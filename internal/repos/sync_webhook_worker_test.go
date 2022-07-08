@@ -24,26 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func PrintRows(db database.DB, ctx context.Context) {
-	q := sqlf.Sprintf(`select * from create_webhook_jobs;`)
-	rows, err := db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		fmt.Println("error printing rows")
-	}
-	var res []repos.CreateWebhookJob
-
-	for rows.Next() {
-		var dest repos.CreateWebhookJob
-		rows.Scan(dest)
-		res = append(res, dest)
-	}
-
-	fmt.Println("len:", len(res))
-	for _, r := range res {
-		fmt.Printf("r:%+v\n", r)
-	}
-}
-
 func testSyncWebhookWorker(db database.DB) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
@@ -63,14 +43,11 @@ func testSyncWebhookWorker(db database.DB) func(t *testing.T) {
 		}
 		fmt.Printf("testRepo:%+v\n", testRepo)
 
-		fmt.Println("before")
-		PrintRows(db, ctx)
 		q1 := sqlf.Sprintf(`insert into create_webhook_jobs (repo_id, repo_name) values (%d, %s);`, testRepo.ID, testRepo.Name)
 		result, err := db.Handle().ExecContext(ctx, q1.Query(sqlf.PostgresBindVar), q1.Args()...)
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Println("after")
 		PrintRows(db, ctx)
 		rowsAffected, err := result.RowsAffected()
 		if rowsAffected != 1 {
@@ -95,12 +72,44 @@ func testSyncWebhookWorker(db database.DB) func(t *testing.T) {
 		var job *repos.CreateWebhookJob
 		select {
 		case job = <-jobChan:
-			t.Log("Job received")
+			fmt.Println("Job received")
 		case <-time.After(5 * time.Second):
 			t.Fatal("Timeout")
 		}
 		fmt.Printf("job:%+v\n", job)
 
+	}
+}
+
+func PrintRows(db database.DB, ctx context.Context) {
+	q := sqlf.Sprintf(`select * from create_webhook_jobs;`)
+	rows, err := db.Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
+	if err != nil {
+		fmt.Println("error printing rows")
+	}
+	var jobs []repos.CreateWebhookJob
+
+	for rows.Next() {
+		var job repos.CreateWebhookJob
+		var executionLogs *[]any
+		rows.Scan(
+			&job.ID,
+			&job.State,
+			&job.FailureMessage,
+			&job.StartedAt,
+			&job.FinishedAt,
+			&job.ProcessAfter,
+			&job.NumResets,
+			&job.NumFailures,
+			&executionLogs,
+			&job.RepoID,
+			&job.RepoName,
+			&job.QueuedAt,
+		)
+		jobs = append(jobs, job)
+	}
+	if err := rows.Err(); err != nil {
+		fmt.Println("err printing:", err)
 	}
 }
 

@@ -177,7 +177,6 @@ loop:
 	for {
 		fmt.Println("numJobsDequeued:", w.numDequeues)
 		if w.options.NumTotalJobs != 0 && w.numDequeues >= w.options.NumTotalJobs {
-			fmt.Println("done with all jobs")
 			reason = "NumTotalJobs dequeued"
 			break loop
 		}
@@ -221,7 +220,6 @@ loop:
 			reason = "MaxActiveTime elapsed"
 			break loop
 		}
-		fmt.Println("none of the cases")
 	}
 
 	w.options.Metrics.logger.Info("Shutting down dequeue loop", log.String("reason", reason))
@@ -257,9 +255,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	// If we block here we are waiting for a handler to exit so that we do not
 	// exceed our configured concurrency limit.
 	case <-w.handlerSemaphore:
-		fmt.Println("handler semaphore")
 	case <-w.dequeueCtx.Done():
-		fmt.Println("dequeue context done")
 		return false, w.dequeueCtx.Err()
 	}
 	defer func() {
@@ -274,11 +270,9 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 
 	dequeueable, extraDequeueArguments, err := w.preDequeueHook(w.dequeueCtx)
 	if err != nil {
-		fmt.Println("dequeueable error")
 		return false, errors.Wrap(err, "Handler.PreDequeueHook")
 	}
 	if !dequeueable {
-		fmt.Println("not dequeueable")
 		// Hook declined to dequeue a record
 		return false, nil
 	}
@@ -287,11 +281,9 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	// Select a queued record to process and the transaction that holds it
 	record, dequeued, err := w.store.Dequeue(w.dequeueCtx, w.options.WorkerHostname, extraDequeueArguments)
 	if err != nil {
-		fmt.Println("record error:", err)
 		return false, errors.Wrap(err, "store.Dequeue")
 	}
 	if !dequeued {
-		fmt.Println("not dequeued")
 		// Nothing to process
 		return false, nil
 	}
@@ -348,7 +340,6 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		}()
 
 		if err := w.handle(handleCtx, workerCtxWithSpan, record); err != nil {
-			fmt.Println("some error")
 			processLog.Error("Failed to finalize record", log.Error(err))
 		}
 	}()
@@ -370,7 +361,6 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 		defer cancel()
 	}
 
-	fmt.Println("worker.handle to worker.dequeueAndHandle")
 	// Open namespace for logger to avoid key collisions on fields
 	handleErr := w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
 	fmt.Println("handleErr:", handleErr)
@@ -415,9 +405,7 @@ func (w *Worker) isJobCanceled(id int, handleErr, ctxErr error) bool {
 // preDequeueHook invokes the handler's pre-dequeue hook if it exists.
 func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDequeueArguments any, err error) {
 	if o, ok := w.handler.(WithPreDequeue); ok {
-		fmt.Println("theres a pre hook")
 		return o.PreDequeue(ctx, w.options.Metrics.logger)
 	}
-	fmt.Println("theres no pre hook")
 	return true, nil, nil
 }

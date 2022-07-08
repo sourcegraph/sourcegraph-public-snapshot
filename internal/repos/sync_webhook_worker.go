@@ -89,23 +89,24 @@ func NewWebhookCreatingWorker(
 	}
 
 	createWebhookJobColumns := []*sqlf.Query{
-		sqlf.Sprintf("create_webhook_jobs.id"),
-		sqlf.Sprintf("create_webhook_jobs.state"),
-		sqlf.Sprintf("create_webhook_jobs.failure_message"),
-		sqlf.Sprintf("create_webhook_jobs.queued_at"),
-		sqlf.Sprintf("create_webhook_jobs.started_at"),
-		sqlf.Sprintf("create_webhook_jobs.finished_at"),
-		sqlf.Sprintf("create_webhook_jobs.process_after"),
-		sqlf.Sprintf("create_webhook_jobs.num_resets"),
-		sqlf.Sprintf("create_webhook_jobs.num_failures"),
-		sqlf.Sprintf("create_webhook_jobs.repo_id"),
-		sqlf.Sprintf("create_webhook_jobs.repo_name"),
+		sqlf.Sprintf("id"),
+		sqlf.Sprintf("state"),
+		sqlf.Sprintf("failure_message"),
+		sqlf.Sprintf("started_at"),
+		sqlf.Sprintf("finished_at"),
+		sqlf.Sprintf("process_after"),
+		sqlf.Sprintf("num_resets"),
+		sqlf.Sprintf("num_failures"),
+		sqlf.Sprintf("execution_logs"),
+		sqlf.Sprintf("repo_id"),
+		sqlf.Sprintf("repo_name"),
+		sqlf.Sprintf("queued_at"),
 	}
 
 	store := workerstore.New(dbHandle, workerstore.Options{
-		Name:              "webhook_creation_worker_store",
-		TableName:         "create_webhook_jobs",
-		ViewName:          "create_webhook_jobs_with_next_in_queue",
+		Name:      "webhook_creation_worker_store",
+		TableName: "create_webhook_jobs",
+		// ViewName:          "create_webhook_jobs_with_next_in_queue",
 		Scan:              scanWebhookCreationJob,
 		OrderByExpression: sqlf.Sprintf("create_webhook_jobs.queued_at"),
 		ColumnExpressions: createWebhookJobColumns,
@@ -142,7 +143,7 @@ func scanWebhookCreationJob(rows *sql.Rows, err error) (workerutil.Record, bool,
 		return nil, false, err
 	}
 
-	jobs, err := scanJobs(rows)
+	jobs, err := scanCreateJobs(rows)
 	if err != nil || len(jobs) == 0 {
 		return nil, false, err
 	}
@@ -153,15 +154,15 @@ func scanWebhookCreationJob(rows *sql.Rows, err error) (workerutil.Record, bool,
 type CreateWebhookJob struct {
 	ID             int
 	State          string
-	FailureMessage *string
-	QueuedAt       *time.Time
-	StartedAt      *time.Time
-	FinishedAt     *time.Time
-	ProcessAfter   *time.Time
+	FailureMessage sql.NullString
+	StartedAt      sql.NullTime
+	FinishedAt     sql.NullTime
+	ProcessAfter   sql.NullTime
 	NumResets      int
 	NumFailures    int
-	RepoID         int
+	RepoID         int64
 	RepoName       string
+	QueuedAt       sql.NullTime
 }
 
 func (cw *CreateWebhookJob) RecordID() int {

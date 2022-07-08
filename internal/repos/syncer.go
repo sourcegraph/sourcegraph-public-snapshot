@@ -121,13 +121,11 @@ type syncHandler struct {
 }
 
 func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	fmt.Println("syncHandler.Handle")
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
 	}
 
-	fmt.Println("syncExternalService")
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
 }
 
