@@ -35,7 +35,7 @@ func newSwitchableOtelTracerProvider(logger log.Logger) *switchableOtelTracerPro
 		provider: oteltrace.NewNoopTracerProvider(),
 		debug:    false,
 	})
-	return &switchableOtelTracerProvider{v: &v}
+	return &switchableOtelTracerProvider{logger: logger, v: &v}
 }
 
 func (s *switchableOtelTracerProvider) Tracer(instrumentationName string, opts ...oteltrace.TracerOption) oteltrace.Tracer {
