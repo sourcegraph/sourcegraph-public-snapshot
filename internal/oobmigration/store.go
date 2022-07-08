@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"embed"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -29,6 +30,7 @@ type Migration struct {
 	Created        time.Time
 	LastUpdated    *time.Time
 	NonDestructive bool
+	IsEnterprise   bool
 	ApplyReverse   bool
 	Errors         []MigrationError
 	// Metadata can be used to store custom JSON data
@@ -82,6 +84,7 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 			&value.Created,
 			&value.LastUpdated,
 			&value.NonDestructive,
+			&value.IsEnterprise,
 			&value.ApplyReverse,
 			&value.Metadata,
 			&dbutil.NullString{S: &message},
@@ -145,10 +148,6 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	return &Store{Store: txBase}, err
 }
 
-//
-// WIP
-//
-
 type yamlMigration struct {
 	ID                     int    `yaml:"id"`
 	Team                   string `yaml:"team"`
@@ -165,19 +164,35 @@ type yamlMigration struct {
 //go:embed oobmigrations.yaml
 var migrations embed.FS
 
-func (s *Store) SynchronizeMetadata(ctx context.Context) error {
+var yamlMigrations = func() []yamlMigration {
 	contents, err := migrations.ReadFile("oobmigrations.yaml")
 	if err != nil {
-		return err
+		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
 	}
 
 	var migrations []yamlMigration
 	if err := yaml.Unmarshal(contents, &migrations); err != nil {
-		return err
+		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
 	}
 
-	for _, migration := range migrations {
-		if err := s.Exec(ctx, sqlf.Sprintf(
+	return migrations
+}()
+
+// TODO - call from runner
+
+// SynchronizeMetadata upserts the metadata defined in the sibling file oobmigrations.yaml.
+// Existing out-of-band migration metadata that does not match one of the identifiers in
+// the referenced file are not removed, as they have likely been registered by an earlier
+// version of the instance prior to a downgrade.
+func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, migration := range yamlMigrations {
+		if err := tx.Exec(ctx, sqlf.Sprintf(
 			synchronizeMetadataUpsertQuery,
 			migration.ID,
 			migration.Team,
@@ -236,10 +251,6 @@ ON CONFLICT (id) DO UPDATE SET
 	deprecated_version_minor = %s
 `
 
-//
-// WIP
-//
-
 // GetByID retrieves a migration by its identifier. If the migration does not exist, a false
 // valued flag is returned.
 func (s *Store) GetByID(ctx context.Context, id int) (_ Migration, _ bool, err error) {
@@ -270,6 +281,7 @@ SELECT
 	m.created,
 	m.last_updated,
 	m.non_destructive,
+	m.is_enterprise,
 	m.apply_reverse,
 	m.metadata,
 	e.message,
@@ -313,6 +325,7 @@ SELECT
 	m.created,
 	m.last_updated,
 	m.non_destructive,
+	m.is_enterprise,
 	m.apply_reverse,
 	m.metadata,
 	e.message,
