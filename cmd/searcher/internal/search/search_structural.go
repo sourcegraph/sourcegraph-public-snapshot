@@ -139,7 +139,10 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 		return ranges[i].Start.Offset < ranges[j].Start.Offset
 	})
 
-	var chunks []rangeChunk
+	// guestimate size to minimize allocations. This assumes ~2 matches per
+	// chunk. Additionally, since allocations are doubled on realloc, this
+	// should only realloc once for small ranges.
+	chunks := make([]rangeChunk, 0, len(ranges)/2)
 	for i, rr := range ranges {
 		if i == 0 {
 			// First iteration, there are no chunks, so create a new one
