@@ -1,6 +1,8 @@
 import React from 'react'
 
-import { Button } from '@sourcegraph/wildcard'
+import { ApolloError } from '@apollo/client'
+
+import { Alert, Button } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { SurveyUseCaseForm } from '../components/SurveyUseCaseForm'
@@ -10,11 +12,9 @@ import { Toast } from './Toast'
 
 import styles from './SurveyUseCaseToast.module.scss'
 
-export interface UseCaseFeedbackState
-    extends Pick<TotalFeedbackState, 'useCases' | 'otherUseCase' | 'better' | 'email'> {}
+export interface UseCaseFeedbackState extends Pick<TotalFeedbackState, 'otherUseCase' | 'better' | 'email'> {}
 
 export interface UseCaseFeedbackModifiers {
-    onChangeUseCases: (useCases: TotalFeedbackState['useCases']) => void
     onChangeOtherUseCase: (otherUseCase: TotalFeedbackState['otherUseCase']) => void
     onChangeBetter: (additionalInfo: TotalFeedbackState['better']) => void
     onChangeEmail: (email: TotalFeedbackState['email']) => void
@@ -25,14 +25,13 @@ interface SurveyUseCaseFormToastProps extends UseCaseFeedbackState, UseCaseFeedb
     onDismiss: () => void
     onDone: () => Promise<void>
     authenticatedUser: AuthenticatedUser | null
+    error?: ApolloError
 }
 
 export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastProps> = ({
     isSubmitting,
     onDismiss,
     onDone,
-    useCases,
-    onChangeUseCases,
     otherUseCase,
     onChangeOtherUseCase,
     better,
@@ -40,16 +39,14 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
     email,
     onChangeEmail,
     authenticatedUser,
+    error,
 }) => (
     <Toast
         toastBodyClassName={styles.toastBody}
         toastContentClassName="mt-0"
         cta={
             <SurveyUseCaseForm
-                title="You use Sourcegraph to..."
                 authenticatedUser={authenticatedUser}
-                useCases={useCases}
-                onChangeUseCases={onChangeUseCases}
                 otherUseCase={otherUseCase}
                 onChangeOtherUseCase={onChangeOtherUseCase}
                 better={better}
@@ -59,11 +56,18 @@ export const SurveyUseCaseToast: React.FunctionComponent<SurveyUseCaseFormToastP
             />
         }
         footer={
-            <div className="d-flex justify-content-end">
-                <Button variant="primary" size="sm" onClick={onDone} disabled={isSubmitting}>
-                    Done
-                </Button>
-            </div>
+            <>
+                {error && (
+                    <div className="d-flex">
+                        <Alert variant="danger">Error: {error.message}</Alert>
+                    </div>
+                )}
+                <div className="d-flex justify-content-end">
+                    <Button variant="primary" size="sm" onClick={onDone} disabled={isSubmitting}>
+                        Done
+                    </Button>
+                </div>
+            </>
         }
         onDismiss={onDismiss}
     />

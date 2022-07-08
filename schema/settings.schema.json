@@ -144,7 +144,7 @@
         "showEnterpriseHomePanels": {
           "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": {
             "pointer": true
           }

@@ -4,16 +4,16 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
+	"gonum.org/v1/gonum/stat/combin"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -29,67 +29,86 @@ func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan
 	for _, b := range plan {
 		generators = append(generators, NewGenerator(inputs, b, rules))
 	}
+
+	jobGenerator := &jobGenerator{SearchInputs: inputs}
+
 	return &FeelingLuckySearchJob{
-		initialJob: initialJob,
-		generators: generators,
+		initialJob:      initialJob,
+		generators:      generators,
+		newGeneratedJob: jobGenerator.New,
 	}
 }
 
+// FeelingLuckySearchJob represents a lucky search. Note `newGeneratedJob`
+// returns a job given an autoQuery. It is a function so that generated queries
+// can be composed at runtime (with auto queries that dictate runtime control
+// flow) with static inputs (search inputs), while not exposing static inputs.
 type FeelingLuckySearchJob struct {
-	initialJob job.Job
-	generators []next
+	initialJob      job.Job
+	generators      []next
+	newGeneratedJob func(*autoQuery) job.Job
+}
+
+// jobGenerator stores static values that should not be exposed to runtime
+// concerns. jobGenerator exposes a method `New` for constructing jobs that
+// require runtime information.
+type jobGenerator struct {
+	*run.SearchInputs
+}
+
+func (g *jobGenerator) New(autoQ *autoQuery) job.Job {
+	j, err := NewGeneratedSearchJob(g.SearchInputs, autoQ)
+	if err != nil {
+		return nil
+	}
+	return j
 }
 
 func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, f)
 	defer func() { finish(alert, err) }()
 
+	stream := streaming.NewDedupingStream(parentStream)
+
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
-
-	var mux sync.Mutex
-	dedup := result.NewDeduper()
-
-	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		mux.Lock()
-
-		results := event.Results[:0]
-		for _, match := range event.Results {
-			seen := dedup.Seen(match)
-			if seen {
-				continue
-			}
-			dedup.Add(match)
-			results = append(results, match)
-		}
-		event.Results = results
-		mux.Unlock()
-		parentStream.Send(event)
-	})
-
 	alert, err = f.initialJob.Run(ctx, clients, stream)
 	if err != nil {
 		return alert, err
 	}
 	maxAlerter.Add(alert)
 
+	// Now start counting how many additional results we get from generated queries
+	countedStream := streaming.NewResultCountingStream(stream)
+
 	generated := &alertobserver.ErrLuckyQueries{ProposedQueries: []*search.ProposedQuery{}}
-	var j job.Job
+	var autoQ *autoQuery
 	for _, next := range f.generators {
 		for {
-			j, next = next()
-			if j == nil {
+			autoQ, next = next()
+			if autoQ == nil {
 				if next == nil {
-					// No job and generator is exhausted.
+					// No query and generator is exhausted.
 					break
 				}
 				continue
 			}
 
-			alert, err = j.Run(ctx, clients, stream)
-			if ctx.Err() != nil {
-				// Cancellation or Deadline hit implies it's time to stop running jobs.
-				errs = errors.Append(errs, generated)
+			j := f.newGeneratedJob(autoQ)
+			if j == nil {
+				// Generated an invalid job with this query, just continue.
+				continue
+			}
+			alert, err = j.Run(ctx, clients, countedStream)
+			if countedStream.Count() >= limits.DefaultMaxSearchResultsStreaming {
+				// We've sent additional results up to the maximum bound. Let's stop here.
+				var lErr *alertobserver.ErrLuckyQueries
+				if errors.As(err, &lErr) {
+					generated.ProposedQueries = append(generated.ProposedQueries, lErr.ProposedQueries...)
+				}
+				if len(generated.ProposedQueries) > 0 {
+					errs = errors.Append(errs, generated)
+				}
 				return maxAlerter.Alert, errs
 			}
 
@@ -119,12 +138,26 @@ func (f *FeelingLuckySearchJob) Name() string {
 	return "FeelingLuckySearchJob"
 }
 
-func (f *FeelingLuckySearchJob) Tags() []log.Field {
-	return []log.Field{}
+func (f *FeelingLuckySearchJob) Fields(job.Verbosity) []log.Field { return nil }
+
+func (f *FeelingLuckySearchJob) Children() []job.Describer {
+	return []job.Describer{f.initialJob}
+}
+
+func (f *FeelingLuckySearchJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *f
+	cp.initialJob = job.Map(f.initialJob, fn)
+	return &cp
+}
+
+// autoQuery is an automatically generated query with associated data (e.g., description).
+type autoQuery struct {
+	description string
+	query       query.Basic
 }
 
 // next is the continuation for the query generator.
-type next func() (job.Job, next)
+type next func() (*autoQuery, next)
 
 // NewGenerator creates a new generator using rules and a seed Basic query. It
 // returns a `next` function which, when called, returns the next job
@@ -136,32 +169,22 @@ func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next
 	var n func(i int) next // i keeps track of rule index in the continuation
 	n = func(i int) next {
 		if i >= len(rules) {
-			return func() (job.Job, next) { return nil, nil }
+			return func() (*autoQuery, next) { return nil, nil }
 		}
 
-		return func() (job.Job, next) {
+		return func() (*autoQuery, next) {
 			generated := applyTransformation(seed, rules[i].transform)
 			if generated == nil {
 				// Rule doesn't apply, go to next rule.
 				return nil, n(i + 1)
 			}
 
-			child, err := NewBasicJob(inputs, *generated)
-			if err != nil {
-				// Generated invalid job, go to next rule.
-				return nil, n(i + 1)
+			q := autoQuery{
+				description: rules[i].description,
+				query:       *generated,
 			}
 
-			j := &generatedSearchJob{
-				Child: child,
-				ProposedQuery: &search.ProposedQuery{
-					Description: rules[i].description,
-					Query:       query.StringHuman(generated.ToParseTree()),
-					PatternType: query.SearchTypeLucky,
-				},
-			}
-
-			return j, n(i + 1)
+			return &q, n(i + 1)
 		}
 	}
 
@@ -278,7 +301,7 @@ func unquotePatterns(b query.Basic) *query.Basic {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
 	if err != nil {
 		return nil
 	}
@@ -297,7 +320,7 @@ func unquotePatterns(b query.Basic) *query.Basic {
 // because parsing maintains the invariant that `concat` nodes only ever have
 // pattern children.
 func unorderedPatterns(b query.Basic) *query.Basic {
-	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeRegex)
+	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeStandard)
 	if err != nil {
 		return nil
 	}
@@ -307,7 +330,7 @@ func unorderedPatterns(b query.Basic) *query.Basic {
 		return nil
 	}
 
-	newNodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newParseTree)
+	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
 	if err != nil {
 		return nil
 	}
@@ -349,7 +372,7 @@ func mapConcat(q []query.Node) ([]query.Node, bool) {
 }
 
 func langPatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteral)
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
 	if err != nil {
 		return nil
 	}
@@ -387,7 +410,7 @@ func langPatterns(b query.Basic) *query.Basic {
 	var pattern query.Node
 	if len(newPattern) > 0 {
 		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newPattern)
+		nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newPattern)
 		if err != nil {
 			return nil
 		}
@@ -401,7 +424,7 @@ func langPatterns(b query.Basic) *query.Basic {
 }
 
 func typePatterns(b query.Basic) *query.Basic {
-	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeLiteral)
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
 	if err != nil {
 		return nil
 	}
@@ -446,7 +469,7 @@ func typePatterns(b query.Basic) *query.Basic {
 	var pattern query.Node
 	if len(newPattern) > 0 {
 		// Process concat nodes
-		nodes, err := query.Sequence(query.For(query.SearchTypeLiteral))(newPattern)
+		nodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newPattern)
 		if err != nil {
 			return nil
 		}
@@ -459,40 +482,175 @@ func typePatterns(b query.Basic) *query.Basic {
 	}
 }
 
+func NewGeneratedSearchJob(inputs *run.SearchInputs, autoQ *autoQuery) (job.Job, error) {
+	child, err := NewBasicJob(inputs, autoQ.query)
+	if err != nil {
+		return nil, err
+	}
+
+	notifier := &notifier{autoQuery: autoQ}
+
+	return &generatedSearchJob{
+		Child:           child,
+		NewNotification: notifier.New,
+	}, nil
+}
+
+// generatedSearchJob represents a generated search at run time. Note
+// `NewNotification` returns the query notifications (encoded as error) given
+// the result count of the job. It is a function so that notifications can be
+// composed at runtime (with result counts) with static inputs (query string),
+// while not exposing static inputs.
 type generatedSearchJob struct {
-	Child         job.Job
-	ProposedQuery *search.ProposedQuery
+	Child           job.Job
+	NewNotification func(count int) error
+}
+
+// notifier stores static values that should not be exposed to runtime concerns.
+// notifier exposes a method `New` for constructing notifications that require
+// runtime information.
+type notifier struct {
+	*autoQuery
+}
+
+func (n *notifier) New(count int) error {
+	var resultCountString string
+	if count == limits.DefaultMaxSearchResultsStreaming {
+		resultCountString = fmt.Sprintf("%d+ results", count)
+	} else if count == 1 {
+		resultCountString = fmt.Sprintf("1 result")
+	} else {
+		resultCountString = fmt.Sprintf("%d additional results", count)
+	}
+
+	return &alertobserver.ErrLuckyQueries{
+		ProposedQueries: []*search.ProposedQuery{{
+			Description: fmt.Sprintf("%s (%s)", n.description, resultCountString),
+			Query:       query.StringHuman(n.query.ToParseTree()),
+			PatternType: query.SearchTypeLucky,
+		}},
+	}
 }
 
 func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (*search.Alert, error) {
 	stream := streaming.NewResultCountingStream(parentStream)
 	alert, err := g.Child.Run(ctx, clients, stream)
-
 	resultCount := stream.Count()
 	if resultCount == 0 {
 		return nil, nil
 	}
 
-	var resultCountString string
-	if resultCount == limits.DefaultMaxSearchResultsStreaming {
-		resultCountString = fmt.Sprintf("%d+ results", resultCount)
-	} else if resultCount == 1 {
-		resultCountString = fmt.Sprintf("1 result")
-	} else {
-		resultCountString = fmt.Sprintf("%d results", resultCount)
+	if ctx.Err() != nil {
+		notification := g.NewNotification(resultCount)
+		return alert, errors.Append(err, notification)
 	}
 
-	g.ProposedQuery.Description = fmt.Sprintf("%s (%s)", g.ProposedQuery.Description, resultCountString)
-	err = errors.Append(err, &alertobserver.ErrLuckyQueries{
-		ProposedQueries: []*search.ProposedQuery{g.ProposedQuery},
-	})
-	return alert, err
+	notification := g.NewNotification(resultCount)
+	if err != nil {
+		return alert, errors.Append(err, notification)
+	}
+
+	return alert, notification
 }
 
 func (g *generatedSearchJob) Name() string {
 	return "GeneratedSearchJob"
 }
 
-func (g *generatedSearchJob) Tags() []log.Field {
-	return []log.Field{}
+func (g *generatedSearchJob) Children() []job.Describer { return []job.Describer{g.Child} }
+
+func (g *generatedSearchJob) Fields(job.Verbosity) []log.Field { return nil }
+
+func (g *generatedSearchJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *g
+	cp.Child = job.Map(g.Child, fn)
+	return &cp
+}
+
+type simpleRule struct {
+	description string
+	transform   func(query.Basic) *query.Basic
+}
+
+var rulesMaxSet = []simpleRule{
+	{
+		description: "unquote patterns",
+		transform:   unquotePatterns,
+	},
+	{
+		description: "apply search type for pattern",
+		transform:   typePatterns,
+	},
+	{
+		description: "apply language filter for pattern",
+		transform:   langPatterns,
+	},
+}
+
+type cg = *combin.CombinationGenerator
+
+// NewComboGenerator returns a generator for queries produces by a combination
+// of rules on a seed query. The generator strategy tries to first apply _all_
+// rules, and then successively reduces the number of rules that it attempts to
+// apply by one. This strategy is useful when we try the most aggressive
+// interpretation of a query subject to rules first, and gradually loosen the
+// number of rules and interpretation. To avoid spending time on generator
+// invalid combinations, the generator prunes the initial rule set to only those
+// rules that do successively apply individually to the seed query.
+func NewComboGenerator(seed query.Basic, rules []simpleRule) next {
+	rules = pruneRules(seed, rules)
+	// the iterator state `n` stores:
+	// - k, the number of rules to try and apply.
+	// - cg, an iterator producing the next sequence of rules for the current value of `k`.
+	var n func(k int, cg cg) next
+	n = func(k int, cg cg) next {
+		if k == 0 {
+			return func() (*autoQuery, next) { return nil, nil }
+		}
+
+		return func() (*autoQuery, next) {
+			if cg.Next() {
+				var transform transform
+				var descriptions []string
+				for _, idx := range cg.Combination(nil) {
+					transform = append(transform, rules[idx].transform)
+					descriptions = append(descriptions, rules[idx].description)
+				}
+				generated := applyTransformation(seed, transform)
+				if generated == nil {
+					// Rule does not apply, go to next rule.
+					continuation := n(k, cg)
+					return continuation()
+				}
+
+				q := autoQuery{
+					description: strings.Join(descriptions, " and "),
+					query:       *generated,
+				}
+
+				return &q, n(k, cg)
+			}
+			k -= 1
+			cg = combin.NewCombinationGenerator(len(rules), k)
+			continuation := n(k, cg)
+			return continuation()
+		}
+	}
+
+	num := len(rules)
+	cg := combin.NewCombinationGenerator(num, num)
+	return n(num, cg)
+}
+
+// pruneRules produces a minimum set of rules that apply successfully on the seed query.
+func pruneRules(seed query.Basic, rules []simpleRule) []simpleRule {
+	applies := make([]simpleRule, 0, len(rules))
+	for _, r := range rules {
+		g := applyTransformation(seed, transform{r.transform})
+		if g == nil {
+			continue
+		}
+		applies = append(applies, r)
+	}
+	return applies
 }

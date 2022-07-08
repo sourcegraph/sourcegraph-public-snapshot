@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiTimerSand, mdiLinkVariantRemove, mdiCancel, mdiAlertCircle, mdiContentSave, mdiCheckBold } from '@mdi/js'
 import classNames from 'classnames'
 
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecWorkspaceState } from '../../../../../graphql-operations'
 
@@ -23,76 +23,84 @@ export const WorkspaceStateIcon: React.FunctionComponent<React.PropsWithChildren
             return null
         case BatchSpecWorkspaceState.QUEUED:
             return (
-                <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="This workspace is queued for execution."
-                    aria-label="This workspace is queued for execution."
-                    svgPath={mdiTimerSand}
-                />
+                <Tooltip content="This workspace is queued for execution.">
+                    <Icon
+                        aria-label="This workspace is queued for execution."
+                        className={classNames('text-muted', className)}
+                        svgPath={mdiTimerSand}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.PROCESSING:
             return (
-                <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="This workspace is currently executing."
-                    aria-label="This workspace is currently executing."
-                    as={LoadingSpinner}
-                />
+                <Tooltip content="This workspace is currently executing.">
+                    <Icon
+                        aria-label="This workspace is currently executing."
+                        className={classNames('text-muted', className)}
+                        as={LoadingSpinner}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.SKIPPED:
             return (
-                <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="This workspace was skipped."
-                    aria-label="This workspace was skipped."
-                    svgPath={mdiLinkVariantRemove}
-                />
+                <Tooltip content="This workspace was skipped.">
+                    <Icon
+                        aria-label="This workspace was skipped."
+                        className={classNames('text-muted', className)}
+                        svgPath={mdiLinkVariantRemove}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.CANCELED:
             return (
-                <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="The execution for this workspace was canceled."
-                    aria-label="The execution for this workspace was canceled."
-                    svgPath={mdiCancel}
-                />
+                <Tooltip content="The execution for this workspace was canceled.">
+                    <Icon
+                        aria-label="The execution for this workspace was canceled."
+                        className={classNames('text-muted', className)}
+                        svgPath={mdiCancel}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.CANCELING:
             return (
-                <Icon
-                    className={classNames('text-muted', className)}
-                    data-tooltip="The execution for this workspace is being canceled."
-                    aria-label="The execution for this workspace is being canceled."
-                    svgPath={mdiCancel}
-                />
+                <Tooltip content="The execution for this workspace is being canceled.">
+                    <Icon
+                        aria-label="The execution for this workspace is being canceled."
+                        className={classNames('text-muted', className)}
+                        svgPath={mdiCancel}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.FAILED:
             return (
-                <Icon
-                    className="text-danger"
-                    data-tooltip="The execution for this workspace failed."
-                    aria-label="The execution for this workspace failed."
-                    svgPath={mdiAlertCircle}
-                />
+                <Tooltip content="The execution for this workspace failed.">
+                    <Icon
+                        aria-label="The execution for this workspace failed."
+                        className="text-danger"
+                        svgPath={mdiAlertCircle}
+                    />
+                </Tooltip>
             )
         case BatchSpecWorkspaceState.COMPLETED:
             if (cachedResultFound) {
                 return (
-                    <Icon
-                        className="text-success"
-                        data-tooltip="Cached result found for this workspace."
-                        aria-label="Cached result found for this workspace."
-                        svgPath={mdiContentSave}
-                    />
+                    <Tooltip content="Cached result found for this workspace.">
+                        <Icon
+                            aria-label="Cached result found for this workspace."
+                            className="text-success"
+                            svgPath={mdiContentSave}
+                        />
+                    </Tooltip>
                 )
             }
             return (
-                <Icon
-                    className="text-success"
-                    data-tooltip="Execution for this workspace succeeded."
-                    aria-label="Execution for this workspace succeeded."
-                    svgPath={mdiCheckBold}
-                />
+                <Tooltip content="Execution for this workspace succeeded.">
+                    <Icon
+                        aria-label="Execution for this workspace succeeded."
+                        className="text-success"
+                        svgPath={mdiCheckBold}
+                    />
+                </Tooltip>
             )
     }
 }

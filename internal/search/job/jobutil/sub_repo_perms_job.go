@@ -59,8 +59,16 @@ func (s *subRepoPermsFilterJob) Name() string {
 	return "SubRepoPermsFilterJob"
 }
 
-func (s *subRepoPermsFilterJob) Tags() []otlog.Field {
-	return []otlog.Field{}
+func (s *subRepoPermsFilterJob) Fields(job.Verbosity) []otlog.Field { return nil }
+
+func (s *subRepoPermsFilterJob) Children() []job.Describer {
+	return []job.Describer{s.child}
+}
+
+func (s *subRepoPermsFilterJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *s
+	cp.child = job.Map(s.child, fn)
+	return &cp
 }
 
 // applySubRepoFiltering filters a set of matches using the provided
