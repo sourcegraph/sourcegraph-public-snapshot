@@ -37,6 +37,7 @@ const config = {
     // All other rules should go into https://github.com/sourcegraph/eslint-config
     'monorepo/no-relative-import': 'error',
     '@sourcegraph/sourcegraph/check-help-links': 'error',
+    '@sourcegraph/sourcegraph/no-unexplained-console-error': 'warn',
     'no-restricted-imports': [
       'error',
       {
