@@ -114,13 +114,13 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			modifiedQuery, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
+			modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}
 
 			log15.Debug("executing query", "query", modifiedQuery)
-			grouped, err := c.computeSearch(ctx, modifiedQuery)
+			grouped, err := c.computeSearch(ctx, modifiedQuery.String())
 			if err != nil {
 				errorMsg := "failed to execute capture group search for repository:" + repository
 				if execution.Revision != "" {
