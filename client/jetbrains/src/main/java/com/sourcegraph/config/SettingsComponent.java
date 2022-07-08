@@ -199,7 +199,6 @@ public class SettingsComponent {
             (remoteUrlReplacementsTextField.getText().length() > 0 && remoteUrlReplacementsTextField.getText().split(",").length % 2 != 0)
                 ? new ValidationInfo("Must be a comma-separated list of pairs", remoteUrlReplacementsTextField)
                 : null);
-        //remoteUrlReplacementsTextField.setToolTipText();
 
         globbingCheckBox = new JBCheckBox("Enable globbing");
         isUrlNotificationDismissedCheckBox = new JBCheckBox("Never show the \"No Sourcegraph URL set\" notification for this project");
