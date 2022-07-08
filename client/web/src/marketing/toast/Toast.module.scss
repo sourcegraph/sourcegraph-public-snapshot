@@ -9,7 +9,7 @@
     align-items: flex-start;
     border-radius: 0.25rem;
     border: 1px solid var(--border-color);
-    width: 520px;
+    min-width: 520px;
 
     @media (--xs-breakpoint-down) {
         right: 0;
