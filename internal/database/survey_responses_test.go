@@ -57,7 +57,7 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 	}
 
 	// Basic submission with email but no user ID
-	_, err = SurveyResponses(db).Create(ctx, nil, &fakeEmail, 8, nil, nil, nil)
+	_, err = SurveyResponses(db).Create(ctx, nil, &fakeEmail, 8, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
