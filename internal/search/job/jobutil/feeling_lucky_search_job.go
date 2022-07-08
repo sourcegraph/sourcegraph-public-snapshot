@@ -77,6 +77,9 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	}
 	maxAlerter.Add(alert)
 
+	// Now start counting how many additional results we get from generated queries
+	countedStream := streaming.NewResultCountingStream(stream)
+
 	generated := &alertobserver.ErrLuckyQueries{ProposedQueries: []*search.ProposedQuery{}}
 	var autoQ *autoQuery
 	for _, next := range f.generators {
@@ -95,10 +98,16 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 				// Generated an invalid job with this query, just continue.
 				continue
 			}
-			alert, err = j.Run(ctx, clients, stream)
-			if ctx.Err() != nil {
-				// Cancellation or Deadline hit implies it's time to stop running jobs.
-				errs = errors.Append(errs, generated)
+			alert, err = j.Run(ctx, clients, countedStream)
+			if countedStream.Count() >= limits.DefaultMaxSearchResultsStreaming {
+				// We've sent additional results up to the maximum bound. Let's stop here.
+				var lErr *alertobserver.ErrLuckyQueries
+				if errors.As(err, &lErr) {
+					generated.ProposedQueries = append(generated.ProposedQueries, lErr.ProposedQueries...)
+				}
+				if len(generated.ProposedQueries) > 0 {
+					errs = errors.Append(errs, generated)
+				}
 				return maxAlerter.Alert, errs
 			}
 
@@ -510,7 +519,7 @@ func (n *notifier) New(count int) error {
 	} else if count == 1 {
 		resultCountString = fmt.Sprintf("1 result")
 	} else {
-		resultCountString = fmt.Sprintf("%d results", count)
+		resultCountString = fmt.Sprintf("%d additional results", count)
 	}
 
 	return &alertobserver.ErrLuckyQueries{
@@ -528,6 +537,11 @@ func (g *generatedSearchJob) Run(ctx context.Context, clients job.RuntimeClients
 	resultCount := stream.Count()
 	if resultCount == 0 {
 		return nil, nil
+	}
+
+	if ctx.Err() != nil {
+		notification := g.NewNotification(resultCount)
+		return alert, errors.Append(err, notification)
 	}
 
 	notification := g.NewNotification(resultCount)
