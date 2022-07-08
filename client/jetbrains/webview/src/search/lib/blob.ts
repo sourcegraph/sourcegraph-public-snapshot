@@ -4,9 +4,12 @@ import { ContentMatch, PathMatch, SymbolMatch } from '@sourcegraph/shared/src/se
 import { BlobContentResult, BlobContentVariables } from '../../graphql-operations'
 import { getMatchId } from '../results/utils'
 
+import { ExpirationCache } from './ExpirationCache'
 import { requestGraphQL } from './requestGraphQl'
 
-const cachedContentRequests = new Map<string, Promise<string | null>>()
+const THIRTY_MINUTES = 30 * 60 * 1000
+
+const cachedContentRequests = new ExpirationCache<string, Promise<string | null>>(THIRTY_MINUTES)
 
 export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
     const cacheKey = getMatchId(match)
