@@ -1,7 +1,13 @@
 import { boolean } from '@storybook/addon-knobs'
-import { DecoratorFn, Story, Meta } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
+
+import { getDocumentNode } from '@sourcegraph/http-client'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
+import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
+import { getLicenseAndUsageInfoResult } from '../list/testData'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
 
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
@@ -20,6 +26,15 @@ const config: Meta = {
 
 export default config
 
+const buildMocks = (isLicensed = true, hasBatchChanges = true) =>
+    new WildcardMockLink([
+        {
+            request: { query: getDocumentNode(GET_LICENSE_AND_USAGE_INFO), variables: MATCH_ANY_PARAMETERS },
+            result: { data: getLicenseAndUsageInfoResult(isLicensed, hasBatchChanges) },
+            nMatches: Number.POSITIVE_INFINITY,
+        },
+    ])
+
 export const Create: Story = () => (
     <WebStory>
         {props => (
@@ -29,6 +44,7 @@ export const Create: Story = () => (
                 toBeArchived={18}
                 batchChange={null}
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                totalCount={1}
             />
         )}
     </WebStory>
@@ -43,6 +59,7 @@ export const Update: Story = () => (
                 toBeArchived={199}
                 batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
                 viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                totalCount={1}
             />
         )}
     </WebStory>
@@ -58,8 +75,26 @@ export const Disabled: Story = () => (
                     toBeArchived={199}
                     batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
                     viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    totalCount={1}
                 />
             </MultiSelectContextProvider>
+        )}
+    </WebStory>
+)
+
+export const ExceedsLicense: Story = () => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={buildMocks(false)}>
+                <CreateUpdateBatchChangeAlert
+                    {...props}
+                    specID="123"
+                    toBeArchived={199}
+                    batchChange={{ id: '123', name: 'awesome-batch-change', url: 'http://test.test/awesome' }}
+                    viewerCanAdminister={boolean('viewerCanAdminister', true)}
+                    totalCount={6}
+                />
+            </MockedTestProvider>
         )}
     </WebStory>
 )
