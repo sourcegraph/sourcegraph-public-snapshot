@@ -118,7 +118,7 @@ func TestTransformRecord(t *testing.T) {
 			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]string{
 				"input.json":              string(marshaledInput),
-				"cache/testcachekey.json": `{"stepIndex":0,"diff":"123","outputs":null,"stepResult":{"Files":null,"Stdout":"","Stderr":""}}`,
+				"cache/testcachekey.json": `{"changedFiles":{"modified":null,"added":null,"deleted":null,"renamed":null},"stdout":"","stderr":"","stepIndex":0,"diff":"123","outputs":null}`,
 			},
 			CliSteps: []apiclient.CliStep{
 				{

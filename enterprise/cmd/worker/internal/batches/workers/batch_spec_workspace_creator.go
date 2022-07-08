@@ -18,9 +18,7 @@ import (
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // batchSpecWorkspaceCreator takes in BatchSpecs, resolves them into
@@ -135,25 +133,25 @@ func (r *batchSpecWorkspaceCreator) process(
 			return err
 		}
 
-		key := cache.KeyForWorkspace(
-			&template.BatchChangeAttributes{
-				Name:        spec.Spec.Name,
-				Description: spec.Spec.Description,
-			},
-			r,
-			w.Path,
-			w.OnlyFetchWorkspace,
-			spec.Spec.Steps,
-		)
-
 		stepCacheKeys := make([]stepCacheKey, 0, len(spec.Spec.Steps))
-		// Generate cache keys for all the step results as well.
+		// Generate cache keys for all the steps.
 		for i := 0; i < len(spec.Spec.Steps); i++ {
 			if _, ok := skippedSteps[int32(i)]; ok {
 				continue
 			}
 
-			key := cache.StepsCacheKey{ExecutionKey: &key, StepIndex: i}
+			key := cache.KeyForWorkspace(
+				&template.BatchChangeAttributes{
+					Name:        spec.Spec.Name,
+					Description: spec.Spec.Description,
+				},
+				r,
+				w.Path,
+				w.OnlyFetchWorkspace,
+				spec.Spec.Steps,
+				i,
+			)
+
 			rawStepKey, err := key.Key()
 			if err != nil {
 				return nil
@@ -240,20 +238,9 @@ func (r *batchSpecWorkspaceCreator) process(
 			continue
 		}
 
-		changes, err := git.ChangesInDiff([]byte(res.Value.Diff))
-		if err != nil {
-			return errors.Wrap(err, "parsing cached step diff")
-		}
-		execResult := execution.Result{
-			Outputs:      res.Value.Outputs,
-			Diff:         res.Value.Diff,
-			ChangedFiles: &changes,
-			Path:         workspace.dbWorkspace.Path,
-		}
-
 		workspace.dbWorkspace.CachedResultFound = true
 
-		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, execResult)
+		rawSpecs, err := cache.ChangesetSpecsFromCache(spec.Spec, workspace.repo, *res.Value, workspace.dbWorkspace.Path)
 		if err != nil {
 			return err
 		}
