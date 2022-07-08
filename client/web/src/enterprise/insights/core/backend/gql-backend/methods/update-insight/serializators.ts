@@ -1,7 +1,6 @@
 import {
     InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
-    SeriesDisplayOptionsInput,
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
@@ -22,10 +21,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
         searchContexts: insight.filters.context ? [insight.filters.context] : [],
     }
 
-    const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-        limit: insight.seriesDisplayOptions?.limit,
-        sortOptions: insight.seriesDisplayOptions?.sortOptions,
-    }
+    const seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesCount, insight.seriesDisplayOptions)
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -51,6 +47,8 @@ export function getCaptureGroupInsightUpdateInput(
     const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
+    const _seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesCount, seriesDisplayOptions)
+
     return {
         dataSeries: [
             {
@@ -70,7 +68,7 @@ export function getCaptureGroupInsightUpdateInput(
                 excludeRepoRegex: filters.excludeRepoRegexp,
                 searchContexts: insight.filters.context ? [filters.context] : [],
             },
-            seriesDisplayOptions: parseSeriesDisplayOptions(insight.seriesCount, seriesDisplayOptions),
+            seriesDisplayOptions: _seriesDisplayOptions,
         },
     }
 }

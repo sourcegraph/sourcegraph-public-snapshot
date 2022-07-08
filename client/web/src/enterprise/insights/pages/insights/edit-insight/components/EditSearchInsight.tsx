@@ -35,6 +35,8 @@ export const EditSearchBasedInsight: React.FunctionComponent<
         return onSubmit({
             ...sanitizedInsight,
             filters: insight.filters,
+            seriesDisplayOptions: insight.seriesDisplayOptions,
+            seriesCount: insight.seriesCount,
         })
     }
 
