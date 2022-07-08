@@ -45,7 +45,7 @@ interface ComputeInsightCreationContentProps extends NativeContainerProps {
 export const ComputeInsightCreationContent: FunctionComponent<ComputeInsightCreationContentProps> = props => {
     const { mode = 'creation', initialValue, onChange, onSubmit, onCancel, ...attributes } = props
 
-    const { repositories, step, stepValue, allReposMode } = useInsightCreationForm({
+    const { repositories, stepValue, allReposMode } = useInsightCreationForm({
         mode,
         initialValue,
         onChange,
@@ -117,8 +117,6 @@ export const ComputeInsightCreationContent: FunctionComponent<ComputeInsightCrea
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
                 series={seriesToPreview(editSeries)}
-                step={step.meta.value}
-                stepValue={stepValue.meta.value}
             />
         </CreationUiLayout>
     )

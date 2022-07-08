@@ -37,7 +37,7 @@ interface ComputeLivePreviewProps {
         query: string
         label: string
         stroke: string
-        groupBy: GroupByField
+        groupBy?: GroupByField
     }[]
 }
 

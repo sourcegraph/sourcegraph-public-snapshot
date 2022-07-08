@@ -71,13 +71,7 @@ const codeInsightsBackend = {
 export const ComputeLivePreview: Story = () => (
     <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
         <div className="m-3 px-4 py-5 bg-white">
-            <ComputeLivePreviewComponent
-                disabled={false}
-                repositories="sourcegraph/sourcegraph"
-                stepValue="2"
-                step="weeks"
-                series={[]}
-            />
+            <ComputeLivePreviewComponent disabled={false} repositories="sourcegraph/sourcegraph" series={[]} />
         </div>
     </CodeInsightsBackendStoryMock>
 )
