@@ -2,8 +2,9 @@
 
 .search-notebook-page {
     background: var(--color-bg-1);
-    overflow: hidden;
     display: flex;
+    align-items: flex-start;
+    overflow: auto;
 }
 
 .auto-save-indicator {
@@ -15,8 +16,9 @@
 .side-column {
     flex: 1;
     min-width: 0;
-    display: flex;
     margin-right: 1rem;
+    position: sticky;
+    top: 0;
 
     @media (--lg-breakpoint-down) {
         display: none;
@@ -25,7 +27,6 @@
 
 .center-column {
     flex: 3;
-    overflow: hidden auto;
     min-width: #{$viewport-lg};
     display: flex;
     flex-direction: column;
