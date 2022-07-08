@@ -16,7 +16,6 @@ import (
 	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go"
 	"github.com/opentracing/opentracing-go/ext"
-	"go.opentelemetry.io/contrib/instrumentation/github.com/gorilla/mux/otelmux"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -129,7 +128,6 @@ var mockServeRepo func(w http.ResponseWriter, r *http.Request)
 func newRouter() *mux.Router {
 	r := mux.NewRouter()
 	r.StrictSlash(true)
-	r.Use(otelmux.Middleware(env.MyName))
 
 	// Top-level routes.
 	r.Path("/").Methods("GET").Name(routeHome)
