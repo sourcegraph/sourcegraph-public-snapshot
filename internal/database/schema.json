@@ -4212,6 +4212,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX cm_action_jobs_pkey ON cm_action_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "cm_action_jobs_state_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -5310,6 +5320,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX cm_trigger_jobs_pkey ON cm_trigger_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "cm_trigger_jobs_state_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
