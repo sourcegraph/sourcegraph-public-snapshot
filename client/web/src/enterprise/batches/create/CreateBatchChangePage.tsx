@@ -70,7 +70,7 @@ const NewBatchChangePageContent: React.FunctionComponent<
         <div className={layoutStyles.pageContainer}>
             <PageTitle title="Create new batch change" />
             {searchQuery && <SearchTemplatesBanner />}
-            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-5" />}
+            {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" />}
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader title={{ text: 'Create batch change' }} />
             </div>
