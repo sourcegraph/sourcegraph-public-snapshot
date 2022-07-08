@@ -1,5 +1,6 @@
 import React from 'react'
 
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { FileDecoration } from 'sourcegraph'
 
@@ -76,17 +77,21 @@ export const FileDecorator: React.FunctionComponent<React.PropsWithChildren<File
                             )}
                             {fileDecoration.meter && (
                                 <Tooltip content={fileDecoration.meter.hoverMessage} placement="bottom">
-                                    <meter
-                                        className={classNames('test-file-decoration-meter', styles.meter, {
-                                            'ml-2': !!fileDecoration.after,
-                                        })}
-                                        min={fileDecoration.meter.min}
-                                        low={fileDecoration.meter.low}
-                                        high={fileDecoration.meter.high}
-                                        max={fileDecoration.meter.max}
-                                        optimum={fileDecoration.meter.optimum}
-                                        value={fileDecoration.meter.value}
-                                    />
+                                    <div>
+                                        <VisuallyHidden>{fileDecoration.meter.hoverMessage}</VisuallyHidden>
+                                        <meter
+                                            className={classNames('test-file-decoration-meter', styles.meter, {
+                                                'ml-2': !!fileDecoration.after,
+                                            })}
+                                            min={fileDecoration.meter.min}
+                                            low={fileDecoration.meter.low}
+                                            high={fileDecoration.meter.high}
+                                            max={fileDecoration.meter.max}
+                                            optimum={fileDecoration.meter.optimum}
+                                            value={fileDecoration.meter.value}
+                                            aria-hidden={true}
+                                        />
+                                    </div>
                                 </Tooltip>
                             )}
                         </div>
