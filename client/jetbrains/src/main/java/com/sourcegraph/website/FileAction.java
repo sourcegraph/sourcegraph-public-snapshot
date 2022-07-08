@@ -35,7 +35,6 @@ public abstract class FileAction extends DumbAwareAction {
         if (currentFile == null) {
             return;
         }
-        SelectionModel sel = editor.getSelectionModel();
 
         // Get repo information.
         RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
@@ -43,14 +42,23 @@ public abstract class FileAction extends DumbAwareAction {
             return;
         }
 
-        VisualPosition selectionStartPosition = sel.getSelectionStartPosition();
-        VisualPosition selectionEndPosition = sel.getSelectionEndPosition();
-        LogicalPosition start = selectionStartPosition != null ? editor.visualToLogicalPosition(selectionStartPosition) : null;
-        LogicalPosition end = selectionEndPosition != null ? editor.visualToLogicalPosition(selectionEndPosition) : null;
-
-        String uri = URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, start, end);
+        String uri = URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, getSelectionStartPosition(editor), getSelectionEndPosition(editor));
 
         handleFileUri(uri);
+    }
+
+    @Nullable
+    private LogicalPosition getSelectionStartPosition(@NotNull Editor editor) {
+        SelectionModel sel = editor.getSelectionModel();
+        VisualPosition position = sel.getSelectionStartPosition();
+        return position != null ? editor.visualToLogicalPosition(position) : null;
+    }
+
+    @Nullable
+    private LogicalPosition getSelectionEndPosition(@NotNull Editor editor) {
+        SelectionModel sel = editor.getSelectionModel();
+        VisualPosition position = sel.getSelectionEndPosition();
+        return position != null ? editor.visualToLogicalPosition(position) : null;
     }
 
     public void actionPerformedFromPreviewContent(@NotNull Project project, @Nullable PreviewContent previewContent, @Nullable LogicalPosition start, @Nullable LogicalPosition end) {
