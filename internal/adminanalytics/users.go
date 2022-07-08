@@ -163,9 +163,9 @@ var (
 			month
 	)
 	SELECT
-		ROUND(sum_total_count / total_days) AS avg_total_count,
-		ROUND(sum_unique_users / total_days) AS avg_unique_users,
-		ROUND(sum_registered_users / total_days) AS avg_registered_users
+		ROUND(sum_total_count / total_days)::int AS avg_total_count,
+		ROUND(sum_unique_users / total_days)::int AS avg_unique_users,
+		ROUND(sum_registered_users / total_days)::int AS avg_registered_users
 	FROM
 		(
 			SELECT
@@ -183,9 +183,9 @@ var (
 		) AS f
 	UNION ALL
 	SELECT
-		ROUND(sum_total_count / total_weeks) AS avg_total_count,
-		ROUND(sum_unique_users / total_weeks) AS avg_unique_users,
-		ROUND(sum_registered_users / total_weeks) AS avg_registered_users
+		ROUND(sum_total_count / total_weeks)::int AS avg_total_count,
+		ROUND(sum_unique_users / total_weeks)::int AS avg_unique_users,
+		ROUND(sum_registered_users / total_weeks)::int AS avg_registered_users
 	FROM
 		(
 			SELECT
@@ -203,9 +203,9 @@ var (
 		) AS f
 	UNION ALL
 	SELECT
-		ROUND(sum_total_count / total_months) AS avg_total_count,
-		ROUND(sum_unique_users / total_months) AS avg_unique_users,
-		ROUND(sum_registered_users / total_months) AS avg_registered_users
+		ROUND(sum_total_count / total_months)::int AS avg_total_count,
+		ROUND(sum_unique_users / total_months)::int AS avg_unique_users,
+		ROUND(sum_registered_users / total_months)::int AS avg_registered_users
 	FROM
 		(
 			SELECT
