@@ -156,6 +156,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     trace: undefined,
                     sourcegraphURL: instanceURL + '.api',
                     decorationContextLines: 0,
+                    displayLimit: 200,
                 }
             ).subscribe(searchResults => {
                 setMatches(searchResults.results)
