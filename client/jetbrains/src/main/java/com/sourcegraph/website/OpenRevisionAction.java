@@ -1,10 +1,9 @@
 package com.sourcegraph.website;
 
-import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.diagnostic.Logger;
-import com.intellij.openapi.project.DumbAware;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vcs.VcsDataKeys;
 import com.intellij.openapi.vcs.history.VcsFileRevision;
@@ -25,7 +24,7 @@ import java.util.Optional;
 /**
  * Jetbrains IDE action to open a selected revision in Sourcegraph.
  */
-public class OpenRevisionAction extends AnAction implements DumbAware {
+public class OpenRevisionAction extends DumbAwareAction {
     private final Logger logger = Logger.getInstance(this.getClass());
 
     @NotNull
