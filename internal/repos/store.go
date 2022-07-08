@@ -93,6 +93,8 @@ type Store interface {
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
 	// ListSyncJobs returns all sync jobs.
 	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
+	// Enqueues webhook build jobs for external services that requests syncing using webhooks.
+	EnqueueWhBuildJobs(ctx context.Context, isCloud bool) (err error)
 }
 
 // A Store exposes methods to read and write repos and external services.
@@ -683,6 +685,31 @@ func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 	return s.Exec(ctx, q)
 }
 
+func (s *store) EnqueueWhBuildJobs(ctx context.Context, isCloud bool) (err error) {
+	tr, ctx := s.trace(ctx, "Store.EnqueueWebhookCreationJobs")
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+		s.Metrics.EnqueueWebhookCreationJobs.Observe(secs, 0, &err)
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	filter := "TRUE"
+	if isCloud {
+		filter = "cloud_default = false"
+	}
+	q := sqlf.Sprintf(enqueueWebhookCreationJobsQueryFmtstr, sqlf.Sprintf(filter))
+	return s.Exec(ctx, q)
+}
+
+const enqueueWebhookCreationJobsQueryFmtstr = `
+WITH DUE AS (
+	SELECT id
+	FROM
+)
+`
+
 // We ignore Phabricator repos here as they are currently synced using
 // RunPhabricatorRepositorySyncWorker
 const enqueueSyncJobsQueryFmtstr = `
@@ -761,13 +788,13 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	return jobs, nil
 }
 
-func scanCreateJobs(rows *sql.Rows) ([]CreateWebhookJob, error) {
-	var jobs []CreateWebhookJob
+func scanWhBuildJobs(rows *sql.Rows) ([]WhBuildJob, error) {
+	var jobs []WhBuildJob
 
 	for rows.Next() {
 		var executionLogs *[]any
 
-		var job CreateWebhookJob
+		var job WhBuildJob
 		if err := rows.Scan(
 			&job.ID,
 			&job.State,

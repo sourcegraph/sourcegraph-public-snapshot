@@ -44,7 +44,6 @@ type Handlers struct {
 	BitbucketCloudWebhook     http.Handler
 	NewCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler
 	NewComputeStreamHandler   enterprise.NewComputeStreamHandler
-	SyncGitHubWebhook         webhooks.Registerer // how do i extend beyond github
 }
 
 // NewHandler returns a new API handler that uses the provided API
@@ -87,7 +86,6 @@ func NewHandler(
 	)
 
 	handlers.GitHubWebhook.Register(&gh)
-	initSyncingWebhooks(handlers, &gh)
 
 	m.Get(apirouter.GitHubWebhooks).Handler(trace.Route(webhookMiddleware.Logger(&gh)))
 	m.Get(apirouter.GitLabWebhooks).Handler(trace.Route(webhookMiddleware.Logger(handlers.GitLabWebhook)))
@@ -199,12 +197,6 @@ func init() {
 		}
 		return reflect.ValueOf(time.Unix(0, ms*int64(time.Millisecond)))
 	})
-}
-
-func initSyncingWebhooks(handlers *Handlers, webhook *webhooks.GitHubWebhook) {
-	handlers.SyncGitHubWebhook.Register(webhook)
-	// handlers.SyncGitLabWebhook.Register(webhook)
-	// etc etc
 }
 
 type errorHandler struct {

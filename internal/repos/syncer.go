@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	webhookapi "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -80,7 +81,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, store.Handle(), &syncHandler{
+	syncWorker, syncResetter := NewSyncWorker(ctx, store.Handle(), &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
@@ -91,15 +92,27 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		CleanupOldJobs:       true,
 	})
 
-	go worker.Start()
-	defer worker.Stop()
+	go syncWorker.Start()
+	defer syncWorker.Stop()
 
-	go resetter.Start()
-	defer resetter.Stop()
+	go syncResetter.Start()
+	defer syncResetter.Stop()
 
-	// webhookWorker, webhookResetter := NewSyncWebhookWorker(ctx, store.Handle(), &syncHandler{}, Opts{})
-	// go webhookWorker.Start()
-	// go webhookWorker.Stop()
+	whBuildWorker, whBuildResetter := NewWhBuildWorker(ctx, store.Handle(), &whBuildHandler{
+		store:                    store,
+		minCreateWebhookInterval: opts.MinSyncInterval, // to change
+	}, WhBuildOptions{
+		WorkerInterval:       opts.DequeueInterval,
+		NumHandlers:          3,
+		PrometheusRegisterer: s.Registerer,
+		CleanupOldJobs:       true,
+	})
+
+	go whBuildWorker.Start()
+	defer whBuildWorker.Stop()
+
+	go whBuildResetter.Start()
+	defer whBuildResetter.Stop()
 
 	for ctx.Err() == nil {
 		if !conf.Get().DisableAutoCodeHostSyncs {
@@ -107,6 +120,11 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 			if err != nil && s.Logger != nil {
 				s.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
+		}
+		// if conf.Get().EnableWebhookSyncing
+		err := store.EnqueueWhBuildJobs(ctx, opts.IsCloud)
+		if err != nil && s.Logger != nil {
+			s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
 		}
 		sleep(ctx, opts.EnqueueInterval())
 	}
@@ -129,18 +147,18 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 	return s.syncer.SyncExternalService(ctx, sj.ExternalServiceID, s.minSyncInterval())
 }
 
-type createWebhookHandler struct {
+type whBuildHandler struct {
 	store                    Store
 	minCreateWebhookInterval func() time.Duration
 }
 
-func (cw *createWebhookHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	cwj, ok := record.(*CreateWebhookJob)
+func (cw *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+	wbj, ok := record.(*WhBuildJob)
 	if !ok {
-		return errors.Errorf("expected repos.CreateWebhookJob, got %T", record)
+		return errors.Errorf("expected repos.WhBuildJob, got %T", record)
 	}
 
-	return CreateSyncWebhook(string(cwj.RepoName), "secret", "token")
+	return webhookapi.CreateSyncWebhook(string(wbj.RepoName), "secret", "token") // to change
 }
 
 // sleep is a context aware time.Sleep
@@ -581,7 +599,6 @@ func (s *Syncer) SyncExternalService(
 	logger = s.Logger.With(log.Object("svc", log.String("name", svc.DisplayName), log.Int64("id", svc.ID)))
 	// Insert or update repos as they are sourced. Keep track of what was seen
 	// so we can remove anything else at the end.
-	worker := NewSyncWebhookWorker(ctx)
 	for res := range results {
 		if err := res.Err; err != nil {
 			logger.Error("error from codehost", log.Int("seen", len(seen)), log.Error(err))
@@ -600,14 +617,6 @@ func (s *Syncer) SyncExternalService(
 		sourced := res.Repo
 		if !allowed(sourced) {
 			continue
-		}
-
-		svc.SyncUsingWebhooks = true
-		if svc.SyncUsingWebhooks {
-			err := worker.Enqueue(sourced)
-			if err != nil {
-				return err
-			}
 		}
 
 		var diff Diff
@@ -631,7 +640,6 @@ func (s *Syncer) SyncExternalService(
 
 		modified = modified || len(diff.Modified)+len(diff.Added) > 0
 	}
-	// worker.processQueue()
 
 	// We don't delete any repos of site-level external services if there were any
 	// errors during a sync.

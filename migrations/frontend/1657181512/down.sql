@@ -1,1 +1,1 @@
-DROP TABLE IF EXISTS create_webhook_jobs;
+DROP TABLE IF EXISTS webhook_build_jobs;

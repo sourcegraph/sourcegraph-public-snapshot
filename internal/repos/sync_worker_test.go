@@ -20,7 +20,6 @@ func testSyncWorkerPlumbing(repoStore repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		testSvc := &types.ExternalService{
-			ID:          77,
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "TestService",
 			Config:      "{}",

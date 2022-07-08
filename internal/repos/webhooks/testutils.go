@@ -1,4 +1,4 @@
-package syncwebhooks
+package webhookapi
 
 import (
 	"crypto/hmac"

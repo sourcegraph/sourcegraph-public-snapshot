@@ -183,18 +183,17 @@ loop:
 
 		ok, err := w.dequeueAndHandle()
 		if err != nil {
-			break loop
 			// Note that both rootCtx and dequeueCtx are used in the dequeueAndHandle
 			// method, but only dequeueCtx errors can be forwarded. The rootCtx is only
 			// used within a Go routine, so its error cannot be returned synchronously.
-			// if w.dequeueCtx.Err() != nil && errors.Is(err, w.dequeueCtx.Err()) {
-			// 	// If the error is due to the loop being shut down, just break
-			// 	break loop
-			// }
+			if w.dequeueCtx.Err() != nil && errors.Is(err, w.dequeueCtx.Err()) {
+				// If the error is due to the loop being shut down, just break
+				break loop
+			}
 
-			// w.options.Metrics.logger.Error("Failed to dequeue and handle record",
-			// 	log.String("name", w.options.Name),
-			// 	log.Error(err))
+			w.options.Metrics.logger.Error("Failed to dequeue and handle record",
+				log.String("name", w.options.Name),
+				log.Error(err))
 		}
 
 		delay := w.options.Interval
@@ -363,7 +362,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 
 	// Open namespace for logger to avoid key collisions on fields
 	handleErr := w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
-	fmt.Println("handleErr:", handleErr)
+	fmt.Println("handleErr:", handleErr) // it is at this point where we decide what to do with the wbj
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
@@ -382,7 +381,6 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 			handleLog.Warn("Marked record as errored", log.Error(handleErr))
 		}
 	} else {
-		fmt.Println("marking as complete")
 		if marked, markErr := w.store.MarkComplete(workerContext, record.RecordID()); markErr != nil {
 			return errors.Wrap(markErr, "store.MarkComplete")
 		} else if marked {
@@ -407,5 +405,6 @@ func (w *Worker) preDequeueHook(ctx context.Context) (dequeueable bool, extraDeq
 	if o, ok := w.handler.(WithPreDequeue); ok {
 		return o.PreDequeue(ctx, w.options.Metrics.logger)
 	}
+
 	return true, nil, nil
 }

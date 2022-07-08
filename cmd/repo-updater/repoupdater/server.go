@@ -208,13 +208,12 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		sourcer = repos.NewSourcer(db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}
 	src, err := sourcer(ctx, &types.ExternalService{
-		ID:                req.ExternalService.ID,
-		Kind:              req.ExternalService.Kind,
-		DisplayName:       req.ExternalService.DisplayName,
-		Config:            req.ExternalService.Config,
-		SyncUsingWebhooks: req.ExternalService.SyncUsingWebhooks,
-		NamespaceUserID:   req.ExternalService.NamespaceUserID,
-		NamespaceOrgID:    req.ExternalService.NamespaceOrgID,
+		ID:              req.ExternalService.ID,
+		Kind:            req.ExternalService.Kind,
+		DisplayName:     req.ExternalService.DisplayName,
+		Config:          req.ExternalService.Config,
+		NamespaceUserID: req.ExternalService.NamespaceUserID,
+		NamespaceOrgID:  req.ExternalService.NamespaceOrgID,
 	})
 
 	if err != nil {

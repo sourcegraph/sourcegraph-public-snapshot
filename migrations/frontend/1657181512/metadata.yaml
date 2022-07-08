@@ -1,2 +1,2 @@
-name: add create_webhook_jobs table
+name: add webhook_build_jobs table
 parents: [1649253538, 1655037391, 1655067139, 1655128668]

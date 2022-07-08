@@ -155,6 +155,7 @@ type StoreMetrics struct {
 	CountNotClonedRepos                *metrics.REDMetrics
 	CountNamespacedRepos               *metrics.REDMetrics
 	EnqueueSyncJobs                    *metrics.REDMetrics
+	EnqueueWebhookCreationJobs         *metrics.REDMetrics
 }
 
 // MustRegister registers all metrics in StoreMetrics in the given
