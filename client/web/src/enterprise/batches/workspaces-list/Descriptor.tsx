@@ -2,7 +2,7 @@ import { ReactElement } from 'react'
 
 import { mdiSourceBranch } from '@mdi/js'
 
-import { Icon, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, H4, Badge } from '@sourcegraph/wildcard'
 
 import styles from './Descriptor.module.scss'
 
@@ -38,19 +38,22 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
             {workspace && (
                 <div className="d-flex align-items-center text-muted text-monospace pt-1">
                     {workspace.ignored && (
-                        <Tooltip content="This workspace is going to be ignored. A .batchignore file was found in it.">
-                            {/*
-                                We are unable to make use of `Badge` here because nesting a badge in a tooltip results in an error.
-                                The error is caused because the Tooltip component forwards a ref to whatever the child component is,
-                                however the `Badge` component doesn't support forwarding of ref at this time.
-                             */}
-                            <span className={styles.badge}>IGNORED</span>
-                        </Tooltip>
+                        <Badge
+                            className={styles.badge}
+                            variant="secondary"
+                            tooltip="This workspace is going to be ignored. A .batchignore file was found in it."
+                        >
+                            IGNORED
+                        </Badge>
                     )}
                     {workspace.unsupported && (
-                        <Tooltip content="This workspace is going to be skipped. It was found on a code-host that is not yet supported by batch changes.">
-                            <span className={styles.badge}>UNSUPPORTED</span>
-                        </Tooltip>
+                        <Badge
+                            className={styles.badge}
+                            variant="secondary"
+                            tooltip="This workspace is going to be skipped. It was found on a code-host that is not yet supported by batch changes."
+                        >
+                            UNSUPPORTED
+                        </Badge>
                     )}
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiSourceBranch} />
                     <small>{workspace.branch.displayName}</small>
