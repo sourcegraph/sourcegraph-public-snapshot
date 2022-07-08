@@ -34,19 +34,19 @@ type Job interface {
 // PartialJob is a partially constructed job that needs information only
 // available at runtime to resolve a fully constructed job.
 type PartialJob[T any] interface {
-	// Partial returns the partially constructed job. This interface allows us
-	// to inspect the state of a parameterized job before resolving it, which
-	// happens at runtime.
-	Partial() Job
-
 	// Resolve returns the fully constructed job using information that is only
 	// available at runtime.
 	Resolve(T) Job
 
+	// MapChildren recursively applies MapFunc to every child job of this job,
+	// returning a copied job with the resulting set of children.
 	MapChildren(MapFunc) PartialJob[T]
+
 	Describer
 }
 
+// Describer is in interface that allows a job to self-describe. It is shared
+// by all jobs and partial jobs
 type Describer interface {
 	// Name is the name of the job
 	Name() string
@@ -72,14 +72,4 @@ type RuntimeClients struct {
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 	Gitserver    gitserver.Client
-}
-
-type MapFunc func(Job) Job
-
-// Map applies fn to every job in tree recursively, returning a new job.
-// The provided function should return a copied job with the mutations
-// applied rather than mutating the job in-place.
-func Map(j Job, fn MapFunc) Job {
-	j = j.MapChildren(fn)
-	return fn(j)
 }
