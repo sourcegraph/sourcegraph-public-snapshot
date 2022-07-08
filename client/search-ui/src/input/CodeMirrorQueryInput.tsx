@@ -125,6 +125,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
             EditorView.contentAttributes.of({ 'aria-label': ariaLabel }),
             callbacksField,
             autocompletion,
+            lineWrapOnMobile(),
         ]
 
         if (preventNewLine) {
@@ -297,17 +298,17 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
 
         // Update pattern type and/or interpretComments when changed
         useEffect(() => {
-            editor?.dispatch({ effects: [setQueryParseOptions.of({ patternType, interpretComments })] })
+            editor?.dispatch({ effects: setQueryParseOptions.of({ patternType, interpretComments }) })
         }, [editor, patternType, interpretComments])
 
         // Update theme if it changes
         useEffect(() => {
-            editor?.dispatch({ effects: [themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false))] })
+            editor?.dispatch({ effects: themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false)) })
         }, [editor, themeExtension, isLightTheme])
 
         // Update external extensions if they changed
         useEffect(() => {
-            editor?.dispatch({ effects: [externalExtensions.reconfigure(extensions)] })
+            editor?.dispatch({ effects: externalExtensions.reconfigure(extensions) })
         }, [editor, externalExtensions, extensions])
 
         return (
@@ -440,6 +441,39 @@ const [callbacksField, setCallbacks] = createUpdateableField<
     ],
     { onChange: () => {} }
 )
+
+// This extension enables line wrapping on mobile
+const lineWrapOnMobile = (): Extension => {
+    if (!window.matchMedia) {
+        return []
+    }
+
+    // Unfortunatelty this media query needs to be kept in sync with
+    // `--xs-breakpoint-down` (in global-styles/breakpoints.scss)
+    const isMobile = window.matchMedia('(max-width: 575.98px)')
+    const wrapLine = new Compartment()
+
+    return [
+        ViewPlugin.define(
+            view => {
+                const listener = (event: MediaQueryListEvent): void => {
+                    view.dispatch({ effects: wrapLine.reconfigure(event.matches ? EditorView.lineWrapping : []) })
+                }
+
+                isMobile.addEventListener('change', listener)
+
+                return {
+                    destroy() {
+                        isMobile.removeEventListener('change', listener)
+                    },
+                }
+            },
+            {
+                provide: () => wrapLine.of(isMobile.matches ? EditorView.lineWrapping : []),
+            }
+        ),
+    ]
+}
 
 // Defines decorators for syntax highlighting
 const tokenDecorators: { [key: string]: Decoration } = {}
@@ -581,12 +615,12 @@ function tokenInfo(): Extension {
             mousemove(event, view) {
                 const position = view.posAtCoords(event)
                 if (position && position !== view.state.field(highlightedTokenPosition)) {
-                    view.dispatch({ effects: [setHighlighedTokenPosition.of(position)] })
+                    view.dispatch({ effects: setHighlighedTokenPosition.of(position) })
                 }
             },
             mouseleave(_event, view) {
                 if (view.state.field(highlightedTokenPosition) !== null) {
-                    view.dispatch({ effects: [setHighlighedTokenPosition.of(null)] })
+                    view.dispatch({ effects: setHighlighedTokenPosition.of(null) })
                 }
             },
         }),
