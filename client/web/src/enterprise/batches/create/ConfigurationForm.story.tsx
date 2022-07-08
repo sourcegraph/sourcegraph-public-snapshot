@@ -1,19 +1,19 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
+import { getDocumentNode } from '@sourcegraph/http-client'
 import {
     EMPTY_SETTINGS_CASCADE,
     SettingsOrgSubject,
     SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
+import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { WebStory } from '../../../components/WebStory'
-
-import { ConfigurationForm } from './ConfigurationForm'
-import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
-import { getDocumentNode } from '@sourcegraph/http-client'
 import { GET_LICENSE_AND_USAGE_INFO } from '../list/backend'
 import { getLicenseAndUsageInfoResult } from '../list/testData'
-import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
+
+import { ConfigurationForm } from './ConfigurationForm'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
