@@ -26,6 +26,9 @@ type MockJob struct {
 	// FieldsFunc is an instance of a mock function object controlling the
 	// behavior of the method Fields.
 	FieldsFunc *JobFieldsFunc
+	// MapChildrenFunc is an instance of a mock function object controlling
+	// the behavior of the method MapChildren.
+	MapChildrenFunc *JobMapChildrenFunc
 	// NameFunc is an instance of a mock function object controlling the
 	// behavior of the method Name.
 	NameFunc *JobNameFunc
@@ -45,6 +48,11 @@ func NewMockJob() *MockJob {
 		},
 		FieldsFunc: &JobFieldsFunc{
 			defaultHook: func(job.Verbosity) (r0 []log.Field) {
+				return
+			},
+		},
+		MapChildrenFunc: &JobMapChildrenFunc{
+			defaultHook: func(job.MapFunc) (r0 job.Job) {
 				return
 			},
 		},
@@ -75,6 +83,11 @@ func NewStrictMockJob() *MockJob {
 				panic("unexpected invocation of MockJob.Fields")
 			},
 		},
+		MapChildrenFunc: &JobMapChildrenFunc{
+			defaultHook: func(job.MapFunc) job.Job {
+				panic("unexpected invocation of MockJob.MapChildren")
+			},
+		},
 		NameFunc: &JobNameFunc{
 			defaultHook: func() string {
 				panic("unexpected invocation of MockJob.Name")
@@ -97,6 +110,9 @@ func NewMockJobFrom(i job.Job) *MockJob {
 		},
 		FieldsFunc: &JobFieldsFunc{
 			defaultHook: i.Fields,
+		},
+		MapChildrenFunc: &JobMapChildrenFunc{
+			defaultHook: i.MapChildren,
 		},
 		NameFunc: &JobNameFunc{
 			defaultHook: i.Name,
@@ -303,6 +319,107 @@ func (c JobFieldsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c JobFieldsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// JobMapChildrenFunc describes the behavior when the MapChildren method of
+// the parent MockJob instance is invoked.
+type JobMapChildrenFunc struct {
+	defaultHook func(job.MapFunc) job.Job
+	hooks       []func(job.MapFunc) job.Job
+	history     []JobMapChildrenFuncCall
+	mutex       sync.Mutex
+}
+
+// MapChildren delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockJob) MapChildren(v0 job.MapFunc) job.Job {
+	r0 := m.MapChildrenFunc.nextHook()(v0)
+	m.MapChildrenFunc.appendCall(JobMapChildrenFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the MapChildren method
+// of the parent MockJob instance is invoked and the hook queue is empty.
+func (f *JobMapChildrenFunc) SetDefaultHook(hook func(job.MapFunc) job.Job) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MapChildren method of the parent MockJob instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *JobMapChildrenFunc) PushHook(hook func(job.MapFunc) job.Job) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobMapChildrenFunc) SetDefaultReturn(r0 job.Job) {
+	f.SetDefaultHook(func(job.MapFunc) job.Job {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobMapChildrenFunc) PushReturn(r0 job.Job) {
+	f.PushHook(func(job.MapFunc) job.Job {
+		return r0
+	})
+}
+
+func (f *JobMapChildrenFunc) nextHook() func(job.MapFunc) job.Job {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobMapChildrenFunc) appendCall(r0 JobMapChildrenFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobMapChildrenFuncCall objects describing
+// the invocations of this function.
+func (f *JobMapChildrenFunc) History() []JobMapChildrenFuncCall {
+	f.mutex.Lock()
+	history := make([]JobMapChildrenFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobMapChildrenFuncCall is an object that describes an invocation of
+// method MapChildren on an instance of MockJob.
+type JobMapChildrenFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 job.MapFunc
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 job.Job
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobMapChildrenFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobMapChildrenFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

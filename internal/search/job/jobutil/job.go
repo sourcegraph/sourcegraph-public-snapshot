@@ -209,19 +209,15 @@ func orderSearcherJob(j job.Job) job.Job {
 	// This job will be sequentially ordered after any Zoekt jobs. We assume
 	// at most one searcher job exists.
 	var pagedSearcherJob job.Job
-	collector := Mapper{
-		MapJob: func(current job.Job) job.Job {
-			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.Partial().(*searcher.TextSearchJob); ok {
-					pagedSearcherJob = pager
-					return &NoopJob{}
-				}
+	newJob := job.Map(j, func(current job.Job) job.Job {
+		if pager, ok := current.(*repoPagerJob); ok {
+			if _, ok := pager.child.Partial().(*searcher.TextSearchJob); ok {
+				pagedSearcherJob = pager
+				return &NoopJob{}
 			}
-			return current
-		},
-	}
-
-	newJob := collector.Map(j)
+		}
+		return current
+	})
 
 	if pagedSearcherJob == nil {
 		// No searcher job, nothing to worry about.
@@ -231,23 +227,19 @@ func orderSearcherJob(j job.Job) job.Job {
 	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
 	// We assume at most one of either two Zoekt search jobs may exist.
 	seenZoektRepoSearch, seenZoektGlobalSearch := false, false
-	orderer := Mapper{
-		MapJob: func(current job.Job) job.Job {
-			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.Partial().(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
-					seenZoektRepoSearch = true
-					return NewSequentialJob(false, current, pagedSearcherJob)
-				}
-			}
-			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
-				seenZoektGlobalSearch = true
+	newJob = job.Map(newJob, func(current job.Job) job.Job {
+		if pager, ok := current.(*repoPagerJob); ok {
+			if _, ok := pager.child.Partial().(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
+				seenZoektRepoSearch = true
 				return NewSequentialJob(false, current, pagedSearcherJob)
 			}
-			return current
-		},
-	}
-
-	newJob = orderer.Map(newJob)
+		}
+		if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
+			seenZoektGlobalSearch = true
+			return NewSequentialJob(false, current, pagedSearcherJob)
+		}
+		return current
+	})
 
 	if !seenZoektRepoSearch && !seenZoektGlobalSearch {
 		// There were no Zoekt jobs, so no need to modify the tree. Return original.

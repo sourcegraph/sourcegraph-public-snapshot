@@ -76,7 +76,8 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return res
 }
 
-func (s *RepoSearchJob) Children() []job.Describer { return nil }
+func (s *RepoSearchJob) Children() []job.Describer       { return nil }
+func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 func repoRevsToRepoMatches(ctx context.Context, db database.DB, repos []*search.RepositoryRevisions) []result.Match {
 	matches := make([]result.Match, 0, len(repos))

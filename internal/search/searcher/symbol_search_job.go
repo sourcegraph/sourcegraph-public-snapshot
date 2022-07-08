@@ -92,7 +92,8 @@ func (s *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return res
 }
 
-func (s *SymbolSearchJob) Children() []job.Describer { return nil }
+func (s *SymbolSearchJob) Children() []job.Describer       { return nil }
+func (s *SymbolSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")

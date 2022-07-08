@@ -98,6 +98,12 @@ func (j *alertJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
+func (j *alertJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *j
+	cp.child = job.Map(j.child, fn)
+	return &cp
+}
+
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.
 func longer(n int, dt time.Duration) time.Duration {
 	dt2 := func() time.Duration {

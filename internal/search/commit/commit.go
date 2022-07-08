@@ -138,7 +138,8 @@ func (j *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	return res
 }
 
-func (j *SearchJob) Children() []job.Describer { return nil }
+func (j *SearchJob) Children() []job.Describer       { return nil }
+func (j *SearchJob) MapChildren(job.MapFunc) job.Job { return j }
 
 func (j *SearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {

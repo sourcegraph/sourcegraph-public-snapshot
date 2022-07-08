@@ -155,7 +155,8 @@ func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	return res
 }
 
-func (s *TextSearchJob) Children() []job.Describer { return nil }
+func (s *TextSearchJob) Children() []job.Describer       { return nil }
+func (s *TextSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 var MockSearchFilesInRepo func(
 	ctx context.Context,

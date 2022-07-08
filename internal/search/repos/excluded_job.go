@@ -50,4 +50,5 @@ func (c *ComputeExcludedJob) Fields(v job.Verbosity) (res []log.Field) {
 	return res
 }
 
-func (c *ComputeExcludedJob) Children() []job.Describer { return nil }
+func (c *ComputeExcludedJob) Children() []job.Describer       { return nil }
+func (c *ComputeExcludedJob) MapChildren(job.MapFunc) job.Job { return c }

@@ -62,6 +62,15 @@ func (s *SequentialJob) Children() []job.Describer {
 	return res
 }
 
+func (s *SequentialJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *s
+	cp.children = make([]job.Job, len(s.children))
+	for i := range s.children {
+		cp.children[i] = job.Map(s.children[i], fn)
+	}
+	return &cp
+}
+
 func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, s)
 	defer func() { finish(alert, err) }()
@@ -133,6 +142,14 @@ func (p *ParallelJob) Children() []job.Describer {
 	}
 	return res
 }
+func (p *ParallelJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *p
+	cp.children = make([]job.Job, len(p.children))
+	for i := range p.children {
+		cp.children[i] = job.Map(p.children[i], fn)
+	}
+	return &cp
+}
 
 func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, s, finish := job.StartSpan(ctx, s, p)
@@ -200,6 +217,12 @@ func (t *TimeoutJob) Children() []job.Describer {
 	return []job.Describer{t.child}
 }
 
+func (t *TimeoutJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *t
+	cp.child = job.Map(t.child, fn)
+	return &cp
+}
+
 func NewNoopJob() *NoopJob {
 	return &NoopJob{}
 }
@@ -213,3 +236,4 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 func (e *NoopJob) Name() string                     { return "NoopJob" }
 func (e *NoopJob) Fields(job.Verbosity) []log.Field { return nil }
 func (e *NoopJob) Children() []job.Describer        { return nil }
+func (e *NoopJob) MapChildren(job.MapFunc) job.Job  { return e }

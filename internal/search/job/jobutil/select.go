@@ -52,6 +52,12 @@ func (j *selectJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
+func (j *selectJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *j
+	cp.child = job.Map(j.child, fn)
+	return &cp
+}
+
 // newSelectingStream returns a child Stream of parent that runs the select operation
 // on each event, deduplicating where possible.
 func newSelectingStream(parent streaming.Sender, s filter.SelectPath) streaming.Sender {
