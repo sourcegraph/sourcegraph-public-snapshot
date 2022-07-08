@@ -329,29 +329,35 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
             <li className={classNames('nav-item mr-2', className)}>
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <Tooltip content={`${isOpen ? 'Close' : 'Open'} extensions panel`}>
-                        <ButtonLink
-                            aria-label={
-                                isOpen
-                                    ? 'Close panel. Press the down arrow key to enter the extensions panel.'
-                                    : 'Open panel'
-                            }
-                            className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
-                            onSelect={toggle}
-                            ref={toggleReference}
-                        >
-                            {!haveExtensionsLoaded ? (
-                                <LoadingSpinner />
-                            ) : isOpen ? (
-                                <Icon
-                                    data-testid="action-items-toggle-open"
-                                    as={ChevronDoubleUpIcon}
-                                    aria-hidden={true}
-                                />
-                            ) : (
-                                <Icon as={PuzzleOutlineIcon} aria-hidden={true} />
-                            )}
-                            {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
-                        </ButtonLink>
+                        {/**
+                         * This <ButtonLink> must be wrapped with an additional span, since the tooltip needs to use "ref" to work properly.
+                         * Without the extra span, the tooltip was writing over the ref needed for the toggle behavior to function correctly, breaking toggling.
+                         */}
+                        <span>
+                            <ButtonLink
+                                aria-label={
+                                    isOpen
+                                        ? 'Close panel. Press the down arrow key to enter the extensions panel.'
+                                        : 'Open panel'
+                                }
+                                className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
+                                onSelect={toggle}
+                                ref={toggleReference}
+                            >
+                                {!haveExtensionsLoaded ? (
+                                    <LoadingSpinner />
+                                ) : isOpen ? (
+                                    <Icon
+                                        data-testid="action-items-toggle-open"
+                                        as={ChevronDoubleUpIcon}
+                                        aria-hidden={true}
+                                    />
+                                ) : (
+                                    <Icon as={PuzzleOutlineIcon} aria-hidden={true} />
+                                )}
+                                {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
+                            </ButtonLink>
+                        </span>
                     </Tooltip>
                 </div>
             </li>

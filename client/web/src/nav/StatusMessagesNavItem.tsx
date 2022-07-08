@@ -415,7 +415,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isErrorLike(this.state.messagesOrError)) {
             return (
                 <Tooltip content="Sorry, we couldn’t fetch notifications!">
-                    <Icon as={CloudAlertIconRefresh} size="md" aria-hidden={true} />
+                    <Icon aria-label="Sorry, we couldn’t fetch notifications!" as={CloudAlertIconRefresh} size="md" />
                 </Tooltip>
             )
         }
@@ -428,7 +428,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
                 <Tooltip content={codeHostMessage}>
-                    <Icon svgPath={mdiCloudOffOutline} size="md" aria-hidden={true} />
+                    <Icon aria-label={codeHostMessage ?? ''} svgPath={mdiCloudOffOutline} size="md" />
                 </Tooltip>
             )
         }
@@ -439,7 +439,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             codeHostMessage = this.state.isOpen ? undefined : 'Syncing repositories failed!'
             return (
                 <Tooltip content={codeHostMessage}>
-                    <Icon as={CloudAlertIconRefresh} size="md" aria-hidden={true} />
+                    <Icon aria-label={codeHostMessage ?? ''} as={CloudAlertIconRefresh} size="md" />
                 </Tooltip>
             )
         }
@@ -447,14 +447,14 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             codeHostMessage = this.state.isOpen ? undefined : 'Cloning repositories...'
             return (
                 <Tooltip content={codeHostMessage}>
-                    <Icon as={CloudSyncIconRefresh} size="md" aria-hidden={true} />
+                    <Icon aria-label={codeHostMessage ?? ''} as={CloudSyncIconRefresh} size="md" />
                 </Tooltip>
             )
         }
         codeHostMessage = this.state.isOpen ? undefined : 'Repositories up-to-date'
         return (
             <Tooltip content={codeHostMessage}>
-                <Icon as={CloudCheckIconRefresh} size="md" aria-hidden={true} />
+                <Icon aria-label={codeHostMessage ?? ''} as={CloudCheckIconRefresh} size="md" />
             </Tooltip>
         )
     }
