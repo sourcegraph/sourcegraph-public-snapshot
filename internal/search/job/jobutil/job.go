@@ -209,14 +209,12 @@ func orderSearcherJob(j job.Job) job.Job {
 	// This job will be sequentially ordered after any Zoekt jobs. We assume
 	// at most one searcher job exists.
 	var pagedSearcherJob job.Job
-	newJob := job.Map(j, func(current job.Job) job.Job {
-		if pager, ok := current.(*repoPagerJob); ok {
-			if _, ok := pager.child.Partial().(*searcher.TextSearchJob); ok {
-				pagedSearcherJob = pager
-				return &NoopJob{}
-			}
+	newJob := job.MapType(j, func(pager *repoPagerJob) job.Job {
+		if job.HasDescendent[*searcher.TextSearchJob](pager) {
+			pagedSearcherJob = pager
+			return &NoopJob{}
 		}
-		return current
+		return pager
 	})
 
 	if pagedSearcherJob == nil {
@@ -226,15 +224,18 @@ func orderSearcherJob(j job.Job) job.Job {
 
 	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
 	// We assume at most one of either two Zoekt search jobs may exist.
-	seenZoektRepoSearch, seenZoektGlobalSearch := false, false
-	newJob = job.Map(newJob, func(current job.Job) job.Job {
-		if pager, ok := current.(*repoPagerJob); ok {
-			if _, ok := pager.child.Partial().(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
-				seenZoektRepoSearch = true
-				return NewSequentialJob(false, current, pagedSearcherJob)
-			}
+	seenZoektRepoSearch := false
+	newJob = job.MapType(newJob, func(pager *repoPagerJob) job.Job {
+		if job.HasDescendent[*zoekt.RepoSubsetTextSearchJob](pager) {
+			seenZoektRepoSearch = true
+			return NewSequentialJob(false, pager, pagedSearcherJob)
 		}
-		if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
+		return pager
+	})
+
+	seenZoektGlobalSearch := false
+	newJob = job.MapType(newJob, func(current *zoekt.GlobalTextSearchJob) job.Job {
+		if !seenZoektGlobalSearch {
 			seenZoektGlobalSearch = true
 			return NewSequentialJob(false, current, pagedSearcherJob)
 		}
