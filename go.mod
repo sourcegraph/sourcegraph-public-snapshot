@@ -181,6 +181,7 @@ require (
 	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e
 	golang.org/x/time v0.0.0-20220411224347-583f2d630306
 	golang.org/x/tools v0.1.10
+	gonum.org/v1/gonum v0.11.0
 	google.golang.org/api v0.77.0
 	google.golang.org/genproto v0.0.0-20220502173005-c8bf987b8c21
 	google.golang.org/protobuf v1.28.0
