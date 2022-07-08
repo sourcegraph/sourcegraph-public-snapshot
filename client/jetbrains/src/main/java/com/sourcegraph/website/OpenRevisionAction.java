@@ -29,9 +29,9 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
     private final Logger logger = Logger.getInstance(this.getClass());
 
     @NotNull
-    private Optional<RevisionContext> getHistoryRevision(@NotNull AnActionEvent e) {
-        VcsFileRevision revision = e.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
-        Project project = e.getProject();
+    private Optional<RevisionContext> getHistoryRevision(@NotNull AnActionEvent event) {
+        VcsFileRevision revision = event.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
+        Project project = event.getProject();
 
         if (project == null) {
             return Optional.empty();
@@ -45,9 +45,9 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
     }
 
     @NotNull
-    private Optional<RevisionContext> getLogRevision(@NotNull AnActionEvent e) {
-        VcsLog log = e.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
-        Project project = e.getProject();
+    private Optional<RevisionContext> getLogRevision(@NotNull AnActionEvent event) {
+        VcsLog log = event.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
+        Project project = event.getProject();
 
         if (project == null) {
             return Optional.empty();
@@ -85,7 +85,7 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
     }
 
     @Override
-    public void update(@NotNull AnActionEvent e) {
-        e.getPresentation().setEnabledAndVisible(true);
+    public void update(@NotNull AnActionEvent event) {
+        event.getPresentation().setEnabledAndVisible(true);
     }
 }
