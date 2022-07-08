@@ -58,34 +58,32 @@ func getFromDate(dateRange string, now time.Time) (time.Time, error) {
 var eventLogsNodesQuery = `
 SELECT
 	%s AS date,
-	COUNT(event_logs.*) AS total_count,
-	COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
-	COUNT(DISTINCT users.id) AS registered_users
+	COUNT(*) AS total_count,
+	COUNT(DISTINCT anonymous_user_id) AS unique_users,
+	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
-	users
-	RIGHT JOIN event_logs ON users.id = event_logs.user_id
-WHERE event_logs.anonymous_user_id <> 'backend'
-	AND event_logs.timestamp %s
-	AND event_logs.name IN (%s)
+	event_logs
+WHERE anonymous_user_id <> 'backend'
+	AND timestamp %s
+	AND name IN (%s)
 GROUP BY date
 `
 
 var eventLogsSummaryQuery = `
 SELECT
-	COUNT(event_logs.*) AS total_count,
-	COUNT(DISTINCT event_logs.anonymous_user_id) AS unique_users,
-	COUNT(DISTINCT users.id) AS registered_users
+	COUNT(*) AS total_count,
+	COUNT(DISTINCT anonymous_user_id) AS unique_users,
+	COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
 FROM
-	users
-	RIGHT JOIN event_logs ON users.id = event_logs.user_id
+	event_logs
 WHERE
-	event_logs.anonymous_user_id <> 'backend'
-	AND event_logs.timestamp %s
-	AND event_logs.name IN (%s)
+	anonymous_user_id <> 'backend'
+	AND timestamp %s
+	AND name IN (%s)
 `
 
 func makeEventLogsQueries(dateRange string, events []string) (*sqlf.Query, *sqlf.Query, error) {
-	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, "event_logs.timestamp")
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, "timestamp")
 	if err != nil {
 		return nil, nil, err
 	}
