@@ -10,13 +10,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Icon, Input, RadioButton } from '@sourcegraph/wildcard'
-import {
-    SettingsCascadeProps,
-    // SettingsOrgSubject,
-    // SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Input, Icon, RadioButton, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -26,13 +20,13 @@ import {
     CreateEmptyBatchChangeVariables,
     Scalars,
 } from '../../../graphql-operations'
+import { LicenseAlert } from '../LicenseAlert'
 
 import { CREATE_BATCH_SPEC_FROM_RAW, CREATE_EMPTY_BATCH_CHANGE } from './backend'
 import { NamespaceSelector } from './NamespaceSelector'
 import { useNamespaces } from './useNamespaces'
 
 import styles from './ConfigurationForm.module.scss'
-import { LicenseAlert } from '../LicenseAlert'
 
 /* Regex pattern for a valid batch change name. Needs to match what's defined in the BatchSpec JSON schema. */
 const NAME_PATTERN = /^[\w.-]+$/

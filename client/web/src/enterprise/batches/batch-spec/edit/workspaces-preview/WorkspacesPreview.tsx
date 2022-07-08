@@ -6,8 +6,7 @@ import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, H4, Icon, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
-import { Button, useAccordion, useStopwatch, Icon, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Button, H4, Icon, useAccordion, useStopwatch, Tooltip } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -15,6 +14,7 @@ import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
+import { LicenseAlert } from '../../../LicenseAlert'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
@@ -27,7 +27,6 @@ import { WorkspacePreviewFilterRow } from './WorkspacesPreviewFilterRow'
 import { WorkspacesPreviewList } from './WorkspacesPreviewList'
 
 import styles from './WorkspacesPreview.module.scss'
-import { LicenseAlert } from '../../../LicenseAlert'
 
 /** Example snippet show in preview prompt if user has not yet added an on: statement. */
 const ON_STATEMENT = `on:
