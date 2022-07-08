@@ -28,7 +28,8 @@ import java.util.Optional;
 public class OpenRevisionAction extends AnAction implements DumbAware {
     private final Logger logger = Logger.getInstance(this.getClass());
 
-    private Optional<RevisionContext> getHistoryRevision(AnActionEvent e) {
+    @NotNull
+    private Optional<RevisionContext> getHistoryRevision(@NotNull AnActionEvent e) {
         VcsFileRevision revision = e.getDataContext().getData(VcsDataKeys.VCS_FILE_REVISION);
         Project project = e.getProject();
 
@@ -43,7 +44,8 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
         return Optional.of(new RevisionContext(project, rev));
     }
 
-    private Optional<RevisionContext> getLogRevision(AnActionEvent e) {
+    @NotNull
+    private Optional<RevisionContext> getLogRevision(@NotNull AnActionEvent e) {
         VcsLog log = e.getDataContext().getData(VcsLogDataKeys.VCS_LOG);
         Project project = e.getProject();
 
@@ -60,18 +62,19 @@ public class OpenRevisionAction extends AnAction implements DumbAware {
     }
 
     @Override
-    public void actionPerformed(@NotNull AnActionEvent e) {
+    public void actionPerformed(@NotNull AnActionEvent event) {
         // This action handles events for both log and history views, so attempt to load from any possible option.
-        RevisionContext context = getHistoryRevision(e).or(() -> getLogRevision(e))
+        RevisionContext context = getHistoryRevision(event).or(() -> getLogRevision(event))
             .orElseThrow(() -> new RuntimeException("Unable to determine revision from history or log."));
 
         try {
             String productName = ApplicationInfo.getInstance().getVersionName();
             String productVersion = ApplicationInfo.getInstance().getFullVersion();
-            RepoInfo repoInfo = GitUtil.getRepoInfo(context.getProject().getProjectFilePath(), context.getProject());
+            Project project = context.getProject();
+            RepoInfo repoInfo = GitUtil.getRepoInfo(project.getProjectFilePath(), project);
 
             CommitViewUriBuilder builder = new CommitViewUriBuilder();
-            URI uri = builder.build(ConfigUtil.getSourcegraphUrl(context.getProject()), context.getRevisionNumber(), repoInfo, productName, productVersion);
+            URI uri = builder.build(ConfigUtil.getSourcegraphUrl(project), context.getRevisionNumber(), repoInfo, productName, productVersion);
 
             // Open the URL in the browser.
             Desktop.getDesktop().browse(uri);
