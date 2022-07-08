@@ -37,7 +37,7 @@ var (
 	WITH t1 AS (
 		SELECT DATE(timestamp) AS date, anonymous_user_id AS user_id
 		FROM event_logs
-		WHERE date %s
+		WHERE DATE(timestamp) %s
 		GROUP BY 2, 1
 	),
 	t2 AS (
@@ -239,8 +239,6 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 		}
 	}
 	query := sqlf.Sprintf(fmt.Sprintf(avgUsersByPeriodQuery, from.Format("2006-01-02 15:04:05"), now.Format("2006-01-02 15:04:05")))
-	fmt.Print(query.Query(sqlf.PostgresBindVar))
-	fmt.Print(query.Args()...)
 	rows, err := s.DB.QueryContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...)
 
 	if err != nil {
