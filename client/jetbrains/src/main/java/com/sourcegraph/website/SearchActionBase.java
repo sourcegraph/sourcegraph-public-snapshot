@@ -50,8 +50,8 @@ public abstract class SearchActionBase extends DumbAwareAction {
         String remoteUrl = null;
         String branchName = null;
         if (mode.equals("search.repository")) {
-            remoteUrl = repoInfo.branchName;
-            branchName = repoInfo.remoteUrl;
+            remoteUrl = repoInfo.remoteUrl;
+            branchName = repoInfo.branchName;
         }
 
         String uri = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
