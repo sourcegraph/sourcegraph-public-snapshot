@@ -255,8 +255,9 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/thing.txt"},
 		},
 		{
-			pathIncludes: []string{"**/foo/bar/thing.txt"},
-			canReadAll:   []string{"a/b/foo/bar/", "foo/", "foo/bar/"},
+			pathIncludes:  []string{"**/foo/bar/thing.txt"},
+			canReadAll:    []string{"a/b/foo/bar/", "a/foo/", "a/foo/bar/"},
+			cannotReadAny: []string{"foo/", "foo/bar/"},
 		},
 		{
 			pathIncludes:  []string{"baz/*/foo/bar/thing.txt"},
