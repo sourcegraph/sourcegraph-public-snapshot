@@ -1082,11 +1082,7 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "You use Sourcegraph to...".
-    """
-    useCases: [SurveyUseCase!]
-    """
-    The answer to "What else do you use Sourcegraph to do?".
+    The answer to "What do you use Sourcegraph for?".
     """
     otherUseCase: String
     """
@@ -6242,11 +6238,7 @@ type SurveyResponse {
     """
     better: String
     """
-    The answer to "You use Sourcegraph to...".
-    """
-    useCases: [SurveyUseCase!]
-    """
-    The answer to "What else do you use Sourcegraph to do?".
+    The answer to "What do you use Sourcegraph for?".
     """
     otherUseCase: String
     """
