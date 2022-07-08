@@ -467,13 +467,6 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 		return nil, ErrIDIsZero{}
 	}
 
-	if args.EnsureBatchChange != nil {
-		opts.EnsureBatchChangeID, err = unmarshalBatchChangeID(*args.EnsureBatchChange)
-		if err != nil {
-			return nil, err
-		}
-	}
-
 	if licenseErr := checkLicense(); licenseErr != nil {
 		if licensing.IsFeatureNotActivated(licenseErr) {
 			batchSpec, err := r.store.GetBatchSpec(ctx, store.GetBatchSpecOpts{
@@ -491,6 +484,13 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 			}
 		} else {
 			return nil, licenseErr
+		}
+	}
+
+	if args.EnsureBatchChange != nil {
+		opts.EnsureBatchChangeID, err = unmarshalBatchChangeID(*args.EnsureBatchChange)
+		if err != nil {
+			return nil, err
 		}
 	}
 
