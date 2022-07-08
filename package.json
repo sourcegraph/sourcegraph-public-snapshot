@@ -485,6 +485,7 @@
     "cssnano": "4.1.10",
     "webpack": "5",
     "tslib": "2.1.0",
-    "prettier": "2.2.1"
+    "prettier": "2.2.1",
+    "jsprim": "1.4.2"
   }
 }
