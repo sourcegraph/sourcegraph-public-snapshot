@@ -7,6 +7,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
+	"gonum.org/v1/gonum/stat/combin"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
@@ -564,4 +565,92 @@ func (g *generatedSearchJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *g
 	cp.Child = job.Map(g.Child, fn)
 	return &cp
+}
+
+type simpleRule struct {
+	description string
+	transform   func(query.Basic) *query.Basic
+}
+
+var rulesMaxSet = []simpleRule{
+	{
+		description: "unquote patterns",
+		transform:   unquotePatterns,
+	},
+	{
+		description: "apply search type for pattern",
+		transform:   typePatterns,
+	},
+	{
+		description: "apply language filter for pattern",
+		transform:   langPatterns,
+	},
+}
+
+type cg = *combin.CombinationGenerator
+
+// NewComboGenerator returns a generator for queries produces by a combination
+// of rules on a seed query. The generator strategy tries to first apply _all_
+// rules, and then successively reduces the number of rules that it attempts to
+// apply by one. This strategy is useful when we try the most aggressive
+// interpretation of a query subject to rules first, and gradually loosen the
+// number of rules and interpretation. To avoid spending time on generator
+// invalid combinations, the generator prunes the initial rule set to only those
+// rules that do successively apply individually to the seed query.
+func NewComboGenerator(seed query.Basic, rules []simpleRule) next {
+	rules = pruneRules(seed, rules)
+	// the iterator state `n` stores:
+	// - k, the number of rules to try and apply.
+	// - cg, an iterator producing the next sequence of rules for the current value of `k`.
+	var n func(k int, cg cg) next
+	n = func(k int, cg cg) next {
+		if k == 0 {
+			return func() (*autoQuery, next) { return nil, nil }
+		}
+
+		return func() (*autoQuery, next) {
+			if cg.Next() {
+				var transform transform
+				var descriptions []string
+				for _, idx := range cg.Combination(nil) {
+					transform = append(transform, rules[idx].transform)
+					descriptions = append(descriptions, rules[idx].description)
+				}
+				generated := applyTransformation(seed, transform)
+				if generated == nil {
+					// Rule does not apply, go to next rule.
+					continuation := n(k, cg)
+					return continuation()
+				}
+
+				q := autoQuery{
+					description: strings.Join(descriptions, " and "),
+					query:       *generated,
+				}
+
+				return &q, n(k, cg)
+			}
+			k -= 1
+			cg = combin.NewCombinationGenerator(len(rules), k)
+			continuation := n(k, cg)
+			return continuation()
+		}
+	}
+
+	num := len(rules)
+	cg := combin.NewCombinationGenerator(num, num)
+	return n(num, cg)
+}
+
+// pruneRules produces a minimum set of rules that apply successfully on the seed query.
+func pruneRules(seed query.Basic, rules []simpleRule) []simpleRule {
+	applies := make([]simpleRule, 0, len(rules))
+	for _, r := range rules {
+		g := applyTransformation(seed, transform{r.transform})
+		if g == nil {
+			continue
+		}
+		applies = append(applies, r)
+	}
+	return applies
 }
