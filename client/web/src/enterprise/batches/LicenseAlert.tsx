@@ -10,7 +10,10 @@ import { GET_LICENSE_AND_USAGE_INFO } from './list/backend'
 
 export interface LicenseAlertProps {
     variant?: AlertProps['variant']
+    // By default, the license is enough to determine to display alert. There may be cases where additional information
+    // is needed to determine to show the alert.
     additionalCondition?: boolean
+    // Allows the ability to apply additional logic to the parent component (such as disabling a button).
     onLicenseRetrieved?: (data: GetLicenseAndUsageInfoResult) => void
 }
 
