@@ -1,10 +1,13 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .search-notebook-page {
-    background: var(--color-bg-1);
-    display: flex;
-    align-items: flex-start;
-    overflow: auto;
+    display: grid;
+    grid-template-columns: 1fr 3fr;
+    gap: 1rem;
+
+    @media (--lg-breakpoint-down) {
+        grid-template-columns: 1fr;
+    }
 }
 
 .auto-save-indicator {
@@ -14,29 +17,22 @@
 }
 
 .side-column {
-    flex: 1;
-    min-width: 0;
-    margin-right: 1rem;
-    position: sticky;
-    top: 0;
-
     @media (--lg-breakpoint-down) {
         display: none;
     }
 }
 
 .center-column {
-    flex: 3;
-    min-width: #{$viewport-lg};
     display: flex;
     flex-direction: column;
+    min-width: #{$viewport-lg};
+    max-width: #{$viewport-xl};
 
     @media (--lg-breakpoint-down) {
         min-width: 0;
     }
 
     .content {
-        max-width: #{$viewport-xl};
         padding: 0 1rem;
         // Content should never shrink, but the spacer should take up the
         // remaining space on the page.
@@ -44,7 +40,6 @@
     }
 
     .spacer {
-        max-width: #{$viewport-xl};
         // Allows scrolling past last blocks in the notebook
         // for easier editing. It will also ensure that there is enough space
         // between the notepad cta and the content

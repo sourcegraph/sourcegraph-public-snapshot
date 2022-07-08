@@ -3,7 +3,7 @@
 .navbar {
     display: flex;
     position: relative;
-    height: 2.5rem;
+    height: var(--navbar-height);
     min-height: 40px;
     width: 100%;
     border-bottom: 1px solid var(--border-color-2);
