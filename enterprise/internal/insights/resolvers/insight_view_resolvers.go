@@ -1114,6 +1114,10 @@ func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeri
 	if series.GeneratedFromCaptureGroups != nil && *series.GeneratedFromCaptureGroups {
 		return types.SearchCompute
 	}
+	if series.GroupBy != nil {
+		return types.MappingCompute
+	}
+
 	return types.Search
 }
 
