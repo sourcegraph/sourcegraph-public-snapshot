@@ -17,9 +17,9 @@ import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -172,7 +172,9 @@ public class PreviewContent {
     @NotNull
     public VirtualFile getVirtualFile() {
         if (virtualFile == null) {
-            virtualFile = new LightVirtualFile(fileName != null ? fileName : "", content != null ? Objects.requireNonNull(getContent()) : "");
+            assert fileName != null;
+            assert content != null;
+            virtualFile = new LightVirtualFile(fileName, Objects.requireNonNull(getContent()));
         }
         return virtualFile;
     }
