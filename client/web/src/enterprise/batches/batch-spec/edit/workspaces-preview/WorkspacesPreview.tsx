@@ -235,9 +235,14 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     )}
                 {totalCount}
             </WorkspacesListHeader>
-            <LicenseAlert
-                additionalCondition={workspaceCount + (importingChangesetsConnection?.connection?.totalCount ?? 0) > 5}
-            />
+            {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
+            <div className="d-flex flex-column align-items-center w-100 mb-3">
+                <LicenseAlert
+                    additionalCondition={
+                        workspaceCount + (importingChangesetsConnection?.connection?.totalCount ?? 0) > 5
+                    }
+                />
+            </div>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">
