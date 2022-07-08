@@ -26,10 +26,10 @@ export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<Licen
     if (!licenseAndUsageInfo?.batchChanges && !licenseAndUsageInfo?.campaigns && additionalCondition) {
         return (
             <Alert variant={variant}>
-                <div className="mb-2">
-                    <strong>Your license only allows for 5 changesets per Batch Change</strong>
-                </div>
                 <div>
+                    <div className="mb-2">
+                        <strong>Your license only allows for 5 changesets per Batch Change</strong>
+                    </div>
                     You are running a free version of batch changes. It is fully functional, however it will only
                     generate 5 changesets per batch change. If you would like to learn more about our pricing, contact
                     us.
