@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-//
 var operationPrecedence = map[btypes.ReconcilerOperation]int{
 	btypes.ReconcilerOperationPush:         0,
 	btypes.ReconcilerOperationDetach:       0,
