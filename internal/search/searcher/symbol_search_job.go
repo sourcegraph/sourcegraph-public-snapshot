@@ -78,13 +78,21 @@ func (s *SymbolSearchJob) Name() string {
 	return "SearcherSymbolSearchJob"
 }
 
-func (s *SymbolSearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("patternInfo", s.PatternInfo),
-		log.Int("numRepos", len(s.Repos)),
-		log.Int("limit", s.Limit),
+func (s *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
+			log.Int("numRepos", len(s.Repos)),
+			log.Int("limit", s.Limit),
+		)
 	}
+	return res
 }
+
+func (s *SymbolSearchJob) Children() []job.Describer { return nil }
 
 func searchInRepo(ctx context.Context, db database.DB, repoRevs *search.RepositoryRevisions, patternInfo *search.TextPatternInfo, limit int) (res []result.Match, err error) {
 	span, ctx := ot.StartSpanFromContext(ctx, "Search symbols in repo")

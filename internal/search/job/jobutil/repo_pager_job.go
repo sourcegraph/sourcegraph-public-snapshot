@@ -3,7 +3,7 @@ package jobutil
 import (
 	"context"
 
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -42,6 +42,10 @@ func (j *reposPartialJob) Partial() job.Job {
 func (j *reposPartialJob) Resolve(rr resolvedRepos) job.Job {
 	return setRepos(j.inner, rr.indexed, rr.unindexed)
 }
+
+func (j *reposPartialJob) Name() string                       { return "PartialReposJob" }
+func (j *reposPartialJob) Fields(job.Verbosity) []otlog.Field { return nil }
+func (j *reposPartialJob) Children() []job.Describer          { return []job.Describer{j.inner} }
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
 // copied, ensuring this function is side-effect free.
@@ -114,10 +118,22 @@ func (p *repoPagerJob) Name() string {
 	return "RepoPagerJob"
 }
 
-func (p *repoPagerJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Scoped("repoOpts", p.repoOpts.Tags()...),
-		log.String("useIndex", string(p.useIndex)),
-		log.Bool("containsRefGlobs", p.containsRefGlobs),
+func (p *repoPagerJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Bool("containsRefGlobs", p.containsRefGlobs),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("repoOpts", p.repoOpts.Tags()...),
+			otlog.String("useIndex", string(p.useIndex)),
+		)
 	}
+	return res
+}
+
+func (p *repoPagerJob) Children() []job.Describer {
+	return []job.Describer{p.child}
 }

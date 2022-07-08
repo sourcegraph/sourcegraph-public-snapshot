@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	alertobserver "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -148,8 +149,10 @@ func (f *FeelingLuckySearchJob) Name() string {
 	return "FeelingLuckySearchJob"
 }
 
-func (f *FeelingLuckySearchJob) Tags() []log.Field {
-	return []log.Field{}
+func (f *FeelingLuckySearchJob) Fields(job.Verbosity) []log.Field { return nil }
+
+func (f *FeelingLuckySearchJob) Children() []job.Describer {
+	return []job.Describer{f.initialJob}
 }
 
 // autoQuery is an automatically generated query with associated data (e.g., description).
@@ -554,6 +557,6 @@ func (g *generatedSearchJob) Name() string {
 	return "GeneratedSearchJob"
 }
 
-func (g *generatedSearchJob) Tags() []log.Field {
-	return []log.Field{}
-}
+func (g *generatedSearchJob) Children() []job.Describer { return []job.Describer{g.Child} }
+
+func (g *generatedSearchJob) Fields(job.Verbosity) []log.Field { return nil }

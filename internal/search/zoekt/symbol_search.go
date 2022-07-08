@@ -59,19 +59,30 @@ func (z *SymbolSearchJob) Name() string {
 	return "ZoektSymbolSearchJob"
 }
 
-func (z *SymbolSearchJob) Tags() []log.Field {
-	tags := []log.Field{
-		trace.Stringer("query", z.Query),
-		log.Int32("fileMatchLimit", z.FileMatchLimit),
-		trace.Stringer("select", z.Select),
+func (z *SymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Int32("fileMatchLimit", z.FileMatchLimit),
+			trace.Stringer("select", z.Select),
+		)
+		// z.Repos is nil for un-indexed search
+		if z.Repos != nil {
+			res = append(res,
+				log.Int("numRepoRevs", len(z.Repos.RepoRevs)),
+				log.Int("numBranchRepos", len(z.Repos.branchRepos)),
+			)
+		}
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", z.Query),
+		)
 	}
-	// z.Repos is nil for un-indexed search
-	if z.Repos != nil {
-		tags = append(tags, log.Int("numRepoRevs", len(z.Repos.RepoRevs)))
-		tags = append(tags, log.Int("numBranchRepos", len(z.Repos.branchRepos)))
-	}
-	return tags
+	return res
 }
+
+func (z *SymbolSearchJob) Children() []job.Describer { return nil }
 
 type GlobalSymbolSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
@@ -104,14 +115,24 @@ func (*GlobalSymbolSearchJob) Name() string {
 	return "ZoektGlobalSymbolSearchJob"
 }
 
-func (s *GlobalSymbolSearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", s.GlobalZoektQuery.Query),
-		trace.Printf("repoScope", "%q", s.GlobalZoektQuery.RepoScope),
-		log.Bool("includePrivate", s.GlobalZoektQuery.IncludePrivate),
-		log.String("type", string(s.ZoektArgs.Typ)),
-		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
-		trace.Stringer("select", s.ZoektArgs.Select),
-		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+func (s *GlobalSymbolSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			trace.Printf("repoScope", "%q", s.GlobalZoektQuery.RepoScope),
+			log.Bool("includePrivate", s.GlobalZoektQuery.IncludePrivate),
+			log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
+			trace.Stringer("select", s.ZoektArgs.Select),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", s.GlobalZoektQuery.Query),
+			log.String("type", string(s.ZoektArgs.Typ)),
+			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
+
+func (s *GlobalSymbolSearchJob) Children() []job.Describer { return nil }

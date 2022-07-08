@@ -20,21 +20,34 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/search/job) used for unit
 // testing.
 type MockJob struct {
+	// ChildrenFunc is an instance of a mock function object controlling the
+	// behavior of the method Children.
+	ChildrenFunc *JobChildrenFunc
+	// FieldsFunc is an instance of a mock function object controlling the
+	// behavior of the method Fields.
+	FieldsFunc *JobFieldsFunc
 	// NameFunc is an instance of a mock function object controlling the
 	// behavior of the method Name.
 	NameFunc *JobNameFunc
 	// RunFunc is an instance of a mock function object controlling the
 	// behavior of the method Run.
 	RunFunc *JobRunFunc
-	// TagsFunc is an instance of a mock function object controlling the
-	// behavior of the method Tags.
-	TagsFunc *JobTagsFunc
 }
 
 // NewMockJob creates a new mock of the Job interface. All methods return
 // zero values for all results, unless overwritten.
 func NewMockJob() *MockJob {
 	return &MockJob{
+		ChildrenFunc: &JobChildrenFunc{
+			defaultHook: func() (r0 []job.Describer) {
+				return
+			},
+		},
+		FieldsFunc: &JobFieldsFunc{
+			defaultHook: func(job.Verbosity) (r0 []log.Field) {
+				return
+			},
+		},
 		NameFunc: &JobNameFunc{
 			defaultHook: func() (r0 string) {
 				return
@@ -45,11 +58,6 @@ func NewMockJob() *MockJob {
 				return
 			},
 		},
-		TagsFunc: &JobTagsFunc{
-			defaultHook: func() (r0 []log.Field) {
-				return
-			},
-		},
 	}
 }
 
@@ -57,6 +65,16 @@ func NewMockJob() *MockJob {
 // panic on invocation, unless overwritten.
 func NewStrictMockJob() *MockJob {
 	return &MockJob{
+		ChildrenFunc: &JobChildrenFunc{
+			defaultHook: func() []job.Describer {
+				panic("unexpected invocation of MockJob.Children")
+			},
+		},
+		FieldsFunc: &JobFieldsFunc{
+			defaultHook: func(job.Verbosity) []log.Field {
+				panic("unexpected invocation of MockJob.Fields")
+			},
+		},
 		NameFunc: &JobNameFunc{
 			defaultHook: func() string {
 				panic("unexpected invocation of MockJob.Name")
@@ -67,11 +85,6 @@ func NewStrictMockJob() *MockJob {
 				panic("unexpected invocation of MockJob.Run")
 			},
 		},
-		TagsFunc: &JobTagsFunc{
-			defaultHook: func() []log.Field {
-				panic("unexpected invocation of MockJob.Tags")
-			},
-		},
 	}
 }
 
@@ -79,16 +92,218 @@ func NewStrictMockJob() *MockJob {
 // delegate to the given implementation, unless overwritten.
 func NewMockJobFrom(i job.Job) *MockJob {
 	return &MockJob{
+		ChildrenFunc: &JobChildrenFunc{
+			defaultHook: i.Children,
+		},
+		FieldsFunc: &JobFieldsFunc{
+			defaultHook: i.Fields,
+		},
 		NameFunc: &JobNameFunc{
 			defaultHook: i.Name,
 		},
 		RunFunc: &JobRunFunc{
 			defaultHook: i.Run,
 		},
-		TagsFunc: &JobTagsFunc{
-			defaultHook: i.Tags,
-		},
 	}
+}
+
+// JobChildrenFunc describes the behavior when the Children method of the
+// parent MockJob instance is invoked.
+type JobChildrenFunc struct {
+	defaultHook func() []job.Describer
+	hooks       []func() []job.Describer
+	history     []JobChildrenFuncCall
+	mutex       sync.Mutex
+}
+
+// Children delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJob) Children() []job.Describer {
+	r0 := m.ChildrenFunc.nextHook()()
+	m.ChildrenFunc.appendCall(JobChildrenFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Children method of
+// the parent MockJob instance is invoked and the hook queue is empty.
+func (f *JobChildrenFunc) SetDefaultHook(hook func() []job.Describer) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Children method of the parent MockJob instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *JobChildrenFunc) PushHook(hook func() []job.Describer) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobChildrenFunc) SetDefaultReturn(r0 []job.Describer) {
+	f.SetDefaultHook(func() []job.Describer {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobChildrenFunc) PushReturn(r0 []job.Describer) {
+	f.PushHook(func() []job.Describer {
+		return r0
+	})
+}
+
+func (f *JobChildrenFunc) nextHook() func() []job.Describer {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobChildrenFunc) appendCall(r0 JobChildrenFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobChildrenFuncCall objects describing the
+// invocations of this function.
+func (f *JobChildrenFunc) History() []JobChildrenFuncCall {
+	f.mutex.Lock()
+	history := make([]JobChildrenFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobChildrenFuncCall is an object that describes an invocation of method
+// Children on an instance of MockJob.
+type JobChildrenFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []job.Describer
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobChildrenFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobChildrenFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// JobFieldsFunc describes the behavior when the Fields method of the parent
+// MockJob instance is invoked.
+type JobFieldsFunc struct {
+	defaultHook func(job.Verbosity) []log.Field
+	hooks       []func(job.Verbosity) []log.Field
+	history     []JobFieldsFuncCall
+	mutex       sync.Mutex
+}
+
+// Fields delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockJob) Fields(v0 job.Verbosity) []log.Field {
+	r0 := m.FieldsFunc.nextHook()(v0)
+	m.FieldsFunc.appendCall(JobFieldsFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Fields method of the
+// parent MockJob instance is invoked and the hook queue is empty.
+func (f *JobFieldsFunc) SetDefaultHook(hook func(job.Verbosity) []log.Field) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Fields method of the parent MockJob instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *JobFieldsFunc) PushHook(hook func(job.Verbosity) []log.Field) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *JobFieldsFunc) SetDefaultReturn(r0 []log.Field) {
+	f.SetDefaultHook(func(job.Verbosity) []log.Field {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *JobFieldsFunc) PushReturn(r0 []log.Field) {
+	f.PushHook(func(job.Verbosity) []log.Field {
+		return r0
+	})
+}
+
+func (f *JobFieldsFunc) nextHook() func(job.Verbosity) []log.Field {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *JobFieldsFunc) appendCall(r0 JobFieldsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of JobFieldsFuncCall objects describing the
+// invocations of this function.
+func (f *JobFieldsFunc) History() []JobFieldsFuncCall {
+	f.mutex.Lock()
+	history := make([]JobFieldsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// JobFieldsFuncCall is an object that describes an invocation of method
+// Fields on an instance of MockJob.
+type JobFieldsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 job.Verbosity
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []log.Field
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c JobFieldsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c JobFieldsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // JobNameFunc describes the behavior when the Name method of the parent
@@ -297,102 +512,4 @@ func (c JobRunFuncCall) Args() []interface{} {
 // invocation.
 func (c JobRunFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
-}
-
-// JobTagsFunc describes the behavior when the Tags method of the parent
-// MockJob instance is invoked.
-type JobTagsFunc struct {
-	defaultHook func() []log.Field
-	hooks       []func() []log.Field
-	history     []JobTagsFuncCall
-	mutex       sync.Mutex
-}
-
-// Tags delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockJob) Tags() []log.Field {
-	r0 := m.TagsFunc.nextHook()()
-	m.TagsFunc.appendCall(JobTagsFuncCall{r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the Tags method of the
-// parent MockJob instance is invoked and the hook queue is empty.
-func (f *JobTagsFunc) SetDefaultHook(hook func() []log.Field) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// Tags method of the parent MockJob instance invokes the hook at the front
-// of the queue and discards it. After the queue is empty, the default hook
-// function is invoked for any future action.
-func (f *JobTagsFunc) PushHook(hook func() []log.Field) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *JobTagsFunc) SetDefaultReturn(r0 []log.Field) {
-	f.SetDefaultHook(func() []log.Field {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *JobTagsFunc) PushReturn(r0 []log.Field) {
-	f.PushHook(func() []log.Field {
-		return r0
-	})
-}
-
-func (f *JobTagsFunc) nextHook() func() []log.Field {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *JobTagsFunc) appendCall(r0 JobTagsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of JobTagsFuncCall objects describing the
-// invocations of this function.
-func (f *JobTagsFunc) History() []JobTagsFuncCall {
-	f.mutex.Lock()
-	history := make([]JobTagsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// JobTagsFuncCall is an object that describes an invocation of method Tags
-// on an instance of MockJob.
-type JobTagsFuncCall struct {
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []log.Field
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c JobTagsFuncCall) Args() []interface{} {
-	return []interface{}{}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c JobTagsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }
