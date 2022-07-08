@@ -625,20 +625,31 @@ func (*RepoSubsetTextSearchJob) Name() string {
 	return "ZoektRepoSubsetTextSearchJob"
 }
 
-func (z *RepoSubsetTextSearchJob) Tags() []otlog.Field {
-	tags := []otlog.Field{
-		trace.Stringer("query", z.Query),
-		otlog.String("type", string(z.Typ)),
-		otlog.Int32("fileMatchLimit", z.FileMatchLimit),
-		trace.Stringer("select", z.Select),
+func (z *RepoSubsetTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Int32("fileMatchLimit", z.FileMatchLimit),
+			trace.Stringer("select", z.Select),
+		)
+		// z.Repos is nil for un-indexed search
+		if z.Repos != nil {
+			res = append(res,
+				otlog.Int("numRepoRevs", len(z.Repos.RepoRevs)),
+				otlog.Int("numBranchRepos", len(z.Repos.branchRepos)),
+			)
+		}
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", z.Query),
+			otlog.String("type", string(z.Typ)),
+		)
 	}
-	// z.Repos is nil for un-indexed search
-	if z.Repos != nil {
-		tags = append(tags, otlog.Int("numRepoRevs", len(z.Repos.RepoRevs)))
-		tags = append(tags, otlog.Int("numBranchRepos", len(z.Repos.branchRepos)))
-	}
-	return tags
+	return res
 }
+
+func (*RepoSubsetTextSearchJob) Children() []job.Describer { return nil }
 
 type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
@@ -661,14 +672,24 @@ func (*GlobalTextSearchJob) Name() string {
 	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *GlobalTextSearchJob) Tags() []otlog.Field {
-	return []otlog.Field{
-		trace.Stringer("query", t.GlobalZoektQuery.Query),
-		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
-		otlog.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
-		otlog.String("type", string(t.ZoektArgs.Typ)),
-		otlog.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
-		trace.Stringer("select", t.ZoektArgs.Select),
-		trace.Scoped("repoOpts", t.RepoOpts.Tags()...),
+func (t *GlobalTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
+			trace.Stringer("select", t.ZoektArgs.Select),
+			trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
+			otlog.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", t.GlobalZoektQuery.Query),
+			otlog.String("type", string(t.ZoektArgs.Typ)),
+			trace.Scoped("repoOpts", t.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
+
+func (t *GlobalTextSearchJob) Children() []job.Describer { return nil }

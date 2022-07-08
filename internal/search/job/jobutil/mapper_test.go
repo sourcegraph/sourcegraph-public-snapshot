@@ -6,11 +6,12 @@ import (
 	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 )
 
 func TestMap(t *testing.T) {
 	test := func(job job.Job, mapper Mapper) string {
-		return "\n" + PrettySexp(mapper.Map(job)) + "\n"
+		return "\n" + printer.SexpPretty(mapper.Map(job)) + "\n"
 	}
 
 	andMapper := Mapper{

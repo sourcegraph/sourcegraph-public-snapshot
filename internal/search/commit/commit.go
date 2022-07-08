@@ -120,15 +120,25 @@ func (j SearchJob) Name() string {
 	return "CommitSearchJob"
 }
 
-func (j *SearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", j.Query),
-		trace.Stringer("repoOpts", &j.RepoOpts),
-		log.Bool("diff", j.Diff),
-		log.Int("limit", j.Limit),
-		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+func (j *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", j.Query),
+			trace.Scoped("repoOpts", j.RepoOpts.Tags()...),
+			log.Bool("diff", j.Diff),
+			log.Int("limit", j.Limit),
+		)
 	}
+	return res
 }
+
+func (j *SearchJob) Children() []job.Describer { return nil }
 
 func (j *SearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {

@@ -51,10 +51,20 @@ func (l *LimitJob) Name() string {
 	return "LimitJob"
 }
 
-func (l *LimitJob) Tags() []log.Field {
-	return []log.Field{
-		log.Int("limit", l.limit),
+func (l *LimitJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			log.Int("limit", l.limit),
+		)
 	}
+	return res
+}
+
+func (l *LimitJob) Children() []job.Describer {
+	return []job.Describer{l.child}
 }
 
 type limitStream struct {

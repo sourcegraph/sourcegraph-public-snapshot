@@ -52,7 +52,6 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 				}
 			}
 		}
-
 		result, _ := json.MarshalIndent(generated, "", "  ")
 		return string(result)
 	}

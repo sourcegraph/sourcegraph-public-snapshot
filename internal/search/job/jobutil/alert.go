@@ -75,15 +75,27 @@ func (j *alertJob) Name() string {
 	return "AlertJob"
 }
 
-func (j *alertJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", j.inputs.Query),
-		log.String("originalQuery", j.inputs.OriginalQuery),
-		trace.Stringer("patternType", j.inputs.PatternType),
-		log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
-		trace.Stringer("protocol", j.inputs.Protocol),
-		trace.Stringer("features", j.inputs.Features),
+func (j *alertJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			trace.Stringer("features", j.inputs.Features),
+			trace.Stringer("protocol", j.inputs.Protocol),
+			log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", j.inputs.Query),
+			log.String("originalQuery", j.inputs.OriginalQuery),
+			trace.Stringer("patternType", j.inputs.PatternType),
+		)
 	}
+	return res
+}
+
+func (j *alertJob) Children() []job.Describer {
+	return []job.Describer{j.child}
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.

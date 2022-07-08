@@ -138,14 +138,24 @@ func (s *TextSearchJob) Name() string {
 	return "SearcherTextSearchJob"
 }
 
-func (s *TextSearchJob) Tags() []otlog.Field {
-	return []otlog.Field{
-		trace.Stringer("patternInfo", s.PatternInfo),
-		otlog.Int("numRepos", len(s.Repos)),
-		otlog.Bool("indexed", s.Indexed),
-		otlog.Bool("useFullDeadline", s.UseFullDeadline),
+func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Bool("useFullDeadline", s.UseFullDeadline),
+			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
+			otlog.Int("numRepos", len(s.Repos)),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			otlog.Bool("indexed", s.Indexed),
+		)
 	}
+	return res
 }
+
+func (s *TextSearchJob) Children() []job.Describer { return nil }
 
 var MockSearchFilesInRepo func(
 	ctx context.Context,

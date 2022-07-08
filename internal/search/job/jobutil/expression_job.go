@@ -80,8 +80,14 @@ func (a *AndJob) Name() string {
 	return "AndJob"
 }
 
-func (a *AndJob) Tags() []log.Field {
-	return []log.Field{}
+func (a *AndJob) Fields(job.Verbosity) []log.Field { return nil }
+
+func (a *AndJob) Children() []job.Describer {
+	res := make([]job.Describer, len(a.children))
+	for i := range a.children {
+		res[i] = a.children[i]
+	}
+	return res
 }
 
 // NewAndJob creates a job that will run each of its child jobs and stream
@@ -177,6 +183,12 @@ func (j *OrJob) Name() string {
 	return "OrJob"
 }
 
-func (j *OrJob) Tags() []log.Field {
-	return []log.Field{}
+func (j *OrJob) Fields(job.Verbosity) []log.Field { return nil }
+
+func (j *OrJob) Children() []job.Describer {
+	res := make([]job.Describer, len(j.children))
+	for i := range j.children {
+		res[i] = j.children[i]
+	}
+	return res
 }

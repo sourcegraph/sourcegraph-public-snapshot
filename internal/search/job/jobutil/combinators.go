@@ -42,10 +42,24 @@ func (s *SequentialJob) Name() string {
 	return "SequentialJob"
 }
 
-func (s *SequentialJob) Tags() []log.Field {
-	return []log.Field{
-		log.Bool("ensureUnique", s.ensureUnique),
+func (s *SequentialJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			log.Bool("ensureUnique", s.ensureUnique),
+		)
 	}
+	return res
+}
+
+func (s *SequentialJob) Children() []job.Describer {
+	res := make([]job.Describer, len(s.children))
+	for i := range s.children {
+		res[i] = s.children[i]
+	}
+	return res
 }
 
 func (s *SequentialJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
@@ -111,8 +125,13 @@ func (p *ParallelJob) Name() string {
 	return "ParallelJob"
 }
 
-func (p *ParallelJob) Tags() []log.Field {
-	return []log.Field{}
+func (p *ParallelJob) Fields(job.Verbosity) []log.Field { return nil }
+func (p *ParallelJob) Children() []job.Describer {
+	res := make([]job.Describer, len(p.children))
+	for i := range p.children {
+		res[i] = p.children[i]
+	}
+	return res
 }
 
 func (p *ParallelJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
@@ -165,10 +184,20 @@ func (t *TimeoutJob) Name() string {
 	return "TimeoutJob"
 }
 
-func (t *TimeoutJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("timeout", t.timeout),
+func (t *TimeoutJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("timeout", t.timeout),
+		)
 	}
+	return res
+}
+
+func (t *TimeoutJob) Children() []job.Describer {
+	return []job.Describer{t.child}
 }
 
 func NewNoopJob() *NoopJob {
@@ -181,8 +210,6 @@ func (e *NoopJob) Run(context.Context, job.RuntimeClients, streaming.Sender) (*s
 	return nil, nil
 }
 
-func (e *NoopJob) Name() string { return "NoopJob" }
-
-func (e *NoopJob) Tags() []log.Field {
-	return []log.Field{}
-}
+func (e *NoopJob) Name() string                     { return "NoopJob" }
+func (e *NoopJob) Fields(job.Verbosity) []log.Field { return nil }
+func (e *NoopJob) Children() []job.Describer        { return nil }
