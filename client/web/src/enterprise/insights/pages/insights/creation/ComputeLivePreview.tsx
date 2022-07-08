@@ -20,34 +20,34 @@ import {
 } from '../../../components'
 import { BackendInsightDatum, CodeInsightsBackendContext } from '../../../core'
 
-import { InsightStep } from './search-insight'
+interface LanguageUsageDatum {
+    name: string
+    value: number
+    fill: string
+    linkURL: string
+    group?: string
+}
 
-interface LineChartLivePreviewProps {
+interface ComputeLivePreviewProps {
     disabled: boolean
     repositories: string
-    stepValue: string
-    step: InsightStep
     className?: string
     series: {
         query: string
         label: string
-        generatedFromCaptureGroup: boolean
         stroke: string
     }[]
 }
 
-export const ComputeLivePreview: React.FunctionComponent<
-    React.PropsWithChildren<LineChartLivePreviewProps>
-> = props => {
+export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren<ComputeLivePreviewProps>> = props => {
     // For the purposes of building out this component before the backend is ready
     // we are using the standard "line series" type data.
     // TODO after backend is merged, remove update the series value to use that structure
-    const { disabled, repositories, stepValue, step, series, className } = props
+    const { disabled, repositories, series, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
 
     const sanitizedSeries = series.map(srs => ({
         query: srs.query,
-        generatedFromCaptureGroup: srs.generatedFromCaptureGroup,
         label: srs.label,
         stroke: srs.stroke,
     }))
@@ -55,7 +55,6 @@ export const ComputeLivePreview: React.FunctionComponent<
     const settings = useDeepMemo({
         disabled,
         repositories: getSanitizedRepositories(repositories),
-        step: { [step]: stepValue },
         series: sanitizedSeries,
     })
 
@@ -68,14 +67,6 @@ export const ComputeLivePreview: React.FunctionComponent<
     )
 
     const { state, update } = useLivePreview(getLivePreview)
-
-    interface LanguageUsageDatum {
-        name: string
-        value: number
-        fill: string
-        linkURL: string
-        group?: string
-    }
 
     const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] =>
         series.map(series => ({
