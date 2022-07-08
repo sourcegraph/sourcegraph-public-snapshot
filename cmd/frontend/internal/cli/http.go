@@ -110,7 +110,9 @@ func newExternalHTTPHandler(
 	h = internalauth.OverrideAuthMiddleware(db, h)
 	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
-	h = middleware.SentryTunnel(h)
+	if envvar.SentryTunnelEnabled() {
+		h = middleware.SentryTunnel(h)
+	}
 
 	return h
 }

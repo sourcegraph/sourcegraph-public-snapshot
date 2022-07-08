@@ -36,3 +36,9 @@ func MockSourcegraphDotComMode(value bool) {
 func OpenGraphPreviewServiceURL() string {
 	return openGraphPreviewServiceURL
 }
+
+var SentryTunnelEndpoint = env.Get("SENTRY_TUNNEL_ENDPOINT", "", "Sentry.io endpoint (ex: https://oXXXXX.ingest.sentry.io) to use if Sentry and Sentry tunneling is enabled")
+
+func SentryTunnelEnabled() bool {
+	return SentryTunnelEndpoint != ""
+}
