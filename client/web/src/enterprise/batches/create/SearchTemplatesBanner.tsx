@@ -8,8 +8,8 @@ interface SearchTemplatesBannerProps {
 
 export const SearchTemplatesBanner: React.FunctionComponent<SearchTemplatesBannerProps> = ({ className }) => (
     <TemplateBanner
-        heading="You are creating a Batch Change from a Code Search"
-        description="Let Sourcegraph help you refactor your code by preparing a Batch Change from your search query"
+        heading="You are creating a batch change from a Code Search"
+        description="Let Sourcegraph help you refactor your code by preparing a batch change from your search query."
         className={className}
     />
 )
