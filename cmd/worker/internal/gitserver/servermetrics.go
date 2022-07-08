@@ -14,10 +14,13 @@ import (
 )
 
 type metricsJob struct {
+	Logger log.Logger
 }
 
 func NewMetricsJob() job.Job {
-	return &metricsJob{}
+	return &metricsJob{
+		Logger: log.Scoped("gitserver-metrics", ""),
+	}
 }
 
 func (j *metricsJob) Description() string {
@@ -48,7 +51,7 @@ func (j *metricsJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 			WHERE g.last_error IS NOT NULL AND r.deleted_at IS NULL
 		`).Scan(&count)
 		if err != nil {
-			// s.Logger.Error("failed to count repository errors", log.Error(err))
+			j.Logger.Error("failed to count repository errors", log.Error(err))
 			return 0
 		}
 		return float64(count)
@@ -68,7 +71,7 @@ func (j *metricsJob) Routines(ctx context.Context, logger log.Logger) ([]gorouti
 			WHERE r.deleted_at IS NULL
 		`).Scan(&count)
 		if err != nil {
-			// s.Logger.Error("failed to count repositories", log.Error(err))
+			j.Logger.Error("failed to count repositories", log.Error(err))
 			return 0
 		}
 		return float64(count)
