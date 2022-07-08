@@ -67,6 +67,12 @@ func (l *LimitJob) Children() []job.Describer {
 	return []job.Describer{l.child}
 }
 
+func (l *LimitJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *l
+	cp.child = job.Map(l.child, fn)
+	return &cp
+}
+
 type limitStream struct {
 	s         streaming.Sender
 	cancel    context.CancelFunc

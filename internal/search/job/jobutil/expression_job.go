@@ -90,6 +90,15 @@ func (a *AndJob) Children() []job.Describer {
 	return res
 }
 
+func (a *AndJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *a
+	cp.children = make([]job.Job, len(a.children))
+	for i := range a.children {
+		cp.children[i] = job.Map(a.children[i], fn)
+	}
+	return &cp
+}
+
 // NewAndJob creates a job that will run each of its child jobs and stream
 // deduplicated matches that were streamed by at least one of the jobs.
 func NewOrJob(children ...job.Job) job.Job {
@@ -191,4 +200,13 @@ func (j *OrJob) Children() []job.Describer {
 		res[i] = j.children[i]
 	}
 	return res
+}
+
+func (j *OrJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *j
+	cp.children = make([]job.Job, len(j.children))
+	for i := range j.children {
+		cp.children[i] = job.Map(j.children[i], fn)
+	}
+	return &cp
 }

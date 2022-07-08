@@ -23,6 +23,11 @@ import (
 // timeout). Calling Run on a job object runs a search.
 type Job interface {
 	Run(context.Context, RuntimeClients, streaming.Sender) (*search.Alert, error)
+
+	// MapChildren recursively applies MapFunc to every child job of this job,
+	// returning a copied job with the resulting set of children.
+	MapChildren(MapFunc) Job
+
 	Describer
 }
 
@@ -38,6 +43,7 @@ type PartialJob[T any] interface {
 	// available at runtime.
 	Resolve(T) Job
 
+	MapChildren(MapFunc) PartialJob[T]
 	Describer
 }
 
@@ -66,4 +72,14 @@ type RuntimeClients struct {
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
 	Gitserver    gitserver.Client
+}
+
+type MapFunc func(Job) Job
+
+// Map applies fn to every job in tree recursively, returning a new job.
+// The provided function should return a copied job with the mutations
+// applied rather than mutating the job in-place.
+func Map(j Job, fn MapFunc) Job {
+	j = j.MapChildren(fn)
+	return fn(j)
 }

@@ -65,6 +65,12 @@ func (s *subRepoPermsFilterJob) Children() []job.Describer {
 	return []job.Describer{s.child}
 }
 
+func (s *subRepoPermsFilterJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *s
+	cp.child = job.Map(s.child, fn)
+	return &cp
+}
+
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
 func applySubRepoFiltering(ctx context.Context, logger log.Logger, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
