@@ -878,7 +878,8 @@ func (s *repoStore) listSQL(ctx context.Context, tr *trace.Trace, opt ReposListO
 	}
 
 	for _, descriptionPattern := range opt.DescriptionPatterns {
-		descriptionConds, err := parseDescriptionPattern(tr, descriptionPattern, opt.CaseSensitivePatterns)
+		// filtering by description is always case-insensitive
+		descriptionConds, err := parseDescriptionPattern(tr, descriptionPattern)
 		if err != nil {
 			return nil, err
 		}
@@ -1556,40 +1557,25 @@ func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query,
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
 
-func parseDescriptionPattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query, error) {
-	exact, like, pattern, err := parseIncludePattern(p)
+func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
+	// parseIncludePattern won't ever return exact string matches for patterns passed to repo:description(...)
+	// because they are transformed into fuzzy regexps during job creation
+	_, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
 	}
 
 	tr.LogFields(
 		otlog.String("parseDescriptionPattern", p),
-		otlog.Bool("caseSensitive", caseSensitive),
-		trace.Strings("exact", exact),
 		trace.Strings("like", like),
 		otlog.String("pattern", pattern))
 
 	var conds []*sqlf.Query
-	if exact != nil {
-		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
-			conds = append(conds, sqlf.Sprintf("TRUE"))
-		} else {
-			conds = append(conds, sqlf.Sprintf("description = ANY (%s)", pq.Array(exact)))
-		}
-	}
 	for _, v := range like {
-		if caseSensitive {
-			conds = append(conds, sqlf.Sprintf(`description::text LIKE %s`, v))
-		} else {
-			conds = append(conds, sqlf.Sprintf(`lower(description) LIKE %s`, strings.ToLower(v)))
-		}
+		conds = append(conds, sqlf.Sprintf(`lower(description) LIKE %s`, strings.ToLower(v)))
 	}
 	if pattern != "" {
-		if caseSensitive {
-			conds = append(conds, sqlf.Sprintf("description::text ~ %s", pattern))
-		} else {
-			conds = append(conds, sqlf.Sprintf("lower(description) ~ lower(%s)", pattern))
-		}
+		conds = append(conds, sqlf.Sprintf("lower(description) ~* %s", strings.ToLower(pattern)))
 	}
 	return []*sqlf.Query{sqlf.Sprintf("(%s)", sqlf.Join(conds, "OR"))}, nil
 }
