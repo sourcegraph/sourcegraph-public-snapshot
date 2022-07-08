@@ -5,6 +5,7 @@ import { useDeepMemo, Text } from '@sourcegraph/wildcard'
 
 import { Series } from '../../../../../charts'
 import { BarChart } from '../../../../../charts/components/bar-chart/BarChart'
+import { GroupByField } from '../../../../../graphql-operations'
 import {
     LivePreviewUpdateButton,
     LivePreviewCard,
@@ -36,6 +37,7 @@ interface ComputeLivePreviewProps {
         query: string
         label: string
         stroke: string
+        groupBy: GroupByField
     }[]
 }
 
@@ -50,12 +52,18 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
         query: srs.query,
         label: srs.label,
         stroke: srs.stroke,
+        groupBy: srs.groupBy,
     }))
 
     const settings = useDeepMemo({
         disabled,
         repositories: getSanitizedRepositories(repositories),
         series: sanitizedSeries,
+        // TODO: Revisit this hardcoded value. Compute does not use it, but it's still required
+        //  for `searchInsightPreview`
+        step: {
+            days: 1,
+        },
     })
 
     const getLivePreview = useMemo(
@@ -93,10 +101,11 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
                                     width={parent.width}
                                     height={parent.height}
                                     data-testid="code-search-insight-live-preview"
-                                    data={mapSeriesToCompute(state.data.series as Series<BackendInsightDatum>[])}
-                                    getDatumName={(datum: any) => datum.name}
-                                    getDatumValue={(datum: any) => datum.value}
-                                    getDatumColor={(datum: any) => datum.fill}
+                                    data={mapSeriesToCompute(state.data.series)}
+                                    getCategory={(datum: LanguageUsageDatum) => datum.group}
+                                    getDatumName={(datum: LanguageUsageDatum) => datum.name}
+                                    getDatumValue={(datum: LanguageUsageDatum) => datum.value}
+                                    getDatumColor={(datum: LanguageUsageDatum) => datum.fill}
                                 />
                             ) : (
                                 <>
@@ -105,9 +114,10 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
                                         width={parent.width}
                                         height={parent.height}
                                         data={COMPUTE_MOCK_CHART}
-                                        getDatumName={(datum: any) => datum.name}
-                                        getDatumValue={(datum: any) => datum.value}
-                                        getDatumColor={(datum: any) => datum.fill}
+                                        getCategory={(datum: LanguageUsageDatum) => datum.group}
+                                        getDatumName={(datum: LanguageUsageDatum) => datum.name}
+                                        getDatumValue={(datum: LanguageUsageDatum) => datum.value}
+                                        getDatumColor={(datum: LanguageUsageDatum) => datum.fill}
                                     />
                                     <LivePreviewBanner>You’ll see your insight’s chart preview here</LivePreviewBanner>
                                 </>
@@ -116,7 +126,9 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
                     </LivePreviewChart>
                 )}
 
-                {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series} />}
+                {state.status === StateStatus.Data && (
+                    <LivePreviewLegend series={state.data.series as Series<unknown>[]} />
+                )}
             </LivePreviewCard>
 
             <Text className="mt-4 pl-2">

@@ -1,6 +1,7 @@
 import { Duration } from 'date-fns'
 
 import { Series } from '../../../../charts'
+import { GroupByField } from '../../../../graphql-operations'
 import {
     RuntimeInsight,
     InsightDashboard,
@@ -107,9 +108,10 @@ export interface InsightPreviewSettings {
 
 export interface SeriesPreviewSettings {
     query: string
-    generatedFromCaptureGroup: boolean
+    generatedFromCaptureGroup?: boolean
     label: string
     stroke: string
+    groupBy?: GroupByField
 }
 
 export interface AccessibleInsightInfo {
