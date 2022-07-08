@@ -201,7 +201,7 @@ public class SettingsComponent {
                 : null);
 
         globbingCheckBox = new JBCheckBox("Enable globbing");
-        isUrlNotificationDismissedCheckBox = new JBCheckBox("Never show the \"No Sourcegraph URL set\" notification for this project");
+        isUrlNotificationDismissedCheckBox = new JBCheckBox("Do not show the \"No Sourcegraph URL set\" notification for this project");
 
         JPanel navigationSettingsPanel = FormBuilder.createFormBuilder()
             .addLabeledComponent(defaultBranchNameLabel, defaultBranchNameTextField)
