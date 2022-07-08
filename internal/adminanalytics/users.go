@@ -16,35 +16,11 @@ type Users struct {
 	Cache     bool
 }
 
-var (
-	activitySummaryQuery = `
-	SELECT
-		COUNT(*) AS total_count,
-		COUNT(DISTINCT anonymous_user_id) AS unique_users,
-		COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
-	FROM event_logs
-	WHERE timestamp %s
-	`
-	activityNodesQuery = `
-	SELECT %s AS date,
-		COUNT(*) AS total_count,
-		COUNT(DISTINCT anonymous_user_id) AS unique_users,
-		COUNT(DISTINCT user_id) FILTER (WHERE user_id != 0) AS registered_users
-	FROM event_logs
-	WHERE timestamp %s
-	GROUP BY date
-	`
-)
-
 func (s *Users) Activity() (*AnalyticsFetcher, error) {
-	dateSelectParam, dateRangeCond, err := makeDateParameters(s.DateRange, "timestamp")
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{})
 	if err != nil {
 		return nil, err
 	}
-
-	nodesQuery := sqlf.Sprintf(activityNodesQuery, dateSelectParam, dateRangeCond)
-
-	summaryQuery := sqlf.Sprintf(activitySummaryQuery, dateRangeCond)
 
 	return &AnalyticsFetcher{
 		db:           s.DB,
@@ -61,7 +37,7 @@ var (
 	WITH t1 AS (
 		SELECT DATE(timestamp) AS date, anonymous_user_id AS user_id
 		FROM event_logs
-		WHERE DATE(timestamp) %s
+		WHERE date %s
 		GROUP BY 2, 1
 	),
 	t2 AS (
