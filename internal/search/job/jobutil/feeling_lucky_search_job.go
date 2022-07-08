@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/go-enry/go-enry/v2"
 	"github.com/opentracing/opentracing-go/log"
@@ -14,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -69,29 +67,10 @@ func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	_, ctx, parentStream, finish := job.StartSpan(ctx, parentStream, f)
 	defer func() { finish(alert, err) }()
 
+	stream := streaming.NewDedupingStream(parentStream)
+
 	var maxAlerter search.MaxAlerter
 	var errs errors.MultiError
-
-	var mux sync.Mutex
-	dedup := result.NewDeduper()
-
-	stream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		mux.Lock()
-
-		results := event.Results[:0]
-		for _, match := range event.Results {
-			seen := dedup.Seen(match)
-			if seen {
-				continue
-			}
-			dedup.Add(match)
-			results = append(results, match)
-		}
-		event.Results = results
-		mux.Unlock()
-		parentStream.Send(event)
-	})
-
 	alert, err = f.initialJob.Run(ctx, clients, stream)
 	if err != nil {
 		return alert, err
