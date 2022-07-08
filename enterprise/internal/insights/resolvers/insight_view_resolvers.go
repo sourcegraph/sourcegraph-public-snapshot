@@ -1117,7 +1117,6 @@ func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeri
 	if series.GroupBy != nil {
 		return types.MappingCompute
 	}
-
 	return types.Search
 }
 
