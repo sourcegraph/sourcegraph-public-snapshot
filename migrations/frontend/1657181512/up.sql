@@ -16,6 +16,8 @@ CREATE TABLE webhook_build_jobs (
     num_failures integer DEFAULT 0 NOT NULL,
     repo_id integer,
     repo_name text,
+    extsvc_kind text,
+    token text,
     queued_at timestamp with time zone,
     execution_logs json[],
     last_heartbeat_at timestamp with time zone,

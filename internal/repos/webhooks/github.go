@@ -1,4 +1,4 @@
-package webhookapi
+package githubwebhook
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strings"
 
 	"github.com/google/go-github/v43/github"
 
@@ -59,24 +58,20 @@ type Payload struct {
 
 var TOKEN = ""
 
-func CreateSyncWebhook(repoURL string, secret string, token string) error { // will need secret, token, client
-	fmt.Println("Creating webhook:", repoURL)
+func CreateSyncWebhook(repoName string, secret string, token string) error {
+	fmt.Println("Creating webhook:", repoName)
 
 	// HOW TO GENERATE THE SECRET
 	// EXTRACTING THE TOKEN FROM THE USER
 
 	// u := "https://api.github.com/repos/susantoscott/Task-Tracker/hooks"
-	parts := strings.Split(repoURL, "/")
-	serviceID := parts[0]
-	owner := parts[1]
-	repoName := parts[2]
-	url := fmt.Sprintf("https://api.%s/repos/%s/%s/hooks", serviceID, owner, repoName)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks", repoName)
 	// fmt.Println("Url:", url)
 	payload := Payload{
 		Name:   "web",
 		Active: true,
 		Config: Config{
-			Url:          "https://test01/webhooks", // the url will be to /enqueue-repo-update?
+			Url:          fmt.Sprintf("%s/enqueue-repo-update", repoupdater.DefaultClient.URL),
 			Content_type: "json",
 			Secret:       secret,
 			Insecure_ssl: "0",
@@ -124,11 +119,11 @@ func CreateSyncWebhook(repoURL string, secret string, token string) error { // w
 	return nil
 }
 
-func ListSyncWebhooks(reponame string) string {
+func ListSyncWebhooks(repoName string, secret string, token string) []Payload {
 	fmt.Println("Listing webhooks...")
 
 	// url := "https://api.github.com/repos/susantoscott/Task-Tracker/hooks"
-	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks", reponame)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks", repoName)
 	fmt.Println("url:", url)
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer([]byte("")))
 	if err != nil {
@@ -154,17 +149,21 @@ func ListSyncWebhooks(reponame string) string {
 		fmt.Println("unmarshal error:", err)
 	}
 
-	if len(obj) == 0 {
-		return ""
-	}
-
-	// what if there are multiple webhooks
-
-	return obj[0].Name
+	return obj
 }
 
-func DeleteSyncWebhook(reponame string, hookID int) {
-	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks/%d", reponame, hookID)
+func FindSyncWebhook(repoName string, secret string, token string) string {
+	payloads := ListSyncWebhooks(repoName, secret, token)
+	for _, payload := range payloads {
+		if payload.Name == "web" {
+			return "web"
+		}
+	}
+	return ""
+}
+
+func DeleteSyncWebhook(repoName string, hookID int) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks/%d", repoName, hookID)
 	req, err := http.NewRequest("DELETE", url, bytes.NewBuffer([]byte("")))
 	if err != nil {
 		fmt.Println("making new request error:", err)

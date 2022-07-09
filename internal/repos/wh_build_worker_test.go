@@ -17,7 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
-	webhookapi "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
+	githubwebhook "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -99,6 +99,11 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 			t.Fatal("Timeout")
 		}
 
+		// create a server
+		// use the server's URL
+		// send a push event to the repo
+		// assert that we enqueue a repo update
+
 	}
 }
 
@@ -117,20 +122,24 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 	}
 	fmt.Printf("Job:%+v\n", wbj)
 
-	webhookName := webhookapi.ListSyncWebhooks(wbj.RepoName)
-	fmt.Println("name:", webhookName)
-	if webhookName != "web" {
-		err := webhookapi.CreateSyncWebhook(string(wbj.RepoName), "secret", "token")
-		if err != nil {
-			return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
+	switch wbj.ExtsvcKind {
+	case "GITHUB":
+		webhookName := githubwebhook.FindSyncWebhook(wbj.RepoName, "secret", wbj.Token)
+		if webhookName != "web" {
+			err := githubwebhook.CreateSyncWebhook(string(wbj.RepoName), "secret", wbj.Token)
+			if err != nil {
+				return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
+			}
+			h.jobChan <- "created new webhook"
+			return nil
+		} else {
+			h.jobChan <- "webhook: " + webhookName
+			return nil
 		}
-		h.jobChan <- "created new webhook"
-		return nil
-	} else {
-		h.jobChan <- "webhook: " + webhookName
-		return nil
 	}
+
 	// how will we know if a repo has been deleted?
+	return nil
 }
 
 func PrintRows(s repos.Store, ctx context.Context) {

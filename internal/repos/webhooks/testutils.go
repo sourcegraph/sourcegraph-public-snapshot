@@ -1,4 +1,4 @@
-package webhookapi
+package githubwebhook
 
 import (
 	"crypto/hmac"

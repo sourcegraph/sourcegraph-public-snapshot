@@ -53,6 +53,8 @@ func NewWhBuildWorker(
 		sqlf.Sprintf("execution_logs"),
 		sqlf.Sprintf("repo_id"),
 		sqlf.Sprintf("repo_name"),
+		sqlf.Sprintf("extsvc_kind"),
+		sqlf.Sprintf("token"),
 		sqlf.Sprintf("queued_at"),
 	}
 
@@ -113,6 +115,8 @@ type WhBuildJob struct {
 	NumFailures    int
 	RepoID         int64
 	RepoName       string
+	ExtsvcKind     string
+	Token          string
 	QueuedAt       sql.NullTime
 }
 

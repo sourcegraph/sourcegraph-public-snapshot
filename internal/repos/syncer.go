@@ -19,7 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	webhookapi "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
+	githubwebhook "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -133,7 +133,7 @@ type syncHandler struct {
 	minSyncInterval func() time.Duration
 }
 
-func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	sj, ok := record.(*SyncJob)
 	if !ok {
 		return errors.Errorf("expected repos.SyncJob, got %T", record)
@@ -147,19 +147,22 @@ type whBuildHandler struct {
 	minWhBuildInterval func() time.Duration
 }
 
-func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
 	wbj, ok := record.(*WhBuildJob)
 	if !ok {
 		return errors.Errorf("expected repos.WhBuildJob, got %T", record)
 	}
 
-	webhookName := webhookapi.ListSyncWebhooks(wbj.RepoName)
-	if webhookName != "web" {
-		fmt.Println("create sync webhook")
-		// err := webhookapi.CreateSyncWebhook(string(wbj.RepoName), "secret", "token")
-		// if err != nil {
-		// 	return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
-		// }
+	switch wbj.ExtsvcKind {
+	case "GITHUB":
+		webhookName := githubwebhook.FindSyncWebhook(wbj.RepoName, "secret", wbj.Token)
+		if webhookName != "web" {
+			fmt.Println("create sync webhook")
+			err := githubwebhook.CreateSyncWebhook(string(wbj.RepoName), "secret", wbj.Token)
+			if err != nil {
+				return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
+			}
+		}
 	}
 
 	// how will we know if a repo has been deleted?
@@ -627,7 +630,11 @@ func (s *Syncer) SyncExternalService(
 
 		svc.SyncUsingWebhooks = true
 		if svc.SyncUsingWebhooks {
-			err := s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name)) // is this instant? can it be done here?
+			err := s.Store.EnqueueSingleWhBuildJob(ctx,
+				int64(sourced.ID),
+				string(sourced.Name),
+				"token",
+				svc.Kind) // is this instant? can it be done here?
 			if err != nil && s.Logger != nil {
 				s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
 			}
