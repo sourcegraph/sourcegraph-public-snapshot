@@ -589,12 +589,12 @@ var rulesWiden = []rule{
 	},
 }
 
-type cg = *combin.CombinationGenerator
+type cg = combin.CombinationGenerator
 
 type PHASE int
 
 const (
-	ONE PHASE = iota
+	ONE PHASE = iota + 1
 	TWO
 	THREE
 )
@@ -655,16 +655,16 @@ func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
 	// - phase, the current generation phase based on progress
 	// - k, the size of the selection in the narrow set to apply
 	// - cg, an iterator producing the next sequence of rules for the current value of `k`.
-	// - w, the index of the widen rule to apply (nil if empty)
-	var n func(phase PHASE, k int, cg cg, w *int) next
-	n = func(phase PHASE, k int, cg cg, w *int) next {
+	// - w, the index of the widen rule to apply (-1 if empty)
+	var n func(phase PHASE, k int, c *cg, w int) next
+	n = func(phase PHASE, k int, c *cg, w int) next {
 		var transform transform
 		var descriptions []string
 		var generated *query.Basic
 
 		narrowing_exhausted := k == 0
-		widening_active := w != nil
-		widening_exhausted := widening_active && *w == len(widen)
+		widening_active := w != -1
+		widening_exhausted := widening_active && w == len(widen)
 
 		switch phase {
 		case THREE:
@@ -675,15 +675,14 @@ func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
 				return func() (*autoQuery, next) { return nil, nil }
 			}
 
-			transform = append(transform, widen[*w].transform...)
-			descriptions = append(descriptions, widen[*w].description)
-			*w += 1 // advance to next widening rule.
+			transform = append(transform, widen[w].transform...)
+			descriptions = append(descriptions, widen[w].description)
+			w += 1 // advance to next widening rule.
 
 		case TWO:
 			if widening_exhausted {
 				// Start phase THREE: apply only widening rules.
-				w := 0
-				return n(THREE, 0, nil, &w)
+				return n(THREE, 0, nil, 0)
 			}
 
 			if narrowing_exhausted && !widening_exhausted {
@@ -691,26 +690,26 @@ func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
 				// rules for the current widen rule, but we're not done
 				// yet: there are still more widen rules to try. So
 				// increment w by 1.
-				cg = combin.NewCombinationGenerator(num, num)
-				*w += 1 // advance to next widening rule.
-				return n(phase, num, cg, w)
+				c = combin.NewCombinationGenerator(num, num)
+				w += 1 // advance to next widening rule.
+				return n(phase, num, c, w)
 			}
 
-			if !cg.Next() {
+			if !c.Next() {
 				// Reduce narrow set size.
 				k -= 1
-				cg = combin.NewCombinationGenerator(num, k)
-				return n(phase, k, cg, w)
+				c = combin.NewCombinationGenerator(num, k)
+				return n(phase, k, c, w)
 			}
 
-			for _, idx := range cg.Combination(nil) {
+			for _, idx := range c.Combination(nil) {
 				transform = append(transform, narrow[idx].transform...)
 				descriptions = append(descriptions, narrow[idx].description)
 			}
 
 			// Compose narrow rules with a widen rule.
-			transform = append(transform, widen[*w].transform...)
-			descriptions = append(descriptions, widen[*w].description)
+			transform = append(transform, widen[w].transform...)
+			descriptions = append(descriptions, widen[w].description)
 
 		case ONE:
 			if narrowing_exhausted && !widening_active {
@@ -720,18 +719,17 @@ func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
 				// compose them with any widen rules. Compose
 				// them with widen rules by initializing w to 0.
 				cg := combin.NewCombinationGenerator(num, num)
-				w := 0
-				return n(TWO, num, cg, &w)
+				return n(TWO, num, cg, 0)
 			}
 
-			if !cg.Next() {
+			if !c.Next() {
 				// Reduce narrow set size.
 				k -= 1
-				cg = combin.NewCombinationGenerator(num, k)
-				return n(phase, k, cg, w)
+				c = combin.NewCombinationGenerator(num, k)
+				return n(phase, k, c, w)
 			}
 
-			for _, idx := range cg.Combination(nil) {
+			for _, idx := range c.Combination(nil) {
 				transform = append(transform, narrow[idx].transform...)
 				descriptions = append(descriptions, narrow[idx].description)
 			}
@@ -740,7 +738,7 @@ func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
 		generated = applyTransformation(seed, transform)
 		if generated == nil {
 			// Rule does not apply, go to next rule.
-			return n(phase, k, cg, w)
+			return n(phase, k, c, w)
 		}
 
 		q := autoQuery{
@@ -749,17 +747,16 @@ func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
 		}
 
 		return func() (*autoQuery, next) {
-			return &q, n(phase, k, cg, w)
+			return &q, n(phase, k, c, w)
 		}
 	}
 
 	if len(narrow) == 0 {
-		w := 0
-		return n(THREE, 0, nil, &w)
+		return n(THREE, 0, nil, 0)
 	}
 
 	cg := combin.NewCombinationGenerator(num, num)
-	return n(ONE, num, cg, nil)
+	return n(ONE, num, cg, -1)
 }
 
 // pruneRules produces a minimum set of rules that apply successfully on the seed query.
