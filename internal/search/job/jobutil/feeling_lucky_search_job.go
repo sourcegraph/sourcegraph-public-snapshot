@@ -170,41 +170,6 @@ type rule struct {
 
 type transform []func(query.Basic) *query.Basic
 
-var rules = []rule{
-	{
-		description: "unquote patterns",
-		transform:   transform{unquotePatterns},
-	},
-	{
-		description: "apply search type and language filter for patterns",
-		transform:   transform{typePatterns, langPatterns},
-	},
-	{
-		description: "apply search type for pattern",
-		transform:   transform{typePatterns},
-	},
-	{
-		description: "apply language filter for pattern",
-		transform:   transform{langPatterns},
-	},
-	{
-		description: "apply search type and language filter for patterns with AND patterns",
-		transform:   transform{typePatterns, langPatterns, unorderedPatterns},
-	},
-	{
-		description: "apply search type with AND patterns",
-		transform:   transform{typePatterns, unorderedPatterns},
-	},
-	{
-		description: "apply language filter with AND patterns",
-		transform:   transform{langPatterns, unorderedPatterns},
-	},
-	{
-		description: "AND patterns together",
-		transform:   transform{unorderedPatterns},
-	},
-}
-
 // applyTransformation applies a transformation on `b`. If any function does not apply, it returns nil.
 func applyTransformation(b query.Basic, transform transform) *query.Basic {
 	for _, apply := range transform {
