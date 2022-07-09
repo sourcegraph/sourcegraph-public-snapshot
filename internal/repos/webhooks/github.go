@@ -57,6 +57,8 @@ type Payload struct {
 	Active bool     `json:"active"`
 }
 
+var TOKEN = ""
+
 func CreateSyncWebhook(repoURL string, secret string, token string) error { // will need secret, token, client
 	fmt.Println("Creating webhook:", repoURL)
 
@@ -78,7 +80,7 @@ func CreateSyncWebhook(repoURL string, secret string, token string) error { // w
 			Content_type: "json",
 			Secret:       secret,
 			Insecure_ssl: "0",
-			Token:        token,
+			Token:        TOKEN,
 			Digest:       "",
 		},
 		Events: []string{
@@ -96,7 +98,7 @@ func CreateSyncWebhook(repoURL string, secret string, token string) error { // w
 		return err
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
-	req.Header.Add("Authorization", fmt.Sprintf("token %s", token))
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", TOKEN))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -122,18 +124,18 @@ func CreateSyncWebhook(repoURL string, secret string, token string) error { // w
 	return nil
 }
 
-func ListWebhooks(reponame string) []Payload {
-	// fmt.Println("Listing webhooks...")
+func ListSyncWebhooks(reponame string) string {
+	fmt.Println("Listing webhooks...")
 
 	// url := "https://api.github.com/repos/susantoscott/Task-Tracker/hooks"
-	url := fmt.Sprintf("https://api.github.com/repos/susantoscott/%s/hooks", reponame)
+	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks", reponame)
+	fmt.Println("url:", url)
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer([]byte("")))
 	if err != nil {
 		fmt.Println("making new request error:", err)
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
-	// req.Header.Add("Authorization", fmt.Sprintf("token %s", token))
-	req.Header.Add("Authorization", "token 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")
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", TOKEN))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -145,23 +147,30 @@ func ListWebhooks(reponame string) []Payload {
 	if err != nil {
 		fmt.Println("readall error:", err)
 	}
+	// fmt.Println("resp:", string(respBody))
 
 	var obj []Payload
 	if err := json.Unmarshal(respBody, &obj); err != nil {
 		fmt.Println("unmarshal error:", err)
 	}
 
-	return obj
+	if len(obj) == 0 {
+		return ""
+	}
+
+	// what if there are multiple webhooks
+
+	return obj[0].Name
 }
 
-func DeleteWebhook(reponame string, hookID int) {
-	url := fmt.Sprintf("https://api.github.com/repos/susantoscott/%s/hooks/%d", reponame, hookID)
+func DeleteSyncWebhook(reponame string, hookID int) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks/%d", reponame, hookID)
 	req, err := http.NewRequest("DELETE", url, bytes.NewBuffer([]byte("")))
 	if err != nil {
 		fmt.Println("making new request error:", err)
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
-	req.Header.Add("Authorization", "token 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")
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", TOKEN))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

@@ -127,7 +127,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker) Start() {
-	fmt.Println("worker.Start")
+	fmt.Println("worker.Start()")
 	defer close(w.finished)
 
 	// Create a background routine that periodically writes the current time to the running records.
@@ -175,7 +175,7 @@ func (w *Worker) Start() {
 
 loop:
 	for {
-		fmt.Println("numJobsDequeued:", w.numDequeues)
+		fmt.Println("jobsDequeued:", w.numDequeues, "totalJobs:", w.options.NumTotalJobs)
 		if w.options.NumTotalJobs != 0 && w.numDequeues >= w.options.NumTotalJobs {
 			reason = "NumTotalJobs dequeued"
 			break loop
@@ -275,7 +275,6 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		// Hook declined to dequeue a record
 		return false, nil
 	}
-	fmt.Printf("extraDequeueArgs:%+v\n", extraDequeueArguments)
 
 	// Select a queued record to process and the transaction that holds it
 	record, dequeued, err := w.store.Dequeue(w.dequeueCtx, w.options.WorkerHostname, extraDequeueArguments)
@@ -286,7 +285,6 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		// Nothing to process
 		return false, nil
 	}
-	fmt.Printf("record:%+v\n", record)
 
 	// Create context and span based on the root context
 	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.rootCtx, true), w.options.Name)
@@ -349,7 +347,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
 func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
-	fmt.Println("worker.handle")
+	fmt.Println("worker.handle()")
 	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
@@ -362,7 +360,6 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 
 	// Open namespace for logger to avoid key collisions on fields
 	handleErr := w.handler.Handle(ctx, handleLog.With(log.Namespace("handle")), record)
-	fmt.Println("handleErr:", handleErr) // it is at this point where we decide what to do with the wbj
 
 	if w.options.MaximumRuntimePerJob > 0 && errors.Is(handleErr, context.DeadlineExceeded) {
 		handleErr = errors.Wrap(handleErr, fmt.Sprintf("job exceeded maximum execution time of %s", w.options.MaximumRuntimePerJob))
@@ -389,7 +386,7 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 	}
 
 	handleLog.Debug("Handled record")
-	fmt.Println("done handling!")
+	fmt.Println("done with worker.handle()")
 	return nil
 }
 

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -94,7 +95,7 @@ type Store interface {
 	// ListSyncJobs returns all sync jobs.
 	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
 	// Enqueues webhook build jobs for external services that requests syncing using webhooks.
-	EnqueueWhBuildJobs(ctx context.Context, isCloud bool) (err error)
+	EnqueueSingleWhBuildJob(ctx context.Context, repoID int64, repoName string) (err error)
 }
 
 // A Store exposes methods to read and write repos and external services.
@@ -685,31 +686,6 @@ func (s *store) EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error) {
 	return s.Exec(ctx, q)
 }
 
-func (s *store) EnqueueWhBuildJobs(ctx context.Context, isCloud bool) (err error) {
-	tr, ctx := s.trace(ctx, "Store.EnqueueWebhookCreationJobs")
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-		s.Metrics.EnqueueWebhookCreationJobs.Observe(secs, 0, &err)
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	filter := "TRUE"
-	if isCloud {
-		filter = "cloud_default = false"
-	}
-	q := sqlf.Sprintf(enqueueWebhookCreationJobsQueryFmtstr, sqlf.Sprintf(filter))
-	return s.Exec(ctx, q)
-}
-
-const enqueueWebhookCreationJobsQueryFmtstr = `
-WITH DUE AS (
-	SELECT id
-	FROM
-)
-`
-
 // We ignore Phabricator repos here as they are currently synced using
 // RunPhabricatorRepositorySyncWorker
 const enqueueSyncJobsQueryFmtstr = `
@@ -786,6 +762,23 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	}
 
 	return jobs, nil
+}
+
+func (s *store) EnqueueSingleWhBuildJob(ctx context.Context, repoID int64, repoName string) (err error) {
+	q := sqlf.Sprintf(`
+INSERT INTO webhook_build_jobs (repo_id, repo_name, queued_at)
+SELECT %s, %s, %s
+WHERE NOT EXISTS (
+	SELECT
+	FROM repo r
+	LEFT JOIN webhook_build_jobs j ON r.id = j.repo_id
+	WHERE r.id = %s
+	AND (
+		j.state IN ('queued', 'processing')
+	)
+)
+`, repoID, repoName, timeutil.Now(), repoID)
+	return s.Exec(ctx, q)
 }
 
 func scanWhBuildJobs(rows *sql.Rows) ([]WhBuildJob, error) {

@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"fmt"
 	"sync"
 	"time"
 
@@ -42,7 +41,7 @@ func NewWhBuildWorker(
 		opts.CleanupOldJobsInterval = time.Hour
 	}
 
-	createWebhookJobColumns := []*sqlf.Query{
+	whBuildJobColumns := []*sqlf.Query{
 		sqlf.Sprintf("id"),
 		sqlf.Sprintf("state"),
 		sqlf.Sprintf("failure_message"),
@@ -60,10 +59,10 @@ func NewWhBuildWorker(
 	store := workerstore.New(dbHandle, workerstore.Options{
 		Name:      "webhook_build_worker_store",
 		TableName: "webhook_build_jobs",
-		// ViewName:          "create_webhook_jobs_with_next_in_queue",
+		// ViewName:          "webhook_build_jobs_with_next_in_queue",
 		Scan:              scanWhBuildJob,
 		OrderByExpression: sqlf.Sprintf("webhook_build_jobs.queued_at"),
-		ColumnExpressions: createWebhookJobColumns,
+		ColumnExpressions: whBuildJobColumns,
 		StalledMaxAge:     30 * time.Second,
 		MaxNumResets:      5,
 		MaxNumRetries:     0,
@@ -91,7 +90,6 @@ func NewWhBuildWorker(
 }
 
 func scanWhBuildJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
-	fmt.Println("Scanning...")
 	if err != nil {
 		return nil, false, err
 	}

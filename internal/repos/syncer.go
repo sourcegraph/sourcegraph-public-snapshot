@@ -99,8 +99,8 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	defer syncResetter.Stop()
 
 	whBuildWorker, whBuildResetter := NewWhBuildWorker(ctx, store.Handle(), &whBuildHandler{
-		store:                    store,
-		minCreateWebhookInterval: opts.MinSyncInterval, // to change
+		store:              store,
+		minWhBuildInterval: opts.MinSyncInterval, // to change
 	}, WhBuildOptions{
 		WorkerInterval:       opts.DequeueInterval,
 		NumHandlers:          3,
@@ -120,11 +120,6 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 			if err != nil && s.Logger != nil {
 				s.Logger.Error("enqueuing sync jobs", log.Error(err))
 			}
-		}
-		// if conf.Get().EnableWebhookSyncing
-		err := store.EnqueueWhBuildJobs(ctx, opts.IsCloud)
-		if err != nil && s.Logger != nil {
-			s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
 		}
 		sleep(ctx, opts.EnqueueInterval())
 	}
@@ -148,17 +143,28 @@ func (s *syncHandler) Handle(ctx context.Context, logger log.Logger, record work
 }
 
 type whBuildHandler struct {
-	store                    Store
-	minCreateWebhookInterval func() time.Duration
+	store              Store
+	minWhBuildInterval func() time.Duration
 }
 
-func (cw *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	wbj, ok := record.(*WhBuildJob)
 	if !ok {
 		return errors.Errorf("expected repos.WhBuildJob, got %T", record)
 	}
 
-	return webhookapi.CreateSyncWebhook(string(wbj.RepoName), "secret", "token") // to change
+	webhookName := webhookapi.ListSyncWebhooks(wbj.RepoName)
+	if webhookName != "web" {
+		fmt.Println("create sync webhook")
+		// err := webhookapi.CreateSyncWebhook(string(wbj.RepoName), "secret", "token")
+		// if err != nil {
+		// 	return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
+		// }
+	}
+
+	// how will we know if a repo has been deleted?
+
+	return nil // to change
 }
 
 // sleep is a context aware time.Sleep
@@ -617,6 +623,14 @@ func (s *Syncer) SyncExternalService(
 		sourced := res.Repo
 		if !allowed(sourced) {
 			continue
+		}
+
+		svc.SyncUsingWebhooks = true
+		if svc.SyncUsingWebhooks {
+			err := s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name)) // is this instant? can it be done here?
+			if err != nil && s.Logger != nil {
+				s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
+			}
 		}
 
 		var diff Diff

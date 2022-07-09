@@ -14,7 +14,7 @@ CREATE TABLE webhook_build_jobs (
     process_after timestamp with time zone,
     num_resets integer DEFAULT 0 NOT NULL,
     num_failures integer DEFAULT 0 NOT NULL,
-    repo_id bigint,
+    repo_id integer,
     repo_name text,
     queued_at timestamp with time zone,
     execution_logs json[],
@@ -22,5 +22,5 @@ CREATE TABLE webhook_build_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL
 );
 
-ALTER TABLE ONLY create_webhook_jobs
-    ADD CONSTRAINT create_webhook_jobs_fk FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+ALTER TABLE ONLY webhook_build_jobs
+    ADD CONSTRAINT webhook_build_jobs_fk FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

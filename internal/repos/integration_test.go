@@ -3,8 +3,14 @@ package repos_test
 import (
 	"testing"
 
+	"github.com/opentracing/opentracing-go"
+
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -22,7 +28,7 @@ func TestIntegration(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		test func(database.DB) func(*testing.T)
+		test func(repos.Store) func(*testing.T)
 	}{
 		// {"SyncRateLimiters", testSyncRateLimiters},
 		// {"EnqueueSyncJobs", testStoreEnqueueSyncJobs},
@@ -56,7 +62,11 @@ func TestIntegration(t *testing.T) {
 		// 	tc.test(store)(t)
 		// })
 		t.Run(tc.name, func(t *testing.T) {
-			store := database.NewDB(dbtest.NewDB(t))
+			store := repos.NewStore(logtest.Scoped(t), database.NewDB(dbtest.NewDB(t)))
+
+			store.SetMetrics(repos.NewStoreMetrics())
+			store.SetTracer(trace.Tracer{Tracer: opentracing.GlobalTracer()})
+
 			tc.test(store)(t)
 		})
 	}
