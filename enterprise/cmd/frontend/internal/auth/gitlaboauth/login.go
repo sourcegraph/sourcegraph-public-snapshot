@@ -87,9 +87,14 @@ func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error)
 	baseURL.Path = ""
 	baseURL.RawQuery = ""
 	baseURL.Fragment = ""
+
+	helper := &refreshTokenHelper{}
+
 	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil,
 		func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
 			// todo
+
+			helper.RefreshToken(ctx)
 			fmt.Println("OAuth token refresh request")
 			return "", nil
 		},

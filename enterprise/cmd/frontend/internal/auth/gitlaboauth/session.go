@@ -3,8 +3,11 @@ package gitlaboauth
 import (
 	"context"
 	"fmt"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/schema"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	"golang.org/x/oauth2"
@@ -242,4 +245,86 @@ func (s *sessionIssuerHelper) verifyUserGroups(ctx context.Context, glClient *gi
 	}
 
 	return false, nil
+}
+
+type refreshTokenHelper struct {
+	db database.DB
+}
+
+func (s *refreshTokenHelper) RefreshToken(ctx context.Context) (string, error) {
+
+	fmt.Println("refresh token helper - login")
+	userID := actor.FromContext(ctx).UID
+	accts, err := s.db.UserExternalAccounts().List(ctx,
+		database.ExternalAccountsListOptions{
+			UserID:         userID,
+			ExcludeExpired: true,
+		},
+	)
+	if err != nil {
+		return "", errors.Wrap(err, "list external accounts")
+	}
+
+	if accts[0].ServiceType != extsvc.TypeGitLab { // todo
+		return "", err
+	}
+
+	var oauthConfig *oauth2.Config
+	expiryWindow := 10 * time.Minute
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab == nil ||
+			strings.TrimSuffix(accts[0].ServiceID, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
+			continue
+		}
+		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
+		if authProvider.Gitlab.TokenRefreshWindowMinutes > 0 {
+			expiryWindow = time.Duration(authProvider.Gitlab.TokenRefreshWindowMinutes) * time.Minute
+		}
+		break
+	}
+	if oauthConfig == nil {
+		//logger.Warn("external account has no auth.provider") / todo
+		return "", nil
+	}
+
+	_, tok, err := gitlab.GetExternalAccountData(&accts[0].AccountData) // todo
+	if err != nil {
+		return "", errors.Wrap(err, "get external account data")
+	} else if tok == nil {
+		return "", errors.New("no token found in the external account data")
+	}
+
+	tok.Expiry = tok.Expiry.Add(expiryWindow)
+
+	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
+	if err != nil {
+		return "", errors.Wrap(err, "refresh token")
+	}
+
+	if refreshedToken.AccessToken != tok.AccessToken {
+		defer func() {
+			success := err == nil
+			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
+		}()
+		accts[0].AccountData.SetAuthData(refreshedToken)
+		_, err := s.db.UserExternalAccounts().LookupUserAndSave(ctx, accts[0].AccountSpec, accts[0].AccountData)
+		if err != nil {
+			return "", errors.Wrap(err, "save refreshed token")
+		}
+	}
+
+	return "", nil
+}
+
+func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
+	url := strings.TrimSuffix(p.Url, "/")
+	return &oauth2.Config{
+		ClientID:     p.ClientID,
+		ClientSecret: p.ClientSecret,
+		Endpoint: oauth2.Endpoint{
+			AuthURL:  url + "/oauth/authorize",
+			TokenURL: url + "/oauth/token",
+		},
+		Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
+	}
 }
