@@ -13,6 +13,14 @@ declare global {
     const Sentry: SentrySDK
 }
 
+// Log supplied error to console if in development mode
+function logErrorToConsole(error: unknown): void {
+    if (error && process.env.NODE_ENV === 'development') {
+        // eslint-disable-next-line @sourcegraph/sourcegraph/no-unexplained-console-error
+        console.error(error)
+    }
+}
+
 export function initSentry(): void {
     if (
         typeof Sentry !== 'undefined' &&
@@ -30,10 +38,7 @@ export function initSentry(): void {
                 // tunnel: '/-/debug/sentry_tunnel',
                 release: 'frontend@' + version,
                 beforeSend(event, hint) {
-                    if (process.env.NODE_ENV === 'development' && hint?.originalException) {
-                        // Log error to console in the development environment
-                        console.error(hint.originalException)
-                    }
+                    logErrorToConsole(hint?.originalException)
 
                     // Use `originalException` to check if we want to ignore the error.
                     if (!hint || shouldErrorBeReported(hint.originalException)) {
@@ -52,6 +57,21 @@ export function initSentry(): void {
                         scope.setUser({ id: user.id })
                     }
                 })
+            })
+        })
+
+        return
+    }
+
+    // If in development mode, initialize sentry only to log
+    // errors to console, and don't send any events forward
+    if (process.env.NODE_ENV === 'development') {
+        Sentry.onLoad(() => {
+            Sentry.init({
+                beforeSend(event, hint) {
+                    logErrorToConsole(hint?.originalException)
+                    return null
+                }
             })
         })
     }
