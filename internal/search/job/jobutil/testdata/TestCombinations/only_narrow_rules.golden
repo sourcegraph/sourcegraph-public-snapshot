@@ -1,14 +1,14 @@
 [
   {
     "Description": "apply search type for pattern and apply language filter for pattern",
-    "Query": "type:commit lang:Go"
+    "Query": "type:commit lang:Go yikes derp"
   },
   {
     "Description": "apply search type for pattern",
-    "Query": "type:commit go"
+    "Query": "type:commit go yikes derp"
   },
   {
     "Description": "apply language filter for pattern",
-    "Query": "lang:Go commit"
+    "Query": "lang:Go commit yikes derp"
   }
 ]

@@ -171,36 +171,47 @@ func TestGeneratedSearchJob(t *testing.T) {
 }
 
 func TestCombinations(t *testing.T) {
-	q, _ := query.ParseStandard(`go commit`)
-	b, _ := query.ToBasicQuery(q)
-	g := NewComboGenerator(b, rulesMaxSet)
+	test := func(input string, rulesNarrow, rulesWiden []rule) string {
+		q, _ := query.ParseStandard(input)
+		b, _ := query.ToBasicQuery(q)
+		g := NewComboGenerator(b, rulesNarrow, rulesWiden)
 
-	var autoQ *autoQuery
-	type want struct {
-		Description string
-		Query       string
-	}
-	generated := []want{}
+		var autoQ *autoQuery
+		type want struct {
+			Description string
+			Query       string
+		}
+		generated := []want{}
 
-	for {
-		autoQ, g = g()
-		if autoQ != nil {
-			generated = append(
-				generated,
-				want{
-					Description: autoQ.description,
-					Query:       query.StringHuman(autoQ.query.ToParseTree()),
-				})
+		for {
+			autoQ, g = g()
+			if autoQ != nil {
+				generated = append(
+					generated,
+					want{
+						Description: autoQ.description,
+						Query:       query.StringHuman(autoQ.query.ToParseTree()),
+					})
+			}
+
+			if g == nil {
+				break
+			}
 		}
 
-		if g == nil {
-			break
-		}
+		result, _ := json.MarshalIndent(generated, "", "  ")
+		return string(result)
 	}
 
-	result, _ := json.MarshalIndent(generated, "", "  ")
+	t.Run("narrow and widen rules", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, rulesNarrow, rulesWiden)))
+	})
 
-	t.Run("ok", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(result))
+	t.Run("only narrow rules", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, rulesNarrow, nil)))
+	})
+
+	t.Run("only widen rules", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, nil, rulesWiden)))
 	})
 }
