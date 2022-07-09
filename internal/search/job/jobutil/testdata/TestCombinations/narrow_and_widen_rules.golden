@@ -1,6 +1,6 @@
 [
   {
-    "Description": "apply search type for pattern and apply language filter for pattern",
+    "Description": "apply search type for pattern ⚬ apply language filter for pattern",
     "Query": "type:commit lang:Go yikes derp"
   },
   {
@@ -12,15 +12,15 @@
     "Query": "lang:Go commit yikes derp"
   },
   {
-    "Description": "apply search type for pattern and apply language filter for pattern and AND patterns together",
+    "Description": "apply search type for pattern ⚬ apply language filter for pattern ⚬ AND patterns together",
     "Query": "type:commit lang:Go (yikes AND derp)"
   },
   {
-    "Description": "apply search type for pattern and AND patterns together",
+    "Description": "apply search type for pattern ⚬ AND patterns together",
     "Query": "type:commit (go AND yikes AND derp)"
   },
   {
-    "Description": "apply language filter for pattern and AND patterns together",
+    "Description": "apply language filter for pattern ⚬ AND patterns together",
     "Query": "lang:Go (commit AND yikes AND derp)"
   },
   {
