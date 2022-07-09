@@ -2,11 +2,13 @@ import React, { Fragment, useMemo } from 'react'
 
 import classNames from 'classnames'
 
+import { SearchPatternType } from '@sourcegraph/search'
 import { decorate, DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 interface SyntaxHighlightedSearchQueryProps extends React.HTMLAttributes<HTMLSpanElement> {
     query: string
+    searchPatternType?: SearchPatternType
 }
 
 interface decoration {
@@ -87,7 +89,7 @@ function toDecoration(query: string, token: DecoratedToken): decoration {
 // A read-only syntax highlighted search query
 export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
     React.PropsWithChildren<SyntaxHighlightedSearchQueryProps>
-> = ({ query, ...otherProps }) => {
+> = ({ query, searchPatternType = SearchPatternType.standard, ...otherProps }) => {
     const tokens = useMemo(() => {
         const tokens = scanSearchQuery(query)
         return tokens.type === 'success'
