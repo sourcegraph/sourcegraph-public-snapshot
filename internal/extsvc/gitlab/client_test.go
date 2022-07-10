@@ -5,15 +5,14 @@ import (
 	"context"
 	"flag"
 	"fmt"
+	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
+	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
-
-	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
-	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -78,17 +77,28 @@ func TestClient_doWithBaseURLWithOAuthContext(t *testing.T) {
 
 	doer := &mockDoer{
 		do: func(r *http.Request) (*http.Response, error) {
-			fmt.Println("header", r.Header.Get("Authorization"))
+			if r.Header.Get("Authorization") == "Bearer bad token" {
+				return &http.Response{
+					Status:     http.StatusText(http.StatusUnauthorized),
+					StatusCode: http.StatusUnauthorized,
+					Body:       io.NopCloser(bytes.NewReader([]byte(`{"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}`))),
+				}, nil
+			}
+
+			body := `{"access_token": "refreshed-token", "token_type": "Bearer", "expires_in":3600, "refresh_token":"refresh-now", "scope":"create"}`
 			return &http.Response{
-				Status:     http.StatusText(http.StatusUnauthorized),
-				StatusCode: http.StatusUnauthorized,
-				Body:       io.NopCloser(bytes.NewReader([]byte(`{"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}`))),
+				Status:     http.StatusText(http.StatusOK),
+				StatusCode: http.StatusOK,
+				Body:       io.NopCloser(bytes.NewReader([]byte(body))),
 			}, nil
+
 		},
 	}
+
 	client := NewClientProvider("Test", baseURL, doer,
-		func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+		func(ctx context.Context, doer httpcli.Doer) (string, error) {
 			fmt.Println("trying to refresh")
+
 			return "refreshed-token", nil
 		},
 	).getClient(&auth.OAuthBearerToken{Token: "bad token"})
@@ -97,7 +107,7 @@ func TestClient_doWithBaseURLWithOAuthContext(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, "todo", nil)
 	require.NoError(t, err)
 
-	var result interface{}
-	_, _, err = client.doWithBaseURLWithOAuthContext(ctx, req, result, oauthutil.Context{})
+	var result map[string]any
+	_, _, err = client.doWithBaseURLWithOAuthContext(ctx, req, &result, oauthutil.Context{})
 	require.NoError(t, err)
 }

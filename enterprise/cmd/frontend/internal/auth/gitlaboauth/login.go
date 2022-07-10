@@ -1,8 +1,8 @@
 package gitlaboauth
 
 import (
-	"context"
-	"fmt"
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/auth/oauth"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"net/http"
 	"net/url"
 
@@ -14,8 +14,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,12 +21,12 @@ func LoginHandler(config *oauth2.Config, failure http.Handler) http.Handler {
 	return oauth2Login.LoginHandler(config, failure)
 }
 
-func CallbackHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
-	success = gitlabHandler(config, success, failure)
+func CallbackHandler(config *oauth2.Config, success, failure http.Handler, db database.DB) http.Handler {
+	success = gitlabHandler(config, success, failure, db)
 	return oauth2Login.CallbackHandler(config, success, failure)
 }
 
-func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Handler {
+func gitlabHandler(config *oauth2.Config, success, failure http.Handler, db database.DB) http.Handler {
 	logger := log.Scoped("GitlabOAuthHandler", "Gitlab OAuth Handler")
 
 	if failure == nil {
@@ -43,7 +41,7 @@ func gitlabHandler(config *oauth2.Config, success, failure http.Handler) http.Ha
 			return
 		}
 
-		gitlabClient, err := gitlabClientFromAuthURL(config.Endpoint.AuthURL, token.AccessToken)
+		gitlabClient, err := gitlabClientFromAuthURL(config, token, db)
 		if err != nil {
 			ctx = gologin.WithError(ctx, errors.Errorf("could not parse AuthURL %s", config.Endpoint.AuthURL))
 			failure.ServeHTTP(w, req.WithContext(ctx))
@@ -79,8 +77,8 @@ func validateResponse(user *gitlab.User, err error) error {
 	return nil
 }
 
-func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error) {
-	baseURL, err := url.Parse(authURL)
+func gitlabClientFromAuthURL(config *oauth2.Config, token *oauth2.Token, db database.DB) (*gitlab.Client, error) {
+	baseURL, err := url.Parse(config.Endpoint.AuthURL)
 	if err != nil {
 		return nil, err
 	}
@@ -88,15 +86,24 @@ func gitlabClientFromAuthURL(authURL, oauthToken string) (*gitlab.Client, error)
 	baseURL.RawQuery = ""
 	baseURL.Fragment = ""
 
-	helper := &refreshTokenHelper{}
+	helper := &oauth.RefreshTokenHelper{
+		DB:          db,
+		Config:      config,
+		Token:       token,
+		ServiceType: extsvc.TypeGitLab,
+	}
 
-	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil,
-		func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
-			// todo
+	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil, helper.RefreshToken).GetOAuthClient(token.AccessToken), nil
 
-			helper.RefreshToken(ctx)
-			fmt.Println("OAuth token refresh request")
-			return "", nil
-		},
-	).GetOAuthClient(oauthToken), nil
+	//func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+	//	// todo
+	//
+	//	newToken, err := helper.RefreshToken(ctx)
+	//	if err != nil {
+	//		return "", errors.Wrap(err, "refresh token")
+	//		// todo
+	//	}
+	//	fmt.Println(".....OAuth token refresh request")
+	//	return newToken, nil
+	//},
 }

@@ -20,21 +20,23 @@ type Endpoint = oauth2.Endpoint
 // todo docstring
 // todo Maybe can be deleted based on how do token refresh (i.e. need access to external service object anyway)
 type Context struct {
-	// ClientID is the application's ID.
-	ClientID string
-	// ClientSecret is the application's secret.
-	ClientSecret string
-	// Endpoint contains the resource server's token endpoint
-	// URLs. These are constants specific to each server and are
-	// often available via site-specific packages, such as
-	// google.Endpoint or github.Endpoint.
-	Endpoint Endpoint
-	// Scope specifies optional requested permissions.
-	Scopes []string
-	// RefreshToken is a token that's used by the application
-	// (as opposed to the user) to refresh the access token
-	// if it expires.
-	RefreshToken string
+	ServiceType string
+
+	//// ClientID is the application's ID.
+	//ClientID string
+	//// ClientSecret is the application's secret.
+	//ClientSecret string
+	//// Endpoint contains the resource server's token endpoint
+	//// URLs. These are constants specific to each server and are
+	//// often available via site-specific packages, such as
+	//// google.Endpoint or github.Endpoint.
+	//Endpoint Endpoint
+	//// Scope specifies optional requested permissions.
+	//Scopes []string
+	//// RefreshToken is a token that's used by the application
+	//// (as opposed to the user) to refresh the access token
+	//// if it expires.
+	//RefreshToken string
 }
 
 type oauthError struct {
@@ -54,10 +56,15 @@ func (e oauthError) Error() string {
 // the similar behavior and let caller check the response status code.
 func getOAuthErrorDetails(body []byte) error {
 	var oe oauthError
+	fmt.Println("about to unmarshal json")
 	if err := json.Unmarshal(body, &oe); err != nil {
+		fmt.Println("failed to unmarshal json")
+
 		// If we failed to unmarshal body with oauth error, it's not oauthError and we should return nil.
 		return nil
 	}
+	fmt.Println("2 failed to unmarshal json")
+
 	// https://www.oauth.com/oauth2-servers/access-tokens/access-token-response/
 	// {"error":"invalid_token","error_description":"Token is expired. You can either do re-authorization or token refresh."}
 	if oe.Err == "invalid_token" && strings.Contains(oe.ErrorDescription, "expired") {
@@ -67,7 +74,7 @@ func getOAuthErrorDetails(body []byte) error {
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.
-type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx Context) (string, error)
+type TokenRefresher func(ctx context.Context, doer httpcli.Doer) (string, error)
 
 // todo docstring
 func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, oauthCtx Context, tokenRefresher TokenRefresher) (code int, header http.Header, body []byte, err error) {
@@ -94,7 +101,7 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 			if err = getOAuthErrorDetails(body); err != nil {
 				if _, ok := err.(*oauthError); ok {
 					// Refresh the token
-					newToken, err := tokenRefresher(ctx, doer, oauthCtx)
+					newToken, err := tokenRefresher(ctx, doer)
 					if err != nil {
 						return 0, nil, nil, errors.Wrap(err, "refresh token")
 					}
