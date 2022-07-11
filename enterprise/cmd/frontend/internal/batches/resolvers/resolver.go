@@ -1945,6 +1945,15 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 	return &graphqlbackend.EmptyResponse{}, nil
 }
 
+func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) (max int32, err error) {
+	tr, ctx := trace.New(ctx, "Resolver.MaxUnlicensedChangesets", "Max Unlicensed Changesets")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+	return maxUnlicensedChangesets, nil
+}
+
 func parseBatchChangeStates(ss *[]string) ([]btypes.BatchChangeState, error) {
 	states := []btypes.BatchChangeState{}
 	if ss == nil || len(*ss) == 0 {
