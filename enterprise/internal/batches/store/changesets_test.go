@@ -2434,12 +2434,13 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 }
 
 func TestCleanDetachedChangesets(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	s := New(db, &observation.TestContext, nil)
-	rs := database.ReposWith(s)
-	es := database.ExternalServicesWith(s)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
 
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	err := rs.Create(ctx, repo)
