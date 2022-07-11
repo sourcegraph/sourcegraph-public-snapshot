@@ -452,9 +452,9 @@ func addGoBuild(pipeline *bk.Pipeline) {
 // Adds backend integration tests step.
 //
 // Runtime: ~11m
-func backendIntegrationTests(candidateImageTag string) operations.Operation {
+func backendIntegrationTests(candidateImageTag string, idx int) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":chains: Backend integration tests",
+		pipeline.AddStep(fmt.Sprintf(":chains: Backend integration tests %d", idx),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("IMAGE",

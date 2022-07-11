@@ -23,70 +23,70 @@ func TestSearch(t *testing.T) {
 	}
 
 	// Set up external service
-	_, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
-		Kind:        extsvc.KindGitHub,
-		DisplayName: "gqltest-github-search",
-		Config: mustMarshalJSONString(struct {
-			URL                   string   `json:"url"`
-			Token                 string   `json:"token"`
-			Repos                 []string `json:"repos"`
-			RepositoryPathPattern string   `json:"repositoryPathPattern"`
-		}{
-			URL:   "https://ghe.sgdev.org/",
-			Token: *githubToken,
-			Repos: []string{
-				"sgtest/java-langserver",
-				"sgtest/jsonrpc2",
-				"sgtest/go-diff",
-				"sgtest/appdash",
-				"sgtest/sourcegraph-typescript",
-				"sgtest/private",  // Private
-				"sgtest/mux",      // Fork
-				"sgtest/archived", // Archived
-			},
-			RepositoryPathPattern: "github.com/{nameWithOwner}",
-		}),
-	})
-	if err != nil {
-		t.Fatal(err)
-	}
+	// _, err := client.AddExternalService(gqltestutil.AddExternalServiceInput{
+	// 	Kind:        extsvc.KindGitHub,
+	// 	DisplayName: "gqltest-github-search",
+	// 	Config: mustMarshalJSONString(struct {
+	// 		URL                   string   `json:"url"`
+	// 		Token                 string   `json:"token"`
+	// 		Repos                 []string `json:"repos"`
+	// 		RepositoryPathPattern string   `json:"repositoryPathPattern"`
+	// 	}{
+	// 		URL:   "https://ghe.sgdev.org/",
+	// 		Token: *githubToken,
+	// 		Repos: []string{
+	// 			"sgtest/java-langserver",
+	// 			"sgtest/jsonrpc2",
+	// 			"sgtest/go-diff",
+	// 			"sgtest/appdash",
+	// 			"sgtest/sourcegraph-typescript",
+	// 			"sgtest/private",  // Private
+	// 			"sgtest/mux",      // Fork
+	// 			"sgtest/archived", // Archived
+	// 		},
+	// 		RepositoryPathPattern: "github.com/{nameWithOwner}",
+	// 	}),
+	// })
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
 
-	err = client.WaitForReposToBeCloned(
-		"github.com/sgtest/java-langserver",
-		"github.com/sgtest/jsonrpc2",
-		"github.com/sgtest/go-diff",
-		"github.com/sgtest/appdash",
-		"github.com/sgtest/sourcegraph-typescript",
-		"github.com/sgtest/private",  // Private
-		"github.com/sgtest/mux",      // Fork
-		"github.com/sgtest/archived", // Archived
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// err = client.WaitForReposToBeCloned(
+	// 	"github.com/sgtest/java-langserver",
+	// 	"github.com/sgtest/jsonrpc2",
+	// 	"github.com/sgtest/go-diff",
+	// 	"github.com/sgtest/appdash",
+	// 	"github.com/sgtest/sourcegraph-typescript",
+	// 	"github.com/sgtest/private",  // Private
+	// 	"github.com/sgtest/mux",      // Fork
+	// 	"github.com/sgtest/archived", // Archived
+	// )
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
 
-	err = client.WaitForReposToBeIndexed(
-		"github.com/sgtest/java-langserver",
-	)
-	if err != nil {
-		t.Fatal(err)
-	}
+	// err = client.WaitForReposToBeIndexed(
+	// 	"github.com/sgtest/java-langserver",
+	// )
+	// if err != nil {
+	// 	t.Fatal(err)
+	// }
 
-	t.Run("search contexts", func(t *testing.T) {
-		testSearchContextsCRUD(t, client)
-		testListingSearchContexts(t, client)
-	})
+	// t.Run("search contexts", func(t *testing.T) {
+	// 	testSearchContextsCRUD(t, client)
+	// 	testListingSearchContexts(t, client)
+	// })
 
-	t.Run("graphql", func(t *testing.T) {
-		testSearchClient(t, client)
-	})
+	// t.Run("graphql", func(t *testing.T) {
+	// 	testSearchClient(t, client)
+	// })
 
 	streamClient := &gqltestutil.SearchStreamClient{Client: client}
-	t.Run("stream", func(t *testing.T) {
-		testSearchClient(t, streamClient)
-	})
+	// t.Run("stream", func(t *testing.T) {
+	// 	testSearchClient(t, streamClient)
+	// })
 
-	testSearchOther(t)
+	// testSearchOther(t)
 
 	// This test runs after all others because its adds package hosts as
 	// external services and activates lockfile indexing for added
@@ -1526,20 +1526,19 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				{"repos-go", `r:deps(oklog/ulid)`, []string{
 					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
 				}},
-				// Flakey
-				// {"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
-				// 	"/python/atomicwrites@v1.4.0",
-				// 	"/python/attrs@v21.4.0",
-				// 	"/python/colorama@v0.4.4",
-				// 	"/python/more-itertools@v8.13.0",
-				// 	"/python/packaging@v21.3",
-				// 	"/python/pluggy@v0.13.1",
-				// 	"/python/py@v1.11.0",
-				// 	"/python/pyparsing@v3.0.8",
-				// 	"/python/pytest@v5.4.3",
-				// 	"/python/tqdm@v4.64.0",
-				// 	"/python/wcwidth@v0.2.5",
-				// }},
+				{"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
+					"/python/atomicwrites@v1.4.0",
+					"/python/attrs@v21.4.0",
+					"/python/colorama@v0.4.4",
+					"/python/more-itertools@v8.13.0",
+					"/python/packaging@v21.3",
+					"/python/pluggy@v0.13.1",
+					"/python/py@v1.11.0",
+					"/python/pyparsing@v3.0.8",
+					"/python/pytest@v5.4.3",
+					"/python/tqdm@v4.64.0",
+					"/python/wcwidth@v0.2.5",
+				}},
 				{"repos-python-pipenv", `r:deps(^github\.com/sgtest/pipenv-hw$)`, []string{
 					"/python/certifi@v2021.10.8",
 					"/python/charset-normalizer@v2.0.12",
