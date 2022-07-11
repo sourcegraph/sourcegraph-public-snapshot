@@ -323,7 +323,7 @@ func TestChangesetResolver(t *testing.T) {
 			},
 		},
 		{
-			name:      "read only github changeset",
+			name:      "read-only github changeset",
 			changeset: readOnlyGitHubChangeset,
 			want: apitest.Changeset{
 				Typename:           "ExternalChangeset",

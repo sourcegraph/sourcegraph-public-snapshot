@@ -98,7 +98,7 @@ func CalcCounts(start, end time.Time, cs []*btypes.Changeset, es ...*btypes.Chan
 				c.Merged++
 			case btypes.ChangesetExternalStateClosed,
 				btypes.ChangesetExternalStateReadOnly:
-				// We'll lump read only into closed, rather than trying to add another
+				// We'll lump read-only into closed, rather than trying to add another
 				// state.
 				c.Closed++
 			}

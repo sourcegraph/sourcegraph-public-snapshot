@@ -186,7 +186,7 @@ enum ChangesetState {
     """
     MERGED
     """
-    The changeset is published, and is now read only, most likely due to the
+    The changeset is published, and is now read-only, most likely due to the
     repository being archived.
     """
     READONLY

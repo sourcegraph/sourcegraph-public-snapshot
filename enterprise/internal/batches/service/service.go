@@ -1586,7 +1586,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		// check what operations this changeset support, most likely from the state
 		// so get the changeset then derive the operations from it's state.
 
-		// No operations are available for read only changesets.
+		// No operations are available for read-only changesets.
 		if isChangesetReadOnly {
 			continue
 		}

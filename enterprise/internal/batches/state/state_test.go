@@ -720,14 +720,14 @@ func TestComputeExternalState(t *testing.T) {
 			want: btypes.ChangesetExternalStateDraft,
 		},
 		{
-			name:      "gitlab read only - no events",
+			name:      "gitlab read-only - no events",
 			changeset: setDraft(gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil)),
 			repo:      archivedRepo,
 			history:   []changesetStatesAtTime{},
 			want:      btypes.ChangesetExternalStateReadOnly,
 		},
 		{
-			name:      "gitlab read only - changeset older than events",
+			name:      "gitlab read-only - changeset older than events",
 			changeset: gitLabChangeset(daysAgo(10), gitlab.MergeRequestStateOpened, nil),
 			repo:      archivedRepo,
 			history: []changesetStatesAtTime{
@@ -736,7 +736,7 @@ func TestComputeExternalState(t *testing.T) {
 			want: btypes.ChangesetExternalStateReadOnly,
 		},
 		{
-			name:      "gitlab read only - changeset newer than events",
+			name:      "gitlab read-only - changeset newer than events",
 			changeset: setDraft(gitLabChangeset(daysAgo(0), gitlab.MergeRequestStateOpened, nil)),
 			repo:      archivedRepo,
 			history: []changesetStatesAtTime{

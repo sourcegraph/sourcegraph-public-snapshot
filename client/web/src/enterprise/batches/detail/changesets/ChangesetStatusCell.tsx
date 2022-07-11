@@ -165,11 +165,11 @@ export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChi
 )
 
 export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
-    label = <span>Read only</span>,
+    label = <span>Read-only</span>,
     className,
     ...props
 }) => (
-    <Tooltip content="This changeset is read only, and cannot be modified. This is usually caused by the repository being archived.">
+    <Tooltip content="This changeset is read-only, and cannot be modified. This is usually caused by the repository being archived.">
         <div className={classNames(iconClassNames, className)} {...props}>
             <LockIcon role="presentation" />
             {label}

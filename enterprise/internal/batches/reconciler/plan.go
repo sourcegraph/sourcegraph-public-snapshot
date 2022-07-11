@@ -188,7 +188,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		// the same as being unpublished.
 
 	case btypes.ChangesetPublicationStatePublished:
-		// Don't take any actions for merged or read only changesets.
+		// Don't take any actions for merged or read-only changesets.
 		if ch.ExternalState == btypes.ChangesetExternalStateMerged ||
 			ch.ExternalState == btypes.ChangesetExternalStateReadOnly {
 			return pl, nil

@@ -36,8 +36,9 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 
 	logger := log.Scoped("SetDerivedState", "")
 
-	// We need to use an internal actor here as the repo-updater otherwise has no
-	// access to the repo.
+	// We need to ensure we're using an internal actor here, since we need to
+	// have access to the repo to set the derived state regardless of the actor
+	// that initiated whatever process led us here.
 	repo, err := repoStore.Get(actor.WithInternalActor(ctx), c.RepoID)
 	if err != nil {
 		logger.Warn("Getting repo to compute derived state", log.Error(err))

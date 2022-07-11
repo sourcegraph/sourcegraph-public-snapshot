@@ -198,7 +198,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			wantOperations: Operations{},
 		},
 		{
-			name:         "publishing read only changeset",
+			name:         "publishing read-only changeset",
 			previousSpec: &ct.TestSpecOpts{Published: true},
 			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{
@@ -219,7 +219,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			wantOperations: Operations{btypes.ReconcilerOperationUpdate},
 		},
 		{
-			name:         "title changed on read only changeset",
+			name:         "title changed on read-only changeset",
 			previousSpec: &ct.TestSpecOpts{Published: true, Title: "Before"},
 			currentSpec:  &ct.TestSpecOpts{Published: true, Title: "After"},
 			changeset: ct.TestChangesetOpts{
@@ -314,7 +314,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			},
 		},
 		{
-			name:         "closing read only changeset",
+			name:         "closing read-only changeset",
 			previousSpec: &ct.TestSpecOpts{Published: true},
 			currentSpec:  &ct.TestSpecOpts{Published: true},
 			changeset: ct.TestChangesetOpts{

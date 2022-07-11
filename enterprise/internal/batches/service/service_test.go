@@ -2428,7 +2428,7 @@ changesetTemplate:
 			}
 		})
 
-		t.Run("read only changesets", func(t *testing.T) {
+		t.Run("read-only changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 				Repo:             rs[0].ID,
 				PublicationState: btypes.ChangesetPublicationStatePublished,
