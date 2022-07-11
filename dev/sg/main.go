@@ -222,16 +222,6 @@ var sg = &cli.App{
 			}, verbose)
 		}
 
-		background.Run(cmd.Context, func(out *std.Output) {
-			out.WriteNoticef("I'm fast!")
-		}, verbose)
-
-		background.Run(cmd.Context, func(out *std.Output) {
-			out.WriteNoticef("I'm starting a background job...")
-			time.Sleep(5 * time.Second)
-			out.WriteSuccessf("I'm done!")
-		}, verbose)
-
 		// Call registered hooks last
 		for _, hook := range postInitHooks {
 			hook(cmd)
