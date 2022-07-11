@@ -5,6 +5,8 @@ import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { Link, H3, createLinkUrl, Tooltip, Icon } from '@sourcegraph/wildcard'
 
+import { SearchPatternType } from '../../graphql-operations'
+
 import styles from './QuerySuggestion.module.scss'
 
 interface LuckySearchProps {
@@ -30,7 +32,10 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                             })}
                         >
                             <span className={styles.suggestion}>
-                                <SyntaxHighlightedSearchQuery query={entry.query} />
+                                <SyntaxHighlightedSearchQuery
+                                    query={entry.query}
+                                    searchPatternType={SearchPatternType.standard}
+                                />
                             </span>
                             <i>{`— ${entry.description}`}</i>
                         </Link>
