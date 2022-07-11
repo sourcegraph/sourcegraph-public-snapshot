@@ -370,25 +370,22 @@ func (s *permsStore) SetUserPermissions(ctx context.Context, p *authz.UserPermis
 		p.IDs = map[int32]struct{}{}
 	}
 
-	added, removed := computeDiff(oldIDs, p.IDs)
+	added, _ := computeDiff(oldIDs, p.IDs)
 
 	// Iterating over maps doesn't guarantee order so we sort the slices to avoid doing unnecessary DB updates.
 	sort.Slice(added, func(i, j int) bool { return added[i] < added[j] })
-	sort.Slice(removed, func(i, j int) bool { return removed[i] < removed[j] })
 
 	updatedAt := txs.clock()
-	if len(added) != 0 || len(removed) != 0 {
+	if len(added) != 0 {
 		var (
 			allAdded    = added
-			allRemoved  = removed
 			addQueue    = allAdded
-			removeQueue = allRemoved
 			hasNextPage = true
 		)
 
 		for hasNextPage {
 			var page *upsertRepoPermissionsPage
-			page, addQueue, removeQueue, hasNextPage = newUpsertRepoPermissionsPage(addQueue, removeQueue)
+			page, addQueue, _, hasNextPage = newUpsertRepoPermissionsPage(addQueue, []int32{})
 
 			if q, err := upsertRepoPermissionsBatchQuery(page, allAdded, []int32{p.UserID}, p.Perm, updatedAt); err != nil {
 				return err
@@ -425,7 +422,7 @@ VALUES
 ON CONFLICT ON CONSTRAINT
   user_permissions_perm_object_unique
 DO UPDATE SET
-  object_ids_ints = excluded.object_ids_ints,
+  object_ids_ints = user_permissions.object_ids_ints | excluded.object_ids_ints,
   updated_at = excluded.updated_at,
   synced_at = excluded.synced_at
 `
