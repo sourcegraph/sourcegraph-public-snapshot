@@ -35,7 +35,8 @@ type Opts struct {
 	SkipInvalid bool
 
 	// SkipDuplicates makes unpacking skip any files that couldn't be extracted
-	// because of os.FileExist errors.
+	// because of os.FileExist errors. In practice, this means the first file
+	// wins if the tar contains two or more entries with the same filename.
 	SkipDuplicates bool
 
 	// Filter filters out files that do not match the given predicate.
