@@ -25,7 +25,7 @@ EOF
     )
 
     echo "Notifying of failed step"
-    curl -v -X POST "Content-Type: application/type" -d "$data" http://169.0.178.64:8080/failed
+    curl -v -X POST "Content-Type: application/json" -d "$data" http://169.0.178.64:8080/failed
 }
 
 if [ "$BUILDKITE_BRANCH" == "main" ]; then
