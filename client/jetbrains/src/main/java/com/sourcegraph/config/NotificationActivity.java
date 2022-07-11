@@ -5,7 +5,6 @@ import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.options.ShowSettingsUtil;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.startup.StartupActivity;
@@ -22,12 +21,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
         // Display notification
         Notification notification = new Notification("Sourcegraph", "Sourcegraph",
             "A custom Sourcegraph URL is not set for this project. You can only access public repos. Do you want to set your custom URL?", NotificationType.INFORMATION);
-        AnAction setUrlAction = new DumbAwareAction("Set URL") {
-            @Override
-            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                ShowSettingsUtil.getInstance().showSettingsDialog(project, SettingsConfigurable.class);
-            }
-        };
+        AnAction setUrlAction = new OpenPluginSettingsAction("Set URL");
         AnAction cancelAction = new DumbAwareAction("Do Not Set") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
