@@ -198,8 +198,8 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 }
 
 type UpdateMergeRequestOpts struct {
-	TargetBranch string                       `json:"target_branch"`
-	Title        string                       `json:"title"`
+	TargetBranch string                       `json:"target_branch,omitempty"`
+	Title        string                       `json:"title,omitempty"`
 	Description  string                       `json:"description,omitempty"`
 	StateEvent   UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
 }

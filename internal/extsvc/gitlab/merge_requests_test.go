@@ -6,7 +6,9 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -366,6 +368,21 @@ func TestUpdateMergeRequest(t *testing.T) {
 			t.Errorf("unexpected non-nil error: %+v", err)
 		}
 	})
+}
+
+func TestUpdateMergeRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+	client := createTestClient(t)
+
+	project := &Project{ProjectCommon: ProjectCommon{ID: 37741563}}
+	mr := &MergeRequest{IID: 1}
+	opts := UpdateMergeRequestOpts{
+		Title: "This title should never change",
+	}
+	mr, err := client.UpdateMergeRequest(ctx, project, mr, opts)
+	assert.Nil(t, mr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
 }
 
 func TestCreateMergeRequestNote(t *testing.T) {
