@@ -39,6 +39,7 @@ func Run(ctx context.Context, job func(out *std.Output), verbose bool) {
 	jobs := loadFromContext(ctx)
 	jobs.wg.Add(1)
 	jobs.count.Add(1)
+
 	b := new(bytes.Buffer)
 	out := std.NewOutput(b, verbose)
 	go func() {
