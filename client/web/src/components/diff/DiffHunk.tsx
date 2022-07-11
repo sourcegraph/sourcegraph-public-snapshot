@@ -1,6 +1,7 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-noninteractive-element-interactions: warn */
 import * as React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { useLocation } from 'react-router'
 
@@ -138,6 +139,13 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                             style={lineStyle}
                             data-diff-marker={diffHunkTypeIndicators[line.kind]}
                         >
+                            {diffHunkTypeIndicators[line.kind] === '+' ? (
+                                <VisuallyHidden>Added Line</VisuallyHidden>
+                            ) : diffHunkTypeIndicators[line.kind] === '-' ? (
+                                <VisuallyHidden>Deleted Line</VisuallyHidden>
+                            ) : (
+                                <VisuallyHidden>Unchanged Line</VisuallyHidden>
+                            )}
                             <div className="d-inline-block" dangerouslySetInnerHTML={{ __html: line.html }} />
                             {decorationsForLine.filter(property('after', isDefined)).map((decoration, index) => {
                                 const style = decorationAttachmentStyleForTheme(decoration.after, isLightTheme)
