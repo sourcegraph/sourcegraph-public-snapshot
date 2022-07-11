@@ -1,0 +1,6 @@
+[
+  {
+    "Description": "AND patterns together",
+    "Query": "(go AND commit AND yikes AND derp)"
+  }
+]
