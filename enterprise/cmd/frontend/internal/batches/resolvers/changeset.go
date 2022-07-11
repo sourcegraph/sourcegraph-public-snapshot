@@ -347,6 +347,8 @@ func (r *changesetResolver) State() (string, error) {
 		return string(btypes.ChangesetStateMerged), nil
 	case btypes.ChangesetExternalStateDeleted:
 		return string(btypes.ChangesetStateDeleted), nil
+	case btypes.ChangesetExternalStateReadOnly:
+		return string(btypes.ChangesetStateReadOnly), nil
 	default:
 		return "", errors.Errorf("invalid ExternalState %q for state calculation", r.changeset.ExternalState)
 	}

@@ -99,6 +99,7 @@ enum ChangesetExternalState {
     OPEN
     CLOSED
     MERGED
+    READONLY
     DELETED
 }
 
@@ -184,6 +185,11 @@ enum ChangesetState {
     The changeset is published, not being reconciled and merged on the code host.
     """
     MERGED
+    """
+    The changeset is published, and is now read-only, most likely due to the
+    repository being archived.
+    """
+    READONLY
     """
     The changeset is published, not being reconciled and has been deleted on the code host.
     """
