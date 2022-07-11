@@ -62,35 +62,24 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageVersion, graph *De
 				continue
 			}
 
-			if name == "" {
-				return nil, nil, errors.New("invalid yarn.lock format")
-			}
-
-			if constraints == nil {
-				return nil, nil, errors.New("invalid yarn.lock format")
-			}
-
-			pkg, err := reposource.ParseNpmPackageVersion(name + "@" + version)
+			// We've got all the data we need now to build the package.
+			pkg, pkgConstraints, err := buildPackage(name, version, constraints)
 			if err != nil {
 				errs = errors.Append(errs, err)
-			} else {
-				deps = append(deps, pkg)
-				current = pkg
-
-				for _, proto := range constraints {
-					dep, err := parseNpmDependency(name, proto)
-					if err != nil {
-						errs = errors.Append(errs, err)
-						continue
-					}
-
-					dependencyToPackage[dep] = pkg
-				}
-
-				dependencies[current] = []npmDependency{}
-				name = ""
-				constraints = nil
+				continue
 			}
+
+			deps = append(deps, pkg)
+			current = pkg
+
+			for _, constraint := range pkgConstraints {
+				dependencyToPackage[constraint] = pkg
+			}
+
+			dependencies[current] = []npmDependency{}
+			name = ""
+			constraints = nil
+
 			continue
 		}
 
@@ -129,7 +118,7 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageVersion, graph *De
 			parsingDependencies = false
 		}
 
-		if line[:4] == "    " && parsingDependencies && current != nil {
+		if len(line) >= 4 && line[:4] == "    " && parsingDependencies && current != nil {
 			dep, err := parsePackageDependencyLine(line)
 			if err != nil {
 				continue
@@ -148,7 +137,6 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageVersion, graph *De
 		graph.addPackage(pkg)
 
 		for _, depConstraint := range deps {
-
 			dep, ok := dependencyToPackage[depConstraint]
 			if !ok {
 				errs = errors.Append(errs, errors.Newf("could not find dependency with name %s and constraint %s", depConstraint.RepoName(), depConstraint.VersionConstraint))
@@ -170,6 +158,34 @@ var (
 type constraint struct {
 	Protocol string // e.g. "npm" in lockfile v2 files
 	Version  string // e.g. "~1.2.3 || 1.2.0"
+}
+
+func buildPackage(name, version string, constraints []string) (*reposource.NpmPackageVersion, []npmDependency, error) {
+	if name == "" {
+		return nil, nil, errors.New("invalid yarn.lock format: version not following a name")
+	}
+
+	if constraints == nil {
+		return nil, nil, errors.New("invalid yarn.lock format: version not following a name with constraints")
+	}
+
+	pkg, err := reposource.ParseNpmPackageVersion(name + "@" + version)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var deps []npmDependency
+	var errs errors.MultiError
+	for _, proto := range constraints {
+		dep, err := parseNpmDependency(name, proto)
+		if err != nil {
+			errs = errors.Append(errs, err)
+			continue
+		}
+		deps = append(deps, dep)
+	}
+
+	return pkg, deps, errs
 }
 
 func parsePackageLocatorLine(line string, yarnLockfileV1 bool) (packagename string, constraints []constraint, err error) {
