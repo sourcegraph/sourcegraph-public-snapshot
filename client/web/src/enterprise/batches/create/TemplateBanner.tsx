@@ -9,8 +9,20 @@ import { BatchChangeTemplateIcon } from './BatchChangeTemplateIcon'
 import styles from './TemplateBanner.module.scss'
 
 interface TemplatesBannerProps {
+    /**
+     * Title of the template the batch change is created from.
+     */
     heading: string | React.ReactNode
+
+    /**
+     * Description of the template used to create a batch change.
+     */
     description: string | React.ReactNode
+
+    /**
+     * CSS class to be applied to banner wrapper. This classname is passed into the
+     * outermost card component.
+     */
     className?: string
 }
 
