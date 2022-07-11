@@ -517,8 +517,8 @@ func GetLimitFromConfig(kind string, config any) (rate.Limit, error) {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}
 	case *schema.RustPackagesConnection:
-		// 1 request per second is default policy for crates.io
-		limit = rate.Limit(1)
+		// The crates.io CDN has no rate limits https://www.pietroalbini.org/blog/downloading-crates-io/
+		limit = rate.Limit(100)
 		if c != nil && c.RateLimit != nil {
 			limit = limitOrInf(c.RateLimit.Enabled, c.RateLimit.RequestsPerHour)
 		}

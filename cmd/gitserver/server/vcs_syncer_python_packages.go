@@ -51,6 +51,10 @@ type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
 
+func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseVersionedPackage(name + "==" + version)
+}
+
 func (pythonPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseVersionedPackage(dep)
 }
@@ -61,16 +65,6 @@ func (pythonPackagesSyncer) ParsePackageFromName(name string) (reposource.Packag
 
 func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParsePythonPackageFromRepoName(repoName)
-}
-
-func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	f, err := s.client.Version(ctx, name, version)
-	if err != nil {
-		return nil, err
-	}
-	dep := reposource.NewPythonVersionedPackage(name, version)
-	dep.PackageURL = f.URL
-	return dep, nil
 }
 
 func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {

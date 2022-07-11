@@ -46,6 +46,10 @@ type goModulesSyncer struct {
 	client *gomodproxy.Client
 }
 
+func (s goModulesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseGoVersionedPackage(name + "@" + version)
+}
+
 func (goModulesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseGoVersionedPackage(dep)
 }
@@ -56,14 +60,6 @@ func (goModulesSyncer) ParsePackageFromName(name string) (reposource.Package, er
 
 func (goModulesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromRepoName(repoName)
-}
-
-func (s *goModulesSyncer) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	mod, err := s.client.GetVersion(ctx, name, version)
-	if err != nil {
-		return nil, err
-	}
-	return reposource.NewGoVersionedPackage(*mod), nil
 }
 
 func (s *goModulesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {

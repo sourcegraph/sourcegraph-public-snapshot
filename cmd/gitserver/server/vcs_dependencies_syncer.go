@@ -38,12 +38,10 @@ var _ VCSSyncer = &vcsPackagesSyncer{}
 // packagesSource encapsulates the methods required to implement a source of
 // package dependencies e.g. npm, go modules, jvm, python.
 type packagesSource interface {
-	// Get verifies that a dependency at a specific version exists in the package
-	// host and returns it if so. Otherwise it returns an error that passes
-	// errcode.IsNotFound() test.
-	Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error)
 	// Download the given dependency's archive and unpack it into dir.
 	Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error
+
+	ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error)
 	// ParseVersionedPackageFromConfiguration parses a package and version from the "dependencies"
 	// field from the site-admin interface.
 	ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error)
@@ -112,9 +110,9 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	var errs errors.MultiError
 	cloneable := make([]reposource.VersionedPackage, 0, len(versions))
 	for _, version := range versions {
-		if d, err := s.source.Get(ctx, depName, version); err != nil {
+		if d, err := s.source.ParseVersionedPackageFromNameAndVersion(depName, version); err != nil {
 			if errcode.IsNotFound(err) {
-				s.logger.Warn("skipping missing dependency",
+				s.logger.Warn("skipping invalid dependency",
 					log.String("dep", depName),
 					log.String("version", version),
 					log.String("type", s.typ),

@@ -50,6 +50,10 @@ type npmPackagesSyncer struct {
 var _ packagesSource = &npmPackagesSyncer{}
 var _ packagesDownloadSource = &npmPackagesSyncer{}
 
+func (npmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseNpmVersionedPackage(name + "@" + version)
+}
+
 func (npmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseNpmVersionedPackage(dep)
 }
@@ -66,11 +70,7 @@ func (npmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.P
 }
 
 func (s npmPackagesSyncer) GetPackage(ctx context.Context, name string) (reposource.Package, error) {
-	return s.Get(ctx, name, "")
-}
-
-func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	dep, err := reposource.ParseNpmVersionedPackage(name + "@" + version)
+	dep, err := reposource.ParseNpmVersionedPackage(name + "@")
 	if err != nil {
 		return nil, err
 	}

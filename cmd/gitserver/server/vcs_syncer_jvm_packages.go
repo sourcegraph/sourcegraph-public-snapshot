@@ -60,6 +60,10 @@ type jvmPackagesSyncer struct {
 	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
 }
 
+func (jvmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseMavenVersionedPackage(name + ":" + version)
+}
+
 func (jvmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseMavenVersionedPackage(dep)
 }
@@ -70,19 +74,6 @@ func (jvmPackagesSyncer) ParsePackageFromName(name string) (reposource.Package, 
 
 func (jvmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParseMavenPackageFromRepoName(repoName)
-}
-
-func (s *jvmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	dep, err := reposource.ParseMavenVersionedPackage(name + ":" + version)
-	if err != nil {
-		return nil, errors.Wrap(err, "reposource.ParseMavenVersionedPackage")
-	}
-
-	err = coursier.Exists(ctx, s.config, dep)
-	if err != nil {
-		return nil, errors.Wrap(err, "coursier.Exists")
-	}
-	return dep, nil
 }
 
 func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {

@@ -49,6 +49,10 @@ type rustDependencySource struct {
 	client *crates.Client
 }
 
+func (rustDependencySource) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseRustVersionedPackage(name + "@" + version)
+}
+
 func (rustDependencySource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseRustVersionedPackage(dep)
 }
@@ -59,18 +63,6 @@ func (rustDependencySource) ParsePackageFromName(name string) (reposource.Packag
 }
 func (rustDependencySource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParseRustPackageFromRepoName(repoName)
-}
-
-func (s *rustDependencySource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	dep := reposource.NewRustVersionedPackage(name, version)
-
-	// Check if crate exists or not. Crates returns a struct detailing the errors if it cannot be found.
-	metaURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s", dep.PackageSyntax(), dep.PackageVersion())
-	if _, err := s.client.Get(ctx, metaURL); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch crate metadata for %s with URL %s", dep.VersionedPackageSyntax(), metaURL)
-	}
-
-	return dep, nil
 }
 
 func (s *rustDependencySource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {

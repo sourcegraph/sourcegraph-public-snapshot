@@ -198,22 +198,6 @@ func (s *fakeDepsSource) Delete(deps ...string) {
 	}
 }
 
-func (s *fakeDepsSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	d := name + "@" + version
-
-	err := s.get[d]
-	if err != nil {
-		return nil, err
-	}
-
-	dep, ok := s.deps[d]
-	if !ok {
-		return nil, notFoundError{errors.Errorf("%s@%s not found", name, version)}
-	}
-
-	return dep, nil
-}
-
 func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
 	err := s.download[dep.VersionedPackageSyntax()]
 	if err != nil {
@@ -222,6 +206,9 @@ func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposourc
 	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.VersionedPackageSyntax()), 0666)
 }
 
+func (fakeDepsSource) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
+	return parseFakeDependency(name + "@" + version)
+}
 func (fakeDepsSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return parseFakeDependency(dep)
 }
