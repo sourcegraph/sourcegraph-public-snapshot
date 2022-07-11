@@ -215,3 +215,74 @@ func TestCombinations(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, nil, rulesWiden)))
 	})
 }
+
+func Test_patternsAsFilters(t *testing.T) {
+	test := func(input string, rules []rule) string {
+		q, _ := query.ParseStandard(input)
+		b, _ := query.ToBasicQuery(q)
+		g := NewGenerator(b, nil, rules)
+
+		var autoQ *autoQuery
+		type want struct {
+			Description string
+			Input       string
+			Query       string
+		}
+		generated := []want{}
+
+		for {
+			autoQ, g = g()
+			if autoQ != nil {
+				generated = append(
+					generated,
+					want{
+						Description: autoQ.description,
+						Input:       input,
+						Query:       query.StringHuman(autoQ.query.ToParseTree()),
+					})
+			}
+
+			if g == nil {
+				break
+			}
+		}
+
+		result, _ := json.MarshalIndent(generated, "", "  ")
+		return string(result)
+	}
+
+	rules := []rule{
+		{
+			description: "patterns to code host filters",
+			transform:   transform{patternsToCodeHostFilters},
+		},
+	}
+
+	t.Run("URL pattern as fully qualified repo filter", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph`, rules)))
+	})
+
+	t.Run("URL pattern as partially qualified repo filter", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph`, rules)))
+	})
+
+	t.Run("schemaless URL pattern as repo filter", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`github.com/sourcegraph`, rules)))
+	})
+
+	t.Run("URL blob", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/blob/main/lib/README.md#L50`, rules)))
+	})
+
+	t.Run("URL tree path", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/tree/main/lib`, rules)))
+	})
+
+	t.Run("URL tree branch revision", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/tree/2.12`, rules)))
+	})
+
+	t.Run("URL tree commit revision", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/commit/abc`, rules)))
+	})
+}
