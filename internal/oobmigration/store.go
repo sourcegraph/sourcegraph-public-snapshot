@@ -242,7 +242,6 @@ ON CONFLICT (id) DO UPDATE SET
 	team = %s,
 	component = %s,
 	description = %s,
-	last_updated = NOW(),
 	non_destructive = %s,
 	is_enterprise = %s,
 	introduced_version_major = %s,
