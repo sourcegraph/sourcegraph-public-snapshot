@@ -194,6 +194,8 @@ func parsePackageLocatorLine(line string, yarnLockfileV1 bool) (packagename stri
 	//
 	//    "@types/istanbul-lib-coverage@*", "@types/istanbul-lib-coverage@^2.0.0":
 	//
+	// But the quotes are optional, so we leave them here and handle them in
+	// the regex.
 	if yarnLockfileV1 {
 		trimmed := strings.TrimSuffix(line, ":")
 		elems = strings.Split(trimmed, ", ")
@@ -202,6 +204,8 @@ func parsePackageLocatorLine(line string, yarnLockfileV1 bool) (packagename stri
 		//
 		//     "console-control-strings@npm:^1.0.0, console-control-strings@npm:~1.1.0":
 		//
+		// We strip the quotes here, so each element can be handled by the
+		// v1-compatible regex further down.
 		trimmed := strings.Trim(strings.TrimSuffix(line, ":"), `"`)
 		elems = strings.Split(trimmed, ", ")
 	}
@@ -209,7 +213,7 @@ func parsePackageLocatorLine(line string, yarnLockfileV1 bool) (packagename stri
 	for _, elem := range elems {
 		capture := yarnLocatorRegexp.FindStringSubmatch(elem)
 		if len(capture) < 2 {
-			return "", constraints, errors.New("not package format")
+			return "", constraints, errors.Newf("not package locator format: %s", elem)
 		}
 		var protocol string
 		for i, group := range yarnLocatorRegexp.SubexpNames() {
@@ -230,7 +234,7 @@ func parsePackageLocatorLine(line string, yarnLockfileV1 bool) (packagename stri
 func parsePackageDependencyLine(line string) (dep npmDependency, err error) {
 	capture := yarnDependencyRegexp.FindStringSubmatch(line)
 	if len(capture) < 2 {
-		return npmDependency{}, errors.New("not package format")
+		return npmDependency{}, errors.Newf("not package dependency format: %s", line)
 	}
 
 	var dependencyname, version string
@@ -282,7 +286,7 @@ func parseNpmDependency(dependency, constraint string) (npmDependency, error) {
 func getVersion(target string) (version string, err error) {
 	capture := yarnVersionRegexp.FindStringSubmatch(target)
 	if len(capture) < 2 {
-		return "", errors.New("not version")
+		return "", errors.Newf("not in version format: %s", target)
 	}
 	return capture[len(capture)-1], nil
 }
