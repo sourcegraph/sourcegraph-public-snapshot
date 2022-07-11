@@ -12,7 +12,6 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/gorilla/mux"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
@@ -178,7 +177,15 @@ func TestSentryTunnel(t *testing.T) {
 				ch <- struct{}{}
 				w.WriteHeader(http.StatusTeapot)
 			}))
-			envvar.SentryTunnelEndpoint = server.URL
+
+			siteConfig := schema.SiteConfiguration{
+				Log: &schema.Log{
+					Sentry: &schema.Sentry{
+						Dsn: fmt.Sprintf("%s/%s", server.URL, mockProjectID),
+					},
+				},
+			}
+			conf.Mock(&conf.Unified{SiteConfiguration: siteConfig})
 
 			rec := httptest.NewRecorder()
 			req := httptest.NewRequest("POST", "/sentry_tunnel", bytes.NewReader(sentryPayload))

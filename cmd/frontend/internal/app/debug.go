@@ -17,7 +17,6 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -152,7 +151,7 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 		if err != nil {
 			return "", "", err
 		}
-		return fmt.Sprintf("%s%s", u.Scheme, u.Host), strings.TrimPrefix(u.Path, "/"), nil
+		return fmt.Sprintf("%s://%s", u.Scheme, u.Host), strings.TrimPrefix(u.Path, "/"), nil
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
