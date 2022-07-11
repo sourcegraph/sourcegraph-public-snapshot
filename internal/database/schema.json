@@ -14915,7 +14915,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 4,
+          "Index": 3,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "",
@@ -14928,7 +14928,7 @@
         },
         {
           "Name": "user_ids_ints",
-          "Index": 5,
+          "Index": 4,
           "TypeName": "bigint[]",
           "IsNullable": false,
           "Default": "'{}'::integer[]",
@@ -16811,7 +16811,7 @@
         },
         {
           "Name": "object_ids_ints",
-          "Index": 9,
+          "Index": 8,
           "TypeName": "integer[]",
           "IsNullable": false,
           "Default": "'{}'::integer[]",
@@ -16850,19 +16850,6 @@
         },
         {
           "Name": "service_id",
-          "Index": 8,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "service_type",
           "Index": 7,
           "TypeName": "text",
           "IsNullable": false,
@@ -16875,8 +16862,21 @@
           "Comment": ""
         },
         {
-          "Name": "updated_at",
+          "Name": "service_type",
           "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 5,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "",

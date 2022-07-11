@@ -1,3 +1,9 @@
+CREATE FUNCTION get_file_extension(path text) RETURNS text
+    LANGUAGE plpgsql IMMUTABLE
+    AS $_$ BEGIN
+    RETURN substring(path FROM '\.([^\.]*)$');
+END; $_$;
+
 CREATE FUNCTION lsif_data_docs_search_private_delete() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -60,6 +66,29 @@ WITH
 UPDATE lsif_data_apidocs_num_dumps_indexed SET count=count + ((select * from afterIndexed) - (select * from beforeIndexed));
 RETURN NULL;
 END $$;
+
+CREATE FUNCTION path_prefixes(path text) RETURNS text[]
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$ BEGIN
+    RETURN (
+        SELECT array_agg(array_to_string(components[:len], '/')) prefixes
+        FROM
+            (SELECT regexp_split_to_array(path, E'/') components) t,
+            generate_series(1, array_length(components, 1)) AS len
+    );
+END; $$;
+
+CREATE FUNCTION singleton(value text) RETURNS text[]
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$ BEGIN
+    RETURN ARRAY[value];
+END; $$;
+
+CREATE FUNCTION singleton_integer(value integer) RETURNS integer[]
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$ BEGIN
+    RETURN ARRAY[value];
+END; $$;
 
 CREATE FUNCTION update_lsif_data_definitions_schema_versions_insert() RETURNS trigger
     LANGUAGE plpgsql
@@ -726,6 +755,59 @@ COMMENT ON COLUMN lsif_data_result_chunks.idx IS 'The unique result chunk index 
 
 COMMENT ON COLUMN lsif_data_result_chunks.data IS 'A gob-encoded payload conforming to the [ResultChunkData](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@3.26/-/blob/enterprise/lib/codeintel/semantic/types.go#L76:6) type.';
 
+CREATE TABLE rockskip_ancestry (
+    id integer NOT NULL,
+    repo_id integer NOT NULL,
+    commit_id character varying(40) NOT NULL,
+    height integer NOT NULL,
+    ancestor integer NOT NULL
+);
+
+CREATE SEQUENCE rockskip_ancestry_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE rockskip_ancestry_id_seq OWNED BY rockskip_ancestry.id;
+
+CREATE TABLE rockskip_repos (
+    id integer NOT NULL,
+    repo text NOT NULL,
+    last_accessed_at timestamp with time zone NOT NULL
+);
+
+CREATE SEQUENCE rockskip_repos_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE rockskip_repos_id_seq OWNED BY rockskip_repos.id;
+
+CREATE TABLE rockskip_symbols (
+    id integer NOT NULL,
+    added integer[] NOT NULL,
+    deleted integer[] NOT NULL,
+    repo_id integer NOT NULL,
+    path text NOT NULL,
+    name text NOT NULL
+);
+
+CREATE SEQUENCE rockskip_symbols_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE rockskip_symbols_id_seq OWNED BY rockskip_symbols.id;
+
 ALTER TABLE ONLY lsif_data_docs_search_current_private ALTER COLUMN id SET DEFAULT nextval('lsif_data_docs_search_current_private_id_seq'::regclass);
 
 ALTER TABLE ONLY lsif_data_docs_search_current_public ALTER COLUMN id SET DEFAULT nextval('lsif_data_docs_search_current_public_id_seq'::regclass);
@@ -745,6 +827,12 @@ ALTER TABLE ONLY lsif_data_docs_search_repo_names_public ALTER COLUMN id SET DEF
 ALTER TABLE ONLY lsif_data_docs_search_tags_private ALTER COLUMN id SET DEFAULT nextval('lsif_data_docs_search_tags_private_id_seq'::regclass);
 
 ALTER TABLE ONLY lsif_data_docs_search_tags_public ALTER COLUMN id SET DEFAULT nextval('lsif_data_docs_search_tags_public_id_seq'::regclass);
+
+ALTER TABLE ONLY rockskip_ancestry ALTER COLUMN id SET DEFAULT nextval('rockskip_ancestry_id_seq'::regclass);
+
+ALTER TABLE ONLY rockskip_repos ALTER COLUMN id SET DEFAULT nextval('rockskip_repos_id_seq'::regclass);
+
+ALTER TABLE ONLY rockskip_symbols ALTER COLUMN id SET DEFAULT nextval('rockskip_symbols_id_seq'::regclass);
 
 ALTER TABLE ONLY lsif_data_definitions
     ADD CONSTRAINT lsif_data_definitions_pkey PRIMARY KEY (dump_id, scheme, identifier);
@@ -833,6 +921,21 @@ ALTER TABLE ONLY lsif_data_references_schema_versions
 ALTER TABLE ONLY lsif_data_result_chunks
     ADD CONSTRAINT lsif_data_result_chunks_pkey PRIMARY KEY (dump_id, idx);
 
+ALTER TABLE ONLY rockskip_ancestry
+    ADD CONSTRAINT rockskip_ancestry_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY rockskip_ancestry
+    ADD CONSTRAINT rockskip_ancestry_repo_id_commit_id_key UNIQUE (repo_id, commit_id);
+
+ALTER TABLE ONLY rockskip_repos
+    ADD CONSTRAINT rockskip_repos_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY rockskip_repos
+    ADD CONSTRAINT rockskip_repos_repo_key UNIQUE (repo);
+
+ALTER TABLE ONLY rockskip_symbols
+    ADD CONSTRAINT rockskip_symbols_pkey PRIMARY KEY (id);
+
 CREATE INDEX lsif_data_definitions_dump_id_schema_version ON lsif_data_definitions USING btree (dump_id, schema_version);
 
 CREATE INDEX lsif_data_definitions_schema_versions_dump_id_schema_version_bo ON lsif_data_definitions_schema_versions USING btree (dump_id, min_schema_version, max_schema_version);
@@ -904,6 +1007,16 @@ CREATE INDEX lsif_data_implementations_schema_versions_dump_id_schema_versio ON 
 CREATE INDEX lsif_data_references_dump_id_schema_version ON lsif_data_references USING btree (dump_id, schema_version);
 
 CREATE INDEX lsif_data_references_schema_versions_dump_id_schema_version_bou ON lsif_data_references_schema_versions USING btree (dump_id, min_schema_version, max_schema_version);
+
+CREATE INDEX rockskip_ancestry_repo_commit_id ON rockskip_ancestry USING btree (repo_id, commit_id);
+
+CREATE INDEX rockskip_repos_last_accessed_at ON rockskip_repos USING btree (last_accessed_at);
+
+CREATE INDEX rockskip_repos_repo ON rockskip_repos USING btree (repo);
+
+CREATE INDEX rockskip_symbols_gin ON rockskip_symbols USING gin (singleton_integer(repo_id) gin__int_ops, added gin__int_ops, deleted gin__int_ops, name gin_trgm_ops, singleton(name), singleton(lower(name)), path gin_trgm_ops, singleton(path), path_prefixes(path), singleton(lower(path)), path_prefixes(lower(path)), singleton(get_file_extension(path)), singleton(get_file_extension(lower(path))));
+
+CREATE INDEX rockskip_symbols_repo_id_path_name ON rockskip_symbols USING btree (repo_id, path, name);
 
 CREATE TRIGGER lsif_data_definitions_schema_versions_insert AFTER INSERT ON lsif_data_definitions REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION update_lsif_data_definitions_schema_versions_insert();
 

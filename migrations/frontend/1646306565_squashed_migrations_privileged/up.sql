@@ -945,7 +945,8 @@ CREATE TABLE external_service_repos (
     repo_id integer NOT NULL,
     clone_url text NOT NULL,
     user_id integer,
-    org_id integer
+    org_id integer,
+    created_at timestamp with time zone DEFAULT transaction_timestamp() NOT NULL
 );
 
 CREATE SEQUENCE external_service_sync_jobs_id_seq
@@ -987,6 +988,7 @@ CREATE TABLE external_services (
     encryption_key_id text DEFAULT ''::text NOT NULL,
     namespace_org_id integer,
     has_webhooks boolean,
+    token_expires_at timestamp with time zone,
     CONSTRAINT check_non_empty_config CHECK ((btrim(config) <> ''::text)),
     CONSTRAINT external_services_max_1_namespace CHECK ((((namespace_user_id IS NULL) AND (namespace_org_id IS NULL)) OR ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))))
 );
@@ -2076,7 +2078,6 @@ ALTER SEQUENCE repo_id_seq OWNED BY repo.id;
 CREATE TABLE repo_pending_permissions (
     repo_id integer NOT NULL,
     permission text NOT NULL,
-    user_ids bytea DEFAULT '\x'::bytea NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     user_ids_ints integer[] DEFAULT '{}'::integer[] NOT NULL
 );
@@ -2188,10 +2189,11 @@ ALTER SEQUENCE security_event_logs_id_seq OWNED BY security_event_logs.id;
 CREATE TABLE settings (
     id integer NOT NULL,
     org_id integer,
-    contents text,
+    contents text DEFAULT '{}'::text NOT NULL,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     user_id integer,
-    author_user_id integer
+    author_user_id integer,
+    CONSTRAINT settings_no_empty_contents CHECK ((contents <> ''::text))
 );
 
 CREATE TABLE settings_bkup_1514702776 (
@@ -2350,7 +2352,6 @@ CREATE TABLE user_pending_permissions (
     bind_id text NOT NULL,
     permission text NOT NULL,
     object_type text NOT NULL,
-    object_ids bytea DEFAULT '\x'::bytea NOT NULL,
     updated_at timestamp with time zone NOT NULL,
     service_type text NOT NULL,
     service_id text NOT NULL,
@@ -2999,8 +3000,6 @@ CREATE INDEX notebooks_title_trgm_idx ON notebooks USING gin (title gin_trgm_ops
 CREATE INDEX org_invitations_org_id ON org_invitations USING btree (org_id) WHERE (deleted_at IS NULL);
 
 CREATE INDEX org_invitations_recipient_user_id ON org_invitations USING btree (recipient_user_id) WHERE (deleted_at IS NULL);
-
-CREATE UNIQUE INDEX org_invitations_singleflight ON org_invitations USING btree (org_id, recipient_user_id) WHERE ((responded_at IS NULL) AND (revoked_at IS NULL) AND (deleted_at IS NULL));
 
 CREATE UNIQUE INDEX orgs_name ON orgs USING btree (name) WHERE (deleted_at IS NULL);
 
