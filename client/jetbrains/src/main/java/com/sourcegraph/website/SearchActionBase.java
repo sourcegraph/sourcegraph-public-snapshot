@@ -21,7 +21,7 @@ import java.io.IOException;
 import java.net.URI;
 
 public abstract class SearchActionBase extends DumbAwareAction {
-    public void actionPerformedMode(@NotNull AnActionEvent e, @NotNull String mode) {
+    public void actionPerformedMode(AnActionEvent e, @NotNull Scope scope) {
         Logger logger = Logger.getInstance(this.getClass());
 
         // Get project, editor, document, file, and position information.
@@ -49,7 +49,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
 
         String remoteUrl = null;
         String branchName = null;
-        if (mode.equals("search.repository")) {
+        if (scope == Scope.REPOSITORY) {
             remoteUrl = repoInfo.remoteUrl;
             branchName = repoInfo.branchName;
         }
@@ -63,6 +63,11 @@ public abstract class SearchActionBase extends DumbAwareAction {
             logger.debug("failed to open browser");
             err.printStackTrace();
         }
+    }
+
+    enum Scope {
+        REPOSITORY,
+        ANYWHERE
     }
 
     @Override
