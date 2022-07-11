@@ -294,6 +294,8 @@ type BatchChangesResolver interface {
 
 	CheckBatchChangesCredential(ctx context.Context, args *CheckBatchChangesCredentialArgs) (*EmptyResponse, error)
 
+	MaxUnlicensedChangesets(ctx context.Context) (int32, error)
+
 	NodeResolvers() map[string]NodeByIDFunc
 }
 
