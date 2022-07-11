@@ -85,7 +85,7 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 
 	var maxAlerter search.MaxAlerter
 
-	repoResolver := &repos.Resolver{DB: clients.DB}
+	repoResolver := repos.NewResolver(clients.DB)
 	pager := func(page *repos.Resolved) error {
 		indexed, unindexed, err := zoekt.PartitionRepos(
 			ctx,

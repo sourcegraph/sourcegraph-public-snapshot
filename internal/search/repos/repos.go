@@ -49,6 +49,10 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit)
 }
 
+func NewResolver(db database.DB) *Resolver {
+	return &Resolver{DB: db}
+}
+
 type Resolver struct {
 	DB database.DB
 }
