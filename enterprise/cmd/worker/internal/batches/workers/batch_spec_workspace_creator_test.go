@@ -201,14 +201,12 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	}
 
 	executionResult := &execution.AfterStepResult{
-		Diff:      testDiff,
-		StepIndex: 0,
-		StepResult: execution.StepResult{
-			Files:  &git.Changes{Modified: []string{"README.md", "urls.txt"}},
-			Stdout: "asdf2",
-			Stderr: "asdf",
-		},
-		Outputs: map[string]any{},
+		Diff:         testDiff,
+		StepIndex:    0,
+		ChangedFiles: git.Changes{Modified: []string{"README.md", "urls.txt"}},
+		Stdout:       "asdf2",
+		Stderr:       "asdf",
+		Outputs:      map[string]any{},
 	}
 
 	createBatchSpec := func(t *testing.T, noCache bool, spec string) *btypes.BatchSpec {
@@ -228,7 +226,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 	createCacheEntry := func(t *testing.T, batchSpec *btypes.BatchSpec, workspace *service.RepoWorkspace, result *execution.AfterStepResult) *btypes.BatchSpecExecutionCacheEntry {
 		t.Helper()
 
-		execKey := cache.KeyForWorkspace(
+		key := cache.KeyForWorkspace(
 			&template.BatchChangeAttributes{
 				Name:        batchSpec.Spec.Name,
 				Description: batchSpec.Spec.Description,
@@ -243,11 +241,8 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			workspace.Path,
 			workspace.OnlyFetchWorkspace,
 			batchSpec.Spec.Steps,
+			result.StepIndex,
 		)
-		key := cache.StepsCacheKey{
-			ExecutionKey: &execKey,
-			StepIndex:    0,
-		}
 		rawKey, err := key.Key()
 		if err != nil {
 			t.Fatal(err)

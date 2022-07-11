@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 )
 
-var testChanges = &git.Changes{
+var testChanges = git.Changes{
 	Modified: []string{"go.mod"},
 	Added:    []string{"main.go.swp"},
 	Deleted:  []string{".DS_Store"},
@@ -24,10 +24,10 @@ func TestEvalStepCondition(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		PreviousStep: execution.StepResult{
-			Files:  testChanges,
-			Stdout: "this is previous step's stdout",
-			Stderr: "this is previous step's stderr",
+		PreviousStep: execution.AfterStepResult{
+			ChangedFiles: testChanges,
+			Stdout:       "this is previous step's stdout",
+			Stderr:       "this is previous step's stderr",
 		},
 		Steps: StepsContext{
 			Changes: testChanges,
@@ -89,19 +89,19 @@ func TestRenderStepTemplate(t *testing.T) {
 			Name:        "test-batch-change",
 			Description: "This batch change is just an experiment",
 		},
-		PreviousStep: execution.StepResult{
-			Files:  testChanges,
-			Stdout: "this is previous step's stdout",
-			Stderr: "this is previous step's stderr",
+		PreviousStep: execution.AfterStepResult{
+			ChangedFiles: testChanges,
+			Stdout:       "this is previous step's stdout",
+			Stderr:       "this is previous step's stderr",
 		},
 		Outputs: map[string]any{
 			"lastLine": "lastLine is this",
 			"project":  parsedYaml,
 		},
-		Step: execution.StepResult{
-			Files:  testChanges,
-			Stdout: "this is current step's stdout",
-			Stderr: "this is current step's stderr",
+		Step: execution.AfterStepResult{
+			ChangedFiles: testChanges,
+			Stdout:       "this is current step's stdout",
+			Stderr:       "this is current step's stderr",
 		},
 		Steps:      StepsContext{Changes: testChanges, Path: "sub/directory/of/repo"},
 		Repository: *testRepo1,
@@ -233,10 +233,10 @@ ${{ steps.path }}
 
 func TestRenderStepMap(t *testing.T) {
 	stepCtx := &StepContext{
-		PreviousStep: execution.StepResult{
-			Files:  testChanges,
-			Stdout: "this is previous step's stdout",
-			Stderr: "this is previous step's stderr",
+		PreviousStep: execution.AfterStepResult{
+			ChangedFiles: testChanges,
+			Stdout:       "this is previous step's stdout",
+			Stderr:       "this is previous step's stderr",
 		},
 		Outputs:    map[string]any{},
 		Repository: *testRepo1,
@@ -284,7 +284,7 @@ func TestRenderChangesetTemplateField(t *testing.T) {
 		},
 		Repository: *testRepo1,
 		Steps: StepsContext{
-			Changes: &git.Changes{
+			Changes: git.Changes{
 				Modified: []string{"modified-file.txt"},
 				Added:    []string{"added-file.txt"},
 				Deleted:  []string{"deleted-file.txt"},
