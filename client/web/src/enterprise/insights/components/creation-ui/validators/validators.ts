@@ -10,7 +10,7 @@ import { fetchRepositories } from './fetch-repositories'
 // Group of shared Creation UI/Edit UI insight validators.
 
 /**
- * Primary is used in any place where we edit or create insights, like creation ui page
+ * Primarily used in any place where we edit or create insights, like creation ui page
  * or drill down insight creation flow.
  */
 export const insightTitleValidator = createRequiredValidator('Title is a required field.')
