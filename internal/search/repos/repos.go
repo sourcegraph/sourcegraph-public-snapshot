@@ -93,8 +93,7 @@ func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (
 	return errs
 }
 
-func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
-	var err error
+func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Resolve", op.String())
 	defer func() {
 		tr.SetError(err)
