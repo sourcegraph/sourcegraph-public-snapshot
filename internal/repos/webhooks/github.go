@@ -12,15 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Config struct {
-	Url          string `json:"url"`
-	Content_type string `json:"content_type"`
-	Secret       string `json:"secret"`
-	Insecure_ssl string `json:"insecure_ssl"`
-	Token        string `json:"token"`
-	Digest       string `json:"digest,omitempty"`
-}
-
 type Payload struct {
 	Name   string   `json:"name"`
 	ID     int      `json:"id,omitempty"`
@@ -28,6 +19,15 @@ type Payload struct {
 	Events []string `json:"events"`
 	Active bool     `json:"active"`
 	URL    string   `json:"url"`
+}
+
+type Config struct {
+	Url          string `json:"url"`
+	Content_type string `json:"content_type"`
+	Secret       string `json:"secret"`
+	Insecure_ssl string `json:"insecure_ssl"`
+	Token        string `json:"token"`
+	Digest       string `json:"digest,omitempty"`
 }
 
 func CreateSyncWebhook(repoName string, secret string, token string) (int, error) {
