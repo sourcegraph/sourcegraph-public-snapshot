@@ -121,7 +121,7 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
         submitOnToggle({ newPatternType })
     }, [defaultPatternTypeValue, patternType, setPatternType, submitOnToggle])
 
-    const toggleExpertMode = useCallback((): void => {
+    const toggleAdvancedMode = useCallback((): void => {
         const newPatternType =
             patternType === SearchPatternType.lucky ? SearchPatternType.literal : SearchPatternType.lucky
 
@@ -150,13 +150,13 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
             {patternType === SearchPatternType.lucky ? (
                 <>
                     <QueryInputToggle
-                        title="Expert mode"
+                        title="Advanced mode"
                         isActive={false}
-                        onToggle={toggleExpertMode}
+                        onToggle={toggleAdvancedMode}
                         icon={LightningBoltIcon}
                         interactive={props.interactive}
-                        className="test-expert-mode-toggle"
-                        activeClassName="test-expert-mode-toggle--active"
+                        className="test-advanced-mode-toggle"
+                        activeClassName="test-advanced-mode-toggle--active"
                         disableOn={[]}
                     />
                     {copyQueryButton}
@@ -228,13 +228,13 @@ export const Toggles: React.FunctionComponent<React.PropsWithChildren<TogglesPro
                     )}
                     {luckySearchEnabled && (
                         <QueryInputToggle
-                            title="Expert mode"
+                            title="Advanced mode"
                             isActive={true}
-                            onToggle={toggleExpertMode}
+                            onToggle={toggleAdvancedMode}
                             icon={LightningBoltIcon}
                             interactive={props.interactive}
-                            className="test-expert-mode-toggle"
-                            activeClassName="test-expert-mode-toggle--active"
+                            className="test-advanced-mode-toggle"
+                            activeClassName="test-advanced-mode-toggle--active"
                             disableOn={[]}
                         />
                     )}
