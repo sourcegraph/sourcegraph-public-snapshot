@@ -39,6 +39,23 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 				}
 				continue
 
+			case "except_clause":
+				if cur.NamedChildCount() < 3 {
+					continue
+				}
+				//        vvvvvvvvv identifier
+				//                     v identifier
+				//                      v block
+				// except Exception as e:
+				exceptIdent := cur.NamedChild(1)
+				if exceptIdent == nil || exceptIdent.Type() != "identifier" {
+					continue
+				}
+				if exceptIdent.Content(node.Contents) == ident {
+					return swapNodePtr(node, exceptIdent), nil
+				}
+				continue
+
 			case "function_definition":
 				// Check the function name and parameters
 				query := `[

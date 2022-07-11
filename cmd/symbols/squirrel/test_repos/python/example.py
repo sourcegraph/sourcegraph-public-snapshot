@@ -20,8 +20,11 @@ def f(x):
 
     try:
         l4 = 3  # < "l4" py.f.l4 def
-    except:
+        #               v py.f.e def
+    except Exception as e:
         l5 = 3  # < "l5" py.f.l5 def
+        #   v py.f.e ref
+        _ = e
 
     #   v py.f.y ref
     #       vv py.f.l1 ref
