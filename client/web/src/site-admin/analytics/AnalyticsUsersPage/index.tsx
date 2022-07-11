@@ -1,5 +1,4 @@
-/* eslint-disable react/forbid-dom-props */
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
@@ -7,17 +6,18 @@ import { RouteComponentProps } from 'react-router'
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, LoadingSpinner, useMatchMedia } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../charts'
-import { BarChart } from '../../charts/components/bar-chart/BarChart'
-import { AnalyticsDateRange, UsersStatisticsResult, UsersStatisticsVariables } from '../../graphql-operations'
+import { LineChart, Series } from '../../../charts'
+import { BarChart } from '../../../charts/components/bar-chart/BarChart'
+import { AnalyticsDateRange, UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
+import { ChartContainer } from '../components/ChartContainer'
+import { HorizontalSelect } from '../components/HorizontalSelect'
+import { ToggleSelect } from '../components/ToggleSelect'
+import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { StandardDatum, buildStandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
 
-import { AnalyticsPageTitle } from './components/AnalyticsPageTitle'
-import { ChartContainer } from './components/ChartContainer'
-import { HorizontalSelect } from './components/HorizontalSelect'
-import { ToggleSelect } from './components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from './components/ValueLegendList'
 import { USERS_STATISTICS } from './queries'
-import { StandardDatum, buildStandardDatum, FrequencyDatum, buildFrequencyDatum } from './utils'
 
 export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('uniqueUsers')
@@ -27,6 +27,9 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
             dateRange,
         },
     })
+    useEffect(() => {
+        eventLogger.logPageView('AdminAnalyticsUsers')
+    }, [])
     const [frequencies, legends] = useMemo(() => {
         if (!data) {
             return []

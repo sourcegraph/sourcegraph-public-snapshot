@@ -1,21 +1,25 @@
-/* eslint-disable react/forbid-dom-props */
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, LoadingSpinner } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../charts'
-import { AnalyticsDateRange, NotebooksStatisticsResult, NotebooksStatisticsVariables } from '../../graphql-operations'
+import { LineChart, Series } from '../../../charts'
+import {
+    AnalyticsDateRange,
+    NotebooksStatisticsResult,
+    NotebooksStatisticsVariables,
+} from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
+import { ChartContainer } from '../components/ChartContainer'
+import { HorizontalSelect } from '../components/HorizontalSelect'
+import { ToggleSelect } from '../components/ToggleSelect'
+import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { StandardDatum, buildStandardDatum } from '../utils'
 
-import { AnalyticsPageTitle } from './components/AnalyticsPageTitle'
-import { ChartContainer } from './components/ChartContainer'
-import { HorizontalSelect } from './components/HorizontalSelect'
-import { ToggleSelect } from './components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from './components/ValueLegendList'
 import { NOTEBOOKS_STATISTICS } from './queries'
-import { StandardDatum, buildStandardDatum } from './utils'
 
 export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
@@ -28,6 +32,9 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
             },
         }
     )
+    useEffect(() => {
+        eventLogger.logPageView('AdminAnalyticsNotebooks')
+    }, [])
     const [stats, legends] = useMemo(() => {
         if (!data) {
             return []
