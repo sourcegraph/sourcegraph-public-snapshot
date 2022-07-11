@@ -33,6 +33,10 @@ function createMarker(
 }
 
 export function validFilterValue(filter: Filter): Monaco.editor.IMarkerData[] {
+    if (!filter.value) {
+        return []
+    }
+
     const validationResult = validateFilter(filter.field.value, filter.value)
     if (validationResult.valid) {
         return []
