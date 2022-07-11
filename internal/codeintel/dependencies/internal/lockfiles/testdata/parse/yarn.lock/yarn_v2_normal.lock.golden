@@ -1,5 +1,17 @@
-[
-  "asap@2.0.6",
-  "jquery@3.5.1",
-  "promise@8.1.0"
-]
+{
+  "Dependencies": [
+    "asap@2.0.6",
+    "jquery@3.5.1",
+    "promise@8.1.0"
+  ],
+  "Graph": {
+    "asap@2.0.6": {
+      "jquery@3.5.1": {},
+      "promise@8.1.0": {}
+    },
+    "jquery@3.5.1": {},
+    "promise@8.1.0": {
+      "asap@2.0.6": {}
+    }
+  }
+}

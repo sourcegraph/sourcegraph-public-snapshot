@@ -753,6 +753,8 @@ func getRewirerMappingCurrentState(state *btypes.ChangesetState) (*sqlf.Query, e
 		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateClosed)
 	case btypes.ChangesetStateMerged:
 		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateMerged)
+	case btypes.ChangesetStateReadOnly:
+		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateReadOnly)
 	case btypes.ChangesetStateDeleted:
 		q = sqlf.Sprintf("external_state = %s", btypes.ChangesetExternalStateDeleted)
 	default:

@@ -3,6 +3,9 @@ package jobutil
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"regexp"
+	"regexp/syntax"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
@@ -27,7 +30,7 @@ import (
 func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
 	generators := make([]next, 0, len(plan))
 	for _, b := range plan {
-		generators = append(generators, NewGenerator(inputs, b, rules))
+		generators = append(generators, NewGenerator(b, rulesNarrow, rulesWiden))
 	}
 
 	jobGenerator := &jobGenerator{SearchInputs: inputs}
@@ -159,38 +162,6 @@ type autoQuery struct {
 // next is the continuation for the query generator.
 type next func() (*autoQuery, next)
 
-// NewGenerator creates a new generator using rules and a seed Basic query. It
-// returns a `next` function which, when called, returns the next job
-// generated, and the `next` continuation. A `nil` continuation means query
-// generation is exhausted. Currently it implements a simple strategy that tries
-// to apply rule transforms in order, and generates jobs for transforms that
-// apply successfully.
-func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next {
-	var n func(i int) next // i keeps track of rule index in the continuation
-	n = func(i int) next {
-		if i >= len(rules) {
-			return func() (*autoQuery, next) { return nil, nil }
-		}
-
-		return func() (*autoQuery, next) {
-			generated := applyTransformation(seed, rules[i].transform)
-			if generated == nil {
-				// Rule doesn't apply, go to next rule.
-				return nil, n(i + 1)
-			}
-
-			q := autoQuery{
-				description: rules[i].description,
-				query:       *generated,
-			}
-
-			return &q, n(i + 1)
-		}
-	}
-
-	return n(0)
-}
-
 // rule represents a transformation function on a Basic query. Transformation
 // cannot fail: either they apply in sequence and produce a valid, non-nil,
 // Basic query, or they do not apply, in which case they return nil. See the
@@ -201,58 +172,6 @@ type rule struct {
 }
 
 type transform []func(query.Basic) *query.Basic
-
-// rules is an ordered list of rules. Each item represents one possible query
-// production, if the sequence of the transformation functions associated with
-// this item apply successfully. Example:
-//
-// If we have input query B0 and a list with two items like this:
-//
-// {
-//   "first rule list"  : [ R1, R2 ],
-//   "second rule list" : [ R2 ],
-// }
-//
-// Then:
-//
-// - If both entries apply, we output [ B1, B2 ] where B1 is generated
-//   from applying R1 then R2, and B2 is generated from just applying R2.
-// - If only the first item applies, R1 then R2, we get the output [ B1 ].
-// - If only the second item applies, R2 on its own, we get the output [ B2 ].
-var rules = []rule{
-	{
-		description: "unquote patterns",
-		transform:   transform{unquotePatterns},
-	},
-	{
-		description: "apply search type and language filter for patterns",
-		transform:   transform{typePatterns, langPatterns},
-	},
-	{
-		description: "apply search type for pattern",
-		transform:   transform{typePatterns},
-	},
-	{
-		description: "apply language filter for pattern",
-		transform:   transform{langPatterns},
-	},
-	{
-		description: "apply search type and language filter for patterns with AND patterns",
-		transform:   transform{typePatterns, langPatterns, unorderedPatterns},
-	},
-	{
-		description: "apply search type with AND patterns",
-		transform:   transform{typePatterns, unorderedPatterns},
-	},
-	{
-		description: "apply language filter with AND patterns",
-		transform:   transform{langPatterns, unorderedPatterns},
-	},
-	{
-		description: "AND patterns together",
-		transform:   transform{unorderedPatterns},
-	},
-}
 
 // applyTransformation applies a transformation on `b`. If any function does not apply, it returns nil.
 func applyTransformation(b query.Basic, transform transform) *query.Basic {
@@ -298,6 +217,130 @@ func unquotePatterns(b query.Basic) *query.Basic {
 
 	if !changed {
 		// No unquoting happened, so we don't run the search.
+		return nil
+	}
+
+	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	if err != nil {
+		return nil
+	}
+
+	newBasic, err := query.ToBasicQuery(newNodes)
+	if err != nil {
+		return nil
+	}
+
+	return &newBasic
+}
+
+// regexpPatterns converts literal patterns into regular expression patterns.
+// The conversion is a heuristic and happens based on whether the pattern has
+// indicative regular expression metasyntax. It would be overly aggressive to
+// convert patterns containing _any_ potential metasyntax, since a pattern like
+// my.config.yaml contains two `.` (match any character in regexp).
+func regexpPatterns(b query.Basic) *query.Basic {
+	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeStandard)
+	if err != nil {
+		return nil
+	}
+
+	// we decide to interpret patterns as regular expressions if the number of
+	// significant metasyntax operators exceed this threshold
+	METASYNTAX_THRESHOLD := 2
+
+	// countMetaSyntax counts the number of significant regular expression
+	// operators in string when it is interpreted as a regular expression. A
+	// rough map of operators to syntax can be found here:
+	// https://sourcegraph.com/github.com/golang/go@bf5898ef53d1693aa572da0da746c05e9a6f15c5/-/blob/src/regexp/syntax/regexp.go?L116-244
+	var countMetaSyntax func([]*syntax.Regexp) int
+	countMetaSyntax = func(res []*syntax.Regexp) int {
+		count := 0
+		for _, r := range res {
+			switch r.Op {
+			case
+				// operators that are weighted 0 on their own
+				syntax.OpAnyCharNotNL,
+				syntax.OpAnyChar,
+				syntax.OpNoMatch,
+				syntax.OpEmptyMatch,
+				syntax.OpLiteral,
+				syntax.OpCapture,
+				syntax.OpConcat:
+				count += countMetaSyntax(r.Sub)
+			case
+				// operators that are weighted 1 on their own
+				syntax.OpCharClass,
+				syntax.OpBeginLine,
+				syntax.OpEndLine,
+				syntax.OpBeginText,
+				syntax.OpEndText,
+				syntax.OpWordBoundary,
+				syntax.OpNoWordBoundary,
+				syntax.OpAlternate:
+				count += countMetaSyntax(r.Sub) + 1
+
+			case
+				// quantifiers *, +, ?, {...} on metasyntax like
+				// `.` or `(...)` are weighted 2. If the
+				// quantifier applies to other syntax like
+				// literals (not metasyntax) it's weighted 1.
+				syntax.OpStar,
+				syntax.OpPlus,
+				syntax.OpQuest,
+				syntax.OpRepeat:
+				switch r.Sub[0].Op {
+				case
+					syntax.OpAnyChar,
+					syntax.OpAnyCharNotNL,
+					syntax.OpCapture:
+					count += countMetaSyntax(r.Sub) + 2
+				default:
+					count += countMetaSyntax(r.Sub) + 1
+				}
+			}
+		}
+		return count
+	}
+
+	changed := false
+	newParseTree := query.MapPattern(rawParseTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		if annotation.Labels.IsSet(query.Regexp) {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		re, err := syntax.Parse(value, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+		if err != nil {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		count := countMetaSyntax([]*syntax.Regexp{re})
+		if count < METASYNTAX_THRESHOLD {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		changed = true
+		annotation.Labels.Unset(query.Literal)
+		annotation.Labels.Set(query.Regexp)
+		return query.Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !changed {
 		return nil
 	}
 
@@ -482,6 +525,170 @@ func typePatterns(b query.Basic) *query.Basic {
 	}
 }
 
+var lookup = map[string]struct{}{
+	"github.com": {},
+	"gitlab.com": {},
+}
+
+// patternToCodeHostFilters checks if a pattern contains a code host URL and
+// extracts the org/repo/branch and path and lifts these to filters, as
+// applicable.
+func patternToCodeHostFilters(v string, negated bool) *[]query.Node {
+	if !strings.HasPrefix(v, "https://") {
+		// normalize v with https:// prefix.
+		v = "https://" + v
+	}
+
+	u, err := url.Parse(v)
+	if err != nil {
+		return nil
+	}
+
+	domain := strings.TrimPrefix(u.Host, "www.")
+	if _, ok := lookup[domain]; !ok {
+		return nil
+	}
+
+	var value string
+	path := strings.Trim(u.Path, "/")
+	pathElems := strings.Split(path, "/")
+	if len(pathElems) == 0 {
+		value = regexp.QuoteMeta(domain)
+		value = fmt.Sprintf("^%s", value)
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      value,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			}}
+	} else if len(pathElems) == 1 {
+		value = regexp.QuoteMeta(domain)
+		value = fmt.Sprintf("^%s/%s", value, strings.Join(pathElems, "/"))
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      value,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			}}
+	} else if len(pathElems) == 2 {
+		value = regexp.QuoteMeta(domain)
+		value = fmt.Sprintf("^%s/%s$", value, strings.Join(pathElems, "/"))
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      value,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			}}
+	} else if len(pathElems) == 4 && (pathElems[2] == "tree" || pathElems[2] == "commit") {
+		repoValue := regexp.QuoteMeta(domain)
+		repoValue = fmt.Sprintf("^%s/%s$", repoValue, strings.Join(pathElems[:2], "/"))
+		revision := pathElems[3]
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      repoValue,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+			query.Parameter{
+				Field:      query.FieldRev,
+				Value:      revision,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+		}
+	} else if len(pathElems) >= 5 {
+		repoValue := regexp.QuoteMeta(domain)
+		repoValue = fmt.Sprintf("^%s/%s$", repoValue, strings.Join(pathElems[:2], "/"))
+
+		revision := pathElems[3]
+
+		pathValue := strings.Join(pathElems[4:], "/")
+		pathValue = regexp.QuoteMeta(pathValue)
+
+		if pathElems[2] == "blob" {
+			pathValue = fmt.Sprintf("^%s$", pathValue)
+		} else if pathElems[2] == "tree" {
+			pathValue = fmt.Sprintf("^%s", pathValue)
+		} else {
+			// We don't know what this is.
+			return nil
+		}
+
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      repoValue,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+			query.Parameter{
+				Field:      query.FieldRev,
+				Value:      revision,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+			query.Parameter{
+				Field:      query.FieldFile,
+				Value:      pathValue,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+		}
+	}
+
+	return nil
+}
+
+// patternsToCodeHostFilters converts patterns to `repo` or `path` filters if they
+// can be interpreted as URIs.
+func patternsToCodeHostFilters(b query.Basic) *query.Basic {
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
+	if err != nil {
+		return nil
+	}
+
+	filterParams := []query.Node{}
+	changed := false
+	newParseTree := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		if params := patternToCodeHostFilters(value, negated); params != nil {
+			changed = true
+			filterParams = append(filterParams, *params...)
+			// Collect the param and delete pattern. We're going to
+			// add those parameters after. We can't map patterns
+			// in-place because that might create parameters in
+			// concat nodes.
+			return nil
+		}
+
+		return query.Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !changed {
+		return nil
+	}
+
+	newParseTree = query.NewOperator(append(newParseTree, filterParams...), query.And) // Reduce with NewOperator to obtain valid partitioning.
+	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	if err != nil {
+		return nil
+	}
+
+	newBasic, err := query.ToBasicQuery(newNodes)
+	if err != nil {
+		return nil
+	}
+
+	return &newBasic
+}
+
 func NewGeneratedSearchJob(inputs *run.SearchInputs, autoQ *autoQuery) (job.Job, error) {
 	child, err := NewBasicJob(inputs, autoQ.query)
 	if err != nil {
@@ -567,86 +774,211 @@ func (g *generatedSearchJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-type simpleRule struct {
-	description string
-	transform   func(query.Basic) *query.Basic
-}
-
-var rulesMaxSet = []simpleRule{
+var rulesNarrow = []rule{
 	{
 		description: "unquote patterns",
-		transform:   unquotePatterns,
+		transform:   transform{unquotePatterns},
 	},
 	{
 		description: "apply search type for pattern",
-		transform:   typePatterns,
+		transform:   transform{typePatterns},
 	},
 	{
 		description: "apply language filter for pattern",
-		transform:   langPatterns,
+		transform:   transform{langPatterns},
+	},
+	{
+		description: "expand URL to filters",
+		transform:   transform{patternsToCodeHostFilters},
 	},
 }
 
-type cg = *combin.CombinationGenerator
+var rulesWiden = []rule{
+	{
+		description: "patterns as regular expressions",
+		transform:   transform{regexpPatterns},
+	},
+	{
+		description: "AND patterns together",
+		transform:   transform{unorderedPatterns},
+	},
+}
+
+type cg = combin.CombinationGenerator
+
+type PHASE int
+
+const (
+	ONE PHASE = iota + 1
+	TWO
+	THREE
+)
 
 // NewComboGenerator returns a generator for queries produces by a combination
-// of rules on a seed query. The generator strategy tries to first apply _all_
-// rules, and then successively reduces the number of rules that it attempts to
-// apply by one. This strategy is useful when we try the most aggressive
+// of rules on a seed query. The generator has a strategy over two kinds of rule
+// sets: narrowing and widening rules. You can read more below, but if you don't
+// care about this and just want to apply rules sequentially, simply pass in
+// only `widen` rules and pass in an empty `narrow` rule set. This will mean
+// your queries are just generated by successively applying rules in order of
+// the `widen` rule set. To get more sophisticated generation behavior, read on.
+//
+// This generator understands two kinds of rules:
+//
+// - narrowing rules (roughly, rules that we expect make a query more specific, and reduces the result set size)
+// - widening rules (roughly, rules that we expect make a query more general, and increases the result set size).
+//
+// A concrete example of a narrowing rule might be: `go parse` -> `lang:go
+// parse`. This since we restrict the subset of files to search for `parse` to
+// Go files only.
+//
+// A concrete example of a widening rule might be: `a b` -> `a OR b`. This since
+// the `OR` expression is more general and will typically find more results than
+// the string `a b`.
+//
+// The way the generator applies narrowing and widening rules has three phases,
+// executed in order. The phases work like this:
+//
+// PHASE ONE: The generator strategy tries to first apply _all narrowing_ rules,
+// and then successively reduces the number of rules that it attempts to apply
+// by one. This strategy is useful when we try the most aggressive
 // interpretation of a query subject to rules first, and gradually loosen the
-// number of rules and interpretation. To avoid spending time on generator
-// invalid combinations, the generator prunes the initial rule set to only those
-// rules that do successively apply individually to the seed query.
-func NewComboGenerator(seed query.Basic, rules []simpleRule) next {
-	rules = pruneRules(seed, rules)
+// number of rules and interpretation. Roughly, PHASE ONE can be thought of as
+// trying to maximize applying "for all" rules on the narrow rule set.
+//
+// PHASE TWO: The generator performs PHASE ONE generation, generating
+// combinations of narrow rules, and then additionally _adds_ the first widening
+// rule to each narrowing combination. It continues iterating along the list of
+// widening rules, appending them to each narrowing combination until the
+// iteration of widening rules is exhausted. Roughly, PHASE TWO can be thought
+// of as trying to maximize applying "for all" rules in the narrow rule set
+// while widening them by applying, in order, "there exists" rules in the widen
+// rule set.
+//
+// PHASE THREE: The generator only applies widening rules in order without any
+// narrowing rules. Roughly, PHASE THREE can be thought of as an ordered "there
+// exists" application over widen rules.
+//
+// To avoid spending time on generator invalid combinations, the generator
+// prunes the initial rule set to only those rules that do successively apply
+// individually to the seed query.
+func NewGenerator(seed query.Basic, narrow, widen []rule) next {
+	narrow = pruneRules(seed, narrow)
+	widen = pruneRules(seed, widen)
+	num := len(narrow)
+
 	// the iterator state `n` stores:
-	// - k, the number of rules to try and apply.
+	// - phase, the current generation phase based on progress
+	// - k, the size of the selection in the narrow set to apply
 	// - cg, an iterator producing the next sequence of rules for the current value of `k`.
-	var n func(k int, cg cg) next
-	n = func(k int, cg cg) next {
-		if k == 0 {
-			return func() (*autoQuery, next) { return nil, nil }
+	// - w, the index of the widen rule to apply (-1 if empty)
+	var n func(phase PHASE, k int, c *cg, w int) next
+	n = func(phase PHASE, k int, c *cg, w int) next {
+		var transform transform
+		var descriptions []string
+		var generated *query.Basic
+
+		narrowing_exhausted := k == 0
+		widening_active := w != -1
+		widening_exhausted := widening_active && w == len(widen)
+
+		switch phase {
+		case THREE:
+			if widening_exhausted {
+				// Base case: we exhausted the set of narrow
+				// rules (if any) and we've attempted every
+				// widen rule with the sets of narrow rules.
+				return func() (*autoQuery, next) { return nil, nil }
+			}
+
+			transform = append(transform, widen[w].transform...)
+			descriptions = append(descriptions, widen[w].description)
+			w += 1 // advance to next widening rule.
+
+		case TWO:
+			if widening_exhausted {
+				// Start phase THREE: apply only widening rules.
+				return n(THREE, 0, nil, 0)
+			}
+
+			if narrowing_exhausted && !widening_exhausted {
+				// Continue widening: We've exhausted the sets of narrow
+				// rules for the current widen rule, but we're not done
+				// yet: there are still more widen rules to try. So
+				// increment w by 1.
+				c = combin.NewCombinationGenerator(num, num)
+				w += 1 // advance to next widening rule.
+				return n(phase, num, c, w)
+			}
+
+			if !c.Next() {
+				// Reduce narrow set size.
+				k -= 1
+				c = combin.NewCombinationGenerator(num, k)
+				return n(phase, k, c, w)
+			}
+
+			for _, idx := range c.Combination(nil) {
+				transform = append(transform, narrow[idx].transform...)
+				descriptions = append(descriptions, narrow[idx].description)
+			}
+
+			// Compose narrow rules with a widen rule.
+			transform = append(transform, widen[w].transform...)
+			descriptions = append(descriptions, widen[w].description)
+
+		case ONE:
+			if narrowing_exhausted && !widening_active {
+				// Start phase TWO: apply widening with
+				// narrowing rules. We've exhausted the sets of
+				// narrow rules, but have not attempted to
+				// compose them with any widen rules. Compose
+				// them with widen rules by initializing w to 0.
+				cg := combin.NewCombinationGenerator(num, num)
+				return n(TWO, num, cg, 0)
+			}
+
+			if !c.Next() {
+				// Reduce narrow set size.
+				k -= 1
+				c = combin.NewCombinationGenerator(num, k)
+				return n(phase, k, c, w)
+			}
+
+			for _, idx := range c.Combination(nil) {
+				transform = append(transform, narrow[idx].transform...)
+				descriptions = append(descriptions, narrow[idx].description)
+			}
+		}
+
+		generated = applyTransformation(seed, transform)
+		if generated == nil {
+			// Rule does not apply, go to next rule.
+			return n(phase, k, c, w)
+		}
+
+		q := autoQuery{
+			description: strings.Join(descriptions, " ⚬ "),
+			query:       *generated,
 		}
 
 		return func() (*autoQuery, next) {
-			if cg.Next() {
-				var transform transform
-				var descriptions []string
-				for _, idx := range cg.Combination(nil) {
-					transform = append(transform, rules[idx].transform)
-					descriptions = append(descriptions, rules[idx].description)
-				}
-				generated := applyTransformation(seed, transform)
-				if generated == nil {
-					// Rule does not apply, go to next rule.
-					continuation := n(k, cg)
-					return continuation()
-				}
-
-				q := autoQuery{
-					description: strings.Join(descriptions, " and "),
-					query:       *generated,
-				}
-
-				return &q, n(k, cg)
-			}
-			k -= 1
-			cg = combin.NewCombinationGenerator(len(rules), k)
-			continuation := n(k, cg)
-			return continuation()
+			return &q, n(phase, k, c, w)
 		}
 	}
 
-	num := len(rules)
+	if len(narrow) == 0 {
+		return n(THREE, 0, nil, 0)
+	}
+
 	cg := combin.NewCombinationGenerator(num, num)
-	return n(num, cg)
+	return n(ONE, num, cg, -1)
 }
 
 // pruneRules produces a minimum set of rules that apply successfully on the seed query.
-func pruneRules(seed query.Basic, rules []simpleRule) []simpleRule {
-	applies := make([]simpleRule, 0, len(rules))
+func pruneRules(seed query.Basic, rules []rule) []rule {
+	applies := make([]rule, 0, len(rules))
 	for _, r := range rules {
-		g := applyTransformation(seed, transform{r.transform})
+		g := applyTransformation(seed, r.transform)
 		if g == nil {
 			continue
 		}

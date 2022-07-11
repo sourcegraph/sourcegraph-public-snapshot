@@ -277,7 +277,6 @@ export const StreamingSearchResults: React.FunctionComponent<
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
             })
-            console.error(results.error)
         }
     }, [results, telemetryService])
 

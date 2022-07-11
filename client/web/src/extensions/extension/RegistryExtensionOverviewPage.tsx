@@ -1,10 +1,10 @@
 import React, { useMemo, useEffect } from 'react'
 
+import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import maxDate from 'date-fns/max'
 import { isObject } from 'lodash'
-import GithubIcon from 'mdi-react/GithubIcon'
 
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
@@ -157,7 +157,7 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                         {repositoryURL && (
                             <div className="d-flex">
                                 {repositoryURL.hostname === 'github.com' && (
-                                    <Icon className="mr-1" as={GithubIcon} aria-hidden={true} />
+                                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiGithub} />
                                 )}
                                 <Link
                                     to={repositoryURL.href}

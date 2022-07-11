@@ -1,5 +1,7 @@
-// This rule is disable to preserve 1-1 mapping between `DecoratedToken` types and classes.
+// This rule needs to be disabled so that we can override CodeMirror's classes
 /* stylelint-disable selector-class-pattern */
+@import 'wildcard/src/global-styles/breakpoints';
+
 .root {
     flex: 1;
     min-width: 0;
@@ -29,6 +31,17 @@
             &:global(.focus-visible),
             &:focus-visible {
                 box-shadow: none;
+            }
+
+            @media (--xs-breakpoint-down) {
+                // Automatically enable line wrapping on small screens.
+                // CodeMirror's own lineWrapping extension does the same
+                // (also see https://codemirror.net/examples/styling/)
+                white-space: pre-wrap; // For IE
+                white-space: break-spaces;
+                word-break: break-word; // For Safari, which doesn't support overflow-wrap: anywhere
+                overflow-wrap: anywhere;
+                flex-shrink: 1;
             }
         }
 

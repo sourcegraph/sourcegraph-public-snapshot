@@ -4,7 +4,7 @@ exports[`Icon custom icons renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-label="Sourcegraph logo"
-    class="iconInline iconInlineMd"
+    class="mdi-icon iconInline iconInlineMd"
     fill="none"
     role="img"
     viewBox="0 0 52 52"
@@ -30,7 +30,7 @@ exports[`Icon custom icons renders a simple inline icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-hidden="true"
-    class="iconInline"
+    class="mdi-icon iconInline"
     fill="none"
     role="img"
     viewBox="0 0 52 52"
@@ -56,7 +56,7 @@ exports[`Icon legacy mdi-react icons renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-label="Checkmark"
-    class="mdi-icon iconInline iconInlineMd"
+    class="mdi-icon mdi-icon iconInline iconInlineMd"
     fill="currentColor"
     height="24"
     role="img"
@@ -74,7 +74,7 @@ exports[`Icon legacy mdi-react icons renders a simple inline icon correctly 1`] 
 <DocumentFragment>
   <svg
     aria-hidden="true"
-    class="mdi-icon iconInline"
+    class="mdi-icon mdi-icon iconInline"
     fill="currentColor"
     height="24"
     role="img"
@@ -92,7 +92,7 @@ exports[`Icon new @mdi/js icons renders a medium icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-label="Checkmark"
-    class="iconInline iconInlineMd"
+    class="mdi-icon iconInline iconInlineMd"
     fill="currentColor"
     height="24"
     role="img"
@@ -110,7 +110,7 @@ exports[`Icon new @mdi/js icons renders a simple inline icon correctly 1`] = `
 <DocumentFragment>
   <svg
     aria-hidden="true"
-    class="iconInline"
+    class="mdi-icon iconInline"
     fill="currentColor"
     height="24"
     role="img"
@@ -128,7 +128,7 @@ exports[`Icon styled as icons renders a simple span 1`] = `
 <DocumentFragment>
   <span
     aria-label="Smile"
-    class="iconInline"
+    class="mdi-icon iconInline"
     role="img"
   >
     :)

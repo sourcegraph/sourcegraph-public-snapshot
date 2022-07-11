@@ -20,11 +20,18 @@ export interface PreviewContent {
     repoUrl: string
     commit?: string
     path?: string
+    // This field is serialized as a base64-encoded string.
     content: string | null
+    // This field is serialized as a base64-encoded string.
     symbolName?: string
     symbolContainerName?: string
     commitMessagePreview?: string
     lineNumber?: number
+    // Note: Although Sourcegraph's API returns results as Unicode code point offsets, JetBrains
+    // does not give us the APIs to use another encoding.
+    //
+    // To work around this, this field contains byte offsets instead we are converting the
+    // Sourcegraph API data accordingly.
     absoluteOffsetAndLengths?: number[][]
     relativeUrl?: string
 }
@@ -209,7 +216,7 @@ export async function createPreviewContent(
 ): Promise<PreviewContent> {
     if (match.type === 'commit') {
         const isCommitResult = match.content.startsWith('```COMMIT_EDITMSG')
-        const content = prepareContent(
+        const content = convertCarriageReturnLineFeedToLineFeed(
             isCommitResult
                 ? match.content.replace(/^```COMMIT_EDITMSG\n([\S\s]*)\n```$/, '$1')
                 : match.content.replace(/^```diff\n([\S\s]*)\n```$/, '$1')
@@ -218,7 +225,7 @@ export async function createPreviewContent(
             timeAsISOString: new Date().toISOString(),
             resultType: isCommitResult ? 'commit' : 'diff',
             repoUrl: match.repository,
-            content,
+            content: encodeContent(content),
             commitMessagePreview: match.message.split('\n', 1)[0],
             relativeUrl: match.url,
         }
@@ -263,9 +270,11 @@ async function createPreviewContentForContentMatch(
     lineMatchIndex: number
 ): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
-    const content = await loadContent(match)
+    const content = convertCarriageReturnLineFeedToLineFeed(await loadContent(match))
     const characterCountUntilLine = getCharacterCountUntilLine(content, match.lineMatches[lineMatchIndex].lineNumber)
     const absoluteOffsetAndLengths = getAbsoluteOffsetAndLengths(
+        content,
+        match.lineMatches[lineMatchIndex].lineNumber,
         match.lineMatches[lineMatchIndex].offsetAndLengths,
         characterCountUntilLine
     )
@@ -277,7 +286,7 @@ async function createPreviewContentForContentMatch(
         repoUrl: match.repository,
         commit: match.commit,
         path: match.path,
-        content: prepareContent(content),
+        content: encodeContent(content),
         lineNumber: match.lineMatches[lineMatchIndex].lineNumber,
         absoluteOffsetAndLengths,
     }
@@ -285,7 +294,7 @@ async function createPreviewContentForContentMatch(
 
 async function createPreviewContentForPathMatch(match: PathMatch): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
-    const content = await loadContent(match)
+    const content = convertCarriageReturnLineFeedToLineFeed(await loadContent(match))
 
     return {
         timeAsISOString: new Date().toISOString(),
@@ -293,7 +302,7 @@ async function createPreviewContentForPathMatch(match: PathMatch): Promise<Previ
         fileName,
         repoUrl: match.repository,
         path: match.path,
-        content: prepareContent(content),
+        content: encodeContent(content),
     }
 }
 
@@ -302,7 +311,7 @@ async function createPreviewContentForSymbolMatch(
     symbolMatchIndex: number
 ): Promise<PreviewContent> {
     const fileName = splitPath(match.path)[1]
-    const content = await loadContent(match)
+    const content = convertCarriageReturnLineFeedToLineFeed(await loadContent(match))
     const symbolMatch = match.symbols[symbolMatchIndex]
 
     return {
@@ -312,30 +321,45 @@ async function createPreviewContentForSymbolMatch(
         repoUrl: match.repository,
         commit: match.commit,
         path: match.path,
-        content: prepareContent(content),
-        symbolName: symbolMatch.name,
+        content: encodeContent(content),
+        symbolName: encodeContent(symbolMatch.name) ?? '',
         symbolContainerName: symbolMatch.containerName,
         lineNumber: getLineFromSourcegraphUrl(symbolMatch.url),
-        absoluteOffsetAndLengths: getAbsoluteOffsetAndLengthsFromSourcegraphUrl(symbolMatch.url, content),
+        absoluteOffsetAndLengths: getAbsoluteOffsetAndLengthsFromSourcegraphUrl(content, symbolMatch.url),
         relativeUrl: '',
     }
 }
 
 // We encode the content as base64-encoded string to avoid encoding errors in the Java JSON parser.
-// The Java side also does not expect `\r\n` line endings, so we replace them with `\n`.
-//
 // We can not use the native btoa() function because it does not support all Unicode characters.
-function prepareContent(content: string | null): string | null {
+function encodeContent(content: string | null): string | null {
     if (content === null) {
         return null
     }
-    return encode(content.replaceAll('\r\n', '\n'))
+    return encode(content)
+}
+
+// This function returns the byte length rather than Unicode code pointer count for an offset on a
+// specific line.
+function convertUnicodeOffsetToByteOffset(content: string, lineNumber: number, unicodeOffset: number): number {
+    const line = content.split('\n')[lineNumber]
+    const lineAsUnicodeCodePoints = [...line]
+
+    let bytes = 0
+    for (let index = 0; index < unicodeOffset; index++) {
+        bytes += lineAsUnicodeCodePoints[index].length
+    }
+
+    return bytes
 }
 
 // NOTE: This might be slow when the content is a really large file and the match is in the
 // beginning of the file because we convert all rows to an array first.
 //
 // If we ever run into issues with large files, this is a place to get some wins.
+//
+// This function returns byte length rather than Unicode code pointer count. See the
+// absoluteOffsetAndLengths field documentation for more information.
 function getCharacterCountUntilLine(content: string | null, lineNumber: number): number {
     if (content === null) {
         return 0
@@ -349,8 +373,23 @@ function getCharacterCountUntilLine(content: string | null, lineNumber: number):
     return count
 }
 
-function getAbsoluteOffsetAndLengths(offsetAndLengths: number[][], characterCountUntilLine: number): number[][] {
-    return offsetAndLengths.map(offsetAndLength => [offsetAndLength[0] + characterCountUntilLine, offsetAndLength[1]])
+function getAbsoluteOffsetAndLengths(
+    content: string | null,
+    lineNumber: number,
+    offsetAndLengths: number[][],
+    characterCountUntilLine: number
+): number[][] {
+    if (content === null) {
+        return []
+    }
+
+    return offsetAndLengths.map(([unicodeOffset, unicodeLength]) => {
+        const byteOffset = convertUnicodeOffsetToByteOffset(content, lineNumber, unicodeOffset)
+        const byteLength =
+            convertUnicodeOffsetToByteOffset(content, lineNumber, unicodeOffset + unicodeLength) - byteOffset
+
+        return [byteOffset + characterCountUntilLine, byteLength]
+    })
 }
 
 function getLineFromSourcegraphUrl(url: string): number {
@@ -361,7 +400,7 @@ function getLineFromSourcegraphUrl(url: string): number {
     return offsets.start.line
 }
 
-function getAbsoluteOffsetAndLengthsFromSourcegraphUrl(url: string, content: string | null): number[][] {
+function getAbsoluteOffsetAndLengthsFromSourcegraphUrl(content: string | null, url: string): number[][] {
     const offsets = extractStartAndEndOffsetsFromSourcegraphUrl(url)
     if (offsets === null) {
         return []
@@ -398,4 +437,12 @@ function extractStartAndEndOffsetsFromSourcegraphUrl(
         start: { line: parseInt(match[1], 10) - 1, col: parseInt(match[2], 10) - 1 },
         end: { line: parseInt(match[3], 10) - 1, col: parseInt(match[4], 10) - 1 },
     }
+}
+
+// The Java side does not expect `\r\n` line endings, so we replace them with `\n`.
+function convertCarriageReturnLineFeedToLineFeed(content: string | null): string | null {
+    if (content === null) {
+        return null
+    }
+    return content.replaceAll('\r\n', '\n')
 }

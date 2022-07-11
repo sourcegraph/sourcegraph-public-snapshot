@@ -2,11 +2,13 @@ import React, { Fragment, useMemo } from 'react'
 
 import classNames from 'classnames'
 
+import { SearchPatternType } from '@sourcegraph/search'
 import { decorate, DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 
 interface SyntaxHighlightedSearchQueryProps extends React.HTMLAttributes<HTMLSpanElement> {
     query: string
+    searchPatternType?: SearchPatternType
 }
 
 interface decoration {
@@ -87,9 +89,9 @@ function toDecoration(query: string, token: DecoratedToken): decoration {
 // A read-only syntax highlighted search query
 export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
     React.PropsWithChildren<SyntaxHighlightedSearchQueryProps>
-> = ({ query, ...otherProps }) => {
+> = ({ query, searchPatternType, ...otherProps }) => {
     const tokens = useMemo(() => {
-        const tokens = scanSearchQuery(query)
+        const tokens = searchPatternType ? scanSearchQuery(query) : scanSearchQuery(query, false, searchPatternType)
         return tokens.type === 'success'
             ? tokens.term.flatMap(token =>
                   decorate(token).map(token => {
@@ -102,7 +104,7 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
                   })
               )
             : [<Fragment key="0">{query}</Fragment>]
-    }, [query])
+    }, [query, searchPatternType])
 
     return (
         <span {...otherProps} className={classNames('text-monospace search-query-link', otherProps.className)}>

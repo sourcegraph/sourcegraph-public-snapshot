@@ -13,7 +13,7 @@ Array [
   >
     <svg
       aria-hidden="true"
-      class="mdi-icon iconInline"
+      class="mdi-icon mdi-icon iconInline"
       fill="currentColor"
       height="24"
       role="img"
@@ -41,7 +41,7 @@ Array [
   >
     <svg
       aria-hidden="true"
-      class="mdi-icon iconInline"
+      class="mdi-icon mdi-icon iconInline"
       fill="currentColor"
       height="24"
       role="img"
@@ -69,7 +69,7 @@ Array [
   >
     <svg
       aria-hidden="true"
-      class="mdi-icon iconInline"
+      class="mdi-icon mdi-icon iconInline"
       fill="currentColor"
       height="24"
       role="img"
