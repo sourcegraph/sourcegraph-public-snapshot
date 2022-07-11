@@ -859,14 +859,6 @@ func publishExecutorDockerMirror(version string) operations.Operation {
 	}
 }
 
-func notifyBuildDone() operations.Operation {
-	return func(p *bk.Pipeline) {
-		p.AddStep(":satelite: Notifying of done build :check:",
-			bk.Cmd("./enterprise/dev/ci/scripts/notify-build-done.sh"),
-		)
-	}
-}
-
 func uploadBuildeventTrace() operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":arrow_heading_up: Upload build trace",

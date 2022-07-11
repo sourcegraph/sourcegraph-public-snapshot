@@ -291,7 +291,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	ops.Append(
 		wait,                    // wait for all steps to pass
 		uploadBuildeventTrace(), // upload the final buildevent trace if the build succeeded.
-		notifyBuildDone(),
 	)
 
 	// Construct pipeline
