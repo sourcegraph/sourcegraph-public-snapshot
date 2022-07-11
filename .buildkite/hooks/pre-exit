@@ -24,7 +24,7 @@ notifyFailedStep() {
 EOF
     )
 
-    echo "Notifying of failed step 🛰️"
+    echo "🛰️ Notifying of failed step 🛰️"
     curl -v -X POST -H "Content-Type: application/json" -d "$data" http://169.0.178.64:8080/failed
 }
 
