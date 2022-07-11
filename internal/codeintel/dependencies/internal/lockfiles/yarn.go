@@ -2,7 +2,6 @@ package lockfiles
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"strings"
 
@@ -258,13 +257,6 @@ type npmDependency struct {
 
 	// The version constraint (such as "^4.6.0" or "> 12.0 || < 15") for a dependency.
 	VersionConstraint string
-}
-
-func (n *npmDependency) String() string {
-	if scope := n.PackageScope(); scope != "" {
-		return fmt.Sprintf("%s/%s@%s", scope, n.PackageName(), n.VersionConstraint)
-	}
-	return fmt.Sprintf("%s@%s", n.PackageName(), n.VersionConstraint)
 }
 
 func (n *npmDependency) Equal(o *npmDependency) bool {

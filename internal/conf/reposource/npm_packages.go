@@ -58,12 +58,6 @@ func (pkg *NpmPackageName) Equal(other *NpmPackageName) bool {
 	return pkg == other || (pkg != nil && other != nil && *pkg == *other)
 }
 
-// TODO: export field instead of sure that this is what we want to do
-func (pkg *NpmPackageName) PackageName() string { return pkg.name }
-
-// TODO: export field instead of sure that this is what we want to do
-func (pkg *NpmPackageName) PackageScope() string { return pkg.scope }
-
 // ParseNpmPackageNameWithoutVersion parses a package name with optional scope
 // into NpmPackageName.
 func ParseNpmPackageNameWithoutVersion(input string) (NpmPackageName, error) {
