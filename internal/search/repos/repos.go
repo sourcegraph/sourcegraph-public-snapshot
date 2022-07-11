@@ -534,7 +534,7 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		tr.Finish()
 	}()
 
-	if !conf.DependeciesSearchEnabled() {
+	if !conf.DependenciesSearchEnabled() {
 		return nil, nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
@@ -619,7 +619,7 @@ func (r *Resolver) dependents(ctx context.Context, op *search.RepoOptions) (_ []
 		tr.Finish()
 	}()
 
-	if !conf.DependeciesSearchEnabled() {
+	if !conf.DependenciesSearchEnabled() {
 		return nil, nil, errors.Errorf("support for `repo:dependents()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
