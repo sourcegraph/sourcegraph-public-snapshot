@@ -69,7 +69,7 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	bridge.SetWarningHandler(func(msg string) { bridgeLogger.Debug(msg) })
 
 	// Done
-	return &otelBridgeTracer{bridge}, otelTracerProvider, &otelBridgeCloser{provider}, nil
+	return bridge, otelTracerProvider, &otelBridgeCloser{provider}, nil
 }
 
 // newOTelCollectorExporter creates a processor that exports spans to an OpenTelemetry
@@ -107,66 +107,6 @@ func (p otelBridgeCloser) Close() error {
 	defer cancel()
 
 	return p.Shutdown(ctx)
-}
-
-// otelBridgeTracer wraps bridge.BridgeTracer with extended Inject/Extract support for
-// opentracing.TextMap which is used in the codebase and similar carriers. It is adapted
-// from the 'thanos-io/thanos' project
-// https://sourcegraph.com/github.com/thanos-io/thanos@4de555db87d38d69b78602c1e1d0fb8ed6e0371b/-/blob/pkg/tracing/migration/bridge.go?L76-88#tab=references
-// but behaves differently, disregarding the provided format if we decide to override it.
-//
-// The main issue is that bridge.BridgeTracer currently supports injection /
-// extraction of only single carrier type which is opentracing.HTTPHeadersCarrier. See:
-//
-// - https://github.com/open-telemetry/opentelemetry-go/blob/c2dc940e0b48e61712e4f8f6f2320d8fd4c9aac6/bridge/opentracing/bridge.go#L634-L638
-// - https://github.com/open-telemetry/opentelemetry-go/blob/c2dc940e0b48e61712e4f8f6f2320d8fd4c9aac6/bridge/opentracing/bridge.go#L664-L668
-type otelBridgeTracer struct{ bridge *otelbridge.BridgeTracer }
-
-var _ opentracing.Tracer = &otelBridgeTracer{}
-
-func (b *otelBridgeTracer) StartSpan(operationName string, opts ...opentracing.StartSpanOption) opentracing.Span {
-	return b.bridge.StartSpan(operationName, opts...)
-}
-
-func (b *otelBridgeTracer) Inject(span opentracing.SpanContext, format interface{}, carrier interface{}) error {
-	// Inject into a blank HTTPHeaders carrier first - we use this as a source for our
-	// wrapped Inject implementation.
-	otCarrier := opentracing.HTTPHeadersCarrier{}
-	err := b.bridge.Inject(span, opentracing.HTTPHeaders, otCarrier)
-	if err != nil {
-		return err
-	}
-
-	// Regardless of format, inject context into the TextMapWriter if there is one. If we
-	// do this, there is no need to pass this on to the underlying Inject implemenation
-	if tmw, ok := carrier.(opentracing.TextMapWriter); ok {
-		return otCarrier.ForeachKey(func(key, val string) error {
-			tmw.Set(key, val)
-			return nil
-		})
-	}
-
-	// If we are receiving some other non-TextMapWriter type, pass it on and hope for the
-	// best.
-	return b.bridge.Inject(span, format, carrier)
-}
-
-func (b *otelBridgeTracer) Extract(format interface{}, carrier interface{}) (opentracing.SpanContext, error) {
-	// Regardless of format, extract TextMapReader content into an HTTPHeadersCarrier
-	if tmr, ok := carrier.(opentracing.TextMapReader); ok {
-		otCarrier := opentracing.HTTPHeadersCarrier{}
-		err := tmr.ForeachKey(func(key, val string) error {
-			otCarrier.Set(key, val)
-			return nil
-		})
-		if err != nil {
-			return nil, err
-		}
-
-		return b.bridge.Extract(opentracing.HTTPHeaders, otCarrier)
-	}
-
-	return b.bridge.Extract(format, carrier)
 }
 
 // newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
