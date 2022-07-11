@@ -1872,6 +1872,11 @@ extend type Query {
     Determines if a batch change credential is authorized for a code host.
     """
     checkBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
+
+    """
+    Returns the max number of changesets are allowed for License that does not have the batch change feature.
+    """
+    maxUnlicensedChangesets: Int!
 }
 
 """
