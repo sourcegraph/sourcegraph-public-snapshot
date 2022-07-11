@@ -6,12 +6,11 @@ import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/setting
 
 const defaultSettings: SettingsExperimentalFeatures = {
     codeMonitoring: true,
-    showEnterpriseHomePanels: true,
+    showEnterpriseHomePanels: false,
     /**
      * Whether we show the mulitiline editor at /search/console
      */
     showMultilineSearchConsole: false,
-    showOnboardingTour: true,
     showSearchContext: true,
     showSearchContextManagement: true,
     showSearchNotebook: true,

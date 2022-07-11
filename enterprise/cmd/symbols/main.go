@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
@@ -34,7 +35,11 @@ func main() {
 	reposVar := env.Get("ROCKSKIP_REPOS", "", "comma separated list of repositories to index (e.g. `github.com/torvalds/linux,github.com/pallets/flask`)")
 	repos := strings.Split(reposVar, ",")
 
-	if env.Get("USE_ROCKSKIP", "false", "use Rockskip to index the repos specified in ROCKSKIP_REPOS") == "true" {
+	minRepoSizeMb := env.MustGetInt("ROCKSKIP_MIN_REPO_SIZE_MB", -1, "all repos that are at least this big will be indexed using Rockskip")
+
+	repoToSize := map[string]int64{}
+
+	if env.Get("USE_ROCKSKIP", "false", "use Rockskip to index the repos specified in ROCKSKIP_REPOS, or repos over ROCKSKIP_MIN_REPO_SIZE_MB in size") == "true" {
 		shared.Main(func(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 			rockskipSearchFunc, rockskipHandleStatus, rockskipBackgroundRoutines, rockskipCtagsCommand, err := SetupRockskip(observationContext, gitserverClient, repositoryFetcher)
 			if err != nil {
@@ -49,11 +54,36 @@ func main() {
 			}
 
 			searchFunc := func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error) {
-				if sliceContains(repos, string(args.Repo)) {
-					return rockskipSearchFunc(ctx, args)
-				} else {
-					return sqliteSearchFunc(ctx, args)
+				if reposVar != "" {
+					if sliceContains(repos, string(args.Repo)) {
+						return rockskipSearchFunc(ctx, args)
+					} else {
+						return sqliteSearchFunc(ctx, args)
+					}
 				}
+
+				if minRepoSizeMb != -1 {
+					var size int64
+					if _, ok := repoToSize[string(args.Repo)]; ok {
+						size = repoToSize[string(args.Repo)]
+					} else {
+						ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+						defer cancel()
+						size, err = gitserverClient.GetRepoSize(ctx, args.Repo)
+						if err != nil {
+							return sqliteSearchFunc(ctx, args)
+						}
+						repoToSize[string(args.Repo)] = size
+					}
+
+					if size >= int64(minRepoSizeMb)*1000*1000 {
+						return rockskipSearchFunc(ctx, args)
+					} else {
+						return sqliteSearchFunc(ctx, args)
+					}
+				}
+
+				return sqliteSearchFunc(ctx, args)
 			}
 
 			return searchFunc, rockskipHandleStatus, append(rockskipBackgroundRoutines, sqliteBackgroundRoutines...), rockskipCtagsCommand, nil

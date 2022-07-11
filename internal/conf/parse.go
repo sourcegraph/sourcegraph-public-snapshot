@@ -60,6 +60,7 @@ var requireRestart = []string{
 	"insights.query.worker.concurrency",
 	"insights.commit.indexer.interval",
 	"codeIntelAutoIndexing.enabled",
+	"permissions.syncUsersMaxConcurrency",
 }
 
 // NeedRestartToApply determines if a restart is needed to apply the changes

@@ -18,7 +18,7 @@ exports[`<NavMenu /> Should render Menu Items Correctly 1`] = `
   <div
     aria-labelledby="menu-button-2"
     aria-modal="true"
-    class="floatingPanel popover py-1"
+    class="floatingPanel popover py-1 menuList"
     data-reach-menu-items=""
     data-reach-menu-popover=""
     id="menu-1"

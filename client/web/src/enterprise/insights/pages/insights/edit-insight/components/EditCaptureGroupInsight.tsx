@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react'
 
-import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import { SubmissionErrors } from '../../../../components'
 import { MinimalCaptureGroupInsightData, CaptureGroupInsight } from '../../../../core'
 import { CaptureGroupFormFields } from '../../creation/capture-group'
 import { CaptureGroupCreationContent } from '../../creation/capture-group/components/CaptureGroupCreationContent'

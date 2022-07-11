@@ -30,7 +30,7 @@ export const ExecutionLogEntry: React.FunctionComponent<React.PropsWithChildren<
     <Card className="mb-3">
         <CardBody>
             {logEntry.command.length > 0 ? (
-                <LogOutput text={logEntry.command.join(' ')} className="mb-3" />
+                <LogOutput text={logEntry.command.join(' ')} className="mb-3" logDescription="Executed command:" />
             ) : (
                 <div className="mb-3">
                     <span className="text-muted">Internal step {logEntry.key}.</span>
@@ -63,7 +63,7 @@ export const ExecutionLogEntry: React.FunctionComponent<React.PropsWithChildren<
         <div className="p-2">
             {logEntry.out ? (
                 <Collapsible title="Log output" titleAtStart={true} buttonClassName="p-2">
-                    <LogOutput text={logEntry.out} />
+                    <LogOutput text={logEntry.out} logDescription="Log output:" />
                 </Collapsible>
             ) : (
                 <div className="p-2">

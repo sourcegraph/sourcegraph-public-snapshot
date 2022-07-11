@@ -1,5 +1,5 @@
+import { createDefaultEditSeries } from '../../../../../../components'
 import { SearchBasedInsightSeries } from '../../../../../../core'
-import { createDefaultEditSeries } from '../../components/search-insight-creation-content/hooks/use-editable-series'
 import { CreateInsightFormFields } from '../../types'
 
 export function decodeSearchInsightUrl(queryParameters: string): Partial<CreateInsightFormFields> | null {

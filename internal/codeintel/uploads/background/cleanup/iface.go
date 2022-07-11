@@ -18,7 +18,7 @@ type DBStore interface {
 }
 
 type UploadService interface {
-	StaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]sharedUploads.SourcedCommits, error)
+	GetStaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]sharedUploads.SourcedCommits, error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, int, error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, error)
 
@@ -31,7 +31,7 @@ type UploadService interface {
 }
 
 type AutoIndexingService interface {
-	StaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]sharedIndexes.SourcedCommits, error)
+	GetStaleSourcedCommits(ctx context.Context, threshold time.Duration, limit int, now time.Time) ([]sharedIndexes.SourcedCommits, error)
 	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (int, error)
 	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (int, error)
 

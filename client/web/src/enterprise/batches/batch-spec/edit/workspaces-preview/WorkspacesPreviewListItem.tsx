@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiClose } from '@mdi/js'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     PreviewHiddenBatchSpecWorkspaceFields,
@@ -64,12 +64,9 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<
 const ExcludeButton: React.FunctionComponent<React.PropsWithChildren<{ handleExclude: () => void }>> = ({
     handleExclude,
 }) => (
-    <Button
-        aria-label="Omit this repository from batch spec file"
-        className="p-0 my-0 mx-2"
-        data-tooltip="Omit this repository from batch spec file"
-        onClick={handleExclude}
-    >
-        <Icon aria-hidden={true} svgPath={mdiClose} />
-    </Button>
+    <Tooltip content="Omit this repository from batch spec file">
+        <Button aria-label="Omit this repository" className="p-0 my-0 mx-2" onClick={handleExclude}>
+            <Icon aria-hidden={true} svgPath={mdiClose} />
+        </Button>
+    </Tooltip>
 )

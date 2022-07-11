@@ -15,7 +15,7 @@ type finishSpanFunc func(*search.Alert, error)
 
 func StartSpan(ctx context.Context, stream streaming.Sender, job Job) (*trace.Trace, context.Context, streaming.Sender, finishSpanFunc) {
 	tr, ctx := trace.New(ctx, job.Name(), "")
-	tr.TagFields(trace.LazyFields(job.Tags))
+	tr.TagFields(trace.LazyFields(func() []log.Field { return job.Fields(VerbosityMax) }))
 
 	observingStream := newObservingStream(tr, stream)
 
