@@ -1,8 +1,7 @@
 import React from 'react'
 
-import { Alert, AlertProps } from '@sourcegraph/wildcard'
-
 import { useQuery } from '@sourcegraph/http-client'
+import { Alert, AlertProps } from '@sourcegraph/wildcard'
 
 import { GetLicenseAndUsageInfoResult, GetLicenseAndUsageInfoVariables } from '../../graphql-operations'
 
