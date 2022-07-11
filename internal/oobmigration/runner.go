@@ -73,6 +73,10 @@ type MigratorOptions struct {
 	ticker glock.Ticker
 }
 
+func (r *Runner) SynchronizeMetadata(ctx context.Context) error {
+	return r.store.SynchronizeMetadata(ctx)
+}
+
 // Register correlates the given migrator with the given migration identifier. An error is
 // returned if a migrator is already associated with this migration.
 func (r *Runner) Register(id int, migrator Migrator, options MigratorOptions) error {

@@ -178,8 +178,6 @@ var yamlMigrations = func() []yamlMigration {
 	return migrations
 }()
 
-// TODO - call from runner
-
 // SynchronizeMetadata upserts the metadata defined in the sibling file oobmigrations.yaml.
 // Existing out-of-band migration metadata that does not match one of the identifiers in
 // the referenced file are not removed, as they have likely been registered by an earlier
