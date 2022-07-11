@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -51,7 +50,7 @@ func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
 
 		urn: op.URN,
 		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli,
-			func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+			func(ctx context.Context, doer httpcli.Doer) (string, error) {
 				// todo
 				fmt.Println("OAuth token refresh request")
 				return "", nil

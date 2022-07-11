@@ -77,7 +77,7 @@ func getOAuthErrorDetails(body []byte) error {
 type TokenRefresher func(ctx context.Context, doer httpcli.Doer) (string, error)
 
 // todo docstring
-func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, oauthCtx Context, tokenRefresher TokenRefresher) (code int, header http.Header, body []byte, err error) {
+func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher) (code int, header http.Header, body []byte, err error) {
 	for i := 0; i < 2; i++ {
 		if auther != nil {
 			if err := auther.Authenticate(req); err != nil {

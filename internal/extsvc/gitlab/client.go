@@ -290,7 +290,7 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
 }
 
-func (c *Client) doWithBaseURLWithOAuthContext(ctx context.Context, req *http.Request, result any, oauthCtx oauthutil.Context) (responseHeader http.Header, responseCode int, err error) {
+func (c *Client) doWithBaseURLWithOAuthContext(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var responseStatus string
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
@@ -319,7 +319,7 @@ func (c *Client) doWithBaseURLWithOAuthContext(ctx context.Context, req *http.Re
 	var body []byte
 	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
 	if ok {
-		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, oauthCtx, c.tokenRefresher)
+		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher)
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 			return nil, 0, errors.Wrap(err, "do request")
