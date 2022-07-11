@@ -77,7 +77,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 	// Add newline after progress related to container
 	std.Out.Write("")
 
-	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID, "squashed_migrations_privileged")
+	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID, "squashed_migrations_unprivileged")
 	if err != nil {
 		return err
 	}
