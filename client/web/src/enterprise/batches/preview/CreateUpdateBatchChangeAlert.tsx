@@ -42,7 +42,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
 
     const onLicenseRetrieved = useCallback(
         (data: GetLicenseAndUsageInfoResult) => {
-            if (!data.batchChanges && !data.campaigns && totalCount > 5) {
+            if (!data.batchChanges && !data.campaigns && totalCount > data.maxUnlicensedChangesets) {
                 setExceedsLicense(true)
             }
         },
