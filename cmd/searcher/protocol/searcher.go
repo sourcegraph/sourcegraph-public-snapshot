@@ -217,14 +217,14 @@ func (fm FileMatch) MatchCount() int {
 }
 
 func (fm *FileMatch) Limit(limit int) {
-	for i, cm := range fm.ChunkMatches {
-		l := len(cm.Ranges)
+	for i := range fm.ChunkMatches {
+		l := len(fm.ChunkMatches[i].Ranges)
 		if l <= limit {
 			limit -= l
 			continue
 		}
 
-		cm.Ranges = cm.Ranges[:limit]
+		fm.ChunkMatches[i].Ranges = fm.ChunkMatches[i].Ranges[:limit]
 		if limit > 0 {
 			fm.ChunkMatches = fm.ChunkMatches[:i+1]
 		} else {
