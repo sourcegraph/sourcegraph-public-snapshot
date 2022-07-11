@@ -32,7 +32,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    color: var(--secondary);
+    color: var(--text-muted);
 
     &--active,
     &:hover {
@@ -48,5 +48,5 @@
 }
 
 .container-name {
-    margin-left: 0.25rem;
+    margin-left: 0.5rem;
 }
