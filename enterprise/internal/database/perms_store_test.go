@@ -439,12 +439,12 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
-				1: {2, 3},
-				2: {1, 3},
+				1: {1, 2, 3},
+				2: {1, 2, 3},
 			},
 			expectRepoPerms: map[int32][]uint32{
-				1: {2},
-				2: {1},
+				1: {1, 2},
+				2: {1, 2},
 				3: {1, 2},
 			},
 		},
@@ -462,12 +462,12 @@ func testPermsStore_SetUserPermissions(db database.DB) func(*testing.T) {
 				},
 			},
 			expectUserPerms: map[int32][]uint32{
-				1: {},
+				1: {1, 2, 3},
 			},
 			expectRepoPerms: map[int32][]uint32{
-				1: {},
-				2: {},
-				3: {},
+				1: {1},
+				2: {1},
+				3: {1},
 			},
 		},
 		{
