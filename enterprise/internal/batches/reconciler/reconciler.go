@@ -84,6 +84,7 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 
 	return executePlan(
 		ctx,
+		logger,
 		r.gitserverClient,
 		r.sourcer,
 		r.noSleepBeforeSync,
