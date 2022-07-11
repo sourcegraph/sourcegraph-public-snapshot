@@ -4,9 +4,6 @@ import (
 	"time"
 )
 
-// TODO(insights): we don't need to convert the results of the StreamAPI to this GraphQL equivalent
-// anymore. (see `computeTabulationResultToGroupedResults`)
-
 type ComputeResult interface {
 	RepoName() string
 	RepoID() string
