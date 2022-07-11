@@ -36,21 +36,21 @@
             class="com.sourcegraph.website.SearchSelection"
             text="Search Selection on Sourcegraph Web"
             description="Search selection on Sourcegraph web"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.searchRepository"
             class="com.sourcegraph.website.SearchRepository"
             text="Search Selection in Repository on Sourcegraph Web"
             description="Search selection in repository on Sourcegraph web"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.copy"
             class="com.sourcegraph.website.Copy"
             text="Copy Sourcegraph File Link"
             description="Copy Sourcegraph file link"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="com.sourcegraph.website.OpenRevisionAction"
@@ -66,7 +66,7 @@
             class="com.sourcegraph.find.OpenFindAction"
             text="Find with Sourcegraph..."
             description="Search all your repos on Sourcegraph"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
             <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
             <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
@@ -78,7 +78,7 @@
             icon="/icons/sourcegraphLogo.png">
         </action>
 
-        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.png" popup="true" text="Sourcegraph">
+        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph">
             <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>
             <reference ref="sourcegraph.searchRepository"/>
