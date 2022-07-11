@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
-import ArrowCollapseRightIcon from 'mdi-react/ArrowCollapseRightIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -388,7 +385,8 @@ export const ReferencesList: React.FunctionComponent<
                     <small>
                         <Icon
                             aria-hidden={true}
-                            as={canShowSpinner ? LoadingSpinner : FilterOutlineIcon}
+                            as={canShowSpinner ? LoadingSpinner : undefined}
+                            svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
                             size="sm"
                             className={styles.filterIcon}
                         />
@@ -462,7 +460,7 @@ export const ReferencesList: React.FunctionComponent<
                                     <Icon
                                         aria-hidden={true}
                                         size="sm"
-                                        as={ArrowCollapseRightIcon}
+                                        svgPath={mdiArrowCollapseRight}
                                         className="border-0"
                                     />
                                 </Button>
@@ -532,9 +530,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                            <Icon aria-label="Close" svgPath={mdiChevronDown} />
                         ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                            <Icon aria-label="Expand" svgPath={mdiChevronRight} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -752,8 +750,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    <Icon aria-hidden="true" as={open ? ChevronDownIcon : ChevronRightIcon} />
-
+                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
                     <small>
                         <Link
                             to={repoUrl}
@@ -798,7 +795,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 navigateToUrl: (url: string) => void
             }
     >
-> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, searchToken, navigateToUrl }) => {
+> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, navigateToUrl }) => {
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
@@ -820,9 +817,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                        <Icon aria-label="Close" svgPath={mdiChevronDown} />
                     ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon aria-label="Expand" svgPath={mdiChevronRight} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>

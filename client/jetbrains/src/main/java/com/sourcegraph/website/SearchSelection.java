@@ -6,6 +6,6 @@ import org.jetbrains.annotations.NotNull;
 public class SearchSelection extends SearchActionBase {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        super.actionPerformedMode(event, "search");
+        super.actionPerformedMode(event, Scope.ANYWHERE);
     }
 }

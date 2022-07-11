@@ -1,10 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 // eslint-disable-next-line no-restricted-imports
 import { Tooltip } from 'reactstrap'
 
@@ -154,7 +152,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                         targetID={targetID}
                                         className={styles.avatar}
                                     />
-                                    <Icon as={isExpanded ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+                                    <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
                             {isExtensionAlertAnimating && (
@@ -272,7 +270,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 target="_blank"
                                 rel="noopener"
                             >
-                                Help <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
                             <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
@@ -290,7 +288,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     target="_blank"
                                     rel="noopener"
                                 >
-                                    About Sourcegraph <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                    About Sourcegraph <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}
                             {codeHostIntegrationMessaging === 'browser-extension' && (
@@ -301,7 +299,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     target="_blank"
                                     rel="noopener"
                                 >
-                                    Browser extension <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                    Browser extension <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                 </MenuLink>
                             )}
                         </MenuList>

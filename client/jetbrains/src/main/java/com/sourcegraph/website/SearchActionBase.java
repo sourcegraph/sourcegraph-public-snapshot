@@ -11,8 +11,10 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.browser.URLBuilder;
+import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
@@ -20,11 +22,11 @@ import java.io.IOException;
 import java.net.URI;
 
 public abstract class SearchActionBase extends DumbAwareAction {
-    public void actionPerformedMode(AnActionEvent e, String mode) {
+    public void actionPerformedMode(@NotNull AnActionEvent event, @NotNull Scope scope) {
         Logger logger = Logger.getInstance(this.getClass());
 
         // Get project, editor, document, file, and position information.
-        final Project project = e.getProject();
+        final Project project = event.getProject();
         if (project == null) {
             return;
         }
@@ -32,41 +34,46 @@ public abstract class SearchActionBase extends DumbAwareAction {
         if (editor == null) {
             return;
         }
-        Document currentDoc = editor.getDocument();
-        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
+        Document currentDocument = editor.getDocument();
+        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
         if (currentFile == null) {
             return;
         }
-        SelectionModel sel = editor.getSelectionModel();
 
-        // Get repo information.
-        RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
-
-        String q = sel.getSelectedText();
-        if (q == null || q.equals("")) {
+        SelectionModel selection = editor.getSelectionModel();
+        String selectedText = selection.getSelectedText();
+        if (selectedText == null || selectedText.equals("")) {
             return; // nothing to query
         }
 
-        String remoteUrl = null;
-        String branchName = null;
-        if (mode.equals("search.repository")) {
-            remoteUrl = repoInfo.branchName;
-            branchName = repoInfo.remoteUrl;
+        String url;
+        if (currentFile instanceof SourcegraphVirtualFile) {
+            SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
+            String repoUrl = (scope == Scope.REPOSITORY) ? sourcegraphFile.getRepoUrl() : null;
+            url = URLBuilder.buildEditorSearchUrl(project, selectedText, repoUrl, null);
+        } else {
+            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
+            String remoteUrl = (scope == Scope.REPOSITORY) ? repoInfo.remoteUrl : null;
+            String branchName = (scope == Scope.REPOSITORY) ? repoInfo.branchName : null;
+            url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
         }
-
-        String uri = URLBuilder.buildEditorSearchUrl(project, q, remoteUrl, branchName);
 
         // Open the URL in the browser.
         try {
-            Desktop.getDesktop().browse(URI.create(uri));
+            Desktop.getDesktop().browse(URI.create(url));
         } catch (IOException err) {
             logger.debug("failed to open browser");
             err.printStackTrace();
         }
     }
 
+    enum Scope {
+        REPOSITORY,
+        ANYWHERE
+    }
+
     @Override
-    public void update(AnActionEvent e) {
+    public void update(@NotNull AnActionEvent e) {
         final Project project = e.getProject();
         if (project == null) {
             return;
@@ -76,7 +83,7 @@ public abstract class SearchActionBase extends DumbAwareAction {
     }
 
     @Nullable
-    private String getSelectedText(Project project) {
+    private String getSelectedText(@NotNull Project project) {
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
         if (editor == null) {
             return null;

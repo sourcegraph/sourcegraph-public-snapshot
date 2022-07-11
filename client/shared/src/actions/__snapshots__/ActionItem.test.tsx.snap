@@ -204,7 +204,7 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
       <div
         aria-label="Loading"
         aria-live="polite"
-        class="loadingSpinner"
+        class="mdi-icon loadingSpinner"
         role="img"
       />
     </div>

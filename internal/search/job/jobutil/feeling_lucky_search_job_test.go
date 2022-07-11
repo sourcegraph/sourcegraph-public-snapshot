@@ -52,7 +52,6 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 				}
 			}
 		}
-
 		result, _ := json.MarshalIndent(generated, "", "  ")
 		return string(result)
 	}
@@ -111,7 +110,7 @@ func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
 	j := FeelingLuckySearchJob{
 		initialJob: mockJob,
 		generators: []next{func() (*autoQuery, next) { return mockAutoQuery, nil }},
-		createJob: func(*autoQuery) job.Job {
+		newGeneratedJob: func(*autoQuery) job.Job {
 			return mockJob
 		},
 	}
@@ -169,4 +168,50 @@ func TestGeneratedSearchJob(t *testing.T) {
 	autogold.Want("0 results", autogold.Raw("")).Equal(t, autogold.Raw(test(0)))
 	autogold.Want("1 result", autogold.Raw("test (1 result)")).Equal(t, autogold.Raw(test(1)))
 	autogold.Want("limit results", autogold.Raw("test (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
+}
+
+func TestCombinations(t *testing.T) {
+	test := func(input string, rulesNarrow, rulesWiden []rule) string {
+		q, _ := query.ParseStandard(input)
+		b, _ := query.ToBasicQuery(q)
+		g := NewComboGenerator(b, rulesNarrow, rulesWiden)
+
+		var autoQ *autoQuery
+		type want struct {
+			Description string
+			Query       string
+		}
+		generated := []want{}
+
+		for {
+			autoQ, g = g()
+			if autoQ != nil {
+				generated = append(
+					generated,
+					want{
+						Description: autoQ.description,
+						Query:       query.StringHuman(autoQ.query.ToParseTree()),
+					})
+			}
+
+			if g == nil {
+				break
+			}
+		}
+
+		result, _ := json.MarshalIndent(generated, "", "  ")
+		return string(result)
+	}
+
+	t.Run("narrow and widen rules", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, rulesNarrow, rulesWiden)))
+	})
+
+	t.Run("only narrow rules", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, rulesNarrow, nil)))
+	})
+
+	t.Run("only widen rules", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, nil, rulesWiden)))
+	})
 }
