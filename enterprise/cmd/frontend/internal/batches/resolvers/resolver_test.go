@@ -2256,6 +2256,35 @@ query($batchChangesCredential: ID!) {
 }
 `
 
+func TestMaxUnlicensedChangesets(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	ct.MockRSAKeygen(t)
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	userID := ct.CreateTestUser(t, db, true).ID
+
+	var response struct{ MaxUnlicensedChangesets int32 }
+	actorCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
+
+	cstore := store.New(db, &observation.TestContext, nil)
+	r := &Resolver{store: cstore}
+	s, err := newSchema(db, r)
+	require.NoError(t, err)
+
+	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
+
+	assert.Equal(t, int32(5), response.MaxUnlicensedChangesets)
+}
+
+const querymaxUnlicensedChangesets = `
+query() {
+  maxUnlicensedChangesets
+}
+`
+
 func TestListBatchSpecs(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
