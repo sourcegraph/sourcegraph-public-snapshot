@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { gql } from '@apollo/client'
+import { mdiPlus, mdiPencilOutline } from '@mdi/js'
 import classNames from 'classnames'
-import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -91,7 +90,7 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
                     variant="secondary"
                     as={Link}
                 >
-                    <Icon aria-hidden={true} as={PlusIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiPlus} />
                     Create a saved search
                 </ButtonLink>
             )}
@@ -136,7 +135,7 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
                                                 onClick={logEvent('SavedSearchesPanelEditClicked')}
                                                 aria-label={`Edit saved search ${search.description}`}
                                             >
-                                                <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
+                                                <Icon role="img" aria-hidden={true} svgPath={mdiPencilOutline} />
                                             </Link>
                                         ) : (
                                             <Link
@@ -144,7 +143,7 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
                                                 onClick={logEvent('SavedSearchesPanelEditClicked')}
                                                 aria-label={`Edit saved search ${search.description}`}
                                             >
-                                                <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
+                                                <Icon role="img" aria-hidden={true} svgPath={mdiPencilOutline} />
                                             </Link>
                                         ))}
                                 </td>

@@ -1,11 +1,10 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiStar, mdiStarOutline } from '@mdi/js'
 import classNames from 'classnames'
 import DomainIcon from 'mdi-react/DomainIcon'
 import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
 import LockIcon from 'mdi-react/LockIcon'
-import StarIcon from 'mdi-react/StarIcon'
-import StarOutlineIcon from 'mdi-react/StarOutlineIcon'
 import WebIcon from 'mdi-react/WebIcon'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
@@ -256,10 +255,10 @@ const NotebookStarsButton: React.FunctionComponent<React.PropsWithChildren<Noteb
                 <Icon
                     aria-hidden={true}
                     className={classNames(styles.notebookStarIcon, styles.notebookStarIconActive)}
-                    as={StarIcon}
+                    svgPath={mdiStar}
                 />
             ) : (
-                <Icon aria-hidden={true} className={styles.notebookStarIcon} as={StarOutlineIcon} />
+                <Icon aria-hidden={true} className={styles.notebookStarIcon} svgPath={mdiStarOutline} />
             )}
             <span className="ml-1">{starsCount}</span>
         </Button>

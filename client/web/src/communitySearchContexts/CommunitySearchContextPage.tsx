@@ -1,11 +1,8 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { mdiSourceRepositoryMultiple, mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import BitbucketIcon from 'mdi-react/BitbucketIcon'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import SourceRepositoryMultipleIcon from 'mdi-react/SourceRepositoryMultipleIcon'
 import { catchError, startWith } from 'rxjs/operators'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
@@ -167,7 +164,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
                         <div className="order-2-lg order-1-xs">
                             <Card className={styles.repoCard}>
                                 <H2>
-                                    <Icon className="mr-2" as={SourceRepositoryMultipleIcon} aria-hidden={true} />
+                                    <Icon className="mr-2" aria-hidden={true} svgPath={mdiSourceRepositoryMultiple} />
                                     Repositories
                                 </H2>
                                 <Text>
@@ -226,7 +223,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('github.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={GithubIcon} aria-hidden={true} />
+                    <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiGithub} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -236,7 +233,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('gitlab.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={GitlabIcon} aria-hidden={true} />
+                    <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiGitlab} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}
@@ -246,7 +243,7 @@ const RepoLink: React.FunctionComponent<React.PropsWithChildren<{ repo: string }
         {repo.startsWith('bitbucket.com') && (
             <>
                 <Link to={`https://${repo}`} target="_blank" rel="noopener noreferrer" onClick={RepoLinkClicked(repo)}>
-                    <Icon className={styles.repoListIcon} as={BitbucketIcon} aria-hidden={true} />
+                    <Icon className={styles.repoListIcon} aria-hidden={true} svgPath={mdiBitbucket} />
                 </Link>
                 <Link to={`/${repo}`} className="text-monospace search-filter-keyword">
                     {displayRepoName(repo)}

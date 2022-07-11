@@ -1526,19 +1526,20 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				{"repos-go", `r:deps(oklog/ulid)`, []string{
 					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
 				}},
-				{"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
-					"/python/atomicwrites@v1.4.0",
-					"/python/attrs@v21.4.0",
-					"/python/colorama@v0.4.4",
-					"/python/more-itertools@v8.13.0",
-					"/python/packaging@v21.3",
-					"/python/pluggy@v0.13.1",
-					"/python/py@v1.11.0",
-					"/python/pyparsing@v3.0.8",
-					"/python/pytest@v5.4.3",
-					"/python/tqdm@v4.64.0",
-					"/python/wcwidth@v0.2.5",
-				}},
+				// Flakey
+				// {"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
+				// 	"/python/atomicwrites@v1.4.0",
+				// 	"/python/attrs@v21.4.0",
+				// 	"/python/colorama@v0.4.4",
+				// 	"/python/more-itertools@v8.13.0",
+				// 	"/python/packaging@v21.3",
+				// 	"/python/pluggy@v0.13.1",
+				// 	"/python/py@v1.11.0",
+				// 	"/python/pyparsing@v3.0.8",
+				// 	"/python/pytest@v5.4.3",
+				// 	"/python/tqdm@v4.64.0",
+				// 	"/python/wcwidth@v0.2.5",
+				// }},
 				{"repos-python-pipenv", `r:deps(^github\.com/sgtest/pipenv-hw$)`, []string{
 					"/python/certifi@v2021.10.8",
 					"/python/charset-normalizer@v2.0.12",

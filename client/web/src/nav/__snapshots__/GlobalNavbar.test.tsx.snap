@@ -81,7 +81,7 @@ exports[`GlobalNavbar default 1`] = `
                 >
                   <svg
                     aria-hidden="true"
-                    class="mdi-icon iconInline icon"
+                    class="mdi-icon mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
                     role="img"
@@ -141,7 +141,7 @@ exports[`GlobalNavbar default 1`] = `
             >
               <svg
                 aria-hidden="true"
-                class="mdi-icon iconInline icon"
+                class="mdi-icon mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 role="img"
@@ -190,7 +190,7 @@ exports[`GlobalNavbar default 1`] = `
             >
               <svg
                 aria-hidden="true"
-                class="mdi-icon iconInline icon"
+                class="mdi-icon mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 role="img"
@@ -355,7 +355,7 @@ exports[`GlobalNavbar low-profile 1`] = `
                 >
                   <svg
                     aria-hidden="true"
-                    class="mdi-icon iconInline icon"
+                    class="mdi-icon mdi-icon iconInline icon"
                     fill="currentColor"
                     height="24"
                     role="img"
@@ -415,7 +415,7 @@ exports[`GlobalNavbar low-profile 1`] = `
             >
               <svg
                 aria-hidden="true"
-                class="mdi-icon iconInline icon"
+                class="mdi-icon mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 role="img"
@@ -464,7 +464,7 @@ exports[`GlobalNavbar low-profile 1`] = `
             >
               <svg
                 aria-hidden="true"
-                class="mdi-icon iconInline icon"
+                class="mdi-icon mdi-icon iconInline icon"
                 fill="currentColor"
                 height="24"
                 role="img"
