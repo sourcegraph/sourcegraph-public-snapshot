@@ -4,7 +4,7 @@
     "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ monitor *Monitor"
   },
   {
-    "Description": "unquote patterns and AND patterns together",
+    "Description": "unquote patterns ⚬ AND patterns together",
     "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ (monitor AND *Monitor)"
   },
   {

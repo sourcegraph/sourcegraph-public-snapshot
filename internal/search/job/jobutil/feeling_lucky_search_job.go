@@ -693,7 +693,7 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 		}
 
 		q := autoQuery{
-			description: strings.Join(descriptions, " and "),
+			description: strings.Join(descriptions, " ⚬ "),
 			query:       *generated,
 		}
 
