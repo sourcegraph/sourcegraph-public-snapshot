@@ -27,7 +27,7 @@ import (
 func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
 	generators := make([]next, 0, len(plan))
 	for _, b := range plan {
-		generators = append(generators, NewGenerator(inputs, b, rules))
+		generators = append(generators, NewGenerator(b, rulesNarrow, rulesWiden))
 	}
 
 	jobGenerator := &jobGenerator{SearchInputs: inputs}
@@ -159,38 +159,6 @@ type autoQuery struct {
 // next is the continuation for the query generator.
 type next func() (*autoQuery, next)
 
-// NewGenerator creates a new generator using rules and a seed Basic query. It
-// returns a `next` function which, when called, returns the next job
-// generated, and the `next` continuation. A `nil` continuation means query
-// generation is exhausted. Currently it implements a simple strategy that tries
-// to apply rule transforms in order, and generates jobs for transforms that
-// apply successfully.
-func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next {
-	var n func(i int) next // i keeps track of rule index in the continuation
-	n = func(i int) next {
-		if i >= len(rules) {
-			return func() (*autoQuery, next) { return nil, nil }
-		}
-
-		return func() (*autoQuery, next) {
-			generated := applyTransformation(seed, rules[i].transform)
-			if generated == nil {
-				// Rule doesn't apply, go to next rule.
-				return nil, n(i + 1)
-			}
-
-			q := autoQuery{
-				description: rules[i].description,
-				query:       *generated,
-			}
-
-			return &q, n(i + 1)
-		}
-	}
-
-	return n(0)
-}
-
 // rule represents a transformation function on a Basic query. Transformation
 // cannot fail: either they apply in sequence and produce a valid, non-nil,
 // Basic query, or they do not apply, in which case they return nil. See the
@@ -202,23 +170,6 @@ type rule struct {
 
 type transform []func(query.Basic) *query.Basic
 
-// rules is an ordered list of rules. Each item represents one possible query
-// production, if the sequence of the transformation functions associated with
-// this item apply successfully. Example:
-//
-// If we have input query B0 and a list with two items like this:
-//
-// {
-//   "first rule list"  : [ R1, R2 ],
-//   "second rule list" : [ R2 ],
-// }
-//
-// Then:
-//
-// - If both entries apply, we output [ B1, B2 ] where B1 is generated
-//   from applying R1 then R2, and B2 is generated from just applying R2.
-// - If only the first item applies, R1 then R2, we get the output [ B1 ].
-// - If only the second item applies, R2 on its own, we get the output [ B2 ].
 var rules = []rule{
 	{
 		description: "unquote patterns",
@@ -646,7 +597,7 @@ const (
 // To avoid spending time on generator invalid combinations, the generator
 // prunes the initial rule set to only those rules that do successively apply
 // individually to the seed query.
-func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
+func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 	narrow = pruneRules(seed, narrow)
 	widen = pruneRules(seed, widen)
 	num := len(narrow)

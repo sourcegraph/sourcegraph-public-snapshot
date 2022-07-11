@@ -1,6 +1,6 @@
 [
   {
-    "Description": "apply search type and language filter for patterns",
+    "Description": "apply search type for pattern and apply language filter for pattern",
     "Query": "context:global type:commit lang:Go monitor code"
   },
   {
@@ -12,15 +12,15 @@
     "Query": "context:global lang:Go commit monitor code"
   },
   {
-    "Description": "apply search type and language filter for patterns with AND patterns",
+    "Description": "apply search type for pattern and apply language filter for pattern and AND patterns together",
     "Query": "context:global type:commit lang:Go (monitor AND code)"
   },
   {
-    "Description": "apply search type with AND patterns",
+    "Description": "apply search type for pattern and AND patterns together",
     "Query": "context:global type:commit (go AND monitor AND code)"
   },
   {
-    "Description": "apply language filter with AND patterns",
+    "Description": "apply language filter for pattern and AND patterns together",
     "Query": "context:global lang:Go (commit AND monitor AND code)"
   },
   {
