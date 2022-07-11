@@ -1,4 +1,4 @@
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
+import { mdiInformationOutline } from '@mdi/js'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
@@ -20,9 +20,9 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                     <Icon
                         size="sm"
                         className="ml-1"
-                        as={InformationOutlineIcon}
                         tabIndex={0}
                         aria-label="More information"
+                        svgPath={mdiInformationOutline}
                     />
                 </Tooltip>
             </H3>
