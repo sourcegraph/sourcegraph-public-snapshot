@@ -200,7 +200,7 @@ func makeCodeIntelUploadURL(uploadID int) (string, error) {
 		return "", err
 	}
 
-	graphqlID := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:"%d"`, uploadID)))
+	graphqlID := base64.URLEncoding.EncodeToString([]byte(fmt.Sprintf(`LSIFUpload:%d`, uploadID)))
 	url.Path = codeintelUploadFlags.repo + "/-/code-intelligence/uploads/" + graphqlID
 	url.User = nil
 	return url.String(), nil
