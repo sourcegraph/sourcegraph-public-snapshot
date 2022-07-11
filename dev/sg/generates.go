@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/generate/golang"
+	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 )
 
 var allGenerateTargets = generateTargets{
@@ -12,6 +13,14 @@ var allGenerateTargets = generateTargets{
 		Name:   "go",
 		Help:   "Run go generate [packages...] on the codebase",
 		Runner: generateGoRunner,
+		Completer: func() (options []string) {
+			root, err := root.RepositoryRoot()
+			if err != nil {
+				return
+			}
+			options, _ = golang.FindFilesWithGenerate(root)
+			return
+		},
 	},
 }
 

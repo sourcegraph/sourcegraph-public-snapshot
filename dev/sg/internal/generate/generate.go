@@ -25,9 +25,10 @@ type Report struct {
 
 // Target denotes a generate task that can be run by `sg generate`
 type Target struct {
-	Name   string
-	Help   string
-	Runner Runner
+	Name      string
+	Help      string
+	Runner    Runner
+	Completer func() (options []string)
 }
 
 // RunScript runs the given script from the root of sourcegraph/sourcegraph.

@@ -16,6 +16,9 @@ func stringHumanPattern(nodes []Node) string {
 			if n.Annotation.Labels.IsSet(Quoted) {
 				v = strconv.Quote(v)
 			}
+			if n.Annotation.Labels.IsSet(Regexp) {
+				v = fmt.Sprintf("/%s/", v)
+			}
 			if n.Negated {
 				v = fmt.Sprintf("(NOT %s)", v)
 			}

@@ -215,6 +215,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           data-testid="hierarchical-locations-view-list"
         >
           <button
+            aria-label="File path file1.txt"
             class="list-group-item list-group-item-action locationButton active"
             data-testid="hierarchical-locations-view-button"
             type="button"
@@ -243,6 +244,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </button>
           <button
+            aria-label="File path file2.txt"
             class="list-group-item list-group-item-action locationButton"
             data-testid="hierarchical-locations-view-button"
             type="button"

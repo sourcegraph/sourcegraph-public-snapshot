@@ -44,6 +44,7 @@ import {
     CollapseHeader,
     Collapse,
     Heading,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { DiffStat } from '../../../../../components/diff/DiffStat'
@@ -146,16 +147,15 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
         </div>
         <div className="d-flex align-items-center">
             {typeof workspace.placeInQueue === 'number' && (
-                <span
-                    className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}
-                    data-tooltip={`This workspace is number ${workspace.placeInGlobalQueue} in the global queue`}
-                >
-                    <Icon aria-hidden={true} svgPath={mdiTimelineClockOutline} />
-                    <strong className="ml-1 mr-1">
-                        <NumberInQueue number={workspace.placeInQueue} />
-                    </strong>
-                    in queue
-                </span>
+                <Tooltip content={`This workspace is number ${workspace.placeInGlobalQueue} in the global queue`}>
+                    <span className={classNames(styles.workspaceDetail, 'd-flex align-items-center')}>
+                        <Icon aria-hidden={true} svgPath={mdiTimelineClockOutline} />
+                        <strong className="ml-1 mr-1">
+                            <NumberInQueue number={workspace.placeInQueue} />
+                        </strong>
+                        in queue
+                    </span>
+                </Tooltip>
             )}
             {workspace.__typename === 'VisibleBatchSpecWorkspace' && workspace.path && (
                 <span className={styles.workspaceDetail}>{workspace.path}</span>

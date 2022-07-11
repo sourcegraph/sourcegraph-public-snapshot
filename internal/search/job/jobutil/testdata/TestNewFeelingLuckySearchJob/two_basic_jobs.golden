@@ -1,24 +1,10 @@
-{
-  "OR": [
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "AND patterns together",
-          "Query": "context:global type:file (parse AND func)",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "AND patterns together",
-          "Query": "context:global type:commit (parse AND func)",
-          "PatternType": 3
-        }
-      }
-    }
-  ]
-}
+[
+  {
+    "Description": "AND patterns together",
+    "Query": "context:global type:file (parse AND func)"
+  },
+  {
+    "Description": "AND patterns together",
+    "Query": "context:global type:commit (parse AND func)"
+  }
+]
