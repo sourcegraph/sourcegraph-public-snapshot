@@ -11,7 +11,7 @@ import (
 
 // switchableTracer implements otel.TracerProvider, and is used to configure the global
 // tracer implementations. It is set as a global tracer so that all opentracing usages
-// will end up usign this tracer.
+// will end up using this tracer.
 //
 // The underlying opentracer used is switchable (set via the `set` method), so as to
 // support live configuration.
