@@ -9,7 +9,11 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import {
+    SettingsCascadeProps,
+    // SettingsOrgSubject,
+    // SettingsUserSubject,
+} from '@sourcegraph/shared/src/settings/settings'
 import { Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
