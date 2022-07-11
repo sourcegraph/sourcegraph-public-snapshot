@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"os/exec"
 	"path"
@@ -106,6 +107,7 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	var errs errors.MultiError
 	cloneable := make([]reposource.PackageVersion, 0, len(versions))
 	for _, version := range versions {
+		fmt.Printf("--- vcsPackageSyncer.Fetch. depName=%s, version=%s\n", depName, version)
 		if d, err := s.source.Get(ctx, depName, version); err != nil {
 			if errcode.IsNotFound(err) {
 				s.logger.Warn("skipping missing dependency",

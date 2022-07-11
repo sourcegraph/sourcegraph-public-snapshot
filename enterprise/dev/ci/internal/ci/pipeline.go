@@ -126,7 +126,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 
 	case runtype.BackendIntegrationTests:
 		ops.Append(buildCandidateDockerImage("server", c.Version, c.candidateImageTag()))
-		for i := 0; i < 10; i++ {
+		for i := 0; i < 20; i++ {
 			ops.Append(backendIntegrationTests(c.candidateImageTag(), i))
 		}
 

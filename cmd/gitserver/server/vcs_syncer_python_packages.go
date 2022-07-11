@@ -61,6 +61,7 @@ func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposourc
 
 func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
 	f, err := s.client.Version(ctx, name, version)
+	fmt.Printf("pythonPackageSyncer.Get(%s, %s). err=%s\n", name, version, err)
 	if err != nil {
 		return nil, err
 	}
