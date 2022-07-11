@@ -17,7 +17,7 @@ import (
 // and the result would be generated as `repo:myrepo test archive:no`. This preserves the semantics of the original query
 // by fully parsing and reconstructing the tree, and does **not** overwrite user supplied values for the default fields.
 func withDefaults(inputQuery string, defaults searchquery.Parameters) (string, error) {
-	plan, err := searchquery.Pipeline(searchquery.Init(inputQuery, searchquery.SearchTypeStandard))
+	plan, err := searchquery.Pipeline(searchquery.Init(inputQuery, searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", errors.Wrap(err, "Pipeline")
 	}
