@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type Resolved struct {
@@ -222,18 +223,12 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		Next:     next,
 	}
 
-	sem := semaphore.NewWeighted(128)
-	g, ctx := errgroup.WithContext(ctx)
+	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
 
 	for i, repo := range repos {
-		if err = sem.Acquire(ctx, 1); err != nil {
-			return Resolved{}, err
-		}
-
 		repo, i := repo, i // avoid race
 
-		g.Go(func() error {
-			defer sem.Release(1)
+		g.Go(func(ctx context.Context) error {
 
 			var (
 				repoRev = search.RepositoryRevisions{Repo: repo}
