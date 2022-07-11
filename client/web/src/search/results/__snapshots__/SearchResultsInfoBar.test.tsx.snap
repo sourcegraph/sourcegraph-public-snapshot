@@ -185,7 +185,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
               role="img"
@@ -358,7 +358,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
               role="img"
@@ -535,7 +535,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
               role="img"
@@ -708,7 +708,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
               role="img"

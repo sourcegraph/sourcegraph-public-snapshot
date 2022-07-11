@@ -30,9 +30,11 @@ public class URLBuilder {
             + "?" + buildMarketingParams()
             + "&search=" + URLEncoder.encode(search, StandardCharsets.UTF_8);
 
-        if (remoteUrl != null && branchName != null) {
-            url += "&search_remote_url=" + URLEncoder.encode(remoteUrl, StandardCharsets.UTF_8)
-                + "&search_branch=" + URLEncoder.encode(branchName, StandardCharsets.UTF_8);
+        if (remoteUrl != null) {
+            url += "&search_remote_url=" + URLEncoder.encode(remoteUrl, StandardCharsets.UTF_8);
+            if (branchName != null) {
+                url += "&search_branch=" + URLEncoder.encode(branchName, StandardCharsets.UTF_8);
+            }
         }
 
         return url;

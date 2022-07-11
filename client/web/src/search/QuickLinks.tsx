@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiLink } from '@mdi/js'
 import classNames from 'classnames'
-import LinkIcon from 'mdi-react/LinkIcon'
 
 import { QuickLink } from '@sourcegraph/shared/src/schema/settings.schema'
 import { Link, Icon } from '@sourcegraph/wildcard'
@@ -20,7 +20,7 @@ export const QuickLinks: React.FunctionComponent<React.PropsWithChildren<Props>>
             {quickLinks.map((quickLink, index) => (
                 <small className={classNames('text-nowrap mr-2', styles.quicklink)} key={index}>
                     <Link to={quickLink.url} data-tooltip={quickLink.description}>
-                        <Icon aria-hidden={true} className="pr-1" as={LinkIcon} />
+                        <Icon aria-hidden={true} className="pr-1" svgPath={mdiLink} />
                         {quickLink.name}
                     </Link>
                 </small>

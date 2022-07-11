@@ -91,7 +91,8 @@ func (s *rustDependencySource) Download(ctx context.Context, dir string, dep rep
 func unpackRustPackage(pkg []byte, workDir string) error {
 	r := bytes.NewReader(pkg)
 	opts := unpack.Opts{
-		SkipInvalid: true,
+		SkipInvalid:    true,
+		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 

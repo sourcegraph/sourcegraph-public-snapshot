@@ -461,12 +461,15 @@ _Solution:_ Double-check mocks required for rendering the snapshotted UI.
 _Problem:_ The screenshot is taken without waiting for the UI to settle down. E.g., a snapshot taken after clicking an input element doesn’t wait for the focus state on it.
 _Solution:_ Wait for the UI to settle using tools provided by Puppeteer.
 
-#### Visual regression flakes caused by test logic
+#### Integration test flakes caused by test logic
+
+_Problem:_ `Error: GraphQL query "XXX" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "XXX" query.` This error can be flaky because some GraphQL mocks are not required for an integration test to pass because the request with a missing mock can be processed by our test driver _after_ the test already passed. In that case, it won't cause the test to fail.
+_Solution:_  All GraphQL requests happening on tested pages should have GraphQL mocks to avoid such flakes.
 
 _Problem examples:_
 
 1. `Navigation timeout of 30000 ms exceeded.`
-2. `Error: GraphQL query "XXX" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "XXX" query.`
+2. `TimeoutError: waiting for selector '.theme.theme-dark' failed: timeout 30000ms exceeded`
 
 _Solution:_ These should be disabled immediately and fixed later by owning teams.
 

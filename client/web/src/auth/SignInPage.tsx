@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react'
 
+import { mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import { partition } from 'lodash'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
 import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -82,12 +81,12 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                             >
                                 {provider.serviceType === 'github' && (
                                     <>
-                                        <Icon as={GithubIcon} aria-hidden={true} />{' '}
+                                        <Icon aria-hidden={true} svgPath={mdiGithub} />{' '}
                                     </>
                                 )}
                                 {provider.serviceType === 'gitlab' && (
                                     <>
-                                        <Icon as={GitlabIcon} aria-hidden={true} />{' '}
+                                        <Icon aria-hidden={true} svgPath={mdiGitlab} />{' '}
                                     </>
                                 )}
                                 Continue with {provider.displayName}
