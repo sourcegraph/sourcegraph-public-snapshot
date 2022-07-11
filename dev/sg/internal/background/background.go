@@ -34,11 +34,11 @@ func loadFromContext(ctx context.Context) *backgroundJobs {
 
 func Run(ctx context.Context, job func(out *std.Output), verbose bool) {
 	jobs := loadFromContext(ctx)
+	b := new(bytes.Buffer)
+	out := std.NewOutput(b, verbose)
 	jobs.wg.Add(1)
 	jobs.count.Add(1)
 	go func() {
-		b := new(bytes.Buffer)
-		out := std.NewOutput(b, verbose)
 		job(out)
 		jobs.results <- b.String()
 	}()
