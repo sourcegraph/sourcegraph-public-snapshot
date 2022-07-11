@@ -277,6 +277,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                         <H4 className={styles.header}>Batch spec</H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
+                            autoFocus={true}
                             batchChangeName={batchChange.name}
                             className={styles.editor}
                             isLightTheme={isLightTheme}
