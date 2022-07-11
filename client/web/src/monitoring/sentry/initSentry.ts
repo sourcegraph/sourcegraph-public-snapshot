@@ -26,7 +26,7 @@ export function initSentry(): void {
         Sentry.onLoad(() => {
             Sentry.init({
                 dsn: sentryDSN,
-                tunnel: '/_sentry_tunnel',
+                tunnel: '/-/debug/sentry_tunnel',
                 release: 'frontend@' + version,
                 beforeSend(event, hint) {
                     // Use `originalException` to check if we want to ignore the error.

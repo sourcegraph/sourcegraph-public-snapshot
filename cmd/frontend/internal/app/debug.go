@@ -51,6 +51,7 @@ func addNoK8sClientHandler(r *mux.Router, db database.DB) {
 func addDebugHandlers(r *mux.Router, db database.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
+	addSentry(r)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -219,8 +220,11 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 }
 
 func addSentry(r *mux.Router) {
-	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
-	r.Handle("/sentry_tunnel", sentryHandler(logger))
+	if envvar.SentryTunnelEnabled() {
+		logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
+		r.Handle("/sentry_tunnel", sentryHandler(logger))
+	} else {
+	}
 }
 
 func addNoJaegerHandler(r *mux.Router, db database.DB) {

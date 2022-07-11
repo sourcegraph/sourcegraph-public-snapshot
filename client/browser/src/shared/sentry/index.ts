@@ -14,7 +14,7 @@ const isExtensionStackTrace = (stacktrace: Sentry.Stacktrace, extensionID: strin
 const callSentryInit = once((extensionID: string) => {
     Sentry.init({
         dsn: 'https://32613b2b6a5b4da2aa50660a60297d79@sentry.io/1334031',
-        tunnel: '/_sentry_tunnel',
+        tunnel: '/-/debug/sentry_tunnel',
         beforeSend: event => {
             // Filter out events if we can tell from the stack trace that
             // they didn't originate from extension code.
