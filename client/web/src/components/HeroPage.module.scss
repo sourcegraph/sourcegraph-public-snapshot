@@ -27,7 +27,7 @@
     letter-spacing: normal;
 }
 
-.icon {
+.icon-wrapper {
     border-radius: 100%;
     width: 6rem;
     height: 6rem;
@@ -42,6 +42,10 @@
         width: 4rem;
         height: 4rem;
     }
+}
+
+.icon {
+    --icon-inline-size: 4rem;
 }
 
 .less-padding {
