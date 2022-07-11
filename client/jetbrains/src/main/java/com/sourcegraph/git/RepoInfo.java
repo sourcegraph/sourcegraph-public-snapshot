@@ -1,11 +1,16 @@
 package com.sourcegraph.git;
 
-public class RepoInfo {
-    public final String relativePath;
-    public final String remoteUrl;
-    public final String branchName;
+import org.jetbrains.annotations.NotNull;
 
-    public RepoInfo(String relativePath, String remoteUrl, String branchName) {
+public class RepoInfo {
+    @NotNull
+    public final String relativePath; // E.g. "/client/jetbrains/package.json"
+    @NotNull
+    public final String remoteUrl; // E.g. "git@github.com:sourcegraph/sourcegraph"
+    @NotNull
+    public final String branchName; // E.g. "main"
+
+    public RepoInfo(@NotNull String relativePath, @NotNull String remoteUrl, @NotNull String branchName) {
         this.relativePath = relativePath;
         this.remoteUrl = remoteUrl;
         this.branchName = branchName;

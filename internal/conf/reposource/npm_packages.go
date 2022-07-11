@@ -24,6 +24,9 @@ var (
 		`^(@` + NpmScopeRegexString + `/)?` +
 			npmPackageNameRegexString +
 			`@(?P<version>[\w\-]+(\.[\w\-]+)*)$`)
+	scopedPackageNameWithoutVersionRegex = lazyregexp.New(
+		`^(@` + NpmScopeRegexString + `/)?` +
+			npmPackageNameRegexString)
 	npmURLRegex = lazyregexp.New(
 		`^npm/(` + NpmScopeRegexString + `/)?` +
 			npmPackageNameRegexString + `$`)
@@ -53,6 +56,22 @@ func NewNpmPackageName(scope string, name string) (*NpmPackageName, error) {
 
 func (pkg *NpmPackageName) Equal(other *NpmPackageName) bool {
 	return pkg == other || (pkg != nil && other != nil && *pkg == *other)
+}
+
+// ParseNpmPackageNameWithoutVersion parses a package name with optional scope
+// into NpmPackageName.
+func ParseNpmPackageNameWithoutVersion(input string) (NpmPackageName, error) {
+	match := scopedPackageNameWithoutVersionRegex.FindStringSubmatch(input)
+	if match == nil {
+		return NpmPackageName{}, errors.Errorf("expected dependency in (@scope/)?name format but found %s", input)
+	}
+	result := make(map[string]string)
+	for i, groupName := range scopedPackageNameWithoutVersionRegex.SubexpNames() {
+		if i != 0 && groupName != "" {
+			result[groupName] = match[i]
+		}
+	}
+	return NpmPackageName{result["scope"], result["name"]}, nil
 }
 
 // ParseNpmPackageFromRepoURL is a convenience function to parse a string in a

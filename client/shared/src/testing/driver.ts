@@ -136,6 +136,20 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
     )})).filter(e => e.innerText && e.innerText.match(/${regexp}/))`
 }
 
+// Console logs with these keywords will be removed from the console output.
+const MUTE_CONSOLE_KEYWORDS = [
+    '[webpack-dev-server]',
+    'Download the React DevTools',
+    '[HMR]',
+    '[WDS]',
+    'Warning: componentWillReceiveProps has been renamed',
+    'Download the Apollo DevTools',
+    'Compiled in DEBUG mode',
+    'Cache data may be lost',
+    'Failed to decode downloaded font',
+    'OTS parsing error',
+]
+
 export class Driver {
     /** The pages that were visited since the creation of the driver. */
     public visitedPages: Readonly<URL>[] = []
@@ -174,19 +188,14 @@ export class Driver {
                             fromEvent<ConsoleMessage>(page, 'console').pipe(
                                 filter(
                                     message =>
-                                        !message.text().includes('Download the React DevTools') &&
-                                        !message.text().includes('[HMR]') &&
-                                        !message.text().includes('[WDS]') &&
-                                        !message
-                                            .text()
-                                            .includes('Warning: componentWillReceiveProps has been renamed') &&
-                                        !message.text().includes('Download the Apollo DevTools') &&
-                                        !message.text().includes('debug') &&
                                         // These requests are expected to fail, we use them to check if the browser extension is installed.
-                                        message.location().url !== 'chrome-extension://invalid/'
+                                        message.location().url !== 'chrome-extension://invalid/' &&
+                                        // Ignore React development build warnings.
+                                        !message.text().startsWith('Warning: ') &&
+                                        !MUTE_CONSOLE_KEYWORDS.some(keyword => message.text().includes(keyword))
                                 ),
-                                // Immediately format remote handles to strings, but maintain order.
                                 map(message =>
+                                    // Immediately format remote handles to strings, but maintain order.
                                     formatPuppeteerConsoleMessage(page, message, this.browserType === 'firefox')
                                 ),
                                 concatAll(),
@@ -291,12 +300,12 @@ export class Driver {
             await this.browser.close()
         }
         console.log(
-            '\nVisited routes:\n' +
+            '\n  Visited routes:\n' +
                 [
                     ...new Set(
                         this.visitedPages
                             .filter(url => url.href.startsWith(this.sourcegraphBaseUrl))
-                            .map(url => url.pathname)
+                            .map(url => `    ${url.pathname}`)
                     ),
                 ].join('\n')
         )

@@ -1576,14 +1576,20 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		isChangesetOpen := changeset.ExternalState == btypes.ChangesetExternalStateOpen
 		isChangesetClosed := changeset.ExternalState == btypes.ChangesetExternalStateClosed
 		isChangesetMerged := changeset.ExternalState == btypes.ChangesetExternalStateMerged
-		isChangsetJobFailed := changeset.ReconcilerState == btypes.ReconcilerStateFailed
+		isChangesetReadOnly := changeset.ExternalState == btypes.ChangesetExternalStateReadOnly
+		isChangesetJobFailed := changeset.ReconcilerState == btypes.ReconcilerStateFailed
 
 		// can changeset be published
 		isChangesetCommentable := isChangesetOpen || isChangesetDraft || isChangesetMerged || isChangesetClosed
-		isChangesetClosable := isChangesetOpen || isChangesetDraft || isChangsetJobFailed
+		isChangesetClosable := isChangesetOpen || isChangesetDraft || isChangesetJobFailed
 
 		// check what operations this changeset support, most likely from the state
 		// so get the changeset then derive the operations from it's state.
+
+		// No operations are available for read-only changesets.
+		if isChangesetReadOnly {
+			continue
+		}
 
 		// DETACH
 		if isChangesetArchived {
@@ -1591,7 +1597,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		}
 
 		// REENQUEUE
-		if !isChangesetArchived && isChangsetJobFailed {
+		if !isChangesetArchived && isChangesetJobFailed {
 			bulkOperationsCounter[btypes.ChangesetJobTypeReenqueue] += 1
 		}
 
@@ -1606,7 +1612,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		}
 
 		// MERGE
-		if !isChangesetArchived && !isChangsetJobFailed && isChangesetOpen {
+		if !isChangesetArchived && !isChangesetJobFailed && isChangesetOpen {
 			bulkOperationsCounter[btypes.ChangesetJobTypeMerge] += 1
 		}
 

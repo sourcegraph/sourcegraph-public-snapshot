@@ -1,11 +1,10 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiChevronRight, mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
 // We're using marked import here to access the `marked` package type definitions.
 // eslint-disable-next-line no-restricted-imports
 import { marked, Slugger } from 'marked'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import ReactDOM from 'react-dom'
 
 import { markdownLexer } from '@sourcegraph/common'
@@ -146,7 +145,7 @@ export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<No
                             className={styles.toggleOutlineButton}
                             aria-label="Open Outline panel"
                         >
-                            <Icon aria-hidden={true} as={ChevronRightIcon} size="sm" />
+                            <Icon aria-hidden={true} size="sm" svgPath={mdiChevronRight} />
                         </Button>
                     </div>
                 </nav>,
@@ -162,7 +161,7 @@ export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<No
                         className={styles.toggleOutlineButton}
                         aria-label="Close Outline panel"
                     >
-                        <Icon aria-hidden={true} as={ChevronLeftIcon} size="sm" />
+                        <Icon aria-hidden={true} size="sm" svgPath={mdiChevronLeft} />
                     </Button>
                     <span>Outline</span>
                 </div>
