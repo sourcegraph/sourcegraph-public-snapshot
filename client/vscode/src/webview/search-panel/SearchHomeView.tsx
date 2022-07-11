@@ -169,8 +169,6 @@ export const SearchHomeView: React.FunctionComponent<React.PropsWithChildren<Sea
                         patternType={patternType}
                         setPatternType={setPatternType}
                         isSourcegraphDotCom={isSourcegraphDotCom}
-                        hasUserAddedExternalServices={false}
-                        hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                         structuralSearchDisabled={false}
                         queryState={userQueryState}
                         onChange={setUserQueryState}

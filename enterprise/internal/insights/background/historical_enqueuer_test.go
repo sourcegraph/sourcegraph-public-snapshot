@@ -16,6 +16,7 @@ import (
 	itypes "github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -27,6 +28,7 @@ type testParams struct {
 	frames                int
 	recordSleepOperations bool
 	haveData              bool
+	deprecateJITFeature   bool
 }
 
 type testResults struct {
@@ -45,6 +47,18 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		}
 		return baseNow
 	}
+
+	mockedFeatureFlag := featureflag.FeatureFlag{
+		Name:      "code_insights_deprecate_jit",
+		Bool:      &featureflag.FeatureFlagBool{Value: p.deprecateJITFeature},
+		Rollout:   nil,
+		CreatedAt: time.Now(),
+		UpdatedAt: time.Now(),
+		DeletedAt: nil,
+	}
+	featureFlagStore := database.NewMockFeatureFlagStore()
+
+	featureFlagStore.GetFeatureFlagFunc.SetDefaultReturn(&mockedFeatureFlag, nil)
 
 	settingStore := discovery.NewMockSettingStore()
 	if p.settings != nil {
@@ -154,6 +168,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		gitFirstEverCommit:  gitFirstEverCommit,
 		gitFindRecentCommit: gitFindRecentCommit,
 	}
+
 	historicalEnqueuer := &historicalEnqueuer{
 		now:                   clock,
 		insightsStore:         insightsStore,
@@ -162,6 +177,7 @@ func testHistoricalEnqueuer(t *testing.T, p *testParams) *testResults {
 		analyzer:              analyzer,
 		dataSeriesStore:       dataSeriesStore,
 		statistics:            stats,
+		featureFlagStore:      featureFlagStore,
 	}
 
 	// If we do an iteration without any insights or repos, we should expect no sleep calls to be made.
@@ -207,54 +223,54 @@ func Test_historicalEnqueuer(t *testing.T) {
 		want := autogold.Want("no_data", &testResults{allReposIteratorCalls: 1, operations: []string{
 			"IncrementBackfillAttemptsFunc(seriesId=series1)",
 			"IncrementBackfillAttemptsFunc(seriesId=series2)",
-			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/0$@")`,
-			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 query1 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
-			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 query2 repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/0$@")`,
+			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 /query1/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2021-01-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-12-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-11-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-10-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-09-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-08-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-07-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-06-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-05-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-04-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-03-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
+			`enqueueQueryRunnerJob("2020-02-01T00:00:00Z", "fork:no archived:no count:99999999 /query2/ repo:^repo/1$@")`,
 			"StampBackfillFunc(seriesId=series1)",
 			"StampBackfillFunc(seriesId=series2)",
 		}})
@@ -265,4 +281,5 @@ func Test_historicalEnqueuer(t *testing.T) {
 			recordSleepOperations: true,
 		}))
 	})
+
 }

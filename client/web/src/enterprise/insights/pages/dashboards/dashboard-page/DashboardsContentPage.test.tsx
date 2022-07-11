@@ -163,12 +163,15 @@ const renderDashboardsContent = (
     ),
 })
 
-const triggerDashboardMenuItem = async (screen: RenderWithBrandedContextResult & { user: UserEvent }, name: RegExp) => {
+const triggerDashboardMenuItem = async (
+    screen: RenderWithBrandedContextResult & { user: UserEvent },
+    testId: string
+) => {
     const { user } = screen
-    const dashboardMenu = await waitFor(() => screen.getByRole('button', { name: /dashboard context menu/ }))
+    const dashboardMenu = await waitFor(() => screen.getByTestId('dashboard-context-menu'))
     user.click(dashboardMenu)
 
-    const dashboardMenuItem = screen.getByRole('menuitem', { name })
+    const dashboardMenuItem = screen.getByTestId(testId)
 
     // We're simulating keyboard navigation here to circumvent a bug in ReachUI
     // does not respond to programmatic click events on menu items
@@ -218,14 +221,14 @@ describe('DashboardsContent', () => {
 
         const { history } = screen
 
-        await triggerDashboardMenuItem(screen, /configure dashboard/)
+        await triggerDashboardMenuItem(screen, 'configure-dashboard')
 
         expect(history.location.pathname).toEqual('/insights/dashboards/foo/edit')
     })
 
     it('opens add insight modal', async () => {
         const screen = renderDashboardsContent()
-        const addInsightsButton = await waitFor(() => screen.getByRole('button', { name: /add or remove insights/ }))
+        const addInsightsButton = await waitFor(() => screen.getByTestId('add-or-remove-insights'))
 
         userEvent.click(addInsightsButton)
 
@@ -238,7 +241,7 @@ describe('DashboardsContent', () => {
     it('opens delete dashboard modal', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, /Delete/)
+        await triggerDashboardMenuItem(screen, 'delete')
 
         const addInsightHeader = await waitFor(() => screen.getByRole('heading', { name: /Delete/ }))
         expect(addInsightHeader).toBeInTheDocument()
@@ -248,7 +251,7 @@ describe('DashboardsContent', () => {
     it('copies dashboard url', async () => {
         const screen = renderDashboardsContent()
 
-        await triggerDashboardMenuItem(screen, /Copy link/)
+        await triggerDashboardMenuItem(screen, 'copy-link')
 
         sinon.assert.calledOnce(mockCopyURL)
     })

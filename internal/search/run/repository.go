@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
-	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -23,14 +22,13 @@ type RepoSearchJob struct {
 	Features                     search.Features
 
 	Mode search.GlobalSearchMode
-	Log  sglog.Logger
 }
 
 func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts, Log: s.Log}
+	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
 	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
@@ -60,15 +58,26 @@ func (*RepoSearchJob) Name() string {
 	return "RepoSearchJob"
 }
 
-func (s *RepoSearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("repoOpts", &s.RepoOpts),
-		trace.Printf("filePatternsReposMustInclude", "%q", s.FilePatternsReposMustInclude),
-		trace.Printf("filePatternsReposMustExclude", "%q", s.FilePatternsReposMustExclude),
-		log.Bool("contentBasedLangFilters", s.Features.ContentBasedLangFilters),
-		trace.Stringer("mode", s.Mode),
+func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("contentBasedLangFilters", s.Features.ContentBasedLangFilters),
+			trace.Strings("filePatternsReposMustInclude", s.FilePatternsReposMustInclude),
+			trace.Strings("filePatternsReposMustExclude", s.FilePatternsReposMustExclude),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+			trace.Stringer("mode", s.Mode),
+		)
 	}
+	return res
 }
+
+func (s *RepoSearchJob) Children() []job.Describer       { return nil }
+func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 func repoRevsToRepoMatches(ctx context.Context, db database.DB, repos []*search.RepositoryRevisions) []result.Match {
 	matches := make([]result.Match, 0, len(repos))

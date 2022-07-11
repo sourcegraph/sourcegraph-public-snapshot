@@ -5,7 +5,6 @@ import (
 
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -56,7 +55,7 @@ func GetRepositories(ctx context.Context, db database.DB) (*Repositories, error)
 	}
 
 	opts := &zoekt.ListOptions{Minimal: true}
-	repos, err := search.Indexed(log.Scoped("GetRepositories", "")).List(ctx, &query.Const{Value: true}, opts)
+	repos, err := search.Indexed().List(ctx, &query.Const{Value: true}, opts)
 	if err != nil {
 		return nil, err
 	}

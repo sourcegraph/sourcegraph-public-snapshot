@@ -2,7 +2,7 @@ import { FilterType, resolveFilter } from '@sourcegraph/shared/src/search/query/
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { Filter } from '@sourcegraph/shared/src/search/query/token'
 
-import { getSanitizedRepositories } from '../../../../../components/creation-ui-kit'
+import { getSanitizedRepositories } from '../../../../../components'
 import { InsightExecutionType, InsightType, MinimalCaptureGroupInsightData } from '../../../../../core'
 import { CaptureGroupFormFields } from '../types'
 

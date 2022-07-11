@@ -7,8 +7,6 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	sglog "github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchalert "github.com/sourcegraph/sourcegraph/internal/search/alert"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -20,21 +18,19 @@ import (
 
 // NewAlertJob creates a job that translates errors from child jobs
 // into alerts when necessary.
-func NewAlertJob(logger sglog.Logger, inputs *run.SearchInputs, child job.Job) job.Job {
+func NewAlertJob(inputs *run.SearchInputs, child job.Job) job.Job {
 	if _, ok := child.(*NoopJob); ok {
 		return child
 	}
 	return &alertJob{
 		inputs: inputs,
 		child:  child,
-		log:    logger,
 	}
 }
 
 type alertJob struct {
 	inputs *run.SearchInputs
 	child  job.Job
-	log    sglog.Logger
 }
 
 func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -47,9 +43,9 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	jobAlert, err := j.child.Run(ctx, clients, statsObserver)
 
 	ao := searchalert.Observer{
+		Logger:       clients.Logger,
 		Db:           clients.DB,
 		SearchInputs: j.inputs,
-		Log:          j.log,
 		HasResults:   countingStream.Count() > 0,
 	}
 	if err != nil {
@@ -79,15 +75,33 @@ func (j *alertJob) Name() string {
 	return "AlertJob"
 }
 
-func (j *alertJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", j.inputs.Query),
-		log.String("originalQuery", j.inputs.OriginalQuery),
-		trace.Stringer("patternType", j.inputs.PatternType),
-		log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
-		trace.Stringer("protocol", j.inputs.Protocol),
-		trace.Stringer("features", j.inputs.Features),
+func (j *alertJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			trace.Stringer("features", j.inputs.Features),
+			trace.Stringer("protocol", j.inputs.Protocol),
+			log.Bool("onSourcegraphDotCom", j.inputs.OnSourcegraphDotCom),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", j.inputs.Query),
+			log.String("originalQuery", j.inputs.OriginalQuery),
+			trace.Stringer("patternType", j.inputs.PatternType),
+		)
 	}
+	return res
+}
+
+func (j *alertJob) Children() []job.Describer {
+	return []job.Describer{j.child}
+}
+
+func (j *alertJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *j
+	cp.child = job.Map(j.child, fn)
+	return &cp
 }
 
 // longer returns a suggested longer time to wait if the given duration wasn't long enough.

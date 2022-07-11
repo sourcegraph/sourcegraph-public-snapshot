@@ -3,7 +3,7 @@ import { FunctionComponent } from 'react'
 import { mdiDelete } from '@mdi/js'
 
 import { ErrorLike } from '@sourcegraph/common'
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 export interface CodeIntelDeleteIndexProps {
     deleteIndex: () => Promise<void>
@@ -14,14 +14,9 @@ export const CodeIntelDeleteIndex: FunctionComponent<React.PropsWithChildren<Cod
     deleteIndex,
     deletionOrError,
 }) => (
-    <Button
-        type="button"
-        variant="danger"
-        onClick={deleteIndex}
-        disabled={deletionOrError === 'loading'}
-        aria-describedby="upload-delete-button-help"
-        data-tooltip="Deleting this index will remove it from the index queue."
-    >
-        <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete index
-    </Button>
+    <Tooltip content="Deleting this index will remove it from the index queue.">
+        <Button type="button" variant="danger" onClick={deleteIndex} disabled={deletionOrError === 'loading'}>
+            <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete index
+        </Button>
+    </Tooltip>
 )

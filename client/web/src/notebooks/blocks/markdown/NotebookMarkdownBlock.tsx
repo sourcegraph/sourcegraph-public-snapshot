@@ -80,7 +80,7 @@ const staticExtensions: Extension[] = [
             { tag: tags.url, class: styles.markdownCode },
         ])
     ),
-    editorHeight({ height: '60rem' }),
+    editorHeight({ maxHeight: '60rem' }),
 ]
 
 interface NotebookMarkdownBlockProps extends BlockProps<MarkdownBlock>, ThemeProps {

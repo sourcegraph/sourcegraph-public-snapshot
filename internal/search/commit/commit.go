@@ -7,7 +7,6 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
-	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -33,7 +32,6 @@ type SearchJob struct {
 	Limit                int
 	IncludeModifiedFiles bool
 	Concurrency          int
-	Log                  sglog.Logger
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
@@ -96,7 +94,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts, Log: j.Log}
+	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		bounded := goroutine.NewBounded(j.Concurrency)
 
@@ -122,15 +120,26 @@ func (j SearchJob) Name() string {
 	return "CommitSearchJob"
 }
 
-func (j *SearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", j.Query),
-		trace.Stringer("repoOpts", &j.RepoOpts),
-		log.Bool("diff", j.Diff),
-		log.Int("limit", j.Limit),
-		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+func (j *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", j.Query),
+			trace.Scoped("repoOpts", j.RepoOpts.Tags()...),
+			log.Bool("diff", j.Diff),
+			log.Int("limit", j.Limit),
+		)
 	}
+	return res
 }
+
+func (j *SearchJob) Children() []job.Describer       { return nil }
+func (j *SearchJob) MapChildren(job.MapFunc) job.Job { return j }
 
 func (j *SearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {

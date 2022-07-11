@@ -46,6 +46,7 @@ import {
     Code,
     H4,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -448,21 +449,22 @@ export const ReferencesList: React.FunctionComponent<
                 <div data-testid="right-pane" className={classNames('px-0 border-left', styles.rightSubPanel)}>
                     <CardHeader className={classNames('d-flex', styles.cardHeader)}>
                         <small>
-                            <Button
-                                onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
-                                title="Close code view"
-                                data-tooltip="Close code view"
-                                data-placement="left"
-                                size="sm"
-                            >
-                                <Icon
-                                    aria-hidden={true}
+                            <Tooltip content="Close code view" placement="left">
+                                <Button
+                                    aria-label="Close"
+                                    onClick={() => setActiveLocation(undefined)}
+                                    className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
                                     size="sm"
-                                    className="border-0"
-                                    svgPath={mdiArrowCollapseRight}
-                                />
-                            </Button>
+                                    data-testid="close-code-view"
+                                >
+                                    <Icon
+                                        aria-hidden={true}
+                                        size="sm"
+                                        svgPath={mdiArrowCollapseRight}
+                                        className="border-0"
+                                    />
+                                </Button>
+                            </Tooltip>
                             <Link
                                 to={activeLocation.url}
                                 onClick={event => {
@@ -744,14 +746,11 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                 <CollapseHeader
                     as={Button}
                     aria-expanded={open}
+                    aria-label={`Repository ${repoLocationGroup.repoName}`}
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    {open ? (
-                        <Icon aria-label="Close" svgPath={mdiChevronDown} />
-                    ) : (
-                        <Icon aria-label="Expand" svgPath={mdiChevronRight} />
-                    )}
+                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
                     <small>
                         <Link
                             to={repoUrl}
@@ -825,6 +824,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>
                             <Link
+                                aria-label={`File path ${group.path}`}
                                 to={fileUrl}
                                 onClick={event => {
                                     event.preventDefault()

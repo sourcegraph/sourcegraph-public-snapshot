@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/opentracing/opentracing-go/log"
-	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -14,14 +13,13 @@ import (
 
 type ComputeExcludedJob struct {
 	RepoOpts search.RepoOptions
-	Log      sglog.Logger
 }
 
 func (c *ComputeExcludedJob) Run(ctx context.Context, clients job.RuntimeClients, s streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, s, finish := job.StartSpan(ctx, s, c)
 	defer func() { finish(alert, err) }()
 
-	excluded, err := computeExcludedRepos(ctx, c.Log, clients.DB, c.RepoOpts)
+	excluded, err := computeExcludedRepos(ctx, clients.DB, c.RepoOpts)
 	if err != nil {
 		return nil, err
 	}
@@ -40,8 +38,17 @@ func (c *ComputeExcludedJob) Name() string {
 	return "ReposComputeExcludedJob"
 }
 
-func (c *ComputeExcludedJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("repoOpts", &c.RepoOpts),
+func (c *ComputeExcludedJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Scoped("repoOpts", c.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
+
+func (c *ComputeExcludedJob) Children() []job.Describer       { return nil }
+func (c *ComputeExcludedJob) MapChildren(job.MapFunc) job.Job { return c }
