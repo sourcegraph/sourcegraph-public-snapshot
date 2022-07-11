@@ -1,9 +1,7 @@
 import React, { useEffect, useCallback } from 'react'
 
+import { mdiCloudOutline, mdiCloudDownload, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
-import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
-import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -46,7 +44,7 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
                         <small className="ml-2 text-muted">
-                            <Icon as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
+                            <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
                         </small>
                     </Tooltip>
                 )}
@@ -55,13 +53,13 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon as={CloudDownloadIcon} aria-hidden={true} /> Clone now
+                        <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                     </Button>
                 )}{' '}
                 {
                     <Tooltip content="Repository settings">
                         <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
-                            <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                         </Button>
                     </Tooltip>
                 }{' '}

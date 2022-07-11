@@ -139,13 +139,16 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 		return ranges[i].Start.Offset < ranges[j].Start.Offset
 	})
 
-	var chunks []rangeChunk
+	// guestimate size to minimize allocations. This assumes ~2 matches per
+	// chunk. Additionally, since allocations are doubled on realloc, this
+	// should only realloc once for small ranges.
+	chunks := make([]rangeChunk, 0, len(ranges)/2)
 	for i, rr := range ranges {
 		if i == 0 {
 			// First iteration, there are no chunks, so create a new one
 			chunks = append(chunks, rangeChunk{
 				cover:  rr,
-				ranges: []protocol.Range{rr},
+				ranges: ranges[:1],
 			})
 			continue
 		}
@@ -153,7 +156,7 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 		lastChunk := &chunks[len(chunks)-1] // pointer for mutability
 		if int(lastChunk.cover.End.Line)+interChunkLines >= int(rr.Start.Line) {
 			// The current range overlaps with the current chunk, so merge them
-			lastChunk.ranges = append(lastChunk.ranges, rr)
+			lastChunk.ranges = ranges[i-len(lastChunk.ranges) : i+1]
 
 			// Expand the chunk coverRange if needed
 			if rr.End.Offset > lastChunk.cover.End.Offset {
@@ -163,7 +166,7 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 			// No overlap, so create a new chunk
 			chunks = append(chunks, rangeChunk{
 				cover:  rr,
-				ranges: []protocol.Range{rr},
+				ranges: ranges[i : i+1],
 			})
 		}
 	}
@@ -184,6 +187,9 @@ func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
 		}
 
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
+			// NOTE: we must copy the content here because the reference
+			// must not outlive the backing mmap, which may be cleaned
+			// up before the match is serialized for the network.
 			Content: string(buf[firstLineStart:lastLineEnd]),
 			ContentStart: protocol.Location{
 				Offset: firstLineStart,

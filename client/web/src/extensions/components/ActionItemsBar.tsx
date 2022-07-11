@@ -1,14 +1,10 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiMenuUp, mdiMenuDown, mdiPlus, mdiChevronDoubleUp, mdiPuzzleOutline } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import * as H from 'history'
 import { head, last } from 'lodash'
-import ChevronDoubleUpIcon from 'mdi-react/ChevronDoubleUpIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { BehaviorSubject } from 'rxjs'
 import { distinctUntilChanged, map } from 'rxjs/operators'
 import { focusable, FocusableElement } from 'tabbable'
@@ -219,7 +215,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         variant="link"
                         aria-label="Scroll up"
                     >
-                        <Icon as={MenuUpIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiMenuUp} />
                     </Button>
                 )}
                 <ActionsContainer
@@ -280,7 +276,7 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                         variant="link"
                         aria-label="Scroll down"
                     >
-                        <Icon as={MenuDownIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiMenuDown} />
                     </Button>
                 )}
                 {haveExtensionsLoaded && <ActionItemsDivider />}
@@ -288,11 +284,11 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                     <div className={styles.listItem}>
                         <Tooltip content="Add extensions">
                             <Link
-                                aria-label="Add"
                                 to="/extensions"
                                 className={classNames(styles.listItem, styles.auxIcon, actionItemClassName)}
+                                aria-label="Add"
                             >
-                                <Icon as={PlusIcon} aria-hidden={true} />
+                                <Icon aria-hidden={true} svgPath={mdiPlus} />
                             </Link>
                         </Tooltip>
                     </div>
@@ -337,8 +333,8 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                             <ButtonLink
                                 aria-label={
                                     isOpen
-                                        ? 'Close panel. Press the down arrow key to enter the extensions panel.'
-                                        : 'Open panel'
+                                        ? 'Close extensions panel. Press the down arrow key to enter the extensions panel.'
+                                        : 'Open extensions panel'
                                 }
                                 className={classNames(actionItemClassName, styles.auxIcon, styles.actionToggle)}
                                 onSelect={toggle}
@@ -349,11 +345,11 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                                 ) : isOpen ? (
                                     <Icon
                                         data-testid="action-items-toggle-open"
-                                        as={ChevronDoubleUpIcon}
                                         aria-hidden={true}
+                                        svgPath={mdiChevronDoubleUp}
                                     />
                                 ) : (
-                                    <Icon as={PuzzleOutlineIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiPuzzleOutline} />
                                 )}
                                 {haveExtensionsLoaded && <VisuallyHidden>Down arrow to enter</VisuallyHidden>}
                             </ButtonLink>

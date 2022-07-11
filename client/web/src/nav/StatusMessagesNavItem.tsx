@@ -428,7 +428,11 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
                 <Tooltip content={codeHostMessage}>
-                    <Icon aria-label={codeHostMessage ?? ''} svgPath={mdiCloudOffOutline} size="md" />
+                    <Icon
+                        svgPath={mdiCloudOffOutline}
+                        size="md"
+                        {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                    />
                 </Tooltip>
             )
         }

@@ -1,11 +1,8 @@
 import * as React from 'react'
 
+import { mdiCog, mdiDelete, mdiRadioactive, mdiPlus } from '@mdi/js'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import RadioactiveIcon from 'mdi-react/RadioactiveIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import { RouteComponentProps } from 'react-router'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
@@ -153,7 +150,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     size="sm"
                                     as={Link}
                                 >
-                                    <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                                    <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                                 </Button>
                             ) &&
                             ' '}
@@ -208,7 +205,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     variant="danger"
                                     size="sm"
                                 >
-                                    <Icon as={DeleteIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiDelete} />
                                 </Button>
                             </Tooltip>
                         )}
@@ -221,7 +218,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     variant="danger"
                                     size="sm"
                                 >
-                                    <Icon as={RadioactiveIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiRadioactive} />
                                 </Button>
                             </Tooltip>
                         )}
@@ -422,7 +419,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                     <H2 className="mb-0">Users</H2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
-                            <Icon as={AddIcon} aria-hidden={true} /> Create user account
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create user account
                         </Button>
                     </div>
                 </div>

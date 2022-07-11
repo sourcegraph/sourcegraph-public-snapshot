@@ -1,10 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiCog, mdiAccount, mdiDelete, mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import AddIcon from 'mdi-react/AddIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import { RouteComponentProps } from 'react-router'
 import { Subject } from 'rxjs'
 
@@ -67,12 +64,12 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                 <div>
                     <Tooltip content="Organization settings">
                         <Button to={`${orgURL(node.name)}/settings`} variant="secondary" size="sm" as={Link}>
-                            <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                         </Button>
                     </Tooltip>{' '}
                     <Tooltip content="Organization members">
                         <Button to={`${orgURL(node.name)}/settings/members`} variant="secondary" size="sm" as={Link}>
-                            <Icon as={AccountIcon} aria-hidden={true} />{' '}
+                            <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
                             {node.members && (
                                 <>
                                     {node.members.totalCount} {pluralize('member', node.members.totalCount)}
@@ -88,7 +85,7 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                             variant="danger"
                             size="sm"
                         >
-                            <Icon as={DeleteIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
                         </Button>
                     </Tooltip>
                 </div>
@@ -121,7 +118,7 @@ export const SiteAdminOrgsPage: React.FunctionComponent<React.PropsWithChildren<
             <div className="d-flex justify-content-between align-items-center mb-3">
                 <H2 className="mb-0">Organizations</H2>
                 <Button to="/organizations/new" className="test-create-org-button" variant="primary" as={Link}>
-                    <Icon as={AddIcon} aria-hidden={true} /> Create organization
+                    <Icon aria-hidden={true} svgPath={mdiPlus} /> Create organization
                 </Button>
             </div>
             <Text>

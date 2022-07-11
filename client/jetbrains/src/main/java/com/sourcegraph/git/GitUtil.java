@@ -15,7 +15,7 @@ public class GitUtil {
     // relative to the repository root. If the repository URI cannot be
     // determined, a RepoInfo with empty strings is returned.
     @NotNull
-    public static RepoInfo getRepoInfo(String filePath, Project project) {
+    public static RepoInfo getRepoInfo(@NotNull String filePath, @NotNull Project project) {
         String relativePath = "";
         String remoteUrl = "";
         String branchName = "";
@@ -50,7 +50,7 @@ public class GitUtil {
      * E.g. "origin" -> "git@github.com:foo/bar"
      */
     @NotNull
-    private static String getRemoteUrl(String repoDirectoryPath, String remoteName) throws Exception {
+    private static String getRemoteUrl(@NotNull String repoDirectoryPath, @NotNull String remoteName) throws Exception {
         String result = exec("git remote get-url " + remoteName, repoDirectoryPath).trim();
         if (result.isEmpty()) {
             throw new Exception("There is no such remote: \"" + remoteName + "\".");
@@ -59,12 +59,12 @@ public class GitUtil {
     }
 
     /**
-     * Returns the URL of the "sourcegraph" remote.
+     * Returns the URL of the "sourcegraph" remote. E.g. "git@github.com:foo/bar"
      * Falls back to the "origin" remote.
      * An exception is thrown if neither exists.
      */
     @NotNull
-    private static String getConfiguredRemoteUrl(String repoDirectoryPath) throws Exception {
+    private static String getConfiguredRemoteUrl(@NotNull String repoDirectoryPath) throws Exception {
         try {
             return getRemoteUrl(repoDirectoryPath, "sourcegraph");
         } catch (Exception e) {
@@ -80,7 +80,7 @@ public class GitUtil {
      * Returns the repository root directory for any path within a repository.
      */
     @NotNull
-    private static String getRepoRootPath(String path) throws IOException {
+    private static String getRepoRootPath(@NotNull String path) throws IOException {
         return exec("git rev-parse --show-toplevel", path).trim();
     }
 
@@ -89,26 +89,26 @@ public class GitUtil {
      * In detached HEAD state and other exceptional cases it returns "HEAD".
      */
     @NotNull
-    private static String getCurrentBranchName(String path) throws IOException {
+    private static String getCurrentBranchName(@NotNull String path) throws IOException {
         return exec("git rev-parse --abbrev-ref HEAD", path).trim();
     }
 
     /**
      * @param branchName E.g. "main"
      */
-    private static boolean doesRemoteBranchExist(String branchName, String repoDirectoryPath) throws IOException {
+    private static boolean doesRemoteBranchExist(@NotNull String branchName, @NotNull String repoDirectoryPath) throws IOException {
         return exec("git show-branch remotes/origin/" + branchName, repoDirectoryPath).length() > 0;
     }
 
     // exec executes the given command in the specified directory and returns
     // its stdout. Any stderr output is logged.
-    private static String exec(String command, String directoryPath) throws IOException {
+    private static String exec(@NotNull String command, @NotNull String directoryPath) throws IOException {
         Logger.getInstance(GitUtil.class).debug("exec cmd='" + command + "' dir=" + directoryPath);
 
         // Create the process.
-        Process p = Runtime.getRuntime().exec(command, null, new File(directoryPath));
-        BufferedReader stdout = new BufferedReader(new InputStreamReader(p.getInputStream()));
-        BufferedReader stderr = new BufferedReader(new InputStreamReader(p.getErrorStream()));
+        Process process = Runtime.getRuntime().exec(command, null, new File(directoryPath));
+        BufferedReader stdout = new BufferedReader(new InputStreamReader(process.getInputStream()));
+        BufferedReader stderr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
         // Log any stderr output.
         Logger logger = Logger.getInstance(GitUtil.class);
@@ -119,7 +119,7 @@ public class GitUtil {
 
         String out = "";
         //noinspection StatementWithEmptyBody
-        for (String l; (l = stdout.readLine()) != null; out += l + "\n") ;
+        for (String line; (line = stdout.readLine()) != null; out += line + "\n") ;
         return out;
     }
 }

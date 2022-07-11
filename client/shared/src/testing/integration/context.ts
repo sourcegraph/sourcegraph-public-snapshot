@@ -104,6 +104,9 @@ export interface IntegrationTestOptions {
 
 const DISPOSE_ACTION_TIMEOUT = 5 * 1000
 
+// Used in `suppressPollyErrors.js` to suppress error logging.
+const POLLY_RECORDING_PREFIX = '[SG_POLLY] '
+
 /**
  * Should be called in a `beforeEach()` and saved into a local variable.
  */
@@ -125,7 +128,8 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapterOptions: CdpAdapterOptions = {
         browser: driver.browser,
     }
-    const polly = new Polly(snakeCase(currentTest.title), {
+
+    const polly = new Polly(POLLY_RECORDING_PREFIX + snakeCase(currentTest.title), {
         adapters: [CdpAdapter.id],
         adapterOptions: {
             [CdpAdapter.id]: cdpAdapterOptions,
@@ -155,7 +159,17 @@ export const createSharedIntegrationTestContext = async <
     const cdpAdapter = polly.adapters.get(CdpAdapter.id) as CdpAdapter
     subscriptions.add(
         cdpAdapter.errors.subscribe(error => {
-            currentTest.emit('error', error)
+            /**
+             * Do not emit errors on completed tests.
+             *
+             * This can happen when GraphQL is not mocked and we throw an error about that but
+             * this mock is not required for test completion and test passes before we throw the error.
+             *
+             * These types of errors are irrelevant to the test output.
+             */
+            if (currentTest.isPending()) {
+                currentTest.emit('error', error)
+            }
         })
     )
 

@@ -1,10 +1,6 @@
 import React, { useCallback } from 'react'
 
-import CodeTagsIcon from 'mdi-react/CodeTagsIcon'
-import FunctionIcon from 'mdi-react/FunctionIcon'
-import LanguageMarkdownOutlineIcon from 'mdi-react/LanguageMarkdownOutlineIcon'
-import LaptopIcon from 'mdi-react/LaptopIcon'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction, mdiLaptop } from '@mdi/js'
 
 import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -34,7 +30,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     data-testid="add-md-block"
                     aria-label="Add markdown"
                 >
-                    <Icon aria-hidden={true} as={LanguageMarkdownOutlineIcon} size="sm" />
+                    <Icon aria-hidden={true} size="sm" svgPath={mdiLanguageMarkdownOutline} />
                 </Button>
             </Tooltip>
             <Tooltip content="Add a Sourcegraph query">
@@ -44,7 +40,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     data-testid="add-query-block"
                     aria-label="Add query"
                 >
-                    <Icon aria-hidden={true} as={MagnifyIcon} size="sm" />
+                    <Icon aria-hidden={true} size="sm" svgPath={mdiMagnify} />
                 </Button>
             </Tooltip>
             <Tooltip content="Add code from a file">
@@ -54,7 +50,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     data-testid="add-file-block"
                     aria-label="Add code"
                 >
-                    <Icon aria-hidden={true} as={CodeTagsIcon} size="sm" />
+                    <Icon aria-hidden={true} size="sm" svgPath={mdiCodeTags} />
                 </Button>
             </Tooltip>
             <Tooltip content="Add a symbol">
@@ -64,7 +60,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     data-testid="add-symbol-block"
                     aria-label="Add symbol"
                 >
-                    <Icon aria-hidden={true} as={FunctionIcon} size="sm" />
+                    <Icon aria-hidden={true} size="sm" svgPath={mdiFunction} />
                 </Button>
             </Tooltip>
             {showComputeComponent && (
@@ -76,7 +72,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                         aria-label="Add compute block"
                     >
                         {/* // TODO: Fix icon */}
-                        <Icon aria-hidden={true} as={LaptopIcon} size="sm" />
+                        <Icon aria-hidden={true} size="sm" svgPath={mdiLaptop} />
                     </Button>
                 </Tooltip>
             )}

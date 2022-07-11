@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiFileDownload } from '@mdi/js'
 import format from 'date-fns/format'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
@@ -252,7 +252,7 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
 
                 <Tooltip content="Download usage stats archive">
                     <Button href="/site-admin/usage-statistics/archive" download="true" variant="secondary" as="a">
-                        <Icon as={FileDownloadIcon} aria-hidden={true} /> Download usage stats archive
+                        <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download usage stats archive
                     </Button>
                 </Tooltip>
 
