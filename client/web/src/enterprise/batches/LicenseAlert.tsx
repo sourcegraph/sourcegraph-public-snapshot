@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { ReactNode } from 'react'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Alert, AlertProps } from '@sourcegraph/wildcard'
@@ -14,12 +14,14 @@ export interface LicenseAlertProps {
     totalChangesetCount?: number
     // Allows the ability to apply additional logic to the parent component (such as disabling a button).
     onLicenseRetrieved?: (data: GetLicenseAndUsageInfoResult) => void
+    children?: ReactNode
 }
 
 export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<LicenseAlertProps>> = ({
     variant = 'info',
     totalChangesetCount,
     onLicenseRetrieved,
+    children,
 }) => {
     const { data: licenseAndUsageInfo } = useQuery<GetLicenseAndUsageInfoResult, GetLicenseAndUsageInfoVariables>(
         GET_LICENSE_AND_USAGE_INFO,
@@ -34,15 +36,7 @@ export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<Licen
     // license.
     const exceedsLimit = totalChangesetCount ? totalChangesetCount > licenseAndUsageInfo.maxUnlicensedChangesets : true
     if (!licenseAndUsageInfo.batchChanges && !licenseAndUsageInfo.campaigns && exceedsLimit) {
-        return (
-            <Alert variant={variant}>
-                <div className="mb-2">
-                    <strong>Your license only allows for 5 changesets per batch change</strong>
-                </div>
-                You are running a free version of batch changes. It is fully functional, however it will only generate 5
-                changesets per batch change. If you would like to learn more about our pricing, contact us.
-            </Alert>
-        )
+        return <Alert variant={variant}>{children}</Alert>
     }
     return <></>
 }
