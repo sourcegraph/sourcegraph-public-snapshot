@@ -10,11 +10,29 @@ if [[ "$BUILDKITE_PIPELINE_NAME" != "sourcegraph" ]]; then
   exit 0
 fi
 
+notifyFailedStep() {
+    data=$(
+    cat << EOF
+{
+    "Build": $BUILDKITE_BUILD_NUMBER,
+    "Name": "$BUILDKITE_LABEL",
+    "JobID": "$BUILDKITE_JOB_ID",
+    "Branch": "$BUILDKITE_BRANCH",
+    "Author": "$BUILDKITE_BUILD_AUTHOR_EMAIL",
+    "ExitCode": $BUILDKITE_COMMAND_EXIT_STATUS
+}
+EOF
+    )
+
+    echo "Notifying of failed step"
+    curl -v -X POST "Content-Type: application/type" -d "$data" http://169.0.178.64:8080/failed
+}
+
 if [ "$BUILDKITE_BRANCH" == "main" ]; then
   # It's possible for the exit status to be unset, in the case of an earlier hook failed, so we need to
   # account for that.
   if [ -n "$BUILDKITE_COMMAND_EXIT_STATUS" ] && [ "$BUILDKITE_COMMAND_EXIT_STATUS" -eq "0" ]; then
-    # If the job exit code is either 0 or a soft failt exit code defined by that step, do nothing.
+    # If the job exit code is either 0 or a soft failed exit code defined by that step, do nothing.
     exit 0
   fi
 
@@ -30,8 +48,10 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
   # Non-zero exit code and not a soft fail: upload the logs.
   echo "--- Uploading build logs: this only runs if your build has already failed, check the logs above, NOT below!"
   ./enterprise/dev/ci/scripts/upload-build-logs.sh
+
 fi
 
+notifyFailedStep
 # upload raw annotations as artifacts if they are available for easier access
 if [ -d "./annotations" ]; then
     buildkite-agent artifact upload --job "$BUILDKITE_JOB_ID" --content-type "text/plain" "./annotations/*-annotation.md"
