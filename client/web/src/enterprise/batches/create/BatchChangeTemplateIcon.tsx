@@ -2,9 +2,9 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import styles from './CodeInsightsBatchesIcon.module.scss'
+import styles from './BatchChangeTemplateIcon.module.scss'
 
-export const CodeInsightsBatchesIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
+export const BatchChangeTemplateIcon: React.FunctionComponent<React.PropsWithChildren<{ className?: string }>> = ({
     className,
 }) => (
     <svg
