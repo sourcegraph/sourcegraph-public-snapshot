@@ -237,8 +237,8 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             <div className="d-flex flex-column align-items-center w-100 mb-3">
                 <LicenseAlert
-                    additionalCondition={
-                        (totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0) > 5
+                    totalChangesetCount={
+                        (totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0)
                     }
                 />
             </div>
