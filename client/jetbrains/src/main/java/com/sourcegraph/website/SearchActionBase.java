@@ -11,6 +11,7 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.browser.URLBuilder;
+import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
 import org.jetbrains.annotations.NotNull;
@@ -39,22 +40,23 @@ public abstract class SearchActionBase extends DumbAwareAction {
             return;
         }
 
-        RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
-
         SelectionModel selection = editor.getSelectionModel();
         String selectedText = selection.getSelectedText();
         if (selectedText == null || selectedText.equals("")) {
             return; // nothing to query
         }
 
-        String remoteUrl = null;
-        String branchName = null;
-        if (scope == Scope.REPOSITORY) {
-            remoteUrl = repoInfo.remoteUrl;
-            branchName = repoInfo.branchName;
+        String url;
+        if (currentFile instanceof SourcegraphVirtualFile) {
+            SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
+            String repoUrl = (scope == Scope.REPOSITORY) ? sourcegraphFile.getRepoUrl() : null;
+            url = URLBuilder.buildEditorSearchUrl(project, selectedText, repoUrl, null);
+        } else {
+            RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
+            String remoteUrl = (scope == Scope.REPOSITORY) ? repoInfo.remoteUrl : null;
+            String branchName = (scope == Scope.REPOSITORY) ? repoInfo.branchName : null;
+            url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
         }
-
-        String url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
 
         // Open the URL in the browser.
         try {
