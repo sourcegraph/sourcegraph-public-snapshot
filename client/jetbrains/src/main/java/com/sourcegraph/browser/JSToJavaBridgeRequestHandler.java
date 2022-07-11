@@ -2,6 +2,7 @@ package com.sourcegraph.browser;
 
 import com.google.gson.JsonObject;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
@@ -91,12 +92,20 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
-                    previewContent = PreviewContent.fromJson(project, arguments);
                     try {
-                        previewContent.openInEditorOrBrowser();
+                        previewContent = PreviewContent.fromJson(project, arguments);
                     } catch (Exception e) {
-                        return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
+                        return createErrorResponse("Parsing error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
                     }
+
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        try {
+                            previewContent.openInEditorOrBrowser();
+                        } catch (Exception e) {
+                            Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
+                            logger.warn("Error while opening link.", e);
+                        }
+                    });
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
                     arguments = request.getAsJsonObject("arguments");

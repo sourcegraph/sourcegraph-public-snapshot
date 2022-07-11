@@ -21,9 +21,9 @@ type AnalyticsFetcher struct {
 
 type AnalyticsNodeData struct {
 	Date            time.Time
-	Count           int32
-	UniqueUsers     int32
-	RegisteredUsers int32
+	Count           float64
+	UniqueUsers     float64
+	RegisteredUsers float64
 }
 
 type AnalyticsNode struct {
@@ -32,11 +32,11 @@ type AnalyticsNode struct {
 
 func (n *AnalyticsNode) Date() string { return n.Data.Date.Format(time.RFC3339) }
 
-func (n *AnalyticsNode) Count() int32 { return n.Data.Count }
+func (n *AnalyticsNode) Count() float64 { return n.Data.Count }
 
-func (n *AnalyticsNode) UniqueUsers() int32 { return n.Data.UniqueUsers }
+func (n *AnalyticsNode) UniqueUsers() float64 { return n.Data.UniqueUsers }
 
-func (n *AnalyticsNode) RegisteredUsers() int32 { return n.Data.RegisteredUsers }
+func (n *AnalyticsNode) RegisteredUsers() float64 { return n.Data.RegisteredUsers }
 
 func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "nodes")
@@ -73,20 +73,20 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 }
 
 type AnalyticsSummaryData struct {
-	TotalCount           int32
-	TotalUniqueUsers     int32
-	TotalRegisteredUsers int32
+	TotalCount           float64
+	TotalUniqueUsers     float64
+	TotalRegisteredUsers float64
 }
 
 type AnalyticsSummary struct {
 	Data AnalyticsSummaryData
 }
 
-func (s *AnalyticsSummary) TotalCount() int32 { return s.Data.TotalCount }
+func (s *AnalyticsSummary) TotalCount() float64 { return s.Data.TotalCount }
 
-func (s *AnalyticsSummary) TotalUniqueUsers() int32 { return s.Data.TotalUniqueUsers }
+func (s *AnalyticsSummary) TotalUniqueUsers() float64 { return s.Data.TotalUniqueUsers }
 
-func (s *AnalyticsSummary) TotalRegisteredUsers() int32 { return s.Data.TotalRegisteredUsers }
+func (s *AnalyticsSummary) TotalRegisteredUsers() float64 { return s.Data.TotalRegisteredUsers }
 
 func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, error) {
 	cacheKey := fmt.Sprintf(`%s:%s:%s`, f.group, f.dateRange, "summary")

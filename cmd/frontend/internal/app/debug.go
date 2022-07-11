@@ -114,6 +114,8 @@ func addGrafana(r *mux.Router, db database.DB) {
 			// 🚨 SECURITY: Only admins have access to Grafana dashboard
 			r.PathPrefix(prefix).Handler(adminOnly(&httputil.ReverseProxy{
 				Director: func(req *http.Request) {
+					// if set, grafana will fail with an authentication error, so don't allow passthrough
+					req.Header.Del("Authorization")
 					req.URL.Scheme = "http"
 					req.URL.Host = grafanaURL.Host
 					if i := strings.Index(req.URL.Path, prefix); i >= 0 {

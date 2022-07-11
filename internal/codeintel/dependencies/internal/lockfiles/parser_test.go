@@ -30,17 +30,29 @@ func TestParse(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			deps, _, err := parse(lockFile, f)
+			deps, graph, err := parse(lockFile, f)
 			if err != nil {
 				t.Fatal(err)
 			}
 
-			got := make([]string, 0, len(deps))
+			gotDepsList := make([]string, 0, len(deps))
 			for _, dep := range deps {
-				got = append(got, dep.PackageVersionSyntax())
+				gotDepsList = append(gotDepsList, dep.PackageVersionSyntax())
 			}
 
-			sort.Strings(got)
+			sort.Strings(gotDepsList)
+
+			got := struct {
+				Dependencies []string
+				Graph        map[string]interface{}
+			}{
+				Dependencies: gotDepsList,
+				Graph:        nil,
+			}
+
+			if graph != nil {
+				got.Graph = graph.AsMap()
+			}
 
 			g := goldie.New(t, goldie.WithFixtureDir(lockFile))
 			g.AssertJson(t, name, got)

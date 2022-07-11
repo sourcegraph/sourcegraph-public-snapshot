@@ -9,7 +9,7 @@ exports[`QuickLink should have correct links when quicklinks present 1`] = `
   >
     <svg
       aria-hidden="true"
-      class="iconInline pr-1 flex-shrink-0"
+      class="mdi-icon iconInline pr-1 flex-shrink-0"
       fill="currentColor"
       height="24"
       role="img"
@@ -29,7 +29,7 @@ exports[`QuickLink should have correct links when quicklinks present 1`] = `
   >
     <svg
       aria-hidden="true"
-      class="iconInline pr-1 flex-shrink-0"
+      class="mdi-icon iconInline pr-1 flex-shrink-0"
       fill="currentColor"
       height="24"
       role="img"

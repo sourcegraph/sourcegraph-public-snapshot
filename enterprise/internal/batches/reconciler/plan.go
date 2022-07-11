@@ -143,7 +143,9 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 	}
 
 	if wantedChangeset.Closing {
-		pl.AddOp(btypes.ReconcilerOperationClose)
+		if wantedChangeset.ExternalState != btypes.ChangesetExternalStateReadOnly {
+			pl.AddOp(btypes.ReconcilerOperationClose)
+		}
 		// Close is a final operation, nothing else should overwrite it.
 		return pl, nil
 	} else if wantDetachFromOwnerBatchChange || wantArchive || isArchived {
@@ -196,8 +198,9 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 		// the same as being unpublished.
 
 	case btypes.ChangesetPublicationStatePublished:
-		// Don't take any actions for merged changesets.
-		if wantedChangeset.ExternalState == btypes.ChangesetExternalStateMerged {
+		// Don't take any actions for merged or read-only changesets.
+		if wantedChangeset.ExternalState == btypes.ChangesetExternalStateMerged ||
+			wantedChangeset.ExternalState == btypes.ChangesetExternalStateReadOnly {
 			return pl, nil
 		}
 		if reopenAfterDetach(wantedChangeset) {
@@ -252,7 +255,8 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChang
 }
 
 func reopenAfterDetach(ch *btypes.Changeset) bool {
-	closed := ch.ExternalState == btypes.ChangesetExternalStateClosed
+	closed := ch.ExternalState == btypes.ChangesetExternalStateClosed ||
+		ch.ExternalState == btypes.ChangesetExternalStateReadOnly
 	if !closed {
 		return false
 	}

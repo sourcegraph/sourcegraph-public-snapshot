@@ -1,12 +1,6 @@
 import React from 'react'
 
-import classNames from 'classnames'
-
-import { Card, CardBody, H4, Text } from '@sourcegraph/wildcard'
-
-import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
-
-import styles from './InsightTemplatesBanner.module.scss'
+import { TemplateBanner } from './TemplateBanner'
 
 interface InsightTemplatesBannerProps {
     insightTitle: string
@@ -16,10 +10,10 @@ interface InsightTemplatesBannerProps {
 
 export const InsightTemplatesBanner: React.FunctionComponent<React.PropsWithChildren<InsightTemplatesBannerProps>> = ({
     insightTitle,
-    className,
     type,
+    className,
 }) => {
-    const [heading, paragraph]: [React.ReactNode, React.ReactNode] =
+    const [heading, description]: [React.ReactNode, React.ReactNode] =
         type === 'create'
             ? [
                   'You are creating a batch change from a code insight',
@@ -33,17 +27,5 @@ export const InsightTemplatesBanner: React.FunctionComponent<React.PropsWithChil
                   `Sourcegraph pre-selected a batch spec for the batch change started from ${insightTitle}.`,
               ]
 
-    return (
-        <Card className={classNames(className, styles.banner)}>
-            <CardBody>
-                <div className="d-flex justify-content-between align-items-center">
-                    <CodeInsightsBatchesIcon className="mr-4" />
-                    <div className="flex-grow-1">
-                        <H4>{heading}</H4>
-                        <Text className="mb-0">{paragraph}</Text>
-                    </div>
-                </div>
-            </CardBody>
-        </Card>
-    )
+    return <TemplateBanner heading={heading} description={description} className={className} />
 }

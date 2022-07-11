@@ -20,6 +20,6 @@
       "promise@8.0.3"
     ],
     "Lockfile": "yarn.lock",
-    "Graph": "NO-GRAPH"
+    "Graph": "{\"jquery@3.4.1\":{},\"promise@8.0.3\":{\"asap@2.0.6\":{}}}\n"
   }
 ]

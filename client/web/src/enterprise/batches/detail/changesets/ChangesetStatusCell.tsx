@@ -5,10 +5,13 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import ArchiveIcon from 'mdi-react/ArchiveIcon'
 import AutorenewIcon from 'mdi-react/AutorenewIcon'
 import DeleteIcon from 'mdi-react/DeleteIcon'
+import LockIcon from 'mdi-react/LockIcon'
 import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
 import SourceMergeIcon from 'mdi-react/SourceMergeIcon'
 import SourcePullIcon from 'mdi-react/SourcePullIcon'
 import TimerSandIcon from 'mdi-react/TimerSandIcon'
+
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import { ChangesetFields, ChangesetState, Scalars } from '../../../../graphql-operations'
 
@@ -44,6 +47,8 @@ export const ChangesetStatusCell: React.FunctionComponent<React.PropsWithChildre
             return <ChangesetStatusClosed className={className} />
         case ChangesetState.MERGED:
             return <ChangesetStatusMerged className={className} />
+        case ChangesetState.READONLY:
+            return <ChangesetStatusReadOnly className={className} />
         case ChangesetState.DELETED:
             return <ChangesetStatusDeleted className={className} />
     }
@@ -157,4 +162,17 @@ export const ChangesetStatusArchived: React.FunctionComponent<React.PropsWithChi
         <ArchiveIcon role="presentation" />
         {label}
     </div>
+)
+
+export const ChangesetStatusReadOnly: React.FunctionComponent<React.PropsWithChildren<ChangesetStatusIconProps>> = ({
+    label = <span>Read-only</span>,
+    className,
+    ...props
+}) => (
+    <Tooltip content="This changeset is read-only, and cannot be modified. This is usually caused by the repository being archived.">
+        <div className={classNames(iconClassNames, className)} {...props}>
+            <LockIcon role="presentation" />
+            {label}
+        </div>
+    </Tooltip>
 )
