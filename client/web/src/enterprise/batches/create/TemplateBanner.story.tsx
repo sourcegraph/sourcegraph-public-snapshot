@@ -1,4 +1,4 @@
-import { Meta, Story, DecoratorFn } from '@storybook/react'
+import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
 
@@ -7,7 +7,7 @@ import { TemplateBanner } from './TemplateBanner'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'web/batches/create/TemplateBanner',
+    title: 'web/batches/create',
     decorators: [decorator],
 }
 
