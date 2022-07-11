@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -27,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -71,6 +73,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		},
 	}
 
+	repoArchivedErr := mockRepoArchivedError{}
+
 	type testCase struct {
 		changeset      ct.TestChangesetOpts
 		hasCurrentSpec bool
@@ -80,6 +84,10 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 		sourcerErr      error
 		// Whether or not the source responds to CreateChangeset with "already exists"
 		alreadyExists bool
+		// Whether or not the source responds to IsArchivedPushError with true
+		isRepoArchived bool
+
+		gitClientErr error
 
 		wantCreateOnCodeHost      bool
 		wantCreateDraftOnCodeHost bool
@@ -197,6 +205,51 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				DiffStat:         state.DiffStat,
 			},
 		},
+		"push and publish to archived repo, detected at push": {
+			hasCurrentSpec: true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublish,
+				},
+			},
+			gitClientErr: &gitprotocol.CreateCommitFromPatchError{
+				CombinedOutput: "archived",
+			},
+			isRepoArchived: true,
+			sourcerErr:     repoArchivedErr,
+
+			wantGitserverCommit: true,
+			wantNonRetryableErr: true,
+
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+		},
+		"push and publish to archived repo, detected at publish": {
+			hasCurrentSpec: true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationPush,
+					btypes.ReconcilerOperationPublish,
+				},
+			},
+			sourcerErr: repoArchivedErr,
+
+			wantCreateOnCodeHost: true,
+			wantGitserverCommit:  true,
+			wantNonRetryableErr:  true,
+
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+			},
+		},
 		"update": {
 			hasCurrentSpec: true,
 			changeset: ct.TestChangesetOpts{
@@ -219,6 +272,36 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				ExternalID:       githubPR.ID,
 				ExternalBranch:   githubHeadRef,
 				ExternalState:    btypes.ChangesetExternalStateOpen,
+				DiffStat:         state.DiffStat,
+				// We update the title/body but want the title/body returned by the code host.
+				Title: githubPR.Title,
+				Body:  githubPR.Body,
+			},
+		},
+		"update to archived repo": {
+			hasCurrentSpec: true,
+			changeset: ct.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalID:       "12345",
+				ExternalBranch:   "head-ref-on-github",
+			},
+
+			plan: &Plan{
+				Ops: Operations{
+					btypes.ReconcilerOperationUpdate,
+				},
+			},
+			sourcerErr: repoArchivedErr,
+
+			// We don't want a new commit, only an update on the code host.
+			wantUpdateOnCodeHost: true,
+			wantNonRetryableErr:  true,
+
+			wantChangeset: ct.ChangesetAssertions{
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalID:       githubPR.ID,
+				ExternalBranch:   githubHeadRef,
+				ExternalState:    btypes.ChangesetExternalStateReadOnly,
 				DiffStat:         state.DiffStat,
 				// We update the title/body but want the title/body returned by the code host.
 				Title: githubPR.Title,
@@ -476,7 +559,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, cstore, changesetOpts)
 
 			// Setup gitserver dependency.
-			gitClient := &ct.FakeGitserverClient{ResponseErr: nil}
+			gitClient := &ct.FakeGitserverClient{ResponseErr: tc.gitClientErr}
 			if changesetSpec != nil {
 				gitClient.Response = changesetSpec.Spec.HeadRef
 			}
@@ -484,9 +567,10 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Setup the sourcer that's used to create a Source with which
 			// to create/update a changeset.
 			fakeSource := &stesting.FakeChangesetSource{
-				Svc:             extSvc,
-				Err:             tc.sourcerErr,
-				ChangesetExists: tc.alreadyExists,
+				Svc:                     extSvc,
+				Err:                     tc.sourcerErr,
+				ChangesetExists:         tc.alreadyExists,
+				IsArchivedPushErrorTrue: tc.isRepoArchived,
 			}
 
 			if tc.sourcerMetadata != nil {
@@ -504,9 +588,17 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			tc.plan.Changeset = changeset
 			tc.plan.ChangesetSpec = changesetSpec
 
+			// Ensure we reset the state of the repo after executing the plan.
+			t.Cleanup(func() {
+				repo.Archived = false
+				_, err := repos.NewStore(logtest.Scoped(t), cstore.DatabaseDB()).UpdateRepo(ctx, repo)
+				require.NoError(t, err)
+			})
+
 			// Execute the plan
 			err := executePlan(
 				ctx,
+				logtest.Scoped(t),
 				gitClient,
 				sourcer,
 				// Don't actually sleep for the sake of testing.
@@ -627,7 +719,7 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: repo.ID})
 
-	err := executePlan(ctx, nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, cstore, plan)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -662,7 +754,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationClose)
 
-		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, cstore, plan)
 		if err != ourError {
 			t.Fatalf("executePlan did not return expected error: %s", err)
 		}
@@ -675,7 +767,7 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationDetach)
 
-		err := executePlan(ctx, nil, sourcer, true, cstore, plan)
+		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, cstore, plan)
 		if err != nil {
 			t.Fatalf("executePlan returned unexpected error: %s", err)
 		}
@@ -1023,6 +1115,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 
 			err := executePlan(
 				context.Background(),
+				logtest.Scoped(t),
 				gitClient,
 				sourcer,
 				true,
@@ -1098,6 +1191,40 @@ func TestDecorateChangesetBody(t *testing.T) {
 	}
 }
 
+func TestHandleArchivedRepo(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("success", func(t *testing.T) {
+		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
+		repo := &types.Repo{Archived: false}
+
+		store := repos.NewMockStore()
+		store.UpdateRepoFunc.SetDefaultReturn(repo, nil)
+
+		err := handleArchivedRepo(ctx, store, repo, ch)
+		assert.NoError(t, err)
+		assert.True(t, repo.Archived)
+		assert.Equal(t, btypes.ChangesetExternalStateReadOnly, ch.ExternalState)
+		assert.NotEmpty(t, store.UpdateRepoFunc.History())
+	})
+
+	t.Run("store error", func(t *testing.T) {
+		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
+		repo := &types.Repo{Archived: false}
+
+		store := repos.NewMockStore()
+		want := errors.New("")
+		store.UpdateRepoFunc.SetDefaultReturn(nil, want)
+
+		have := handleArchivedRepo(ctx, store, repo, ch)
+		assert.Error(t, have)
+		assert.ErrorIs(t, have, want)
+		assert.True(t, repo.Archived)
+		assert.Equal(t, btypes.ChangesetExternalStateDraft, ch.ExternalState)
+		assert.NotEmpty(t, store.UpdateRepoFunc.History())
+	})
+}
+
 func TestBatchChangeURL(t *testing.T) {
 	ctx := context.Background()
 
@@ -1171,3 +1298,9 @@ type mockInternalClient struct {
 func (c *mockInternalClient) ExternalURL(ctx context.Context) (string, error) {
 	return c.externalURL, c.err
 }
+
+type mockRepoArchivedError struct{}
+
+func (mockRepoArchivedError) Archived() bool     { return true }
+func (mockRepoArchivedError) Error() string      { return "mock repo archived" }
+func (mockRepoArchivedError) NonRetryable() bool { return true }

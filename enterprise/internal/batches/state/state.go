@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -34,6 +35,16 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	sort.Sort(events)
 
 	logger := log.Scoped("SetDerivedState", "")
+
+	// We need to ensure we're using an internal actor here, since we need to
+	// have access to the repo to set the derived state regardless of the actor
+	// that initiated whatever process led us here.
+	repo, err := repoStore.Get(actor.WithInternalActor(ctx), c.RepoID)
+	if err != nil {
+		logger.Warn("Getting repo to compute derived state", log.Error(err))
+		return
+	}
+
 	c.ExternalCheckState = computeCheckState(c, events)
 
 	history, err := computeHistory(c, events)
@@ -42,7 +53,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 		return
 	}
 
-	if state, err := computeExternalState(c, history); err != nil {
+	if state, err := computeExternalState(c, history, repo); err != nil {
 		logger.Warn("Computing external changeset state", log.Error(err))
 	} else {
 		c.ExternalState = state
@@ -61,25 +72,13 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 		return
 	}
 
-	// Some of the fields on changesets are dependent on the SyncState: this
-	// encapsulates fields that we want to cache based on our current
-	// understanding of the changeset's state on the external provider that are
-	// not part of the metadata that we get from the provider's API.
-	//
-	// To update this, first we need gitserver's view of the repo.
-	repo, err := changesetRepoName(ctx, repoStore, c)
-	if err != nil {
-		logger.Warn("Retrieving repo name for changeset's repo", log.Error(err))
-		return
-	}
-
 	// Now we can update the state. Since we'll want to only perform some
 	// actions based on how the state changes, we'll keep references to the old
 	// and new states for the duration of this function, although we'll update
 	// c.SyncState as soon as we can.
 	oldState := c.SyncState
 	db := database.NewDBWith(logger, repoStore)
-	newState, err := computeSyncState(ctx, db, c, repo)
+	newState, err := computeSyncState(ctx, db, c, repo.Name)
 	if err != nil {
 		logger.Warn("Computing sync state", log.Error(err))
 		return
@@ -89,7 +88,7 @@ func SetDerivedState(ctx context.Context, repoStore database.RepoStore, c *btype
 	// Now we can update fields that are invalidated when the sync state
 	// changes.
 	if !oldState.Equals(newState) {
-		if stat, err := computeDiffStat(ctx, db, c, repo); err != nil {
+		if stat, err := computeDiffStat(ctx, db, c, repo.Name); err != nil {
 			logger.Warn("Computing diffstat", log.Error(err))
 		} else {
 			c.SetDiffStat(stat)
@@ -120,7 +119,10 @@ func computeCheckState(c *btypes.Changeset, events ChangesetEvents) btypes.Chang
 
 // computeExternalState computes the external state for the changeset and its
 // associated events.
-func computeExternalState(c *btypes.Changeset, history []changesetStatesAtTime) (btypes.ChangesetExternalState, error) {
+func computeExternalState(c *btypes.Changeset, history []changesetStatesAtTime, repo *types.Repo) (btypes.ChangesetExternalState, error) {
+	if repo.Archived {
+		return btypes.ChangesetExternalStateReadOnly, nil
+	}
 	if len(history) == 0 {
 		return computeSingleChangesetExternalState(c)
 	}
@@ -682,16 +684,6 @@ func computeRev(ctx context.Context, db database.DB, repo api.RepoName, getOid, 
 	// the fallback to ref, to get the specific revision.
 	gitRev, err := gitserver.NewClient(db).ResolveRevision(ctx, repo, rev, gitserver.ResolveRevisionOptions{})
 	return string(gitRev), err
-}
-
-// changesetRepoName looks up a api.RepoName based on the RepoID within a changeset.
-func changesetRepoName(ctx context.Context, repoStore database.RepoStore, c *btypes.Changeset) (api.RepoName, error) {
-	// We need to use an internal actor here as the repo-updater otherwise has no access to the repo.
-	repo, err := repoStore.Get(actor.WithInternalActor(ctx), c.RepoID)
-	if err != nil {
-		return "", err
-	}
-	return repo.Name, nil
 }
 
 func unixMilliToTime(ms int64) time.Time {

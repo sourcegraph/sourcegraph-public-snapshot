@@ -870,6 +870,12 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
+		case btypes.ChangesetStateReadOnly:
+			externalState := btypes.ChangesetExternalStateReadOnly
+			publicationState := btypes.ChangesetPublicationStatePublished
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
+			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateUnpublished:
 			publicationState := btypes.ChangesetPublicationStateUnpublished
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}

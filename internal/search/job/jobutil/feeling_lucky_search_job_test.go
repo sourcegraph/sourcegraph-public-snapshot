@@ -174,7 +174,7 @@ func TestCombinations(t *testing.T) {
 	test := func(input string, rulesNarrow, rulesWiden []rule) string {
 		q, _ := query.ParseStandard(input)
 		b, _ := query.ToBasicQuery(q)
-		g := NewComboGenerator(b, rulesNarrow, rulesWiden)
+		g := NewGenerator(b, rulesNarrow, rulesWiden)
 
 		var autoQ *autoQuery
 		type want struct {
