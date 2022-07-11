@@ -5,7 +5,6 @@ import (
 	"context"
 	"io"
 	"strings"
-	"sync"
 	"time"
 	"unicode/utf8"
 
@@ -289,8 +288,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	defer cancel()
 
 	var (
-		filesmu sync.Mutex // protects files
-		files   = zf.Files
+		files = zf.Files
 	)
 
 	if rg.re == nil || (patternMatchesPaths && !patternMatchesContent) {
@@ -309,6 +307,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	}
 
 	var (
+		nextFileIdx   = atomic.NewInt32(-1)
 		filesSkipped  atomic.Uint32
 		filesSearched atomic.Uint32
 	)
@@ -320,15 +319,12 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 		rg := rg.Copy()
 		g.Go(func() error {
 			for ctx.Err() == nil {
-				// grab a file to work on
-				filesmu.Lock()
-				if len(files) == 0 {
-					filesmu.Unlock()
+				idx := int(nextFileIdx.Inc())
+				if idx >= len(files) {
 					return nil
 				}
-				f := &files[0]
-				files = files[1:]
-				filesmu.Unlock()
+
+				f := &files[idx]
 
 				// decide whether to process, record that decision
 				if !rg.matchPath.MatchPath(f.Name) {
