@@ -197,7 +197,13 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             </H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
                 <div ref={exampleReference} className="pt-2 pb-3">
-                    <CodeSnippet className="w-100 m-0" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
+                    {/* Hide the copy button while the example is closed so that it's not focusable. */}
+                    <CodeSnippet
+                        className="w-100 m-0"
+                        code={ON_STATEMENT}
+                        language="yaml"
+                        withCopyButton={exampleOpen}
+                    />
                 </div>
             </animated.div>
         </>
