@@ -1,4 +1,4 @@
-import React, { useContext, useRef, useState } from 'react'
+import React, { useContext, useState } from 'react'
 
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
@@ -16,8 +16,14 @@ import {
     SeriesDisplayOptionsInput,
 } from '../../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
-import { InsightCard, InsightCardHeader, InsightCardLoading } from '../../../../../components'
-import { FORM_ERROR, FormChangeEvent, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
+import {
+    InsightCard,
+    InsightCardHeader,
+    InsightCardLoading,
+    FORM_ERROR,
+    FormChangeEvent,
+    SubmissionErrors,
+} from '../../../../../components'
 import {
     DrillDownInsightFilters,
     FilterSectionVisualMode,
@@ -28,7 +34,6 @@ import {
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
-import { useVisibility } from '../../../../../components/insights-view-grid/hooks/use-insight-data'
 import {
     BackendInsightData,
     ALL_INSIGHTS_DASHBOARD,
@@ -54,6 +59,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { telemetryService, insight, className } = props
     const history = useHistory()
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
+
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
@@ -66,8 +72,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(insight.filters)
-    const insightCardReference = useRef<HTMLDivElement>(null)
-    const { wasEverVisible } = useVisibility(insightCardReference)
+
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
@@ -93,18 +98,20 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
-            skip: !wasEverVisible,
             onCompleted: data => {
-                const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
+                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
                 setInsightData(parsedData)
             },
+            onError: () => {
+                stopPolling()
+            },
         }
     )
 
-    const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
+    const { trackMouseLeave, trackMouseEnter, trackDatumClicks, trackFilterChanges } = useCodeInsightViewPings({
         telemetryService,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
@@ -160,6 +167,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         visualMode={filterVisualMode}
                         onVisualModeChange={setFilterVisualMode}
                         onFiltersChange={handleFilterChange}
+                        onFilterValuesChange={trackFilterChanges}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
                         originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}
@@ -176,7 +184,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
             </Card>
 
             <InsightCard
-                ref={insightCardReference}
                 data-testid={`insight-standalone-card.${insight.id}`}
                 className={styles.chart}
                 onMouseEnter={trackMouseEnter}
@@ -192,7 +199,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
 
                 {error ? (
                     <BackendInsightErrorAlert error={error} />
-                ) : loading || !wasEverVisible || !insightData ? (
+                ) : loading || !insightData ? (
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
                 ) : error ? (
                     <BackendInsightErrorAlert error={error} />

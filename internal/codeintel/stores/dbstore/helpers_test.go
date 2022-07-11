@@ -155,7 +155,16 @@ func updateUploads(t testing.TB, db database.DB, uploads ...Upload) {
 			upload.ID)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
-			t.Fatalf("unexpected error while inserting upload: %s", err)
+			t.Fatalf("unexpected error while updating upload: %s", err)
+		}
+	}
+}
+
+func deleteUploads(t testing.TB, db database.DB, uploads ...int) {
+	for _, upload := range uploads {
+		query := sqlf.Sprintf(`DELETE FROM lsif_uploads WHERE id = %s`, upload)
+		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
+			t.Fatalf("unexpected error while deleting upload: %s", err)
 		}
 	}
 }

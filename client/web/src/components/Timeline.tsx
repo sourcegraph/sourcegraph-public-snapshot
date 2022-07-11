@@ -1,9 +1,9 @@
 import React, { FunctionComponent, ReactNode, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { formatDistance } from 'date-fns/esm'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
 
@@ -42,6 +42,7 @@ export const Timeline: FunctionComponent<React.PropsWithChildren<TimelineProps>>
                         <div className={styles.separator} />
                         {showDurations && (
                             <span className="flex-1 text-muted ml-4">
+                                <VisuallyHidden>Step took</VisuallyHidden>
                                 {formatDistance(new Date(stage.date), new Date(stages[stageIndex - 1]?.date))}
                             </span>
                         )}
@@ -83,7 +84,7 @@ const TimelineStage: FunctionComponent<React.PropsWithChildren<TimelineStageProp
                 className="p-0 m-0 border-0 w-100 font-weight-normal d-flex justify-content-between align-items-center"
             >
                 {stageLabel}
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} className="mr-1" />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} className="mr-1" />
             </CollapseHeader>
             <CollapsePanel className={styles.details}>{details}</CollapsePanel>
         </Collapse>

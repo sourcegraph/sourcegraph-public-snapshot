@@ -1,19 +1,21 @@
 import React from 'react'
 
+import {
+    mdiUpload,
+    mdiImport,
+    mdiCloseCircleOutline,
+    mdiDelete,
+    mdiSourceBranchRefresh,
+    mdiSourceBranchCheck,
+    mdiSourceBranchSync,
+    mdiUploadNetwork,
+    mdiBeakerQuestion,
+    mdiArchive,
+    mdiCheckboxBlankCircleOutline,
+} from '@mdi/js'
 import classNames from 'classnames'
-import ArchiveIcon from 'mdi-react/ArchiveIcon'
-import BeakerQuestionIcon from 'mdi-react/BeakerQuestionIcon'
-import BlankCircleIcon from 'mdi-react/CheckboxBlankCircleOutlineIcon'
-import CloseCircleOutlineIcon from 'mdi-react/CloseCircleOutlineIcon'
-import ImportIcon from 'mdi-react/ImportIcon'
-import SourceBranchCheckIcon from 'mdi-react/SourceBranchCheckIcon'
-import SourceBranchRefreshIcon from 'mdi-react/SourceBranchRefreshIcon'
-import SourceBranchSyncIcon from 'mdi-react/SourceBranchSyncIcon'
-import TrashIcon from 'mdi-react/TrashIcon'
-import UploadIcon from 'mdi-react/UploadIcon'
-import UploadNetworkIcon from 'mdi-react/UploadNetworkIcon'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 
@@ -101,12 +103,9 @@ export const PreviewActionPublish: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Publish', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="mr-1"
-            data-tooltip="This changeset will be published to its code host"
-            as={UploadIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be published to its code host">
+            <Icon aria-label="This changeset will be published to its code host" className="mr-1" svgPath={mdiUpload} />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -115,12 +114,13 @@ export const PreviewActionPublishDraft: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Publish draft', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="text-muted mr-1"
-            data-tooltip="This changeset will be published as a draft to its code host"
-            as={UploadIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be published as a draft to its code host">
+            <Icon
+                aria-label="This changeset will be published as a draft to its code host"
+                className="text-muted mr-1"
+                svgPath={mdiUpload}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -129,12 +129,13 @@ export const PreviewActionImport: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Import', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="mr-1"
-            data-tooltip="This changeset will be imported and tracked in this batch change"
-            as={ImportIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be imported and tracked in this batch change">
+            <Icon
+                aria-label="This changeset will be imported and tracked in this batch change"
+                className="mr-1"
+                svgPath={mdiImport}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -143,12 +144,13 @@ export const PreviewActionClose: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Close', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="text-danger mr-1"
-            data-tooltip="This changeset will be closed on the code host"
-            as={CloseCircleOutlineIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be closed on the code host">
+            <Icon
+                aria-label="This changeset will be closed on the code host"
+                className="text-danger mr-1"
+                svgPath={mdiCloseCircleOutline}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -157,12 +159,13 @@ export const PreviewActionDetach: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Detach', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="text-danger mr-1"
-            data-tooltip="This changeset will be removed from the batch change"
-            as={TrashIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be removed from the batch change">
+            <Icon
+                aria-label="This changeset will be removed from the batch change"
+                className="text-danger mr-1"
+                svgPath={mdiDelete}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -171,12 +174,13 @@ export const PreviewActionReopen: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Reopen', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="text-success mr-1"
-            data-tooltip="This changeset will be reopened on the code host"
-            as={SourceBranchRefreshIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be reopened on the code host">
+            <Icon
+                aria-label="This changeset will be reopened on the code host"
+                className="text-success mr-1"
+                svgPath={mdiSourceBranchRefresh}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -185,12 +189,13 @@ export const PreviewActionUndraft: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Undraft', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="text-success mr-1"
-            data-tooltip="This changeset will be marked as ready for review on the code host"
-            as={SourceBranchCheckIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be marked as ready for review on the code host">
+            <Icon
+                aria-label="This changeset will be marked as ready for review on the code host"
+                className="text-success mr-1"
+                svgPath={mdiSourceBranchCheck}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -199,12 +204,13 @@ export const PreviewActionUpdate: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Update', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="mr-1"
-            data-tooltip="This changeset will be updated on the code host"
-            as={SourceBranchSyncIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be updated on the code host">
+            <Icon
+                aria-label="This changeset will be updated on the code host"
+                className="mr-1"
+                svgPath={mdiSourceBranchSync}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -213,12 +219,13 @@ export const PreviewActionPush: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Push', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="mr-1"
-            data-tooltip="A new commit will be pushed to the code host"
-            as={UploadNetworkIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="A new commit will be pushed to the code host">
+            <Icon
+                aria-label="A new commit will be pushed to the code host"
+                className="mr-1"
+                svgPath={mdiUploadNetwork}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -227,12 +234,13 @@ export const PreviewActionUnknown: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string; operations: string }>
 > = ({ operations, className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="mr-1"
-            data-tooltip={`The operation ${operations} can't yet be displayed.`}
-            as={BeakerQuestionIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content={`The operation ${operations} can't yet be displayed.`}>
+            <Icon
+                aria-label={`The operation ${operations} can't yet be displayed.`}
+                className="mr-1"
+                svgPath={mdiBeakerQuestion}
+            />
+        </Tooltip>
         <span>Unknown</span>
     </div>
 )
@@ -241,12 +249,13 @@ export const PreviewActionArchive: React.FunctionComponent<
     React.PropsWithChildren<{ label?: string; className?: string }>
 > = ({ label = 'Archive', className }) => (
     <div className={classNames(className, iconClassNames)}>
-        <Icon
-            className="text-muted mr-1"
-            data-tooltip="This changeset will be kept and marked as archived in this batch change"
-            as={ArchiveIcon}
-            aria-hidden={true}
-        />
+        <Tooltip content="This changeset will be kept and marked as archived in this batch change">
+            <Icon
+                aria-label="This changeset will be kept and marked as archived in this batch change"
+                className="text-muted mr-1"
+                svgPath={mdiArchive}
+            />
+        </Tooltip>
         <span>{label}</span>
     </div>
 )
@@ -263,7 +272,9 @@ export const PreviewActionNoAction: React.FunctionComponent<
     React.PropsWithChildren<{ className?: string; reason?: string }>
 > = ({ className, reason }) => (
     <div className={classNames(className, iconClassNames, 'text-muted')}>
-        <Icon className="mr-1" data-tooltip={reason} as={BlankCircleIcon} aria-hidden={true} />
+        <Tooltip content={reason}>
+            <Icon aria-label={reason ?? ''} className="mr-1" svgPath={mdiCheckboxBlankCircleOutline} />
+        </Tooltip>
         <span>No action</span>
     </div>
 )

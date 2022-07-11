@@ -235,9 +235,26 @@ const coalescePatterns = (tokens: DecoratedToken[]): DecoratedToken[] => {
 
 const mapRegexpMeta = (pattern: Pattern): DecoratedToken[] | undefined => {
     const tokens: DecoratedToken[] = []
+
+    if (pattern.delimited) {
+        tokens.push({
+            type: 'metaRegexp',
+            range: { start: pattern.range.start, end: pattern.range.start + 1 },
+            value: '/',
+            kind: MetaRegexpKind.Delimited,
+        })
+        tokens.push({
+            type: 'metaRegexp',
+            range: { start: pattern.range.end - 1, end: pattern.range.end },
+            value: '/',
+            kind: MetaRegexpKind.Delimited,
+        })
+    }
+
+    const offset = pattern.delimited ? pattern.range.start + 1 : pattern.range.start
+
     try {
         const ast = new RegExpParser().parsePattern(pattern.value)
-        const offset = pattern.range.start
         visitRegExpAST(ast, {
             onAlternativeEnter(node: Alternative) {
                 // regexpp doesn't tell us where a '|' operator is. We infer it by visiting any
@@ -1069,6 +1086,74 @@ export const decorate = (token: Token): DecoratedToken[] => {
             decorated.push(token)
     }
     return decorated
+}
+
+const tokenKindToCSSName: Record<MetaRevisionKind | MetaRegexpKind | MetaPredicateKind | MetaStructuralKind, string> = {
+    Separator: 'separator',
+    IncludeGlobMarker: 'include-glob-marker',
+    ExcludeGlobMarker: 'exclude-glob-marker',
+    CommitHash: 'commit-hash',
+    Label: 'label',
+    ReferencePath: 'reference-path',
+    Wildcard: 'wildcard',
+    Assertion: 'assertion',
+    Alternative: 'alternative',
+    Delimited: 'delimited',
+    EscapedCharacter: 'escaped-character',
+    CharacterSet: 'character-set',
+    CharacterClass: 'character-class',
+    CharacterClassRange: 'character-class-range',
+    CharacterClassRangeHyphen: 'character-class-range-hyphen',
+    CharacterClassMember: 'character-class-member',
+    LazyQuantifier: 'lazy-quantifier',
+    RangeQuantifier: 'range-quantifier',
+    NameAccess: 'name-access',
+    Dot: 'dot',
+    Parenthesis: 'parenthesis',
+    Hole: 'hole',
+    RegexpHole: 'regexp-hole',
+    Variable: 'variable',
+    RegexpSeparator: 'regexp-separator',
+}
+
+/**
+ * Returns the standard global CSS class name used for higlighting this token.
+ * These classes are defined in global-styles/code.css
+ */
+export const toCSSClassName = (token: DecoratedToken): string => {
+    switch (token.type) {
+        case 'field':
+            return 'search-filter-keyword'
+        case 'keyword':
+        case 'openingParen':
+        case 'closingParen':
+        case 'metaRepoRevisionSeparator':
+        case 'metaContextPrefix':
+            return 'search-keyword'
+        case 'metaFilterSeparator':
+            return 'search-filter-separator'
+        case 'metaPath':
+            return 'search-path-separator'
+
+        case 'metaRevision': {
+            return `search-revision-${tokenKindToCSSName[token.kind]}`
+        }
+
+        case 'metaRegexp': {
+            return `search-regexp-meta-${tokenKindToCSSName[token.kind]}`
+        }
+
+        case 'metaPredicate': {
+            return `search-predicate-${tokenKindToCSSName[token.kind]}`
+        }
+
+        case 'metaStructural': {
+            return `search-structural-${tokenKindToCSSName[token.kind]}`
+        }
+
+        default:
+            return 'search-query-text'
+    }
 }
 
 const decoratedToMonaco = (token: DecoratedToken): Monaco.languages.IToken => {

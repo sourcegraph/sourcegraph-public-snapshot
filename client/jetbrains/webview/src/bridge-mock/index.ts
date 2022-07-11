@@ -7,7 +7,7 @@ import { renderColorDebugger } from './renderColorDebugger'
 import { dark } from './theme-snapshots/dark'
 import { light } from './theme-snapshots/light'
 
-const instanceURL = 'https://sourcegraph.com'
+const instanceURL = 'https://sourcegraph.com/'
 
 let isDarkTheme = false
 
@@ -133,6 +133,12 @@ function handleRequest(
         }
 
         case 'indicateFinishedLoading': {
+            onSuccessCallback('null')
+            break
+        }
+
+        case 'windowClose': {
+            console.log('Closing window')
             onSuccessCallback('null')
             break
         }

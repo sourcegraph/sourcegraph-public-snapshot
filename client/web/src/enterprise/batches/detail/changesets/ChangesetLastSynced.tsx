@@ -1,12 +1,10 @@
 import React, { useState, useEffect, useCallback } from 'react'
 
+import { mdiAlertCircle, mdiSync, mdiInformationOutline } from '@mdi/js'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { syncChangeset } from '../backend'
@@ -74,29 +72,30 @@ export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildre
     return (
         <small className="text-muted">
             {changeset.__typename === 'ExternalChangeset' && changeset.syncerError ? (
-                <span data-tooltip="Expand to see details.">
-                    <Icon aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> Syncing from code host
-                    failed.
-                </span>
+                <Tooltip content="Expand to see details.">
+                    <span>
+                        <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} /> Syncing from code
+                        host failed.
+                    </span>
+                </Tooltip>
             ) : (
                 <>Last synced {formatDistance(parseISO(changeset.updatedAt), _now ?? new Date())} ago.</>
             )}{' '}
             {isErrorLike(lastUpdatedAt) && (
-                <Icon
-                    data-tooltip={lastUpdatedAt.message}
-                    aria-label={lastUpdatedAt.message}
-                    className="ml-2 small"
-                    as={AlertCircleIcon}
-                />
+                <Tooltip content={lastUpdatedAt.message}>
+                    <Icon aria-label={lastUpdatedAt.message} className="ml-2 small" svgPath={mdiAlertCircle} />
+                </Tooltip>
             )}
-            <span data-tooltip={tooltipText}>
-                <UpdateLoaderIcon
-                    changesetUpdatedAt={changeset.updatedAt}
-                    lastUpdatedAt={lastUpdatedAt}
-                    onEnqueueChangeset={enqueueChangeset}
-                    viewerCanAdminister={viewerCanAdminister}
-                />
-            </span>
+            <Tooltip content={tooltipText}>
+                <span>
+                    <UpdateLoaderIcon
+                        changesetUpdatedAt={changeset.updatedAt}
+                        lastUpdatedAt={lastUpdatedAt}
+                        onEnqueueChangeset={enqueueChangeset}
+                        viewerCanAdminister={viewerCanAdminister}
+                    />
+                </span>
+            </Tooltip>
         </small>
     )
 }
@@ -120,10 +119,10 @@ const UpdateLoaderIcon: React.FunctionComponent<
                 className="cursor-pointer"
                 onClick={onEnqueueChangeset}
                 role="button"
-                as={SyncIcon}
+                svgPath={mdiSync}
             />
         )
     }
 
-    return <Icon aria-hidden={true} as={InfoCircleOutlineIcon} />
+    return <Icon aria-hidden={true} svgPath={mdiInformationOutline} />
 }

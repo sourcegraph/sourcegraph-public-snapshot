@@ -14,6 +14,7 @@ import {
     MenuList,
     Position,
     Checkbox,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../stores'
@@ -122,20 +123,23 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                             )}
 
                             {currentDashboard && (
-                                <MenuItem
-                                    data-testid="insight-context-remove-from-dashboard-button"
-                                    onSelect={() => setShowRemoveConfirm(true)}
-                                    disabled={withinVirtualDashboard}
-                                    data-tooltip={
+                                <Tooltip
+                                    content={
                                         withinVirtualDashboard
                                             ? "Removing insight isn't available for the All insights dashboard"
                                             : undefined
                                     }
-                                    data-placement="left"
-                                    className={styles.item}
+                                    placement="left"
                                 >
-                                    Remove from this dashboard
-                                </MenuItem>
+                                    <MenuItem
+                                        data-testid="insight-context-remove-from-dashboard-button"
+                                        onSelect={() => setShowRemoveConfirm(true)}
+                                        disabled={withinVirtualDashboard}
+                                        className={styles.item}
+                                    >
+                                        Remove from this dashboard
+                                    </MenuItem>
+                                </Tooltip>
                             )}
 
                             <MenuDivider />

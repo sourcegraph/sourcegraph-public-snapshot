@@ -1058,7 +1058,7 @@ type RandomizeUserPasswordResult {
 }
 
 """
-Possible answers to "You are using Sourcegraph to..." in the NPS Survey.
+Possible answers to "You use Sourcegraph to..." in the NPS Survey.
 """
 enum SurveyUseCase {
     UNDERSTAND_NEW_CODE
@@ -1082,15 +1082,11 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "You are using Sourcegraph to...".
-    """
-    useCases: [SurveyUseCase!]
-    """
-    The answer to "What else are you using Sourcegraph to do?".
+    The answer to "What do you use Sourcegraph for?".
     """
     otherUseCase: String
     """
-    The answer to "What can Sourcegraph do to provide a better product?"
+    The answer to "What would make Sourcegraph better?"
     """
     better: String
 }
@@ -1866,9 +1862,13 @@ enum SearchVersion {
     """
     V1
     """
-    Search syntax that defaults to literal search.
+    Search syntax that defaults to literal-only search.
     """
     V2
+    """
+    Search syntax that defaults to standard search.
+    """
+    V3
 }
 
 """
@@ -5557,6 +5557,12 @@ type Site implements SettingsSubject {
         """
         months: Int
     ): SiteUsageStatistics!
+
+    """
+    New usage statistics/analytics for this site.
+    """
+    analytics: Analytics!
+
     """
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
@@ -5867,6 +5873,248 @@ type SiteUsageStatistics {
 }
 
 """
+A pre-defined periods to get site analytics.
+"""
+enum AnalyticsDateRange {
+    """
+    Last 3 monthes date range.
+    """
+    LAST_THREE_MONTHS
+    """
+    Last month date range.
+    """
+    LAST_MONTH
+    """
+    Last week date range.
+    """
+    LAST_WEEK
+    """
+    Custom date range.
+    """
+    CUSTOM
+}
+
+"""
+Analytics for certain date.
+"""
+type AnalyticsStatItemNode {
+    """
+    A date in ISO format
+    """
+    date: String!
+    """
+    Total number of events.
+    """
+    count: Int!
+    """
+    Unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
+    uniqueUsers: Int!
+    """
+    Unique number of currently registered users who triggered event.
+    """
+    registeredUsers: Int!
+}
+
+"""
+Analytics summary.
+"""
+type AnalyticsStatItemSummary {
+    """
+    Total number of events.
+    """
+    totalCount: Int!
+    """
+    Total unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
+    totalUniqueUsers: Int!
+    """
+    Total unique number of currently registered users who triggered event.
+    """
+    totalRegisteredUsers: Int!
+}
+
+"""
+Analytics result item.
+"""
+type AnalyticsStatItem {
+    """
+    Analytics summary.
+    """
+    summary: AnalyticsStatItemSummary!
+    """
+    Array of analytics by period.
+    """
+    nodes: [AnalyticsStatItemNode!]!
+}
+
+"""
+Search analytics.
+"""
+type AnalyticsSearchResult {
+    """
+    Searches analytics
+    """
+    searches: AnalyticsStatItem!
+    """
+    Search result click analytics
+    """
+    resultClicks: AnalyticsStatItem!
+    """
+    File view analytics
+    """
+    fileViews: AnalyticsStatItem!
+    """
+    File open analytics
+    """
+    fileOpens: AnalyticsStatItem!
+}
+
+"""
+Notebook analytics.
+"""
+type AnalyticsNotebooksResults {
+    """
+    Notebooks creation analytics.
+    """
+    creations: AnalyticsStatItem!
+    """
+    Notebooks views analytics.
+    """
+    views: AnalyticsStatItem!
+    """
+    Notebooks block run analytics.
+    """
+    blockRuns: AnalyticsStatItem!
+}
+
+"""
+Users frequency by days used.
+"""
+type AnalyticsUsersFrequencyItem {
+    """
+    Number of days used
+    """
+    daysUsed: Int!
+    """
+    Number of users.
+    """
+    frequency: Int!
+    """
+    Percentage of users from total frequencies.
+    """
+    percentage: Float!
+}
+
+"""
+Average DAUs/WAUs/MAUs.
+"""
+type AnalyticsUsersSummaryResult {
+    """
+    Average DAUs
+    """
+    avgDAU: AnalyticsStatItemSummary!
+    """
+    Average WAUs
+    """
+    avgWAU: AnalyticsStatItemSummary!
+    """
+    Average MAUs
+    """
+    avgMAU: AnalyticsStatItemSummary!
+}
+
+"""
+Users' analytics.
+"""
+type AnalyticsUsersResult {
+    """
+    Users' activity analytics.
+    """
+    activity: AnalyticsStatItem!
+    """
+    Frequency of usage by day.
+    """
+    frequencies: [AnalyticsUsersFrequencyItem!]!
+    """
+    Average number of active users summary.
+    """
+    summary: AnalyticsUsersSummaryResult!
+}
+
+"""
+CodeIntel' analytics.
+"""
+type AnalyticsCodeIntelResult {
+    """
+    "GoToRef" click
+    """
+    referenceClicks: AnalyticsStatItem!
+    """
+    "GoToDef" click
+    """
+    definitionClicks: AnalyticsStatItem!
+    """
+    Browser extension installs
+    """
+    browserExtensionInstalls: AnalyticsStatItem!
+    """
+    Search based events
+    """
+    searchBasedEvents: AnalyticsStatItem!
+    """
+    Precise events
+    """
+    preciseEvents: AnalyticsStatItem!
+    """
+    Cross-repo events
+    """
+    crossRepoEvents: AnalyticsStatItem!
+}
+
+"""
+Repositories summary.
+"""
+type AnalyticsReposSummartResult {
+    """
+    Total number of repositories.
+    """
+    count: Int!
+    """
+    Total number of repositories with precise code-intel.
+    """
+    preciseCodeIntelCount: Int!
+}
+
+"""
+Analytics describes a new site statistics.
+"""
+type Analytics {
+    """
+    Search statistics.
+    """
+    search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
+    """
+    Notebooks statistics.
+    """
+    notebooks(dateRange: AnalyticsDateRange): AnalyticsNotebooksResults!
+    """
+    Users statistics.
+    """
+    users(dateRange: AnalyticsDateRange): AnalyticsUsersResult!
+    """
+    Code-intelligence statistics.
+    """
+    codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
+    """
+    Repositories summary statistics.
+    """
+    repos: AnalyticsReposSummartResult!
+}
+
+"""
 SiteUsagePeriod describes a site's usage statistics for a given timespan.
 This information is visible to all viewers.
 """
@@ -5990,11 +6238,7 @@ type SurveyResponse {
     """
     better: String
     """
-    The answer to "You are using Sourcegraph to...".
-    """
-    useCases: [SurveyUseCase!]
-    """
-    The answer to "What else are you using Sourcegraph to do?".
+    The answer to "What do you use Sourcegraph for?".
     """
     otherUseCase: String
     """

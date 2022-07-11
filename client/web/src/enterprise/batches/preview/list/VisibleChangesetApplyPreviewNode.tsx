@@ -1,17 +1,19 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import {
+    mdiCardTextOutline,
+    mdiFileDocumentEditOutline,
+    mdiAccountEdit,
+    mdiCheckboxBlankCircle,
+    mdiChevronDown,
+    mdiChevronRight,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import AccountEditIcon from 'mdi-react/AccountEditIcon'
-import CardTextOutlineIcon from 'mdi-react/CardTextOutlineIcon'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import FileDocumentEditOutlineIcon from 'mdi-react/FileDocumentEditOutlineIcon'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, H3 } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Tabs, TabList, TabPanels, TabPanel, Tab, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { InputTooltip } from '../../../../components/InputTooltip'
@@ -77,7 +79,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {selectable ? (
                 <SelectBox node={node} selectable={selectable} />
@@ -126,11 +128,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <Icon
-                            data-tooltip="The commit message changed"
-                            aria-label="The commit message changed"
-                            as={CardTextOutlineIcon}
-                        />
+                        <Tooltip content="The commit message changed">
+                            <Icon aria-label="The commit message changed" svgPath={mdiCardTextOutline} />
+                        </Tooltip>
                         <span className="text-nowrap">Message</span>
                     </div>
                 )}
@@ -141,11 +141,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <Icon
-                            data-tooltip="The diff changed"
-                            aria-label="The diff changed"
-                            as={FileDocumentEditOutlineIcon}
-                        />
+                        <Tooltip content="The diff changed">
+                            <Icon aria-label="The diff changed" svgPath={mdiFileDocumentEditOutline} />
+                        </Tooltip>
                         <span className="text-nowrap">Diff</span>
                     </div>
                 )}
@@ -156,11 +154,9 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                             'd-flex justify-content-center align-items-center flex-column mx-1'
                         )}
                     >
-                        <Icon
-                            data-tooltip="The commit author details changed"
-                            aria-label="The commit author details changed"
-                            as={AccountEditIcon}
-                        />
+                        <Tooltip content="The commit author details changed">
+                            <Icon aria-label="The commit author details changed" svgPath={mdiAccountEdit} />
+                        </Tooltip>
                         <span className="text-nowrap">Author</span>
                     </div>
                 )}
@@ -183,7 +179,7 @@ export const VisibleChangesetApplyPreviewNode: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />{' '}
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />{' '}
                 {isExpanded ? 'Hide' : 'Show'} details
             </Button>
             {isExpanded && (
@@ -296,13 +292,15 @@ const ExpandedSection: React.FunctionComponent<
                         Changed files
                     </span>
                     {node.delta.diffChanged && (
-                        <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                            <Icon
-                                aria-label="Changes in this tab"
-                                className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
-                            />
-                        </small>
+                        <Tooltip content="Changes in this tab">
+                            <small className="text-warning ml-2">
+                                <Icon
+                                    aria-label="Changes in this tab"
+                                    className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                    svgPath={mdiCheckboxBlankCircle}
+                                />
+                            </small>
+                        </Tooltip>
                     )}
                 </Tab>
 
@@ -311,13 +309,15 @@ const ExpandedSection: React.FunctionComponent<
                         Description
                     </span>
                     {(node.delta.titleChanged || node.delta.bodyChanged) && (
-                        <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                            <Icon
-                                aria-label="Changes in this tab"
-                                className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
-                            />
-                        </small>
+                        <Tooltip content="Changes in this tab">
+                            <small className="text-warning ml-2">
+                                <Icon
+                                    aria-label="Changes in this tab"
+                                    className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                    svgPath={mdiCheckboxBlankCircle}
+                                />
+                            </small>
+                        </Tooltip>
                     )}
                 </Tab>
 
@@ -328,13 +328,15 @@ const ExpandedSection: React.FunctionComponent<
                     {(node.delta.authorEmailChanged ||
                         node.delta.authorNameChanged ||
                         node.delta.commitMessageChanged) && (
-                        <small className="text-warning ml-2" data-tooltip="Changes in this tab">
-                            <Icon
-                                aria-label="Changes in this tab"
-                                className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
-                                as={CheckboxBlankCircleIcon}
-                            />
-                        </small>
+                        <Tooltip content="Changes in this tab">
+                            <small className="text-warning ml-2">
+                                <Icon
+                                    aria-label="Changes in this tab"
+                                    className={styles.visibleChangesetApplyPreviewNodeChangeIndicator}
+                                    svgPath={mdiCheckboxBlankCircle}
+                                />
+                            </small>
+                        </Tooltip>
                     )}
                 </Tab>
             </TabList>

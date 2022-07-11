@@ -3,7 +3,6 @@ package structural
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 
@@ -133,7 +132,7 @@ func runStructuralSearch(ctx context.Context, clients job.RuntimeClients, args *
 		event = agg.SearchEvent
 		if len(event.Results) == 0 {
 			// Still no results? Give up.
-			log15.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
+			clients.Logger.Warn("Structural search gives up after more exhaustive attempt. Results may have been missed.")
 			event.Stats.IsLimitHit = false // Ensure we don't display "Show more".
 		}
 	}
@@ -170,6 +169,7 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
+			clients.Logger,
 			page.RepoRevs,
 			clients.Zoekt,
 			search.TextRequest,
@@ -192,16 +192,27 @@ func (*SearchJob) Name() string {
 	return "StructuralSearchJob"
 }
 
-func (s *SearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", s.ZoektArgs.Query),
-		log.String("type", string(s.ZoektArgs.Typ)),
-		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
-		trace.Printf("select", "%q", s.ZoektArgs.Select),
-		trace.Stringer("patternInfo", s.SearcherArgs.PatternInfo),
-		log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
-		log.String("useIndex", string(s.UseIndex)),
-		log.Bool("containsRefGlobs", s.ContainsRefGlobs),
-		trace.Stringer("repoOpts", &s.RepoOpts),
+func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
+			log.Bool("containsRefGlobs", s.ContainsRefGlobs),
+			log.String("useIndex", string(s.UseIndex)),
+			trace.Printf("select", "%q", s.ZoektArgs.Select),
+			log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", s.ZoektArgs.Query),
+			log.String("type", string(s.ZoektArgs.Typ)),
+			trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...),
+			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
+
+func (s *SearchJob) Children() []job.Describer       { return nil }
+func (s *SearchJob) MapChildren(job.MapFunc) job.Job { return s }

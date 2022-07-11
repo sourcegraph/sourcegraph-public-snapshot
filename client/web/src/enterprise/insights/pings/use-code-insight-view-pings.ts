@@ -1,5 +1,7 @@
 import { useCallback, useRef } from 'react'
 
+import { useDebouncedCallback } from 'use-debounce'
+
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { CodeInsightTrackType } from './types'
@@ -16,6 +18,7 @@ interface PingHandlers {
     trackMouseEnter: () => void
     trackMouseLeave: () => void
     trackDatumClicks: () => void
+    trackFilterChanges: () => void
 }
 
 /**
@@ -42,9 +45,14 @@ export function useCodeInsightViewPings(props: UseCodeInsightViewPingsInput): Pi
         telemetryService.log('InsightDataPointClick', { insightType }, { insightType })
     }, [insightType, telemetryService])
 
+    const trackFilterChanges = useDebouncedCallback(() => {
+        telemetryService.log('InsightFiltersChange', { insightType }, { insightType })
+    }, 1000)
+
     return {
         trackDatumClicks,
         trackMouseEnter,
         trackMouseLeave,
+        trackFilterChanges,
     }
 }

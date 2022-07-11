@@ -25,6 +25,11 @@
             color: var(--search-query-text-color);
             // Disable default padding
             padding: 0;
+
+            &:global(.focus-visible),
+            &:focus-visible {
+                box-shadow: none;
+            }
         }
 
         :global(.cm-line) {
@@ -178,164 +183,32 @@
     }
 }
 
-// Search query syntax highlighting
+// Copied and adapted from the Wildcard LoadingSpinner component
+.loading-spinner {
+    :global(.theme-light) & {
+        --loading-spinner-outer-color: var(--gray-05);
+        --loading-spinner-inner-color: var(--gray-08);
+    }
+    :global(.theme-dark) & {
+        --loading-spinner-outer-color: var(--gray-07);
+        --loading-spinner-inner-color: var(--white);
+    }
 
-// Base language tokens
-.identifier {
-    color: var(--search-query-text-color);
-}
-.field {
-    color: var(--search-filter-keyword-color);
-}
-.keyword,
-.openingParen,
-.closingParen {
-    color: var(--search-keyword-color);
-}
-.comment {
-    color: var(--oc-orange-9);
-}
-
-// Decorated language tokens
-.metaFilterSeparator {
-    color: var(--oc-gray-6);
-}
-.metaRepoRevisionSeparator {
-    color: var(--search-filter-keyword-color);
-}
-.metaContextPrefix,
-.metaPredicateNameAccess {
-    color: var(--search-keyword-color);
-}
-.metaPredicateDot {
-    color: var(--search-query-text-color);
-}
-.metaPredicateParenthesis {
-    color: var(--oc-orange-9);
+    flex-shrink: 0;
+    margin: 0.125rem;
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    animation: loading-spinner-spin 1s linear infinite;
+    border: 2px solid var(--loading-spinner-outer-color, rgba(0, 0, 0, 0.3));
+    border-top: 2px solid var(--loading-spinner-inner-color, rgba(0, 0, 0, 1));
 }
 
-// Regexp pattern
-.metaRegexp {
-    &Delimited,
-    &Assertion,
-    &LazyQualifier {
-        color: var(--oc-red-9);
+@keyframes loading-spinner-spin {
+    0% {
+        transform: rotate(0deg);
     }
-
-    &EscapedCharacter {
-        color: var(--oc-orange-9);
-    }
-
-    &CharacterSet,
-    &CharacterClass,
-    &CharacterClassRangeHyphen {
-        color: var(--search-keyword-color);
-    }
-
-    &CharacterClassMember,
-    &CharacterClassRange {
-        color: var(--search-query-text-color);
-    }
-
-    &Alternative,
-    &RangeQuantifier {
-        color: var(--oc-cyan-7);
-    }
-}
-
-// Structural pattern highlighting
-.metaStructural {
-    &Hole,
-    &RegexpHole {
-        color: var(--oc-red-9);
-    }
-
-    &Variable {
-        color: var(--search-query-text-color);
-    }
-
-    &RegexpSeparator {
-        color: var(--oc-orange-9);
-    }
-}
-
-// Revision highlighting
-.metaRevision {
-    &Separator {
-        color: var(--oc-orange-9);
-    }
-
-    &IncludeGlobMarker,
-    &ExcludeGlobaMarker {
-        color: var(--oc-red-9);
-    }
-
-    &CommitHash,
-    &Label,
-    &ReferencePath {
-        color: var(--search-query-text-color);
-    }
-
-    &Wildcard {
-        color: var(--oc-cyan-7);
-    }
-}
-
-// Path-like highlighting
-.metaPathSeparator {
-    color: var(--oc-gray-6);
-}
-
-:global(.theme-dark) {
-    .comment,
-    .metaPredicateParenthesis {
-        color: var(--oc-orange-4);
-    }
-
-    .metaRegexp {
-        &Delimited,
-        &Assertion,
-        &LazyQualifier {
-            color: var(--oc-red-5);
-        }
-
-        &EscapedCharacter {
-            color: var(--oc-red-3);
-        }
-
-        &CharacterClass {
-            color: var(--oc-grape-4);
-        }
-
-        &Alternative,
-        &RangeQuantifier {
-            color: var(--oc-cyan-4);
-        }
-    }
-
-    .metaStructural {
-        &Hole,
-        &RegexpHole {
-            color: var(--oc-red-5);
-        }
-
-        &RegexpSeparator {
-            color: var(--oc-orange-4);
-        }
-    }
-
-    .metaRevision {
-        &Separator {
-            color: var(--oc-orange-4);
-        }
-
-        &IncludeGlobMarker,
-        &ExcludeGlobaMarker {
-            color: var(--oc-red-5);
-        }
-
-        &Wildcard {
-            color: var(--oc-cyan-4);
-        }
+    100% {
+        transform: rotate(360deg);
     }
 }

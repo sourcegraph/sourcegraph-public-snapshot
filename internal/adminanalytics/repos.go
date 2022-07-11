@@ -1,0 +1,66 @@
+package adminanalytics
+
+import (
+	"context"
+
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+)
+
+type Repos struct {
+	DB    database.DB
+	Cache bool
+}
+
+func (r *Repos) Summary(ctx context.Context) (*ReposSummary, error) {
+	cacheKey := "Repos:Summary"
+	if r.Cache == true {
+		if summary, err := getItemFromCache[ReposSummary](cacheKey); err == nil {
+			return summary, nil
+		}
+	}
+
+	query := sqlf.Sprintf(`
+	SELECT
+		COUNT(DISTINCT repo.id) as total_repo_count,
+		COUNT(DISTINCT lsif_uploads.repository_id) as lsif_index_repo_count
+	FROM
+		repo
+		LEFT JOIN lsif_uploads ON lsif_uploads.repository_id = repo.id
+	`)
+	var data ReposSummaryData
+
+	if err := r.DB.QueryRowContext(ctx, query.Query(sqlf.PostgresBindVar), query.Args()...).Scan(&data.Count, &data.PreciseCodeIntelCount); err != nil {
+		return nil, err
+	}
+
+	summary := &ReposSummary{data}
+
+	if _, err := setItemToCache(cacheKey, summary); err != nil {
+		return nil, err
+	}
+
+	return summary, nil
+}
+
+type ReposSummary struct {
+	Data ReposSummaryData
+}
+
+type ReposSummaryData struct {
+	Count                 int32
+	PreciseCodeIntelCount int32
+}
+
+func (s *ReposSummary) Count() int32 { return s.Data.Count }
+
+func (s *ReposSummary) PreciseCodeIntelCount() int32 { return s.Data.PreciseCodeIntelCount }
+
+func (s *Repos) CacheAll(ctx context.Context) error {
+	if _, err := s.Summary(ctx); err != nil {
+		return err
+	}
+
+	return nil
+}

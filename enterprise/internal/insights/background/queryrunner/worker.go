@@ -70,7 +70,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		Name: "src_insights_search_queue_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), false, nil)
+		count, err := workerStore.QueuedCount(context.Background(), false)
 		if err != nil {
 			logger.Error("Failed to get queued job count", log.Error(err))
 		}
@@ -96,10 +96,18 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		},
 		computeSearch: query.ComputeSearch,
 		computeSearchStream: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
-			decoder, streamResults := streaming.ComputeDecoder()
+			decoder, streamResults := streaming.MatchContextComputeDecoder()
 			err := streaming.ComputeMatchContextStream(ctx, query, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Compute")
+			}
+			return streamResults, nil
+		},
+		computeTextExtraSearch: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
+			decoder, streamResults := streaming.ComputeTextDecoder()
+			err := streaming.ComputeTextExtraStream(ctx, query, decoder)
+			if err != nil {
+				return nil, errors.Wrap(err, "streaming.ComputeText")
 			}
 			return streamResults, nil
 		},

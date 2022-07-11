@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Link, Button, CardBody, Card, Icon, H2, H3, H4, Text } from '@sourcegraph/wildcard'
@@ -94,7 +94,7 @@ export const CodeMonitoringGettingStarted: React.FunctionComponent<
                     </ul>
                     {isSignedIn ? (
                         <Button to="/code-monitoring/new" className={styles.createButton} variant="primary" as={Link}>
-                            <Icon aria-hidden={true} className="mr-2" as={PlusIcon} />
+                            <Icon aria-hidden={true} className="mr-2" svgPath={mdiPlus} />
                             Create a code monitor
                         </Button>
                     ) : (

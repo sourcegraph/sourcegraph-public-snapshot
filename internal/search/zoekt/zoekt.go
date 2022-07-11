@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -60,7 +61,7 @@ func parseRe(pattern string, filenameOnly bool, contentOnly bool, queryIsCaseSen
 }
 
 func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[string]string) {
-	if !ot.ShouldTrace(ctx) {
+	if !policy.ShouldTrace(ctx) {
 		return false, nil
 	}
 
@@ -75,9 +76,10 @@ func getSpanContext(ctx context.Context) (shouldTrace bool, spanContext map[stri
 func SearchOpts(ctx context.Context, k int, fileMatchLimit int32, selector filter.SelectPath) zoekt.SearchOptions {
 	shouldTrace, spanContext := getSpanContext(ctx)
 	searchOpts := zoekt.SearchOptions{
-		Trace:       shouldTrace,
-		SpanContext: spanContext,
-		MaxWallTime: defaultTimeout,
+		Trace:        shouldTrace,
+		SpanContext:  spanContext,
+		MaxWallTime:  defaultTimeout,
+		ChunkMatches: true,
 	}
 
 	if userProbablyWantsToWaitLonger := fileMatchLimit > limits.DefaultMaxSearchResults; userProbablyWantsToWaitLonger {

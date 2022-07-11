@@ -2,11 +2,10 @@ import * as os from 'os'
 import * as path from 'path'
 
 import realPercySnapshot from '@percy/puppeteer'
-import * as jsonc from '@sqs/jsonc-parser'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
 import expect from 'expect'
 import getFreePort from 'get-port'
+import * as jsonc from 'jsonc-parser'
 import { escapeRegExp } from 'lodash'
 import { readFile, appendFile, mkdir } from 'mz/fs'
 import puppeteer, {
@@ -734,14 +733,17 @@ export function modifyJSONC(
     text: string,
     path: jsonc.JSONPath,
     editFunction: (oldValue: jsonc.Node | undefined) => any
-): any {
-    const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
+): string | undefined {
+    const tree = jsonc.parseTree(text)
+    const old = tree ? jsonc.findNodeAtLocation(tree, path) : undefined
     return jsonc.applyEdits(
         text,
-        jsoncEdit.setProperty(text, path, editFunction(old), {
-            eol: '\n',
-            insertSpaces: true,
-            tabSize: 2,
+        jsonc.modify(text, path, editFunction(old), {
+            formattingOptions: {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            },
         })
     )
 }
