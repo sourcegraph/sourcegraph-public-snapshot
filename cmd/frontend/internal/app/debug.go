@@ -139,20 +139,20 @@ type sentryHeader struct {
 }
 
 func sentryHandler(logger sglog.Logger) http.Handler {
-	getSiteConfigSentryProjectID := func() (string, error) {
+	getConfig := func() (string, string, error) {
 		var sentryDSN string
 		siteConfig := conf.Get().SiteConfiguration
 		if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 			sentryDSN = siteConfig.Log.Sentry.Dsn
 		}
 		if sentryDSN == "" {
-			return "", nil
+			return "", "", errors.New("no sentry config available in siteconfig")
 		}
 		u, err := url.Parse(sentryDSN)
 		if err != nil {
-			return "", err
+			return "", "", err
 		}
-		return strings.TrimPrefix(u.Path, "/"), nil
+		return fmt.Sprintf("%s%s", u.Scheme, u.Host), strings.TrimPrefix(u.Path, "/"), nil
 	}
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -193,10 +193,10 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
-		configProjectID, err := getSiteConfigSentryProjectID()
+		sentryHost, configProjectID, err := getConfig()
 		if err != nil {
 			logger.Warn("failed to read sentryDSN from siteconfig", sglog.Error(err))
-			w.WriteHeader(http.StatusInternalServerError)
+			w.WriteHeader(http.StatusForbidden)
 			return
 		}
 		// hardcoded in client/browser/src/shared/sentry/index.ts
@@ -211,7 +211,7 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 			// We want to keep this short, the default client settings are not strict enough.
 			Timeout: 3 * time.Second,
 		}
-		url := fmt.Sprintf("%s/api/%s/envelope/", envvar.SentryTunnelEndpoint, pID)
+		url := fmt.Sprintf("%s/api/%s/envelope/", sentryHost, pID)
 		go client.Post(url, "text/plain;charset=UTF-8", bytes.NewReader(b))
 
 		w.WriteHeader(http.StatusOK)
@@ -220,11 +220,8 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 }
 
 func addSentry(r *mux.Router) {
-	if envvar.SentryTunnelEnabled() {
-		logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
-		r.Handle("/sentry_tunnel", sentryHandler(logger))
-	} else {
-	}
+	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
+	r.Handle("/sentry_tunnel", sentryHandler(logger))
 }
 
 func addNoJaegerHandler(r *mux.Router, db database.DB) {
