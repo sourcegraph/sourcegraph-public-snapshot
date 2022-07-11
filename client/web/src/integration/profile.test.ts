@@ -27,7 +27,7 @@ const USER: UserSettingsAreaUserFields = {
     viewerCanChangeUsername: true,
     siteAdmin: true,
     builtinAuth: true,
-    createdAt: subDays(now, 730).toISOString(),
+    createdAt: subDays(now, 732).toISOString(),
     emails: [{ email: 'test@example.com', verified: true }],
     organizations: { nodes: [] },
     tags: [],
