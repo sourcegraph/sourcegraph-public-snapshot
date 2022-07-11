@@ -3,12 +3,14 @@ package oauth
 import (
 	"context"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/oauth2"
 	"strconv"
+	"strings"
 )
 
 type RefreshTokenHelper struct {
@@ -50,4 +52,29 @@ func (s *RefreshTokenHelper) RefreshToken(ctx context.Context, doer httpcli.Doer
 	}
 
 	return "", nil
+}
+
+// todo - we have a similar function on perm_syncer. Would be better to avoid dupes or find out how to use the
+// same function in both places...
+func Oauth2ConfigFromGitLabProvider() *oauth2.Config {
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab != nil {
+			p := authProvider.Gitlab
+
+			url := strings.TrimSuffix(p.Url, "/")
+			return &oauth2.Config{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  url + "/oauth/authorize",
+					TokenURL: url + "/oauth/token",
+				},
+				Scopes: gitlab.RequestedOAuthScopes(p.ApiScope, nil),
+			}
+
+		}
+	}
+
+	// todo  - log warning
+	return nil
 }

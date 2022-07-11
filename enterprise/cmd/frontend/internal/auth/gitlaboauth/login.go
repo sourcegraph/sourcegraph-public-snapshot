@@ -93,5 +93,7 @@ func gitlabClientFromAuthURL(config *oauth2.Config, token *oauth2.Token, db data
 		ServiceType: extsvc.TypeGitLab,
 	}
 
+	//  todo: question: why are passing nil here instead of a httpcli Doer?
+
 	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil, helper.RefreshToken).GetOAuthClient(token.AccessToken), nil
 }
