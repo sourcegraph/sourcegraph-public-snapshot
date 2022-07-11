@@ -239,6 +239,7 @@ describe('Search', () => {
                 test('Is set from the URL query parameter when loading a search-related page', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
                     await editor.waitForIt()
+                    await driver.page.waitForSelector('[data-testid="results-info-bar"]')
                     expect(await editor.getValue()).toStrictEqual('foo')
                     // Field value is cleared when navigating to a non search-related page
                     await driver.page.waitForSelector('a[href="/extensions"]')
