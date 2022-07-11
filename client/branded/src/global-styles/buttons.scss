@@ -16,31 +16,6 @@
     --btn-block-spacing-y: 0.5rem;
 }
 
-// This class is meant for clickable icons. It is NOT meant for buttons with icons in it or for nav
-// items.
-.btn-icon {
-    margin: 0;
-    padding: 0;
-    background: transparent;
-    color: inherit;
-    display: flex;
-    align-items: center;
-    border: none;
-    cursor: pointer;
-
-    .icon {
-        @extend .icon-inline;
-    }
-
-    &:focus-visible:not(:disabled):not(.disabled) {
-        box-shadow: 0 0 0 2px rgba($primary, 0.5);
-    }
-
-    &:hover:not(:disabled):not(.disabled) {
-        color: var(--body-color);
-    }
-}
-
 @mixin button-variant(
     $name,
     $base-color,
@@ -235,7 +210,7 @@
     user-select: none;
     background-color: transparent;
     border: var(--btn-border-width) solid transparent;
-    padding: var(--btn-padding-y) var(--$btn-padding-x);
+    padding: var(--btn-padding-y) var(--btn-padding-x);
     line-height: var(--btn-line-height);
     border-radius: var(--btn-border-radius);
     font-size: var(--btn-font-size);
@@ -271,9 +246,6 @@
     }
 }
 
-//
-// Button Sizes
-//
 .btn.btn-sm {
     @extend %label-base-small;
 }
@@ -320,6 +292,31 @@
                 fill: var(--icon-color);
             }
         }
+    }
+}
+
+// This class is meant for clickable icons. It is NOT meant for buttons with icons in it or for nav
+// items.
+.btn-icon {
+    margin: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    display: flex;
+    align-items: center;
+    border: none;
+    cursor: pointer;
+
+    .icon {
+        @extend .icon-inline;
+    }
+
+    &:focus-visible:not(:disabled):not(.disabled) {
+        box-shadow: 0 0 0 2px rgba($primary, 0.5);
+    }
+
+    &:hover:not(:disabled):not(.disabled) {
+        color: var(--body-color);
     }
 }
 
