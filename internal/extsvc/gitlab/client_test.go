@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 )
 
 func TestGetAuthenticatedUserOAuthScopes(t *testing.T) {
@@ -108,6 +107,6 @@ func TestClient_doWithBaseURLWithOAuthContext(t *testing.T) {
 	require.NoError(t, err)
 
 	var result map[string]any
-	_, _, err = client.doWithBaseURLWithOAuthContext(ctx, req, &result, oauthutil.Context{})
+	_, _, err = client.doWithBaseURLWithOAuthContext(ctx, req, &result)
 	require.NoError(t, err)
 }

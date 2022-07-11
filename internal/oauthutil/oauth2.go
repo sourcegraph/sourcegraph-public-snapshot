@@ -56,10 +56,7 @@ func (e oauthError) Error() string {
 // the similar behavior and let caller check the response status code.
 func getOAuthErrorDetails(body []byte) error {
 	var oe oauthError
-	fmt.Println("about to unmarshal json")
 	if err := json.Unmarshal(body, &oe); err != nil {
-		fmt.Println("failed to unmarshal json")
-
 		// If we failed to unmarshal body with oauth error, it's not oauthError and we should return nil.
 		return nil
 	}

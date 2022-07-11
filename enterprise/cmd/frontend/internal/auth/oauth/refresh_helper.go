@@ -42,7 +42,7 @@ func (s *RefreshTokenHelper) RefreshToken(ctx context.Context, doer httpcli.Doer
 			success := err == nil
 			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
 		}()
-		accts[0].AccountData.SetAuthData(refreshedToken)                                                         // todo - accts[0]lo
+		accts[0].AccountData.SetAuthData(refreshedToken)                                                         // todo
 		_, err := s.DB.UserExternalAccounts().LookupUserAndSave(ctx, accts[0].AccountSpec, accts[0].AccountData) // todo
 		if err != nil {
 			return "", errors.Wrap(err, "save refreshed token")
