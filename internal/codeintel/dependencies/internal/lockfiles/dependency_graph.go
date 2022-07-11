@@ -103,7 +103,7 @@ func (dg *DependencyGraph) AsMap() map[string]interface{} {
 
 		subOut := map[string]interface{}{}
 		// Write current item to its out map
-		current.out[string(current.pkg.PackageVersionSyntax())] = subOut
+		current.out[current.pkg.PackageVersionSyntax()] = subOut
 
 		_, alreadyVisited := visited[current.pkg]
 		visited[current.pkg] = struct{}{}
@@ -128,7 +128,7 @@ func printDependenciesToMap(out map[string]interface{}, graph *DependencyGraph, 
 	_, alreadyVisited := visited[node]
 	visited[node] = struct{}{}
 
-	key := string(node.PackageVersionSyntax())
+	key := node.PackageVersionSyntax()
 	val := map[string]interface{}{}
 	out[key] = val
 
