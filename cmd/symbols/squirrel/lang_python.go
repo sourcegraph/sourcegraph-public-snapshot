@@ -25,6 +25,10 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 			switch cur.Type() {
 
 			case "module":
+				found := findNodeInScope(cur, node, ident)
+				if found != nil {
+					return found, nil
+				}
 				return squirrel.getDefInImportsOrCurrentModulePython(ctx, swapNode(node, cur), ident)
 
 			case "for_statement":
@@ -109,79 +113,7 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 					squirrel.breadcrumb(swapNode(node, cur), "getDefPython: expected function_definition to have a block body")
 					continue
 				}
-				var recur func(*sitter.Node) *Node
-				recur = func(block *sitter.Node) *Node {
-					if block == nil {
-						return nil
-					}
-
-					for i := 0; i < int(block.NamedChildCount()); i++ {
-						child := block.NamedChild(i)
-
-						switch child.Type() {
-						case "expression_statement":
-							query := `(expression_statement (assignment left: (identifier) @ident))`
-							captures, err := allCaptures(query, swapNode(node, child))
-							if err != nil {
-								return nil
-							}
-							for _, capture := range captures {
-								if capture.Content(capture.Contents) == ident {
-									return swapNodePtr(node, capture.Node)
-								}
-							}
-							continue
-						case "if_statement":
-							var found *Node
-							found = recur(child.ChildByFieldName("consequence"))
-							if found != nil {
-								return found
-							}
-							elseClause := child.ChildByFieldName("alternative")
-							if elseClause == nil {
-								continue
-							}
-							found = recur(elseClause.ChildByFieldName("body"))
-							if found != nil {
-								return found
-							}
-							continue
-						case "while_statement":
-							fallthrough
-						case "for_statement":
-							found := recur(child.ChildByFieldName("body"))
-							if found != nil {
-								return found
-							}
-							continue
-						case "try_statement":
-							found := recur(child.ChildByFieldName("body"))
-							if found != nil {
-								return found
-							}
-							for j := 0; j < int(child.NamedChildCount()); j++ {
-								tryChild := child.NamedChild(j)
-								if tryChild.Type() == "except_clause" {
-									for k := 0; k < int(tryChild.NamedChildCount()); k++ {
-										exceptChild := tryChild.NamedChild(k)
-										if exceptChild.Type() == "block" {
-											found := recur(exceptChild)
-											if found != nil {
-												return found
-											}
-										}
-									}
-								}
-							}
-							continue
-						default:
-							continue
-						}
-					}
-
-					return nil
-				}
-				found := recur(body)
+				found := findNodeInScope(body, node, ident)
 				if found != nil {
 					return found, nil
 				}
@@ -201,6 +133,78 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 	default:
 		return nil, nil
 	}
+}
+
+func findNodeInScope(block *sitter.Node, node Node, ident string) *Node {
+	if block == nil {
+		return nil
+	}
+
+	for i := 0; i < int(block.NamedChildCount()); i++ {
+		child := block.NamedChild(i)
+
+		switch child.Type() {
+		case "expression_statement":
+			query := `(expression_statement (assignment left: (identifier) @ident))`
+			captures, err := allCaptures(query, swapNode(node, child))
+			if err != nil {
+				return nil
+			}
+			for _, capture := range captures {
+				if capture.Content(capture.Contents) == ident {
+					return swapNodePtr(node, capture.Node)
+				}
+			}
+			continue
+		case "if_statement":
+			var found *Node
+			found = findNodeInScope(child.ChildByFieldName("consequence"), node, ident)
+			if found != nil {
+				return found
+			}
+			elseClause := child.ChildByFieldName("alternative")
+			if elseClause == nil {
+				continue
+			}
+			found = findNodeInScope(elseClause.ChildByFieldName("body"), node, ident)
+			if found != nil {
+				return found
+			}
+			continue
+		case "while_statement":
+			fallthrough
+		case "for_statement":
+			found := findNodeInScope(child.ChildByFieldName("body"), node, ident)
+			if found != nil {
+				return found
+			}
+			continue
+		case "try_statement":
+			found := findNodeInScope(child.ChildByFieldName("body"), node, ident)
+			if found != nil {
+				return found
+			}
+			for j := 0; j < int(child.NamedChildCount()); j++ {
+				tryChild := child.NamedChild(j)
+				if tryChild.Type() == "except_clause" {
+					for k := 0; k < int(tryChild.NamedChildCount()); k++ {
+						exceptChild := tryChild.NamedChild(k)
+						if exceptChild.Type() == "block" {
+							found := findNodeInScope(exceptChild, node, ident)
+							if found != nil {
+								return found
+							}
+						}
+					}
+				}
+			}
+			continue
+		default:
+			continue
+		}
+	}
+
+	return nil
 }
 
 func (squirrel *SquirrelService) getDefInImportsOrCurrentModulePython(ctx context.Context, program Node, ident string) (ret *Node, err error) {
