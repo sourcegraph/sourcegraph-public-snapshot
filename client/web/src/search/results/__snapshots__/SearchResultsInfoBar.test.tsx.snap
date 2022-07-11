@@ -19,7 +19,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="iconInline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           role="img"
@@ -33,7 +33,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
         Filters
         <svg
           aria-hidden="true"
-          class="iconInline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           role="img"
@@ -67,7 +67,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -99,7 +99,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               role="img"
@@ -107,7 +107,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
               width="24"
             >
               <path
-                d="M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z"
+                d="M4.08,11.92L12,4L19.92,11.92L18.5,13.33L13,7.83V22H11V7.83L5.5,13.33L4.08,11.92M12,4H22V2H2V4H12Z"
               />
             </svg>
           </button>
@@ -137,7 +137,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       >
         <svg
           aria-hidden="true"
-          class="iconInline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           role="img"
@@ -151,7 +151,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         Filters
         <svg
           aria-hidden="true"
-          class="iconInline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           role="img"
@@ -185,7 +185,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
               role="img"
@@ -216,7 +216,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -241,7 +241,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -273,7 +273,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               role="img"
@@ -281,7 +281,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               width="24"
             >
               <path
-                d="M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z"
+                d="M4.08,11.92L12,4L19.92,11.92L18.5,13.33L13,7.83V22H11V7.83L5.5,13.33L4.08,11.92M12,4H22V2H2V4H12Z"
               />
             </svg>
           </button>
@@ -311,7 +311,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
       >
         <svg
           aria-hidden="true"
-          class="iconInline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           role="img"
@@ -325,7 +325,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         Filters
         <svg
           aria-hidden="true"
-          class="iconInline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           role="img"
@@ -358,7 +358,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
               role="img"
@@ -389,7 +389,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -412,7 +412,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -444,7 +444,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               role="img"
@@ -452,7 +452,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
               width="24"
             >
               <path
-                d="M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z"
+                d="M4.08,11.92L12,4L19.92,11.92L18.5,13.33L13,7.83V22H11V7.83L5.5,13.33L4.08,11.92M12,4H22V2H2V4H12Z"
               />
             </svg>
           </button>
@@ -482,7 +482,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
       >
         <svg
           aria-hidden="true"
-          class="iconInline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           role="img"
@@ -496,7 +496,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         Filters
         <svg
           aria-hidden="true"
-          class="iconInline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           role="img"
@@ -535,7 +535,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
               role="img"
@@ -566,7 +566,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -591,7 +591,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -623,7 +623,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               role="img"
@@ -631,7 +631,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
               width="24"
             >
               <path
-                d="M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z"
+                d="M4.08,11.92L12,4L19.92,11.92L18.5,13.33L13,7.83V22H11V7.83L5.5,13.33L4.08,11.92M12,4H22V2H2V4H12Z"
               />
             </svg>
           </button>
@@ -661,7 +661,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="iconInline mr-1"
+          class="mdi-icon iconInline mr-1"
           fill="currentColor"
           height="24"
           role="img"
@@ -675,7 +675,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         Filters
         <svg
           aria-hidden="true"
-          class="iconInline"
+          class="mdi-icon iconInline"
           fill="currentColor"
           height="24"
           role="img"
@@ -708,7 +708,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="20"
               role="img"
@@ -739,7 +739,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -762,7 +762,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -794,7 +794,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-0"
+              class="mdi-icon iconInline mr-0"
               fill="currentColor"
               height="24"
               role="img"
@@ -802,7 +802,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
               width="24"
             >
               <path
-                d="M19.5,3.09L15,7.59V4H13V11H20V9H16.41L20.91,4.5L19.5,3.09M4,13V15H7.59L3.09,19.5L4.5,20.91L9,16.41V20H11V13H4Z"
+                d="M4.08,11.92L12,4L19.92,11.92L18.5,13.33L13,7.83V22H11V7.83L5.5,13.33L4.08,11.92M12,4H22V2H2V4H12Z"
               />
             </svg>
           </button>

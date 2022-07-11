@@ -8,6 +8,7 @@ import {
     mdiMenuUp,
     mdiArrowCollapse,
     mdiArrowExpandDown,
+    mdiArrowCollapseUp,
 } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
@@ -404,7 +405,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                     <Icon
                                         aria-hidden={true}
                                         className="mr-0"
-                                        svgPath={props.allExpanded ? mdiArrowCollapse : mdiArrowExpandDown}
+                                        svgPath={props.allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown}
                                     />
                                 </Button>
                             </li>

@@ -71,7 +71,7 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"
@@ -250,7 +250,7 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline mr-1"
+              class="mdi-icon iconInline mr-1"
               fill="currentColor"
               height="24"
               role="img"

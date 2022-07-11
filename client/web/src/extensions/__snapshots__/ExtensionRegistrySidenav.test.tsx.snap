@@ -84,7 +84,7 @@ exports[`ExtensionsQueryInputToolbar renders 1`] = `
       Show all 
       <svg
         aria-hidden="true"
-        class="iconInline"
+        class="mdi-icon iconInline"
         fill="currentColor"
         height="24"
         role="img"
