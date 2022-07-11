@@ -171,7 +171,7 @@ public class PreviewContent {
     @NotNull
     public VirtualFile getVirtualFile() {
         if (virtualFile == null) {
-            assert fileName != null;
+            assert fileName != null; // We should always have a non-null file name and content when we call getVirtualFile()
             assert content != null;
             virtualFile = new SourcegraphVirtualFile(fileName, Objects.requireNonNull(getContent()), getRepoUrl(), getCommit(), getPath());
         }
@@ -218,7 +218,7 @@ public class PreviewContent {
     }
 
     private void openInEditor() {
-        assert fileName != null;
+        assert fileName != null; // We should always have a non-null file name when we call openInEditor()
         // Open file in editor
         virtualFile = getVirtualFile();
         OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
