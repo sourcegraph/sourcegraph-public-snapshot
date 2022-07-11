@@ -50,18 +50,16 @@ func (r *Resolved) String() string {
 }
 
 type Resolver struct {
-	DB   database.DB
-	Opts search.RepoOptions
+	DB database.DB
 }
 
-func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
+func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	opts := r.Opts
 	if opts.Limit == 0 {
 		opts.Limit = 500
 	}

@@ -371,10 +371,10 @@ func TestResolverPaginate(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := Resolver{Opts: tc.opts, DB: db}
+			r := Resolver{DB: db}
 
 			var pages []Resolved
-			err := r.Paginate(ctx, func(page *Resolved) error {
+			err := r.Paginate(ctx, tc.opts, func(page *Resolved) error {
 				pages = append(pages, *page)
 				return nil
 			})
