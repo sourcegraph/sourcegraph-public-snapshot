@@ -85,18 +85,23 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 
 			case "function_definition":
 				// Check the function name and parameters
-				query := `[
-					(function_definition name: (identifier) @ident)
-					(function_definition parameters:
-						(parameters [
-							(identifier) @ident
-							(default_parameter name: (identifier) @ident)
-							(list_splat_pattern (identifier) @ident)
-							(dictionary_splat_pattern (identifier) @ident)
-						])
-					)
-				]`
-				captures, err := allCaptures(query, swapNode(node, cur))
+				name := cur.ChildByFieldName("name")
+				if name != nil && name.Type() == "identifier" && name.Content(node.Contents) == ident {
+					return swapNodePtr(node, name), nil
+				}
+				parameters := cur.ChildByFieldName("parameters")
+				if parameters == nil {
+					continue
+				}
+				query := `
+					(parameters [
+						(identifier) @ident
+						(default_parameter name: (identifier) @ident)
+						(list_splat_pattern (identifier) @ident)
+						(dictionary_splat_pattern (identifier) @ident)
+					])
+				`
+				captures, err := allCaptures(query, swapNode(node, parameters))
 				if err != nil {
 					return nil, err
 				}
@@ -144,6 +149,12 @@ func findNodeInScope(block *sitter.Node, node Node, ident string) *Node {
 		child := block.NamedChild(i)
 
 		switch child.Type() {
+		case "function_definition":
+			name := child.ChildByFieldName("name")
+			if name != nil && name.Type() == "identifier" && name.Content(node.Contents) == ident {
+				return swapNodePtr(node, name)
+			}
+			continue
 		case "expression_statement":
 			query := `(expression_statement (assignment left: (identifier) @ident))`
 			captures, err := allCaptures(query, swapNode(node, child))

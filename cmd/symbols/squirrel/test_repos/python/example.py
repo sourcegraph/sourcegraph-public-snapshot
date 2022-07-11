@@ -1,6 +1,8 @@
 #   v py.f def
 #     v py.f.x def
 def f(x):
+
+    #   v py.f.g def
     def g():
         y = 5
 
@@ -36,7 +38,8 @@ def f(x):
     #                 vv py.f.l3 ref
     #                      vv py.f.l4 ref
     #                           vv py.f.l5 ref
-    _ = y + l1 + l2 + l3 + l4 + l5
+    #                                v py.f.g ref
+    _ = y + l1 + l2 + l3 + l4 + l5 + g()
 
 
 f(3)  # < "f" py.f ref
