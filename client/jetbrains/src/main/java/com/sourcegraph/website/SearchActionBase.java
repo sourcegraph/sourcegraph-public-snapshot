@@ -2,6 +2,7 @@ package com.sourcegraph.website;
 
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.editor.Caret;
 import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.editor.Editor;
 import com.intellij.openapi.editor.SelectionModel;
@@ -9,6 +10,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
+import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.sourcegraph.browser.URLBuilder;
 import com.sourcegraph.find.SourcegraphVirtualFile;
@@ -24,27 +26,16 @@ import java.net.URI;
 public abstract class SearchActionBase extends DumbAwareAction {
     public void actionPerformedMode(@NotNull AnActionEvent event, @NotNull Scope scope) {
         Logger logger = Logger.getInstance(this.getClass());
-
-        // Get project, editor, document, file, and position information.
         final Project project = event.getProject();
-        if (project == null) {
-            return;
-        }
-        Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
-        if (editor == null) {
-            return;
-        }
-        Document currentDocument = editor.getDocument();
-        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
-        if (currentFile == null) {
-            return;
-        }
 
-        SelectionModel selection = editor.getSelectionModel();
-        String selectedText = selection.getSelectedText();
-        if (selectedText == null || selectedText.equals("")) {
-            return; // nothing to query
+        String selectedText = getSelectedText(project);
+
+        if (selectedText == null || selectedText.length() == 0) {
+            return;
         }
+        //noinspection ConstantConditions selectedText != null, so the editor can't be null.
+        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(FileEditorManager.getInstance(project).getSelectedTextEditor().getDocument());
+        assert currentFile != null; // selectedText != null, so this can't be null.
 
         String url;
         if (currentFile instanceof SourcegraphVirtualFile) {
@@ -83,18 +74,32 @@ public abstract class SearchActionBase extends DumbAwareAction {
     }
 
     @Nullable
-    private String getSelectedText(@NotNull Project project) {
+    private String getSelectedText(@Nullable Project project) {
+        if (project == null) {
+            return null;
+        }
+
         Editor editor = FileEditorManager.getInstance(project).getSelectedTextEditor();
         if (editor == null) {
             return null;
         }
-        Document currentDoc = editor.getDocument();
-        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDoc);
+
+        Document currentDocument = editor.getDocument();
+        VirtualFile currentFile = FileDocumentManager.getInstance().getFile(currentDocument);
         if (currentFile == null) {
             return null;
         }
-        SelectionModel sel = editor.getSelectionModel();
 
-        return sel.getSelectedText();
+        SelectionModel selectionModel = editor.getSelectionModel();
+        String selectedText = selectionModel.getSelectedText();
+        if (selectedText != null && !selectedText.equals("")) {
+            return selectedText;
+        }
+
+        // Get whole current line, trimmed
+        Caret caret = editor.getCaretModel().getCurrentCaret();
+        selectedText = currentDocument.getText(new TextRange(caret.getVisualLineStart(), caret.getVisualLineEnd())).trim();
+
+        return !selectedText.equals("") ? selectedText : null;
     }
 }
