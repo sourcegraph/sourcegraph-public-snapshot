@@ -286,3 +286,66 @@ func Test_patternsAsFilters(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/commit/abc`, rules)))
 	})
 }
+
+func Test_regexpPatterns(t *testing.T) {
+	test := func(input string, rules []rule) string {
+		q, _ := query.ParseStandard(input)
+		b, _ := query.ToBasicQuery(q)
+		g := NewGenerator(b, nil, rules)
+
+		var autoQ *autoQuery
+		type want struct {
+			Description string
+			Input       string
+			Query       string
+		}
+		generated := []want{}
+
+		for {
+			autoQ, g = g()
+			if autoQ != nil {
+				generated = append(
+					generated,
+					want{
+						Description: autoQ.description,
+						Input:       input,
+						Query:       query.StringHuman(autoQ.query.ToParseTree()),
+					})
+			}
+
+			if g == nil {
+				break
+			}
+		}
+
+		result, _ := json.MarshalIndent(generated, "", "  ")
+		return string(result)
+	}
+
+	rules := []rule{
+		{
+			description: "patterns as regular expressions",
+			transform:   transform{regexpPatterns},
+		},
+	}
+
+	t.Run("valid regular expression", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`[a-z]+`, rules)))
+	})
+
+	t.Run("valid regular expression", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`a.*b`, rules)))
+	})
+
+	t.Run("valid regular expression with capture group", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`(ab)*`, rules)))
+	})
+
+	t.Run("invalid regular expression", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`c++`, rules)))
+	})
+
+	t.Run("pattern without enough regexp syntax", func(t *testing.T) {
+		autogold.Equal(t, autogold.Raw(test(`my.yaml.conf`, rules)))
+	})
+}
