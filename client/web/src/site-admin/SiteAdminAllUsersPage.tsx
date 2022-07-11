@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiCog, mdiDelete, mdiRadioactive, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiPlus } from '@mdi/js'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import { RouteComponentProps } from 'react-router'
@@ -56,8 +56,8 @@ interface UserNodeState {
 }
 
 const nukeDetails = `
-- By deleting a user, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
-- By nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this). When deleting data at a user's request, nuking is used.
+- When deleting a user normally, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
+- By deleting a user forever, the user and ALL associated data will be permanently removed from the DB (you CANNOT undo this). When deleting data at a user's request, "Delete forever" is used.
 
 Beware this includes e.g. deleting extensions authored by the user, deleting ANY settings authored or updated by the user, etc.
 
@@ -196,15 +196,8 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 </Button>
                             ))}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <Button
-                                onClick={this.deleteUser}
-                                disabled={this.state.loading}
-                                data-tooltip="Delete user"
-                                variant="danger"
-                                size="sm"
-                                aria-label="Delete User"
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiDelete} />
+                            <Button onClick={this.deleteUser} disabled={this.state.loading} variant="danger" size="sm">
+                                Delete
                             </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -212,12 +205,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 className="ml-1"
                                 onClick={this.nukeUser}
                                 disabled={this.state.loading}
-                                data-tooltip="Nuke user (click for more information)"
                                 variant="danger"
                                 size="sm"
-                                aria-label="Nuke user (click for more information)"
                             >
-                                <Icon aria-hidden={true} svgPath={mdiRadioactive} />
+                                Delete forever
                             </Button>
                         )}
                     </div>
@@ -330,7 +321,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     private doDeleteUser = (hard: boolean): void => {
         let message = `Delete the user ${this.props.node.username}?`
         if (hard) {
-            message = `Nuke the user ${this.props.node.username}?${nukeDetails}`
+            message = `Delete the user ${this.props.node.username} forever?${nukeDetails}`
         }
         if (!window.confirm(message)) {
             return
