@@ -253,7 +253,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			categoriesDurations[i] = time.Since(start)
 
 			// record if skipped
-			if err == errSkipped {
+			if errors.Is(err, errSkipped) {
 				categoriesSkipped[i] = true
 			}
 
