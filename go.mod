@@ -197,7 +197,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require go.opentelemetry.io/contrib/propagators/jaeger v1.7.0 // indirect
+require go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
