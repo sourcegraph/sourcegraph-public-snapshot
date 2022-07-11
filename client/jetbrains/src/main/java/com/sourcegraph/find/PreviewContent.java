@@ -10,16 +10,15 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
-import com.intellij.testFramework.LightVirtualFile;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.awt.*;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -172,7 +171,9 @@ public class PreviewContent {
     @NotNull
     public VirtualFile getVirtualFile() {
         if (virtualFile == null) {
-            virtualFile = new LightVirtualFile(fileName != null ? fileName : "", content != null ? Objects.requireNonNull(getContent()) : "");
+            assert fileName != null; // We should always have a non-null file name and content when we call getVirtualFile()
+            assert content != null;
+            virtualFile = new SourcegraphVirtualFile(fileName, Objects.requireNonNull(getContent()), getRepoUrl(), getCommit(), getPath());
         }
         return virtualFile;
     }
@@ -183,11 +184,7 @@ public class PreviewContent {
             return null;
         }
         byte[] decodedBytes = Base64.getDecoder().decode(base64String);
-        try {
-            return new String(decodedBytes, "UTF-8");
-        } catch (UnsupportedEncodingException e) {
-            return "";
-        }
+        return new String(decodedBytes, StandardCharsets.UTF_8);
     }
 
     @Override
@@ -221,7 +218,7 @@ public class PreviewContent {
     }
 
     private void openInEditor() {
-        assert fileName != null;
+        assert fileName != null; // We should always have a non-null file name when we call openInEditor()
         // Open file in editor
         virtualFile = getVirtualFile();
         OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
