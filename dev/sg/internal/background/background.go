@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"sync"
+	"time"
 
 	"go.uber.org/atomic"
 
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -50,9 +52,9 @@ func Wait(ctx context.Context, out *std.Output) {
 	if count == 0 {
 		return // no jobs registered
 	}
+	start := time.Now() // start clock for additional time waited
 
 	out.VerboseLine(output.Styledf(output.StylePending, "Waiting for remaining background jobs to complete (%d total)...", count))
-
 	go func() {
 		for r := range jobs.results {
 			if r != "" {
@@ -61,10 +63,10 @@ func Wait(ctx context.Context, out *std.Output) {
 			jobs.wg.Done()
 		}
 	}()
-
 	jobs.wg.Wait()
 
+	// Done!
 	close(jobs.results)
-
 	out.VerboseLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
+	analytics.LogEvent(ctx, "background_wait", nil, start)
 }
