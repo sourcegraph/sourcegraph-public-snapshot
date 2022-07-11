@@ -222,6 +222,16 @@ var sg = &cli.App{
 			}, verbose)
 		}
 
+		background.Run(cmd.Context, func(out *std.Output) {
+			out.WriteNoticef("I'm fast!")
+		}, verbose)
+
+		background.Run(cmd.Context, func(out *std.Output) {
+			out.WriteNoticef("I'm starting a background job...")
+			time.Sleep(5 * time.Second)
+			out.WriteSuccessf("I'm done!")
+		}, verbose)
+
 		// Call registered hooks last
 		for _, hook := range postInitHooks {
 			hook(cmd)
@@ -230,10 +240,15 @@ var sg = &cli.App{
 		return nil
 	},
 	After: func(cmd *cli.Context) error {
+<<<<<<< HEAD
 		if !bashCompletionsMode {
 			// Wait for background jobs to finish up, iff not in autocomplete mode
 			background.Wait(cmd.Context, std.Out)
 		}
+=======
+		// Wait for background jobs to finish up
+		background.Wait(cmd.Context, std.Out)
+>>>>>>> 43f0375220c4e6d1ec2da3144d4044a51db3f89a
 
 		return nil
 	},
