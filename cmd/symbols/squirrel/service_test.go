@@ -184,6 +184,9 @@ func TestNonLocalDefinition(t *testing.T) {
 
 	// Also test path definitions
 	for _, a := range annotations {
+		if solo != "" && a.symbol != solo {
+			continue
+		}
 		for _, tag := range a.tags {
 			if tag == "path" {
 				squirrel.breadcrumbs = Breadcrumbs{}
