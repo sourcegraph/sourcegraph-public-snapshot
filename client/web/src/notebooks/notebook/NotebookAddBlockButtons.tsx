@@ -1,10 +1,6 @@
 import React, { useCallback } from 'react'
 
-import CodeTagsIcon from 'mdi-react/CodeTagsIcon'
-import FunctionIcon from 'mdi-react/FunctionIcon'
-import LanguageMarkdownOutlineIcon from 'mdi-react/LanguageMarkdownOutlineIcon'
-import LaptopIcon from 'mdi-react/LaptopIcon'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { mdiLanguageMarkdownOutline, mdiMagnify, mdiCodeTags, mdiFunction, mdiLaptop } from '@mdi/js'
 
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -34,7 +30,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                 onClick={() => addBlock({ type: 'md', input: { text: '', initialFocusInput: true } })}
                 data-testid="add-md-block"
             >
-                <Icon aria-hidden={true} as={LanguageMarkdownOutlineIcon} size="sm" />
+                <Icon aria-hidden={true} size="sm" svgPath={mdiLanguageMarkdownOutline} />
             </Button>
             <Button
                 className={styles.addBlockButton}
@@ -43,7 +39,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                 onClick={() => addBlock({ type: 'query', input: { query: '', initialFocusInput: true } })}
                 data-testid="add-query-block"
             >
-                <Icon aria-hidden={true} as={MagnifyIcon} size="sm" />
+                <Icon aria-hidden={true} size="sm" svgPath={mdiMagnify} />
             </Button>
             <Button
                 className={styles.addBlockButton}
@@ -52,7 +48,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                 onClick={() => addBlock({ type: 'file', input: EMPTY_FILE_BLOCK_INPUT })}
                 data-testid="add-file-block"
             >
-                <Icon aria-hidden={true} as={CodeTagsIcon} size="sm" />
+                <Icon aria-hidden={true} size="sm" svgPath={mdiCodeTags} />
             </Button>
             <Button
                 className={styles.addBlockButton}
@@ -61,7 +57,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                 onClick={() => addBlock({ type: 'symbol', input: EMPTY_SYMBOL_BLOCK_INPUT })}
                 data-testid="add-symbol-block"
             >
-                <Icon aria-hidden={true} as={FunctionIcon} size="sm" />
+                <Icon aria-hidden={true} size="sm" svgPath={mdiFunction} />
             </Button>
             {showComputeComponent && (
                 <Button
@@ -72,7 +68,7 @@ export const NotebookAddBlockButtons: React.FunctionComponent<
                     data-testid="add-compute-block"
                 >
                     {/* // TODO: Fix icon */}
-                    <Icon aria-hidden={true} as={LaptopIcon} size="sm" />
+                    <Icon aria-hidden={true} size="sm" svgPath={mdiLaptop} />
                 </Button>
             )}
         </>

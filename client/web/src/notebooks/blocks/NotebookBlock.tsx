@@ -76,11 +76,10 @@ export const NotebookBlock: React.FunctionComponent<React.PropsWithChildren<Note
 
     return (
         <div className={classNames('block-wrapper', blockStyles.blockWrapper)} data-block-id={id}>
-            {/* Notebook blocks are a form of specialized UI for which there are no good accesibility settings (role, aria-*)
-            or semantic elements that would accurately describe its functionality. To provide the necessary functionality we have
-            to rely on plain div elements and custom click/focus/keyDown handlers. We still preserve the ability to navigate through blocks
-            with the keyboard using the up and down arrows, and TAB. */}
-            <div
+            {/* Notebook blocks are a form of specialized UI. Since they are items in a list that use some common UI,
+            we can use the `article` semantic element. To provide the necessary functionality we have
+            to provide custom click/focus/keyDown handlers for arrows/enter, as well as setting a tabindex. */}
+            <article
                 className={classNames(
                     'block',
                     blockStyles.block,
@@ -90,12 +89,15 @@ export const NotebookBlock: React.FunctionComponent<React.PropsWithChildren<Note
                 )}
                 onDoubleClick={onDoubleClick}
                 // A tabIndex is necessary to make the block focusable.
+                // ARC Toolkit will complain about this, but setting a
+                // role (implicitly via use of `article`) and aria-label
+                // is valid by WCAG 2.1 Success Criterion 4.1.2.
                 // eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex
                 tabIndex={0}
                 aria-label={ariaLabel}
             >
                 {children}
-            </div>
+            </article>
             {(isSelected || !isOtherBlockSelected) && (
                 <NotebookBlockMenu id={id} mainAction={mainAction} actions={actions} />
             )}

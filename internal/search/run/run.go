@@ -115,8 +115,8 @@ func (e *QueryError) Error() string {
 
 // detectSearchType returns the search type to perform. The search type derives
 // from three sources: the version and patternType parameters passed to the
-// search endpoint (literal search is the default in V2), and the `patternType:`
-// filter in the input query string which overrides the searchType, if present.
+// search endpoint and the `patternType:` filter in the input query string which
+// overrides the searchType, if present.
 func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
@@ -140,8 +140,10 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 			searchType = query.SearchTypeRegex
 		case "V2":
 			searchType = query.SearchTypeLiteral
+		case "V3":
+			searchType = query.SearchTypeStandard
 		default:
-			return -1, errors.Errorf("unrecognized version: want \"V1\" or \"V2\", got %q", version)
+			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", or \"V3\", got %q", version)
 		}
 	}
 	return searchType, nil

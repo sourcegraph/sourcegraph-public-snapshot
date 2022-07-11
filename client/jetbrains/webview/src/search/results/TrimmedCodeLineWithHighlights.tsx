@@ -17,24 +17,38 @@ export const TrimmedCodeLineWithHighlights: React.FunctionComponent<Props> = Rea
         // remember our progress.
         const highlightRanges = [...line.offsetAndLengths]
 
+        // The indices that we receive from the Sourcegraph API are unicode code pointer offsets
+        // rather than byte lengths.
+        //
+        // We use the spread syntax to properly split a string based into its unicode code points.
+        //
+        //   "🚀".length      // => 2
+        //   [..."🚀"].length // => 1
+        const contentArray = [...content]
+
         const segments = []
-        for (let index = trimLeft; index <= content.length; ) {
+        for (let index = trimLeft; index <= contentArray.length; ) {
             const nextPointOfInterest = highlightRanges.shift()
 
             // There are no more highlight segments, so we can render the remaining text
             if (nextPointOfInterest === undefined) {
-                segments.push(content.slice(index))
+                segments.push(contentArray.slice(index).join(''))
                 break
             } else {
-                // There are highlight segments, so we need to render the text before the next highlight
-                // and then render the highlight.
+                // There are highlight segments, so we need to render the text before the next
+                // highlight and then render the highlight.
                 const [offset, length] = nextPointOfInterest
-                if (content.slice(index, offset) !== '') {
-                    segments.push(content.slice(index, offset))
+                const rest = contentArray.slice(index, offset).join('')
+                if (rest !== '') {
+                    segments.push(rest)
                 }
+
+                // Note: The <span> might cut-off a joined emoji sequence in-between a &zwj;. For
+                // example if the content contains "👨‍👩‍👧‍👧" but we search for "👨‍👩‍👧", we will highlight
+                // only a section of the joined sequence, e.g.: "<span>👨‍👩‍👧</span>&zwj;‍👧".
                 segments.push(
                     <span key={`highlight-${index}`} className={styles.codeHighlight}>
-                        {content.slice(offset, offset + length)}
+                        {contentArray.slice(offset, offset + length).join('')}
                     </span>
                 )
                 index = offset + length

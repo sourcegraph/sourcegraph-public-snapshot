@@ -2,39 +2,31 @@ package executorqueue
 
 import (
 	"fmt"
-	"net"
 	"net/http"
-	"net/url"
 	"strings"
 
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/executorqueue/handler"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	executorDB "github.com/sourcegraph/sourcegraph/internal/services/executors/store/db"
 )
 
-func newExecutorQueueHandler(executorStore executor.Store, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
-	host, port, err := net.SplitHostPort(envvar.HTTPAddrInternal)
-	if err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("failed to parse internal API address %q", envvar.HTTPAddrInternal))
-	}
-
-	frontendOrigin, err := url.Parse(fmt.Sprintf("http://%s:%s/.internal/git", host, port))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to construct the origin for the internal frontend")
-	}
+func newExecutorQueueHandler(db database.DB, queueOptions []handler.QueueOptions, accessToken func() string, uploadHandler http.Handler) (func() http.Handler, error) {
+	executorStore := executorDB.New(db)
+	gitserverClient := gitserver.NewClient(db)
 
 	factory := func() http.Handler {
 		// 🚨 SECURITY: These routes are secured by checking a token shared between services.
 		base := mux.NewRouter().PathPrefix("/.executors/").Subrouter()
 		base.StrictSlash(true)
 
-		// Proxy only info/refs and git-upload-pack for gitservice (git clone/fetch).
-		base.Path("/git/{rest:.*/(?:info/refs|git-upload-pack)}").Handler(reverseProxy(frontendOrigin))
+		// Proxy /info/refs and /git-upload-pack to gitservice for git clone/fetch.
+		base.Path("/git/{RepoName:.*}/info/refs").Handler(gitserverProxy(gitserverClient, "/info/refs"))
+		base.Path("/git/{RepoName:.*}/git-upload-pack").Handler(gitserverProxy(gitserverClient, "/git-upload-pack"))
 
 		// Serve the executor queue API.
 		handler.SetupRoutes(executorStore, queueOptions, base.PathPrefix("/queue/").Subrouter())

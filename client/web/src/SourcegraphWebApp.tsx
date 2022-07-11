@@ -10,10 +10,9 @@ import { Route, Router } from 'react-router'
 import { CompatRouter } from 'react-router-dom-v5-compat'
 import { ScrollManager } from 'react-scroll-manager'
 import { combineLatest, from, Subscription, fromEvent, of, Subject, Observable } from 'rxjs'
-import { catchError, distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
+import { distinctUntilChanged, map, startWith, switchMap } from 'rxjs/operators'
 import * as uuid from 'uuid'
 
-import { asError, isErrorLike } from '@sourcegraph/common'
 import { GraphQLClient, HTTPStatusError } from '@sourcegraph/http-client'
 import {
     fetchAutoDefinedSearchContexts,
@@ -65,7 +64,6 @@ import { getWebGraphQLClient } from './backend/graphql'
 import { BatchChangesProps, isBatchChangesExecutionEnabled } from './batches'
 import { CodeIntelligenceProps } from './codeintel'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { queryExternalServices } from './components/externalServices/backend'
 import { HeroPage } from './components/HeroPage'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
@@ -91,7 +89,6 @@ import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
 import { NotepadContainer } from './search/Notepad'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
-import { listUserRepositories } from './site-admin/backend'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { CodeHostScopeProvider } from './site/CodeHostScopeAlerts/CodeHostScopeProvider'
@@ -162,9 +159,6 @@ interface SourcegraphWebAppState extends SettingsCascadeProps {
 
     selectedSearchContextSpec?: string
     defaultSearchContextSpec: string
-    hasUserAddedRepositories: boolean
-    hasUserSyncedPublicRepositories: boolean
-    hasUserAddedExternalServices: boolean
 
     /**
      * Whether globbing is enabled for filters.
@@ -232,9 +226,6 @@ export class SourcegraphWebApp extends React.Component<
             settingsCascade: EMPTY_SETTINGS_CASCADE,
             viewerSubject: siteSubjectNoAdmin(),
             defaultSearchContextSpec: 'global', // global is default for now, user will be able to change this at some point
-            hasUserAddedRepositories: false,
-            hasUserSyncedPublicRepositories: false,
-            hasUserAddedExternalServices: false,
             globbing: false,
         }
     }
@@ -277,35 +268,6 @@ export class SourcegraphWebApp extends React.Component<
                 },
                 () => this.setState({ authenticatedUser: null })
             )
-        )
-
-        this.subscriptions.add(
-            combineLatest([this.userRepositoriesUpdates, authenticatedUser])
-                .pipe(
-                    switchMap(([, authenticatedUser]) =>
-                        authenticatedUser
-                            ? combineLatest([
-                                  listUserRepositories({
-                                      id: authenticatedUser.id,
-                                      first: window.context.sourcegraphDotComMode ? undefined : 1,
-                                  }),
-                                  queryExternalServices({ namespace: authenticatedUser.id, first: 1, after: null }),
-                                  [authenticatedUser],
-                              ])
-                            : of(null)
-                    ),
-                    catchError(error => [asError(error)])
-                )
-                .subscribe(result => {
-                    if (!isErrorLike(result) && result !== null) {
-                        const [userRepositoriesResult, externalServicesResult] = result
-
-                        this.setState({
-                            hasUserAddedRepositories: userRepositoriesResult.nodes.length > 0,
-                            hasUserAddedExternalServices: externalServicesResult.nodes.length > 0,
-                        })
-                    }
-                })
         )
 
         /**
@@ -432,10 +394,6 @@ export class SourcegraphWebApp extends React.Component<
                                                                         searchContextsEnabled={
                                                                             this.props.searchContextsEnabled
                                                                         }
-                                                                        hasUserAddedRepositories={this.hasUserAddedRepositories()}
-                                                                        hasUserAddedExternalServices={
-                                                                            this.state.hasUserAddedExternalServices
-                                                                        }
                                                                         selectedSearchContextSpec={this.getSelectedSearchContextSpec()}
                                                                         setSelectedSearchContextSpec={
                                                                             this.setSelectedSearchContextSpec
@@ -462,13 +420,6 @@ export class SourcegraphWebApp extends React.Component<
                                                                         }
                                                                         globbing={this.state.globbing}
                                                                         streamSearch={aggregateStreamingSearch}
-                                                                        onUserExternalServicesOrRepositoriesUpdate={
-                                                                            this
-                                                                                .onUserExternalServicesOrRepositoriesUpdate
-                                                                        }
-                                                                        onSyncedPublicRepositoriesUpdate={
-                                                                            this.onSyncedPublicRepositoriesUpdate
-                                                                        }
                                                                     />
                                                                 </CodeHostScopeProvider>
                                                             )}
@@ -496,25 +447,6 @@ export class SourcegraphWebApp extends React.Component<
             </ApolloProvider>
         )
     }
-
-    private onUserExternalServicesOrRepositoriesUpdate = (
-        externalServicesCount: number,
-        userRepoCount: number
-    ): void => {
-        this.setState({
-            hasUserAddedExternalServices: externalServicesCount > 0,
-            hasUserAddedRepositories: userRepoCount > 0,
-        })
-    }
-
-    private onSyncedPublicRepositoriesUpdate = (publicReposCount: number): void => {
-        this.setState({
-            hasUserSyncedPublicRepositories: publicReposCount > 0,
-        })
-    }
-
-    private hasUserAddedRepositories = (): boolean =>
-        this.state.hasUserAddedRepositories || this.state.hasUserSyncedPublicRepositories
 
     private getSelectedSearchContextSpec = (): string | undefined =>
         getExperimentalFeatures().showSearchContext ? this.state.selectedSearchContextSpec : undefined

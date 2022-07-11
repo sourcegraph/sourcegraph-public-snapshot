@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiChevronLeft } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 import { useLocation } from 'react-router-dom'
 
 import { useQuery } from '@sourcegraph/http-client'
@@ -118,7 +118,7 @@ export const CloudSignUpPage: React.FunctionComponent<React.PropsWithChildren<Pr
                     className="d-flex align-items-center"
                     to={`${location.pathname}?${queryWithUseEmailToggled.toString()}`}
                 >
-                    <Icon className={styles.backIcon} as={ChevronLeftIcon} aria-hidden={true} />
+                    <Icon className={styles.backIcon} aria-hidden={true} svgPath={mdiChevronLeft} />
                     Go back
                 </Link>
             </small>

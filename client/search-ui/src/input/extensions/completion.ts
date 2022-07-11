@@ -55,7 +55,7 @@ import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/provide
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { parsedQuery } from './parsedQuery'
+import { queryTokens } from './parsedQuery'
 
 import styles from '../CodeMirrorQueryInput.module.scss'
 
@@ -134,7 +134,7 @@ export function searchQueryAutocompletion(
 ): Extension {
     const override: CompletionSource[] = sources.map(source => context => {
         const position = context.pos
-        const query = context.state.facet(parsedQuery)
+        const query = context.state.facet(queryTokens)
         const token = query.tokens.find(token => isTokenInRange(token, position))
         return source(
             { position, onAbort: listener => context.addEventListener('abort', listener) },
@@ -173,7 +173,7 @@ export function searchQueryAutocompletion(
             // If a filter was completed, show the completion list again for
             // filter values.
             if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
-                const query = update.state.facet(parsedQuery)
+                const query = update.state.facet(queryTokens)
                 const token = query.tokens.find(token => isTokenInRange(token, update.state.selection.main.anchor - 1))
                 if (token) {
                     startCompletion(update.view)
@@ -207,7 +207,7 @@ export function searchQueryAutocompletion(
                 {
                     render() {
                         const node = document.createElement('span')
-                        node.className = styles.tabStyle
+                        node.classList.add('completion-hint', styles.tabStyle)
                         node.textContent = 'Tab'
                         return node
                     },
@@ -234,7 +234,7 @@ export function createDefaultSuggestionSources(options: {
 
     if (options.disableFilterCompletion !== true) {
         sources.push(
-            // Static suggestions shown if the the current position is outside a
+            // Static suggestions shown if the current position is outside a
             // filter value
             createDefaultSource((context, _tokens, token) => {
                 // Default to the current cursor position (e.g. if the token is a
@@ -260,20 +260,43 @@ export function createDefaultSuggestionSources(options: {
 
                 const { value } = token
                 const insidePredicate = value ? PREDICATE_REGEX.test(value.value) : false
+                const hasDynamicSuggestions = resolvedFilter.definition.suggestions
 
-                if (insidePredicate) {
+                // Don't show static suggestions if we are inside a predicate or
+                // if the filter already has a value _and_ is configured for
+                // dynamic suggestions.
+                // That's because dynamic suggestions are not filtered (filter: false)
+                // which CodeMirror always displays above filtered suggestions.
+                if (insidePredicate || (value && hasDynamicSuggestions)) {
                     return null
                 }
 
                 return {
                     from: value?.range.start ?? token.range.end,
+                    to: value?.range.end,
+                    // Filtering is unnecessary when dynamic suggestions are
+                    // available because if there is any input that the static
+                    // suggestions could be filtered by we disable static
+                    // suggestions and only show the dynamic ones anyway.
+                    filter: !hasDynamicSuggestions,
                     options: resolvedFilter.definition
                         .discreteValues(value, options.isSourcegraphDotCom)
-                        .map(({ label, insertText, asSnippet }) => {
+                        .map(({ label, insertText, asSnippet }, index) => {
                             const apply = (insertText || label) + ' '
                             return {
                                 label,
-                                apply: asSnippet ? snippet(apply) : apply,
+                                // See issue https://github.com/sourcegraph/sourcegraph/issues/38254
+                                // Per CodeMirror's documentation (https://codemirror.net/docs/ref/#autocomplete.snippet)
+                                // "The user can move between fields with Tab and Shift-Tab as long as the fields are
+                                // active. Moving to the last field or moving the cursor out of the current field
+                                // deactivates the fields."
+                                // This means we need to append a field at the end so that pressing Tab when at the last
+                                // field will move the cursor after the filter value and not move focus outside the input
+                                apply: asSnippet ? snippet(apply + '${}') : apply,
+                                // Setting boost this way has the effect of
+                                // displaying matching suggestions in the same
+                                // order as they have been defined in code.
+                                boost: index * -1,
                             }
                         }),
                 }
@@ -326,6 +349,7 @@ export function createDefaultSuggestionSources(options: {
 
                 return {
                     from: token.value?.range.start ?? token.range.end,
+                    to: token.value?.range.end,
                     filter: false,
                     options: filteredResults,
                 }
@@ -351,6 +375,7 @@ export function createDefaultSuggestionSources(options: {
 
                 return {
                     from: token.range.start,
+                    to: token.range.end,
                     options: results
                         .flatMap(result => {
                             if (result.type === 'symbol') {

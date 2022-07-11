@@ -6,7 +6,7 @@ import format from 'date-fns/format'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { CardBody, Icon } from '@sourcegraph/wildcard'
+import { CardBody, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 export const ProductSubscriptionHistory: React.FunctionComponent<
     React.PropsWithChildren<{
@@ -25,9 +25,9 @@ export const ProductSubscriptionHistory: React.FunctionComponent<
                 {productSubscription.events.map(event => (
                     <tr key={event.id}>
                         <td className="text-nowrap">
-                            <span data-tooltip={format(parseISO(event.date), 'PPpp')}>
-                                {format(parseISO(event.date), 'yyyy-MM-dd')}
-                            </span>
+                            <Tooltip content={format(parseISO(event.date), 'PPpp')}>
+                                <span>{format(parseISO(event.date), 'yyyy-MM-dd')}</span>
+                            </Tooltip>
                         </td>
                         <td className="w-100">
                             <LinkOrSpan to={event.url} target="_blank" rel="noopener noreferrer">

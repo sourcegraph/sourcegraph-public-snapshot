@@ -1,7 +1,7 @@
 import React, { FunctionComponent, useState, useEffect, useCallback, useRef } from 'react'
 
 import classNames from 'classnames'
-import { useLocation, useHistory } from 'react-router'
+import { useLocation, useNavigate } from 'react-router-dom-v5-compat'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -16,7 +16,6 @@ import { SourcegraphContext } from '../jscontext'
 import { PageRoutes } from '../routes.constants'
 import { eventLogger } from '../tracking/eventLogger'
 import { SelectAffiliatedRepos } from '../user/settings/repositories/SelectAffiliatedRepos'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../util'
 
 import { getReturnTo } from './SignInSignUpCommon'
 import { Steps, Step, StepList, StepPanels, StepPanel } from './Steps'
@@ -32,7 +31,6 @@ interface PostSignUpPage {
     authenticatedUser: AuthenticatedUser
     context: Pick<SourcegraphContext, 'authProviders'>
     telemetryService: TelemetryService
-    onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
     setSelectedSearchContextSpec: (spec: string) => void
 }
 
@@ -57,7 +55,6 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
     authenticatedUser: user,
     context,
     telemetryService,
-    onUserExternalServicesOrRepositoriesUpdate,
     setSelectedSearchContextSpec,
 }) => {
     const [didUserFinishWelcomeFlow, setUserFinishedWelcomeFlow] = useTemporarySetting(
@@ -67,11 +64,11 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
 
     const isOAuthCall = useRef(false)
     const location = useLocation()
-    const history = useHistory()
+    const navigate = useNavigate()
 
     const debug = new URLSearchParams(location.search).get('debug')
 
-    const goToSearch = (): void => history.push(getReturnTo(location))
+    const goToSearch = (): void => navigate(getReturnTo(location))
 
     useEffect(() => {
         eventLogger.logViewEvent(getPostSignUpEvent())
@@ -201,9 +198,6 @@ export const PostSignUpPage: FunctionComponent<React.PropsWithChildren<PostSignU
                                                 className={styles.container}
                                                 user={user}
                                                 repoSelectionMode={repoSelectionMode}
-                                                onUserExternalServicesOrRepositoriesUpdate={
-                                                    onUserExternalServicesOrRepositoriesUpdate
-                                                }
                                                 setSelectedSearchContextSpec={setSelectedSearchContextSpec}
                                                 onError={onError}
                                                 onFinish={finishWelcomeFlow}

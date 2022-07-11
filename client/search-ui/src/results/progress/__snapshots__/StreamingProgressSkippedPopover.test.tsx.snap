@@ -16,7 +16,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <svg
           aria-label="Alert"
-          class="iconInline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           role="img"
@@ -34,7 +34,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </span>
         <svg
           aria-hidden="true"
-          class="iconInline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           role="img"
@@ -78,7 +78,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <svg
           aria-label="Alert"
-          class="iconInline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           role="img"
@@ -96,7 +96,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </span>
         <svg
           aria-hidden="true"
-          class="iconInline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           role="img"
@@ -140,7 +140,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <svg
           aria-label="Information"
-          class="iconInline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           role="img"
@@ -158,7 +158,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </span>
         <svg
           aria-hidden="true"
-          class="iconInline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           role="img"
@@ -202,7 +202,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <svg
           aria-label="Information"
-          class="iconInline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           role="img"
@@ -220,7 +220,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </span>
         <svg
           aria-hidden="true"
-          class="iconInline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           role="img"
@@ -264,7 +264,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
       >
         <svg
           aria-label="Information"
-          class="iconInline icon flex-shrink-0"
+          class="mdi-icon iconInline icon flex-shrink-0"
           fill="currentColor"
           height="24"
           role="img"
@@ -282,7 +282,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
         </span>
         <svg
           aria-hidden="true"
-          class="iconInline flex-shrink-0 chevron"
+          class="mdi-icon iconInline flex-shrink-0 chevron"
           fill="currentColor"
           height="24"
           role="img"
@@ -357,7 +357,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             >
               :
             </span>
-            2m
+            <span
+              class="search-query-text"
+            >
+              2m
+            </span>
           </span>
           )
         </label>
@@ -381,7 +385,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
           <span
             class="text-monospace search-query-link"
           >
-            forked:yes
+            <span
+              class="search-query-text"
+            >
+              forked:yes
+            </span>
           </span>
           )
         </label>
@@ -415,7 +423,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             >
               :
             </span>
-            yes
+            <span
+              class="search-query-text"
+            >
+              yes
+            </span>
           </span>
           )
         </label>
@@ -449,7 +461,11 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
             >
               :
             </span>
-            yes
+            <span
+              class="search-query-text"
+            >
+              yes
+            </span>
           </span>
           )
         </label>
@@ -463,7 +479,7 @@ exports[`StreamingProgressSkippedPopover should render correctly 1`] = `
     >
       <svg
         aria-hidden="true"
-        class="iconInline mr-1"
+        class="mdi-icon iconInline mr-1"
         fill="currentColor"
         height="24"
         role="img"

@@ -158,7 +158,7 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 		defer span.Finish()
 
 		// get trace ID
-		trace := ContextFromSpan(span)
+		trace := Context(ctx)
 		var traceURL string
 		if trace != nil && trace.TraceID != "" {
 			var traceType string
@@ -273,6 +273,8 @@ func HTTPMiddleware(logger log.Logger, next http.Handler, siteConfig conftypes.S
 				// https://github.com/sourcegraph/sourcegraph/pull/29312.
 				fields = append(fields, log.Error(requestErrorCause))
 				logger.Error(msg, fields...)
+			case m.Duration >= minDuration:
+				logger.Warn(msg, fields...)
 			default:
 				logger.Error(msg, fields...)
 			}

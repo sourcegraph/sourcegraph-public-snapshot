@@ -204,7 +204,10 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
       data-testid="action-item-spinner"
     >
       <div
-        class="loadingSpinner"
+        aria-label="Loading"
+        aria-live="polite"
+        class="mdi-icon loadingSpinner"
+        role="img"
       />
     </div>
   </button>

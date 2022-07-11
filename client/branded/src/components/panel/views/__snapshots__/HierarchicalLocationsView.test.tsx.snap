@@ -56,7 +56,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -72,7 +72,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0 mr-1"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -215,6 +215,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           data-testid="hierarchical-locations-view-list"
         >
           <button
+            aria-label="File path file1.txt"
             class="list-group-item list-group-item-action locationButton active"
             data-testid="hierarchical-locations-view-button"
             type="button"
@@ -243,6 +244,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </button>
           <button
+            aria-label="File path file2.txt"
             class="list-group-item list-group-item-action locationButton"
             data-testid="hierarchical-locations-view-button"
             type="button"
@@ -321,7 +323,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -337,7 +339,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0 mr-1"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -542,7 +544,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -558,7 +560,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0 mr-1"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -685,7 +687,8 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 <DocumentFragment>
   <div
     aria-label="Loading"
-    class="iconInline loadingSpinner m-1 test-loading-spinner"
+    aria-live="polite"
+    class="mdi-icon iconInline loadingSpinner m-1 test-loading-spinner"
     role="img"
   />
 </DocumentFragment>
@@ -695,7 +698,8 @@ exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty 
 <DocumentFragment>
   <div
     aria-label="Loading"
-    class="iconInline loadingSpinner m-1 test-loading-spinner"
+    aria-live="polite"
+    class="mdi-icon iconInline loadingSpinner m-1 test-loading-spinner"
     role="img"
   />
 </DocumentFragment>

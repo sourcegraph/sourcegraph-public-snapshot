@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Redirect } from 'react-router'
+import { Navigate } from 'react-router-dom-v5-compat'
 
 import { AuthenticatedUser } from '../auth'
 
@@ -24,7 +24,7 @@ export const withAuthenticatedUser = <P extends object & { authenticatedUser: Au
             newUrl.pathname = '/sign-in'
             // Return to the current page after sign up/in.
             newUrl.searchParams.set('returnTo', window.location.href)
-            return <Redirect to={newUrl.pathname + newUrl.search} />
+            return <Navigate to={newUrl.pathname + newUrl.search} replace={true} />
         }
         return <Component {...({ ...props, authenticatedUser } as P)} />
     }

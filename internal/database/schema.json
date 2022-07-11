@@ -133,6 +133,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.invalidate_session_for_userid_on_password_change()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        IF OLD.passwd != NEW.passwd THEN\n            NEW.invalidated_sessions_at = now() + (1 * interval '1 second');\n            RETURN NEW;\n        END IF;\n    RETURN NEW;\n    END;\n$function$\n"
     },
     {
+      "Name": "merge_audit_log_transitions",
+      "Definition": "CREATE OR REPLACE FUNCTION public.merge_audit_log_transitions(internal hstore, arrayhstore hstore[])\n RETURNS hstore\n LANGUAGE plpgsql\n IMMUTABLE\nAS $function$\n    DECLARE\n        trans hstore;\n    BEGIN\n      FOREACH trans IN ARRAY arrayhstore\n      LOOP\n          internal := internal || hstore(trans-\u003e'column', trans-\u003e'new');\n      END LOOP;\n\n      RETURN internal;\n    END;\n$function$\n"
+    },
+    {
       "Name": "repo_block",
       "Definition": "CREATE OR REPLACE FUNCTION public.repo_block(reason text, at timestamp with time zone)\n RETURNS jsonb\n LANGUAGE sql\n IMMUTABLE STRICT\nAS $function$\nSELECT jsonb_build_object(\n    'reason', reason,\n    'at', extract(epoch from timezone('utc', at))::bigint\n);\n$function$\n"
     },
@@ -4208,6 +4212,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX cm_action_jobs_pkey ON cm_action_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "cm_action_jobs_state_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -5306,6 +5320,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX cm_trigger_jobs_pkey ON cm_trigger_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "cm_trigger_jobs_state_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         }
       ],
       "Constraints": [
@@ -7793,12 +7817,12 @@
       ],
       "Indexes": [
         {
-          "Name": "external_service_sync_jobs_state_idx",
+          "Name": "external_service_sync_jobs_state_external_service_id",
           "IsPrimaryKey": false,
           "IsUnique": false,
           "IsExclusion": false,
           "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX external_service_sync_jobs_state_idx ON external_service_sync_jobs USING btree (state)",
+          "IndexDefinition": "CREATE INDEX external_service_sync_jobs_state_external_service_id ON external_service_sync_jobs USING btree (state, external_service_id) INCLUDE (finished_at)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         }
@@ -14698,6 +14722,16 @@
           "IsExclusion": false,
           "IsDeferrable": false,
           "IndexDefinition": "CREATE INDEX repo_created_at ON repo USING btree (created_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
+          "Name": "repo_description_trgm_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops)",
           "ConstraintType": "",
           "ConstraintDefinition": ""
         },

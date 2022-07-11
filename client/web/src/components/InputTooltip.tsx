@@ -16,6 +16,9 @@ export interface InputTooltipProps extends ButtonAndInputElementProps {
  * Disabled elements do not trigger mouse events on hover, and `Tooltip` relies on mouse events.
  *
  * All other props are passed to the `input` element.
+ *
+ * @deprecated The new `<Tooltip>` component from Wildcard now supports disabled inputs automatically,
+ * please use that component instead.
  */
 export const InputTooltip: React.FunctionComponent<React.PropsWithChildren<InputTooltipProps>> = ({
     disabled,
