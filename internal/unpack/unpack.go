@@ -34,6 +34,10 @@ type Opts struct {
 	// the whole unpack.
 	SkipInvalid bool
 
+	// SkipDuplicates makes unpacking skip any files that couldn't be extracted
+	// because of os.FileExist errors.
+	SkipDuplicates bool
+
 	// Filter filters out files that do not match the given predicate.
 	Filter func(path string, file fs.FileInfo) bool
 }
@@ -62,6 +66,9 @@ func Zip(r io.ReaderAt, size int64, dir string, opt Opts) error {
 
 		err = extractZipFile(f, dir)
 		if err != nil {
+			if opt.SkipDuplicates && errors.Is(err, os.ErrExist) {
+				continue
+			}
 			return err
 		}
 	}
@@ -135,6 +142,9 @@ func Tar(r io.Reader, dir string, opt Opts) error {
 
 		err = extractTarFile(tr, header, dir)
 		if err != nil {
+			if opt.SkipDuplicates && errors.Is(err, os.ErrExist) {
+				continue
+			}
 			return err
 		}
 	}
