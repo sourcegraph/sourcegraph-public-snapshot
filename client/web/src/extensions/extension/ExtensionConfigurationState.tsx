@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiCheck } from '@mdi/js'
 import classNames from 'classnames'
-import CheckIcon from 'mdi-react/CheckIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -18,7 +18,7 @@ export const ExtensionConfigurationState: React.FunctionComponent<
 > = ({ isAdded, isEnabled, enabledIconOnly, className = '' }) =>
     isAdded && isEnabled ? (
         <span className={classNames('text-success', className)}>
-            <Icon as={CheckIcon} aria-hidden={true} /> {!enabledIconOnly && 'Enabled'}
+            <Icon aria-hidden={true} svgPath={mdiCheck} /> {!enabledIconOnly && 'Enabled'}
         </span>
     ) : (
         <span className={classNames('text-muted', className)}>Disabled</span>
