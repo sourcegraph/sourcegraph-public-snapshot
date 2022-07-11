@@ -12,7 +12,7 @@ func TestExternalServiceFields(t *testing.T) {
 	// If this test fails it means that fields have changed on types.ExternalService.
 	// Ensure that types.ExternalService and api.ExternalService are consistent and
 	// also that types.ExternalService.ToAPIService has been updated.
-	wantFieldCount := 15
+	wantFieldCount := 16
 	if wantFieldCount != v.NumField() {
 		t.Fatalf("Expected %d fields, got %d. See comments in failing test", wantFieldCount, v.NumField())
 	}
