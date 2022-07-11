@@ -86,9 +86,9 @@ They are evaluated before the execution of each entry in `steps`, except for the
 | `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
 | `repository.branch` | `string` | The target branch of the repository in which the step is being executed. </br><i><small>Requires Sourcegraph 3.35 or later.</small></i> |
 | `repository.name` | `string` | Full name of the repository in which the step is being executed. Example: `org_foo/repo_bar`. |
-| `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous step in `steps`. Empty list if no files have been modified. |
-| `previous_step.added_files` | `list of strings` | List of files that have been added by the previous step in `steps`. Empty list if no files have been added. |
-| `previous_step.deleted_files` | `list of strings` | List of files that have been deleted by the previous step in `steps`. Empty list if no files have been deleted. |
+| `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous steps. Empty list if no files have been modified. |
+| `previous_step.added_files` | `list of strings` | List of files that have been added by the previous steps. Empty list if no files have been added. |
+| `previous_step.deleted_files` | `list of strings` | List of files that have been deleted by the previous steps. Empty list if no files have been deleted. |
 | `previous_step.stdout` | `string` | The complete output of the previous step on standard output. |
 | `previous_step.stderr` | `string` | The complete output of the previous step on standard error. |
 | `step.modified_files` | `list of strings` | Only in `steps.outputs`: List of files that have been modified by the just-executed step. Empty list if no files have been modified. </br><i><small>Requires Sourcegraph 3.24 and [Sourcegraph CLI](../../cli/index.md) 3.24 or later</small></i>. |
