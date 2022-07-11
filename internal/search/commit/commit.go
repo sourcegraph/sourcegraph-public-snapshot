@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -23,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type SearchJob struct {
@@ -53,7 +53,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return nil, err
 	}
 
-	searchRepoRev := func(repoRev *search.RepositoryRevisions) error {
+	searchRepoRev := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			return nil
@@ -96,20 +96,16 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 
 	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
-		bounded := goroutine.NewBounded(j.Concurrency)
+		g := group.New().WithContext(ctx).WithMaxConcurrency(j.Concurrency).WithFirstError()
 
 		for _, repoRev := range page.RepoRevs {
 			repoRev := repoRev
-			if ctx.Err() != nil {
-				// Don't keep spinning up goroutines if context has been canceled
-				return ctx.Err()
-			}
-			bounded.Go(func() error {
-				return searchRepoRev(repoRev)
+			g.Go(func(ctx context.Context) error {
+				return searchRepoRev(ctx, repoRev)
 			})
 		}
 
-		return bounded.Wait()
+		return g.Wait()
 	})
 }
 
