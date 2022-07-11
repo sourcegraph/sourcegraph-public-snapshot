@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/url"
 	"regexp"
+	"regexp/syntax"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
@@ -216,6 +217,130 @@ func unquotePatterns(b query.Basic) *query.Basic {
 
 	if !changed {
 		// No unquoting happened, so we don't run the search.
+		return nil
+	}
+
+	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	if err != nil {
+		return nil
+	}
+
+	newBasic, err := query.ToBasicQuery(newNodes)
+	if err != nil {
+		return nil
+	}
+
+	return &newBasic
+}
+
+// regexpPatterns converts literal patterns into regular expression patterns.
+// The conversion is a heuristic and happens based on whether the pattern has
+// indicative regular expression metasyntax. It would be overly aggressive to
+// convert patterns containing _any_ potential metasyntax, since a pattern like
+// my.config.yaml contains two `.` (match any character in regexp).
+func regexpPatterns(b query.Basic) *query.Basic {
+	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeStandard)
+	if err != nil {
+		return nil
+	}
+
+	// we decide to interpret patterns as regular expressions if the number of
+	// significant metasyntax operators exceed this threshold
+	METASYNTAX_THRESHOLD := 2
+
+	// countMetaSyntax counts the number of significant regular expression
+	// operators in string when it is interpreted as a regular expression. A
+	// rough map of operators to syntax can be found here:
+	// https://sourcegraph.com/github.com/golang/go@bf5898ef53d1693aa572da0da746c05e9a6f15c5/-/blob/src/regexp/syntax/regexp.go?L116-244
+	var countMetaSyntax func([]*syntax.Regexp) int
+	countMetaSyntax = func(res []*syntax.Regexp) int {
+		count := 0
+		for _, r := range res {
+			switch r.Op {
+			case
+				// operators that are weighted 0 on their own
+				syntax.OpAnyCharNotNL,
+				syntax.OpAnyChar,
+				syntax.OpNoMatch,
+				syntax.OpEmptyMatch,
+				syntax.OpLiteral,
+				syntax.OpCapture,
+				syntax.OpConcat:
+				count += countMetaSyntax(r.Sub)
+			case
+				// operators that are weighted 1 on their own
+				syntax.OpCharClass,
+				syntax.OpBeginLine,
+				syntax.OpEndLine,
+				syntax.OpBeginText,
+				syntax.OpEndText,
+				syntax.OpWordBoundary,
+				syntax.OpNoWordBoundary,
+				syntax.OpAlternate:
+				count += countMetaSyntax(r.Sub) + 1
+
+			case
+				// quantifiers *, +, ?, {...} on metasyntax like
+				// `.` or `(...)` are weighted 2. If the
+				// quantifier applies to other syntax like
+				// literals (not metasyntax) it's weighted 1.
+				syntax.OpStar,
+				syntax.OpPlus,
+				syntax.OpQuest,
+				syntax.OpRepeat:
+				switch r.Sub[0].Op {
+				case
+					syntax.OpAnyChar,
+					syntax.OpAnyCharNotNL,
+					syntax.OpCapture:
+					count += countMetaSyntax(r.Sub) + 2
+				default:
+					count += countMetaSyntax(r.Sub) + 1
+				}
+			}
+		}
+		return count
+	}
+
+	changed := false
+	newParseTree := query.MapPattern(rawParseTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		if annotation.Labels.IsSet(query.Regexp) {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		re, err := syntax.Parse(value, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+		if err != nil {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		count := countMetaSyntax([]*syntax.Regexp{re})
+		if count < METASYNTAX_THRESHOLD {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		changed = true
+		annotation.Labels.Unset(query.Literal)
+		annotation.Labels.Set(query.Regexp)
+		return query.Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !changed {
 		return nil
 	}
 
@@ -669,6 +794,10 @@ var rulesNarrow = []rule{
 }
 
 var rulesWiden = []rule{
+	{
+		description: "patterns as regular expressions",
+		transform:   transform{regexpPatterns},
+	},
 	{
 		description: "AND patterns together",
 		transform:   transform{unorderedPatterns},

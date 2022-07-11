@@ -1,0 +1,7 @@
+[
+  {
+    "Description": "patterns as regular expressions",
+    "Input": "[a-z]+",
+    "Query": "/[a-z]+/"
+  }
+]
