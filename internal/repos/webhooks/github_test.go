@@ -33,6 +33,8 @@ func TestGitHubWebhooks_CreateAndList(t *testing.T) {
 		}
 	}
 
+	// even if there is an error,
+	// we want to delete the webhook we just created
 	countErr := ""
 	if idCount != 1 {
 		countErr = "Created webhook more not equal to 1"
