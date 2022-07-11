@@ -1,4 +1,4 @@
-package definition
+package stitch
 
 import (
 	"os"
@@ -8,21 +8,22 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 const squashedMigrationPrefix = "squashed migrations"
 
-func StitchDefinitions(schemaName string, revs []string) (*Definitions, error) {
+func StitchDefinitions(schemaName string, revs []string) (*definition.Definitions, error) {
 	root, err := os.Getwd()
 	if err != nil {
 		return nil, err
 	}
 	migrationsPath := filepath.Join("migrations", schemaName)
 
-	definitionMap := map[int]Definition{}
+	definitionMap := map[int]definition.Definition{}
 	for _, rev := range revs {
-		revDefinitions, err := ReadDefinitions(newGitFS(rev, root, migrationsPath), migrationsPath)
+		revDefinitions, err := definition.ReadDefinitions(newGitFS(rev, root, migrationsPath), migrationsPath)
 		if err != nil {
 			return nil, errors.Wrap(err, "@"+rev)
 		}
@@ -49,19 +50,15 @@ func StitchDefinitions(schemaName string, revs []string) (*Definitions, error) {
 		}
 	}
 
-	migrationDefinitions := make([]Definition, 0, len(definitionMap))
+	migrationDefinitions := make([]definition.Definition, 0, len(definitionMap))
 	for _, v := range definitionMap {
 		migrationDefinitions = append(migrationDefinitions, v)
 	}
 
-	if err := reorderDefinitions(migrationDefinitions); err != nil {
-		return nil, err
-	}
-
-	return newDefinitions(migrationDefinitions), nil
+	return definition.NewDefinitions(migrationDefinitions)
 }
 
-func compareDefinitions(x, y Definition) bool {
+func compareDefinitions(x, y definition.Definition) bool {
 	return cmp.Diff(x, y, cmp.Comparer(func(x, y *sqlf.Query) bool {
 		// Note: migrations do not have args to compare here, so we can compare only
 		// the query text safely. If we ever need to add runtime arguments to the

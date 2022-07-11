@@ -310,7 +310,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 			// We're currently processing the descendants of this node, so we have a paths in
 			// both directions between these two nodes.
 
-			// Peel off the head of the parent list until we reach the target  node. This leaves
+			// Peel off the head of the parent list until we reach the target node. This leaves
 			// us with a slice starting with the target node, followed by the path back to itself.
 			// We'll use this instance of a cycle in the error description.
 			for len(parents) > 0 && parents[0] != id {

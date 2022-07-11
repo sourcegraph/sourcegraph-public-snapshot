@@ -1,4 +1,4 @@
-package definition
+package stitch
 
 import (
 	"fmt"
@@ -13,6 +13,7 @@ func TestFoo(t *testing.T) {
 		"v3.38.0",
 		"v3.39.0",
 		"v3.40.0",
+		"v3.41.0",
 		"HEAD",
 	}
 
