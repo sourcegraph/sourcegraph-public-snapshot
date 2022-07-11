@@ -107,9 +107,9 @@ func (p *Plan) SetOp(op btypes.ReconcilerOperation) { p.Ops = Operations{op} }
 // It consumes the current and the previous changeset spec, if they exist. If
 // the current ChangesetSpec is not applied to a batch change, it returns an
 // error.
-func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.Changeset) (*Plan, error) {
+func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, currentChangeset, wantedChangeset *btypes.Changeset) (*Plan, error) {
 	pl := &Plan{
-		Changeset:     ch,
+		Changeset:     wantedChangeset,
 		ChangesetSpec: currentSpec,
 	}
 
@@ -119,16 +119,16 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 	isStillAttached := false
 	isReattach := false
 	wantDetachFromOwnerBatchChange := false
-	for _, assoc := range ch.BatchChanges {
+	for _, assoc := range wantedChangeset.BatchChanges {
 		if assoc.Detach {
 			wantDetach = true
-			if assoc.BatchChangeID == ch.OwnedByBatchChangeID {
+			if assoc.BatchChangeID == wantedChangeset.OwnedByBatchChangeID {
 				wantDetachFromOwnerBatchChange = true
 			}
-		} else if assoc.Archive && assoc.BatchChangeID == ch.OwnedByBatchChangeID && ch.Published() {
+		} else if assoc.Archive && assoc.BatchChangeID == wantedChangeset.OwnedByBatchChangeID && wantedChangeset.Published() {
 			wantArchive = !assoc.IsArchived
 			isArchived = assoc.IsArchived
-		} else if len(ch.BatchChanges) > 0 && !ch.DetachedAt.IsZero() {
+		} else if currentChangeset != nil && len(currentChangeset.BatchChanges) == 0 {
 			isReattach = true
 		} else {
 			isStillAttached = true
@@ -142,8 +142,8 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		pl.SetOp(btypes.ReconcilerOperationArchive)
 	}
 
-	if ch.Closing {
-		if ch.ExternalState != btypes.ChangesetExternalStateReadOnly {
+	if wantedChangeset.Closing {
+		if wantedChangeset.ExternalState != btypes.ChangesetExternalStateReadOnly {
 			pl.AddOp(btypes.ReconcilerOperationClose)
 		}
 		// Close is a final operation, nothing else should overwrite it.
@@ -163,7 +163,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 	// anything.
 	if currentSpec == nil {
 		// If still more than one remains attached, we still want to import the changeset.
-		if ch.Unpublished() && isStillAttached {
+		if wantedChangeset.Unpublished() && isStillAttached {
 			pl.AddOp(btypes.ReconcilerOperationImport)
 		} else if isReattach && !wantDetach {
 			pl.AddOp(btypes.ReconcilerOperationReattach)
@@ -175,19 +175,19 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		pl.AddOp(btypes.ReconcilerOperationReattach)
 	}
 
-	delta, err := compareChangesetSpecs(previousSpec, currentSpec, ch.UiPublicationState)
+	delta, err := compareChangesetSpecs(previousSpec, currentSpec, wantedChangeset.UiPublicationState)
 	if err != nil {
 		return pl, nil
 	}
 	pl.Delta = delta
 
-	switch ch.PublicationState {
+	switch wantedChangeset.PublicationState {
 	case btypes.ChangesetPublicationStateUnpublished:
-		calc := calculatePublicationState(currentSpec.Spec.Published, ch.UiPublicationState)
+		calc := calculatePublicationState(currentSpec.Spec.Published, wantedChangeset.UiPublicationState)
 		if calc.IsPublished() {
 			pl.SetOp(btypes.ReconcilerOperationPublish)
 			pl.AddOp(btypes.ReconcilerOperationPush)
-		} else if calc.IsDraft() && ch.SupportsDraft() {
+		} else if calc.IsDraft() && wantedChangeset.SupportsDraft() {
 			// If configured to be opened as draft, and the changeset supports
 			// draft mode, publish as draft. Otherwise, take no action.
 			pl.SetOp(btypes.ReconcilerOperationPublishDraft)
@@ -199,11 +199,11 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 
 	case btypes.ChangesetPublicationStatePublished:
 		// Don't take any actions for merged or read-only changesets.
-		if ch.ExternalState == btypes.ChangesetExternalStateMerged ||
-			ch.ExternalState == btypes.ChangesetExternalStateReadOnly {
+		if wantedChangeset.ExternalState == btypes.ChangesetExternalStateMerged ||
+			wantedChangeset.ExternalState == btypes.ChangesetExternalStateReadOnly {
 			return pl, nil
 		}
-		if reopenAfterDetach(ch) {
+		if reopenAfterDetach(wantedChangeset) {
 			pl.SetOp(btypes.ReconcilerOperationReopen)
 		}
 
@@ -212,10 +212,10 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		// applied, which would mean delta.Undraft is set, or because the UI
 		// publication state has been changed, for which we need to compare the
 		// current changeset state against the desired state.
-		if btypes.ExternalServiceSupports(ch.ExternalServiceType, btypes.CodehostCapabilityDraftChangesets) {
+		if btypes.ExternalServiceSupports(wantedChangeset.ExternalServiceType, btypes.CodehostCapabilityDraftChangesets) {
 			if delta.Undraft {
 				pl.AddOp(btypes.ReconcilerOperationUndraft)
-			} else if calc := calculatePublicationState(currentSpec.Spec.Published, ch.UiPublicationState); calc.IsPublished() && ch.ExternalState == btypes.ChangesetExternalStateDraft {
+			} else if calc := calculatePublicationState(currentSpec.Spec.Published, wantedChangeset.UiPublicationState); calc.IsPublished() && wantedChangeset.ExternalState == btypes.ChangesetExternalStateDraft {
 				pl.AddOp(btypes.ReconcilerOperationUndraft)
 			}
 		}
@@ -248,7 +248,7 @@ func DeterminePlan(previousSpec, currentSpec *btypes.ChangesetSpec, ch *btypes.C
 		}
 
 	default:
-		return pl, errors.Errorf("unknown changeset publication state: %s", ch.PublicationState)
+		return pl, errors.Errorf("unknown changeset publication state: %s", wantedChangeset.PublicationState)
 	}
 
 	return pl, nil
