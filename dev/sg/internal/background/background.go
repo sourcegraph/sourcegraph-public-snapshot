@@ -36,9 +36,9 @@ func Run(ctx context.Context, job func(out *std.Output), verbose bool) {
 	jobs := loadFromContext(ctx)
 	jobs.wg.Add(1)
 	jobs.count.Add(1)
+	b := new(bytes.Buffer)
+	out := std.NewOutput(b, verbose)
 	go func() {
-		b := new(bytes.Buffer)
-		out := std.NewOutput(b, verbose)
 		job(out)
 		jobs.results <- b.String()
 	}()
@@ -51,7 +51,7 @@ func Wait(ctx context.Context, out *std.Output) {
 		return // no jobs registered
 	}
 
-	p := out.Pending(output.Styledf(output.StylePending, "waiting for remaining background jobs to complete (%d total)...", count))
+	out.VerboseLine(output.Styledf(output.StylePending, "Waiting for remaining background jobs to complete (%d total)...", count))
 
 	go func() {
 		for r := range jobs.results {
@@ -63,7 +63,7 @@ func Wait(ctx context.Context, out *std.Output) {
 	}()
 
 	jobs.wg.Wait()
-	p.Destroy()
+
 	close(jobs.results)
 
 	out.VerboseLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
