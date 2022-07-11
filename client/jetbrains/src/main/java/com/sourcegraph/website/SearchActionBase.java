@@ -21,11 +21,11 @@ import java.io.IOException;
 import java.net.URI;
 
 public abstract class SearchActionBase extends DumbAwareAction {
-    public void actionPerformedMode(AnActionEvent e, @NotNull Scope scope) {
+    public void actionPerformedMode(AnActionEvent event, @NotNull Scope scope) {
         Logger logger = Logger.getInstance(this.getClass());
 
         // Get project, editor, document, file, and position information.
-        final Project project = e.getProject();
+        final Project project = event.getProject();
         if (project == null) {
             return;
         }
@@ -54,11 +54,11 @@ public abstract class SearchActionBase extends DumbAwareAction {
             branchName = repoInfo.branchName;
         }
 
-        String uri = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
+        String url = URLBuilder.buildEditorSearchUrl(project, selectedText, remoteUrl, branchName);
 
         // Open the URL in the browser.
         try {
-            Desktop.getDesktop().browse(URI.create(uri));
+            Desktop.getDesktop().browse(URI.create(url));
         } catch (IOException err) {
             logger.debug("failed to open browser");
             err.printStackTrace();
