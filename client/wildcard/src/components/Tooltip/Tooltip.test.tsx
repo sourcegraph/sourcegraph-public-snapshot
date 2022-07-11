@@ -38,7 +38,7 @@ describe('Tooltip', () => {
         userEvent.hover(rendered.getByTestId('trigger-1'))
 
         await waitFor(() => {
-            expect(rendered.getByTestId('trigger-1')).toHaveAttribute('aria-describedby', 'radix-0')
+            expect(rendered.getByTestId('trigger-1')).toHaveAttribute('aria-describedby', 'radix-:r0:')
             expect(rendered.getByTestId('trigger-2')).not.toHaveAttribute('aria-describedby')
 
             // Should be one tooltip for visual users, and a second for use with aria-describedby
@@ -53,7 +53,7 @@ describe('Tooltip', () => {
 
         await waitFor(() => {
             expect(rendered.getByTestId('trigger-1')).not.toHaveAttribute('aria-describedby')
-            expect(rendered.getByTestId('trigger-2')).toHaveAttribute('aria-describedby', 'radix-1')
+            expect(rendered.getByTestId('trigger-2')).toHaveAttribute('aria-describedby', 'radix-:r1:')
 
             // Should be one tooltip for visual users, and a second for use with aria-describedby
             const tooltips = rendered.getAllByRole('tooltip')
