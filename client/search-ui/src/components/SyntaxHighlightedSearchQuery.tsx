@@ -91,7 +91,7 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
     React.PropsWithChildren<SyntaxHighlightedSearchQueryProps>
 > = ({ query, searchPatternType, ...otherProps }) => {
     const tokens = useMemo(() => {
-        const tokens = searchPatternType ? scanSearchQuery(query) : scanSearchQuery(query, false, searchPatternType)
+        const tokens = searchPatternType ? scanSearchQuery(query, false, searchPatternType) : scanSearchQuery(query)
         return tokens.type === 'success'
             ? tokens.term.flatMap(token =>
                   decorate(token).map(token => {

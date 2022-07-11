@@ -1,6 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
+import { SearchPatternType } from '@sourcegraph/search'
 import { Text } from '@sourcegraph/wildcard'
 
 import { SyntaxHighlightedSearchQuery } from './SyntaxHighlightedSearchQuery'
@@ -23,6 +24,8 @@ export const SyntaxHighlightedSearchQueryStory: Story = () => (
                 <SyntaxHighlightedSearchQuery query="test or spec repo:sourcegraph" />
                 <br />
                 <SyntaxHighlightedSearchQuery query="test -lang:ts" />
+                <br />
+                <SyntaxHighlightedSearchQuery query="/func.*parse/" searchPatternType={SearchPatternType.standard} />
             </Text>
         )}
     </BrandedStory>
