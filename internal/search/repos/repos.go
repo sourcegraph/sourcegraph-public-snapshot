@@ -113,48 +113,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
-	var (
-		dependencyNames        []string
-		dependencyRevs         = map[api.RepoName][]search.RevisionSpecifier{}
-		dependencyNotFoundRevs = map[api.RepoName][]search.RevisionSpecifier{}
-	)
-
-	if len(op.Dependencies) > 0 {
-		depNames, depRevs, notFoundRevs, err := r.dependencies(ctx, &op)
-		if err != nil {
-			return Resolved{}, err
-		}
-
-		dependencyNames = append(dependencyNames, depNames...)
-		for repo, revs := range depRevs {
-			if _, ok := dependencyRevs[repo]; !ok {
-				dependencyRevs[repo] = revs
-			} else {
-				dependencyRevs[repo] = append(dependencyRevs[repo], revs...)
-			}
-		}
-
-		dependencyNotFoundRevs = notFoundRevs
-	}
-
-	if len(op.Dependents) > 0 {
-		revDepNames, revDepRevs, err := r.dependents(ctx, &op)
-		if err != nil {
-			return Resolved{}, err
-		}
-
-		dependencyNames = append(dependencyNames, revDepNames...)
-		for repo, revs := range revDepRevs {
-			if _, ok := dependencyRevs[repo]; !ok {
-				dependencyRevs[repo] = revs
-			} else {
-				dependencyRevs[repo] = append(dependencyRevs[repo], revs...)
-			}
-		}
-	}
-
-	if (len(op.Dependencies) > 0 || len(op.Dependents) > 0) && len(dependencyNames) == 0 {
-		return Resolved{}, ErrNoResolvedRepos
+	dependencyNames, dependencyRevs, dependencyNotFoundRevs, err := r.fetchDependencyInfo(ctx, &op)
+	if err != nil {
+		return Resolved{}, err
 	}
 
 	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, op.SearchContextSpec)
@@ -518,6 +479,56 @@ func computeExcludedRepos(ctx context.Context, db database.DB, op search.RepoOpt
 	}
 
 	return excluded.ExcludedRepos, g.Wait()
+}
+
+func (r *Resolver) fetchDependencyInfo(ctx context.Context, op *search.RepoOptions) (
+	dependencyNames []string,
+	dependencyRevs map[api.RepoName][]search.RevisionSpecifier,
+	dependencyNotFoundRevs map[api.RepoName][]search.RevisionSpecifier,
+	err error,
+) {
+	dependencyRevs = map[api.RepoName][]search.RevisionSpecifier{}
+	dependencyNotFoundRevs = map[api.RepoName][]search.RevisionSpecifier{}
+
+	if len(op.Dependencies) > 0 {
+		depNames, depRevs, notFoundRevs, err := r.dependencies(ctx, op)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		dependencyNames = append(dependencyNames, depNames...)
+		for repo, revs := range depRevs {
+			if _, ok := dependencyRevs[repo]; !ok {
+				dependencyRevs[repo] = revs
+			} else {
+				dependencyRevs[repo] = append(dependencyRevs[repo], revs...)
+			}
+		}
+
+		dependencyNotFoundRevs = notFoundRevs
+	}
+
+	if len(op.Dependents) > 0 {
+		revDepNames, revDepRevs, err := r.dependents(ctx, op)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+
+		dependencyNames = append(dependencyNames, revDepNames...)
+		for repo, revs := range revDepRevs {
+			if _, ok := dependencyRevs[repo]; !ok {
+				dependencyRevs[repo] = revs
+			} else {
+				dependencyRevs[repo] = append(dependencyRevs[repo], revs...)
+			}
+		}
+	}
+
+	if (len(op.Dependencies) > 0 || len(op.Dependents) > 0) && len(dependencyNames) == 0 {
+		return nil, nil, nil, ErrNoResolvedRepos
+	}
+
+	return dependencyNames, dependencyRevs, dependencyNotFoundRevs, nil
 }
 
 // dependencies resolves `repo:dependencies` predicates to a specific list of
