@@ -103,6 +103,10 @@ This job executes the bulk operations in the background.
 
 This job runs the workspace resolutions for batch specs. Used for batch changes that are running server-side.
 
+#### `gitserver-metrics`
+
+This job runs queries against the database pertaining to generate `gitserver` metrics. These queries are generally expensive to run and do not need to be run per-instance of `gitserver` so the worker allows them to only be run once per scrape.
+
 ## Deploying workers
 
 By default, all of the jobs listed above are registered to a single instance of the `worker` service. For Sourcegraph instances operating over large data (e.g., a high number of repositories, large monorepos, high commit frequency, or regular precise code intelligence index uploads), a single `worker` instance may experience low throughput or stability issues.

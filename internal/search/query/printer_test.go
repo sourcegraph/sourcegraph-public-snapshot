@@ -27,4 +27,11 @@ func TestStringHuman(t *testing.T) {
 	autogold.Want("12", "((repo:foo OR repo:bar file:a) OR ((repo:baz OR repo:qux file:b) AND a AND b))").Equal(t, test("(repo:foo or repo:bar file:a) or (repo:baz or repo:qux and file:b) a and b"))
 	autogold.Want("13", "repo:foo ((NOT b) AND (NOT c) AND a)").Equal(t, test("repo:foo a -content:b -content:c"))
 	autogold.Want("14", "-repo:modspeed -file:pogspeed ((NOT Phoenicians) AND Arizonan)").Equal(t, test("-repo:modspeed -file:pogspeed Arizonan -content:Phoenicians"))
+
+	test = func(input string) string {
+		q, _ := ParseRegexp(input)
+		return StringHuman(q)
+	}
+
+	autogold.Want("15", "/bo/u\\gros/").Equal(t, test(`bo/u\gros`))
 }

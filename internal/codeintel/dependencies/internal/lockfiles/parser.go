@@ -20,7 +20,7 @@ func wrapNonGraphParser(f nonGraphParser) parser {
 
 var parsers = map[string]parser{
 	"package-lock.json": wrapNonGraphParser(parsePackageLockFile),
-	"yarn.lock":         wrapNonGraphParser(parseYarnLockFile),
+	"yarn.lock":         parseYarnLockFile,
 	"go.mod":            wrapNonGraphParser(parseGoModFile),
 	"poetry.lock":       wrapNonGraphParser(parsePoetryLockFile),
 	"Pipfile.lock":      wrapNonGraphParser(parsePipfileLockFile),

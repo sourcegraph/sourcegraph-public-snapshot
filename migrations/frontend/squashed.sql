@@ -3555,7 +3555,11 @@ CREATE INDEX changesets_publication_state_idx ON changesets USING btree (publica
 
 CREATE INDEX changesets_reconciler_state_idx ON changesets USING btree (reconciler_state);
 
+CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
+
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
+
+CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
 
@@ -3615,7 +3619,7 @@ CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (e
 
 CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE (org_id IS NOT NULL);
 
-CREATE INDEX external_service_sync_jobs_state_idx ON external_service_sync_jobs USING btree (state);
+CREATE INDEX external_service_sync_jobs_state_external_service_id ON external_service_sync_jobs USING btree (state, external_service_id) INCLUDE (finished_at);
 
 CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE (user_id IS NOT NULL);
 
@@ -3738,6 +3742,8 @@ CREATE INDEX repo_archived ON repo USING btree (archived);
 CREATE INDEX repo_blocked_idx ON repo USING btree (((blocked IS NOT NULL)));
 
 CREATE INDEX repo_created_at ON repo USING btree (created_at);
+
+CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops);
 
 CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
 

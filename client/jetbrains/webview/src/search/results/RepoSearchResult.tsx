@@ -13,16 +13,23 @@ export interface RepoSearchResultProps {
     match: RepositoryMatch
     selectedResult: null | string
     selectResult: (id: string) => void
+    openResult: (id: string) => void
 }
 
 export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = ({
     match,
     selectedResult,
     selectResult,
+    openResult,
 }) => {
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
     return (
-        <SelectableSearchResult match={match} selectResult={selectResult} selectedResult={selectedResult}>
+        <SelectableSearchResult
+            match={match}
+            selectedResult={selectedResult}
+            selectResult={selectResult}
+            openResult={openResult}
+        >
             {isActive => (
                 <SearchResultLayout
                     iconColumn={{ icon: SourceRepositoryIcon, repoName: match.repository }}

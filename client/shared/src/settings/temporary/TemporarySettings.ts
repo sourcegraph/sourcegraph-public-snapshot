@@ -15,7 +15,6 @@ export interface TemporarySettingsSchema {
     'search.collapsedSidebarSections': { [key in SectionID]?: boolean }
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
-    'search.contexts.ctaDismissed': boolean
     'search.notepad.enabled': boolean
     'search.notepad.ctaSeen': boolean
     'search.notebooks.gettingStartedTabSeen': boolean

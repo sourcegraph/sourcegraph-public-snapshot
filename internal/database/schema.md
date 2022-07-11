@@ -417,6 +417,7 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
+    "cm_action_jobs_state_idx" btree (state)
 Check constraints:
     "cm_action_jobs_only_one_action_type" CHECK ((
 CASE
@@ -615,6 +616,7 @@ Slack webhook actions configured on code monitors
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
+    "cm_trigger_jobs_state_idx" btree (state)
 Check constraints:
     "search_results_is_array" CHECK (jsonb_typeof(search_results) = 'array'::text)
 Foreign-key constraints:
@@ -1026,7 +1028,7 @@ Foreign-key constraints:
  last_heartbeat_at   | timestamp with time zone |           |          | 
  queued_at           | timestamp with time zone |           |          | now()
 Indexes:
-    "external_service_sync_jobs_state_idx" btree (state)
+    "external_service_sync_jobs_state_external_service_id" btree (state, external_service_id) INCLUDE (finished_at)
 Foreign-key constraints:
     "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
 
@@ -2258,6 +2260,7 @@ Indexes:
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
+    "repo_description_trgm_idx" gin (lower(description) gin_trgm_ops)
     "repo_fork" btree (fork)
     "repo_hashed_name_idx" btree (sha256(lower(name::text)::bytea)) WHERE deleted_at IS NULL
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))

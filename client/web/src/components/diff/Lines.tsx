@@ -6,7 +6,7 @@ import { DecorationAttachmentRenderOptions, ThemableDecorationStyle } from 'sour
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { decorationAttachmentStyleForTheme } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { createLinkUrl, RouterLink } from '@sourcegraph/wildcard'
+import { createLinkUrl, RouterLink, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType } from '../../graphql-operations'
 
@@ -112,14 +112,11 @@ export const Line: React.FunctionComponent<React.PropsWithChildren<Line>> = ({
                         return (
                             <React.Fragment key={index}>
                                 {' '}
-                                <LinkOrSpan
-                                    className="d-inline-block"
-                                    to={decoration.after.linkURL}
-                                    data-tooltip={decoration.after.hoverMessage}
-                                    style={style}
-                                >
-                                    {decoration.after.contentText}
-                                </LinkOrSpan>
+                                <Tooltip content={decoration.after.hoverMessage}>
+                                    <LinkOrSpan className="d-inline-block" to={decoration.after.linkURL} style={style}>
+                                        {decoration.after.contentText}
+                                    </LinkOrSpan>
+                                </Tooltip>
                             </React.Fragment>
                         )
                     })}

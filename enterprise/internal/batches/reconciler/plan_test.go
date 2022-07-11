@@ -198,6 +198,18 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 			wantOperations: Operations{},
 		},
 		{
+			name:         "publishing read-only changeset",
+			previousSpec: &ct.TestSpecOpts{Published: true},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateReadOnly,
+				UiPublicationState: &btypes.ChangesetUiPublicationStateDraft,
+			},
+			// We expect a no-op here.
+			wantOperations: Operations{},
+		},
+		{
 			name:         "title changed on published changeset",
 			previousSpec: &ct.TestSpecOpts{Published: true, Title: "Before"},
 			currentSpec:  &ct.TestSpecOpts{Published: true, Title: "After"},
@@ -205,6 +217,17 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				PublicationState: btypes.ChangesetPublicationStatePublished,
 			},
 			wantOperations: Operations{btypes.ReconcilerOperationUpdate},
+		},
+		{
+			name:         "title changed on read-only changeset",
+			previousSpec: &ct.TestSpecOpts{Published: true, Title: "Before"},
+			currentSpec:  &ct.TestSpecOpts{Published: true, Title: "After"},
+			changeset: ct.TestChangesetOpts{
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalState:    btypes.ChangesetExternalStateReadOnly,
+			},
+			// We expect a no-op here.
+			wantOperations: Operations{},
 		},
 		{
 			name:         "commit diff changed on published changeset",
@@ -289,6 +312,21 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 				// TODO: This should probably be a noop in the future
 				btypes.ReconcilerOperationClose,
 			},
+		},
+		{
+			name:         "closing read-only changeset",
+			previousSpec: &ct.TestSpecOpts{Published: true},
+			currentSpec:  &ct.TestSpecOpts{Published: true},
+			changeset: ct.TestChangesetOpts{
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateReadOnly,
+				OwnedByBatchChange: 1234,
+				BatchChanges:       []btypes.BatchChangeAssoc{{BatchChangeID: 1234}},
+				// Important bit:
+				Closing: true,
+			},
+			// should be a noop
+			wantOperations: Operations{},
 		},
 		{
 			name:         "detaching",

@@ -1,13 +1,8 @@
 # Indexing a C++ repository with LSIF
 
-This guide walks through setting up LSIF generation for a C++ codebase using
-[`lsif-clang`](https://github.com/sourcegraph/lsif-clang). These instructions should apply to any
-C++ project that is buildable with `clang` or `clang++`. (This should also cover most projects built
-with `gcc` or `g++`.)
+For C and C++ code, we recommend following the steps in the [lsif-clang](https://github.com/sourcegraph/lsif-clang/#usage) repository. They describe how you can use a prebuilt binary bundle or build `lsif-clang` from source. Those are easier to set up compared to using Docker. However, we describe how to use Docker as an alternative approach below.
 
 ## Local dev setup
-
-### With Docker (recommended)
 
 1. Copy the files in the [`lsif-docker` directory of
    sourcegraph/tesseract](https://github.com/sourcegraph/tesseract/tree/master/lsif-docker) to a
@@ -77,37 +72,6 @@ For reference, some examples of Dockerized C++ LSIF generation are:
 * [`github.com/google/tcmalloc`](https://github.com/sourcegraph/tcmalloc/tree/master/docker)
 * [`github.com/tesseract-ocr/tesseract`](https://github.com/sourcegraph/tesseract/tree/master/lsif-docker)
 
-### Without Docker
-
-It can sometimes be difficult to replicate the build environment inside a separate Docker
-container. If this situation applies to you, you'll need to install `lsif-clang` directly to your
-local dev environment.
-
-1. Install `lsif-clang` in your environment using the [instructions in the `lsif-clang`
-   repository](https://github.com/sourcegraph/lsif-clang/blob/main/docs/install.md).
-
-1. [Install the `src` CLI](https://github.com/sourcegraph/src-cli).
-
-1. You'll need a way to generate a compilation database (i.e., a `compile_commands.json`
-   file). There are different methods of doing so depending on your build tool, and we recommend
-   reading [these excellent
-   notes](https://sarcasm.github.io/notes/dev/compilation-database.html). If there isn't an explicit
-   way to generate one with your build tool, we recommend using
-   [Bear](https://github.com/rizsotto/Bear), which should be generic enough to handle any C++ build
-   (but might be less efficient than explicit generation methods).
-
-1. Generate the `compile_commands.json` file in the root directory of the repository.
-
-1. Run `lsif-clang compile_commands.json` from the root directory. This should emit a `dump.lsif`
-   file.
-
-1. Run `src code-intel upload` from the root directory. You may first have to [authenticate to your
-   Sourcegraph instance](https://github.com/sourcegraph/src-cli#log-into-your-sourcegraph-instance).
-
-If you run into issues along the way, a useful reference is [one of the
-`Dockerfile`s](https://github.com/sourcegraph/tesseract/blob/master/lsif-docker/Dockerfile)
-currently used for LSIF generation for an open-source repository.
-
 ## CI setup
 
 Incorporating LSIF generation and uploading in CI will allow precise code navigation to remain
@@ -116,12 +80,7 @@ up-to-date without any human intervention.
 If you created a `Dockerfile` that encapsulates LSIF generation, you can use the same one in your CI
 pipeline.
 
-If you installed `lsif-clang` directly into your host machine in development, you'll need to
-incorporate those steps into your build scripts.
-
 ## Troubleshooting
-
-### With Docker
 
 If the `docker run` command fails, you likely have an error in one of the `lsif-docker/*.sh`
 files. The general rule is if you can get your project to build normally (i.e., generate an
