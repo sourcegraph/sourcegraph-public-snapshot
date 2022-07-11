@@ -9,16 +9,16 @@ import { GET_LICENSE_AND_USAGE_INFO } from './list/backend'
 
 export interface LicenseAlertProps {
     variant?: AlertProps['variant']
-    // By default, the license is enough to determine to display alert. There may be cases where additional information
-    // is needed to determine to show the alert.
-    additionalCondition?: boolean
+    // By default, the license is enough to determine to display alert. There may be cases where the total number of
+    // changesets need to be checked against the max allowed.
+    totalChangesetCount?: number
     // Allows the ability to apply additional logic to the parent component (such as disabling a button).
     onLicenseRetrieved?: (data: GetLicenseAndUsageInfoResult) => void
 }
 
 export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<LicenseAlertProps>> = ({
     variant = 'info',
-    additionalCondition = true,
+    totalChangesetCount,
     onLicenseRetrieved,
 }) => {
     const { data: licenseAndUsageInfo } = useQuery<GetLicenseAndUsageInfoResult, GetLicenseAndUsageInfoVariables>(
@@ -29,7 +29,11 @@ export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<Licen
     if (!licenseAndUsageInfo) {
         return <></>
     }
-    if (!licenseAndUsageInfo.batchChanges && !licenseAndUsageInfo.campaigns && additionalCondition) {
+
+    // If totalChangesetCount is not provided then display the alert simply based on if the feature is enabled in the
+    // license.
+    const exceedsLimit = totalChangesetCount ? totalChangesetCount > licenseAndUsageInfo.maxUnlicensedChangesets : true
+    if (!licenseAndUsageInfo.batchChanges && !licenseAndUsageInfo.campaigns && exceedsLimit) {
         return (
             <Alert variant={variant}>
                 <div className="mb-2">
