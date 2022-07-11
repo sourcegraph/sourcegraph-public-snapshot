@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.net.URI;
 
 public abstract class SearchActionBase extends DumbAwareAction {
-    public void actionPerformedMode(AnActionEvent event, @NotNull Scope scope) {
+    public void actionPerformedMode(@NotNull AnActionEvent event, @NotNull Scope scope) {
         Logger logger = Logger.getInstance(this.getClass());
 
         // Get project, editor, document, file, and position information.
