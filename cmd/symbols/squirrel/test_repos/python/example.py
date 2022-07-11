@@ -26,6 +26,10 @@ def f(x):
         #   v py.f.e ref
         _ = e
 
+    #          vvv py.f.lam def
+    #               vvv py.f.lam ref
+    _ = lambda lam: lam
+
     #   v py.f.y ref
     #       vv py.f.l1 ref
     #            vv py.f.l2 ref

@@ -56,6 +56,29 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 				}
 				continue
 
+			case "lambda":
+				// Check the parameters
+				query := `
+					(lambda parameters:
+						(lambda_parameters [
+							(identifier) @ident
+							(default_parameter name: (identifier) @ident)
+							(list_splat_pattern (identifier) @ident)
+							(dictionary_splat_pattern (identifier) @ident)
+						])
+					)
+				`
+				captures, err := allCaptures(query, swapNode(node, cur))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == ident {
+						return swapNodePtr(node, capture.Node), nil
+					}
+				}
+				continue
+
 			case "function_definition":
 				// Check the function name and parameters
 				query := `[
