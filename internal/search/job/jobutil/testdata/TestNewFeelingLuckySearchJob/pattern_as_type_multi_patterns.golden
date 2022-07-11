@@ -4,7 +4,7 @@
     "Query": "context:global type:commit code monitor"
   },
   {
-    "Description": "apply search type for pattern and AND patterns together",
+    "Description": "apply search type for pattern ⚬ AND patterns together",
     "Query": "context:global type:commit (code AND monitor)"
   },
   {
