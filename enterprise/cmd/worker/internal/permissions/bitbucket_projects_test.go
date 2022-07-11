@@ -56,7 +56,6 @@ func mustParseTime(v string) time.Time {
 
 func TestGetBitbucketClient(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
 	var c schema.BitbucketServerConnection
 	c.Token = "secret"
@@ -71,7 +70,7 @@ func TestGetBitbucketClient(t *testing.T) {
 	}
 
 	var handler bitbucketProjectPermissionsHandler
-	client, err := handler.getBitbucketClient(ctx, &svc)
+	client, err := handler.getBitbucketClient(&svc)
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }
@@ -153,6 +152,11 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	extSvc := &types.ExternalService{
+		ID:   1,
+		Kind: extsvc.KindBitbucketServer,
+	}
+
 	check := func() {
 		// check that the permissions were set
 		perms := db.Perms()
@@ -174,15 +178,37 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		}, up.IDs)
 	}
 
+	checkPendingPerms := func(bindIDs []string) {
+		perms := db.Perms()
+
+		for _, bindID := range bindIDs {
+			userPerms := &authz.UserPendingPermissions{
+				ServiceType: extsvc.TypeBitbucketServer,
+				ServiceID:   "1",
+				BindID:      bindID,
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
+			}
+
+			err := perms.LoadUserPendingPermissions(ctx, userPerms)
+			require.NoError(t, err)
+			require.Equal(t, map[int32]struct{}{
+				1: {},
+				2: {},
+			}, userPerms.IDs)
+		}
+	}
+
 	h := bitbucketProjectPermissionsHandler{db: db}
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
 	err = h.setPermissionsForUsers(
 		ctx,
+		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -192,15 +218,17 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	check()
+	checkPendingPerms([]string{"username1@foo.bar"})
 
 	// run the same set of permissions again, shouldn't change anything
 	err = h.setPermissionsForUsers(
 		ctx,
+		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -210,15 +238,17 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	check()
+	checkPendingPerms([]string{"username1@foo.bar"})
 
-	// test with wrong bindids
+	// test with only non-existent users
 	err = h.setPermissionsForUsers(
 		ctx,
+		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
-			{BindID: "pushpa", Permission: "read"},
-			{BindID: "igor", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
+			{BindID: "username2@foo.bar", Permission: "read"},
+			{BindID: "username3@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -227,7 +257,8 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		"foo",
 	)
 	// should fail if the bind ids are wrong
-	require.Error(t, err)
+	require.NoError(t, err)
+	checkPendingPerms([]string{"username1@foo.bar", "username2@foo.bar", "username3@foo.bar"})
 
 	// ensure this unsets the unrestricted flag
 	_, err = db.ExecContext(ctx, "UPDATE repo_permissions SET unrestricted = true WHERE repo_id = 1")
@@ -236,11 +267,12 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again
 	err = h.setPermissionsForUsers(
 		ctx,
+		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
