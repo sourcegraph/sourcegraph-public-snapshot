@@ -133,22 +133,32 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         }
     }, [isWorkspacesPreviewInProgress, start, stop])
 
-    const ctaButton = isWorkspacesPreviewInProgress ? (
-        <Button className="mt-2 mb-2" variant="secondary" onClick={cancel}>
-            Cancel
-        </Button>
-    ) : (
-        <Tooltip content={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}>
-            <Button
-                className="mt-2 mb-2"
-                variant="success"
-                disabled={!!isPreviewDisabled}
-                onClick={() => preview(debouncedCode)}
+    // We use the same `<Button />` and just swap props so that we keep the same element
+    // hierarchy when the preview is in progress as when it is not. We do this in order to
+    // maintain focus on the button between state changes.
+    const ctaButton = useMemo(
+        () => (
+            <Tooltip
+                content={
+                    !isWorkspacesPreviewInProgress && typeof isPreviewDisabled === 'string'
+                        ? isPreviewDisabled
+                        : undefined
+                }
             >
-                <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
-                {error ? 'Retry preview' : 'Preview workspaces'}
-            </Button>
-        </Tooltip>
+                <Button
+                    variant={isWorkspacesPreviewInProgress ? 'secondary' : 'success'}
+                    onClick={isWorkspacesPreviewInProgress ? cancel : () => preview(debouncedCode)}
+                    // The "Cancel" button is always enabled while the preview is in progress
+                    disabled={!isWorkspacesPreviewInProgress && !!isPreviewDisabled}
+                >
+                    {!isWorkspacesPreviewInProgress && (
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
+                    )}
+                    {isWorkspacesPreviewInProgress ? 'Cancel' : error ? 'Retry preview' : 'Preview workspaces'}
+                </Button>
+            </Tooltip>
+        ),
+        [isWorkspacesPreviewInProgress, isPreviewDisabled, cancel, preview, debouncedCode, error]
     )
 
     const [exampleReference, exampleOpen, setExampleOpen, exampleStyle] = useAccordion()
