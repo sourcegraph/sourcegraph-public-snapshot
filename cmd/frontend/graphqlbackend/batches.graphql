@@ -713,6 +713,10 @@ enum ChangesetSpecOperation {
     The changeset is kept in the batch change, but it's marked as archived.
     """
     ARCHIVE
+    """
+    The changeset is re-added to the batch change.
+    """
+    REATTACH
 }
 
 """
@@ -1178,40 +1182,39 @@ Aggregated stats on nodes in this connection.
 """
 type ChangesetApplyPreviewConnectionStats {
     """
-    Push a new commit to the code host.
+    The amount of new commits from the batch change in this operation.
     """
     push: Int!
     """
-    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
-    not the git commit. For updates to the commit, see 'PUSH'.
+    The amount of existing changeset that will be updated from the batch change in this operation.
     """
     update: Int!
     """
-    Move the existing changeset out of being a draft.
+    The amount of changesets that will be un-drafted from the batch change in this operation.
     """
     undraft: Int!
     """
-    Publish a changeset to the codehost.
+    The amount of changesets that will be pubished from the batch change in this operation.
     """
     publish: Int!
     """
-    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    The amount of changesets that will be published as a draft from the batch change in this operation.
     """
     publishDraft: Int!
     """
-    Sync the changeset with the current state on the codehost.
+    The amount of changesets that will be synced from the batch change in this operation.
     """
     sync: Int!
     """
-    Import an existing changeset from the code host with the ExternalID from the spec.
+    The amount of changesets that will be imported from the batch change in this operation.
     """
     import: Int!
     """
-    Close the changeset on the codehost.
+    The amount of changesets that will be closed from the batch change in this operation.
     """
     close: Int!
     """
-    Reopen the changeset on the codehost.
+    The amount of changesets that will be re-opened from the batch change in this operation.
     """
     reopen: Int!
     """
@@ -1219,11 +1222,11 @@ type ChangesetApplyPreviewConnectionStats {
     """
     sleep: Int!
     """
-    The changeset is removed from some of the associated batch changes.
+    The amount of changesets that will be removed from the batch change in this operation.
     """
     detach: Int!
     """
-    The changeset will still be attached to the batch change but marked as archived.
+    The amount of changesets that will be archived from the batch change in this operation.
     """
     archive: Int!
     """
@@ -1238,6 +1241,10 @@ type ChangesetApplyPreviewConnectionStats {
     The amount of changesets that are disassociated from the batch change in this operation.
     """
     removed: Int!
+    """
+    The amount of changesets that will be re-added from the batch change in this operation.
+    """
+    reattach: Int!
 }
 
 """

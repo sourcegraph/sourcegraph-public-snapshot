@@ -843,6 +843,7 @@ describe('Batches', () => {
                                     reopen: 10,
                                     undraft: 10,
                                     update: 10,
+                                    reattach: 10,
                                     archive: 18,
                                     added: 5,
                                     modified: 10,

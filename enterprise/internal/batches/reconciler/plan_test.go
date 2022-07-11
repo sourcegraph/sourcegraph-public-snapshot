@@ -447,7 +447,7 @@ func TestDetermineReconcilerPlan(t *testing.T) {
 
 			cs := ct.BuildChangeset(tc.changeset)
 
-			plan, err := DeterminePlan(previousSpec, currentSpec, cs)
+			plan, err := DeterminePlan(previousSpec, currentSpec, nil, cs)
 			if err != nil {
 				t.Fatal(err)
 			}
