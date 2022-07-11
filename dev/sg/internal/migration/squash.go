@@ -144,7 +144,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 	defer block.Close()
 
 	for _, filename := range filenames {
-		block.Writef("Deleted: %s", filename)
+		block.Writef("Deleted: %s", rootRelative(filename))
 	}
 
 	for _, files := range files {
