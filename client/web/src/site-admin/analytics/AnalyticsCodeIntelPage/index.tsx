@@ -1,5 +1,4 @@
-/* eslint-disable react/forbid-dom-props */
-import React, { useMemo, useState } from 'react'
+import React, { useMemo, useState, useEffect } from 'react'
 
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
@@ -7,17 +6,22 @@ import { RouteComponentProps } from 'react-router'
 import { useQuery } from '@sourcegraph/http-client'
 import { Card, H3, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
 
-import { LineChart, Series } from '../../charts'
-import { AnalyticsDateRange, CodeIntelStatisticsResult, CodeIntelStatisticsVariables } from '../../graphql-operations'
+import { LineChart, Series } from '../../../charts'
+import {
+    AnalyticsDateRange,
+    CodeIntelStatisticsResult,
+    CodeIntelStatisticsVariables,
+} from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
+import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
+import { ChartContainer } from '../components/ChartContainer'
+import { HorizontalSelect } from '../components/HorizontalSelect'
+import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
+import { ToggleSelect } from '../components/ToggleSelect'
+import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
+import { StandardDatum, buildStandardDatum } from '../utils'
 
-import { AnalyticsPageTitle } from './components/AnalyticsPageTitle'
-import { ChartContainer } from './components/ChartContainer'
-import { HorizontalSelect } from './components/HorizontalSelect'
-import { TimeSavedCalculatorGroup } from './components/TimeSavedCalculatorGroup'
-import { ToggleSelect } from './components/ToggleSelect'
-import { ValueLegendList, ValueLegendListProps } from './components/ValueLegendList'
 import { CODEINTEL_STATISTICS } from './queries'
-import { StandardDatum, buildStandardDatum } from './utils'
 
 import styles from './index.module.scss'
 
@@ -32,6 +36,9 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             },
         }
     )
+    useEffect(() => {
+        eventLogger.logPageView('AdminAnalyticsCodeIntel')
+    }, [])
     const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []

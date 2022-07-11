@@ -89,9 +89,9 @@ function toDecoration(query: string, token: DecoratedToken): decoration {
 // A read-only syntax highlighted search query
 export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
     React.PropsWithChildren<SyntaxHighlightedSearchQueryProps>
-> = ({ query, searchPatternType = SearchPatternType.standard, ...otherProps }) => {
+> = ({ query, searchPatternType, ...otherProps }) => {
     const tokens = useMemo(() => {
-        const tokens = scanSearchQuery(query)
+        const tokens = searchPatternType ? scanSearchQuery(query) : scanSearchQuery(query, false, searchPatternType)
         return tokens.type === 'success'
             ? tokens.term.flatMap(token =>
                   decorate(token).map(token => {
@@ -104,7 +104,7 @@ export const SyntaxHighlightedSearchQuery: React.FunctionComponent<
                   })
               )
             : [<Fragment key="0">{query}</Fragment>]
-    }, [query])
+    }, [query, searchPatternType])
 
     return (
         <span {...otherProps} className={classNames('text-monospace search-query-link', otherProps.className)}>
