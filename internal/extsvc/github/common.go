@@ -585,10 +585,7 @@ func (c *V4Client) CreatePullRequest(ctx context.Context, in *CreatePullRequestI
 	input := map[string]any{"input": compatibleInput}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		if isPullRequestAlreadyExistsError(err) {
-			return nil, ErrPullRequestAlreadyExists
-		}
-		return nil, err
+		return nil, handlePullRequestError(err)
 	}
 
 	ti := result.CreatePullRequest.PullRequest.TimelineItems
@@ -647,10 +644,7 @@ func (c *V4Client) UpdatePullRequest(ctx context.Context, in *UpdatePullRequestI
 	input := map[string]any{"input": in}
 	err = c.requestGraphQL(ctx, q.String(), input, &result)
 	if err != nil {
-		if isPullRequestAlreadyExistsError(err) {
-			return nil, ErrPullRequestAlreadyExists
-		}
-		return nil, err
+		return nil, handlePullRequestError(err)
 	}
 
 	ti := result.UpdatePullRequest.PullRequest.TimelineItems
@@ -1676,6 +1670,18 @@ func (e ErrPullRequestNotFound) Error() string {
 	return fmt.Sprintf("GitHub pull request not found: %d", e)
 }
 
+// ErrRepoArchived is returned when a mutation is performed on an archived
+// repo.
+type ErrRepoArchived struct{}
+
+func (ErrRepoArchived) Archived() bool { return true }
+
+func (ErrRepoArchived) Error() string {
+	return "GitHub repository is archived"
+}
+
+func (ErrRepoArchived) NonRetryable() bool { return true }
+
 type disabledClient struct{}
 
 func (t disabledClient) Do(r *http.Request) (*http.Response, error) {
@@ -1964,10 +1970,30 @@ func normalizeURL(rawURL string) string {
 	return parsed.String()
 }
 
+func isArchivedError(err error) bool {
+	var errs graphqlErrors
+	if !errors.As(err, &errs) {
+		return false
+	}
+	return len(errs) == 1 &&
+		errs[0].Type == "UNPROCESSABLE" &&
+		strings.Contains(errs[0].Message, "Repository was archived")
+}
+
 func isPullRequestAlreadyExistsError(err error) bool {
 	var errs graphqlErrors
 	if !errors.As(err, &errs) {
 		return false
 	}
 	return len(errs) == 1 && strings.Contains(errs[0].Message, "A pull request already exists for")
+}
+
+func handlePullRequestError(err error) error {
+	if isArchivedError(err) {
+		return ErrRepoArchived{}
+	}
+	if isPullRequestAlreadyExistsError(err) {
+		return ErrPullRequestAlreadyExists
+	}
+	return err
 }
