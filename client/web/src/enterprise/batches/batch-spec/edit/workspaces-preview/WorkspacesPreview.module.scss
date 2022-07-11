@@ -49,13 +49,15 @@
     overflow-y: hidden;
 }
 
+.toggle-example-button-container {
+    display: inline-block;
+    width: 6rem;
+}
+
 .toggle-example-button {
-    line-height: 0.75rem;
     font-size: 0.75rem;
     padding: 0;
     border: none;
-    vertical-align: baseline;
-    width: 6rem;
 }
 
 .on-example {

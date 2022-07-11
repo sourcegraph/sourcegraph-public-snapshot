@@ -182,17 +182,15 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         <H4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</H4>
     ) : (
         <>
-            <H4 className={styles.instruction}>
-                {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
-                preview repositories.
+            <H4 className={classNames(styles.instruction, 'd-flex align-items-center')}>
+                {hasPreviewed ? 'Modify your' : 'Add an'}
+                <span className="text-monospace mx-1">on:</span> statement to preview repositories.
                 {!hasPreviewed && (
-                    <Button
-                        className={styles.toggleExampleButton}
-                        display="inline"
-                        onClick={() => setExampleOpen(!exampleOpen)}
-                    >
-                        {exampleOpen ? 'Close example' : 'See example'}
-                    </Button>
+                    <div className={styles.toggleExampleButtonContainer}>
+                        <Button className={styles.toggleExampleButton} onClick={() => setExampleOpen(!exampleOpen)}>
+                            {exampleOpen ? 'Close example' : 'See example'}
+                        </Button>
+                    </div>
                 )}
             </H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
