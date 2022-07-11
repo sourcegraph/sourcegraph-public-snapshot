@@ -280,7 +280,7 @@ New fields can be added to the existing migration metadata entry in the file `in
 
 This date may be known at the time the migration is created, in which case it is fine to set both the introduced and the deprecated fields at the same time.
 
-Note that it is not advised to set the deprecated version to the minor release of Sourcegraph directly following its introduction. This will not given site-admins enough warning on the previous version that updating with an unfinished migration may cause issues at startup or data loss.
+Note that it is not advised to set the deprecated version to the minor release of Sourcegraph directly following its introduction. This will not give site-admins enough warning on the previous version that updating with an unfinished migration may cause issues at startup or data loss.
 
 #### Step 6: Deprecation
 
