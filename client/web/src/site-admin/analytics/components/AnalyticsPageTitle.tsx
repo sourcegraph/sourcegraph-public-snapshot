@@ -4,7 +4,7 @@ import { mdiChartLineVariant, mdiInformationOutline } from '@mdi/js'
 
 import { Badge, H2, Icon, Tooltip } from '@sourcegraph/wildcard'
 
-export const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
+export const AnalyticsPageTitle: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
     <div className="d-flex justify-content-between align-items-start">
         <H2 className="mb-4 d-flex align-items-center">
             <Icon

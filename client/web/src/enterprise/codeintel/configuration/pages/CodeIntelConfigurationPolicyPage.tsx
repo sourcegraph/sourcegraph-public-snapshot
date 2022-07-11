@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { ApolloError } from '@apollo/client'
 import { mdiDelete } from '@mdi/js'
 import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'

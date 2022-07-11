@@ -23,7 +23,7 @@ interface TourContentProps {
     className?: string
 }
 
-const Header: React.FunctionComponent<{ onClose: () => void; title?: string }> = ({
+const Header: React.FunctionComponent<React.PropsWithChildren<{ onClose: () => void; title?: string }>> = ({
     children,
     onClose,
     title = 'Quick start',
@@ -36,7 +36,7 @@ const Header: React.FunctionComponent<{ onClose: () => void; title?: string }> =
     </div>
 )
 
-const Footer: React.FunctionComponent<{ completedCount: number; totalCount: number }> = ({
+const Footer: React.FunctionComponent<React.PropsWithChildren<{ completedCount: number; totalCount: number }>> = ({
     completedCount,
     totalCount,
 }) => (
@@ -50,7 +50,7 @@ const Footer: React.FunctionComponent<{ completedCount: number; totalCount: numb
     </Text>
 )
 
-const CompletedItem: React.FunctionComponent = ({ children }) => (
+const CompletedItem: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
     <li className="d-flex align-items-start">
         <Icon
             size="sm"
@@ -62,7 +62,7 @@ const CompletedItem: React.FunctionComponent = ({ children }) => (
     </li>
 )
 
-export const TourContent: React.FunctionComponent<TourContentProps> = ({
+export const TourContent: React.FunctionComponent<React.PropsWithChildren<TourContentProps>> = ({
     onClose,
     tasks,
     variant,
