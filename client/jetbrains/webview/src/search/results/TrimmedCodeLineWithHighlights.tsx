@@ -20,7 +20,7 @@ export const TrimmedCodeLineWithHighlights: React.FunctionComponent<Props> = Rea
         // The indices that we receive from the Sourcegraph API are unicode code pointer offsets
         // rather than byte lengths.
         //
-        // We use the spread syntax to properly split a string based into it's unicode code points.
+        // We use the spread syntax to properly split a string based into its unicode code points.
         //
         //   "🚀".length      // => 2
         //   [..."🚀"].length // => 1
