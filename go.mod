@@ -226,6 +226,7 @@ require (
 	github.com/pseudomuto/protoc-gen-doc v1.5.1 // indirect
 	github.com/pseudomuto/protokit v0.2.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
+	github.com/thanhpk/randstr v1.0.4 // indirect
 	github.com/tinylib/msgp v1.1.6 // indirect
 	github.com/yuin/goldmark v1.4.4 // indirect
 	github.com/yuin/goldmark-emoji v1.0.1 // indirect

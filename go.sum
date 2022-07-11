@@ -2248,6 +2248,8 @@ github.com/temoto/robotstxt v1.1.2 h1:W2pOjSJ6SWvldyEuiFXNxz3xZ8aiWX5LbfDiOFd7Fx
 github.com/temoto/robotstxt v1.1.2/go.mod h1:+1AmkuG3IYkh1kv0d2qEB9Le88ehNO0zwOr3ujewlOo=
 github.com/tetafro/godot v0.3.7/go.mod h1:/7NLHhv08H1+8DNj0MElpAACw1ajsCuf3TKNQxA5S+0=
 github.com/tetafro/godot v0.4.2/go.mod h1:/7NLHhv08H1+8DNj0MElpAACw1ajsCuf3TKNQxA5S+0=
+github.com/thanhpk/randstr v1.0.4 h1:IN78qu/bR+My+gHCvMEXhR/i5oriVHcTB/BJJIRTsNo=
+github.com/thanhpk/randstr v1.0.4/go.mod h1:M/H2P1eNLZzlDwAzpkkkUvoyNNMbzRGhESZuEQk3r0U=
 github.com/throttled/throttled/v2 v2.9.0 h1:DOkCb1el7NYzRoPb1pyeHVghsUoonVWEjmo34vrcp/8=
 github.com/throttled/throttled/v2 v2.9.0/go.mod h1:0JHxhGAidPyqbgD4HF8Y1sNFfG0ffVXK6C8EpkNdLEM=
 github.com/tidwall/btree v0.3.0/go.mod h1:huei1BkDWJ3/sLXmO+bsCNELL+Bp2Kks9OLyQFkzvA8=

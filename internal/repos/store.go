@@ -32,6 +32,9 @@ type Store interface {
 	// ExternalServiceStore returns a database.ExternalServiceStore using the same
 	// database handle.
 	ExternalServiceStore() database.ExternalServiceStore
+	// UserExternalAccountsStore returns a database.UserExternalAccountsStore using
+	// the same database handle.
+	UserExternalAccountsStore() database.UserExternalAccountsStore
 
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
@@ -95,7 +98,7 @@ type Store interface {
 	// ListSyncJobs returns all sync jobs.
 	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
 	// Enqueues webhook build jobs for external services that requests syncing using webhooks.
-	EnqueueSingleWhBuildJob(ctx context.Context, repoID int64, repoName string, token string, kind string) (err error)
+	EnqueueSingleWhBuildJob(ctx context.Context, repoID int64, repoName string, kind string) (err error)
 }
 
 // A Store exposes methods to read and write repos and external services.
@@ -133,6 +136,10 @@ func (s *store) GitserverReposStore() database.GitserverRepoStore {
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s)
+}
+
+func (s *store) UserExternalAccountsStore() database.UserExternalAccountsStore {
+	return database.ExternalAccountsWith(s)
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
@@ -767,11 +774,10 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 func (s *store) EnqueueSingleWhBuildJob(ctx context.Context,
 	repoID int64,
 	repoName string,
-	token string,
 	kind string) (err error) {
 	q := sqlf.Sprintf(`
-INSERT INTO webhook_build_jobs (repo_id, repo_name, queued_at, token, extsvc_kind)
-SELECT %s, %s, %s, %s, %s
+INSERT INTO webhook_build_jobs (repo_id, repo_name, queued_at, extsvc_kind)
+SELECT %s, %s, %s, %s
 WHERE NOT EXISTS (
 	SELECT
 	FROM repo r
@@ -781,7 +787,7 @@ WHERE NOT EXISTS (
 		j.state IN ('queued', 'processing')
 	)
 )
-`, repoID, repoName, timeutil.Now(), token, kind, repoID)
+`, repoID, repoName, timeutil.Now(), kind, repoID)
 	return s.Exec(ctx, q)
 }
 
@@ -805,7 +811,6 @@ func scanWhBuildJobs(rows *sql.Rows) ([]WhBuildJob, error) {
 			&job.RepoID,
 			&job.RepoName,
 			&job.ExtsvcKind,
-			&job.Token,
 			&job.QueuedAt,
 		); err != nil {
 			return nil, err

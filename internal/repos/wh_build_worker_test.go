@@ -76,6 +76,47 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		data := json.RawMessage(`{}`)
+		authData := json.RawMessage(fmt.Sprintf(`
+			{
+				"access_token":"9cc46dcda66306277915a6919a90ac7972853317d9df385a828b17d9200b7d4c",
+				"token_type":"Bearer",
+				"refresh_token":"5fa56e21251f4c2295494ee29b6b66f7011dad92251ab988a376a23ef12ad041",
+				"expiry":"%s"
+			}`,
+			time.Now().Add(time.Hour).Format(time.RFC3339)))
+		extAccount := extsvc.Account{
+			ID:     0,
+			UserID: 777,
+			AccountSpec: extsvc.AccountSpec{
+				ServiceID:   "serviceID",
+				ServiceType: "testService",
+				ClientID:    "clientID",
+				AccountID:   "accountID",
+			},
+			AccountData: extsvc.AccountData{
+				AuthData: &authData,
+				Data:     &data,
+			},
+		}
+
+		// extAccounts := database.NewMockUserExternalAccountsStore()
+		// extAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
+
+		// userAccountsDB := database.NewMockDB()
+		// userAccountsDB.UserExternalAccountsFunc.SetDefaultReturn(extAccounts)
+
+		user, err := s.UserExternalAccountsStore().CreateUserAndSave(ctx, database.NewUser{
+			Email:                 "a@a.com",
+			Username:              "u",
+			Password:              "p",
+			EmailVerificationCode: "c",
+		}, extAccount.AccountSpec, extAccount.AccountData)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Printf("User:%+v\n", user)
+
 		jobChan := make(chan string)
 		whBuildHandler := &fakeWhBuildHandler{
 			store:              s,
@@ -124,23 +165,74 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 
 	switch wbj.ExtsvcKind {
 	case "GITHUB":
-		webhookName := githubwebhook.FindSyncWebhook(wbj.RepoName, "secret", wbj.Token)
-		if webhookName != "web" {
-			err := githubwebhook.CreateSyncWebhook(string(wbj.RepoName), "secret", wbj.Token)
-			if err != nil {
-				return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
-			}
-			h.jobChan <- "created new webhook"
-			return nil
-		} else {
-			h.jobChan <- "webhook: " + webhookName
-			return nil
+		fmt.Println("getting accounts...")
+		accts, err := h.store.UserExternalAccountsStore().List(ctx, database.ExternalAccountsListOptions{})
+		if err != nil {
+			return errors.Newf("Error getting user accounts,", err)
 		}
+		fmt.Println("Accts:", len(accts))
+
+		_, token, err := github.GetExternalAccountData(&accts[0].AccountData)
+		if err != nil {
+			fmt.Println("token error:", err)
+		}
+		fmt.Println("token:", token.AccessToken)
+
+		foundSyncWebhook := githubwebhook.FindSyncWebhook(wbj.RepoName, token.AccessToken)
+		if !foundSyncWebhook {
+			githubwebhook.CreateSyncWebhook(wbj.RepoName, "secret", token.AccessToken)
+		}
+		h.jobChan <- "done!"
 	}
 
 	// how will we know if a repo has been deleted?
 	return nil
 }
+
+// func (h *fakeWhBuildHandler) Handle2(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+// 	fmt.Println("in fake handler")
+// 	wbj, ok := record.(*repos.WhBuildJob)
+// 	if !ok {
+// 		h.jobChan <- "wrong type"
+// 		return errors.Errorf("expected repos.WhBuildJob, got %T", record)
+// 	}
+// 	fmt.Printf("Job:%+v\n", wbj)
+
+// 	switch wbj.ExtsvcKind {
+// 	case "GITHUB":
+// 		fmt.Println("getting accounts...")
+// 		accts, err := h.userAccountsDB.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
+// 			UserID:         777,
+// 			ExcludeExpired: true,
+// 		})
+// 		if err != nil {
+// 			return errors.Newf("Error getting user accounts,", err)
+// 		}
+// 		fmt.Println("Accts:", len(accts))
+
+// 		_, token, err := github.GetExternalAccountData(&accts[0].AccountData)
+// 		if err != nil {
+// 			fmt.Println("token error:", err)
+// 		}
+
+// 		fmt.Println("token:", token.AccessToken)
+// 		webhookName := githubwebhook.FindSyncWebhook(wbj.RepoName, "secret", token.AccessToken)
+// 		if webhookName != "web" {
+// 			err := githubwebhook.CreateSyncWebhook(string(wbj.RepoName), "secret", token.AccessToken)
+// 			if err != nil {
+// 				return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
+// 			}
+// 			h.jobChan <- "created new webhook"
+// 			return nil
+// 		} else {
+// 			h.jobChan <- "webhook: " + webhookName
+// 			return nil
+// 		}
+// 	}
+
+// 	// how will we know if a repo has been deleted?
+// 	return nil
+// }
 
 func PrintRows(s repos.Store, ctx context.Context) {
 	fmt.Println("Printing rows...")
@@ -177,36 +269,5 @@ func PrintRows(s repos.Store, ctx context.Context) {
 	fmt.Println("Len:", len(jobs))
 	for _, j := range jobs {
 		fmt.Printf("Job:%+v\n", j)
-	}
-}
-
-func testOldSyncWebhookWorker(db database.DB) func(t *testing.T) {
-	return func(t *testing.T) {
-		ctx := context.Background()
-		testRepo := &types.Repo{
-			ID:       33,
-			Name:     "github.com/susantoscott/Task-Tracker",
-			Metadata: &github.Repository{},
-			ExternalRepo: api.ExternalRepoSpec{
-				ID:          "hi-mom-12345",
-				ServiceID:   "https://github.com/",
-				ServiceType: extsvc.TypeGitHub,
-			},
-		}
-		err := db.Repos().Create(ctx, testRepo)
-		if err != nil {
-			t.Fatal(err)
-		}
-		fmt.Printf("testRepo:%+v\n", testRepo)
-
-		q := sqlf.Sprintf(`insert into webhook_build_jobs (repo_id, repo_name) values (%d, %s);`, testRepo.ID, testRepo.Name)
-		result, err := db.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-		if err != nil {
-			t.Fatal(err)
-		}
-		rowsAffected, err := result.RowsAffected()
-		if rowsAffected != 1 {
-			t.Fatalf("Expected 1 row to be affected, got %d", rowsAffected)
-		}
 	}
 }

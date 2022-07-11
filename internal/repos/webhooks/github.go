@@ -2,41 +2,23 @@ package githubwebhook
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"strings"
 
-	"github.com/google/go-github/v43/github"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var Url = ""
-
-func handleSyncWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
-	fmt.Println("handleSyncWebhook...")
-	repo := payload.(*github.PushEvent).GetRepo()
-	name := api.RepoName(*repo.Name)
-
-	var cli *repoupdater.Client
-	if Url == "" {
-		cli = repoupdater.DefaultClient
-	} else {
-		cli = repoupdater.NewClient(Url)
-	}
-
-	res, err := cli.EnqueueRepoUpdate(ctx, name)
-	if err != nil {
-		return errors.New(fmt.Sprint("error enqueuing repo", err))
-	}
-	fmt.Printf("Enqueued:%+v\n", res)
-
-	return nil
+type Payload struct {
+	Name   string   `json:"name"`
+	ID     int      `json:"id,omitempty"`
+	Config Config   `json:"config"`
+	Events []string `json:"events"`
+	Active bool     `json:"active"`
+	URL    string   `json:"url"`
 }
 
 type Config struct {
@@ -48,25 +30,9 @@ type Config struct {
 	Digest       string `json:"digest,omitempty"`
 }
 
-type Payload struct {
-	Name   string   `json:"name"`
-	ID     int      `json:"id,omitempty"`
-	Config Config   `json:"config"`
-	Events []string `json:"events"`
-	Active bool     `json:"active"`
-}
-
-var TOKEN = ""
-
-func CreateSyncWebhook(repoName string, secret string, token string) error {
-	fmt.Println("Creating webhook:", repoName)
-
-	// HOW TO GENERATE THE SECRET
-	// EXTRACTING THE TOKEN FROM THE USER
-
-	// u := "https://api.github.com/repos/susantoscott/Task-Tracker/hooks"
+func CreateSyncWebhook(repoName string, secret string, token string) (int, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks", repoName)
-	// fmt.Println("Url:", url)
+
 	payload := Payload{
 		Name:   "web",
 		Active: true,
@@ -74,9 +40,8 @@ func CreateSyncWebhook(repoName string, secret string, token string) error {
 			Url:          fmt.Sprintf("%s/enqueue-repo-update", repoupdater.DefaultClient.URL),
 			Content_type: "json",
 			Secret:       secret,
+			Token:        token,
 			Insecure_ssl: "0",
-			Token:        TOKEN,
-			Digest:       "",
 		},
 		Events: []string{
 			"push",
@@ -85,95 +50,105 @@ func CreateSyncWebhook(repoName string, secret string, token string) error {
 
 	body, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return -1, err
 	}
 
 	req, err := http.NewRequest("POST", url, bytes.NewBuffer(body))
 	if err != nil {
-		return err
+		return -1, err
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
-	req.Header.Add("Authorization", fmt.Sprintf("token %s", TOKEN))
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", token))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return -1, err
+	}
+
+	if resp.StatusCode >= 300 {
+		return -1, errors.Newf("non-2XX status code: %d", resp.StatusCode)
 	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return err
-	}
-	// fmt.Println("RespBody:", string(respBody))
-
-	if resp.StatusCode >= 300 {
-		// fmt.Println("STATUS CODE:", resp.StatusCode)
-		// return errors.Newf("non-200 status code, %s", err)
+		return -1, err
 	}
 
 	var obj Payload
 	if err := json.Unmarshal(respBody, &obj); err != nil {
-		return err
+		return -1, err
 	}
 
-	return nil
+	return obj.ID, nil
 }
 
-func ListSyncWebhooks(repoName string, secret string, token string) []Payload {
-	fmt.Println("Listing webhooks...")
-
-	// url := "https://api.github.com/repos/susantoscott/Task-Tracker/hooks"
+func ListSyncWebhooks(repoName string, token string) ([]Payload, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks", repoName)
-	fmt.Println("url:", url)
+
 	req, err := http.NewRequest("GET", url, bytes.NewBuffer([]byte("")))
 	if err != nil {
 		fmt.Println("making new request error:", err)
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
-	req.Header.Add("Authorization", fmt.Sprintf("token %s", TOKEN))
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", token))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("client do error:", err)
+		return nil, err
 	}
-	// fmt.Println("Status Code:", resp.StatusCode)
+
+	if resp.StatusCode >= 300 {
+		return nil, errors.Newf("non-2XX status code: %d", resp.StatusCode)
+	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		fmt.Println("readall error:", err)
+		return nil, err
 	}
-	// fmt.Println("resp:", string(respBody))
 
 	var obj []Payload
 	if err := json.Unmarshal(respBody, &obj); err != nil {
-		fmt.Println("unmarshal error:", err)
+		return nil, err
 	}
 
-	return obj
+	return obj, nil
 }
 
-func FindSyncWebhook(repoName string, secret string, token string) string {
-	payloads := ListSyncWebhooks(repoName, secret, token)
+func FindSyncWebhook(repoName string, token string) bool {
+	payloads, err := ListSyncWebhooks(repoName, token)
+	if err != nil {
+		return false
+	}
+
 	for _, payload := range payloads {
-		if payload.Name == "web" {
-			return "web"
+		endpoint := payload.Config.Url
+		parts := strings.Split(endpoint, "/")
+		if parts[len(parts)-1] == "enqueue-repo-update" {
+			return true
 		}
 	}
-	return ""
+
+	return false
 }
 
-func DeleteSyncWebhook(repoName string, hookID int) {
+func DeleteSyncWebhook(repoName string, hookID int, token string) (bool, error) {
 	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks/%d", repoName, hookID)
+
 	req, err := http.NewRequest("DELETE", url, bytes.NewBuffer([]byte("")))
 	if err != nil {
-		fmt.Println("making new request error:", err)
+		return false, err
 	}
 	req.Header.Add("Accept", "application/vnd.github.v3+json")
-	req.Header.Add("Authorization", fmt.Sprintf("token %s", TOKEN))
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", token))
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Println("client do error:", err)
+		return false, err
 	}
-	fmt.Println("Status Code:", resp.StatusCode)
+
+	if resp.StatusCode >= 300 {
+		return false, errors.Newf("non-2XX status code: %d", resp.StatusCode)
+	}
+
+	return true, nil
 }

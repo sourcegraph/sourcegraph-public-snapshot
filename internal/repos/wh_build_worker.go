@@ -3,18 +3,15 @@ package repos
 import (
 	"context"
 	"database/sql"
-	"sync"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type WhBuildOptions struct {
@@ -54,7 +51,6 @@ func NewWhBuildWorker(
 		sqlf.Sprintf("repo_id"),
 		sqlf.Sprintf("repo_name"),
 		sqlf.Sprintf("extsvc_kind"),
-		sqlf.Sprintf("token"),
 		sqlf.Sprintf("queued_at"),
 	}
 
@@ -116,67 +112,9 @@ type WhBuildJob struct {
 	RepoID         int64
 	RepoName       string
 	ExtsvcKind     string
-	Token          string
 	QueuedAt       sql.NullTime
 }
 
 func (cw *WhBuildJob) RecordID() int {
 	return cw.ID
-}
-
-type SyncWebhookWorker struct {
-	syncRequestQueue *syncRequestQueue
-}
-
-func NewWebhookCreator(ctx context.Context) SyncWebhookWorker {
-	syncRequestQueue := syncRequestQueue{queue: make([]*syncRequest, 0)}
-	worker := SyncWebhookWorker{syncRequestQueue: &syncRequestQueue}
-	return worker
-}
-
-func (worker *SyncWebhookWorker) Enqueue(repo *types.Repo) error {
-	syncRequest := syncRequest{
-		repo:   repo,
-		secret: "secret",
-		token:  "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",
-	}
-	ok := worker.syncRequestQueue.enqueue(syncRequest)
-	if !ok {
-		return errors.New("error enqueuing")
-	} else {
-		return nil
-	}
-}
-
-type syncRequest struct {
-	repo   *types.Repo
-	secret string
-	token  string
-}
-
-type syncRequestQueue struct {
-	mu            sync.Mutex
-	queue         []*syncRequest
-	notifyEnqueue chan struct{}
-}
-
-func (sq *syncRequestQueue) enqueue(syncReq syncRequest) bool {
-	sq.mu.Lock()
-	defer sq.mu.Unlock()
-
-	sq.queue = append(sq.queue, &syncReq)
-	return true
-}
-
-func (sq *syncRequestQueue) dequeue() (syncRequest, bool) {
-	sq.mu.Lock()
-	defer sq.mu.Unlock()
-
-	syncReq := sq.queue[0]
-	sq.queue = sq.queue[1:]
-	return *syncReq, true
-}
-
-func (sq *syncRequestQueue) len() int {
-	return len(sq.queue)
 }

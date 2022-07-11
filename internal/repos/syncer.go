@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/thanhpk/randstr"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/log"
@@ -18,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	githubwebhook "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -99,7 +101,8 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	defer syncResetter.Stop()
 
 	whBuildWorker, whBuildResetter := NewWhBuildWorker(ctx, store.Handle(), &whBuildHandler{
-		store:              store,
+		store: store,
+		// userAccountsDB: store.With(),
 		minWhBuildInterval: opts.MinSyncInterval, // to change
 	}, WhBuildOptions{
 		WorkerInterval:       opts.DequeueInterval,
@@ -155,13 +158,20 @@ func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record 
 
 	switch wbj.ExtsvcKind {
 	case "GITHUB":
-		webhookName := githubwebhook.FindSyncWebhook(wbj.RepoName, "secret", wbj.Token)
-		if webhookName != "web" {
-			fmt.Println("create sync webhook")
-			err := githubwebhook.CreateSyncWebhook(string(wbj.RepoName), "secret", wbj.Token)
-			if err != nil {
-				return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
-			}
+		accounts, err := wb.store.UserExternalAccountsStore().List(ctx, database.ExternalAccountsListOptions{})
+		if err != nil {
+			return errors.Errorf("error getting accounts", err)
+		}
+
+		_, token, err := github.GetExternalAccountData(&accounts[0].AccountData)
+		if err != nil {
+			return errors.Errorf("error getting token", err)
+		}
+
+		foundSyncWebhook := githubwebhook.FindSyncWebhook(wbj.RepoName, token.AccessToken)
+		if !foundSyncWebhook {
+			secret := randstr.Hex(32)
+			githubwebhook.CreateSyncWebhook(wbj.RepoName, secret, token.AccessToken)
 		}
 	}
 
@@ -633,7 +643,6 @@ func (s *Syncer) SyncExternalService(
 			err := s.Store.EnqueueSingleWhBuildJob(ctx,
 				int64(sourced.ID),
 				string(sourced.Name),
-				"token",
 				svc.Kind) // is this instant? can it be done here?
 			if err != nil && s.Logger != nil {
 				s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
