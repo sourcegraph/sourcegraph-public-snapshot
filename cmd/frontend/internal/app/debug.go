@@ -1,8 +1,11 @@
 package app
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/http/httputil"
@@ -12,7 +15,9 @@ import (
 
 	"github.com/gorilla/mux"
 
+	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -126,6 +131,69 @@ func addGrafana(r *mux.Router, db database.DB) {
 	} else {
 		addNoGrafanaHandler(r, db)
 	}
+}
+
+type sentryHeader struct {
+	DSN string `json:"dsn"`
+}
+
+func sentryHandler(logger sglog.Logger) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method != http.MethodPost {
+			w.WriteHeader(http.StatusMethodNotAllowed)
+			return
+		}
+
+		// Read the envelope.
+		b, err := io.ReadAll(r.Body)
+		if err != nil {
+			logger.Warn("failed to read request body", sglog.Error(err))
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		defer r.Body.Close()
+
+		// Extract the DSN and ProjectID
+		n := bytes.IndexByte(b, '\n')
+		if n < 0 {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			return
+		}
+		h := sentryHeader{}
+		err = json.Unmarshal(b[0:n], &h)
+		if err != nil {
+			logger.Warn("failed to parse request body", sglog.Error(err))
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			return
+		}
+		u, err := url.Parse(h.DSN)
+		if err != nil {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			return
+		}
+		projectID := u.Path
+		// TODO
+		if !(projectID == "/1334031" || projectID == "/1391511") {
+			// not our projects, just discard the request.
+			w.WriteHeader(http.StatusUnauthorized)
+			return
+		}
+
+		client := http.Client{
+			// We want to keep this short, the default client settings are not strict enough.
+			Timeout: 3 * time.Second,
+		}
+		url := fmt.Sprintf("%s/api%s/envelope/", envvar.SentryTunnelEndpoint, projectID)
+		go client.Post(url, "text/plain;charset=UTF-8", bytes.NewReader(b))
+
+		w.WriteHeader(http.StatusOK)
+		return
+	})
+}
+
+func addSentry(r *mux.Router) {
+	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
+	r.Handle("/sentry_tunnel", sentryHandler(logger))
 }
 
 func addNoJaegerHandler(r *mux.Router, db database.DB) {
