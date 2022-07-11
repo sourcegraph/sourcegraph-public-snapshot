@@ -746,6 +746,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
 
         // The "Title 2" heading in the outline should be highlighted
+        await driver.page.waitForSelector('[data-id="title-2-id-1"][aria-current="true"]')
         expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
     })
 
