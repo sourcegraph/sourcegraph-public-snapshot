@@ -86,14 +86,14 @@ func transformRecord(ctx context.Context, logger log.Logger, s BatchesStore, job
 	if !batchSpec.NoCache {
 		// Find the cache entry for the _last_ step. src-cli only needs the most
 		// recent cache entry to do its work.
-		latestIndex := -1
-		for idx := range workspace.StepCacheResults {
-			if idx > latestIndex {
-				latestIndex = idx
+		latestStepIndex := -1
+		for stepIndex := range workspace.StepCacheResults {
+			if stepIndex > latestStepIndex {
+				latestStepIndex = stepIndex
 			}
 		}
-		if latestIndex != -1 {
-			cacheEntry, ok := workspace.StepCacheResult(latestIndex)
+		if latestStepIndex != -1 {
+			cacheEntry, ok := workspace.StepCacheResult(latestStepIndex)
 			// Technically this should never be not ok, but computers.
 			if ok {
 				executionInput.CachedStepResultFound = true
