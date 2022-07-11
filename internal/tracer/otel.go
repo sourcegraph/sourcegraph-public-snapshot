@@ -37,7 +37,7 @@ var otelCollectorEndpoint = env.Get("OTEL_EXPORTER_OTLP_ENDPOINT", "127.0.0.1:43
 // as OpenTelemetry traces to an OpenTelemetry collector (effectively "bridging" the two
 // APIs). This enables us to continue leveraging the OpenTracing API (which is a predecessor
 // to OpenTelemetry tracing) without making changes to existing tracing code.
-func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer, error) {
+func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
 	logger = logger.Scoped("otel", "OpenTelemetry tracer").
 		With(log.String("otel-collector.endpoint", otelCollectorEndpoint))
 
@@ -50,7 +50,7 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	// Initialize OpenTelemetry processor and tracer provider
 	processor, err := newOTelCollectorExporter(context.Background(), logger, opts.debug)
 	if err != nil {
-		return nil, nil, err
+		return nil, nil, nil, err
 	}
 	provider := oteltracesdk.NewTracerProvider(
 		oteltracesdk.WithResource(newResource(opts.resource)),
@@ -62,9 +62,6 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	bridge, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("tracer.global"))
 	bridge.SetTextMapPropagator(propagation.TraceContext{})
 
-	// Set OTel provider globally - this gets unset by otelBridgeCloser
-	otel.SetTracerProvider(otelTracerProvider)
-
 	// Set up logging
 	otelLogger := logger.AddCallerSkip(1) // no additional scope needed, this is already otel scope
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) { otelLogger.Warn("error encountered", log.Error(err)) }))
@@ -72,7 +69,7 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	bridge.SetWarningHandler(func(msg string) { bridgeLogger.Debug(msg) })
 
 	// Done
-	return &otelBridgeTracer{bridge}, &otelBridgeCloser{provider}, nil
+	return &otelBridgeTracer{bridge}, otelTracerProvider, &otelBridgeCloser{provider}, nil
 }
 
 // newOTelCollectorExporter creates a processor that exports spans to an OpenTelemetry
@@ -106,9 +103,6 @@ type otelBridgeCloser struct{ *oteltracesdk.TracerProvider }
 var _ io.Closer = &otelBridgeCloser{}
 
 func (p otelBridgeCloser) Close() error {
-	// unset the global provider
-	otel.SetTracerProvider(oteltrace.NewNoopTracerProvider())
-
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 

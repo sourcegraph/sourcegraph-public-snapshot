@@ -10,8 +10,11 @@ import (
 )
 
 // switchableTracer implements opentracing.Tracer, and is used to configure the global
-// tracer implementations. The underlying opentracer used is switchable (set via the `set`
-// method), so as to support live configuration.
+// tracer implementations. It is set as a global tracer so that all opentracing usages
+// will end up using this tracer.
+//
+// The underlying opentracer used is switchable (set via the `set` method), so as to
+// support live configuration.
 type switchableTracer struct {
 	mu           sync.RWMutex
 	tracer       opentracing.Tracer
@@ -23,7 +26,7 @@ type switchableTracer struct {
 
 var _ opentracing.Tracer = &switchableTracer{}
 
-func newSwitchableTracer(logger log.Logger) *switchableTracer {
+func newSwitchableOTTracer(logger log.Logger) *switchableTracer {
 	var t opentracing.NoopTracer
 	return &switchableTracer{
 		tracer: t,
