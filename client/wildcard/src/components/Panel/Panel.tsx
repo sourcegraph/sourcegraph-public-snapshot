@@ -2,6 +2,9 @@ import React, { useRef } from 'react'
 
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
+import { useMergeRefs } from 'use-callback-ref'
+
+import { ForwardReferenceComponent } from '../../types'
 
 import { useResizablePanel, UseResizablePanelParameters } from './useResizablePanel'
 import { getDisplayStyle, getPositionStyle } from './utils'
@@ -22,19 +25,23 @@ export interface PanelProps extends Omit<UseResizablePanelParameters, 'panelRef'
     className?: string
 }
 
-export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>> = ({
-    children,
-    className,
-    defaultSize = 200,
-    storageKey,
-    position = 'bottom',
-    isFloating = false,
-    handleClassName,
-    minSize,
-    maxSize,
-}) => {
+export const Panel = React.forwardRef(function Panel(
+    {
+        children,
+        className,
+        defaultSize = 200,
+        storageKey,
+        position = 'bottom',
+        isFloating = false,
+        handleClassName,
+        minSize,
+        maxSize,
+    },
+    reference
+) {
     const handleReference = useRef<HTMLDivElement | null>(null)
     const panelReference = useRef<HTMLDivElement | null>(null)
+    const mergedPanelReference = useMergeRefs([reference, panelReference])
 
     const { panelSize, isResizing } = useResizablePanel({
         position,
@@ -56,7 +63,7 @@ export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>>
                 getPositionStyle({ position }),
                 getDisplayStyle({ isFloating })
             )}
-            ref={panelReference}
+            ref={mergedPanelReference}
         >
             <div
                 ref={handleReference}
@@ -71,4 +78,4 @@ export const Panel: React.FunctionComponent<React.PropsWithChildren<PanelProps>>
             {children}
         </div>
     )
-}
+}) as ForwardReferenceComponent<'div', React.PropsWithChildren<PanelProps>>
