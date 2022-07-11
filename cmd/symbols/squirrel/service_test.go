@@ -123,8 +123,8 @@ func TestNonLocalDefinition(t *testing.T) {
 			continue
 		}
 		m := symbolToTagToAnnotations[symbol]
-		if m["def"] == nil {
-			// It's probably a path definition
+		if m["def"] == nil && m["path"] != nil {
+			// It's a path definition, which is checked separately
 			continue
 		}
 		var wantAnn *annotation
