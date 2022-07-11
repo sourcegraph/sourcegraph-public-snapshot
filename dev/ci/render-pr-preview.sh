@@ -51,8 +51,8 @@ while getopts 'b:r:d' flag; do
 done
 
 # Get `{owner}/{repo}` part from GitHub repository url
-if [[ "$repo_url" =~ ^(https|git):\/\/github\.com\/(.*)$ ]]; then
-  owner_and_repo="${BASH_REMATCH[2]//\.git/}"
+if [[ "$repo_url" =~ ^(https://|git://|git@)github\.com(:|\/)(.*)$ ]]; then
+  owner_and_repo="${BASH_REMATCH[3]//\.git/}"
 else
   echo "Couldn't find owner_and_repo"
   exit 1

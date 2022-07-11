@@ -1,21 +1,24 @@
-import React, { FormEventHandler, RefObject, useMemo } from 'react'
+import { FC, FormEventHandler, RefObject, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Checkbox, Input, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../components/LoaderButton'
-import { CodeInsightDashboardsVisibility, CodeInsightTimeStepPicker } from '../../../../../components/creation-ui-kit'
-import { FormGroup } from '../../../../../components/form/form-group/FormGroup'
-import { getDefaultInputProps } from '../../../../../components/form/getDefaultInputProps'
-import { useFieldAPI } from '../../../../../components/form/hooks/useField'
-import { FORM_ERROR, SubmissionErrors } from '../../../../../components/form/hooks/useForm'
-import { RepositoriesField } from '../../../../../components/form/repositories-field/RepositoriesField'
-import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
+import {
+    FormSeries,
+    LimitedAccessLabel,
+    CodeInsightDashboardsVisibility,
+    CodeInsightTimeStepPicker,
+    RepositoriesField,
+    FormGroup,
+    getDefaultInputProps,
+    useFieldAPI,
+    FORM_ERROR,
+    SubmissionErrors,
+} from '../../../../../components'
 import { Insight } from '../../../../../core'
-import { useUiFeatures } from '../../../../../hooks/use-ui-features'
-import { CreateInsightFormFields, EditableDataSeries } from '../types'
-
-import { FormSeries } from './form-series/FormSeries'
+import { useUiFeatures } from '../../../../../hooks'
+import { CreateInsightFormFields } from '../types'
 
 interface CreationSearchInsightFormProps {
     /** This component might be used in edit or creation insight case. */
@@ -40,22 +43,6 @@ interface CreationSearchInsightFormProps {
     insight?: Insight
 
     onCancel: () => void
-
-    /**
-     * Handler to listen latest value form particular series edit form
-     * Used to get information for live preview chart.
-     */
-    onSeriesLiveChange: (liveSeries: EditableDataSeries, isValid: boolean, index: number) => void
-
-    /**
-     * Handlers for CRUD operation over series. Add, delete, update and cancel
-     * series edit form.
-     */
-    onEditSeriesRequest: (seriesId?: string) => void
-    onEditSeriesCommit: (editedSeries: EditableDataSeries) => void
-    onEditSeriesCancel: (seriesId: string) => void
-    onSeriesRemove: (seriesId: string) => void
-
     onFormReset: () => void
 }
 
@@ -63,9 +50,7 @@ interface CreationSearchInsightFormProps {
  * Displays creation code insight form (title, visibility, series, etc.)
  * UI layer only, all controlled data should be managed by consumer of this component.
  */
-export const SearchInsightCreationForm: React.FunctionComponent<
-    React.PropsWithChildren<CreationSearchInsightFormProps>
-> = props => {
+export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = props => {
     const {
         mode,
         innerRef,
@@ -84,11 +69,6 @@ export const SearchInsightCreationForm: React.FunctionComponent<
         dashboardReferenceCount,
         insight,
         onCancel,
-        onSeriesLiveChange,
-        onEditSeriesRequest,
-        onEditSeriesCommit,
-        onEditSeriesCancel,
-        onSeriesRemove,
         onFormReset,
     } = props
 
@@ -160,14 +140,9 @@ export const SearchInsightCreationForm: React.FunctionComponent<
                 innerRef={series.input.ref}
             >
                 <FormSeries
-                    series={series.input.value}
+                    seriesField={series}
                     repositories={repositories.input.value}
                     showValidationErrorsOnMount={submitted}
-                    onLiveChange={onSeriesLiveChange}
-                    onEditSeriesRequest={onEditSeriesRequest}
-                    onEditSeriesCommit={onEditSeriesCommit}
-                    onEditSeriesCancel={onEditSeriesCancel}
-                    onSeriesRemove={onSeriesRemove}
                 />
             </FormGroup>
 
@@ -210,7 +185,7 @@ export const SearchInsightCreationForm: React.FunctionComponent<
                 <LoaderButton
                     alwaysShowLabel={true}
                     loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save insight' : 'Create code insight'}
+                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
                     type="submit"
                     disabled={submitting || !creationPermission?.available}
                     data-testid="insight-save-button"

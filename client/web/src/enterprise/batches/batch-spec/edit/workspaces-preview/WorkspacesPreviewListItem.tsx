@@ -1,14 +1,14 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import CloseIcon from 'mdi-react/CloseIcon'
+import { mdiClose } from '@mdi/js'
 
-import { Button, Icon } from '@sourcegraph/wildcard'
+import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
-import { CachedIcon, Descriptor, ExcludeIcon, ListItem } from '../../../workspaces-list'
+import { CachedIcon, Descriptor, ExcludeIcon, ListItem, PartiallyCachedIcon } from '../../../workspaces-list'
 
 import styles from './WorkspacesPreviewListItem.module.scss'
 
@@ -35,10 +35,18 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<
         exclude(workspace.repository.name, workspace.branch.displayName)
     }, [exclude, workspace])
 
-    const statusIndicator = useMemo(
-        () => (toBeExcluded ? <ExcludeIcon /> : workspace.cachedResultFound ? <CachedIcon /> : undefined),
-        [toBeExcluded, workspace.cachedResultFound]
-    )
+    const statusIndicator = useMemo(() => {
+        if (toBeExcluded) {
+            return <ExcludeIcon />
+        }
+        if (workspace.cachedResultFound) {
+            return <CachedIcon />
+        }
+        if (workspace.stepCacheResultCount > 0) {
+            return <PartiallyCachedIcon count={workspace.stepCacheResultCount} />
+        }
+        return undefined
+    }, [toBeExcluded, workspace.cachedResultFound, workspace.stepCacheResultCount])
 
     return (
         <ListItem className={!isReadOnly && isStale ? styles.stale : undefined}>
@@ -56,12 +64,9 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<
 const ExcludeButton: React.FunctionComponent<React.PropsWithChildren<{ handleExclude: () => void }>> = ({
     handleExclude,
 }) => (
-    <Button
-        aria-label="Omit this repository from batch spec file"
-        className="p-0 my-0 mx-2"
-        data-tooltip="Omit this repository from batch spec file"
-        onClick={handleExclude}
-    >
-        <Icon role="img" aria-hidden={true} as={CloseIcon} />
-    </Button>
+    <Tooltip content="Omit this repository from batch spec file">
+        <Button aria-label="Omit this repository" className="p-0 my-0 mx-2" onClick={handleExclude}>
+            <Icon aria-hidden={true} svgPath={mdiClose} />
+        </Button>
+    </Tooltip>
 )

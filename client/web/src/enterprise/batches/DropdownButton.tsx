@@ -12,8 +12,10 @@ import {
     MenuList,
     Position,
     MenuItem,
+    MenuDivider,
     H4,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
@@ -131,15 +133,16 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
             {renderedElement}
             <Menu>
                 <ButtonGroup>
-                    <Button
-                        className="text-nowrap"
-                        onClick={onTriggerAction}
-                        disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
-                        data-tooltip={tooltip}
-                        variant="primary"
-                    >
-                        {label}
-                    </Button>
+                    <Tooltip content={tooltip}>
+                        <Button
+                            className="text-nowrap"
+                            onClick={onTriggerAction}
+                            disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
+                            variant="primary"
+                        >
+                            {label}
+                        </Button>
+                    </Tooltip>
                     {actions.length > 1 && (
                         <MenuButton variant="primary" className={styles.dropdownButton}>
                             <ChevronDownIcon />
@@ -152,7 +155,7 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
                         {actions.map((action, index) => (
                             <React.Fragment key={action.type}>
                                 <DropdownItem action={action} setSelectedType={onSelectedTypeSelect} />
-                                {index !== actions.length - 1 && <div className="dropdown-divider" />}
+                                {index !== actions.length - 1 && <MenuDivider />}
                             </React.Fragment>
                         ))}
                     </MenuList>

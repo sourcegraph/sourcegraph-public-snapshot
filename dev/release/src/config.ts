@@ -1,6 +1,6 @@
 import { readFileSync, unlinkSync } from 'fs'
 
-import { parse as parseJSONC } from '@sqs/jsonc-parser'
+import { parse as parseJSONC } from 'jsonc-parser'
 import * as semver from 'semver'
 
 import { cacheFolder, readLine, getWeekNumber } from './util'
@@ -18,7 +18,7 @@ export interface Config {
     upcomingRelease: string
 
     oneWorkingWeekBeforeRelease: string
-    oneWorkingDayBeforeRelease: string
+    threeWorkingDaysBeforeRelease: string
     releaseDate: string
     oneWorkingDayAfterRelease: string
 
@@ -71,7 +71,7 @@ export async function releaseVersions(
     const now = new Date()
     const cachedVersionResponse = `${cacheFolder}/current_release_${now.getUTCFullYear()}_${getWeekNumber(now)}.txt`
     const confirmVersion = await readLine(
-        `Please confirm the upcoming release version configured in '${configPath}' (currently '${config.upcomingRelease}'): `,
+        `Please confirm the upcoming release version configured in '${configPath}' (currently '${config.upcomingRelease}') by entering it again: `,
         cachedVersionResponse
     )
     const parsedConfirmed = semver.parse(confirmVersion, parseOptions)

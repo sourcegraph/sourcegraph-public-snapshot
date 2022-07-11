@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { Position, Menu, MenuButton, MenuList, MenuLink, Icon, Link } from '@sourcegraph/wildcard'
 
@@ -36,14 +36,20 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                         outline={true}
                         size="sm"
                     >
-                        <Icon role="img" aria-hidden={true} className="mr-1" as={PlusIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiPlus} />
                         Create …
                     </MenuButton>
                 </li>
-                <MenuList position={Position.bottomStart} aria-label="Create Actions. Open menu">
+                <MenuList tabIndex={0} position={Position.bottomStart} aria-label="Create Actions. Open menu">
                     {createActions.map(createAction => (
                         <MenuLink key={createAction.label} as={Link} to={createAction.url}>
-                            <Icon role="img" aria-hidden="true" className="mr-1" as={createAction.icon} />
+                            <Icon
+                                aria-hidden="true"
+                                className="mr-1"
+                                {...(typeof createAction.icon === 'string'
+                                    ? { svgPath: createAction.icon }
+                                    : { as: createAction.icon })}
+                            />
                             {createAction.label}
                         </MenuLink>
                     ))}
@@ -56,9 +62,20 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                                     ? 'Code monitors only support type:diff or type:commit searches.'
                                     : undefined
                             }
+                            aria-label={
+                                authenticatedUser && !canCreateMonitor
+                                    ? 'Code monitors only support type:diff or type:commit searches.'
+                                    : undefined
+                            }
                             to={createCodeMonitorAction.url}
                         >
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={createCodeMonitorAction.icon} />
+                            <Icon
+                                aria-hidden={true}
+                                className="mr-1"
+                                {...(typeof createCodeMonitorAction.icon === 'string'
+                                    ? { svgPath: createCodeMonitorAction.icon }
+                                    : { as: createCodeMonitorAction.icon })}
+                            />
                             Create Monitor
                         </MenuLink>
                     )}

@@ -2,6 +2,7 @@ package compute
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -11,10 +12,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 )
 
 func Test_output(t *testing.T) {
@@ -51,7 +52,7 @@ train(commuter, lightrail)`).
 }
 
 func fileMatch(content string) result.Match {
-	git.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
+	gitserver.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
 		return []byte(content), nil
 	}
 	return &result.FileMatch{
@@ -74,13 +75,21 @@ func commitMatch(content string) result.Match {
 
 func TestRun(t *testing.T) {
 	test := func(q string, m result.Match) string {
-		defer git.ResetMocks()
+		defer gitserver.ResetMocks()
 		computeQuery, _ := Parse(q)
 		res, err := computeQuery.Command.Run(context.Background(), database.NewMockDB(), m)
 		if err != nil {
 			return err.Error()
 		}
-		return res.(*Text).Value
+
+		switch r := res.(type) {
+		case *Text:
+			return r.Value
+		case *TextExtra:
+			result, _ := json.Marshal(r)
+			return string(result)
+		}
+		return "Error, unrecognized result type returned"
 	}
 
 	autogold.Want(
@@ -117,4 +126,9 @@ func TestRun(t *testing.T) {
 		"substitute language",
 		"OCaml\n").
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
+
+	autogold.Want(
+		"use output.extra",
+		`{"value":"OCaml\n","kind":"output","repositoryID":0,"repository":"my/awesome/repo"}`).
+		Equal(t, test(`content:output.extra((.|\n)* -> $lang)`, fileMatch("anything")))
 }

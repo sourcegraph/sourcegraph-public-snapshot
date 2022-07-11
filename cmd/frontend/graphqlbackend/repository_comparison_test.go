@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/go-diff/diff"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/externallink"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -22,13 +23,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestRepositoryComparisonNoMergeBase(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	wantBaseRevision := "ba5e"
 	wantHeadRevision := "1ead"
@@ -62,8 +63,9 @@ func TestRepositoryComparisonNoMergeBase(t *testing.T) {
 }
 
 func TestRepositoryComparison(t *testing.T) {
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
-	db := database.NewDB(nil)
+	db := database.NewDB(logger, nil)
 
 	wantBaseRevision := "24f7ca7c1190835519e261d7eefa09df55ceea4f"
 	wantMergeBaseRevision := "a7985dde7f92ad3490ec513be78fa2b365c7534c"
@@ -86,6 +88,9 @@ func TestRepositoryComparison(t *testing.T) {
 	gitserver.Mocks.ExecReader = func(args []string) (io.ReadCloser, error) {
 		if len(args) < 1 && args[0] != "diff" {
 			t.Fatalf("gitserver.ExecReader received wrong args: %v", args)
+		}
+		if args[len(args)-1] == "JOKES.md" {
+			return io.NopCloser(strings.NewReader(testDiffJokesOnly)), nil
 		}
 		return io.NopCloser(strings.NewReader(testDiff + testCopyDiff)), nil
 	}
@@ -134,7 +139,7 @@ func TestRepositoryComparison(t *testing.T) {
 			{ID: api.CommitID(wantHeadRevision)},
 		}
 
-		git.Mocks.Commits = func(repo api.RepoName, opts git.CommitsOptions) ([]*gitdomain.Commit, error) {
+		gitserver.Mocks.Commits = func(repo api.RepoName, opts gitserver.CommitsOptions) ([]*gitdomain.Commit, error) {
 			wantRange := fmt.Sprintf("%s..%s", wantBaseRevision, wantHeadRevision)
 
 			if have, want := opts.Range, wantRange; have != want {
@@ -144,7 +149,7 @@ func TestRepositoryComparison(t *testing.T) {
 			return commits, nil
 		}
 
-		defer func() { git.Mocks.Commits = nil }()
+		defer func() { gitserver.Mocks.Commits = nil }()
 		commitConnection := comp.Commits(&graphqlutil.ConnectionArgs{})
 
 		nodes, err := commitConnection.Nodes(ctx)
@@ -204,6 +209,32 @@ func TestRepositoryComparison(t *testing.T) {
 			want := "2 added, 7 changed, 1 deleted"
 			if have := fmt.Sprintf("%d added, %d changed, %d deleted", diffStat.Added(), diffStat.Changed(), diffStat.Deleted()); have != want {
 				t.Fatalf("wrong diffstat. want=%q, have=%q", want, have)
+			}
+		})
+
+		t.Run("LimitedPaths", func(t *testing.T) {
+			paths := []string{"JOKES.md"}
+			diffConnection, err := comp.FileDiffs(ctx, &FileDiffsConnectionArgs{Paths: &paths})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			nodes, err := diffConnection.Nodes(ctx)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if len(nodes) != 1 {
+				t.Fatalf("expected 1 file node, got %d", len(nodes))
+			}
+
+			oldPath := nodes[0].OldPath()
+			if oldPath == nil {
+				t.Fatalf("expected non-nil oldPath")
+			}
+
+			if *oldPath != "JOKES.md" {
+				t.Fatalf("expected JOKES.md, got %s", *oldPath)
 			}
 		})
 
@@ -731,6 +762,27 @@ const testDiffFirstHunk = ` Line 1
 +Foobar Line 8
  Line 9
  Line 10
+`
+
+const testDiffJokesOnly = `
+diff --git JOKES.md JOKES.md
+index ea80abf..1b86505 100644
+--- JOKES.md
++++ JOKES.md
+@@ -4,10 +4,10 @@ Joke #1
+ Joke #2
+ Joke #3
+ Joke #4
+-Joke #5
++This is not funny: Joke #5
+ Joke #6
+-Joke #7
++This one is good: Joke #7
+ Joke #8
+-Joke #9
++Waffle: Joke #9
+ Joke #10
+ Joke #11
 `
 
 func TestFileDiffHighlighter(t *testing.T) {

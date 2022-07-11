@@ -1,8 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
 import { RouteComponentProps } from 'react-router'
 import { catchError, startWith } from 'rxjs/operators'
 
@@ -155,7 +155,7 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
     return (
         <div className="w-100">
             <Page>
-                <div className="container col-8">
+                <div className="container col-sm-8">
                     {searchContextOrError === LOADING && (
                         <div className="d-flex justify-content-center">
                             <LoadingSpinner inline={false} />
@@ -180,16 +180,23 @@ export const SearchContextPage: React.FunctionComponent<React.PropsWithChildren<
                                 }
                             >
                                 <PageHeader.Heading as="h2" styleAs="h1">
-                                    <PageHeader.Breadcrumb icon={MagnifyIcon} to="/search" aria-label="Code Search" />
+                                    <PageHeader.Breadcrumb icon={mdiMagnify} to="/search" aria-label="Code Search" />
                                     <PageHeader.Breadcrumb to="/contexts">Contexts</PageHeader.Breadcrumb>
                                     <PageHeader.Breadcrumb>
-                                        <div className="d-flex align-items-center">
-                                            <span>{searchContextOrError.spec}</span>
+                                        <div>
+                                            <span
+                                                className={classNames(
+                                                    !searchContextOrError.public && 'mr-2',
+                                                    styles.searchContextPageTitleSpec
+                                                )}
+                                            >
+                                                {searchContextOrError.spec}
+                                            </span>
                                             {!searchContextOrError.public && (
                                                 <Badge
                                                     variant="secondary"
                                                     pill={true}
-                                                    className={classNames('ml-2', styles.searchContextPagePrivateBadge)}
+                                                    className={styles.searchContextPagePrivateBadge}
                                                     as="div"
                                                 >
                                                     Private

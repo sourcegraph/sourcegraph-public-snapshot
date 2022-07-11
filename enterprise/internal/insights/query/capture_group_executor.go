@@ -6,20 +6,18 @@ import (
 	"sort"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
-
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/timeseries"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/git"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -29,9 +27,9 @@ type CaptureGroupExecutor struct {
 }
 
 func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
-	executor := CaptureGroupExecutor{
+	return &CaptureGroupExecutor{
 		justInTimeExecutor: justInTimeExecutor{
-			db:        database.NewDB(postgres),
+			db:        postgres,
 			repoStore: postgres.Repos(),
 			// filter:    compression.NewHistoricalFilter(true, clock().Add(time.Hour*24*365*-1), insightsDb),
 			filter: &compression.NoopFilter{},
@@ -39,25 +37,10 @@ func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *Capt
 		},
 		computeSearch: streamCompute,
 	}
-
-	useGraphQL := conf.Get().InsightsComputeGraphql
-	if useGraphQL != nil && *useGraphQL {
-		executor.computeSearch = graphQLCompute
-	}
-
-	return &executor
-}
-
-func graphQLCompute(ctx context.Context, query string) ([]GroupedResults, error) {
-	searchResults, err := ComputeSearch(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	return GroupByCaptureMatch(searchResults), nil
 }
 
 func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) {
-	decoder, streamResults := streaming.ComputeDecoder()
+	decoder, streamResults := streaming.MatchContextComputeDecoder()
 	err := streaming.ComputeMatchContextStream(ctx, query, decoder)
 	if err != nil {
 		return nil, err
@@ -86,9 +69,13 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 	pivoted := make(map[string]timeCounts)
 
 	for _, repository := range repositories {
-		firstCommit, err := git.FirstEverCommit(ctx, c.db, api.RepoName(repository), authz.DefaultSubRepoPermsChecker)
+		firstCommit, err := discovery.GitFirstEverCommit(ctx, c.db, api.RepoName(repository))
 		if err != nil {
-			return nil, errors.Wrapf(err, "FirstEverCommit")
+			if errors.Is(err, discovery.EmptyRepoErr) {
+				continue
+			} else {
+				return nil, errors.Wrapf(err, "FirstEverCommit")
+			}
 		}
 		// uncompressed plan for now, because there is some complication between the way compressed plans are generated and needing to resolve revhashes
 		plan := c.filter.FilterFrames(ctx, frames, repoIds[repository])
@@ -102,7 +89,7 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				// since we are using uncompressed plans (to avoid this problem and others) right now, each execution is standalone
 				continue
 			}
-			commits, err := git.Commits(ctx, c.db, api.RepoName(repository), git.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
+			commits, err := gitserver.NewClient(c.db).Commits(ctx, api.RepoName(repository), gitserver.CommitsOptions{N: 1, Before: execution.RecordingTime.Format(time.RFC3339), DateOrder: true}, authz.DefaultSubRepoPermsChecker)
 			if err != nil {
 				return nil, errors.Wrap(err, "git.Commits")
 			} else if len(commits) < 1 {
@@ -110,13 +97,13 @@ func (c *CaptureGroupExecutor) Execute(ctx context.Context, query string, reposi
 				continue
 			}
 
-			modifiedQuery, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID))
+			modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}
 
 			log15.Debug("executing query", "query", modifiedQuery)
-			grouped, err := c.computeSearch(ctx, modifiedQuery)
+			grouped, err := c.computeSearch(ctx, modifiedQuery.String())
 			if err != nil {
 				errorMsg := "failed to execute capture group search for repository:" + repository
 				if execution.Revision != "" {

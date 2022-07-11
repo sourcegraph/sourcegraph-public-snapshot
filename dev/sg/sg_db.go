@@ -10,6 +10,8 @@ import (
 	"github.com/jackc/pgx/v4"
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -92,6 +94,7 @@ sg db add-user -name=foo
 
 func dbAddUserAction(cmd *cli.Context) error {
 	ctx := cmd.Context
+	logger := log.Scoped("dbAddUserAction", "")
 
 	// Read the configuration.
 	conf, _ := sgconf.Get(configFile, configOverwriteFile)
@@ -104,7 +107,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(conn)
+	db := database.NewDB(logger, conn)
 
 	username := cmd.String("username")
 	password := cmd.String("password")
@@ -194,7 +197,13 @@ func dbResetPGExec(ctx *cli.Context) error {
 		}
 	}
 
-	for name, dsn := range dsnMap {
+	std.Out.WriteNoticef("This will reset database(s) %s%s%s. Are you okay with this?",
+		output.StyleOrange, strings.Join(schemaNames, ", "), output.StyleReset)
+	if ok := getBool(); !ok {
+		return NewEmptyExitErr(1)
+	}
+
+	for _, dsn := range dsnMap {
 		var (
 			db  *pgx.Conn
 			err error
@@ -203,12 +212,6 @@ func dbResetPGExec(ctx *cli.Context) error {
 		db, err = pgx.Connect(ctx.Context, dsn)
 		if err != nil {
 			return errors.Wrap(err, "failed to connect to Postgres database")
-		}
-
-		std.Out.WriteNoticef("This will reset database %s%s%s. Are you okay with this?", output.StyleOrange, name, output.StyleReset)
-		ok := getBool()
-		if !ok {
-			return nil
 		}
 
 		_, err = db.Exec(ctx.Context, "DROP SCHEMA public CASCADE; CREATE SCHEMA public;")
@@ -225,7 +228,7 @@ func dbResetPGExec(ctx *cli.Context) error {
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
-	r, err := connections.RunnerFromDSNs(dsnMap, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(log.Scoped("migrations.runner", ""), dsnMap, "sg", storeFactory)
 	if err != nil {
 		return err
 	}
@@ -238,7 +241,12 @@ func dbResetPGExec(ctx *cli.Context) error {
 		})
 	}
 
-	return r.Run(ctx.Context, runner.Options{
+	if err := r.Run(ctx.Context, runner.Options{
 		Operations: operations,
-	})
+	}); err != nil {
+		return err
+	}
+
+	std.Out.WriteSuccessf("Database(s) reset!")
+	return nil
 }

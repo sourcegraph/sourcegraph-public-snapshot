@@ -10,10 +10,15 @@ import {
     getUserSearchContextNamespaces,
     QueryState,
 } from '@sourcegraph/search'
-import { IEditor, SearchBox, StreamingProgress, StreamingSearchResultsList } from '@sourcegraph/search-ui'
+import {
+    IEditor,
+    SearchBox,
+    StreamingProgress,
+    StreamingSearchResultsList,
+    FetchFileParameters,
+} from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
@@ -354,8 +359,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                     patternType={context.submittedSearchQueryState?.searchPatternType}
                     setPatternType={setPatternType}
                     isSourcegraphDotCom={isSourcegraphDotCom}
-                    hasUserAddedExternalServices={false}
-                    hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                     structuralSearchDisabled={false}
                     queryState={userQueryState}
                     onChange={onChange}

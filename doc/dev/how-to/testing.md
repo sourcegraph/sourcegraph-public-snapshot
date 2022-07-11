@@ -98,7 +98,7 @@ This utility method will let you print a URL that will visually render the DOM o
     })
 ```
 
-This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element. 
+This page also provides some additional functionality that can make it easier to identify the correct query to use to access a particular DOM element.
 
 ## Browser-based tests
 
@@ -129,14 +129,17 @@ For end-to-end tests that failed in CI, a video of the session is available in t
 
 Our test driver accepts various environment variables that can be used to control Puppeteer's behavior:
 
-| Environment variable  | Purpose                                                          |
-| --------------------- | ---------------------------------------------------------------- |
-| `BROWSER`             | Whether to run `firefox` or `chrome` (default)                   |
-| `LOG_BROWSER_CONSOLE` | Log the browser console output to the terminal (default `true`). |
-| `SLOWMO`              | Slow down each interaction by a delay (ms).                      |
-| `HEADLESS`            | Run the tests without a visible browser window.                  |
-| `DEVTOOLS`            | Whether to run all tests with the browser devtools open          |
-| `KEEP_BROWSER`        | If `true`, browser window will remain open after tests ran       |
+| Environment variable               | Purpose                                                                       |
+| ---------------------------------- | ----------------------------------------------------------------------------- |
+| `BROWSER`                          | Whether to run `firefox` or `chrome` (default).                               |
+| `LOG_BROWSER_CONSOLE`              | Log the browser console output to the terminal (default `true`).              |
+| `SLOWMO`                           | Slow down each interaction by a delay (ms).                                   |
+| `HEADLESS`                         | Run the tests without a visible browser window.                               |
+| `DEVTOOLS`                         | Whether to run all tests with the browser devtools open.                      |
+| `KEEP_BROWSER`                     | If `true`, browser window will remain open after tests ran.                   |
+| `DISABLE_APP_ASSETS_MOCKING`       | Disable `index.html` and client assets mocking.                               |
+| `WINDOW_WIDTH`                     | Browser window width.                                                         |
+| `WINDOW_HEIGHT`                    | Browser window height.                                                        |
 
 #### Filtering tests
 
@@ -207,7 +210,12 @@ To run integration tests for the web app:
 
 A Sourcegraph instance does not need to be running, because all backend interactions are stubbed.
 
-See the above sections for how to debug the tests, which applies to both integration and end-to-end tests.
+To run a specific web app integration test in the debug mode:
+
+1. Run `sg start web-standalone` in the repository root to start serving the development version of the application.
+2. Run `yarn test-integration:debug PATH_TO_THE_TEST_FILE_TO_DEBUG`. With that command, the server is only used to serve `index.html` and client bundle assets, but the API responses should be mocked as usual.
+
+See the above sections for more details on how to debug the tests, which applies to both integration and end-to-end tests.
 
 #### Writing integration tests
 
@@ -413,14 +421,14 @@ If, for whatever reason, we have to ignore some elements from an accessibility a
 
 We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
 
-
 #### Running the tests locally
+
 1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true yarn workspace @sourcegraph/web build`
 2. Run the Lighthouse CI tests. `yarn test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
 
 #### Running the tests in CI
-The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
 
+The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
 
 ### Bundlesize
 
@@ -434,3 +442,42 @@ If `Bundlesize` fails, it is likely because one of the generated bundles has gon
 2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
+
+### Assessing flaky client steps
+
+The breakdown of known client flakes by type with resolution tips:
+
+#### Visual regression flakes
+
+_Problem:_ Percy’s pixel sensitivity is too high, and we cannot relax it further which means that SVG rendering can be flaky.
+_Solution:_ Snapshot these pages in Chromatic or hide flaky elements from Percy using the `.percy-hide` class name.
+
+_Problem:_ UI depends on the date and time, which are not appropriately mocked.
+_Solution:_ Mock the date and time properly in your integration test or Storybook story.
+
+_Problem:_ Mocks are not configured correctly, resulting in flaky error messages in UI.
+_Solution:_ Double-check mocks required for rendering the snapshotted UI.
+
+_Problem:_ The screenshot is taken without waiting for the UI to settle down. E.g., a snapshot taken after clicking an input element doesn’t wait for the focus state on it.
+_Solution:_ Wait for the UI to settle using tools provided by Puppeteer.
+
+#### Integration test flakes caused by test logic
+
+_Problem:_ `Error: GraphQL query "XXX" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "XXX" query.` This error can be flaky because some GraphQL mocks are not required for an integration test to pass because the request with a missing mock can be processed by our test driver _after_ the test already passed. In that case, it won't cause the test to fail.
+_Solution:_  All GraphQL requests happening on tested pages should have GraphQL mocks to avoid such flakes.
+
+_Problem examples:_
+
+1. `Navigation timeout of 30000 ms exceeded.`
+2. `TimeoutError: waiting for selector '.theme.theme-dark' failed: timeout 30000ms exceeded`
+
+_Solution:_ These should be disabled immediately and fixed later by owning teams.
+
+#### Percy outages
+
+_Problem:_ Percy API outages result into
+
+1. HTTP requests to upload screenshots fail with internal server errors.
+2. HTTP requests to upload screenshots fail with errors about duplicated snapshot names. `[percy] Error: The name of each snapshot must be unique, and this name already exists in the build`
+
+_Solution:_ Wait for the Percy infrastructure to come back to life and restart the build. 🥲

@@ -2,9 +2,9 @@ import { Meta, Story } from '@storybook/react'
 
 import { Series } from '../../../../../../charts'
 import { WebStory } from '../../../../../../components/WebStory'
-import { SeriesBasedChartTypes } from '../../types'
+import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 
-import { SeriesChart } from './SeriesChart'
+import { SeriesBasedChartTypes, SeriesChart } from './SeriesChart'
 
 const StoryConfig: Meta = {
     title: 'web/insights/views/SeriesChart',
@@ -71,6 +71,17 @@ const SERIES: Series<StandardDatum>[] = [
     },
 ]
 
-export const SeriesLineChart: Story = () => (
-    <SeriesChart type={SeriesBasedChartTypes.Line} series={SERIES} stacked={false} width={400} height={400} />
-)
+export const SeriesLineChart: Story = () => {
+    const seriesToggleState = useSeriesToggle()
+
+    return (
+        <SeriesChart
+            type={SeriesBasedChartTypes.Line}
+            series={SERIES}
+            stacked={false}
+            width={400}
+            height={400}
+            seriesToggleState={seriesToggleState}
+        />
+    )
+}

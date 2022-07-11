@@ -8,8 +8,8 @@ import { Button, Menu, MenuButton, MenuItem, MenuList, H2 } from '@sourcegraph/w
 
 import { getLineColor, LegendItem, LegendList, ParentSize, Series } from '../../../../../charts'
 import { WebStory } from '../../../../../components/WebStory'
-import { SeriesChart } from '../chart'
-import { SeriesBasedChartTypes } from '../types'
+import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
+import { SeriesBasedChartTypes, SeriesChart } from '../chart'
 
 import * as Card from './InsightCard'
 
@@ -136,6 +136,8 @@ const SERIES: Series<StandardDatum>[] = [
 ]
 
 function InsightCardWithChart() {
+    const seriesToggleState = useSeriesToggle()
+
     return (
         <Card.Root style={{ width: '400px', height: '400px' }}>
             <Card.Header title="Insight with chart" subtitle="CSS migration insight chart">
@@ -160,6 +162,7 @@ function InsightCardWithChart() {
                         series={SERIES}
                         width={parent.width}
                         height={parent.height}
+                        seriesToggleState={seriesToggleState}
                     />
                 )}
             </ParentSize>

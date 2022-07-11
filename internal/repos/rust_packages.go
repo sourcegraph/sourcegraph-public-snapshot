@@ -15,7 +15,7 @@ import (
 )
 
 // NewRustPackagesSource returns a new RustPackagesSource from the given external service.
-func NewRustPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*DependenciesSource, error) {
+func NewRustPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*PackagesSource, error) {
 	var c schema.RustPackagesConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
@@ -26,7 +26,7 @@ func NewRustPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*De
 		return nil, err
 	}
 
-	return &DependenciesSource{
+	return &PackagesSource{
 		svc:        svc,
 		configDeps: c.Dependencies,
 		scheme:     dependencies.RustPackagesScheme,
@@ -38,23 +38,23 @@ type rustPackagesSource struct {
 	client *crates.Client
 }
 
-var _ dependenciesSource = &rustPackagesSource{}
+var _ packagesSource = &rustPackagesSource{}
 
-func (s *rustPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	dep := reposource.NewRustDependency(name, version)
+func (s *rustPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
+	dep := reposource.NewRustPackageVersion(name, version)
 	// Check if crate exists or not. Crates returns a struct detailing the errors if it cannot be found.
 	metaURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s", dep.PackageSyntax(), dep.PackageVersion())
 	if _, err := s.client.Get(ctx, metaURL); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch crate metadata for %s with URL %s", dep.PackageManagerSyntax(), metaURL)
+		return nil, errors.Wrapf(err, "failed to fetch crate metadata for %s with URL %s", dep.PackageVersionSyntax(), metaURL)
 	}
 
 	return dep, nil
 }
 
-func (rustPackagesSource) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParseRustDependency(dep)
+func (rustPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
+	return reposource.ParseRustPackageVersion(dep)
 }
 
-func (rustPackagesSource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
-	return reposource.ParseRustDependencyFromRepoName(repoName)
+func (rustPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+	return reposource.ParseRustPackageFromRepoName(repoName)
 }

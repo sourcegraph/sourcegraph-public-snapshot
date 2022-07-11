@@ -1,11 +1,11 @@
 import React from 'react'
 
+import { mdiCloudOffOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
-import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
 import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { Observable, Subscription, of } from 'rxjs'
@@ -404,7 +404,6 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isErrorLike(this.state.messagesOrError)) {
             return (
                 <Icon
-                    role="img"
                     data-tooltip="Sorry, we couldn’t fetch notifications!"
                     as={CloudAlertIconRefresh}
                     size="md"
@@ -421,12 +420,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
                 <Icon
-                    role="img"
                     data-tooltip={codeHostMessage}
-                    as={CloudOffOutlineIcon}
                     size="md"
-                    aria-hidden={this.state.isOpen}
-                    aria-label={codeHostMessage}
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                    svgPath={mdiCloudOffOutline}
                 />
             )
         }
@@ -437,12 +434,10 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             codeHostMessage = this.state.isOpen ? undefined : 'Syncing repositories failed!'
             return (
                 <Icon
-                    role="img"
                     data-tooltip={codeHostMessage}
                     as={CloudAlertIconRefresh}
                     size="md"
-                    aria-hidden={this.state.isOpen}
-                    aria-label={codeHostMessage}
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
                 />
             )
         }
@@ -450,24 +445,20 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             codeHostMessage = this.state.isOpen ? undefined : 'Cloning repositories...'
             return (
                 <Icon
-                    img="img"
                     data-tooltip={codeHostMessage}
                     as={CloudSyncIconRefresh}
                     size="md"
-                    aria-hidden={this.state.isOpen}
-                    aria-label={codeHostMessage}
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
                 />
             )
         }
         codeHostMessage = this.state.isOpen ? undefined : 'Repositories up-to-date'
         return (
             <Icon
-                role="img"
                 data-tooltip={codeHostMessage}
                 as={CloudCheckIconRefresh}
                 size="md"
-                aria-hidden={this.state.isOpen}
-                aria-label={codeHostMessage}
+                {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
             />
         )
     }

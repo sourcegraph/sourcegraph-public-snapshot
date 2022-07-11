@@ -3,9 +3,9 @@ package uploads
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
+	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 )
 
-type Store interface {
-	List(ctx context.Context, opts store.ListOpts) ([]Upload, error)
+type Locker interface {
+	Lock(ctx context.Context, key int32, blocking bool) (bool, locker.UnlockFunc, error)
 }

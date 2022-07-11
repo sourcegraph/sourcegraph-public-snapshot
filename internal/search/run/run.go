@@ -115,14 +115,16 @@ func (e *QueryError) Error() string {
 
 // detectSearchType returns the search type to perform. The search type derives
 // from three sources: the version and patternType parameters passed to the
-// search endpoint (literal search is the default in V2), and the `patternType:`
-// filter in the input query string which overrides the searchType, if present.
+// search endpoint and the `patternType:` filter in the input query string which
+// overrides the searchType, if present.
 func detectSearchType(version string, patternType *string) (query.SearchType, error) {
 	var searchType query.SearchType
 	if patternType != nil {
 		switch *patternType {
+		case "standard":
+			searchType = query.SearchTypeStandard
 		case "literal":
-			searchType = query.SearchTypeLiteralDefault
+			searchType = query.SearchTypeLiteral
 		case "regexp":
 			searchType = query.SearchTypeRegex
 		case "structural":
@@ -137,16 +139,18 @@ func detectSearchType(version string, patternType *string) (query.SearchType, er
 		case "V1":
 			searchType = query.SearchTypeRegex
 		case "V2":
-			searchType = query.SearchTypeLiteralDefault
+			searchType = query.SearchTypeLiteral
+		case "V3":
+			searchType = query.SearchTypeStandard
 		default:
-			return -1, errors.Errorf("unrecognized version: want \"V1\" or \"V2\", got %q", version)
+			return -1, errors.Errorf("unrecognized version: want \"V1\", \"V2\", or \"V3\", got %q", version)
 		}
 	}
 	return searchType, nil
 }
 
 func overrideSearchType(input string, searchType query.SearchType) query.SearchType {
-	q, err := query.Parse(input, query.SearchTypeLiteralDefault)
+	q, err := query.Parse(input, query.SearchTypeLiteral)
 	q = query.LowercaseFieldNames(q)
 	if err != nil {
 		// If parsing fails, return the default search type. Any actual
@@ -155,10 +159,12 @@ func overrideSearchType(input string, searchType query.SearchType) query.SearchT
 	}
 	query.VisitField(q, "patterntype", func(value string, _ bool, _ query.Annotation) {
 		switch value {
+		case "standard":
+			searchType = query.SearchTypeStandard
 		case "regex", "regexp":
 			searchType = query.SearchTypeRegex
 		case "literal":
-			searchType = query.SearchTypeLiteralDefault
+			searchType = query.SearchTypeLiteral
 		case "structural":
 			searchType = query.SearchTypeStructural
 		case "lucky":

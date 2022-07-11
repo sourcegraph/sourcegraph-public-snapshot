@@ -240,7 +240,10 @@ var unsupportedLanguageError = errors.New("unsupported language")
 
 // Parses a file and returns info about it.
 func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCommitPath) (*Node, error) {
-	ext := strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
+	ext := filepath.Base(repoCommitPath.Path)
+	if strings.Index(ext, ".") >= 0 {
+		ext = strings.TrimPrefix(filepath.Ext(repoCommitPath.Path), ".")
+	}
 
 	langName, ok := extToLang[ext]
 	if !ok {
@@ -270,7 +273,7 @@ func (s *SquirrelService) parse(ctx context.Context, repoCommitPath types.RepoCo
 		return nil, errors.New("root is nil")
 	}
 	if s.errorOnParseFailure && root.HasError() {
-		return nil, errors.Newf("parse failure in %+v", repoCommitPath)
+		return nil, errors.Newf("parse error in %+v, try pasting it in https://tree-sitter.github.io/tree-sitter/playground to find the ERROR node", repoCommitPath)
 	}
 
 	return &Node{RepoCommitPath: repoCommitPath, Node: root, Contents: contents, LangSpec: langSpec}, nil

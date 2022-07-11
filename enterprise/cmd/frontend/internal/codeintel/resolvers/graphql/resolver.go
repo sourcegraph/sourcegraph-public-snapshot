@@ -52,7 +52,7 @@ type Resolver struct {
 }
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
-func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
+func NewResolver(db database.DB, codeIntelDB database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
 	baseResolver := &Resolver{
 		db:                 db,
 		gitserver:          gitserver,
@@ -64,7 +64,7 @@ func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.R
 	return &frankenResolver{
 		Resolver:                    baseResolver,
 		AutoindexingServiceResolver: autoindexinggraphql.GetResolver(autoindexing.GetService(db, nil, nil, nil)), // Note: Currently unused
-		UploadsServiceResolver:      uploadsgraphql.GetResolver(uploads.GetService(db)),
+		UploadsServiceResolver:      uploadsgraphql.GetResolver(uploads.GetService(db, codeIntelDB, gitserver)),
 		PoliciesServiceResolver:     policiesgraphql.GetResolver(policies.GetService(db)),
 	}
 }
@@ -459,6 +459,7 @@ func (r *Resolver) CreateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		LockfileIndexingEnabled:   args.LockfileIndexingEnabled,
 	})
 	if err != nil {
 		return nil, err
@@ -499,6 +500,7 @@ func (r *Resolver) UpdateCodeIntelligenceConfigurationPolicy(ctx context.Context
 		IndexingEnabled:           args.IndexingEnabled,
 		IndexCommitMaxAge:         toDuration(args.IndexCommitMaxAgeHours),
 		IndexIntermediateCommits:  args.IndexIntermediateCommits,
+		LockfileIndexingEnabled:   args.LockfileIndexingEnabled,
 	}); err != nil {
 		return nil, err
 	}
@@ -626,7 +628,7 @@ func (r *Resolver) PreviewRepositoryFilter(ctx context.Context, args *gql.Previe
 
 	resolvers := make([]*gql.RepositoryResolver, 0, len(ids))
 	for _, id := range ids {
-		repo, err := backend.NewRepos(r.db).Get(ctx, api.RepoID(id))
+		repo, err := backend.NewRepos(r.locationResolver.logger, r.db).Get(ctx, api.RepoID(id))
 		if err != nil {
 			return nil, err
 		}
@@ -709,15 +711,16 @@ func makeGetUploadsOptions(args *gql.LSIFRepositoryUploadsQueryArgs) (store.GetU
 	}
 
 	return store.GetUploadsOptions{
-		RepositoryID: repositoryID,
-		State:        strings.ToLower(derefString(args.State, "")),
-		Term:         derefString(args.Query, ""),
-		VisibleAtTip: derefBool(args.IsLatestForRepo, false),
-		DependencyOf: int(dependencyOf),
-		DependentOf:  int(dependentOf),
-		Limit:        derefInt32(args.First, DefaultUploadPageSize),
-		Offset:       offset,
-		AllowExpired: true,
+		RepositoryID:       repositoryID,
+		State:              strings.ToLower(derefString(args.State, "")),
+		Term:               derefString(args.Query, ""),
+		VisibleAtTip:       derefBool(args.IsLatestForRepo, false),
+		DependencyOf:       int(dependencyOf),
+		DependentOf:        int(dependentOf),
+		Limit:              derefInt32(args.First, DefaultUploadPageSize),
+		Offset:             offset,
+		AllowExpired:       true,
+		AllowDeletedUpload: derefBool(args.IncludeDeleted, false),
 	}, nil
 }
 

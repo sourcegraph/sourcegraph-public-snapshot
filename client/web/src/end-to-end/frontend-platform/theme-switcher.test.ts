@@ -33,7 +33,8 @@ describe('Theme switcher', () => {
             return []
         })
 
-    test('changes the theme', async () => {
+    // Disabled as flaky
+    test.skip('changes the theme', async () => {
         await driver.page.goto(sourcegraphBaseUrl + '/github.com/gorilla/mux/-/blob/mux.go')
         await driver.page.waitForSelector('.theme.theme-dark, .theme.theme-light', { visible: true })
 

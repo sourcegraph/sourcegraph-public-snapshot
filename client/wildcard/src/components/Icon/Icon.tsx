@@ -1,4 +1,4 @@
-import React, { ComponentType, ElementType, PropsWithChildren } from 'react'
+import React, { AriaRole, ComponentType, ElementType, SVGProps } from 'react'
 
 import classNames from 'classnames'
 import { MdiReactIconProps } from 'mdi-react'
@@ -9,41 +9,82 @@ import { ICON_SIZES } from './constants'
 
 import styles from './Icon.module.scss'
 
-interface BaseIconProps extends Omit<MdiReactIconProps, 'children'> {
-    className?: string
+type PathIcon = string
+type CustomIcon = ComponentType<{ className?: string }>
+export type IconType = PathIcon | CustomIcon
+
+interface BaseIconProps extends SVGProps<SVGSVGElement> {
+    /**
+     * Provide a custom `svgPath` to build an SVG.
+     *
+     * If using a Material Design icon, simply import the path from '@mdj/js'.
+     */
+    svgPath?: PathIcon
     /**
      * The variant style of the icon. defaults to 'sm'
      */
     size?: typeof ICON_SIZES[number]
+    /**
+     * If the icon should be styled to scale according to the surrounding text.
+     * Defaults to `true`.
+     */
+    inline?: boolean
+    className?: string
+    role?: AriaRole
 }
 
 interface ScreenReaderIconProps extends BaseIconProps {
-    'aria-label'?: string
+    'aria-label': string
 }
 
 interface HiddenIconProps extends BaseIconProps {
-    'aria-hidden'?: true | 'true'
+    'aria-hidden': true | 'true'
 }
 
-// We're currently migrating our icons to provide a descriptive label or use aria-hidden to be excluded from screen readers.
-// Migration issue: https://github.com/sourcegraph/sourcegraph/issues/34582
-// TODO: We should enforce that these props are provided once that migration is complete.
 export type IconProps = HiddenIconProps | ScreenReaderIconProps
 
-export const Icon = React.forwardRef((props, reference) => {
-    const { children, inline = true, className, size, as: Component = 'svg', role, ...attributes } = props
+// eslint-disable-next-line react/display-name
+export const Icon = React.memo(
+    React.forwardRef(function Icon({ children, className, size, role = 'img', inline = true, ...props }, reference) {
+        const iconStyle = classNames(
+            'mdi-icon',
+            inline && styles.iconInline,
+            size === 'md' && styles.iconInlineMd,
+            className
+        )
 
-    return (
-        <Component
-            className={classNames(styles.iconInline, size === 'md' && styles.iconInlineMd, className)}
-            ref={reference}
-            role={role}
-            {...attributes}
-        >
-            {children}
-        </Component>
-    )
-}) as ForwardReferenceComponent<
-    ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType,
-    PropsWithChildren<IconProps>
->
+        if (props.svgPath) {
+            const {
+                svgPath,
+                height = 24,
+                width = 24,
+                viewBox = '0 0 24 24',
+                fill = 'currentColor',
+                ...attributes
+            } = props
+
+            return (
+                <svg
+                    ref={reference}
+                    className={iconStyle}
+                    role={role}
+                    height={height}
+                    width={width}
+                    viewBox={viewBox}
+                    fill={fill}
+                    {...attributes}
+                >
+                    <path d={svgPath} />
+                </svg>
+            )
+        }
+
+        const { as: IconComponent = 'svg', ...attributes } = props
+
+        return (
+            <IconComponent ref={reference} className={iconStyle} role={role} {...attributes}>
+                {children}
+            </IconComponent>
+        )
+    })
+) as ForwardReferenceComponent<ComponentType<React.PropsWithChildren<MdiReactIconProps>> | ElementType, IconProps>

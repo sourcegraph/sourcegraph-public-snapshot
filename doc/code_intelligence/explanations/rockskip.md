@@ -16,7 +16,34 @@ You can always try Rockskip for a while and if it doesn't help then you can disa
 
 ## How do I enable Rockskip?
 
-**Step 1:** Give your `codeintel-db` has a few extra GB of RAM and set environment variables on the `symbols` container:
+**Step 1:** Set environment variables on the `symbols` container:
+
+For Docker Compose:
+
+```yaml
+services:
+  symbols-0:
+    environment:
+      # 👇 Enables Rockskip
+      - USE_ROCKSKIP=true
+      # 👇 Uses Rockskip for all the repositories over 1GB
+      - ROCKSKIP_MIN_REPO_SIZE_MB=1000
+```
+
+For Helm:
+
+
+```yaml
+# overrides.yaml
+symbols:
+  env:
+    # 👇 Enables Rockskip
+    USE_ROCKSHIP:
+      value: "true"
+    # 👇 Uses Rockskip for the repositories in the comma separated list
+    ROCKSKIP_REPOS:
+      value: "github.com/crossplane/crossplane,github.com/sgtest/megarepo"
+```
 
 For Kubernetes:
 
@@ -31,42 +58,12 @@ spec:
         # 👇 Enables Rockskip
         - name: USE_ROCKSKIP
           value: "true"
-        # 👇 Uses Rockskip for the repositories in the comma separated list
-        - name: ROCKSKIP_REPOS
-          value: "github.com/torvalds/linux,github.com/pallets/flask"
+        # 👇 Uses Rockskip for all the repositories over 1GB
+        - name: ROCKSKIP_MIN_REPO_SIZE_MB
+          value: "1000"
 ```
 
-```yaml
-# base/codeintel-db/codeintel-db.Deployment.yaml
-spec:
-  template:
-    spec:
-      containers:
-      - name: pgsql
-        resources:
-          limits:
-            memory: 8Gi # 👈 Increase RAM from 4g to 8g
-          requests:
-            memory: 8Gi # 👈 Increase RAM from 4g to 8g
-```
-
-For Docker Compose:
-
-```yaml
-services:
-
-  symbols-0:
-    environment:
-      # 👇 Enables Rockskip
-      - USE_ROCKSKIP=true
-      # 👇 Uses Rockskip for the repositories in the comma separated list
-      - ROCKSKIP_REPOS=github.com/torvalds/linux,github.com/pallets/flask
-
-  codeintel-db:
-    mem_limit: '8g' # 👈 Increase RAM from 2g to 8g
-```
-
-For other deployments, make sure that:
+For all deployments, make sure that:
 
 - The `symbols` service has access to the codeintel DB
 - The `symbols` service has the environment variables set
@@ -76,9 +73,9 @@ For other deployments, make sure that:
 
 1. Visit your repository in the Sourcegraph UI
 1. Click on the branch selector, click **Commits**, and select the second most recent commit (this avoids routing the request to Zoekt)
-1. Open the symbols sidebar to kick off indexing (it's ok to see a loading spinner, that probably means indexing is in progress)
+1. Open the symbols sidebar to kick off indexing. You can expect to see a loading spinner for 5s then an error message saying that indexing is in progress with the estimated time remaining.
 
-**Step 3:** Check the indexing status by following the [instructions below](#how-do-i-check-the-indexing-status).
+**Step 3:** Wait for indexing to complete. You can check the status as before by refreshing the page, opening the symbols sidebar, and looking at the error message. If you are interested in more technical details about the status, see the [instructions below](#how-do-i-check-the-indexing-status).
 
 **Step 4:** Open the symbols sidebar again and the symbols should appear quickly. Hover popovers and jump-to-definition via search-based code intelligence should also respond quickly.
 
@@ -98,7 +95,9 @@ Rockskip heavily relies on gitserver for data. Rockskip issues very long-running
 
 ## How do I check the indexing status?
 
-The symbols container responds to GET requests on the `localhost:3184/status` endpoint with the following info:
+The easiest way to check the status of a single repository is to open the symbols sidebar and wait 5s for an error message to appear with the estimated time remaining.
+
+For more info, the symbols container responds to GET requests on the `localhost:3184/status` endpoint with the following info:
 
 - Repository count
 - Size of the symbols table in Postgres

@@ -10,368 +10,22 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
+
+	"github.com/hexops/autogold"
+
+	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	dbtypes "github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/sourcegraph/internal/api"
-
-	"github.com/hexops/autogold"
-
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 )
-
-func TestGenerateComputeRecordings(t *testing.T) {
-	ctx := context.Background()
-
-	t.Run("compute job with no dependencies", func(t *testing.T) {
-		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
-			SeriesID:        "testseries1",
-			SearchQuery:     "searchit",
-			RecordTime:      &date,
-			PersistMode:     "record",
-			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
-		}
-
-		mocked := mockComputeSearch([]computeSearch{
-			{
-				repoName: "github.com/sourcegraph/sourcegraph",
-				repoId:   11,
-				values: []computeValue{
-					{
-						value:   "1.15",
-						count:   3,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-					{
-						value:   "1.14",
-						count:   1,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-				},
-			},
-		})
-
-		handler := workHandler{
-			baseWorkerStore: nil,
-			insightsStore:   nil,
-			metadadataStore: nil,
-			limiter:         nil,
-			mu:              sync.RWMutex{},
-			seriesCache:     nil,
-			computeSearch:   mocked,
-		}
-
-		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
-		if err != nil {
-			t.Error(err)
-		}
-		stringified := stringify(recordings)
-		autogold.Want("compute job with no dependencies", []string{
-			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.14 1.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.15 3.000000",
-		}).Equal(t, stringified)
-	})
-
-	t.Run("compute job with sub-repo permissions", func(t *testing.T) {
-		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
-			SeriesID:        "testseries1",
-			SearchQuery:     "searchit",
-			RecordTime:      &date,
-			PersistMode:     "record",
-			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
-		}
-
-		mocked := mockComputeSearch([]computeSearch{
-			{
-				repoName: "github.com/sourcegraph/sourcegraph",
-				repoId:   11,
-				values: []computeValue{
-					{
-						value:   "1.15",
-						count:   3,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-					{
-						value:   "1.14",
-						count:   1,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-				},
-			},
-		})
-
-		handler := workHandler{
-			baseWorkerStore: nil,
-			insightsStore:   nil,
-			metadadataStore: nil,
-			limiter:         nil,
-			mu:              sync.RWMutex{},
-			seriesCache:     nil,
-			computeSearch:   mocked,
-		}
-
-		checker := authz.NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return true
-		})
-		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
-			if id == 11 {
-				return true, nil
-			} else {
-				return false, errors.New("Wrong repoID, try again")
-			}
-		})
-
-		// sub-repo permissions are enabled
-		authz.DefaultSubRepoPermsChecker = checker
-
-		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
-		if err != nil {
-			t.Error(err)
-		}
-		if len(recordings) != 0 {
-			t.Error("No records should be returned as given repo has sub-repo permissions")
-		}
-
-		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
-		authz.DefaultSubRepoPermsChecker = nil
-	})
-
-	t.Run("compute job with sub-repo permissions resulted in error", func(t *testing.T) {
-		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
-			SeriesID:        "testseries1",
-			SearchQuery:     "searchit",
-			RecordTime:      &date,
-			PersistMode:     "record",
-			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
-		}
-
-		mocked := mockComputeSearch([]computeSearch{
-			{
-				repoName: "github.com/sourcegraph/sourcegraph",
-				repoId:   11,
-				values: []computeValue{
-					{
-						value:   "1.15",
-						count:   3,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-					{
-						value:   "1.14",
-						count:   1,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-				},
-			},
-		})
-
-		handler := workHandler{
-			baseWorkerStore: nil,
-			insightsStore:   nil,
-			metadadataStore: nil,
-			limiter:         nil,
-			mu:              sync.RWMutex{},
-			seriesCache:     nil,
-			computeSearch:   mocked,
-		}
-
-		checker := authz.NewMockSubRepoPermissionChecker()
-		checker.EnabledFunc.SetDefaultHook(func() bool {
-			return true
-		})
-		checker.EnabledForRepoIdFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (bool, error) {
-			return false, errors.New("Oops")
-		})
-
-		// sub-repo permissions are enabled
-		authz.DefaultSubRepoPermsChecker = checker
-
-		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
-		if err != nil {
-			t.Error(err)
-		}
-		if len(recordings) != 0 {
-			t.Error("No records should be returned as given repo has an error during sub-repo permissions check")
-		}
-
-		// Resetting DefaultSubRepoPermsChecker, so it won't affect further tests
-		authz.DefaultSubRepoPermsChecker = nil
-	})
-
-	t.Run("compute job with no dependencies multirepo", func(t *testing.T) {
-		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
-			SeriesID:        "testseries1",
-			SearchQuery:     "searchit",
-			RecordTime:      &date,
-			PersistMode:     "record",
-			DependentFrames: nil,
-			ID:              1,
-			State:           "queued",
-		}
-
-		mocked := mockComputeSearch([]computeSearch{
-			{
-				repoName: "github.com/sourcegraph/sourcegraph",
-				repoId:   11,
-				values: []computeValue{
-					{
-						value:   "1.18",
-						count:   8,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-					{
-						value:   "1.11",
-						count:   2,
-						path:    "package2/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-				},
-			},
-			{
-				repoName: "github.com/sourcegraph/handbook",
-				repoId:   5,
-				values: []computeValue{
-					{
-						value:   "1.20",
-						count:   1,
-						path:    "package3/go.mod",
-						revhash: "asdfsdfer32r234234",
-					},
-					{
-						value:   "1.18",
-						count:   2,
-						path:    "package4/go.mod",
-						revhash: "asdfsdfer32r234234",
-					},
-				},
-			},
-		})
-
-		handler := workHandler{
-			baseWorkerStore: nil,
-			insightsStore:   nil,
-			metadadataStore: nil,
-			limiter:         nil,
-			mu:              sync.RWMutex{},
-			seriesCache:     nil,
-			computeSearch:   mocked,
-		}
-
-		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
-		if err != nil {
-			t.Error(err)
-		}
-		stringified := stringify(recordings)
-		autogold.Want("compute job with no dependencies multirepo", []string{
-			"github.com/sourcegraph/handbook 5 2021-12-01 00:00:00 +0000 UTC 1.18 2.000000",
-			"github.com/sourcegraph/handbook 5 2021-12-01 00:00:00 +0000 UTC 1.20 1.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.11 2.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-12-01 00:00:00 +0000 UTC 1.18 8.000000",
-		}).Equal(t, stringified)
-	})
-
-	t.Run("compute job with dependencies", func(t *testing.T) {
-		date := time.Date(2021, 8, 1, 0, 0, 0, 0, time.UTC)
-		job := Job{
-			SeriesID:        "testseries1",
-			SearchQuery:     "searchit",
-			RecordTime:      &date,
-			PersistMode:     "record",
-			DependentFrames: []time.Time{date.AddDate(0, 1, 0), date.AddDate(0, 2, 0)},
-			ID:              1,
-			State:           "queued",
-		}
-
-		mocked := mockComputeSearch([]computeSearch{
-			{
-				repoName: "github.com/sourcegraph/sourcegraph",
-				repoId:   11,
-				values: []computeValue{
-					{
-						value:   "1.1",
-						count:   1,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-					{
-						value:   "1.22",
-						count:   2,
-						path:    "package1/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-				},
-			},
-			{
-				repoName: "github.com/sourcegraph/sourcegraph",
-				repoId:   11,
-				values: []computeValue{
-					{
-						value:   "1.33",
-						count:   3,
-						path:    "package3/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-					{
-						value:   "1.22",
-						count:   4,
-						path:    "package3/go.mod",
-						revhash: "asdfsadf1234qwrar234",
-					},
-				},
-			},
-		})
-
-		handler := workHandler{
-			baseWorkerStore: nil,
-			insightsStore:   nil,
-			metadadataStore: nil,
-			limiter:         nil,
-			mu:              sync.RWMutex{},
-			seriesCache:     nil,
-			computeSearch:   mocked,
-		}
-
-		recordings, err := handler.generateComputeRecordings(ctx, &job, date)
-		if err != nil {
-			t.Error(err)
-		}
-		stringified := stringify(recordings)
-		autogold.Want("compute job with dependencies", []string{
-			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.1 1.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.22 6.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-08-01 00:00:00 +0000 UTC 1.33 3.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-09-01 00:00:00 +0000 UTC 1.1 1.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-09-01 00:00:00 +0000 UTC 1.22 6.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-09-01 00:00:00 +0000 UTC 1.33 3.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC 1.1 1.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC 1.22 6.000000",
-			"github.com/sourcegraph/sourcegraph 11 2021-10-01 00:00:00 +0000 UTC 1.33 3.000000",
-		}).Equal(t, stringified)
-	})
-}
 
 func TestGenerateComputeRecordingsStream(t *testing.T) {
 	t.Run("compute stream job with no dependencies", func(t *testing.T) {
@@ -402,16 +56,15 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		}
 
 		handler := workHandler{
-			baseWorkerStore:     nil,
-			insightsStore:       nil,
-			metadadataStore:     nil,
-			limiter:             nil,
-			mu:                  sync.RWMutex{},
-			seriesCache:         nil,
-			computeSearchStream: mocked,
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -474,7 +127,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -534,7 +187,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -591,7 +244,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -642,7 +295,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if err != nil {
 			t.Error(err)
 		}
@@ -686,7 +339,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -695,7 +348,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 		}
 	})
 
-	t.Run("compute stream job returns error event", func(t *testing.T) {
+	t.Run("compute stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
 		job := Job{
 			SeriesID:        "testseries1",
@@ -725,16 +378,58 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
 		if err == nil {
 			t.Error("Expected error but received nil")
 		}
-		var streamingErr StreamingError
-		if !errors.As(err, &streamingErr) {
-			t.Errorf("Expected StreamingError, got %v", err)
+		if strings.Contains(err.Error(), "terminal") {
+			t.Errorf("Expected retryable error, got %v", err)
+		}
+	})
+
+	t.Run("compute stream job returns terminal error event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.ComputeTabulationResult, error) {
+			return &streaming.ComputeTabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"not terminal", "invalid query"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore:     nil,
+			insightsStore:       nil,
+			metadadataStore:     nil,
+			limiter:             nil,
+			mu:                  sync.RWMutex{},
+			seriesCache:         nil,
+			computeSearchStream: mocked,
+		}
+
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on compute stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		var terminalError TerminalStreamingError
+		if !errors.As(err, &terminalError) {
+			t.Errorf("Expected terminal error, got %v", err)
 		}
 	})
 
@@ -768,7 +463,7 @@ func TestGenerateComputeRecordingsStream(t *testing.T) {
 			computeSearchStream: mocked,
 		}
 
-		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date)
+		recordings, err := handler.generateComputeRecordingsStream(context.Background(), &job, date, mocked)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on compute stream")
 		}
@@ -817,9 +512,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			searchStream:    mocked,
 		}
 
-		// We only use series data for inserting dirty queries in the non-stream path so we can
-		// ignore the argument here.
-		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
 		if err != nil {
 			t.Error(err)
 		}
@@ -881,9 +574,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		// We only use series data for inserting dirty queries in the non-stream path so we can
-		// ignore the argument here.
-		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
 		if err != nil {
 			t.Error(err)
 		}
@@ -941,9 +632,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		// sub-repo permissions are enabled
 		authz.DefaultSubRepoPermsChecker = checker
 
-		// We only use series data for inserting dirty queries in the non-stream path so we can
-		// ignore the argument here.
-		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
 		if err != nil {
 			t.Error(err)
 		}
@@ -995,9 +684,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			searchStream:    mocked,
 		}
 
-		// We only use series data for inserting dirty queries in the non-stream path so we can
-		// ignore the argument here.
-		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
 		if err != nil {
 			t.Error(err)
 		}
@@ -1043,9 +730,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			searchStream:    mocked,
 		}
 
-		// We only use series data for inserting dirty queries in the non-stream path so we can
-		// ignore the argument here.
-		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
 		if err != nil {
 			t.Error(err)
 		}
@@ -1083,7 +768,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			searchStream:    mocked,
 		}
 
-		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}
@@ -1092,7 +777,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 		}
 	})
 
-	t.Run("search stream job returns error event", func(t *testing.T) {
+	t.Run("search stream job returns retryable error event", func(t *testing.T) {
 		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
 		job := Job{
 			SeriesID:        "testseries1",
@@ -1122,13 +807,58 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			searchStream:    mocked,
 		}
 
-		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}
-		var streamingErr StreamingError
-		if !errors.As(err, &streamingErr) {
-			t.Errorf("Expected StreamingError, got %v", err)
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		if strings.Contains(err.Error(), "terminal") {
+			t.Errorf("Expected retryable error, got %v", err)
+		}
+	})
+
+	t.Run("search stream job returns retryable error event", func(t *testing.T) {
+		date := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC)
+		job := Job{
+			SeriesID:        "testseries1",
+			SearchQuery:     "searchit",
+			RecordTime:      &date,
+			PersistMode:     "record",
+			DependentFrames: nil,
+			ID:              1,
+			State:           "queued",
+		}
+
+		mocked := func(context.Context, string) (*streaming.TabulationResult, error) {
+			return &streaming.TabulationResult{
+				StreamDecoderEvents: streaming.StreamDecoderEvents{
+					Errors: []string{"retryable event", "invalid query"},
+				},
+			}, nil
+		}
+
+		handler := workHandler{
+			baseWorkerStore: nil,
+			insightsStore:   nil,
+			metadadataStore: nil,
+			limiter:         nil,
+			mu:              sync.RWMutex{},
+			seriesCache:     nil,
+			searchStream:    mocked,
+		}
+
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
+		if len(recordings) != 0 {
+			t.Error("No records should be returned as we errored on stream")
+		}
+		if err == nil {
+			t.Error("Expected error but received nil")
+		}
+		var terminalError TerminalStreamingError
+		if !errors.As(err, &terminalError) {
+			t.Errorf("Expected terminal error, got %v", err)
 		}
 	})
 
@@ -1162,7 +892,7 @@ func TestGenerateSearchRecordingsStream(t *testing.T) {
 			searchStream:    mocked,
 		}
 
-		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, nil, date)
+		recordings, err := handler.generateSearchRecordingsStream(context.Background(), &job, date)
 		if len(recordings) != 0 {
 			t.Error("No records should be returned as we errored on stream")
 		}
@@ -1349,7 +1079,8 @@ func mockComputeSearch(results []computeSearch) func(context.Context, string) ([
 }
 
 func TestGetSeries(t *testing.T) {
-	insightsDB := dbtest.NewInsightsDB(t)
+	logger := logtest.Scoped(t)
+	insightsDB := edb.NewInsightsDB(dbtest.NewInsightsDB(logger, t))
 	now := time.Date(2021, 12, 1, 0, 0, 0, 0, time.UTC).Truncate(time.Microsecond).Round(0)
 	metadataStore := store.NewInsightStore(insightsDB)
 	metadataStore.Now = func() time.Time {

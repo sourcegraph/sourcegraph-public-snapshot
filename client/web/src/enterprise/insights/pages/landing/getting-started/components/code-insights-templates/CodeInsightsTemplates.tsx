@@ -1,7 +1,7 @@
 import React, { MouseEvent, useContext, useState } from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -22,6 +22,7 @@ import {
     ProductStatusBadge,
     H2,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../../stores'
@@ -218,16 +219,16 @@ const QueryPanel: React.FunctionComponent<React.PropsWithChildren<QueryPanelProp
     return (
         <CodeInsightsQueryBlock className={styles.query}>
             <SyntaxHighlightedSearchQuery query={query} />
-            <Button
-                className={styles.copyButton}
-                onClick={onCopy}
-                data-tooltip={currentCopyTooltip}
-                data-placement="top"
-                aria-label="Copy Docker command to clipboard"
-                variant="icon"
-            >
-                <Icon role="img" aria-hidden={true} as={ContentCopyIcon} />
-            </Button>
+            <Tooltip content={currentCopyTooltip} placement="top">
+                <Button
+                    className={styles.copyButton}
+                    onClick={onCopy}
+                    aria-label="Copy Docker command to clipboard"
+                    variant="icon"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiContentCopy} />
+                </Button>
+            </Tooltip>
         </CodeInsightsQueryBlock>
     )
 }

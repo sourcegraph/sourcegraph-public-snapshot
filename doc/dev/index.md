@@ -67,6 +67,7 @@ Clarification and discussion about key concepts, architecture, and development s
 ### Overview
 
 - [Tech stack](background-information/tech_stack.md)
+- [Current Sourcegraph tech radar](https://radar.thoughtworks.com/?sheetId=https%3A%2F%2Fraw.githubusercontent.com%2Fsourcegraph%2Fsourcegraph%2Fmain%2Fdoc%2Fdev%2Fradar%2Ftech-radar.csv) (also see [how to maintain the radar](how-to/maintain-tech-radar.md))
 
 ### [Architecture](background-information/architecture/index.md)
 
@@ -163,6 +164,8 @@ Guides to help with troubleshooting, configuring test instances, debugging, and 
 - [How to add logging](how-to/add_logging.md)
 - [How to find monitoring](how-to/find_monitoring.md)
 - [How to add monitoring](how-to/add_monitoring.md)
+- [Set up local monitoring development](how-to/monitoring_local_dev.md)
+- [Set up local OpenTelemetry development](how-to/otel_local_dev.md)
 
 ### Documentation
 

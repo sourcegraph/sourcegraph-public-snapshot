@@ -294,6 +294,7 @@ func addBrowserExtensionUnitTests(pipeline *bk.Pipeline) {
 func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 	pipeline.AddStep(":jest::java: Test (client/jetbrains)",
 		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
 		bk.Cmd("yarn generate"),
 		bk.Cmd("yarn --cwd client/jetbrains -s build"),
 	)
@@ -384,11 +385,16 @@ func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
 		pipeline.AddStep(
 			fmt.Sprintf(":go: Test (%s)", description),
+			// Max DB connections is set to 200: https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless/postgresql.conf
+			// Because we run tests concurrently, the following must hold to avoid connection issues:
+			//
+			//   GOMAXPROCS * TESTDB_MAXOPENCONNS < 200
+			//
+			// We aim a bit below the threshold to be safe.
+			bk.Env("GOMAXPROCS", "10"),
+			bk.Env("TESTDB_MAXOPENCONNS", "15"),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
-				TestReports: &bk.TestReportOpts{
-					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
-				},
 			}),
 			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
 		)
@@ -501,25 +507,14 @@ func addBrowserExtensionReleaseSteps(pipeline *bk.Pipeline) {
 		bk.Cmd("yarn workspace @sourcegraph/browser release:npm"))
 }
 
-// Release the browser extension.
-func addVsceReleaseSteps(buildOptions bk.BuildOptions) operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		// Check Commit Message to determine version incremented
-		// Uses Semantic Versioning: major / minor / patch
-		// Example Commit Message: minor release
-		releaseType := strings.TrimSpace(strings.Split(buildOptions.Message, "release")[0])
-		if releaseType == "major" || releaseType == "minor" || releaseType == "patch" {
-			addVsceIntegrationTests(pipeline)
-			pipeline.AddWait()
-			// Release to the VS Code Marketplace
-			pipeline.AddStep(":vscode: Extension release",
-				bk.Env("VSCODE_RELEASE_TYPE", releaseType),
-				withYarnCache(),
-				bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
-				bk.Cmd("yarn generate"),
-				bk.Cmd("yarn --cwd client/vscode -s run release"))
-		}
-	}
+// Release the VS Code extension.
+func addVsceReleaseSteps(pipeline *bk.Pipeline) {
+	// Publish extension to the VS Code Marketplace
+	pipeline.AddStep(":vscode: Extension release",
+		withYarnCache(),
+		bk.Cmd("yarn --frozen-lockfile --network-timeout 60000"),
+		bk.Cmd("yarn generate"),
+		bk.Cmd("yarn --cwd client/vscode -s run release"))
 }
 
 // Adds a Buildkite pipeline "Wait".
@@ -562,6 +557,7 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
+			bk.Skip("Disabled because flaky"),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -796,7 +792,7 @@ func publishFinalDockerImage(c Config, app string) operations.Operation {
 func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor")),
+			bk.Key(candidateImageStepKey("executor.vm-image")),
 			bk.Env("VERSION", version),
 		}
 		if !skipHashCompare {
@@ -807,7 +803,7 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 				bk.Cmd(fmt.Sprintf("%s ./enterprise/cmd/executor/hash.sh", compareHashScript)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/build.sh"))
+			bk.Cmd("./enterprise/cmd/executor/vm-image/build.sh"))
 
 		pipeline.AddStep(":packer: :construction: Build executor image", stepOpts...)
 	}
@@ -815,7 +811,7 @@ func buildExecutor(version string, skipHashCompare bool) operations.Operation {
 
 func publishExecutor(version string, skipHashCompare bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("executor")
+		candidateBuildStep := candidateImageStepKey("executor.vm-image")
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", version),
@@ -829,7 +825,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 				bk.Cmd(fmt.Sprintf("%s %s", checkDependencySoftFailScript, candidateBuildStep)))
 		}
 		stepOpts = append(stepOpts,
-			bk.Cmd("./enterprise/cmd/executor/release.sh"))
+			bk.Cmd("./enterprise/cmd/executor/vm-image/release.sh"))
 
 		pipeline.AddStep(":packer: :white_check_mark: Publish executor image", stepOpts...)
 	}
@@ -839,7 +835,7 @@ func publishExecutor(version string, skipHashCompare bool) operations.Operation 
 func buildExecutorDockerMirror(version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		stepOpts := []bk.StepOpt{
-			bk.Key(candidateImageStepKey("executor-docker-mirror")),
+			bk.Key(candidateImageStepKey("executor-docker-miror.vm-image")),
 			bk.Env("VERSION", version),
 		}
 		stepOpts = append(stepOpts,
@@ -851,7 +847,7 @@ func buildExecutorDockerMirror(version string) operations.Operation {
 
 func publishExecutorDockerMirror(version string) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
-		candidateBuildStep := candidateImageStepKey("executor-docker-mirror")
+		candidateBuildStep := candidateImageStepKey("executor-docker-miror.vm-image")
 		stepOpts := []bk.StepOpt{
 			bk.DependsOn(candidateBuildStep),
 			bk.Env("VERSION", version),

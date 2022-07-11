@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	gitprotocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -23,7 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 )
 
 type SearchJob struct {
@@ -32,6 +31,7 @@ type SearchJob struct {
 	Diff                 bool
 	Limit                int
 	IncludeModifiedFiles bool
+	Concurrency          int
 
 	// CodeMonitorSearchWrapper, if set, will wrap the commit search with extra logic specific to code monitors.
 	CodeMonitorSearchWrapper CodeMonitorHook `json:"-"`
@@ -53,7 +53,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return nil, err
 	}
 
-	searchRepoRev := func(repoRev *search.RepositoryRevisions) error {
+	searchRepoRev := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			return nil
@@ -94,22 +94,18 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	bounded := goroutine.NewBounded(4)
-	defer func() { err = errors.Append(err, bounded.Wait()) }()
-
 	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
 	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+		g := group.New().WithContext(ctx).WithMaxConcurrency(j.Concurrency).WithFirstError()
+
 		for _, repoRev := range page.RepoRevs {
 			repoRev := repoRev
-			if ctx.Err() != nil {
-				// Don't keep spinning up goroutines if context has been canceled
-				return ctx.Err()
-			}
-			bounded.Go(func() error {
-				return searchRepoRev(repoRev)
+			g.Go(func(ctx context.Context) error {
+				return searchRepoRev(ctx, repoRev)
 			})
 		}
-		return nil
+
+		return g.Wait()
 	})
 }
 
@@ -120,15 +116,26 @@ func (j SearchJob) Name() string {
 	return "CommitSearchJob"
 }
 
-func (j *SearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", j.Query),
-		trace.Stringer("repoOpts", &j.RepoOpts),
-		log.Bool("diff", j.Diff),
-		log.Int("limit", j.Limit),
-		log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+func (j *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("includeModifiedFiles", j.IncludeModifiedFiles),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", j.Query),
+			trace.Scoped("repoOpts", j.RepoOpts.Tags()...),
+			log.Bool("diff", j.Diff),
+			log.Int("limit", j.Limit),
+		)
 	}
+	return res
 }
+
+func (j *SearchJob) Children() []job.Describer       { return nil }
+func (j *SearchJob) MapChildren(job.MapFunc) job.Job { return j }
 
 func (j *SearchJob) ExpandUsernames(ctx context.Context, db database.DB) (err error) {
 	protocol.ReduceWith(j.Query, func(n protocol.Node) protocol.Node {

@@ -13,6 +13,31 @@ print_usage() {
   printf "  echo \"your markdown\" | annotate.sh -m -s my-section"
 }
 
+generate_grafana_link() {
+    # -sR in the jq command below is "slurp" and "raw" tells jq to escape the json as a raw string since it will be
+    # embedded as a value in other json (aka the query we send to grafana)
+    expression="$(cat <<EOF | jq -sR .
+{app="buildkite", build="$BUILDKITE_BUILD_NUMBER", branch="main", state="failed", job="$BUILDKITE_JOB_ID"} # to search the whole build remove the job id here!
+|~ "(?i)failed|panic|(FAIL:)" # this is a case insensitive regular expression, feel free to unleash your regex-fu!
+EOF
+    )"
+    # On Darwin use gdate
+    begin=$(date -d '1 hour ago' "+%s")000
+    end=$(date "+%s")000
+    payload=$(printf '{"datasource":"grafanacloud-sourcegraph-logs","queries":[{"refId":"A","expr":%s}],"range":{"from":"%s","to":"%s"}}' "$expression" "$begin" "$end")
+
+    echo "https://sourcegraph.grafana.net/explore?orgId=1&left=$(echo "$payload" | jq -s -R -r @uri)"
+}
+
+print_heading() {
+    logs=""
+    output="&bull; [View job output](#$BUILDKITE_JOB_ID)"
+    if [[ $BUILDKITE_BRANCH == "main" ]]; then
+        logs="&bull; [View Grafana logs]($(generate_grafana_link))"
+    fi
+    printf "**%s** %s %s\n\n" "$BUILDKITE_LABEL" "$output" "$logs"
+}
+
 if [ $# -eq 0 ]; then
   print_usage
   exit 1
@@ -39,6 +64,8 @@ done
 # Set a default context that is unique per job/custom context and type combination.
 CONTEXT=${CUSTOM_CONTEXT:-$BUILDKITE_JOB_ID}
 CONTEXT="$CONTEXT-$TYPE"
+# when the markdown is created, write the output to a file as well
+TEE_FILE="./annotations/${BUILDKITE_JOB_ID}-annotation.md"
 
 # If we are not in Buildkite, exit before doing annotations
 if [[ -z "$BUILDKITE" ]]; then
@@ -59,7 +86,7 @@ if [[ -z "$CUSTOM_CONTEXT" ]]; then
 
   if [ ! -f "$FILE" ]; then
     touch $FILE
-    printf "**%s** ([logs](#%s))\n\n" "$BUILDKITE_LABEL" "$BUILDKITE_JOB_ID" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+    print_heading | tee -a "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
   fi
 fi
 
@@ -72,12 +99,14 @@ while IFS= read -r line; do
   fi
 done
 
+
 if [ -n "$SECTION" ]; then
-  printf "**%s**\n" "$SECTION" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "**%s**\n" "$SECTION" | tee -a "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi
 
+
 if [ "$MARKDOWN" = true ]; then
-  printf "%s\n" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "%s\n" "$BODY" | tee -a "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 else
-  printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
+  printf "\`\`\`term\n%s\n\`\`\`\n" "$BODY" | tee -a "$TEE_FILE" | buildkite-agent annotate --style "$TYPE" --context "$CONTEXT" --append
 fi

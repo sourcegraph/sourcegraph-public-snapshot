@@ -1,7 +1,7 @@
 import React, { useCallback } from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { useQuery } from '@sourcegraph/http-client'
 import { Button, Select, Icon } from '@sourcegraph/wildcard'
@@ -73,10 +73,9 @@ export const WebhookLogPageHeader: React.FunctionComponent<React.PropsWithChildr
             <div className={styles.errorButton}>
                 <Button variant="danger" onClick={onErrorToggle} outline={!onlyErrors}>
                     <Icon
-                        role="img"
                         className={classNames(styles.icon, onlyErrors && styles.enabled)}
-                        as={AlertCircleIcon}
                         aria-hidden={true}
+                        svgPath={mdiAlertCircle}
                     />
                     <span className="ml-1">Only errors</span>
                 </Button>

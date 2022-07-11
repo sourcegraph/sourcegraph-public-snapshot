@@ -2,21 +2,30 @@ package store
 
 import (
 	"context"
-	"database/sql"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Store provides the interface for autoindexing storage.
 type Store interface {
+	// Not in use yet.
 	List(ctx context.Context, opts ListOpts) (indexJobs []shared.IndexJob, err error)
+
+	// Commits
+	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (indexesUpdated int, err error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration) (indexesDeleted int, err error)
+
+	// Indexes
+	DeleteIndexesWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
 }
 
 // store manages the autoindexing store.
@@ -26,9 +35,9 @@ type store struct {
 }
 
 // New returns a new autoindexing store.
-func New(db dbutil.DB, observationContext *observation.Context) Store {
+func New(db database.DB, observationContext *observation.Context) Store {
 	return &store{
-		db:         basestore.NewWithDB(db, sql.TxOptions{}),
+		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext),
 	}
 }

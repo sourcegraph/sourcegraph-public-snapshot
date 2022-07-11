@@ -2,48 +2,78 @@ package store
 
 import (
 	"context"
-	"database/sql"
+	"time"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
+	logger "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // Store provides the interface for uploads storage.
 type Store interface {
+	// Not in use yet.
 	List(ctx context.Context, opts ListOpts) (uploads []shared.Upload, err error)
+
+	// Commits
+	GetCommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) (_ []string, nextToken *string, err error)
+	GetOldestCommitDate(ctx context.Context, repositoryID int) (time.Time, bool, error)
+	GetStaleSourcedCommits(ctx context.Context, minimumTimeSinceLastCheck time.Duration, limit int, now time.Time) (_ []shared.SourcedCommits, err error)
+	UpdateSourcedCommits(ctx context.Context, repositoryID int, commit string, now time.Time) (uploadsUpdated int, err error)
+	DeleteSourcedCommits(ctx context.Context, repositoryID int, commit string, maximumCommitLag time.Duration, now time.Time) (uploadsUpdated int, uploadsDeleted int, err error)
+
+	// Repositories
+	GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error)
+	SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error)
+	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
+	RepoName(ctx context.Context, repositoryID int) (_ string, err error)              // TODO(numbers88s): renaming this after I remove dbStore from gitserver init.
+	RepoNames(ctx context.Context, repositoryIDs ...int) (_ map[int]string, err error) // TODO(numbers88s): renaming this after I remove dbStore from gitserver init.
+
+	// Uploads
+	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (_ []shared.Upload, _ int, err error)
+	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
+	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
+	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
+	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
+	HardDeleteUploadsByIDs(ctx context.Context, ids ...int) error
+	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (_ int, err error)
+	DeleteUploadsWithoutRepository(ctx context.Context, now time.Time) (_ map[int]int, err error)
+
+	// Dumps
+	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) (_ []shared.Dump, err error)
+	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, commitGraph *gitdomain.CommitGraph) (_ []shared.Dump, err error)
+
+	// Packages
+	UpdatePackages(ctx context.Context, dumpID int, packages []precise.Package) (err error)
+
+	// References
+	UpdatePackageReferences(ctx context.Context, dumpID int, references []precise.PackageReference) (err error)
+
+	// Audit Logs
+	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (count int, err error)
 }
 
 // store manages the database operations for uploads.
 type store struct {
+	logger     logger.Logger
 	db         *basestore.Store
 	operations *operations
 }
 
 // New returns a new uploads store.
-func New(db dbutil.DB, observationContext *observation.Context) Store {
+func New(db database.DB, observationContext *observation.Context) Store {
 	return &store{
-		db:         basestore.NewWithDB(db, sql.TxOptions{}),
+		logger:     logger.Scoped("uploads.store", ""),
+		db:         basestore.NewWithHandle(db.Handle()),
 		operations: newOperations(observationContext),
 	}
-}
-
-// Transact returns a store with a transaction.
-func (s *store) Transact(ctx context.Context) (*store, error) {
-	txBase, err := s.db.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-
-	return &store{
-		db:         txBase,
-		operations: s.operations,
-	}, nil
 }
 
 // ListOpts specifies options for listing uploads.

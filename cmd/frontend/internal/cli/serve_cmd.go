@@ -20,7 +20,10 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/throttled/throttled/v2/store/redigostore"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	sglog "github.com/sourcegraph/log"
+
+	sentrylib "github.com/getsentry/sentry-go"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -32,7 +35,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
+	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/check"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -49,13 +54,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/redispool"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/sysreq"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 var (
@@ -106,13 +110,15 @@ func defaultExternalURL(nginxAddr, httpAddr string) *url.URL {
 
 // InitDB initializes and returns the global database connection and sets the
 // version of the frontend in our versions table.
-func InitDB() (*sql.DB, error) {
-	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &observation.TestContext)
+func InitDB(logger sglog.Logger) (*sql.DB, error) {
+	obsCtx := observation.TestContext
+	obsCtx.Logger = logger
+	sqlDB, err := connections.EnsureNewFrontendDB("", "frontend", &obsCtx)
 	if err != nil {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(sqlDB), "frontend", version.Version()); err != nil {
+	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), "frontend", version.Version()); err != nil {
 		return nil, err
 	}
 
@@ -126,23 +132,32 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	log.SetFlags(0)
 	log.SetPrefix("")
 
-	liblog := sglog.InitWithSinks(sglog.Resource{
+	liblog := sglog.Init(sglog.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
-	}, sglog.NewSentrySink())
+	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
+	hc := &check.HealthChecker{Checks: []check.Check{
+		checkCanReachGitserver,
+		checkCanReachSearcher,
+	}}
+	hc.Init()
+
 	logger := sglog.Scoped("server", "the frontend server program")
-
 	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
+	go debugserver.NewServerRoutine(ready, debugserver.Endpoint{
+		Name:    "Health Checks",
+		Path:    "/aggregate-checks",
+		Handler: check.NewAggregateHealthCheckHandler(check.DefaultEndpointProvider),
+	}).Start()
 
-	sqlDB, err := InitDB()
+	sqlDB, err := InitDB(logger)
 	if err != nil {
 		return err
 	}
-	db := database.NewDB(sqlDB)
+	db := database.NewDB(logger, sqlDB)
 
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		log15.Warn("Skipping out-of-band migrations check")
@@ -166,7 +181,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	globals.ConfigurationServerFrontendOnly = conf.InitConfigurationServerFrontendOnly(&configurationSource{db: db})
 	conf.Init()
 	conf.MustValidateDefaults()
-	conf.Watch(liblog.Update(conf.GetLogSinks))
+	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	// now we can init the keyring, as it depends on site config
 	if err := keyring.Init(ctx); err != nil {
@@ -186,8 +201,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	// Filter trace logs
 	d, _ := time.ParseDuration(traceThreshold)
 	logging.Init(logging.Filter(loghandlers.Trace(strings.Fields(traceFields), d)))
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
+	tracer.Init(sglog.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 
@@ -257,6 +271,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
+	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
@@ -285,7 +300,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, hc)
 	if err != nil {
 		return err
 	}
@@ -339,7 +354,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -356,6 +371,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
+		healthCheckHandler,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,
@@ -399,5 +415,6 @@ func makeRateLimitWatcher() (*graphqlbackend.BasicLimitWatcher, error) {
 	if err != nil {
 		return nil, err
 	}
-	return graphqlbackend.NewBasicLimitWatcher(ratelimitStore), nil
+
+	return graphqlbackend.NewBasicLimitWatcher(sglog.Scoped("BasicLimitWatcher", "basic rate-limiter"), ratelimitStore), nil
 }

@@ -7,6 +7,6 @@ import org.jetbrains.annotations.NotNull;
 public class SearchRepository extends SearchActionBase {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
-        super.actionPerformedMode(event, "search.repository");
+        super.actionPerformedMode(event, Scope.REPOSITORY);
     }
 }

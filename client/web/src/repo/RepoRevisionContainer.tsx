@@ -154,9 +154,13 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                     : revision) ||
                     resolvedRevisionOrError.defaultBranch ||
                     'HEAD'}
-                <Icon role="img" as={RepoRevisionChevronDownIcon} aria-hidden={true} />
+                <Icon as={RepoRevisionChevronDownIcon} aria-hidden={true} />
             </PopoverTrigger>
-            <PopoverContent position={Position.bottomStart} className="pt-0 pb-0">
+            <PopoverContent
+                position={Position.bottomStart}
+                className="pt-0 pb-0"
+                aria-labelledby="repo-revision-popover"
+            >
                 <RevisionsPopover
                     repo={repo.id}
                     repoName={repo.name}

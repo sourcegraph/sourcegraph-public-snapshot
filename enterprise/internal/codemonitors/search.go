@@ -10,7 +10,8 @@ import (
 
 	"github.com/graphql-go/graphql/gqlerrors"
 	"github.com/opentracing/opentracing-go"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -53,7 +54,7 @@ type gqlSettingsResponse struct {
 func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	span, ctx := opentracing.StartSpanFromContext(ctx, "CodeMonitorSearch")
 	defer func() {
-		span.LogFields(log.Error(err))
+		span.LogFields(otlog.Error(err))
 		span.Finish()
 	}()
 
@@ -107,8 +108,8 @@ func Settings(ctx context.Context) (_ *schema.Settings, err error) {
 	return &unmarshaledSettings, nil
 }
 
-func Search(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+func Search(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) (_ []*result.CommitMatch, err error) {
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
@@ -126,7 +127,7 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 		return nil, errcode.MakeNonRetryable(err)
 	}
 
-	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", false) {
+	if featureflag.FromContext(ctx).GetBoolOr("cc-repo-aware-monitors", true) {
 		hook := func(ctx context.Context, db database.DB, gs commit.GitserverClient, args *gitprotocol.SearchRequest, repoID api.RepoID, doSearch commit.DoSearchFunc) error {
 			return hookWithID(ctx, db, gs, monitorID, repoID, args, doSearch)
 		}
@@ -183,8 +184,8 @@ func Search(ctx context.Context, db database.DB, query string, monitorID int64, 
 // Snapshot runs a dummy search that just saves the current state of the searched repos in the database.
 // On subsequent runs, this allows us to treat all new repos or sets of args as something new that should
 // be searched from the beginning.
-func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
-	searchClient := client.NewSearchClient(db, search.Indexed(), search.SearcherURLs())
+func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query string, monitorID int64, settings *schema.Settings) error {
+	searchClient := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
 	inputs, err := searchClient.Plan(ctx, "V2", nil, query, search.Streaming, settings, envvar.SourcegraphDotComMode())
 	if err != nil {
 		return err
@@ -210,32 +211,53 @@ func Snapshot(ctx context.Context, db database.DB, query string, monitorID int64
 		return err
 	}
 
+	// HACK(camdencheek): limit the concurrency of the commit search job
+	// because the db passed into this function might actually be a transaction
+	// and transactions cannot be used concurrently.
+	planJob = limitConcurrency(planJob)
+
 	_, err = planJob.Run(ctx, clients, streaming.NewNullStream())
 	return err
 }
 
 var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
 
+func limitConcurrency(in job.Job) job.Job {
+	return job.Map(in, func(j job.Job) job.Job {
+		switch v := j.(type) {
+		case *commit.SearchJob:
+			cp := *v
+			cp.Concurrency = 1
+			return &cp
+		default:
+			return j
+		}
+	})
+}
+
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	commitSearchJobCount := 0
-	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
-		switch typedAtom := atom.(type) {
+	return job.Map(in, func(j job.Job) job.Job {
+		switch v := j.(type) {
 		case *commit.SearchJob:
 			commitSearchJobCount++
 			if commitSearchJobCount > 1 && err == nil {
 				err = ErrInvalidMonitorQuery
 			}
-			jobCopy := *typedAtom
-			jobCopy.CodeMonitorSearchWrapper = hook
-			return &jobCopy
+			cp := *v
+			cp.CodeMonitorSearchWrapper = hook
+			return &cp
 		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
-			// ComputeExcludedJob is fine for code monitor jobs
-			return atom
+			// ComputeExcludedJob is fine for code monitor jobs, but should be
+			// removed since it's not used
+			return jobutil.NewNoopJob()
 		default:
-			if err == nil {
-				err = errors.Errorf("found invalid atom job type %T for code monitor search", atom)
+			if len(j.Children()) == 0 {
+				if err == nil {
+					err = errors.Errorf("found invalid atom job type %T for code monitor search", j)
+				}
 			}
-			return atom
+			return j
 		}
 	}), err
 }

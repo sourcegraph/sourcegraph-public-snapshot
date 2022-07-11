@@ -1,12 +1,8 @@
 import React, { useMemo } from 'react'
 
+import { mdiFileDocument, mdiSourceCommit, mdiSourceBranch, mdiTag, mdiHistory, mdiAccount } from '@mdi/js'
 import classNames from 'classnames'
-import AccountIcon from 'mdi-react/AccountIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import TagIcon from 'mdi-react/TagIcon'
+import { useCallbackRef } from 'use-callback-ref'
 
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link } from '@sourcegraph/wildcard'
@@ -31,7 +27,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Home',
                 isActive: selectedTab === 'home',
                 logName: 'RepoHomeTab',
-                icon: <Icon role="img" as={FileDocumentIcon} aria-hidden={true} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiFileDocument} />,
                 url: `${tree.url}/`,
             },
             {
@@ -39,7 +35,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Commits',
                 isActive: selectedTab === 'commits',
                 logName: 'RepoCommitsTab',
-                icon: <Icon role="img" as={SourceCommitIcon} aria-hidden={true} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiSourceCommit} />,
                 url: `${tree.url}/-/commits/tab`,
             },
             {
@@ -47,7 +43,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Branches',
                 isActive: selectedTab === 'branch',
                 logName: 'RepoBranchesTab',
-                icon: <Icon role="img" as={SourceBranchIcon} aria-hidden={true} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiSourceBranch} />,
                 url: `${tree.url}/-/branch/tab`,
             },
             {
@@ -55,7 +51,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Tags',
                 isActive: selectedTab === 'tags',
                 logName: 'RepoTagsTab',
-                icon: <Icon role="img" as={TagIcon} aria-hidden={true} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiTag} />,
                 url: `${tree.url}/-/tag/tab`,
             },
             {
@@ -63,7 +59,7 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Compare',
                 isActive: selectedTab === 'compare',
                 logName: 'RepoCompareTab',
-                icon: <Icon role="img" as={HistoryIcon} aria-hidden={true} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiHistory} />,
                 url: `${tree.url}/-/compare/tab`,
             },
             {
@@ -71,23 +67,25 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                 title: 'Contributors',
                 isActive: selectedTab === 'contributors',
                 logName: 'RepoContributorsTab',
-                icon: <Icon role="img" as={AccountIcon} aria-hidden={true} />,
+                icon: <Icon aria-hidden={true} svgPath={mdiAccount} />,
                 url: `${tree.url}/-/contributors/tab`,
             },
         ],
         [selectedTab, tree.url]
     )
 
+    const callbackReference = useCallbackRef<HTMLAnchorElement>(null, ref => ref?.focus())
+
     return (
-        <div className="d-flex mb-4">
-            <div className="nav nav-tabs w-100">
+        <nav className="d-flex mb-4">
+            <ul className="nav nav-tabs w-100">
                 {tabs.map(({ tab, title, isActive, icon, url }) => (
-                    <div className="nav-item" key={`repo-${tab}-tab`}>
+                    <li className="nav-item" key={`repo-${tab}-tab`}>
                         <Link
                             to={url}
-                            role="button"
                             className={classNames('nav-link text-content bg-transparent', isActive && 'active')}
                             onClick={() => setSelectedTab(tab)}
+                            ref={selectedTab === tab ? callbackReference : null}
                         >
                             <div>
                                 {icon}
@@ -96,9 +94,9 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                                 </span>
                             </div>
                         </Link>
-                    </div>
+                    </li>
                 ))}
-            </div>
-        </div>
+            </ul>
+        </nav>
     )
 }

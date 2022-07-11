@@ -11,7 +11,10 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
+	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
@@ -26,11 +29,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
-	"github.com/sourcegraph/sourcegraph/internal/sentry"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 const addr = ":3189"
@@ -45,6 +46,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
 		"codeintel-dependencies":                codeintel.NewDependenciesJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
+		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 	}
 
 	jobs := map[string]job.Job{}
@@ -62,8 +64,7 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 	env.HandleHelpFlag()
 	conf.Init()
 	logging.Init()
-	tracer.Init(conf.DefaultClient())
-	sentry.Init(conf.DefaultClient())
+	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()
 	profiler.Init()
 

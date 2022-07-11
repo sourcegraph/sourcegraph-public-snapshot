@@ -22,7 +22,10 @@ exports[`Input Renders status 'loading' correctly 1`] = `
     value=""
   />
   <div
-    class="loadingSpinner spinner"
+    aria-label="Loading"
+    aria-live="polite"
+    class="mdi-icon loadingSpinner spinner"
+    role="img"
   />
 </div>
 `;

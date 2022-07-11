@@ -63,7 +63,7 @@ import { TextDocumentDecoration, WorkspaceRoot } from '@sourcegraph/extension-ap
 import { gql, isHTTPAuthError } from '@sourcegraph/http-client'
 import { ActionItemAction, urlForClientCommandOpen } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { DecorationMapByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine, flattenDecorations } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { CodeEditorData, CodeEditorWithPartialModel } from '@sourcegraph/shared/src/api/viewerTypes'
 import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import {
@@ -238,13 +238,6 @@ export interface CodeHost extends ApplyLinkPreviewOptions {
      * Override of `observeMutations`, used where a MutationObserve is not viable, such as in the shadow DOMs in Gerrit.
      */
     observeMutations?: ObserveMutations
-
-    /**
-     * Adjust the position of the hover overlay. Useful for fixed headers or other
-     * elements that throw off the position of the tooltip within the relative
-     * element.
-     */
-    adjustOverlayPosition?: (position: OverlayPosition) => OverlayPosition
 
     // Extensions related input
 
@@ -580,16 +573,14 @@ function initCodeIntelligence({
             event.preventDefault()
         }
         public render(): JSX.Element | null {
-            const hoverOverlayProps = this.getHoverOverlayProps()
-
-            if (!hoverOverlayProps) {
+            if (!this.state.hoverOverlayProps) {
                 return null
             }
 
             return (
                 <TrackAnchorClick onClick={this.handleHoverLinkClick}>
                     <HoverOverlay
-                        {...hoverOverlayProps}
+                        {...this.state.hoverOverlayProps}
                         {...codeHost.hoverOverlayClassProps}
                         className={classNames(styles.hoverOverlay, codeHost.hoverOverlayClassProps?.className)}
                         telemetryService={telemetryService}
@@ -603,17 +594,6 @@ function initCodeIntelligence({
                     />
                 </TrackAnchorClick>
             )
-        }
-        private getHoverOverlayProps(): HoverState<HoverContext, HoverMerged, ActionItemAction>['hoverOverlayProps'] {
-            if (!this.state.hoverOverlayProps) {
-                return undefined
-            }
-            let { overlayPosition, ...rest } = this.state.hoverOverlayProps
-            // TODO: is adjustOverlayPosition needed or could it be solved with a better relativeElement?
-            if (overlayPosition && codeHost.adjustOverlayPosition) {
-                overlayPosition = codeHost.adjustOverlayPosition(overlayPosition)
-            }
-            return { ...rest, overlayPosition }
         }
     }
 
@@ -1396,7 +1376,9 @@ export async function handleCodeHost({
                             // The nested subscribe cannot be replaced with a switchMap()
                             // We manage the subscription correctly.
                             // eslint-disable-next-line rxjs/no-nested-subscribe
-                            .subscribe(([decorations, isLightTheme]) => update(decorations, isLightTheme))
+                            .subscribe(([decorations, isLightTheme]) =>
+                                update(flattenDecorations(decorations), isLightTheme)
+                            )
                     )
                 }
 

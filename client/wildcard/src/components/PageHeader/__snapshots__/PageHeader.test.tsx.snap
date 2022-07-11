@@ -19,7 +19,7 @@ exports[`PageHeader renders correctly 1`] = `
             >
               <svg
                 aria-hidden="true"
-                class="mdi-icon icon"
+                class="mdi-icon mdi-icon icon"
                 fill="currentColor"
                 height="24"
                 role="img"

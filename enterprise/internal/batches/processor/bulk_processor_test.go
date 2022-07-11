@@ -2,15 +2,19 @@ package processor
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/global"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
+	stesting "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -21,11 +25,13 @@ import (
 func TestBulkProcessor(t *testing.T) {
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
-	sqlDB := dbtest.NewDB(t)
+	sqlDB := dbtest.NewDB(logger, t)
 	tx := dbtest.NewTx(t, sqlDB)
-	db := database.NewDB(sqlDB)
-	bstore := store.New(tx, &observation.TestContext, nil)
+	db := database.NewDB(logger, sqlDB)
+	bstore := store.New(database.NewDBWith(logger, basestore.NewWithHandle(basestore.NewHandleWithTx(tx, sql.TxOptions{}))), &observation.TestContext, nil)
 	user := ct.CreateTestUser(t, db, true)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 	ct.CreateTestSiteCredential(t, bstore, repo)
@@ -46,10 +52,10 @@ func TestBulkProcessor(t *testing.T) {
 	})
 
 	t.Run("Unknown job type", func(t *testing.T) {
-		fake := &sources.FakeChangesetSource{}
+		fake := &stesting.FakeChangesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: sources.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN")}
 		err := bp.Process(ctx, job)
@@ -86,10 +92,10 @@ func TestBulkProcessor(t *testing.T) {
 	})
 
 	t.Run("Comment job", func(t *testing.T) {
-		fake := &sources.FakeChangesetSource{}
+		fake := &stesting.FakeChangesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: sources.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
 			JobType:     types.ChangesetJobTypeComment,
@@ -110,10 +116,10 @@ func TestBulkProcessor(t *testing.T) {
 	})
 
 	t.Run("Detach job", func(t *testing.T) {
-		fake := &sources.FakeChangesetSource{}
+		fake := &stesting.FakeChangesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: sources.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
 			JobType:       types.ChangesetJobTypeDetach,
@@ -143,10 +149,10 @@ func TestBulkProcessor(t *testing.T) {
 	})
 
 	t.Run("Reenqueue job", func(t *testing.T) {
-		fake := &sources.FakeChangesetSource{}
+		fake := &stesting.FakeChangesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: sources.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
 			JobType:     types.ChangesetJobTypeReenqueue,
@@ -172,10 +178,10 @@ func TestBulkProcessor(t *testing.T) {
 	})
 
 	t.Run("Merge job", func(t *testing.T) {
-		fake := &sources.FakeChangesetSource{}
+		fake := &stesting.FakeChangesetSource{}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: sources.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
 			JobType:     types.ChangesetJobTypeMerge,
@@ -193,10 +199,10 @@ func TestBulkProcessor(t *testing.T) {
 	})
 
 	t.Run("Close job", func(t *testing.T) {
-		fake := &sources.FakeChangesetSource{FakeMetadata: &github.PullRequest{}}
+		fake := &stesting.FakeChangesetSource{FakeMetadata: &github.PullRequest{}}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: sources.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
 		job := &types.ChangesetJob{
 			JobType:     types.ChangesetJobTypeClose,
@@ -214,10 +220,10 @@ func TestBulkProcessor(t *testing.T) {
 	})
 
 	t.Run("Publish job", func(t *testing.T) {
-		fake := &sources.FakeChangesetSource{FakeMetadata: &github.PullRequest{}}
+		fake := &stesting.FakeChangesetSource{FakeMetadata: &github.PullRequest{}}
 		bp := &bulkProcessor{
 			tx:      bstore,
-			sourcer: sources.NewFakeSourcer(nil, fake),
+			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
 
 		t.Run("errors", func(t *testing.T) {

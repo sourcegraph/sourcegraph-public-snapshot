@@ -2,18 +2,20 @@ package com.sourcegraph.git;
 
 import com.google.common.base.Strings;
 import com.sourcegraph.config.ConfigUtil;
+import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 
 public class CommitViewUriBuilder {
-    public URI build(String sourcegraphBase, String revisionNumber, RepoInfo repoInfo, String productName, String productVersion) {
+    @NotNull
+    public URI build(@NotNull String sourcegraphBase, @NotNull String revisionNumber, @NotNull RepoInfo repoInfo, @NotNull String productName, @NotNull String productVersion) {
         if (Strings.isNullOrEmpty(sourcegraphBase)) {
             throw new RuntimeException("Missing sourcegraph URI for commit uri.");
         } else if (Strings.isNullOrEmpty(revisionNumber)) {
             throw new RuntimeException("Missing revision number for commit uri.");
-        } else if (repoInfo == null || Strings.isNullOrEmpty(repoInfo.remoteUrl)) {
+        } else if (repoInfo.remoteUrl.equals("")) {
             throw new RuntimeException("Missing remote URL for commit uri.");
         }
 
@@ -29,7 +31,7 @@ public class CommitViewUriBuilder {
             String.format("/%s%s", remote.getHost(), path) +
             String.format("/-/commit/%s", revisionNumber) +
             String.format("?editor=%s", URLEncoder.encode("JetBrains", StandardCharsets.UTF_8)) +
-            String.format("&version=%s", URLEncoder.encode(ConfigUtil.getVersion(), StandardCharsets.UTF_8)) +
+            String.format("&version=v%s", URLEncoder.encode(ConfigUtil.getPluginVersion(), StandardCharsets.UTF_8)) +
             String.format("&utm_product_name=%s", URLEncoder.encode(productName, StandardCharsets.UTF_8)) +
             String.format("&utm_product_version=%s", URLEncoder.encode(productVersion, StandardCharsets.UTF_8));
 

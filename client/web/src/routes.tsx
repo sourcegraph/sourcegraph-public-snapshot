@@ -19,7 +19,6 @@ import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
@@ -40,8 +39,7 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         BreadcrumbSetters,
         ExtensionAlertProps,
         CodeIntelligenceProps,
-        BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        BatchChangesProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
@@ -90,13 +88,9 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     {
         path: PageRoutes.SearchConsole,
         render: props => {
-            const { showMultilineSearchConsole, showSearchContext } = getExperimentalFeatures()
+            const { showMultilineSearchConsole } = getExperimentalFeatures()
 
-            return showMultilineSearchConsole ? (
-                <SearchConsolePage {...props} showSearchContext={showSearchContext ?? false} />
-            ) : (
-                <Redirect to={PageRoutes.Search} />
-            )
+            return showMultilineSearchConsole ? <SearchConsolePage {...props} /> : <Redirect to={PageRoutes.Search} />
         },
         exact: true,
     },
@@ -174,7 +168,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     authenticatedUser={props.authenticatedUser}
                     telemetryService={props.telemetryService}
                     context={window.context}
-                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                     setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (
@@ -235,7 +228,7 @@ export const routes: readonly LayoutRouteProps<any>[] = [
     },
     {
         path: PageRoutes.Survey,
-        render: lazyComponent(() => import('./marketing/SurveyPage'), 'SurveyPage'),
+        render: lazyComponent(() => import('./marketing/page/SurveyPage'), 'SurveyPage'),
     },
     {
         path: PageRoutes.Extensions,

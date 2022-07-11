@@ -44,6 +44,7 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -128,6 +129,22 @@ function useCalculatedNavLinkVariant(
     }, [containerReference, savedWindowWidth, width])
 
     return navLinkVariant
+}
+
+const AnalyticsNavItem: React.FunctionComponent = () => {
+    const [isAdminAnalyticsEnabled] = useFeatureFlag('admin-analytics-enabled', false)
+
+    if (!isAdminAnalyticsEnabled) {
+        return null
+    }
+
+    return (
+        <NavAction className="d-none d-sm-flex">
+            <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
+                Analytics
+            </Link>
+        </NavAction>
+    )
 }
 
 export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -328,6 +345,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             )}
                         </>
                     )}
+                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {props.authenticatedUser && (
                         <NavAction>
                             <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>

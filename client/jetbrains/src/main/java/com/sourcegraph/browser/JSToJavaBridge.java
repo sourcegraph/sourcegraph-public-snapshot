@@ -2,9 +2,8 @@ package com.sourcegraph.browser;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
 import com.intellij.openapi.Disposable;
-import com.intellij.ui.jcef.JBCefBrowserBase;
+import com.intellij.ui.jcef.JBCefBrowser;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import org.cef.browser.CefBrowser;
 import org.cef.browser.CefFrame;
@@ -14,9 +13,11 @@ import org.cef.network.CefRequest;
 public class JSToJavaBridge implements Disposable {
     JBCefJSQuery query;
 
-    public JSToJavaBridge(JBCefBrowserBase browser,
+    public JSToJavaBridge(JBCefBrowser browser,
                           JSToJavaBridgeRequestHandler requestHandler,
                           String jsCodeToRunAfterBridgeInit) {
+        // Using a deprecated method because JBCefBrowserBase is not present in older JetBrains versions
+        //noinspection removal - Using this old method intentionally for backwards compatibility
         query = JBCefJSQuery.create(browser);
         query.addHandler((String requestAsString) -> {
             try {

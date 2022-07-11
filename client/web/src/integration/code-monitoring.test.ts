@@ -41,7 +41,7 @@ describe('Code monitoring', () => {
                             latestSettings: {
                                 id: 0,
                                 contents: JSON.stringify({
-                                    experimentalFeatures: { showOnboardingTour: true, codeMonitoring: true },
+                                    experimentalFeatures: { codeMonitoring: true },
                                 }),
                             },
                         },
@@ -52,7 +52,7 @@ describe('Code monitoring', () => {
                             latestSettings: {
                                 id: 470,
                                 contents: JSON.stringify({
-                                    experimentalFeatures: { showOnboardingTour: true, codeMonitoring: true },
+                                    experimentalFeatures: { codeMonitoring: true },
                                 }),
                             },
                             settingsURL: '/site-admin/global-settings',
@@ -140,9 +140,6 @@ describe('Code monitoring', () => {
             await driver.page.waitForSelector('.test-is-invalid')
 
             await driver.page.type('.test-trigger-input', ' type:diff')
-            await driver.page.waitForSelector('.test-is-invalid')
-
-            await driver.page.type('.test-trigger-input', ' repo:test')
             await driver.page.waitForSelector('.test-is-valid')
             await driver.page.waitForSelector('.test-preview-link')
             expect(

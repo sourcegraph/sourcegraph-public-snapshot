@@ -18,13 +18,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 const (
@@ -35,8 +36,8 @@ const (
 func (s *Server) testSetup(t *testing.T) {
 	t.Helper()
 	s.Handler() // Handler as a side-effect sets up Server
-	db := dbtest.NewDB(t)
-	s.DB = database.NewDB(db)
+	db := dbtest.NewDB(s.Logger, t)
+	s.DB = database.NewDB(s.Logger, db)
 	s.Hostname = "gitserver-0"
 }
 
@@ -70,7 +71,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
-insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
+insert into repo(id, name, fork) values (1, 'a', false), (2, 'b/d', false), (3, 'c', false);
 update gitserver_repos set shard_id = 1;
 update gitserver_repos set repo_size_bytes = 228 where repo_id = 3;
 `); err != nil {
@@ -164,8 +165,6 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		s.testSetup(t)
 		s.Hostname = "does-not-exist"
-		// force cleanup of repos
-		wrongShardReposDeleteLimit = 10
 		s.cleanupRepos([]string{"gitserver-0", "gitserver-1"})
 
 		if _, err := os.Stat(repoA); err != nil {
@@ -173,37 +172,6 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		if _, err := os.Stat(repoD); err != nil {
 			t.Error("expected repoD assigned to different shard not to be removed")
-		}
-	})
-	t.Run("forced", func(t *testing.T) {
-		root := t.TempDir()
-		// should be allocated to shard gitserver-1
-		testRepoD := "testrepo-D"
-
-		repoA := path.Join(root, testRepoA, ".git")
-		cmd := exec.Command("git", "--bare", "init", repoA)
-		if err := cmd.Run(); err != nil {
-			t.Fatal(err)
-		}
-		repoD := path.Join(root, testRepoD, ".git")
-		cmdD := exec.Command("git", "--bare", "init", repoD)
-		if err := cmdD.Run(); err != nil {
-			t.Fatal(err)
-		}
-
-		s := &Server{ReposDir: root,
-			Logger: logtest.Scoped(t),
-		}
-		s.testSetup(t)
-		// force cleanup of repos
-		wrongShardReposDeleteLimit = 10
-		s.cleanupRepos([]string{"gitserver-0", "gitserver-1"})
-
-		if _, err := os.Stat(repoA); os.IsNotExist(err) {
-			t.Error("expected repoA not to be removed")
-		}
-		if _, err := os.Stat(repoD); !os.IsNotExist(err) {
-			t.Error("expected repoD assigned to different shard to be removed during clean up")
 		}
 	})
 	t.Run("substringShardName", func(t *testing.T) {
@@ -227,8 +195,6 @@ func TestCleanupWrongShard(t *testing.T) {
 		}
 		s.testSetup(t)
 		s.Hostname = "gitserver-0"
-		// force cleanup of repos
-		wrongShardReposDeleteLimit = 10
 		s.cleanupRepos([]string{"gitserver-0.cluster.local:3178", "gitserver-1.cluster.local:3178"})
 
 		if _, err := os.Stat(repoA); err != nil {
@@ -703,6 +669,7 @@ func TestSetupAndClearTmp_Empty(t *testing.T) {
 }
 
 func TestRemoveRepoDirectory(t *testing.T) {
+	logger := logtest.Scoped(t)
 	root := t.TempDir()
 
 	mkFiles(t, root,
@@ -716,7 +683,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	idMapping := make(map[api.RepoName]api.RepoID)
 
@@ -744,7 +711,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 	}
 
 	s := &Server{
-		Logger:   logtest.Scoped(t),
+		Logger:   logger,
 		ReposDir: root,
 		DB:       db,
 		ctx:      ctx,
@@ -1035,7 +1002,7 @@ func makeFakeRepo(d string, sizeBytes int) error {
 	return nil
 }
 
-func TestMaybeCorruptStderrRe(t *testing.T) {
+func TestStdErrIndicatesCorruption(t *testing.T) {
 	bad := []string{
 		"error: packfile .git/objects/pack/pack-a.pack does not match index",
 		"error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda\n",
@@ -1044,6 +1011,8 @@ error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		`unrelated
 error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		"\n\nerror: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda",
+		"fatal: commit-graph requires overflow generation data but has none\n",
+		"\rResolving deltas: 100% (21750/21750), completed with 565 local objects.\nfatal: commit-graph requires overflow generation data but has none\nerror: https://github.com/sgtest/megarepo did not send all necessary objects\n\n\": exit status 1",
 	}
 	good := []string{
 		"",
@@ -1052,12 +1021,12 @@ error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		"error: object 45043b3ff0440f4d7937f8c68f8fb2881759edef is a tree, not a commit",
 	}
 	for _, stderr := range bad {
-		if !maybeCorruptStderrRe.MatchString(stderr) {
+		if !stdErrIndicatesCorruption(stderr) {
 			t.Errorf("should contain corrupt line:\n%s", stderr)
 		}
 	}
 	for _, stderr := range good {
-		if maybeCorruptStderrRe.MatchString(stderr) {
+		if stdErrIndicatesCorruption(stderr) {
 			t.Errorf("should not contain corrupt line:\n%s", stderr)
 		}
 	}
@@ -1348,6 +1317,7 @@ func TestPruneIfNeeded(t *testing.T) {
 }
 
 func TestCleanup_setRepoSizes(t *testing.T) {
+	logger := logtest.Scoped(t)
 	if testing.Short() {
 		t.Skip()
 	}
@@ -1372,15 +1342,15 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
 	s.Handler() // Handler as a side-effect sets up Server
-	db := dbtest.NewDB(t)
-	s.DB = database.NewDB(db)
+	db := dbtest.NewDB(logger, t)
+	s.DB = database.NewDB(logger, db)
 
 	// inserting info about repos to DB. Repo with ID = 1 already has its size
 	if _, err := db.Exec(`
-insert into repo(id, name)
-values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
-       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
-       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
+insert into repo(id, name, fork)
+values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket', false),
+       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux', false),
+       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions', false);
 update gitserver_repos set shard_id = 1;
 update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 `); err != nil {
@@ -1397,8 +1367,8 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		if repo.RepoSizeBytes == 0 {
 			t.Fatal("repo_size_bytes is not updated")
 		}
-		if i == 1 && repo.RepoSizeBytes != 228 {
-			t.Fatal("existing repo_size_bytes has been updated")
+		if i == 1 && repo.RepoSizeBytes == 228 {
+			t.Fatal("existing repo_size_bytes has not been updated")
 		}
 		if repo.ShardID != "1" {
 			t.Fatal("shard_id has been corrupted")

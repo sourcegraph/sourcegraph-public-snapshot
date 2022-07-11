@@ -7,6 +7,9 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	apiclient "github.com/sourcegraph/sourcegraph/enterprise/internal/executor"
@@ -21,14 +24,7 @@ import (
 )
 
 func TestTransformRecord(t *testing.T) {
-	accessToken := "thisissecret-dont-tell-anyone"
-	var accessTokenID int64 = 1234
-
-	accessTokens := database.NewMockAccessTokenStore()
-	accessTokens.CreateInternalFunc.SetDefaultReturn(accessTokenID, accessToken, nil)
-
 	db := database.NewMockDB()
-	db.AccessTokensFunc.SetDefaultReturn(accessTokens)
 	repos := database.NewMockRepoStore()
 	repos.GetFunc.SetDefaultHook(func(ctx context.Context, id api.RepoID) (*types.Repo, error) {
 		return &types.Repo{ID: id, Name: "github.com/sourcegraph/sourcegraph"}, nil
@@ -74,76 +70,69 @@ func TestTransformRecord(t *testing.T) {
 	workspaceExecutionJob := &btypes.BatchSpecWorkspaceExecutionJob{
 		ID:                   42,
 		BatchSpecWorkspaceID: workspace.ID,
+		UserID:               123,
 	}
 
 	store := NewMockBatchesStore()
 	store.GetBatchSpecFunc.SetDefaultReturn(batchSpec, nil)
 	store.GetBatchSpecWorkspaceFunc.SetDefaultReturn(workspace, nil)
-	var storedAccessToken int64
-	store.SetBatchSpecWorkspaceExecutionJobAccessTokenFunc.SetDefaultHook(func(c context.Context, jobID, accessTokenID int64) error {
-		storedAccessToken = accessTokenID
-		return nil
-	})
 	store.DatabaseDBFunc.SetDefaultReturn(db)
 
-	wantInput := batcheslib.WorkspacesExecutionInput{
-		BatchChangeAttributes: template.BatchChangeAttributes{
-			Name:        batchSpec.Spec.Name,
-			Description: batchSpec.Spec.Description,
-		},
-		Repository: batcheslib.WorkspaceRepo{
-			ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
-			Name: "github.com/sourcegraph/sourcegraph",
-		},
-		Branch: batcheslib.WorkspaceBranch{
-			Name:   workspace.Branch,
-			Target: batcheslib.Commit{OID: workspace.Commit},
-		},
-		Path:               workspace.Path,
-		OnlyFetchWorkspace: workspace.OnlyFetchWorkspace,
-		Steps:              batchSpec.Spec.Steps,
-		SearchResultPaths:  workspace.FileMatches,
-	}
-
-	marshaledInput, err := json.Marshal(&wantInput)
-	if err != nil {
-		t.Fatal(err)
+	wantInput := func(cachedStepResultFound bool, cachedStepResult execution.AfterStepResult) batcheslib.WorkspacesExecutionInput {
+		return batcheslib.WorkspacesExecutionInput{
+			BatchChangeAttributes: template.BatchChangeAttributes{
+				Name:        batchSpec.Spec.Name,
+				Description: batchSpec.Spec.Description,
+			},
+			Repository: batcheslib.WorkspaceRepo{
+				ID:   string(graphqlbackend.MarshalRepositoryID(workspace.RepoID)),
+				Name: "github.com/sourcegraph/sourcegraph",
+			},
+			Branch: batcheslib.WorkspaceBranch{
+				Name:   workspace.Branch,
+				Target: batcheslib.Commit{OID: workspace.Commit},
+			},
+			Path:                  workspace.Path,
+			OnlyFetchWorkspace:    workspace.OnlyFetchWorkspace,
+			Steps:                 batchSpec.Spec.Steps,
+			SearchResultPaths:     workspace.FileMatches,
+			CachedStepResultFound: cachedStepResultFound,
+			CachedStepResult:      cachedStepResult,
+		}
 	}
 
 	t.Run("with cache entry", func(t *testing.T) {
-		job, err := transformRecord(context.Background(), store, workspaceExecutionJob, "hunter2")
+		job, err := transformRecord(context.Background(), logtest.Scoped(t), store, workspaceExecutionJob)
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
 
+		marshaledInput, err := json.Marshal(wantInput(true, execution.AfterStepResult{Diff: "123"}))
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		expected := apiclient.Job{
-			ID: int(workspaceExecutionJob.ID),
+			ID:                  int(workspaceExecutionJob.ID),
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory: "repository",
+			Commit:              workspace.Commit,
+			ShallowClone:        true,
+			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]string{
-				"input.json":        string(marshaledInput),
-				"testcachekey.json": `{"stepIndex":0,"diff":"123","outputs":null,"previousStepResult":{"Files":null,"Stdout":null,"Stderr":null}}`,
+				"input.json": string(marshaledInput),
 			},
 			CliSteps: []apiclient.CliStep{
 				{
-					Commands: []string{"batch", "exec", "-f", "input.json"},
+					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-tmp", ".src-tmp"},
 					Dir:      ".",
-					Env: []string{
-						"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io",
-						"SRC_ACCESS_TOKEN=" + accessToken,
-					},
+					Env:      []string{},
 				},
 			},
-			RedactedValues: map[string]string{
-				"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
-				"hunter2":                             "PASSWORD_REMOVED",
-				accessToken:                           "SRC_ACCESS_TOKEN_REMOVED",
-			},
+			RedactedValues: map[string]string{},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
 			t.Errorf("unexpected job (-want +got):\n%s", diff)
-		}
-
-		if storedAccessToken != accessTokenID {
-			t.Errorf("wrong access token ID set on execution job: %d", storedAccessToken)
 		}
 	})
 
@@ -151,31 +140,34 @@ func TestTransformRecord(t *testing.T) {
 		// Set the no cache flag on the batch spec.
 		batchSpec.NoCache = true
 
-		job, err := transformRecord(context.Background(), store, workspaceExecutionJob, "hunter2")
+		job, err := transformRecord(context.Background(), log.Scoped("test", "test logger"), store, workspaceExecutionJob)
 		if err != nil {
 			t.Fatalf("unexpected error transforming record: %s", err)
 		}
 
+		marshaledInput, err := json.Marshal(wantInput(false, execution.AfterStepResult{}))
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		expected := apiclient.Job{
-			ID: int(workspaceExecutionJob.ID),
+			ID:                  int(workspaceExecutionJob.ID),
+			RepositoryName:      "github.com/sourcegraph/sourcegraph",
+			RepositoryDirectory: "repository",
+			Commit:              workspace.Commit,
+			ShallowClone:        true,
+			SparseCheckout:      []string{"a/b/c/*"},
 			VirtualMachineFiles: map[string]string{
 				"input.json": string(marshaledInput),
 			},
 			CliSteps: []apiclient.CliStep{
 				{
-					Commands: []string{"batch", "exec", "-f", "input.json"},
+					Commands: []string{"batch", "exec", "-f", "input.json", "-repo", "repository", "-tmp", ".src-tmp"},
 					Dir:      ".",
-					Env: []string{
-						"SRC_ENDPOINT=https://sourcegraph:hunter2@test.io",
-						"SRC_ACCESS_TOKEN=" + accessToken,
-					},
+					Env:      []string{},
 				},
 			},
-			RedactedValues: map[string]string{
-				"https://sourcegraph:hunter2@test.io": "https://sourcegraph:PASSWORD_REMOVED@test.io",
-				"hunter2":                             "PASSWORD_REMOVED",
-				accessToken:                           "SRC_ACCESS_TOKEN_REMOVED",
-			},
+			RedactedValues: map[string]string{},
 		}
 		if diff := cmp.Diff(expected, job); diff != "" {
 			t.Errorf("unexpected job (-want +got):\n%s", diff)

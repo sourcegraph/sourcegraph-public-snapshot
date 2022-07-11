@@ -12,7 +12,7 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link } from '@sourcegraph/wildcard'
+import { createLinkUrl, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { DiffHunkLineType, FileDiffHunkFields } from '../../graphql-operations'
 
@@ -102,7 +102,7 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <Link className={styles.numLine} to={{ hash: oldAnchor }}>
+                                            <Link className={styles.numLine} to={createLinkUrl({ hash: oldAnchor })}>
                                                 {oldLine - 1}
                                             </Link>
                                         )}
@@ -120,7 +120,7 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                         data-hunk-num=" "
                                     >
                                         {persistLines && (
-                                            <Link className={styles.numLine} to={{ hash: newAnchor }}>
+                                            <Link className={styles.numLine} to={createLinkUrl({ hash: newAnchor })}>
                                                 {newLine - 1}
                                             </Link>
                                         )}
@@ -144,13 +144,11 @@ export const DiffHunk: React.FunctionComponent<React.PropsWithChildren<DiffHunkP
                                 return (
                                     <React.Fragment key={index}>
                                         {' '}
-                                        <LinkOrSpan
-                                            to={decoration.after.linkURL}
-                                            data-tooltip={decoration.after.hoverMessage}
-                                            style={style}
-                                        >
-                                            {decoration.after.contentText}
-                                        </LinkOrSpan>
+                                        <Tooltip content={decoration.after.hoverMessage}>
+                                            <LinkOrSpan to={decoration.after.linkURL} style={style}>
+                                                {decoration.after.contentText}
+                                            </LinkOrSpan>
+                                        </Tooltip>
                                     </React.Fragment>
                                 )
                             })}

@@ -101,11 +101,10 @@ export const WebhookAction: React.FunctionComponent<React.PropsWithChildren<Acti
     return (
         <ActionEditor
             title={
-                <div className="d-flex align-items-center">
-                    Call a webhook <ProductStatusBadge className="ml-1" status="experimental" />{' '}
+                <div>
+                    Call a webhook <ProductStatusBadge className="ml-1 mb-1" status="beta" />{' '}
                 </div>
             }
-            label="Call a webhook"
             subtitle="Calls the specified URL with a JSON payload."
             idName="webhook"
             disabled={disabled}

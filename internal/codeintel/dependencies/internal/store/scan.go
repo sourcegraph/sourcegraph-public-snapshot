@@ -1,6 +1,8 @@
 package store
 
 import (
+	"database/sql"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -60,3 +62,39 @@ func scanDependencyRepo(s dbutil.Scanner) (shared.Repo, error) {
 // Scans `[]shared.Repo`
 
 var scanDependencyRepos = basestore.NewSliceScanner(scanDependencyRepo)
+
+// scanIntString scans a int, string pair.
+func scanIntString(s dbutil.Scanner) (int, string, error) {
+	var (
+		i   int
+		str string
+	)
+
+	if err := s.Scan(&i, &str); err != nil {
+		return 0, "", err
+	}
+
+	return i, str, nil
+}
+
+func scanIdNames(rows *sql.Rows, queryErr error) (nameIDs map[string]int, ids []int, err error) {
+	if queryErr != nil {
+		return nil, nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	nameIDs = make(map[string]int)
+	ids = []int{}
+
+	for rows.Next() {
+		id, name, err := scanIntString(rows)
+		if err != nil {
+			return nil, nil, err
+		}
+
+		nameIDs[name] = id
+		ids = append(ids, id)
+	}
+
+	return nameIDs, ids, nil
+}

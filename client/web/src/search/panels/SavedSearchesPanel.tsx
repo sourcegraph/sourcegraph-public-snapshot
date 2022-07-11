@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { gql } from '@apollo/client'
+import { mdiPlus, mdiPencilOutline } from '@mdi/js'
 import classNames from 'classnames'
-import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import {
@@ -91,7 +90,7 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
                     variant="secondary"
                     as={Link}
                 >
-                    <Icon role="img" aria-hidden={true} as={PlusIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiPlus} />
                     Create a saved search
                 </ButtonLink>
             )}
@@ -100,50 +99,60 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
     const loadingDisplay = <LoadingPanelView text="Loading saved searches" />
 
     const contentDisplay = (
-        <div className="d-flex flex-column h-100">
-            <div className="d-flex justify-content-between mb-1 mt-2">
-                <small>Search</small>
-                <small>Edit</small>
-            </div>
-            <ul className="list-group-flush flex-grow-1 list-group mb-3">
-                {savedSearches
-                    ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
-                    .map(search => (
-                        <li key={search.id} className="text-monospace test-saved-search-entry d-block mb-2">
-                            <div className="d-flex justify-content-between">
-                                <small>
-                                    <Link
-                                        to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
-                                        className="p-0"
-                                        onClick={logEvent('SavedSearchesPanelSearchClicked')}
-                                    >
-                                        {search.description}
-                                    </Link>
-                                </small>
-                                {authenticatedUser &&
-                                    (search.namespace.__typename === 'User' ? (
+        <div className="d-flex flex-column h-100 justify-content-between">
+            <table className="w-100 mt-2">
+                <thead className="pb-1">
+                    <tr>
+                        <th>
+                            <small>Search</small>
+                        </th>
+                        <th className="text-right">
+                            <small>Edit</small>
+                        </th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {savedSearches
+                        ?.filter(search => (showAllSearches ? true : search.namespace.id === authenticatedUser?.id))
+                        .map(search => (
+                            <tr key={search.id} className="text-monospace test-saved-search-entry">
+                                <td className="pb-2">
+                                    <small>
                                         <Link
-                                            to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
-                                            onClick={logEvent('SavedSearchesPanelEditClicked')}
-                                            aria-label={`Edit saved search ${search.description}`}
+                                            to={'/search?' + buildSearchURLQueryFromQueryState({ query: search.query })}
+                                            className="p-0"
+                                            onClick={logEvent('SavedSearchesPanelSearchClicked')}
                                         >
-                                            <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
+                                            {search.description}
                                         </Link>
-                                    ) : (
-                                        <Link
-                                            to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
-                                            onClick={logEvent('SavedSearchesPanelEditClicked')}
-                                            aria-label={`Edit saved search ${search.description}`}
-                                        >
-                                            <Icon role="img" aria-hidden={true} as={PencilOutlineIcon} />
-                                        </Link>
-                                    ))}
-                            </div>
-                        </li>
-                    ))}
-            </ul>
+                                    </small>
+                                </td>
+                                <td className="text-right align-top pb-2">
+                                    {authenticatedUser &&
+                                        (search.namespace.__typename === 'User' ? (
+                                            <Link
+                                                to={`/users/${search.namespace.namespaceName}/searches/${search.id}`}
+                                                onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                                aria-label={`Edit saved search ${search.description}`}
+                                            >
+                                                <Icon role="img" aria-hidden={true} svgPath={mdiPencilOutline} />
+                                            </Link>
+                                        ) : (
+                                            <Link
+                                                to={`/organizations/${search.namespace.namespaceName}/searches/${search.id}`}
+                                                onClick={logEvent('SavedSearchesPanelEditClicked')}
+                                                aria-label={`Edit saved search ${search.description}`}
+                                            >
+                                                <Icon role="img" aria-hidden={true} svgPath={mdiPencilOutline} />
+                                            </Link>
+                                        ))}
+                                </td>
+                            </tr>
+                        ))}
+                </tbody>
+            </table>
             {authenticatedUser && (
-                <FooterPanel className="p-1">
+                <FooterPanel className="p-1 mt-3">
                     <small>
                         {/*
                            a11y-ignore
@@ -164,13 +173,15 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
 
     const actionButtons = (
         <>
-            <ButtonGroup className="d-none d-sm-block d-lg-none d-xl-block">
+            <ButtonGroup className="d-none d-sm-block d-lg-none d-xl-block" role="tablist">
                 <Button
                     onClick={() => setShowAllSearches(false)}
                     className="test-saved-search-panel-my-searches"
                     outline={showAllSearches}
+                    aria-selected={showAllSearches}
                     variant="secondary"
                     size="sm"
+                    role="tab"
                 >
                     My searches
                 </Button>
@@ -178,8 +189,10 @@ export const SavedSearchesPanel: React.FunctionComponent<React.PropsWithChildren
                     onClick={() => setShowAllSearches(true)}
                     className="test-saved-search-panel-all-searches"
                     outline={!showAllSearches}
+                    aria-selected={!showAllSearches}
                     variant="secondary"
                     size="sm"
+                    role="tab"
                 >
                     All searches
                 </Button>

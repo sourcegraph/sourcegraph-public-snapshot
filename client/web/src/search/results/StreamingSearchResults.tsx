@@ -49,8 +49,9 @@ import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { useIsBrowserExtensionActiveUser } from '../../tracking/BrowserExtensionTracker'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
+import { DidYouMean } from '../suggestion/DidYouMean'
+import { LuckySearch } from '../suggestion/LuckySearch'
 
-import { DidYouMean } from './DidYouMean'
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
@@ -276,7 +277,6 @@ export const StreamingSearchResults: React.FunctionComponent<
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
             })
-            console.error(results.error)
         }
     }, [results, telemetryService])
 
@@ -404,6 +404,8 @@ export const StreamingSearchResults: React.FunctionComponent<
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
             />
 
+            {results?.alert?.kind && <LuckySearch alert={results?.alert} />}
+
             <div className={styles.streamingSearchResultsContainer}>
                 <GettingStartedTour.Info className="mt-2 mr-3 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
                 {showSavedSearchModal && (
@@ -415,7 +417,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                         onDidCancel={onSaveQueryModalClose}
                     />
                 )}
-                {results?.alert && (
+                {results?.alert && !results?.alert.kind && (
                     <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
                         <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
                     </div>

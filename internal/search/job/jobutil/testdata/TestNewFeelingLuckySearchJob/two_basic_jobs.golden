@@ -1,0 +1,10 @@
+[
+  {
+    "Description": "AND patterns together",
+    "Query": "context:global type:file (parse AND func)"
+  },
+  {
+    "Description": "AND patterns together",
+    "Query": "context:global type:commit (parse AND func)"
+  }
+]

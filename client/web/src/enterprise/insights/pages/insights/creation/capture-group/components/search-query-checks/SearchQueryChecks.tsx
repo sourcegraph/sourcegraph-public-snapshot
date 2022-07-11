@@ -1,9 +1,8 @@
 import React from 'react'
 
+import { mdiClose, mdiRadioboxBlank } from '@mdi/js'
 import classNames from 'classnames'
 import Check from 'mdi-react/CheckIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import RadioboxBlankIcon from 'mdi-react/RadioboxBlankIcon'
 
 import { Icon, Code } from '@sourcegraph/wildcard'
 
@@ -26,7 +25,7 @@ const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: tr
     if (valid === true) {
         return (
             <>
-                <Icon role="img" aria-hidden={true} className={classNames(styles.icon, 'text-success')} as={Check} />
+                <Icon aria-hidden={true} className={classNames(styles.icon, 'text-success')} as={Check} />
                 <span className={classNames(styles.valid, 'text-muted')}>{children}</span>
             </>
         )
@@ -35,7 +34,7 @@ const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: tr
     if (valid === false) {
         return (
             <>
-                <Icon role="img" aria-hidden={true} className={classNames(styles.icon, 'text-danger')} as={CloseIcon} />
+                <Icon aria-hidden={true} className={classNames(styles.icon, 'text-danger')} svgPath={mdiClose} />
                 <span className="text-muted">{children}</span>
             </>
         )
@@ -43,12 +42,7 @@ const CheckListItem: React.FunctionComponent<React.PropsWithChildren<{ valid: tr
 
     return (
         <>
-            <Icon
-                role="img"
-                aria-hidden={true}
-                className={classNames(styles.icon, styles.smaller)}
-                as={RadioboxBlankIcon}
-            />{' '}
+            <Icon aria-hidden={true} className={classNames(styles.icon, styles.smaller)} svgPath={mdiRadioboxBlank} />{' '}
             <span className="text-muted">{children}</span>
         </>
     )

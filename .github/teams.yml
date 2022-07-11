@@ -5,10 +5,9 @@ team/frontend-platform:
   - '@pdubroy'
   - '@oleggromov'
 
-team/iam-admin-experience:
+team/iam:
   - '@unknwon'
-  - '@RafLeszczynski'
-  - '@rafax'
+  - '@jplahn'
   - '@miveronese'
   - '@ryphil'
   - '@pietrorosa77'

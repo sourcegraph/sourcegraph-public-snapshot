@@ -1,8 +1,8 @@
 import * as React from 'react'
 
+import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import LockIcon from 'mdi-react/LockIcon'
 import { RouteComponentProps } from 'react-router'
 import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
@@ -24,6 +24,7 @@ import {
     Code,
 } from '@sourcegraph/wildcard'
 
+import { TerminalLine } from '../../auth/Terminal'
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
 import { SettingsAreaRepositoryFields } from '../../graphql-operations'
@@ -313,6 +314,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                 <Container className="repo-settings-mirror-page">
                     {this.state.loading && <LoadingSpinner />}
                     {this.state.error && <ErrorAlert error={this.state.error} />}
+
                     <div className="form-group">
                         <Input
                             value={this.props.repo.mirrorInfo.remoteURL || '(unknown)'}
@@ -323,7 +325,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     {' '}
                                     Remote repository URL{' '}
                                     <small className="text-info">
-                                        <Icon role="img" as={LockIcon} aria-hidden={true} /> Only visible to site admins
+                                        <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
                                     </small>
                                 </>
                             }
@@ -335,6 +337,12 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                             </small>
                         )}
                     </div>
+                    {this.state.repo.mirrorInfo.lastError && (
+                        <Alert variant="warning">
+                            <TerminalLine>Error updating repo:</TerminalLine>
+                            <TerminalLine>{this.state.repo.mirrorInfo.lastError}</TerminalLine>
+                        </Alert>
+                    )}
                     <UpdateMirrorRepositoryActionContainer
                         repo={this.state.repo}
                         onDidUpdateRepository={this.onDidUpdateRepository}

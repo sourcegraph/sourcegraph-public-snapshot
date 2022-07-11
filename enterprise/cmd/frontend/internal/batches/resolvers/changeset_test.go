@@ -7,6 +7,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -28,16 +30,17 @@ func TestChangesetResolver(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	userID := ct.CreateTestUser(t, db, true).ID
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	esStore := database.ExternalServicesWith(cstore)
-	repoStore := database.ReposWith(cstore)
+	esStore := database.ExternalServicesWith(logger, cstore)
+	repoStore := database.ReposWith(logger, cstore)
 
 	// Set up the scheduler configuration to a consistent state where a window
 	// will always open at 00:00 UTC on the "next" day.
@@ -165,6 +168,30 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	readOnlyGitHubChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "123456",
+		ExternalBranch:      "read-only-pr",
+		ExternalState:       btypes.ChangesetExternalStateReadOnly,
+		ExternalCheckState:  btypes.ChangesetCheckStatePending,
+		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		Metadata: &github.PullRequest{
+			ID:          "123456",
+			Title:       "GitHub PR Title",
+			Body:        "GitHub PR Body",
+			Number:      123456,
+			State:       "OPEN",
+			URL:         "https://github.com/sourcegraph/archived/pull/123456",
+			HeadRefName: "read-only-pr",
+			HeadRefOid:  headRev,
+			BaseRefOid:  baseRev,
+			BaseRefName: "master",
+		},
+	})
+
 	unsyncedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
@@ -212,7 +239,7 @@ func TestChangesetResolver(t *testing.T) {
 	// Associate the changeset with a batch change, so it's considered in syncer logic.
 	addChangeset(t, ctx, cstore, syncedGitHubChangeset, batchChange.ID)
 
-	s, err := graphqlbackend.NewSchema(database.NewDB(db), &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -293,6 +320,27 @@ func TestChangesetResolver(t *testing.T) {
 					Typename:  "RepositoryComparison",
 					FileDiffs: testDiffGraphQL,
 				},
+			},
+		},
+		{
+			name:      "read-only github changeset",
+			changeset: readOnlyGitHubChangeset,
+			want: apitest.Changeset{
+				Typename:           "ExternalChangeset",
+				Title:              "GitHub PR Title",
+				Body:               "GitHub PR Body",
+				ExternalID:         "123456",
+				CheckState:         "PENDING",
+				ReviewState:        "CHANGES_REQUESTED",
+				ScheduleEstimateAt: "",
+				Repository:         apitest.Repository{Name: string(repo.Name)},
+				ExternalURL: apitest.ExternalURL{
+					URL:         "https://github.com/sourcegraph/archived/pull/123456",
+					ServiceKind: "GITHUB",
+					ServiceType: "github",
+				},
+				Labels: []apitest.Label{},
+				State:  string(btypes.ChangesetStateReadOnly),
 			},
 		},
 		{

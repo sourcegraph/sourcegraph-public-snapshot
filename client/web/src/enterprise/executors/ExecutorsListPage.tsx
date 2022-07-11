@@ -1,12 +1,12 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import CheckboxBlankCircleIcon from 'mdi-react/CheckboxBlankCircleIcon'
+import { mdiCheckboxBlankCircle } from '@mdi/js'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -132,19 +132,18 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                         <H4 className="mb-0">
                             {node.active ? (
                                 <Icon
-                                    role="img"
                                     aria-hidden={true}
                                     className="text-success mr-2"
-                                    as={CheckboxBlankCircleIcon}
+                                    svgPath={mdiCheckboxBlankCircle}
                                 />
                             ) : (
-                                <Icon
-                                    role="img"
-                                    className="text-warning mr-2"
-                                    aria-label="This executor missed at least three heartbeats."
-                                    data-tooltip="This executor missed at least three heartbeats."
-                                    as={CheckboxBlankCircleIcon}
-                                />
+                                <Tooltip content="This executor missed at least three heartbeats.">
+                                    <Icon
+                                        aria-label="This executor missed at least three heartbeats."
+                                        className="text-warning mr-2"
+                                        svgPath={mdiCheckboxBlankCircle}
+                                    />
+                                </Tooltip>
                             )}
                             {node.hostname}{' '}
                             <Badge

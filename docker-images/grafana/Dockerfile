@@ -1,7 +1,7 @@
 # sourcegraph/grafana - learn more about this image in https://docs.sourcegraph.com/dev/background-information/observability/grafana
 
 # Build monitoring definitions
-FROM sourcegraph/alpine-3.14:142406_2022-04-14_8836ac3499f4@sha256:2a2d1cbaec78882661fe1aa5b0a4af0c23a37be2ea9ff8aadc2da5b80852c233 AS monitoring_builder
+FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7 AS monitoring_builder
 RUN mkdir -p '/generated/grafana'
 COPY ./.bin/monitoring-generator /bin/monitoring-generator
 RUN GRAFANA_DIR='/generated/grafana' PROMETHEUS_DIR='' DOCS_DIR='' NO_PRUNE=true /bin/monitoring-generator
@@ -43,7 +43,7 @@ RUN mkdir /sg_config_grafana/provisioning/plugins && chown grafana:root /sg_conf
 
 # @FIXME: Update redis image
 # Pin busybox=1.32.1-r7 https://github.com/sourcegraph/sourcegraph/issues/27965
-RUN apk add --upgrade --no-cache apk-tools>=2.12 krb5-libs>=1.18.4 libssl1.1>=1.1.1l openssl>=1.1.1l busybox>=1.32.1
+RUN apk add --upgrade --no-cache 'apk-tools>=2.12' 'krb5-libs>=1.18.4' 'libssl1.1>=1.1.1l' 'openssl>=1.1.1l' 'busybox>=1.32.1'
 
 EXPOSE 3370
 USER grafana

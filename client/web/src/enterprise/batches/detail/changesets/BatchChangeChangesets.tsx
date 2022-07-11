@@ -195,7 +195,10 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
     useEffect(() => {
         if (connection?.nodes?.length) {
             // Available changesets are all changesets that the user can view.
-            setVisible(connection.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id))
+            setVisible(
+                true,
+                connection.nodes.filter(node => node.__typename === 'ExternalChangeset').map(node => node.id)
+            )
         }
     }, [connection?.nodes, setVisible])
 
@@ -310,13 +313,14 @@ const BatchChangeChangesetsImpl: React.FunctionComponent<React.PropsWithChildren
                             <ConnectionSummary
                                 noSummaryIfAllNodesVisible={true}
                                 first={BATCH_COUNT}
+                                centered={true}
                                 connection={connection}
                                 noun="changeset"
                                 pluralNoun="changesets"
                                 hasNextPage={hasNextPage}
                                 emptyElement={emptyElement}
                             />
-                            {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                            {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
                         </SummaryContainer>
                     )}
                 </ConnectionContainer>

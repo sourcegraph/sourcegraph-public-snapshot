@@ -134,7 +134,7 @@ func (d *ChangesetSpec) Type() ChangesetSpecDescriptionType {
 	return ChangesetSpecDescriptionTypeBranch
 }
 
-// IsExisting returns whether the description is of type
+// IsImportingExisting returns whether the description is of type
 // ChangesetSpecDescriptionTypeExisting.
 func (d *ChangesetSpec) IsImportingExisting() bool {
 	return d.Type() == ChangesetSpecDescriptionTypeExisting

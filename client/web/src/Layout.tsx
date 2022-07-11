@@ -1,5 +1,6 @@
 import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
 
+import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -36,9 +37,10 @@ import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
+import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
-import { SurveyToast } from './marketing/SurveyToast'
+import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -59,7 +61,6 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
@@ -75,7 +76,6 @@ export interface LayoutProps
         SearchContextProps,
         HomePanelsProps,
         SearchStreamingProps,
-        UserExternalServicesOrRepositoriesUpdateProps,
         CodeIntelligenceProps,
         BatchChangesProps {
     extensionAreaRoutes: readonly ExtensionAreaRoute[]
@@ -113,6 +113,12 @@ export interface LayoutProps
     isSourcegraphDotCom: boolean
     children?: never
 }
+
+/**
+ * Syntax highlighting changes for WCAG 2.1 contrast compliance (currently behind feature flag)
+ * https://github.com/sourcegraph/sourcegraph/issues/36251
+ */
+const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
     const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
@@ -162,6 +168,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const authRequired = useObservable(authRequiredObservable)
 
     const themeProps = useThemeProps()
+    const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -205,13 +212,22 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     }
 
     return (
-        <div className={styles.layout}>
+        <div
+            className={classNames(
+                styles.layout,
+                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
+            )}
+        >
             <KeyboardShortcutsHelp
                 keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
                 keyboardShortcuts={props.keyboardShortcuts}
             />
-            <GlobalAlerts authenticatedUser={props.authenticatedUser} settingsCascade={props.settingsCascade} />
-            {!isSiteInit && <SurveyToast />}
+            <GlobalAlerts
+                authenticatedUser={props.authenticatedUser}
+                settingsCascade={props.settingsCascade}
+                isSourcegraphDotCom={props.isSourcegraphDotCom}
+            />
+            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}

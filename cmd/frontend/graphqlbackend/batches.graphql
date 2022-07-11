@@ -99,6 +99,7 @@ enum ChangesetExternalState {
     OPEN
     CLOSED
     MERGED
+    READONLY
     DELETED
 }
 
@@ -184,6 +185,11 @@ enum ChangesetState {
     The changeset is published, not being reconciled and merged on the code host.
     """
     MERGED
+    """
+    The changeset is published, and is now read-only, most likely due to the
+    repository being archived.
+    """
+    READONLY
     """
     The changeset is published, not being reconciled and has been deleted on the code host.
     """
@@ -707,6 +713,10 @@ enum ChangesetSpecOperation {
     The changeset is kept in the batch change, but it's marked as archived.
     """
     ARCHIVE
+    """
+    The changeset is re-added to the batch change.
+    """
+    REATTACH
 }
 
 """
@@ -1172,40 +1182,39 @@ Aggregated stats on nodes in this connection.
 """
 type ChangesetApplyPreviewConnectionStats {
     """
-    Push a new commit to the code host.
+    The amount of new commits from the batch change in this operation.
     """
     push: Int!
     """
-    Update the existing changeset on the codehost. This is purely the changeset resource on the code host,
-    not the git commit. For updates to the commit, see 'PUSH'.
+    The amount of existing changeset that will be updated from the batch change in this operation.
     """
     update: Int!
     """
-    Move the existing changeset out of being a draft.
+    The amount of changesets that will be un-drafted from the batch change in this operation.
     """
     undraft: Int!
     """
-    Publish a changeset to the codehost.
+    The amount of changesets that will be pubished from the batch change in this operation.
     """
     publish: Int!
     """
-    Publish a changeset to the codehost as a draft changeset. (Only on supported code hosts).
+    The amount of changesets that will be published as a draft from the batch change in this operation.
     """
     publishDraft: Int!
     """
-    Sync the changeset with the current state on the codehost.
+    The amount of changesets that will be synced from the batch change in this operation.
     """
     sync: Int!
     """
-    Import an existing changeset from the code host with the ExternalID from the spec.
+    The amount of changesets that will be imported from the batch change in this operation.
     """
     import: Int!
     """
-    Close the changeset on the codehost.
+    The amount of changesets that will be closed from the batch change in this operation.
     """
     close: Int!
     """
-    Reopen the changeset on the codehost.
+    The amount of changesets that will be re-opened from the batch change in this operation.
     """
     reopen: Int!
     """
@@ -1213,11 +1222,11 @@ type ChangesetApplyPreviewConnectionStats {
     """
     sleep: Int!
     """
-    The changeset is removed from some of the associated batch changes.
+    The amount of changesets that will be removed from the batch change in this operation.
     """
     detach: Int!
     """
-    The changeset will still be attached to the batch change but marked as archived.
+    The amount of changesets that will be archived from the batch change in this operation.
     """
     archive: Int!
     """
@@ -1232,6 +1241,10 @@ type ChangesetApplyPreviewConnectionStats {
     The amount of changesets that are disassociated from the batch change in this operation.
     """
     removed: Int!
+    """
+    The amount of changesets that will be re-added from the batch change in this operation.
+    """
+    reattach: Int!
 }
 
 """
@@ -1372,6 +1385,26 @@ extend type Mutation {
     the input batch spec after creating.
     """
     createEmptyBatchChange(
+        """
+        The namespace (either a user or organization) that this batch change should belong to.
+        """
+        namespace: ID!
+
+        """
+        The (unique) name to identify the batch change by in its namespace.
+        """
+        name: String!
+    ): BatchChange!
+
+    """
+    Checks if a batch change with the specified name exists, if it doesn't, it creates a batch change
+    with an empty batch spec otherwise returns the existing batch change, this is useful for drafting
+    server-side batch changes with the src-cli tool.
+    The user creating the batch change must have permission to create it in the
+    namespace provided. Use `createBatchSpecFromRaw` and `replaceBatchSpecInput` to update
+    the input batch spec after creating.
+    """
+    upsertEmptyBatchChange(
         """
         The namespace (either a user or organization) that this batch change should belong to.
         """
@@ -1842,6 +1875,10 @@ extend type Query {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
+        """
+        includeLocallyExecutedSpecs: Boolean
     ): BatchSpecConnection!
 
     """
@@ -2097,6 +2134,11 @@ interface BatchSpecWorkspace {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
     """
     queuedAt: DateTime
@@ -2117,10 +2159,16 @@ interface BatchSpecWorkspace {
     state: BatchSpecWorkspaceState!
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2181,6 +2229,11 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     Executor stages of running in this workspace. Null, if the execution hasn't
     started yet.
     """
@@ -2234,10 +2287,16 @@ type VisibleBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     changesetSpecs: [VisibleChangesetSpec!]
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2290,6 +2349,11 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     cachedResultFound: Boolean!
 
     """
+    How many steps had a cached result.
+    """
+    stepCacheResultCount: Int!
+
+    """
     The time when the workspace was enqueued for processing. Null, if not yet enqueued.
     """
     queuedAt: DateTime
@@ -2310,10 +2374,16 @@ type HiddenBatchSpecWorkspace implements BatchSpecWorkspace & Node {
     state: BatchSpecWorkspaceState!
 
     """
-    The rank of this execution in the queue. The value of this field is null if the
+    The rank of this execution in the queue of the user. The value of this field is null if the
     execution has started.
     """
     placeInQueue: Int
+
+    """
+    The rank of this execution in the global queue. The value of this field is null if the
+    execution has started.
+    """
+    placeInGlobalQueue: Int
 
     """
     The diff stat over all created changeset specs. Null, if not yet finished or
@@ -2666,6 +2736,10 @@ type BatchChange implements Node {
         Opaque pagination cursor.
         """
         after: String
+        """
+        Include locally executed (i.e. with src-cli) batch specs in the list of specs returned.
+        """
+        includeLocallyExecutedSpecs: Boolean
     ): BatchSpecConnection!
 }
 
@@ -2844,6 +2918,22 @@ enum BatchSpecState {
     The execution has been canceled.
     """
     CANCELED
+}
+
+"""
+The possible sources of a batch spec.
+"""
+enum BatchSpecSource {
+    """
+    The spec was created from the local src-cli workflow.
+    """
+    LOCAL
+
+    """
+    This spec was created for remote server-side execution, e.g. from the web UI editor,
+    or with src batch remote.
+    """
+    REMOTE
 }
 
 """
@@ -3092,6 +3182,12 @@ type BatchSpec implements Node {
     retryBatchSpecExecution.
     """
     viewerCanRetry: Boolean!
+
+    """
+    Whether the batch spec was created from the local src-cli workflow or remotely for
+    server-side execution.
+    """
+    source: BatchSpecSource!
 }
 
 """

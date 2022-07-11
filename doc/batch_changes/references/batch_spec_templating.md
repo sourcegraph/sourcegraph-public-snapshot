@@ -85,7 +85,7 @@ They are evaluated before the execution of each entry in `steps`, except for the
 | `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>. 
 | `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
 | `repository.branch` | `string` | The target branch of the repository in which the step is being executed. </br><i><small>Requires Sourcegraph 3.35 or later.</small></i> |
-| `repository.name` | `string` | Full name of the repository in which the step is being executed. |
+| `repository.name` | `string` | Full name of the repository in which the step is being executed. Example: `org_foo/repo_bar`. |
 | `previous_step.modified_files` | `list of strings` | List of files that have been modified by the previous step in `steps`. Empty list if no files have been modified. |
 | `previous_step.added_files` | `list of strings` | List of files that have been added by the previous step in `steps`. Empty list if no files have been added. |
 | `previous_step.deleted_files` | `list of strings` | List of files that have been deleted by the previous step in `steps`. Empty list if no files have been deleted. |
@@ -115,12 +115,13 @@ They are evaluated after the execution of all entries in `steps`.
 | `batch_change.description` | `string` | The `description` of the batch change, as set in the batch spec. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.26 or later</small></i>.  |
 | `repository.search_result_paths` | `list of strings` | Unique list of file paths relative to the repository root directory in which the search results of the `repositoriesMatchingQuery`s have been found. |
 | `repository.branch` | `string` | The target branch of the repository in which the step is being executed. </br><i><small>Requires Sourcegraph 3.35 or later.</small></i> |
-| `repository.name` | `string` | Full name of the repository in which the step is being executed. |
+| `repository.name` | `string` | Full name of the repository in which the step is being executed. Example: `org_foo/repo_bar`. |
 | `steps.modified_files` | `list of strings` | List of files that have been modified by the `steps`. Empty list if no files have been modified. |
 | `steps.added_files` | `list of strings` | List of files that have been added by the `steps`. Empty list if no files have been added. |
 | `steps.deleted_files` | `list of strings` | List of files that have been deleted by the `steps`. Empty list if no files have been deleted. |
 | `steps.path` | `string` | Path (relative to the root of the directory, no leading `/` or `.`) in which the `steps` have been executed. Empty if no workspaces have been used and the `steps` were executed in the root of the repository. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.25 or later</small></i> |
 | `outputs.<name>` | depends on `outputs.<name>.format`, default: `string`| Value of an [`output`](batch_spec_yaml_reference.md#steps-outputs) set by `steps`. If the [`outputs.<name>.format`](batch_spec_yaml_reference.md#steps-outputs-format) is `yaml` or `json` and the `value` a data structure (i.e. array, object, ...), then subfields can be accessed too. See "[Examples](#examples)" below. |
+| `batch_change_link` | `string` | <strong><small>Only available in `changesetTemplate.body`</small></strong><br />Link back to the batch change that produced the changeset on Sourcegraph. If omitted, the link will be automatically appended to the end of the body. </br><i><small>Requires [Sourcegraph CLI](../../cli/index.md) 3.40.9 or later</small></i> |
 
 ## Template helper functions
 
@@ -306,4 +307,15 @@ changesetTemplate:
   body: |
     The host of the repository: ${{ index (split repository.name "/") 0 }}
     The org of the repository: ${{ index (split repository.name "/") 1 }}
+```
+
+Render the batch change link at the beginning of the changeset body:
+
+```yaml
+changesetTemplate:
+  # [...]
+  body: |
+    ${{ batch_change_link }}
+
+    This is the rest of my changeset description.
 ```

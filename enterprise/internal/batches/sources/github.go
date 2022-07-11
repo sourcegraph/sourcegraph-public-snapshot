@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -70,7 +71,7 @@ func newGithubSource(urn string, c *schema.GitHubConnection, cf *httpcli.Factory
 }
 
 func (s GithubSource) GitserverPushConfig(ctx context.Context, store database.ExternalServiceStore, repo *types.Repo) (*protocol.PushConfig, error) {
-	return gitserverPushConfig(ctx, store, repo, s.au)
+	return GitserverPushConfig(ctx, store, repo, s.au)
 }
 
 func (s GithubSource) WithAuthenticator(a auth.Authenticator) (ChangesetSource, error) {
@@ -322,4 +323,8 @@ func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githu
 	remoteRepo.Metadata = fork
 
 	return &remoteRepo, nil
+}
+
+func (GithubSource) IsPushResponseArchived(s string) bool {
+	return strings.Contains(s, "This repository was archived so it is read-only.")
 }

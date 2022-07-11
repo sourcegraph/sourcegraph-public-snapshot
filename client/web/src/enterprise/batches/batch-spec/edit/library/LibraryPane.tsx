@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
-import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
+import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
 import { animated, useSpring } from 'react-spring'
 
 import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
@@ -12,8 +11,11 @@ import { insertNameIntoLibraryItem } from '../../yaml-util'
 import combySample from './comby.batch.yaml'
 import goImportsSample from './go-imports.batch.yaml'
 import helloWorldSample from './hello-world.batch.yaml'
+import manyCombySample from './many-comby.batch.yaml'
 import minimalSample from './minimal.batch.yaml'
+import monorepoDynamicSample from './monorepo-dynamic.batch.yaml'
 import { ReplaceSpecModal } from './ReplaceSpecModal'
+import regexSample from './sed.batch.yaml'
 
 import styles from './LibraryPane.module.scss'
 
@@ -22,11 +24,14 @@ interface LibraryItem {
     code: string
 }
 
-const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
+const LIBRARY: [LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem, LibraryItem] = [
     { name: 'hello world', code: helloWorldSample },
     { name: 'minimal', code: minimalSample },
     { name: 'modify with comby', code: combySample },
     { name: 'update go imports', code: goImportsSample },
+    { name: 'apply a regex', code: regexSample },
+    { name: 'apply many comby patterns', code: manyCombySample },
+    { name: 'monorepo example', code: monorepoDynamicSample },
 ]
 
 const LIBRARY_PANE_DEFAULT_COLLAPSED = 'batch-changes.ssbc-library-pane-default-collapsed'
@@ -123,9 +128,8 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             aria-label={collapsed ? 'Expand' : 'Collapse'}
                         >
                             <Icon
-                                role="img"
                                 aria-hidden={true}
-                                as={collapsed ? ChevronDoubleRightIcon : ChevronDoubleLeftIcon}
+                                svgPath={collapsed ? mdiChevronDoubleRight : mdiChevronDoubleLeft}
                             />
                         </Button>
                     </div>
@@ -146,7 +150,13 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                         ))}
                     </ul>
                     <Text className={styles.lastItem}>
-                        <Link to="https://github.com/sourcegraph/batch-change-examples">View more examples</Link>
+                        <Link
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            to="https://github.com/sourcegraph/batch-change-examples"
+                        >
+                            View more examples <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
+                        </Link>
                     </Text>
                 </animated.div>
             </animated.div>

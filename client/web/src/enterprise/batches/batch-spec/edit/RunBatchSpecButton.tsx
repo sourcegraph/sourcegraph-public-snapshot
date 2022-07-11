@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 
-import VisuallyHidden from '@reach/visually-hidden'
+import { mdiInformationOutline } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 import { animated } from 'react-spring'
 
 import {
@@ -17,6 +17,7 @@ import {
     Icon,
     H3,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ExecutionOptions } from '../BatchSpecContext'
@@ -48,14 +49,11 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
         // similarly to a native dropdown selector.
         <Popover isOpen={isOpen} onOpenChange={event => setIsOpen(event.isOpen)}>
             <ButtonGroup className="mb-2">
-                <Button
-                    variant="primary"
-                    onClick={execute}
-                    disabled={!!isExecutionDisabled}
-                    data-tooltip={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}
-                >
-                    Run batch spec
-                </Button>
+                <Tooltip content={typeof isExecutionDisabled === 'string' ? isExecutionDisabled : undefined}>
+                    <Button variant="primary" onClick={execute} disabled={!!isExecutionDisabled}>
+                        Run batch spec
+                    </Button>
+                </Tooltip>
                 <PopoverTrigger
                     as={Button}
                     variant="primary"
@@ -69,7 +67,8 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
 
             <PopoverContent className={styles.menuList} position={Position.bottomEnd}>
                 <H3 className="pb-2 pt-3 pl-3 pr-3 m-0">Execution options</H3>
-                <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution.">
+                {/* TODO: Once the execution mutation honors execution options, this can be removed. */}
+                <ExecutionOption moreInfo="When this batch spec is executed, it will not use cached results from any previous execution. Currently, toggling this option also requires updating the workspaces preview.">
                     <Checkbox
                         name="run-without-cache"
                         id="run-without-cache"
@@ -106,17 +105,12 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
     const [infoReference, infoOpen, setInfoOpen, infoStyle] = useAccordion<HTMLParagraphElement>()
 
     const info = props.disabled ? (
-        <Icon
-            role="img"
-            className="ml-2"
-            data-tooltip={props.disabledTooltip}
-            aria-label={props.disabledTooltip}
-            tabIndex={0}
-            as={InfoCircleOutlineIcon}
-        />
+        <Tooltip content={props.disabledTooltip}>
+            <Icon aria-label={props.disabledTooltip} className="ml-2" tabIndex={0} svgPath={mdiInformationOutline} />
+        </Tooltip>
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>
-            <Icon role="img" aria-hidden={true} as={InfoCircleOutlineIcon} />
+            <Icon aria-hidden={true} svgPath={mdiInformationOutline} />
 
             <VisuallyHidden>More info</VisuallyHidden>
         </Button>

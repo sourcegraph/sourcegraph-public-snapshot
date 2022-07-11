@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject } from 'rxjs'
 import { catchError, concatMap, tap } from 'rxjs/operators'
@@ -26,13 +26,12 @@ import {
 import { AccessTokenScopes } from '../../../auth/accessToken'
 import { PageTitle } from '../../../components/PageTitle'
 import { CreateAccessTokenResult } from '../../../graphql-operations'
-import { SiteAdminAlert } from '../../../site-admin/SiteAdminAlert'
 import { UserSettingsAreaRouteContext } from '../UserSettingsArea'
 
 import { createAccessToken } from './create'
 
 interface Props
-    extends Pick<UserSettingsAreaRouteContext, 'authenticatedUser' | 'user'>,
+    extends Pick<UserSettingsAreaRouteContext, 'user'>,
         Pick<RouteComponentProps<{}>, 'history' | 'match'>,
         TelemetryProps {
     /**
@@ -47,7 +46,6 @@ interface Props
 export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     telemetryService,
     onDidCreateAccessToken,
-    authenticatedUser,
     user,
     history,
     match,
@@ -97,18 +95,10 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
         )
     )
 
-    const siteAdminViewingOtherUser = authenticatedUser && authenticatedUser.id !== user.id
-
     return (
         <div className="user-settings-create-access-token-page">
             <PageTitle title="Create access token" />
             <PageHeader path={[{ text: 'New access token' }]} headingElement="h2" className="mb-3" />
-
-            {siteAdminViewingOtherUser && (
-                <SiteAdminAlert className="sidebar__alert">
-                    Creating access token for other user <strong>{user.username}</strong>
-                </SiteAdminAlert>
-            )}
 
             <Form onSubmit={onSubmit}>
                 <Container className="mb-3">
@@ -173,7 +163,7 @@ export const UserSettingsCreateAccessTokenPage: React.FunctionComponent<React.Pr
                         {creationOrError === 'loading' ? (
                             <LoadingSpinner />
                         ) : (
-                            <Icon role="img" as={AddIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiPlus} />
                         )}{' '}
                         Generate token
                     </Button>

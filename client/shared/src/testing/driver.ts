@@ -2,11 +2,10 @@ import * as os from 'os'
 import * as path from 'path'
 
 import realPercySnapshot from '@percy/puppeteer'
-import * as jsonc from '@sqs/jsonc-parser'
-import * as jsoncEdit from '@sqs/jsonc-parser/lib/edit'
 import delay from 'delay'
 import expect from 'expect'
 import getFreePort from 'get-port'
+import * as jsonc from 'jsonc-parser'
 import { escapeRegExp } from 'lodash'
 import { readFile, appendFile, mkdir } from 'mz/fs'
 import puppeteer, {
@@ -137,6 +136,20 @@ function getDebugExpressionFromRegexp(tag: string, regexp: string): string {
     )})).filter(e => e.innerText && e.innerText.match(/${regexp}/))`
 }
 
+// Console logs with these keywords will be removed from the console output.
+const MUTE_CONSOLE_KEYWORDS = [
+    '[webpack-dev-server]',
+    'Download the React DevTools',
+    '[HMR]',
+    '[WDS]',
+    'Warning: componentWillReceiveProps has been renamed',
+    'Download the Apollo DevTools',
+    'Compiled in DEBUG mode',
+    'Cache data may be lost',
+    'Failed to decode downloaded font',
+    'OTS parsing error',
+]
+
 export class Driver {
     /** The pages that were visited since the creation of the driver. */
     public visitedPages: Readonly<URL>[] = []
@@ -175,19 +188,14 @@ export class Driver {
                             fromEvent<ConsoleMessage>(page, 'console').pipe(
                                 filter(
                                     message =>
-                                        !message.text().includes('Download the React DevTools') &&
-                                        !message.text().includes('[HMR]') &&
-                                        !message.text().includes('[WDS]') &&
-                                        !message
-                                            .text()
-                                            .includes('Warning: componentWillReceiveProps has been renamed') &&
-                                        !message.text().includes('Download the Apollo DevTools') &&
-                                        !message.text().includes('debug') &&
                                         // These requests are expected to fail, we use them to check if the browser extension is installed.
-                                        message.location().url !== 'chrome-extension://invalid/'
+                                        message.location().url !== 'chrome-extension://invalid/' &&
+                                        // Ignore React development build warnings.
+                                        !message.text().startsWith('Warning: ') &&
+                                        !MUTE_CONSOLE_KEYWORDS.some(keyword => message.text().includes(keyword))
                                 ),
-                                // Immediately format remote handles to strings, but maintain order.
                                 map(message =>
+                                    // Immediately format remote handles to strings, but maintain order.
                                     formatPuppeteerConsoleMessage(page, message, this.browserType === 'firefox')
                                 ),
                                 concatAll(),
@@ -292,12 +300,12 @@ export class Driver {
             await this.browser.close()
         }
         console.log(
-            '\nVisited routes:\n' +
+            '\n  Visited routes:\n' +
                 [
                     ...new Set(
                         this.visitedPages
                             .filter(url => url.href.startsWith(this.sourcegraphBaseUrl))
-                            .map(url => url.pathname)
+                            .map(url => `    ${url.pathname}`)
                     ),
                 ].join('\n')
         )
@@ -734,14 +742,17 @@ export function modifyJSONC(
     text: string,
     path: jsonc.JSONPath,
     editFunction: (oldValue: jsonc.Node | undefined) => any
-): any {
-    const old = jsonc.findNodeAtLocation(jsonc.parseTree(text), path)
+): string | undefined {
+    const tree = jsonc.parseTree(text)
+    const old = tree ? jsonc.findNodeAtLocation(tree, path) : undefined
     return jsonc.applyEdits(
         text,
-        jsoncEdit.setProperty(text, path, editFunction(old), {
-            eol: '\n',
-            insertSpaces: true,
-            tabSize: 2,
+        jsonc.modify(text, path, editFunction(old), {
+            formattingOptions: {
+                eol: '\n',
+                insertSpaces: true,
+                tabSize: 2,
+            },
         })
     )
 }
@@ -779,7 +790,16 @@ interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLau
 }
 
 export async function createDriverForTest(options?: Partial<DriverOptions>): Promise<Driver> {
-    const config = getConfig('sourcegraphBaseUrl', 'headless', 'slowMo', 'keepBrowser', 'browser', 'devtools')
+    const config = getConfig(
+        'sourcegraphBaseUrl',
+        'headless',
+        'slowMo',
+        'keepBrowser',
+        'browser',
+        'devtools',
+        'windowWidth',
+        'windowHeight'
+    )
 
     // Apply defaults
     const resolvedOptions: typeof config & typeof options = {
@@ -830,7 +850,7 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         }
     } else {
         // Chrome
-        args.push('--window-size=1280,1024')
+        args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
         if (process.getuid() === 0) {
             // TODO don't run as root in CI
             console.warn('Running as root, disabling sandbox')

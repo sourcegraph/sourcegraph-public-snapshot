@@ -62,6 +62,8 @@ type DBStore interface {
 	LastIndexScanForRepository(ctx context.Context, repositoryID int) (*time.Time, error)
 	RequestLanguageSupport(ctx context.Context, userID int, language string) error
 	LanguagesRequestedBy(ctx context.Context, userID int) ([]string, error)
+	GetAuditLogsForUpload(ctx context.Context, uploadID int) ([]dbstore.UploadLog, error)
+	UpdateReposMatchingPatterns(ctx context.Context, patterns []string, policyID int, repositoryMatchLimit *int) (err error)
 }
 
 type LSIFStore interface {

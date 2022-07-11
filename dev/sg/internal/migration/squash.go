@@ -14,6 +14,8 @@ import (
 	"github.com/grafana/regexp"
 	"gopkg.in/yaml.v2"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -75,7 +77,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 	// Add newline after progress related to container
 	std.Out.Write("")
 
-	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID)
+	unprivilegedFiles, err := makeMigrationFilenames(database, newRoot.ID, "squashed_migrations_unprivileged")
 	if err != nil {
 		return err
 	}
@@ -111,7 +113,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 		// and replace its contents.
 		privilegedRoot := newRoot.Parents[0]
 
-		privilegedFiles, err := makeMigrationFilenames(database, privilegedRoot)
+		privilegedFiles, err := makeMigrationFilenames(database, privilegedRoot, "squashed_migrations_privileged")
 		if err != nil {
 			return err
 		}
@@ -142,7 +144,7 @@ func Squash(database db.Database, commit string, inContainer, skipTeardown bool)
 	defer block.Close()
 
 	for _, filename := range filenames {
-		block.Writef("Deleted: %s", filename)
+		block.Writef("Deleted: %s", rootRelative(filename))
 	}
 
 	for _, files := range files {
@@ -231,10 +233,8 @@ func setupDatabaseForSquash(database db.Database, runInContainer bool) (string, 
 
 // runTargetedUpMigrations runs up migration targeting the given versions on the given database instance.
 func runTargetedUpMigrations(database db.Database, targetVersions []int, postgresDSN string) (err error) {
-	// Disable runner logs to prevent clashing progress output below
-	runner.DisableLogging()
-	defer runner.EnableLogging()
 
+	logger := log.Scoped("runTargetedUpMigrations", "")
 	pending := std.Out.Pending(output.Line("", output.StylePending, "Migrating PostgreSQL schema..."))
 	defer func() {
 		if err == nil {
@@ -264,7 +264,7 @@ func runTargetedUpMigrations(database db.Database, targetVersions []int, postgre
 
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
 	}
-	r, err := connections.RunnerFromDSNs(dsns, "sg", storeFactory)
+	r, err := connections.RunnerFromDSNs(logger, dsns, "sg", storeFactory)
 	if err != nil {
 		return err
 	}
@@ -512,10 +512,10 @@ func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetV
 
 	// Gather the set of filtered that are NOT a proper descendant of the given target version.
 	// This will leave us with the ancestors of the target version (including itself).
-	filtered := make([]string, 0, len(allDefinitions))
+	filteredIDs := make([]int, 0, len(allDefinitions))
 	for _, definition := range allDefinitions {
 		if _, ok := keep[definition.ID]; !ok {
-			filtered = append(filtered, strconv.Itoa(definition.ID))
+			filteredIDs = append(filteredIDs, definition.ID)
 		}
 	}
 
@@ -524,11 +524,33 @@ func removeAncestorsOf(database db.Database, ds *definition.Definitions, targetV
 		return nil, err
 	}
 
-	for _, name := range filtered {
-		if err := os.RemoveAll(filepath.Join(baseDir, name)); err != nil {
+	entries, err := os.ReadDir(baseDir)
+	if err != nil {
+		return nil, err
+	}
+
+	idsToFilenames := map[int]string{}
+	for _, e := range entries {
+		if id, err := strconv.Atoi(strings.Split(e.Name(), "_")[0]); err == nil {
+			idsToFilenames[id] = e.Name()
+		}
+	}
+
+	filenames := make([]string, 0, len(filteredIDs))
+	for _, id := range filteredIDs {
+		filename, ok := idsToFilenames[id]
+		if !ok {
+			return nil, errors.Newf("could not find file for migration %d", id)
+		}
+
+		filenames = append(filenames, filepath.Join(baseDir, filename))
+	}
+
+	for _, filename := range filenames {
+		if err := os.RemoveAll(filename); err != nil {
 			return nil, err
 		}
 	}
 
-	return filtered, nil
+	return filenames, nil
 }

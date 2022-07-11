@@ -2,7 +2,6 @@ import { basename } from 'path'
 
 import {
     autocompletion,
-    closeCompletion,
     startCompletion,
     completionKeymap,
     CompletionResult,
@@ -12,6 +11,34 @@ import {
 } from '@codemirror/autocomplete'
 import { Extension, Prec } from '@codemirror/state'
 import { keymap, EditorView } from '@codemirror/view'
+import {
+    mdiCodeArray,
+    mdiCodeBraces,
+    mdiCodeNotEqual,
+    mdiCodeString,
+    mdiCube,
+    mdiCubeOutline,
+    mdiDrawingBox,
+    mdiFileDocument,
+    mdiFilterOutline,
+    mdiFunction,
+    mdiKey,
+    mdiLink,
+    mdiMatrix,
+    mdiNull,
+    mdiNumeric,
+    mdiPackage,
+    mdiPiBox,
+    mdiPillar,
+    mdiPound,
+    mdiShape,
+    mdiSitemap,
+    mdiSourceBranch,
+    mdiTextBox,
+    mdiTimetable,
+    mdiWeb,
+    mdiWrench,
+} from '@mdi/js'
 import { startCase } from 'lodash'
 
 import { isDefined } from '@sourcegraph/common'
@@ -28,53 +55,56 @@ import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/provide
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { parsedQuery } from './parsedQuery'
+import { queryTokens } from './parsedQuery'
 
-enum Type {
-    class = 'class',
-    constant = 'constant',
-    enum = 'enum',
-    function = 'function',
-    interface = 'interface',
-    keyword = 'keyword',
-    method = 'method',
-    namespace = 'namespace',
-    property = 'property',
-    text = 'text',
-    type = 'type',
-    variable = 'variable',
-    repo = 'repo',
-    queryFilter = 'queryfilter',
+import styles from '../CodeMirrorQueryInput.module.scss'
+
+type CompletionType = SymbolKind | 'queryfilter' | 'repository'
+
+// See SymbolIcon
+const typeIconMap: Record<CompletionType, string> = {
+    FILE: mdiFileDocument,
+    MODULE: mdiCodeBraces,
+    NAMESPACE: mdiWeb,
+    PACKAGE: mdiPackage,
+    CLASS: mdiSitemap,
+    METHOD: mdiCubeOutline,
+    PROPERTY: mdiWrench,
+    FIELD: mdiTextBox,
+    CONSTRUCTOR: mdiCubeOutline,
+    ENUM: mdiNumeric,
+    INTERFACE: mdiLink,
+    FUNCTION: mdiFunction,
+    VARIABLE: mdiCube,
+    CONSTANT: mdiPiBox,
+    STRING: mdiCodeString,
+    NUMBER: mdiPound,
+    BOOLEAN: mdiMatrix,
+    ARRAY: mdiCodeArray,
+    OBJECT: mdiDrawingBox,
+    KEY: mdiKey,
+    NULL: mdiNull,
+    ENUMMEMBER: mdiNumeric,
+    STRUCT: mdiPillar,
+    EVENT: mdiTimetable,
+    OPERATOR: mdiCodeNotEqual,
+    TYPEPARAMETER: mdiCube,
+    UNKNOWN: mdiShape,
+    queryfilter: mdiFilterOutline,
+    repository: mdiSourceBranch,
 }
 
-const typeMap: Record<SymbolKind, Type | undefined> = {
-    MODULE: Type.namespace,
-    NAMESPACE: Type.namespace,
-    PACKAGE: Type.namespace,
-    CLASS: Type.class,
-    METHOD: Type.method,
-    PROPERTY: Type.property,
-    FIELD: Type.property,
-    CONSTRUCTOR: Type.class,
-    ENUM: Type.enum,
-    INTERFACE: Type.interface,
-    FUNCTION: Type.function,
-    VARIABLE: Type.variable,
-    CONSTANT: Type.constant,
-    ENUMMEMBER: Type.enum,
-    STRING: undefined,
-    NUMBER: undefined,
-    BOOLEAN: undefined,
-    ARRAY: undefined,
-    OBJECT: undefined,
-    KEY: undefined,
-    NULL: undefined,
-    STRUCT: undefined,
-    EVENT: undefined,
-    OPERATOR: undefined,
-    TYPEPARAMETER: undefined,
-    UNKNOWN: undefined,
-    FILE: undefined,
+function createIcon(pathSpec: string): Node {
+    const svgNS = 'http://www.w3.org/2000/svg'
+    const svg = document.createElementNS(svgNS, 'svg')
+    svg.setAttributeNS(null, 'viewBox', '0 0 24 24')
+    svg.setAttribute('aria-hidden', 'true')
+
+    const path = document.createElementNS(svgNS, 'path')
+    path.setAttribute('d', pathSpec)
+
+    svg.append(path)
+    return svg
 }
 
 interface SuggestionContext {
@@ -104,7 +134,7 @@ export function searchQueryAutocompletion(
 ): Extension {
     const override: CompletionSource[] = sources.map(source => context => {
         const position = context.pos
-        const query = context.state.facet(parsedQuery)
+        const query = context.state.facet(queryTokens)
         const token = query.tokens.find(token => isTokenInRange(token, position))
         return source(
             { position, onAbort: listener => context.addEventListener('abort', listener) },
@@ -127,16 +157,23 @@ export function searchQueryAutocompletion(
             '.completion-type-queryfilter > .cm-completionLabel': {
                 fontWeight: 'bold',
             },
+            '.cm-tooltip-autocomplete svg': {
+                width: '1rem',
+                height: '1rem',
+                display: 'inline-block',
+                boxSizing: 'content-box',
+                textAlign: 'center',
+                paddingRight: '0.5rem',
+            },
+            '.cm-tooltip-autocomplete svg path': {
+                fillOpacity: 0.6,
+            },
         }),
         EditorView.updateListener.of(update => {
-            // Hide completion list when the editor looses focus
-            if (update.focusChanged && !update.view.hasFocus) {
-                closeCompletion(update.view)
-            }
             // If a filter was completed, show the completion list again for
             // filter values.
             if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
-                const query = update.state.facet(parsedQuery)
+                const query = update.state.facet(queryTokens)
                 const token = query.tokens.find(token => isTokenInRange(token, update.state.selection.main.anchor - 1))
                 if (token) {
                     startCompletion(update.view)
@@ -148,6 +185,35 @@ export function searchQueryAutocompletion(
             defaultKeymap: false,
             override,
             optionClass: completionItem => 'completion-type-' + (completionItem.type ?? ''),
+            icons: false,
+            closeOnBlur: true,
+            addToOptions: [
+                // This renders the completion icon
+                {
+                    render(completion) {
+                        return createIcon(
+                            completion.type && completion.type in typeIconMap
+                                ? typeIconMap[completion.type as CompletionType]
+                                : typeIconMap[SymbolKind.UNKNOWN]
+                        )
+                    },
+                    // Per CodeMirror documentation, 20 is the default icon
+                    // position
+                    position: 20,
+                },
+                // This renders the "Tab" indicator after the details text. It's
+                // only visible for the currently selected suggestion (handled
+                // by CSS).
+                {
+                    render() {
+                        const node = document.createElement('span')
+                        node.classList.add('completion-hint', styles.tabStyle)
+                        node.textContent = 'Tab'
+                        return node
+                    },
+                    position: 200,
+                },
+            ],
         }),
     ]
 }
@@ -161,111 +227,117 @@ export function createDefaultSuggestionSources(options: {
     fetchSuggestions: (query: string, onAbort: (listener: () => void) => void) => Promise<SearchMatch[]>
     isSourcegraphDotCom: boolean
     globbing: boolean
+    disableFilterCompletion?: true
+    disableSymbolCompletion?: true
 }): SuggestionSource<CompletionResult | null, SuggestionContext>[] {
-    return [
-        // Static suggestions shown if the the current position is
-        // outside a filter value
-        createDefaultSource((context, _tokens, token) => ({
-            from: token ? token.range.start : context.position,
-            options: FILTER_SUGGESTIONS,
-        })),
+    const sources: SuggestionSource<CompletionResult | null, SuggestionContext>[] = []
 
-        // Show symbol suggestions outside of filters
-        createDefaultSource(async (context, tokens, token) => {
-            if (!token || token.type !== 'pattern') {
-                return null
-            }
+    if (options.disableFilterCompletion !== true) {
+        sources.push(
+            // Static suggestions shown if the current position is outside a
+            // filter value
+            createDefaultSource((context, _tokens, token) => {
+                // Default to the current cursor position (e.g. if the token is a
+                // whitespace, we want the suggestion to be inserted after it)
+                let from = context.position
 
-            const results = await options.fetchSuggestions(getSuggestionQuery(tokens, token, 'symbol'), context.onAbort)
-            if (results.length === 0) {
-                return null
-            }
+                if (token?.type === 'pattern') {
+                    // If the token is a pattern (e.g. the start of a filter name),
+                    // we want the suggestion to complete that name.
+                    from = token.range.start
+                }
 
-            return {
-                from: token.range.start,
-                options: results
-                    .flatMap(result => {
-                        if (result.type === 'symbol') {
-                            const path = result.path
-                            return result.symbols.map(symbol => ({
-                                label: symbol.name,
-                                type: typeMap[symbol.kind],
-                                apply: symbol.name + ' ',
-                                detail: `${startCase(symbol.kind.toLowerCase())} | ${basename(path)}`,
-                                info: result.repository,
-                            }))
-                        }
-                        return null
-                    })
-                    .filter(isDefined),
-            }
-        }),
+                return {
+                    from,
+                    options: FILTER_SUGGESTIONS,
+                }
+            }),
+            // Show static filter value suggestions
+            createFilterSource((_context, _tokens, token, resolvedFilter) => {
+                if (!resolvedFilter?.definition.discreteValues) {
+                    return null
+                }
 
-        // Show static filter value suggestions
-        createFilterSource((_context, _tokens, token, resolvedFilter) => {
-            if (!resolvedFilter?.definition.discreteValues) {
-                return null
-            }
+                const { value } = token
+                const insidePredicate = value ? PREDICATE_REGEX.test(value.value) : false
+                const hasDynamicSuggestions = resolvedFilter.definition.suggestions
 
-            const { value } = token
-            const insidePredicate = value ? PREDICATE_REGEX.test(value.value) : false
+                // Don't show static suggestions if we are inside a predicate or
+                // if the filter already has a value _and_ is configured for
+                // dynamic suggestions.
+                // That's because dynamic suggestions are not filtered (filter: false)
+                // which CodeMirror always displays above filtered suggestions.
+                if (insidePredicate || (value && hasDynamicSuggestions)) {
+                    return null
+                }
 
-            if (insidePredicate) {
-                return null
-            }
+                return {
+                    from: value?.range.start ?? token.range.end,
+                    to: value?.range.end,
+                    // Filtering is unnecessary when dynamic suggestions are
+                    // available because if there is any input that the static
+                    // suggestions could be filtered by we disable static
+                    // suggestions and only show the dynamic ones anyway.
+                    filter: !hasDynamicSuggestions,
+                    options: resolvedFilter.definition
+                        .discreteValues(value, options.isSourcegraphDotCom)
+                        .map(({ label, insertText, asSnippet }, index) => {
+                            const apply = (insertText || label) + ' '
+                            return {
+                                label,
+                                // See issue https://github.com/sourcegraph/sourcegraph/issues/38254
+                                // Per CodeMirror's documentation (https://codemirror.net/docs/ref/#autocomplete.snippet)
+                                // "The user can move between fields with Tab and Shift-Tab as long as the fields are
+                                // active. Moving to the last field or moving the cursor out of the current field
+                                // deactivates the fields."
+                                // This means we need to append a field at the end so that pressing Tab when at the last
+                                // field will move the cursor after the filter value and not move focus outside the input
+                                apply: asSnippet ? snippet(apply + '${}') : apply,
+                                // Setting boost this way has the effect of
+                                // displaying matching suggestions in the same
+                                // order as they have been defined in code.
+                                boost: index * -1,
+                            }
+                        }),
+                }
+            }),
 
-            return {
-                from: value?.range.start ?? token.range.end,
-                options: resolvedFilter.definition
-                    .discreteValues(value, options.isSourcegraphDotCom)
-                    .map(({ label, insertText, asSnippet }) => {
-                        const apply = (insertText || label) + ' '
-                        return {
-                            label,
-                            apply: asSnippet ? snippet(apply) : apply,
-                        }
-                    }),
-            }
-        }),
+            // Show dynamic filter value suggestions
+            createFilterSource(async (context, tokens, token, resolvedFilter) => {
+                // On Sourcegraph.com, prompt only static suggestions (above) if there is no value to use for generating dynamic suggestions yet.
+                if (
+                    options.isSourcegraphDotCom &&
+                    (!token.value || (token.value.type === 'literal' && token.value.value === ''))
+                ) {
+                    return null
+                }
 
-        // Show dynamic filter value suggestions
-        createFilterSource(async (context, tokens, token, resolvedFilter) => {
-            // On Sourcegraph.com, prompt only static suggestions (above) if there is no value to use for generating dynamic suggestions yet.
-            if (
-                options.isSourcegraphDotCom &&
-                (!token.value || (token.value.type === 'literal' && token.value.value === ''))
-            ) {
-                return null
-            }
+                if (!resolvedFilter?.definition.suggestions) {
+                    return null
+                }
 
-            if (!resolvedFilter?.definition.suggestions) {
-                return null
-            }
-
-            const results = await options.fetchSuggestions(
-                getSuggestionQuery(tokens, token, resolvedFilter.definition.suggestions),
-                context.onAbort
-            )
-            if (results.length === 0) {
-                return null
-            }
-
-            return {
-                from: token.value?.range.start ?? token.range.end,
-                filter: false,
-                options: results
+                const results = await options.fetchSuggestions(
+                    getSuggestionQuery(tokens, token, resolvedFilter.definition.suggestions),
+                    context.onAbort
+                )
+                if (results.length === 0) {
+                    return null
+                }
+                const filteredResults = results
+                    .filter(match => match.type === resolvedFilter.definition.suggestions)
                     .map(match => {
                         switch (match.type) {
                             case 'path':
                                 return {
                                     label: match.path,
+                                    type: SymbolKind.FILE,
                                     apply: regexInsertText(match.path, options) + ' ',
                                     info: match.repository,
                                 }
                             case 'repo':
                                 return {
                                     label: match.repository,
-                                    type: Type.repo,
+                                    type: 'repository',
                                     apply:
                                         repositoryInsertText(match, { ...options, filterValue: token.value?.value }) +
                                         ' ',
@@ -273,10 +345,58 @@ export function createDefaultSuggestionSources(options: {
                         }
                         return null
                     })
-                    .filter(isDefined),
-            }
-        }),
-    ]
+                    .filter(isDefined)
+
+                return {
+                    from: token.value?.range.start ?? token.range.end,
+                    to: token.value?.range.end,
+                    filter: false,
+                    options: filteredResults,
+                }
+            })
+        )
+    }
+
+    if (options.disableSymbolCompletion !== true) {
+        sources.push(
+            // Show symbol suggestions outside of filters
+            createDefaultSource(async (context, tokens, token) => {
+                if (!token || token.type !== 'pattern') {
+                    return null
+                }
+
+                const results = await options.fetchSuggestions(
+                    getSuggestionQuery(tokens, token, 'symbol'),
+                    context.onAbort
+                )
+                if (results.length === 0) {
+                    return null
+                }
+
+                return {
+                    from: token.range.start,
+                    to: token.range.end,
+                    options: results
+                        .flatMap(result => {
+                            if (result.type === 'symbol') {
+                                const path = result.path
+                                return result.symbols.map(symbol => ({
+                                    label: symbol.name,
+                                    type: symbol.kind,
+                                    apply: symbol.name + ' ',
+                                    detail: `${startCase(symbol.kind.toLowerCase())} | ${basename(path)}`,
+                                    info: result.repository,
+                                }))
+                            }
+                            return null
+                        })
+                        .filter(isDefined),
+                }
+            })
+        )
+    }
+
+    return sources
 }
 
 /**
@@ -323,7 +443,7 @@ function createFilterSource<R, C extends SuggestionContext>(
 const FILTER_SUGGESTIONS: Completion[] = createFilterSuggestions(Object.keys(FILTERS) as FilterType[]).map(
     ({ label, insertText, detail }) => ({
         label,
-        type: Type.queryFilter,
+        type: 'queryfilter',
         apply: insertText,
         detail,
         boost: insertText.startsWith('-') ? 1 : 2, // demote negated filters

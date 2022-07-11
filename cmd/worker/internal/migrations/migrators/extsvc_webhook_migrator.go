@@ -2,13 +2,13 @@ package migrators
 
 import (
 	"context"
-	"database/sql"
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -16,6 +16,7 @@ import (
 // has_webhooks field on external services based on the external service
 // configuration.
 type ExternalServiceWebhookMigrator struct {
+	logger    log.Logger
 	store     *basestore.Store
 	BatchSize int
 }
@@ -24,11 +25,11 @@ var _ oobmigration.Migrator = &ExternalServiceWebhookMigrator{}
 
 func NewExternalServiceWebhookMigrator(store *basestore.Store) *ExternalServiceWebhookMigrator {
 	// Batch size arbitrarily chosen to match ExternalServiceConfigMigrator.
-	return &ExternalServiceWebhookMigrator{store: store, BatchSize: 50}
+	return &ExternalServiceWebhookMigrator{logger: log.Scoped("ExternalServiceWebhookMigrator", ""), store: store, BatchSize: 50}
 }
 
-func NewExternalServiceWebhookMigratorWithDB(db dbutil.DB) *ExternalServiceWebhookMigrator {
-	return NewExternalServiceWebhookMigrator(basestore.NewWithDB(db, sql.TxOptions{}))
+func NewExternalServiceWebhookMigratorWithDB(db database.DB) *ExternalServiceWebhookMigrator {
+	return NewExternalServiceWebhookMigrator(basestore.NewWithHandle(db.Handle()))
 }
 
 // ID returns the migration row ID in the out_of_band_migrations table.
@@ -63,7 +64,7 @@ func (m *ExternalServiceWebhookMigrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = tx.Done(err) }()
 
-	store := database.ExternalServicesWith(tx)
+	store := database.ExternalServicesWith(m.logger, tx)
 
 	svcs, err := store.List(ctx, database.ExternalServicesListOptions{
 		OrderByDirection: "ASC",

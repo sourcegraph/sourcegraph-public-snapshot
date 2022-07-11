@@ -1,8 +1,7 @@
 import React, { useEffect, useCallback } from 'react'
 
-import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
-import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
+import { mdiCloudOutline, mdiCloudDownload, mdiCog } from '@mdi/js'
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
@@ -10,6 +9,7 @@ import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
+import { TerminalLine } from '../auth/Terminal'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
@@ -20,6 +20,8 @@ import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operat
 import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
+
+import styles from './SiteAdminRepositoriesPage.module.scss'
 
 interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
@@ -44,14 +46,15 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         className="ml-2 text-muted"
                         data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
                     >
-                        <Icon role="img" as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
+                        <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
                     </small>
                 )}
             </div>
+
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon role="img" as={CloudDownloadIcon} aria-hidden={true} /> Clone now
+                        <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                     </Button>
                 )}{' '}
                 {
@@ -62,11 +65,20 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                         size="sm"
                         as={Link}
                     >
-                        <Icon role="img" as={SettingsIcon} aria-hidden={true} /> Settings
+                        <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                     </Button>
                 }{' '}
             </div>
         </div>
+
+        {node.mirrorInfo.lastError && (
+            <div className={classNames(styles.alertWrapper)}>
+                <Alert variant="warning">
+                    <TerminalLine>Error updating repo:</TerminalLine>
+                    <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
+                </Alert>
+            </div>
+        )}
     </li>
 )
 

@@ -1,9 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiClose, mdiCheckCircle, mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
@@ -45,7 +43,7 @@ import {
     createNotebookStar as _createNotebookStar,
     deleteNotebookStar as _deleteNotebookStar,
 } from '../backend'
-import { NOTEPAD_ENABLED_EVENT } from '../listPage/NotebooksListPage'
+import { NOTEPAD_ENABLED_EVENT } from '../listPage/NotebooksListPageHeader'
 import { copyNotebook as _copyNotebook, CopyNotebookProps } from '../notebook'
 import { blockToGQLInput, convertNotebookTitleToFileName, GQLBlockToGQLInput } from '../serialize'
 
@@ -225,20 +223,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                     {isNotebookLoaded(notebookOrError) && (
                         <>
                             <PageHeader
-                                className="mt-2"
-                                path={[
-                                    { to: '/notebooks', icon: BookOutlineIcon, ariaLabel: 'Notebooks' },
-                                    {
-                                        text: (
-                                            <NotebookTitle
-                                                title={notebookOrError.title}
-                                                viewerCanManage={notebookOrError.viewerCanManage}
-                                                onUpdateTitle={onUpdateTitle}
-                                                telemetryService={telemetryService}
-                                            />
-                                        ),
-                                    },
-                                ]}
+                                className="mt-2 px-3"
                                 actions={
                                     <NotebookPageHeaderActions
                                         isSourcegraphDotCom={isSourcegraphDotCom}
@@ -256,8 +241,24 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                         telemetryService={telemetryService}
                                     />
                                 }
-                            />
-                            <small className="d-flex align-items-center mt-2">
+                            >
+                                <PageHeader.Heading as="h2" styleAs="h1">
+                                    <PageHeader.Breadcrumb
+                                        icon={mdiBookOutline}
+                                        to="/notebooks"
+                                        aria-label="Notebooks"
+                                    />
+                                    <PageHeader.Breadcrumb>
+                                        <NotebookTitle
+                                            title={notebookOrError.title}
+                                            viewerCanManage={notebookOrError.viewerCanManage}
+                                            onUpdateTitle={onUpdateTitle}
+                                            telemetryService={telemetryService}
+                                        />
+                                    </PageHeader.Breadcrumb>
+                                </PageHeader.Heading>
+                            </PageHeader>
+                            <small className="d-flex align-items-center mt-2 px-3">
                                 <div className="mr-2">
                                     Created{' '}
                                     {notebookOrError.creator && (
@@ -276,7 +277,9 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                     {isNotebookLoaded(latestNotebook) && (
                                         <>
-                                            <CheckCircleIcon
+                                            <Icon
+                                                aria-hidden={true}
+                                                svgPath={mdiCheckCircle}
                                                 className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                             />
                                             <span>
@@ -293,7 +296,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                 </div>
                             </small>
-                            <hr className="mt-2 mb-3" />
+                            <hr className="mt-2 mb-3 mx-3" />
                         </>
                     )}
                     {isNotebookLoaded(notebookOrError) && (
@@ -357,7 +360,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     size="sm"
                     className={styles.notepadCtaCloseButton}
                 >
-                    <Icon role="img" aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
                 <img
                     className="flex-shrink-0 mr-3"

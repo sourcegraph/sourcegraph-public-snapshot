@@ -8,7 +8,7 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/sourcegraph/sourcegraph/lib/log"
+	"github.com/sourcegraph/log"
 
 	"golang.org/x/sync/errgroup"
 
@@ -81,9 +81,7 @@ const (
 )
 
 type CommitSearcher struct {
-	// logger is a standardized, strongly-typed, and structured logging interface
-	// Production output from this logger (SRC_LOG_FORMAT=json) complies with the OpenTelemetry log data model
-	logger               log.Logger
+	Logger               log.Logger
 	RepoDir              string
 	Query                MatchTree
 	Revisions            []protocol.RevisionSpecifier
@@ -156,7 +154,7 @@ func (cs *CommitSearcher) feedBatches(ctx context.Context, jobs chan job, result
 	defer func() {
 		// Always call cmd.Wait to avoid leaving zombie processes around.
 		if e := cmd.Wait(); e != nil {
-			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String(), cs.logger))
+			err = errors.Append(err, tryInterpretErrorWithStderr(ctx, err, stderrBuf.String(), cs.Logger))
 		}
 	}()
 

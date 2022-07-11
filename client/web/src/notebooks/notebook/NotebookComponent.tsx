@@ -1,11 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
-import { debounce, noop } from 'lodash'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import DownloadIcon from 'mdi-react/DownloadIcon'
-import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
-import * as Monaco from 'monaco-editor'
+import { debounce } from 'lodash'
 import { useLocation } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { Observable, ReplaySubject } from 'rxjs'
@@ -14,15 +11,13 @@ import { catchError, delay, filter, map, startWith, switchMap, tap, withLatestFr
 import { HoverMerged } from '@sourcegraph/client-api'
 import { createHoverifier } from '@sourcegraph/codeintellify'
 import { asError, isDefined, isErrorLike, property } from '@sourcegraph/common'
-import { StreamingSearchResultsListProps, useQueryIntelligence } from '@sourcegraph/search-ui'
+import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { getHoverActions } from '@sourcegraph/shared/src/hover/actions'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay'
 import { getModeFromPath } from '@sourcegraph/shared/src/languages'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
-import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Button, useEventObservable, Icon, useObservable } from '@sourcegraph/wildcard'
@@ -331,25 +326,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         )
         useNotebookEventHandlers(notebookEventHandlersProps)
 
-        const sourcegraphSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
-            patternType: SearchPatternType.literal,
-            globbing,
-            interpretComments: true,
-        })
-
-        const sourcegraphSuggestionsSearchLanguageId = useQueryIntelligence(fetchStreamSuggestions, {
-            patternType: SearchPatternType.literal,
-            globbing,
-            interpretComments: true,
-            disablePatternSuggestions: true,
-        })
-
-        // Register dummy onCompletionSelected handler to prevent console errors
-        useEffect(() => {
-            const disposable = Monaco.editor.registerCommand('completionItemSelected', noop)
-            return () => disposable.dispose()
-        }, [])
-
         // Element reference subjects passed to `hoverifier`
         const notebookElements = useMemo(() => new ReplaySubject<HTMLElement | null>(1), [])
         useEffect(() => notebookElements.next(notebookElement.current), [notebookElement, notebookElements])
@@ -430,10 +406,10 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 hoverifier={hoverifier}
-                                sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
                                 extensionsController={extensionsController}
                                 telemetryService={telemetryService}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                globbing={globbing}
                             />
                         )
                     case 'query':
@@ -442,6 +418,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 {...block}
                                 {...blockProps}
                                 isSourcegraphDotCom={isSourcegraphDotCom}
+                                globbing={globbing}
                                 fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
                                 searchContextsEnabled={searchContextsEnabled}
                                 settingsCascade={settingsCascade}
@@ -449,7 +426,6 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                                 platformContext={platformContext}
                                 authenticatedUser={authenticatedUser}
                                 hoverifier={hoverifier}
-                                sourcegraphSearchLanguageId={sourcegraphSearchLanguageId}
                                 extensionsController={extensionsController}
                             />
                         )
@@ -460,10 +436,11 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             <NotebookSymbolBlock
                                 {...block}
                                 {...blockProps}
+                                isSourcegraphDotCom={isSourcegraphDotCom}
+                                globbing={globbing}
                                 telemetryService={telemetryService}
                                 platformContext={platformContext}
                                 hoverifier={hoverifier}
-                                sourcegraphSearchLanguageId={sourcegraphSuggestionsSearchLanguageId}
                                 extensionsController={extensionsController}
                             />
                         )
@@ -480,16 +457,15 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 isReadOnly,
                 selectedBlockId,
                 hoverifier,
-                sourcegraphSuggestionsSearchLanguageId,
                 extensionsController,
                 telemetryService,
                 isSourcegraphDotCom,
+                globbing,
                 fetchHighlightedFileLineRanges,
                 searchContextsEnabled,
                 settingsCascade,
                 platformContext,
                 authenticatedUser,
-                sourcegraphSearchLanguageId,
             ]
         )
 
@@ -512,7 +488,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
 
         return (
             <div className={classNames(styles.searchNotebook)} ref={notebookElement}>
-                <div className="pb-1">
+                <div className="pb-1 px-3">
                     <Button
                         className="mr-2"
                         variant="primary"
@@ -520,7 +496,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         onClick={runAllBlocks}
                         disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                     >
-                        <Icon role="img" aria-hidden={true} className="mr-1" as={PlayCircleOutlineIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiPlayCircleOutline} />
                         <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                     </Button>
                     {!isEmbedded && (
@@ -531,7 +507,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             onClick={exportNotebook}
                             data-testid="export-notebook-markdown-button"
                         >
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={DownloadIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
                             <span>Export as Markdown</span>
                         </Button>
                     )}
@@ -544,7 +520,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             data-testid="copy-notebook-button"
                             disabled={copiedNotebookOrError === LOADING}
                         >
-                            <Icon role="img" aria-hidden={true} className="mr-1" as={ContentCopyIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiContentCopy} />
                             <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
                         </Button>
                     )}

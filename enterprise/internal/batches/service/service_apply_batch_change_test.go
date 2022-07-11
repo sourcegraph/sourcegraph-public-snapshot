@@ -8,6 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
@@ -25,8 +27,9 @@ func TestServiceApplyBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	ctx := actor.WithInternalActor(context.Background())
-	db := database.NewDB(dbtest.NewDB(t))
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	admin := ct.CreateTestUser(t, db, true)
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
@@ -589,6 +592,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1,
 				// changesets[0].CurrentSpecID
 				spec2,
+				nil,
 				changesets[0],
 			)
 			if err != nil {
@@ -628,6 +632,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1,
 				// changesets[0].CurrentSpecID
 				spec3,
+				nil,
 				changesets[0],
 			)
 			if err != nil {
@@ -669,6 +674,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1,
 				// changesets[0].CurrentSpecID
 				spec4,
+				nil,
 				changesets[0],
 			)
 			if err != nil {
@@ -788,6 +794,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				nil,
 				// c2.currentSpec is newSpec2
 				newSpec2,
+				nil,
 				c2,
 			)
 			if err != nil {

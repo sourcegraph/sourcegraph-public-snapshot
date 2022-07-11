@@ -1,8 +1,12 @@
 package httpapi
 
 import (
+	"testing"
+
 	"github.com/gorilla/mux"
 	"github.com/throttled/throttled/v2/store/memstore"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -16,10 +20,11 @@ func init() {
 	txemail.DisableSilently()
 }
 
-func newTest() *httptestutil.Client {
+func newTest(t *testing.T) *httptestutil.Client {
+	logger := logtest.Scoped(t)
 	enterpriseServices := enterprise.DefaultServices()
 	rateLimitStore, _ := memstore.New(1024)
-	rateLimiter := graphqlbackend.NewRateLimiteWatcher(rateLimitStore)
+	rateLimiter := graphqlbackend.NewRateLimiteWatcher(logger, rateLimitStore)
 
 	return httptestutil.NewTest(NewHandler(database.NewMockDB(),
 		router.New(mux.NewRouter()),

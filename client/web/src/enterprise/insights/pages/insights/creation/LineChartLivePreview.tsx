@@ -3,11 +3,10 @@ import React, { useContext, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo, Text } from '@sourcegraph/wildcard'
 
-import { SeriesBasedChartTypes, SeriesChart } from '../../../components'
+import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
-    getSanitizedRepositories,
-    useLivePreview,
-    StateStatus,
+    SeriesChart,
+    SeriesBasedChartTypes,
     LivePreviewUpdateButton,
     LivePreviewCard,
     LivePreviewLoading,
@@ -15,12 +14,22 @@ import {
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
     LivePreviewLegend,
+    getSanitizedRepositories,
+    useLivePreview,
+    StateStatus,
     SERIES_MOCK_CHART,
-} from '../../../components/creation-ui-kit'
+} from '../../../components'
 import { CodeInsightsBackendContext, SeriesChartContent } from '../../../core'
 
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'
+
+export interface LivePreviewSeries {
+    query: string
+    label: string
+    generatedFromCaptureGroup: boolean
+    stroke: string
+}
 
 interface LineChartLivePreviewProps {
     disabled: boolean
@@ -29,12 +38,7 @@ interface LineChartLivePreviewProps {
     step: InsightStep
     isAllReposMode: boolean
     className?: string
-    series: {
-        query: string
-        label: string
-        generatedFromCaptureGroup: boolean
-        stroke: string
-    }[]
+    series: LivePreviewSeries[]
 }
 
 export const LineChartLivePreview: React.FunctionComponent<
@@ -42,6 +46,7 @@ export const LineChartLivePreview: React.FunctionComponent<
 > = props => {
     const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
+    const seriesToggleState = useSeriesToggle()
 
     const sanitizedSeries = series.map(srs => {
         const sanitizer = srs.generatedFromCaptureGroup ? getSanitizedCaptureQuery : (query: string) => query
@@ -88,6 +93,7 @@ export const LineChartLivePreview: React.FunctionComponent<
                                     width={parent.width}
                                     height={parent.height}
                                     data-testid="code-search-insight-live-preview"
+                                    seriesToggleState={seriesToggleState}
                                     {...state.data}
                                 />
                             ) : (
@@ -97,6 +103,7 @@ export const LineChartLivePreview: React.FunctionComponent<
                                         type={SeriesBasedChartTypes.Line}
                                         width={parent.width}
                                         height={parent.height}
+                                        seriesToggleState={seriesToggleState}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support inferring as component with generic.
                                         {...(SERIES_MOCK_CHART as SeriesChartContent<unknown>)}

@@ -1,6 +1,6 @@
 import React from 'react'
 
-import ImportIcon from 'mdi-react/ImportIcon'
+import { mdiImport } from '@mdi/js'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Icon, H4 } from '@sourcegraph/wildcard'
@@ -47,7 +47,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
                                     : undefined
                             }
                         >
-                            <Icon role="img" aria-hidden={true} as={ImportIcon} />{' '}
+                            <Icon aria-hidden={true} svgPath={mdiImport} />{' '}
                             {node.description.__typename === 'ExistingChangesetReference' &&
                                 node.description.baseRepository.name}
                         </LinkOrSpan>{' '}
@@ -60,6 +60,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
         {connection && (
             <SummaryContainer centered={true}>
                 <ConnectionSummary
+                    centered={true}
                     noSummaryIfAllNodesVisible={true}
                     first={CHANGESETS_PER_PAGE_COUNT}
                     connection={connection}
@@ -68,7 +69,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
                     hasNextPage={hasNextPage}
                     emptyElement={null}
                 />
-                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                {hasNextPage && <ShowMoreButton centered={true} onClick={fetchMore} />}
             </SummaryContainer>
         )}
     </ConnectionContainer>

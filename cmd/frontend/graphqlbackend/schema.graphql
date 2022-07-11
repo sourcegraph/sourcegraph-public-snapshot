@@ -1058,6 +1058,17 @@ type RandomizeUserPasswordResult {
 }
 
 """
+Possible answers to "You use Sourcegraph to..." in the NPS Survey.
+"""
+enum SurveyUseCase {
+    UNDERSTAND_NEW_CODE
+    FIX_SECURITY_VULNERABILITIES
+    REUSE_CODE
+    RESPOND_TO_INCIDENTS
+    IMPROVE_CODE_QUALITY
+}
+
+"""
 Input for a user satisfaction (NPS) survey submission.
 """
 input SurveySubmissionInput {
@@ -1071,11 +1082,11 @@ input SurveySubmissionInput {
     """
     score: Int!
     """
-    The answer to "What is the most important reason for the score you gave".
+    The answer to "What do you use Sourcegraph for?".
     """
-    reason: String
+    otherUseCase: String
     """
-    The answer to "What can Sourcegraph do to provide a better product"
+    The answer to "What would make Sourcegraph better?"
     """
     better: String
 }
@@ -1420,6 +1431,11 @@ type Query {
     Retrieve the list of defined feature flags
     """
     featureFlags: [FeatureFlag!]!
+
+    """
+    Retrieve a feature flag
+    """
+    featureFlag(name: String!): FeatureFlag!
 
     """
     Evaluates a feature flag for the current user
@@ -1846,15 +1862,20 @@ enum SearchVersion {
     """
     V1
     """
-    Search syntax that defaults to literal search.
+    Search syntax that defaults to literal-only search.
     """
     V2
+    """
+    Search syntax that defaults to standard search.
+    """
+    V3
 }
 
 """
 The search pattern type.
 """
 enum SearchPatternType {
+    standard
     literal
     regexp
     structural
@@ -2124,6 +2145,10 @@ type SearchAlert {
     The description.
     """
     description: String
+    """
+    An identifier indicating the kind of alert
+    """
+    kind: String
     """
     "Did you mean: ____" query proposals
     """
@@ -2650,7 +2675,7 @@ type Repository implements Node & GenericSearchResultInterface {
         """
         The date after which to count contributions.
         """
-        after: String
+        afterDate: String
         """
         Return contributors to files in this path.
         """
@@ -2780,6 +2805,10 @@ type MirrorRepositoryInfo {
     The state of this repository in the update queue.
     """
     updateQueue: UpdateQueue
+    """
+    The last error message, if any, returned when fetching or cloning the repo
+    """
+    lastError: String
 }
 
 """
@@ -2928,6 +2957,24 @@ type RepositoryTextSearchIndexedRef {
     indexed is false, this field's value is null.
     """
     indexedCommit: GitObject
+    """
+    EXPERIMENTAL: Information about the files that were not indexed.
+    """
+    skippedIndexed: SkippedIndexed
+}
+
+"""
+EXPERIMENTAL: Information about the files that were not indexed.
+"""
+type SkippedIndexed {
+    """
+    The count of files that were not indexed.
+    """
+    count: BigInt!
+    """
+    The query to retrieve the list of files that were not indexed.
+    """
+    query: String!
 }
 
 """
@@ -2975,6 +3022,10 @@ type PreviewRepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3019,6 +3070,10 @@ type RepositoryComparison {
         Return file diffs after the given cursor.
         """
         after: String
+        """
+        A list of paths or directories used to filter the diffs
+        """
+        paths: [String!]
     ): FileDiffConnection!
 }
 
@@ -3872,6 +3927,16 @@ type GitCommit implements Node {
         """
         includePatterns: [String!]
     ): SymbolConnection!
+
+    """
+    Returns the comparison with another revision.
+    """
+    diff(
+        """
+        The base commit to compare to. Defaults to the commit's first parent.
+        """
+        base: String
+    ): RepositoryComparison!
 }
 
 """
@@ -4473,6 +4538,11 @@ type FileMatch {
     """
     lineMatches: [LineMatch!]!
     """
+    EXPERIMENTAL: This field is experimental and may be unstable.
+    The chunk matches.
+    """
+    chunkMatches: [ChunkMatch!]!
+    """
     Whether or not the limit was hit.
     """
     limitHit: Boolean!
@@ -4499,6 +4569,24 @@ type LineMatch {
     Whether or not the limit was hit.
     """
     limitHit: Boolean! @deprecated(reason: "will always be false")
+}
+
+"""
+A set of matched ranges contained in a chunk of contiguous lines.
+"""
+type ChunkMatch {
+    """
+    The contiguous set of full lines which contain the matches in ranges.
+    """
+    content: String!
+    """
+    The location of the beginning of content.
+    """
+    contentStart: Position!
+    """
+    The set of ranges within the content that matched the search query.
+    """
+    ranges: [Range!]!
 }
 
 """
@@ -5469,6 +5557,12 @@ type Site implements SettingsSubject {
         """
         months: Int
     ): SiteUsageStatistics!
+
+    """
+    New usage statistics/analytics for this site.
+    """
+    analytics: Analytics!
+
     """
     Monitoring overview for this site.
     Note: This is primarily used for displaying recently-fired alerts in the web app. If your intent
@@ -5779,6 +5873,248 @@ type SiteUsageStatistics {
 }
 
 """
+A pre-defined periods to get site analytics.
+"""
+enum AnalyticsDateRange {
+    """
+    Last 3 monthes date range.
+    """
+    LAST_THREE_MONTHS
+    """
+    Last month date range.
+    """
+    LAST_MONTH
+    """
+    Last week date range.
+    """
+    LAST_WEEK
+    """
+    Custom date range.
+    """
+    CUSTOM
+}
+
+"""
+Analytics for certain date.
+"""
+type AnalyticsStatItemNode {
+    """
+    A date in ISO format
+    """
+    date: String!
+    """
+    Total number of events.
+    """
+    count: Float!
+    """
+    Unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
+    uniqueUsers: Float!
+    """
+    Unique number of currently registered users who triggered event.
+    """
+    registeredUsers: Float!
+}
+
+"""
+Analytics summary.
+"""
+type AnalyticsStatItemSummary {
+    """
+    Total number of events.
+    """
+    totalCount: Float!
+    """
+    Total unique number of users who triggered event.
+    This counts deleted users as well as anonymous users.
+    """
+    totalUniqueUsers: Float!
+    """
+    Total unique number of currently registered users who triggered event.
+    """
+    totalRegisteredUsers: Float!
+}
+
+"""
+Analytics result item.
+"""
+type AnalyticsStatItem {
+    """
+    Analytics summary.
+    """
+    summary: AnalyticsStatItemSummary!
+    """
+    Array of analytics by period.
+    """
+    nodes: [AnalyticsStatItemNode!]!
+}
+
+"""
+Search analytics.
+"""
+type AnalyticsSearchResult {
+    """
+    Searches analytics
+    """
+    searches: AnalyticsStatItem!
+    """
+    Search result click analytics
+    """
+    resultClicks: AnalyticsStatItem!
+    """
+    File view analytics
+    """
+    fileViews: AnalyticsStatItem!
+    """
+    File open analytics
+    """
+    fileOpens: AnalyticsStatItem!
+}
+
+"""
+Notebook analytics.
+"""
+type AnalyticsNotebooksResults {
+    """
+    Notebooks creation analytics.
+    """
+    creations: AnalyticsStatItem!
+    """
+    Notebooks views analytics.
+    """
+    views: AnalyticsStatItem!
+    """
+    Notebooks block run analytics.
+    """
+    blockRuns: AnalyticsStatItem!
+}
+
+"""
+Users frequency by days used.
+"""
+type AnalyticsUsersFrequencyItem {
+    """
+    Number of days used
+    """
+    daysUsed: Float!
+    """
+    Number of users.
+    """
+    frequency: Float!
+    """
+    Percentage of users from total frequencies.
+    """
+    percentage: Float!
+}
+
+"""
+Average DAUs/WAUs/MAUs.
+"""
+type AnalyticsUsersSummaryResult {
+    """
+    Average DAUs
+    """
+    avgDAU: AnalyticsStatItemSummary!
+    """
+    Average WAUs
+    """
+    avgWAU: AnalyticsStatItemSummary!
+    """
+    Average MAUs
+    """
+    avgMAU: AnalyticsStatItemSummary!
+}
+
+"""
+Users' analytics.
+"""
+type AnalyticsUsersResult {
+    """
+    Users' activity analytics.
+    """
+    activity: AnalyticsStatItem!
+    """
+    Frequency of usage by day.
+    """
+    frequencies: [AnalyticsUsersFrequencyItem!]!
+    """
+    Average number of active users summary.
+    """
+    summary: AnalyticsUsersSummaryResult!
+}
+
+"""
+CodeIntel' analytics.
+"""
+type AnalyticsCodeIntelResult {
+    """
+    "GoToRef" click
+    """
+    referenceClicks: AnalyticsStatItem!
+    """
+    "GoToDef" click
+    """
+    definitionClicks: AnalyticsStatItem!
+    """
+    Browser extension installs
+    """
+    browserExtensionInstalls: AnalyticsStatItem!
+    """
+    Search based events
+    """
+    searchBasedEvents: AnalyticsStatItem!
+    """
+    Precise events
+    """
+    preciseEvents: AnalyticsStatItem!
+    """
+    Cross-repo events
+    """
+    crossRepoEvents: AnalyticsStatItem!
+}
+
+"""
+Repositories summary.
+"""
+type AnalyticsReposSummartResult {
+    """
+    Total number of repositories.
+    """
+    count: Float!
+    """
+    Total number of repositories with precise code-intel.
+    """
+    preciseCodeIntelCount: Float!
+}
+
+"""
+Analytics describes a new site statistics.
+"""
+type Analytics {
+    """
+    Search statistics.
+    """
+    search(dateRange: AnalyticsDateRange): AnalyticsSearchResult!
+    """
+    Notebooks statistics.
+    """
+    notebooks(dateRange: AnalyticsDateRange): AnalyticsNotebooksResults!
+    """
+    Users statistics.
+    """
+    users(dateRange: AnalyticsDateRange): AnalyticsUsersResult!
+    """
+    Code-intelligence statistics.
+    """
+    codeIntel(dateRange: AnalyticsDateRange): AnalyticsCodeIntelResult!
+    """
+    Repositories summary statistics.
+    """
+    repos: AnalyticsReposSummartResult!
+}
+
+"""
 SiteUsagePeriod describes a site's usage statistics for a given timespan.
 This information is visible to all viewers.
 """
@@ -5901,6 +6237,10 @@ type SurveyResponse {
     The answer to "What can Sourcegraph do to provide a better product"
     """
     better: String
+    """
+    The answer to "What do you use Sourcegraph for?".
+    """
+    otherUseCase: String
     """
     The time when this response was created.
     """

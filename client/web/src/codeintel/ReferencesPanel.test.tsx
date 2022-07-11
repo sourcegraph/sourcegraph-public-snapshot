@@ -136,7 +136,7 @@ describe('ReferencesPanel', () => {
         const referenceButton = within(referencesList).getByRole('button', { name: '16: OrigName string' })
         const fullReferenceURL =
             '/github.com/sourcegraph/go-diff@9d1f353a285b3094bc33bdae277a19aedabe8b71/-/blob/diff/diff.go?L16:2-16:10'
-        expect(referenceButton).toHaveAttribute('to', fullReferenceURL)
+        expect(referenceButton).toHaveAttribute('data-test-reference-url', fullReferenceURL)
         expect(referenceButton.parentNode).not.toHaveClass('locationActive')
 
         // Click on reference
@@ -156,7 +156,7 @@ describe('ReferencesPanel', () => {
         // Wait for response
         await waitForNextApolloResponse()
 
-        const closeCodeViewButton = result.getByRole('button', { name: 'Close code view' })
+        const closeCodeViewButton = result.getByTestId('close-code-view')
         expect(closeCodeViewButton).toBeVisible()
 
         const rightPane = result.getByTestId('right-pane')

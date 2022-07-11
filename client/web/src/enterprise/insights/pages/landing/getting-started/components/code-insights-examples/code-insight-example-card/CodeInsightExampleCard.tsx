@@ -7,6 +7,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Link } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ParentSize } from '../../../../../../../../charts'
+import { useSeriesToggle } from '../../../../../../../../insights/utils/use-series-toggle'
 import {
     InsightCard,
     InsightCardHeader,
@@ -48,6 +49,7 @@ interface CodeInsightSearchExampleProps extends TelemetryProps {
 
 const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps> = props => {
     const { templateLink, className, content, telemetryService } = props
+    const seriesToggleState = useSeriesToggle()
 
     const { mode } = useContext(CodeInsightsLandingPageContext)
     const {
@@ -101,6 +103,7 @@ const CodeInsightSearchExample: FunctionComponent<CodeInsightSearchExampleProps>
                         type={SeriesBasedChartTypes.Line}
                         width={parent.width}
                         height={parent.height}
+                        seriesToggleState={seriesToggleState}
                     />
                 )}
             </ParentSize>
@@ -126,6 +129,7 @@ interface CodeInsightCaptureExampleProps extends TelemetryProps {
 
 const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProps> = props => {
     const { content, templateLink, className, telemetryService } = props
+    const seriesToggleState = useSeriesToggle()
 
     const {
         UIFeatures: { licensed },
@@ -181,6 +185,7 @@ const CodeInsightCaptureExample: FunctionComponent<CodeInsightCaptureExampleProp
                                 type={SeriesBasedChartTypes.Line}
                                 width={parent.width}
                                 height={parent.height}
+                                seriesToggleState={seriesToggleState}
                             />
                         )}
                     </ParentSize>

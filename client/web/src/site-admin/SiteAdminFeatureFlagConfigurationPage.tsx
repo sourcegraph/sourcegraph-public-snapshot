@@ -1,8 +1,8 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo, useState } from 'react'
 
 import { gql, useMutation } from '@apollo/client'
+import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
-import DeleteIcon from 'mdi-react/DeleteIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { of } from 'rxjs'
 import { catchError, map } from 'rxjs/operators'
@@ -203,7 +203,7 @@ export const SiteAdminFeatureFlagConfigurationPage: FunctionComponent<
                         </>
                     ) : (
                         <>
-                            <Icon role="img" as={DeleteIcon} aria-hidden={true} /> Delete
+                            <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
                         </>
                     )}
                 </Button>
@@ -419,13 +419,11 @@ const FeatureFlagOverridesHeader: FunctionComponent<
 
     return (
         <>
-            {type === 'FeatureFlagBoolean' && (
-                <AddFeatureFlagOverride
-                    name={name}
-                    value={(value as FeatureFlagBooleanValue).value}
-                    onOverrideAdded={onOverrideAdded}
-                />
-            )}
+            <AddFeatureFlagOverride
+                name={name}
+                value={type === 'FeatureFlagBoolean' ? (value as FeatureFlagBooleanValue).value : false}
+                onOverrideAdded={onOverrideAdded}
+            />
             <div className="mr-auto">{count}</div>
         </>
     )

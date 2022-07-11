@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -69,8 +69,8 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	}
 
 	tr.LogFields(
-		log.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
-		log.Int64("repos_count", int64(len(s.Repos))),
+		otlog.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
+		otlog.Int64("repos_count", int64(len(s.Repos))),
 	)
 
 	if len(s.Repos) == 0 {
@@ -89,6 +89,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	g, ctx := errgroup.WithContext(ctx)
 	g.Go(func() error {
 		for _, repoAllRevs := range s.Repos {
+			repo := repoAllRevs.Repo // capture repo
 			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
@@ -99,24 +100,23 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 			}
 
 			for _, rev := range revSpecs {
+				rev := rev // capture rev
 				limitCtx, limitDone, err := textSearchLimiter.Acquire(ctx)
 				if err != nil {
 					return err
 				}
 
-				// Make a new repoRev for just the operation of searching this revspec.
-				repoRev := &search.RepositoryRevisions{Repo: repoAllRevs.Repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}}
 				g.Go(func() error {
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repoRev.Repo, repoRev.GitserverRepo(), repoRev.RevSpecs()[0], s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
-						tr.LogFields(log.String("repo", string(repoRev.Repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
-						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repoRev.Repo.Name)
+						tr.LogFields(otlog.String("repo", string(repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repoRev, repoLimitHit, false, err)
+					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []search.RevisionSpecifier{{RevSpec: rev}}, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
 						Stats: streaming.Stats{
 							Status:     status,
@@ -138,14 +138,25 @@ func (s *TextSearchJob) Name() string {
 	return "SearcherTextSearchJob"
 }
 
-func (s *TextSearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("patternInfo", s.PatternInfo),
-		log.Int("numRepos", len(s.Repos)),
-		log.Bool("indexed", s.Indexed),
-		log.Bool("useFullDeadline", s.UseFullDeadline),
+func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Bool("useFullDeadline", s.UseFullDeadline),
+			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
+			otlog.Int("numRepos", len(s.Repos)),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			otlog.Bool("indexed", s.Indexed),
+		)
 	}
+	return res
 }
+
+func (s *TextSearchJob) Children() []job.Describer       { return nil }
+func (s *TextSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 var MockSearchFilesInRepo func(
 	ctx context.Context,

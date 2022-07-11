@@ -24,6 +24,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+        lockfileIndexingEnabled: Boolean!
     ): CodeIntelligenceConfigurationPolicy!
 
     """
@@ -41,6 +42,7 @@ extend type Mutation {
         indexingEnabled: Boolean!
         indexCommitMaxAgeHours: Int
         indexIntermediateCommits: Boolean!
+        lockfileIndexingEnabled: Boolean!
     ): EmptyResponse
 
     """
@@ -173,6 +175,13 @@ extend type Query {
         'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         """
         after: String
+
+        """
+        When specified, merges the list of existing uploads with data from
+        uploads that have been deleted but for which audit logs still exist.
+        Only makes sense when state filter is unset or equal to 'DELETED'.
+        """
+        includeDeleted: Boolean
     ): LSIFUploadConnection!
 
     """
@@ -363,6 +372,11 @@ type CodeIntelligenceConfigurationPolicy implements Node {
     only consider the tip of the branch.
     """
     indexIntermediateCommits: Boolean!
+
+    """
+    Whether or not this configuration policy affects lockfile-indexing schedules.
+    """
+    lockfileIndexingEnabled: Boolean!
 }
 
 """
@@ -457,6 +471,13 @@ extend type Repository {
         'LSIFUploadConnection.pageInfo.endCursor' that is returned.
         """
         after: String
+
+        """
+        When specified, merges the list of existing uploads with data from
+        uploads that have been deleted but for which audit logs still exist.
+        Only makes sense when state filter is unset or equal to 'DELETED'.
+        """
+        includeDeleted: Boolean
     ): LSIFUploadConnection!
 
     """
@@ -939,6 +960,12 @@ enum LSIFUploadState {
     point the upload will become unreachable.
     """
     DELETING
+
+    """
+    This upload is deleted and its metadata is reconstructed from existing
+    audit log entries.
+    """
+    DELETED
 }
 
 """
@@ -1056,6 +1083,11 @@ type LSIFUpload implements Node {
     pattern. Pattern type is subject to change.
     """
     documentPaths(pattern: String!): LSIFUploadDocumentPathsConnection!
+
+    """
+    Audit logs representing each state change of the upload in order from earliest to latest.
+    """
+    auditLogs: [LSIFUploadAuditLog!]
 }
 
 """
@@ -1091,6 +1123,95 @@ type LSIFUploadDocumentPathsConnection {
     The total number of docuemnt paths.
     """
     totalCount: Int
+}
+
+"""
+Contains the metadata and upload data for a single state change of an upload.
+"""
+type LSIFUploadAuditLog {
+    """
+    The timestamp the log was emitted at.
+    """
+    logTimestamp: DateTime!
+
+    """
+    The timestamp when the associated upload was deleted at.
+    """
+    uploadDeletedAt: DateTime
+
+    """
+    The reason for this change in data.
+    """
+    reason: String
+
+    """
+    A list of changed columns in the format {"column": "<colname>", "new": "<newval>", "old": "<oldval>"}
+    """
+    changedColumns: [AuditLogColumnChange!]!
+
+    """
+    The ID of the upload.
+    """
+    uploadId: ID!
+
+    """
+    The original 40-character commit commit supplied at upload time.
+    """
+    inputCommit: String!
+
+    """
+    The original root supplied at upload time.
+    """
+    inputRoot: String!
+
+    """
+    The original indexer name supplied at upload time.
+    """
+    inputIndexer: String!
+
+    """
+    The time the upload was uploaded.
+    """
+    uploadedAt: DateTime!
+
+    """
+    The operation denoted by this log.
+    """
+    operation: AuditLogOperation!
+}
+
+"""
+Represents a state transition of a single column.
+"""
+type AuditLogColumnChange {
+    """
+    The column that is changing.
+    """
+    column: String!
+
+    """
+    The previous value of the column.
+    """
+    old: String
+
+    """
+    The new value of the column
+    """
+    new: String
+}
+
+"""
+Denotes the type of operation of a given log entry.
+"""
+enum AuditLogOperation {
+    """
+    Denotes this log entry represents an INSERT query.
+    """
+    CREATE
+    """
+    Denotes this log entry represents an UPDATE query.
+    """
+    MODIFY
 }
 
 """

@@ -1,11 +1,6 @@
 .search-result-header {
-    padding: 0.5rem 0.5rem 0.5rem 0;
-    background-color: transparent;
-    display: flex;
-    align-items: center;
-    white-space: nowrap;
-
-    &:not(:only-of-type) {
-        border-bottom: none;
-    }
+    width: 100%;
+    overflow-x: hidden;
+    cursor: default;
+    user-select: none;
 }

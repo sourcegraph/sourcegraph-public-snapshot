@@ -3,9 +3,12 @@ package main
 import (
 	"context"
 	"database/sql"
-	"log"
 	"net/http"
 	"strings"
+	"time"
+
+	"github.com/sourcegraph/go-ctags"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	symbolsGitserver "github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
@@ -26,14 +29,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	sglog "github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 func main() {
 	reposVar := env.Get("ROCKSKIP_REPOS", "", "comma separated list of repositories to index (e.g. `github.com/torvalds/linux,github.com/pallets/flask`)")
 	repos := strings.Split(reposVar, ",")
 
-	if env.Get("USE_ROCKSKIP", "false", "use Rockskip to index the repos specified in ROCKSKIP_REPOS") == "true" {
+	minRepoSizeMb := env.MustGetInt("ROCKSKIP_MIN_REPO_SIZE_MB", -1, "all repos that are at least this big will be indexed using Rockskip")
+
+	repoToSize := map[string]int64{}
+
+	if env.Get("USE_ROCKSKIP", "false", "use Rockskip to index the repos specified in ROCKSKIP_REPOS, or repos over ROCKSKIP_MIN_REPO_SIZE_MB in size") == "true" {
 		shared.Main(func(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 			rockskipSearchFunc, rockskipHandleStatus, rockskipBackgroundRoutines, rockskipCtagsCommand, err := SetupRockskip(observationContext, gitserverClient, repositoryFetcher)
 			if err != nil {
@@ -48,11 +54,36 @@ func main() {
 			}
 
 			searchFunc := func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error) {
-				if sliceContains(repos, string(args.Repo)) {
-					return rockskipSearchFunc(ctx, args)
-				} else {
-					return sqliteSearchFunc(ctx, args)
+				if reposVar != "" {
+					if sliceContains(repos, string(args.Repo)) {
+						return rockskipSearchFunc(ctx, args)
+					} else {
+						return sqliteSearchFunc(ctx, args)
+					}
 				}
+
+				if minRepoSizeMb != -1 {
+					var size int64
+					if _, ok := repoToSize[string(args.Repo)]; ok {
+						size = repoToSize[string(args.Repo)]
+					} else {
+						ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+						defer cancel()
+						size, err = gitserverClient.GetRepoSize(ctx, args.Repo)
+						if err != nil {
+							return sqliteSearchFunc(ctx, args)
+						}
+						repoToSize[string(args.Repo)] = size
+					}
+
+					if size >= int64(minRepoSizeMb)*1000*1000 {
+						return rockskipSearchFunc(ctx, args)
+					} else {
+						return sqliteSearchFunc(ctx, args)
+					}
+				}
+
+				return sqliteSearchFunc(ctx, args)
 			}
 
 			return searchFunc, rockskipHandleStatus, append(rockskipBackgroundRoutines, sqliteBackgroundRoutines...), rockskipCtagsCommand, nil
@@ -63,15 +94,19 @@ func main() {
 }
 
 func SetupRockskip(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
+	logger := log.Scoped("rockskip", "rockskip-based symbols")
+
 	baseConfig := env.BaseConfig{}
 	config := LoadRockskipConfig(baseConfig)
 	if err := baseConfig.Validate(); err != nil {
-		log.Fatalf("Failed to load configuration: %s", err)
+		logger.Fatal("failed to load configuration", log.Error(err))
 	}
 
-	db := mustInitializeCodeIntelDB()
+	db := mustInitializeCodeIntelDB(logger)
 	git := NewGitserver(repositoryFetcher)
-	createParser := func() (rockskip.ParseSymbolsFunc, error) { return createParserWithConfig(config.Ctags) }
+	createParser := func() (ctags.Parser, error) {
+		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags)
+	}
 	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
@@ -99,38 +134,12 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 		LogQueries:              baseConfig.GetBool("LOG_QUERIES", "false", "print search queries to stdout"),
 		IndexRequestsQueueSize:  baseConfig.GetInt("INDEX_REQUESTS_QUEUE_SIZE", "1000", "how many index requests can be queued at once, at which point new requests will be rejected"),
 		MaxConcurrentlyIndexing: baseConfig.GetInt("MAX_CONCURRENTLY_INDEXING", "4", "maximum number of repositories being indexed at a time (also limits ctags processes)"),
-		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "1000000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
-		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "100000", "how many sets of symbols for files to cache in memory"),
+		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
+		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory"),
 	}
 }
 
-func createParserWithConfig(config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
-	parser, err := symbolsParser.SpawnCtags(sglog.Scoped("ctags", "ctags processes"), config)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
-		entries, err := parser.Parse(path, bytes)
-		if err != nil {
-			return nil, err
-		}
-
-		symbols = []rockskip.Symbol{}
-		for _, entry := range entries {
-			symbols = append(symbols, rockskip.Symbol{
-				Name:   entry.Name,
-				Parent: entry.Parent,
-				Kind:   entry.Kind,
-				Line:   entry.Line - 1,
-			})
-		}
-
-		return symbols, nil
-	}, nil
-}
-
-func mustInitializeCodeIntelDB() *sql.DB {
+func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.CodeIntelPostgresDSN
 	})
@@ -140,7 +149,7 @@ func mustInitializeCodeIntelDB() *sql.DB {
 	)
 	db, err = connections.EnsureNewCodeIntelDB(dsn, "symbols", &observation.TestContext)
 	if err != nil {
-		log.Fatalf("Failed to connect to codeintel database: %s", err)
+		logger.Fatal("failed to connect to codeintel database", log.Error(err))
 	}
 
 	return db

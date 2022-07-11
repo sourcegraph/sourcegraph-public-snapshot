@@ -48,6 +48,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            border-bottom: none !important;
         }
 
         .dark #title {
@@ -100,14 +101,16 @@
             color:#4f5b66;
         }
     </style>
+    <meta charset="UTF-8">
 </head>
 <body>
 <div id="modal">
-    <div id="title"><img src="/icons/icon.png" /> Sourcegraph</div>
+    <div id="title"><img alt="Sourcegraph logo" height="16" src="/icons/sourcegraphLogo.svg" width="16" /> Sourcegraph</div>
     <iframe height="100%" id="webview" src="/html/index.html" width="100%"></iframe>
     <div id="code-details"></div>
 
-    <script src="/dist/bridgeMock.js"></script>
+    <script type="module" src="/dist/bridgeMock.js"></script>
+</div>
 </body>
 </html>
 

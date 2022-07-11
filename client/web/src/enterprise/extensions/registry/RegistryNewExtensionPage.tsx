@@ -1,9 +1,9 @@
 import * as React from 'react'
 
+import { mdiPuzzleOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import HelpCircleOutline from 'mdi-react/HelpCircleOutlineIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
 import { RouteComponentProps } from 'react-router'
 import { concat, Subject, Subscription } from 'rxjs'
 import { catchError, concatMap, map, tap } from 'rxjs/operators'
@@ -129,7 +129,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                     <PageTitle title="Create new extension" />
                     <PageHeader
                         path={[
-                            { icon: PuzzleOutlineIcon, to: '/extensions', ariaLabel: 'Extensions' },
+                            { icon: mdiPuzzleOutline, to: '/extensions', ariaLabel: 'Extensions' },
                             { text: 'Create extension' },
                         ]}
                         description={
@@ -144,7 +144,7 @@ export const RegistryNewExtensionPage = withAuthenticatedUser(
                                     rel="noopener"
                                     to="/help/extensions/authoring"
                                 >
-                                    <Icon role="img" aria-hidden={true} as={HelpCircleOutline} />
+                                    <Icon aria-hidden={true} as={HelpCircleOutline} />
                                 </Link>
                             </>
                         }

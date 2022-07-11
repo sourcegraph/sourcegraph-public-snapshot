@@ -8,6 +8,7 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -117,8 +118,8 @@ type Store struct {
 }
 
 // NewStoreWithDB creates a new Store with the given database connection.
-func NewStoreWithDB(db dbutil.DB) *Store {
-	return &Store{Store: basestore.NewWithDB(db, sql.TxOptions{})}
+func NewStoreWithDB(db database.DB) *Store {
+	return &Store{Store: basestore.NewWithHandle(db.Handle())}
 }
 
 var _ basestore.ShareableStore = &Store{}

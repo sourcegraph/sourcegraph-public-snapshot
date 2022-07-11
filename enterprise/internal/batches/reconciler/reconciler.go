@@ -4,12 +4,13 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 type GitserverClient interface {
@@ -74,7 +75,9 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 		return nil
 	}
 
-	plan, err := DeterminePlan(prev, curr, ch)
+	// Pass nil since there is no "current" changeset. The changeset has already been updated in the DB to the wanted
+	// state. Current changeset is only (at the moment) used for previewing.
+	plan, err := DeterminePlan(prev, curr, nil, ch)
 	if err != nil {
 		return err
 	}
@@ -83,6 +86,7 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 
 	return executePlan(
 		ctx,
+		logger,
 		r.gitserverClient,
 		r.sourcer,
 		r.noSleepBeforeSync,

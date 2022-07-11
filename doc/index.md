@@ -15,17 +15,16 @@ This website is home to Sourcegraph's feature, administration (including deploym
 <div class="cta-group">
 <a class="btn btn-primary" href="#getting-started">★ Try Sourcegraph now</a>
 <a class="btn" href="#core-documentation">Core docs</a>
-<a class="btn" href="#cloud-documentation">Cloud docs</a>
 <a class="btn" href="https://about.sourcegraph.com/">About Sourcegraph</a>
 </div>
 
 ## Getting started
 
 <div class="getting-started">
-  <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph Cloud">
-   <span>★ Sourcegraph Cloud</span>
+  <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph.com">
+   <span>★ Sourcegraph.com</span>
    </br>
-   <b>Search 1 million+ open source repositories or your own repositories.</b> No installation required.
+   <b>Search millions of open source repositories.</b> No installation required.
   </a>
 
   <a href="admin/deploy" class="btn btn-primary" alt="Self-host">
@@ -67,7 +66,7 @@ You can quickly try out Sourcegraph locally using Docker, which takes only a few
   This uses line breaks that are rendered but not copy-pasted to the clipboard.
 -->
 
-<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.40.1<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
+<pre class="pre-wrap start-sourcegraph-command" id="dockerInstall"><code>docker run -d<span class="virtual-br"></span> --publish 7080:7080 --publish 127.0.0.1:3370:3370 --rm<span class="virtual-br"></span> --volume ~/.sourcegraph/config:/etc/sourcegraph<span class="virtual-br"></span> --volume ~/.sourcegraph/data:/var/opt/sourcegraph<span class="virtual-br"></span> sourcegraph/server:3.41.0<span class="iconify copy-text" data-icon="mdi:clipboard-arrow-left-outline" data-inline="false"></span></code>
 </pre>
 
 For next steps, visit the [Docker deployment documentation](admin/deploy/docker-single-container/index.md).

@@ -118,7 +118,7 @@
           }
         },
         "showOnboardingTour": {
-          "description": "Enables the onboarding tour.",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": true,
           "!go": {
@@ -144,7 +144,7 @@
         "showEnterpriseHomePanels": {
           "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": {
             "pointer": true
           }
@@ -223,7 +223,7 @@
         "batchChangesExecution": {
           "description": "Enables/disables the Batch Changes server side execution feature.",
           "type": "boolean",
-          "default": false,
+          "default": true,
           "!go": {
             "pointer": true
           }
@@ -311,6 +311,14 @@
         },
         "goCodeCheckerTemplates": {
           "description": "Shows a panel with code insights templates for go code checker results.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableExtensionsDecorationsColumnView": {
+          "description": "If extension supports column view show its decorations in a separate column in the blob view.",
           "type": "boolean",
           "default": false,
           "!go": {

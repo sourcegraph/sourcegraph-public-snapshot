@@ -9,6 +9,8 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/graph-gophers/graphql-go"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
@@ -92,6 +94,7 @@ func newExternalHTTPHandler(
 
 	var h http.Handler = sm
 
+	logger := log.Scoped("external", "external http handlers")
 	// Wrap in middleware, first line is last to run.
 	//
 	// 🚨 SECURITY: Auth middleware that must run before other auth middlewares.
@@ -105,7 +108,7 @@ func newExternalHTTPHandler(
 	h = middleware.SourcegraphComGoGetHandler(h)
 	h = internalauth.ForbidAllRequestsMiddleware(h)
 	h = internalauth.OverrideAuthMiddleware(db, h)
-	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
+	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 
 	return h
@@ -124,7 +127,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 
 // newInternalHTTPHandler creates and returns the HTTP handler for the internal API (accessible to
 // other internal services).
-func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
+func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) http.Handler {
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
@@ -136,13 +139,15 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 					newCodeIntelUploadHandler,
 					newComputeStreamHandler,
 					rateLimitWatcher,
+					healthCheckHandler,
 				),
 			),
 		),
 	))
 	h := http.Handler(internalMux)
 	h = gcontext.ClearHandler(h)
-	h = tracepkg.HTTPMiddleware(h, conf.DefaultClient())
+	logger := log.Scoped("internal", "internal http handlers")
+	h = tracepkg.HTTPMiddleware(logger, h, conf.DefaultClient())
 	h = ot.HTTPMiddleware(h)
 	return h
 }
@@ -161,7 +166,7 @@ const (
 	// crossOriginPolicyAPI describes that the middleware should handle cross origin requests as a
 	// public API. That is, cross-origin requests are allowed from any domain but
 	// cookie/session-based authentication is only allowed if the origin is in the configured
-	/// allow-list of origins. Otherwise, only access token authentication is permitted.
+	// allow-list of origins. Otherwise, only access token authentication is permitted.
 	//
 	// This is to be used for all /.api routes, such as our GraphQL and search streaming APIs as we
 	// want third-party websites (such as e.g. github1s.com, or internal tools for on-prem

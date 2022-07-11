@@ -1,141 +1,115 @@
 package com.sourcegraph.find;
 
-import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
 import com.intellij.codeInsight.highlighting.HighlightManager;
 import com.intellij.openapi.Disposable;
-import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.actionSystem.ActionGroup;
+import com.intellij.openapi.actionSystem.AnActionEvent;
+import com.intellij.openapi.actionSystem.DefaultActionGroup;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.editor.*;
 import com.intellij.openapi.editor.colors.EditorColors;
-import com.intellij.openapi.externalSystem.service.execution.NotSupportedException;
-import com.intellij.openapi.fileEditor.FileEditorManager;
-import com.intellij.openapi.fileEditor.OpenFileDescriptor;
+import com.intellij.openapi.editor.impl.ContextMenuPopupHandler;
+import com.intellij.openapi.editor.impl.EditorImpl;
+import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
-import com.intellij.openapi.vfs.VirtualFile;
-import com.intellij.psi.PsiFile;
-import com.intellij.psi.PsiManager;
-import com.intellij.testFramework.LightVirtualFile;
 import com.intellij.ui.components.JBPanelWithEmptyText;
-import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.Icons;
+import com.sourcegraph.website.Copy;
+import com.sourcegraph.website.FileActionBase;
+import com.sourcegraph.website.OpenFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Objects;
 
 public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     private final Project project;
     private JComponent editorComponent;
-
     private PreviewContent previewContent;
-    private VirtualFile virtualFile;
     private Editor editor;
 
     public PreviewPanel(Project project) {
         super(new BorderLayout());
 
         this.project = project;
-        this.getEmptyText().setText("(No preview available)");
+        setState(State.NO_PREVIEW_AVAILABLE);
     }
 
-    public void setContent(@NotNull PreviewContent previewContent) {
+    @Nullable
+    public PreviewContent getPreviewContent() {
+        return previewContent;
+    }
+
+    public void setContent(@Nullable PreviewContent previewContent) {
+        String fileContent = previewContent != null ? previewContent.getContent() : null;
+        if (previewContent == null || fileContent == null) {
+            setState(State.NO_PREVIEW_AVAILABLE);
+            return;
+        }
+
         if (editorComponent != null && previewContent.equals(this.previewContent)) {
+            setState(State.PREVIEW_AVAILABLE);
             return;
         }
 
         this.previewContent = previewContent;
-        String fileContent = previewContent.getContent();
 
-        /* If no content, just show “No preview available” */
-        if (fileContent == null) {
-            clearContent();
-            return;
+        if (editorComponent != null) {
+            remove(editorComponent);
         }
+        if (editor != null) {
+            EditorFactory.getInstance().releaseEditor(editor);
+        }
+        EditorFactory editorFactory = EditorFactory.getInstance();
+        Document document = editorFactory.createDocument(fileContent);
+        document.setReadOnly(true);
 
-        ApplicationManager.getApplication().invokeLater(() -> {
-            if (editorComponent != null) {
-                remove(editorComponent);
-            }
-            EditorFactory editorFactory = EditorFactory.getInstance();
-            virtualFile = new LightVirtualFile(this.previewContent.getFileName(), fileContent);
-            Document document = editorFactory.createDocument(fileContent);
-            document.setReadOnly(true);
-            editor = editorFactory.createEditor(document, project, virtualFile, true, EditorKind.MAIN_EDITOR);
+        editor = editorFactory.createEditor(document, project, previewContent.getVirtualFile(), true, EditorKind.MAIN_EDITOR);
 
-            EditorSettings settings = editor.getSettings();
-            settings.setLineMarkerAreaShown(true);
-            settings.setFoldingOutlineShown(false);
-            settings.setAdditionalColumnsCount(0);
-            settings.setAdditionalLinesCount(0);
-            settings.setAnimatedScrolling(false);
-            settings.setAutoCodeFoldingEnabled(false);
+        EditorSettings settings = editor.getSettings();
+        settings.setLineMarkerAreaShown(true);
+        settings.setFoldingOutlineShown(false);
+        settings.setAdditionalColumnsCount(0);
+        settings.setAdditionalLinesCount(0);
+        settings.setAnimatedScrolling(false);
+        settings.setAutoCodeFoldingEnabled(false);
 
-            editorComponent = editor.getComponent();
-            add(editorComponent, BorderLayout.CENTER);
+        ((EditorImpl) editor).installPopupHandler(new ContextMenuPopupHandler.Simple(this.createActionGroup()));
 
-            addHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
+        setState(State.PREVIEW_AVAILABLE);
 
-            invalidate(); // TODO: Is this needed? What does it do? Maybe use revalidate()? If needed then document
-            validate();
-        });
+        editorComponent = editor.getComponent();
+        add(editorComponent, BorderLayout.CENTER);
+        validate();
+
+        addAndScrollToHighlights(editor, previewContent.getAbsoluteOffsetAndLengths());
     }
 
-    public void openInEditorOrBrowser() throws URISyntaxException, IOException, NotSupportedException {
-        openInEditorOrBrowser(this.previewContent);
-    }
-
-    public void openInEditorOrBrowser(@Nullable PreviewContent previewContent) throws URISyntaxException, IOException, NotSupportedException {
-        if (previewContent == null) {
-            return;
+    public void setState(@NotNull State state) {
+        if (editorComponent != null) {
+            editorComponent.setVisible(state == State.PREVIEW_AVAILABLE);
         }
-
-        if (previewContent.getFileName().length() == 0) {
-            openInBrowser(previewContent);
-        } else {
-            openInEditor(previewContent);
+        if (state == State.LOADING) {
+            getEmptyText().setText("Loading...");
+        } else if (state == State.NO_PREVIEW_AVAILABLE) {
+            getEmptyText().setText("No preview available");
         }
     }
 
-    private void openInEditor(@NotNull PreviewContent previewContent) {
-        // Open file in editor
-        virtualFile = new LightVirtualFile(this.previewContent.getFileName(), Objects.requireNonNull(previewContent.getContent()));
-        OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);
-        FileEditorManager.getInstance(project).openTextEditor(openFileDescriptor, true);
-
-        // Suppress code issues
-        PsiFile file = PsiManager.getInstance(project).findFile(virtualFile);
-        if (file != null) {
-            DaemonCodeAnalyzer.getInstance(project).setHighlightingEnabled(file, false);
-        }
-    }
-
-    private void openInBrowser(@NotNull PreviewContent previewContent) throws URISyntaxException, IOException, NotSupportedException {
-        // Source: https://stackoverflow.com/questions/5226212/how-to-open-the-default-webbrowser-using-java
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            String sourcegraphUrl = ConfigUtil.getSourcegraphUrl(this.project);
-            Desktop.getDesktop().browse(new URI(sourcegraphUrl + "/" + previewContent.getRelativeUrl()));
-        } else {
-            throw new NotSupportedException("Can't open link. Desktop is not supported.");
-        }
-    }
-
-    private void addHighlights(Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
+    private void addAndScrollToHighlights(@NotNull Editor editor, @NotNull int[][] absoluteOffsetAndLengths) {
+        int firstOffset = -1;
         HighlightManager highlightManager = HighlightManager.getInstance(project);
         for (int[] offsetAndLength : absoluteOffsetAndLengths) {
-            highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.SEARCH_RESULT_ATTRIBUTES, 0, null);
-        }
-    }
+            if (firstOffset == -1) {
+                firstOffset = offsetAndLength[0] + offsetAndLength[1];
+            }
 
-    public void clearContent() {
-        if (editorComponent != null) {
-            ApplicationManager.getApplication().invokeLater(() -> {
-                remove(editorComponent);
-                editorComponent = null;
-                virtualFile = null;
-            });
+            highlightManager.addOccurrenceHighlight(editor, offsetAndLength[0], offsetAndLength[0] + offsetAndLength[1], EditorColors.TEXT_SEARCH_RESULT_ATTRIBUTES, 0, null);
+        }
+
+        if (firstOffset != -1) {
+            editor.getScrollingModel().scrollTo(editor.offsetToLogicalPosition(firstOffset), ScrollType.CENTER);
         }
     }
 
@@ -143,6 +117,55 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     public void dispose() {
         if (editor != null) {
             EditorFactory.getInstance().releaseEditor(editor);
+        }
+    }
+
+    @NotNull
+    private ActionGroup createActionGroup() {
+        DefaultActionGroup group = new DefaultActionGroup();
+        group.add(new DumbAwareAction("Open File in Editor", "Open file in editor", Icons.SourcegraphLogo) {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent e) {
+                try {
+                    if (getPreviewContent() != null) {
+                        getPreviewContent().openInEditorOrBrowser();
+                    }
+                } catch (Exception ex) {
+                    Logger logger = Logger.getInstance(SelectionMetadataPanel.class);
+                    logger.error("Error opening file in editor: " + ex.getMessage());
+                }
+            }
+        });
+        group.add(new SimpleEditorFileAction("Open on Sourcegraph", new OpenFile(), editor));
+        group.add(new SimpleEditorFileAction("Copy Sourcegraph File Link", new Copy(), editor));
+        return group;
+    }
+
+    public enum State {
+        LOADING,
+        PREVIEW_AVAILABLE,
+        NO_PREVIEW_AVAILABLE,
+    }
+
+    class SimpleEditorFileAction extends DumbAwareAction {
+        FileActionBase action;
+        Editor editor;
+
+        SimpleEditorFileAction(String text, FileActionBase action, Editor editor) {
+            super(text, text, Icons.SourcegraphLogo);
+            this.action = action;
+            this.editor = editor;
+        }
+
+        @Override
+        public void actionPerformed(@NotNull AnActionEvent e) {
+            SelectionModel sel = editor.getSelectionModel();
+            VisualPosition selectionStartPosition = sel.getSelectionStartPosition();
+            VisualPosition selectionEndPosition = sel.getSelectionEndPosition();
+            LogicalPosition start = selectionStartPosition != null ? editor.visualToLogicalPosition(selectionStartPosition) : null;
+            LogicalPosition end = selectionEndPosition != null ? editor.visualToLogicalPosition(selectionEndPosition) : null;
+
+            action.actionPerformedFromPreviewContent(project, getPreviewContent(), start, end);
         }
     }
 }

@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
@@ -12,7 +12,6 @@ import { SidebarGroup, SidebarGroupHeader, SidebarNavItem } from '../../componen
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { UserSettingsAreaUserFields } from '../../graphql-operations'
 import { OrgAvatar } from '../../org/OrgAvatar'
-import { useExperimentalFeatures } from '../../stores'
 import { NavItemDescriptor } from '../../util/contributions'
 
 import { UserSettingsAreaRouteContext } from './UserSettingsArea'
@@ -45,9 +44,10 @@ export interface UserSettingsSidebarProps
 export const UserSettingsSidebar: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsSidebarProps>
 > = props => {
-    const [, setHasCancelledTour] = useTemporarySetting('search.onboarding.tourCancelled')
-    const showOnboardingTour = useExperimentalFeatures(features => features.showOnboardingTour ?? false)
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useTemporarySetting(
+        'coreWorkflowImprovements.enabled'
+    )
 
     if (!props.authenticatedUser) {
         return null
@@ -63,10 +63,6 @@ export const UserSettingsSidebar: React.FunctionComponent<
         authenticatedUser: props.authenticatedUser,
         isSourcegraphDotCom: props.isSourcegraphDotCom,
         openBetaEnabled: isOpenBetaEnabled,
-    }
-
-    function reEnableSearchTour(): void {
-        setHasCancelledTour(false)
     }
 
     return (
@@ -103,7 +99,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
                         ) : (
                             <div className={styles.newOrgBtnWrapper}>
                                 <Button to="/organizations/new" variant="secondary" outline={true} size="sm" as={Link}>
-                                    <Icon role="img" as={AddIcon} aria-hidden={true} /> New organization
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} /> New organization
                                 </Button>
                             </div>
                         ))}
@@ -113,11 +109,12 @@ export const UserSettingsSidebar: React.FunctionComponent<
                 <SidebarGroupHeader label="Other actions" />
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-                {showOnboardingTour && (
-                    <Button className="text-left sidebar__link--inactive d-flex w-100" onClick={reEnableSearchTour}>
-                        Show search tour
-                    </Button>
-                )}
+                <Button
+                    className="text-left sidebar__link--inactive d-flex w-100"
+                    onClick={() => setCoreWorkflowImprovementsEnabled(!coreWorkflowImprovementsEnabled)}
+                >
+                    {coreWorkflowImprovementsEnabled ? 'Disable' : 'Enable'} workflow improvements
+                </Button>
             </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>

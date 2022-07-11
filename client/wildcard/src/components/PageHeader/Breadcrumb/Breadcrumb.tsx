@@ -4,9 +4,11 @@ import classNames from 'classnames'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 
+import { Icon, IconType } from '../../Icon'
+
 import styles from './Breadcrumb.module.scss'
 
-export type BreadcrumbIcon = React.ComponentType<{ className?: string; role?: React.AriaRole }>
+export type BreadcrumbIcon = IconType
 export type BreadcrumbText = React.ReactNode
 
 type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {
@@ -25,16 +27,28 @@ type BreadcrumbProps = React.HTMLAttributes<HTMLSpanElement> & {
 
 export const Breadcrumb: React.FunctionComponent<BreadcrumbProps> = ({
     to,
-    icon: Icon,
+    icon,
     className,
     children,
     'aria-label': ariaLabel,
     ...rest
-}) => (
-    <span className={classNames(styles.wrapper, className)} {...rest}>
-        <LinkOrSpan className={styles.path} to={to} aria-label={ariaLabel}>
-            {Icon && <Icon role="img" className={styles.icon} aria-hidden={true} />}
-            {children && <span className={styles.text}>{children}</span>}
-        </LinkOrSpan>
-    </span>
-)
+}) => {
+    const iconHidden = !!children || !ariaLabel
+
+    return (
+        <span className={classNames(styles.wrapper, className)} {...rest}>
+            <LinkOrSpan className={styles.path} to={to} aria-label={children ? ariaLabel : undefined}>
+                {icon && (
+                    <Icon
+                        inline={false}
+                        className={styles.icon}
+                        svgPath={typeof icon === 'string' ? icon : undefined}
+                        as={typeof icon !== 'string' ? icon : undefined}
+                        {...(iconHidden ? { 'aria-hidden': true } : { 'aria-label': ariaLabel })}
+                    />
+                )}
+                {children && <span className={styles.text}>{children}</span>}
+            </LinkOrSpan>
+        </span>
+    )
+}

@@ -1,10 +1,8 @@
 import React, { useEffect, useRef, useState, forwardRef } from 'react'
 
+import { mdiChevronDown, mdiChevronUp, mdiMenu } from '@mdi/js'
 import classNames from 'classnames'
 import H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
 import { LinkProps, NavLink as RouterLink } from 'react-router-dom'
 
 import { Button, Link, Icon, H1, ForwardReferenceComponent } from '@sourcegraph/wildcard'
@@ -32,6 +30,7 @@ interface NavItemProps {
 
 interface NavActionsProps {
     children: React.ReactNode
+    className?: string
 }
 
 export interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationState>, 'to'> {
@@ -81,8 +80,8 @@ export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     return (
         <div className={navBarStyles.menu} ref={menuReference}>
             <Button className={navBarStyles.menuButton} onClick={() => setOpen(!open)} aria-label="Sections Navigation">
-                <Icon role="img" as={MenuIcon} aria-hidden={true} />
-                <Icon role="img" as={open ? ChevronUpIcon : ChevronDownIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiMenu} />
+                <Icon svgPath={open ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
             </Button>
             <ul className={classNames(navBarStyles.list, { [navBarStyles.menuClose]: !open })}>{children}</ul>
         </div>
@@ -93,10 +92,13 @@ export const NavActions: React.FunctionComponent<React.PropsWithChildren<NavActi
     <ul className={navActionStyles.actions}>{children}</ul>
 )
 
-export const NavAction: React.FunctionComponent<React.PropsWithChildren<NavActionsProps>> = ({ children }) => (
+export const NavAction: React.FunctionComponent<React.PropsWithChildren<NavActionsProps>> = ({
+    children,
+    className,
+}) => (
     <>
         {React.Children.map(children, action => (
-            <li className={navActionStyles.action}>{action}</li>
+            <li className={classNames(navActionStyles.action, className)}>{action}</li>
         ))}
     </>
 )
@@ -131,7 +133,7 @@ export const NavLink: React.FunctionComponent<React.PropsWithChildren<NavLinkPro
 }) => {
     const content = (
         <span className={classNames(navItemStyles.linkContent, className)}>
-            {LinkIcon ? <Icon role="img" className={navItemStyles.icon} as={LinkIcon} aria-hidden={true} /> : null}
+            {LinkIcon ? <Icon className={navItemStyles.icon} as={LinkIcon} aria-hidden={true} /> : null}
             <span
                 className={classNames(navItemStyles.text, {
                     [navItemStyles.iconIncluded]: Icon,

@@ -2,7 +2,6 @@ package authz
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
 	"flag"
 	"fmt"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/regexp"
+
+	"github.com/sourcegraph/log/logtest"
 
 	authzGitHub "github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
@@ -27,7 +28,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/log/logtest"
 )
 
 var updateRegex = flag.String("update", "", "Update testdata of tests matching the given regex")
@@ -50,6 +50,7 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 		t.Skip()
 	}
 
+	logger := logtest.Scoped(t)
 	token := os.Getenv("GITHUB_TOKEN")
 
 	spec := extsvc.AccountSpec{
@@ -88,10 +89,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := database.NewDB(dbtest.NewDB(t))
+			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -133,9 +134,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			db := database.NewDB(testDB)
-			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logtest.Scoped(t), db, reposStore, permsStore, timeutil.Now, nil)
+			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -169,10 +169,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := database.NewDB(dbtest.NewDB(t))
+			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -214,9 +214,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			db := database.NewDB(testDB)
-			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logtest.Scoped(t), db, reposStore, permsStore, timeutil.Now, nil)
+			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncRepoPerms(ctx, repo.ID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -273,10 +272,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := database.NewDB(dbtest.NewDB(t))
+			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -321,9 +320,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			db := database.NewDB(testDB)
-			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logtest.Scoped(t), db, reposStore, permsStore, timeutil.Now, nil)
+			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {
@@ -357,10 +355,10 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 			}
 			cli := extsvcGitHub.NewV3Client(logtest.Scoped(t), svc.URN(), uri, &auth.OAuthBearerToken{Token: token}, doer)
 
-			testDB := database.NewDB(dbtest.NewDB(t))
+			testDB := database.NewDB(logger, dbtest.NewDB(logger, t))
 			ctx := actor.WithInternalActor(context.Background())
 
-			reposStore := repos.NewStore(logtest.Scoped(t), database.NewDB(testDB), sql.TxOptions{})
+			reposStore := repos.NewStore(logtest.Scoped(t), testDB)
 
 			err = reposStore.ExternalServiceStore().Upsert(ctx, &svc)
 			if err != nil {
@@ -405,9 +403,8 @@ func TestIntegration_GitHubPermissions(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			db := database.NewDB(testDB)
-			permsStore := edb.Perms(testDB, timeutil.Now)
-			syncer := NewPermsSyncer(logtest.Scoped(t), db, reposStore, permsStore, timeutil.Now, nil)
+			permsStore := edb.Perms(logger, testDB, timeutil.Now)
+			syncer := NewPermsSyncer(logger, testDB, reposStore, permsStore, timeutil.Now, nil)
 
 			err = syncer.syncUserPerms(ctx, userID, false, authz.FetchPermsOptions{})
 			if err != nil {

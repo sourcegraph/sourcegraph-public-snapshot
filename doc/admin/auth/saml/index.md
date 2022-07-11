@@ -78,6 +78,78 @@ The most likely error message indicating a problem is:
 Error prefetching SAML service provider metadata
 ```
 
+### How to control user sign-up and sign-in
+
+Use the following filters to restrict how users can create accounts and sign in to your Sourcegraph instance via SAML auth provider.
+
+**allowSignup**
+
+  Allows new users to creating their accounts via SAML authentication, or blocks the sign-up when set to `false`.
+
+  If `false`, users signing in via SAML must have an existing Sourcegraph account, which will be linked to their SAML identity after the sign-in.
+
+  If not set, it will default to `true`.
+
+  ```json
+    {
+      "type": "saml",
+      // ...
+      "allowSignup": false
+    }
+  ```
+
+**allowGroups**
+
+  Restricts login to members of the allowed SAML groups. By groups we understand any SAML assertion by which we can determine if a user should be allowed to sign-in or sign-up to a sourcegraph account. This SAML assertion attribute needs to return a list of strings.
+
+  When not configured or set to`true`, sign-in will be allowed.
+  If the list of allowed groups is empty, sign-in is not allowed.
+
+  The `groupsAttributeName` is an optional parameter that can be used to set a different name for the SAML attribute assertion that contains a list of groups the user belongs to. It defaults to `"groups"` when not provided.
+
+  If combined with `"allowSignup": true` or if `allowSignup` is not set, only members of the allowed groups can create their accounts in Sourcegraph via SAML authentication.
+  When set with `"allowSignup": false`, an admin should first create the user account so that the user can login with SAML.
+
+  ```json
+    {
+      "type": "saml",
+      // ...
+      "allowSignup": false,
+      "allowGroups": ["sourcegraph"],
+      "groupsAttributeName": "mySAMLgroup"
+    }
+  ```
+
+  * Group names with special characters
+
+  Special characters such as the `&` (ampersand) will be encoded in the XML document, the format used by SAML. For example, if you have a group `Dogs & cats` set in your Identity Provider, it will be shown as `Dogs &amp; cats` in the XML assertions.
+
+  This is expected - just avoid using the encoded character when adding a group name to the `allowGroups` array.
+
+  _Instead of_
+  ```json
+    {
+      "allowGroups":
+      [
+        "Dogs &amp; cats", // wrong
+        "Dogs &gt; cats", // wrong
+        "Cats &lt; dogs" // wrong
+      ]
+    }
+  ```
+
+  _Use_
+  ```json
+    {
+      "allowGroups":
+      [
+        "Dogs & cats", // correct
+        "Dogs > cats", // correct
+        "Cats < dogs" // correct
+      ]
+    }
+  ```
+
 See [SAML troubleshooting](#troubleshooting) for more tips.
 
 ## Troubleshooting

@@ -3,6 +3,7 @@
 exports[`FilterLink should have correct links for dynamic filters 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Filter by lang:go, At least 500 results match this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -24,17 +25,22 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
         >
           :
         </span>
-        go
+        <span
+          class="search-query-text"
+        >
+          go
+        </span>
       </span>
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      title="At least 500 results match this filter."
+      data-tooltip="At least 500 results match this filter."
     >
       500+
     </span>
   </button>
   <button
+    aria-label="Filter by lang:typescript, At least 241 results match this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -56,17 +62,22 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
         >
           :
         </span>
-        typescript
+        <span
+          class="search-query-text"
+        >
+          typescript
+        </span>
       </span>
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      title="At least 241 results match this filter."
+      data-tooltip="At least 241 results match this filter."
     >
       241
     </span>
   </button>
   <button
+    aria-label="Filter by -file:_test\\\\.go$, At least 1 result matches this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -88,12 +99,31 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
         >
           :
         </span>
-        _test\\.go$
+        <span
+          class="search-query-text"
+        >
+          _test
+        </span>
+        <span
+          class="search-regexp-meta-escaped-character"
+        >
+          \\.
+        </span>
+        <span
+          class="search-query-text"
+        >
+          go
+        </span>
+        <span
+          class="search-regexp-meta-assertion"
+        >
+          $
+        </span>
       </span>
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      title="At least 1 result matches this filter."
+      data-tooltip="At least 1 result matches this filter."
     >
       1
     </span>
@@ -104,6 +134,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
 exports[`FilterLink should have correct links for repos 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Search in repository gitlab.com/sourcegraph/sourcegraph, At least 5 results match this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -123,7 +154,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
         <svg
           aria-label="gitlab.com"
           class="mdi-icon iconInline text-muted sidebarSectionIcon"
-          data-tooltip="gitlab.com"
+          data-state="closed"
           fill="currentColor"
           height="24"
           role="img"
@@ -139,12 +170,13 @@ exports[`FilterLink should have correct links for repos 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      title="At least 5 results match this filter."
+      data-tooltip="At least 5 results match this filter."
     >
       5
     </span>
   </button>
   <button
+    aria-label="Search in repository github.com/microsoft/vscode, At least 201 results match this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -164,7 +196,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
         <svg
           aria-label="github.com"
           class="mdi-icon iconInline text-muted sidebarSectionIcon"
-          data-tooltip="github.com"
+          data-state="closed"
           fill="currentColor"
           height="24"
           role="img"
@@ -180,7 +212,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      title="At least 201 results match this filter."
+      data-tooltip="At least 201 results match this filter."
     >
       201+
     </span>
@@ -191,6 +223,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
 exports[`FilterLink should have correct links for scopes 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Use search snippet: This is a search scope with a very long name lorem ipsum dolor sit amet"
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -203,6 +236,7 @@ exports[`FilterLink should have correct links for scopes 1`] = `
     </span>
   </button>
   <button
+    aria-label="Use search snippet: All results"
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -220,6 +254,7 @@ exports[`FilterLink should have correct links for scopes 1`] = `
 exports[`FilterLink should have show icons for repos on cloud 1`] = `
 <DocumentFragment>
   <button
+    aria-label="Search in repository gitlab.com/sourcegraph/sourcegraph, At least 5 results match this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -239,7 +274,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
         <svg
           aria-label="gitlab.com"
           class="mdi-icon iconInline text-muted sidebarSectionIcon"
-          data-tooltip="gitlab.com"
+          data-state="closed"
           fill="currentColor"
           height="24"
           role="img"
@@ -255,12 +290,13 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      title="At least 5 results match this filter."
+      data-tooltip="At least 5 results match this filter."
     >
       5
     </span>
   </button>
   <button
+    aria-label="Search in repository github.com/microsoft/vscode, At least 201 results match this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -280,7 +316,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
         <svg
           aria-label="github.com"
           class="mdi-icon iconInline text-muted sidebarSectionIcon"
-          data-tooltip="github.com"
+          data-state="closed"
           fill="currentColor"
           height="24"
           role="img"
@@ -296,7 +332,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     </span>
     <span
       class="pl-2 flex-shrink-0"
-      title="At least 201 results match this filter."
+      data-tooltip="At least 201 results match this filter."
     >
       201+
     </span>

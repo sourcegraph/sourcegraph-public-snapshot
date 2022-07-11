@@ -10,9 +10,12 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
@@ -24,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // This file contains all the methods required to:
@@ -54,7 +56,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	defaultRateLimit := rate.Limit(10.0)
 	getRateLimit := getRateLimit(defaultRateLimit)
 
-	limiter := rate.NewLimiter(getRateLimit(), 1)
+	limiter := ratelimit.NewInstrumentedLimiter("QueryRunner", rate.NewLimiter(getRateLimit(), 1))
 
 	go conf.Watch(func() {
 		val := getRateLimit()
@@ -68,7 +70,7 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 		Name: "src_insights_search_queue_total",
 		Help: "Total number of jobs in the queued state.",
 	}, func() float64 {
-		count, err := workerStore.QueuedCount(context.Background(), false, nil)
+		count, err := workerStore.QueuedCount(context.Background(), false)
 		if err != nil {
 			logger.Error("Failed to get queued job count", log.Error(err))
 		}
@@ -77,13 +79,12 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 	}))
 
 	return dbworker.NewWorker(ctx, workerStore, &workHandler{
-		baseWorkerStore: basestore.NewWithDB(workerStore.Handle().DB(), sql.TxOptions{}),
+		baseWorkerStore: basestore.NewWithHandle(workerStore.Handle()),
 		insightsStore:   insightsStore,
 		repoStore:       repoStore,
 		limiter:         limiter,
-		metadadataStore: store.NewInsightStore(insightsStore.Handle().DB()),
+		metadadataStore: store.NewInsightStoreWith(insightsStore),
 		seriesCache:     sharedCache,
-		search:          query.Search,
 		searchStream: func(ctx context.Context, query string) (*streaming.TabulationResult, error) {
 			decoder, streamResults := streaming.TabulationDecoder()
 			err := streaming.Search(ctx, query, decoder)
@@ -92,12 +93,19 @@ func NewWorker(ctx context.Context, logger log.Logger, workerStore dbworkerstore
 			}
 			return streamResults, nil
 		},
-		computeSearch: query.ComputeSearch,
 		computeSearchStream: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
-			decoder, streamResults := streaming.ComputeDecoder()
+			decoder, streamResults := streaming.MatchContextComputeDecoder()
 			err := streaming.ComputeMatchContextStream(ctx, query, decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Compute")
+			}
+			return streamResults, nil
+		},
+		computeTextExtraSearch: func(ctx context.Context, query string) (*streaming.ComputeTabulationResult, error) {
+			decoder, streamResults := streaming.ComputeTextDecoder()
+			err := streaming.ComputeTextExtraStream(ctx, query, decoder)
+			if err != nil {
+				return nil, errors.Wrap(err, "streaming.ComputeText")
 			}
 			return streamResults, nil
 		},

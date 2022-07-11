@@ -43,11 +43,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		// generate opportunistic queries and run them after the usual jobTree
-		generatedChildren := NewFeelingLuckySearchJob(inputs, plan)
-		if len(generatedChildren) > 0 {
-			jobTree = NewSequentialJob(true, append([]job.Job{jobTree}, generatedChildren...)...)
-		}
+		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
@@ -97,7 +93,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            job,
+					child:            &reposPartialJob{job},
 					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
@@ -121,7 +117,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 					return nil, err
 				}
 				addJob(&repoPagerJob{
-					child:            job,
+					child:            &reposPartialJob{job},
 					repoOpts:         repoOptions,
 					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
@@ -139,6 +135,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
 				IncludeModifiedFiles: authz.SubRepoEnabled(authz.DefaultSubRepoPermsChecker),
+				Concurrency:          4,
 			})
 		}
 
@@ -212,19 +209,13 @@ func orderSearcherJob(j job.Job) job.Job {
 	// This job will be sequentially ordered after any Zoekt jobs. We assume
 	// at most one searcher job exists.
 	var pagedSearcherJob job.Job
-	collector := Mapper{
-		MapJob: func(current job.Job) job.Job {
-			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.(*searcher.TextSearchJob); ok {
-					pagedSearcherJob = pager
-					return &NoopJob{}
-				}
-			}
-			return current
-		},
-	}
-
-	newJob := collector.Map(j)
+	newJob := job.MapType(j, func(pager *repoPagerJob) job.Job {
+		if job.HasDescendent[*searcher.TextSearchJob](pager) {
+			pagedSearcherJob = pager
+			return &NoopJob{}
+		}
+		return pager
+	})
 
 	if pagedSearcherJob == nil {
 		// No searcher job, nothing to worry about.
@@ -233,24 +224,23 @@ func orderSearcherJob(j job.Job) job.Job {
 
 	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
 	// We assume at most one of either two Zoekt search jobs may exist.
-	seenZoektRepoSearch, seenZoektGlobalSearch := false, false
-	orderer := Mapper{
-		MapJob: func(current job.Job) job.Job {
-			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
-					seenZoektRepoSearch = true
-					return NewSequentialJob(false, current, pagedSearcherJob)
-				}
-			}
-			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
-				seenZoektGlobalSearch = true
-				return NewSequentialJob(false, current, pagedSearcherJob)
-			}
-			return current
-		},
-	}
+	seenZoektRepoSearch := false
+	newJob = job.MapType(newJob, func(pager *repoPagerJob) job.Job {
+		if job.HasDescendent[*zoekt.RepoSubsetTextSearchJob](pager) {
+			seenZoektRepoSearch = true
+			return NewSequentialJob(false, pager, pagedSearcherJob)
+		}
+		return pager
+	})
 
-	newJob = orderer.Map(newJob)
+	seenZoektGlobalSearch := false
+	newJob = job.MapType(newJob, func(current *zoekt.GlobalTextSearchJob) job.Job {
+		if !seenZoektGlobalSearch {
+			seenZoektGlobalSearch = true
+			return NewSequentialJob(false, current, pagedSearcherJob)
+		}
+		return current
+	})
 
 	if !seenZoektRepoSearch && !seenZoektGlobalSearch {
 		// There were no Zoekt jobs, so no need to modify the tree. Return original.
@@ -302,7 +292,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 				}
 
 				addJob(&repoPagerJob{
-					child:            searcherJob,
+					child:            &reposPartialJob{searcherJob},
 					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
@@ -320,7 +310,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 				}
 
 				addJob(&repoPagerJob{
-					child:            symbolSearchJob,
+					child:            &reposPartialJob{symbolSearchJob},
 					repoOpts:         repoOptions,
 					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
@@ -530,7 +520,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.IncludeExcludeValues(query.FieldRepoHasFile)
+	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(b, p)
 
@@ -626,7 +616,6 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	}
 
 	visibility := b.Visibility()
-	commitAfter := b.FindValue(query.FieldRepoHasCommitAfter)
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
@@ -642,7 +631,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		OnlyArchived:      archived == query.Only,
 		NoArchived:        archived == query.No,
 		Visibility:        visibility,
-		CommitAfter:       commitAfter,
+		CommitAfter:       b.RepoContainsCommitAfter(),
 	}
 }
 

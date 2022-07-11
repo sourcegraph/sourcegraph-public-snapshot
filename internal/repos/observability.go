@@ -6,10 +6,11 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"github.com/sourcegraph/sourcegraph/lib/log"
 )
 
 // ObservedSource returns a decorator that wraps a Source
@@ -128,7 +129,9 @@ func (o *observedSource) GetRepo(ctx context.Context, path string) (sourced *typ
 	defer func(began time.Time) {
 		secs := time.Since(began).Seconds()
 		o.metrics.GetRepo.Observe(secs, 1, &err)
-		o.logger.Error("source.get-repo", log.Error(err))
+		if err != nil {
+			o.logger.Error("source.get-repo", log.Error(err))
+		}
 	}(time.Now())
 
 	return rg.GetRepo(ctx, path)
@@ -142,6 +145,7 @@ type StoreMetrics struct {
 	UpdateExternalServiceRepo          *metrics.REDMetrics
 	DeleteExternalServiceRepo          *metrics.REDMetrics
 	DeleteExternalServiceReposNotIn    *metrics.REDMetrics
+	UpdateRepo                         *metrics.REDMetrics
 	UpsertRepos                        *metrics.REDMetrics
 	UpsertSources                      *metrics.REDMetrics
 	ListExternalRepoSpecs              *metrics.REDMetrics
