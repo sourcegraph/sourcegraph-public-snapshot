@@ -7,6 +7,7 @@ import useResizeObserver from 'use-resize-observer'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
+import { BarChart } from '../../../../../../../../charts/components/bar-chart/BarChart'
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData } from '../../../../../../core'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
@@ -45,6 +46,7 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
     className?: string
     onDatumClick: () => void
     seriesToggleState: UseSeriesToggleReturn
+    chartType: 'series' | 'categorical'
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
@@ -56,6 +58,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
         className,
         onDatumClick,
         seriesToggleState,
+        chartType,
     } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
     const { setHoveredId, isSeriesSelected, isSeriesHovered } = seriesToggleState
@@ -82,17 +85,29 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     className={styles.alertOverlay}
                                 />
 
-                                <SeriesChart
-                                    type={SeriesBasedChartTypes.Line}
-                                    width={parent.width}
-                                    height={parent.height}
-                                    locked={locked}
-                                    className={styles.chart}
-                                    onDatumClick={onDatumClick}
-                                    zeroYAxisMin={zeroYAxisMin}
-                                    seriesToggleState={seriesToggleState}
-                                    {...content}
-                                />
+                                {chartType === 'series' ? (
+                                    <SeriesChart
+                                        type={SeriesBasedChartTypes.Line}
+                                        width={parent.width}
+                                        height={parent.height}
+                                        locked={locked}
+                                        className={styles.chart}
+                                        onDatumClick={onDatumClick}
+                                        zeroYAxisMin={zeroYAxisMin}
+                                        seriesToggleState={seriesToggleState}
+                                        {...content}
+                                    />
+                                ) : (
+                                    <BarChart
+                                        width={parent.width}
+                                        height={parent.height}
+                                        className={styles.chart}
+                                        data={content.series}
+                                        getDatumColor={datum => datum.color}
+                                        getDatumName={datum => datum.name}
+                                        getDatumValue={datum => datum.data[0]?.value ?? 0}
+                                    />
+                                )}
                             </>
                         )}
                     </ParentSize>

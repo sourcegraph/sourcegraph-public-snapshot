@@ -20,7 +20,7 @@ import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, Insight
 import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
-import { SeriesDisplayOptionsInputRequired } from '../../../../core/types/insight/common'
+import { InsightType, SeriesDisplayOptionsInputRequired } from '../../../../core/types/insight/common'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
 import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
@@ -238,6 +238,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                     zeroYAxisMin={zeroYAxisMin}
                     seriesToggleState={seriesToggleState}
                     onDatumClick={trackDatumClicks}
+                    chartType={insight.type === InsightType.Compute ? 'categorical' : 'series'}
                 />
             )}
             {
