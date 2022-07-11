@@ -150,6 +150,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     disabled={true}
                 />
                 <Input
+                    autoFocus={true}
                     label="Batch change name"
                     value={nameInput}
                     onChange={onNameChange}
