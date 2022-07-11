@@ -194,28 +194,27 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         </>
     )
 
-    const [workspaceCount, setWorkspaceCount] = useState<number>(0)
-    const totalCount = useMemo(() => {
+    const [visibleCount, totalCount] = useMemo<[number, number] | [null, null]>(() => {
         if (shouldShowConnection) {
             if (cachedWorkspacesPreview && (showCached || !connection?.nodes.length)) {
-                setWorkspaceCount(cachedWorkspacesPreview.totalCount ?? 0)
-                return (
-                    <span className={styles.totalCount}>
-                        Displaying {cachedWorkspacesPreview.nodes.length} of {cachedWorkspacesPreview.totalCount}
-                    </span>
-                )
+                return [cachedWorkspacesPreview.nodes.length, cachedWorkspacesPreview.totalCount ?? 0]
             }
             if (connection) {
-                setWorkspaceCount(connection.totalCount ?? 0)
-                return (
-                    <span className={styles.totalCount}>
-                        Displaying {connection.nodes.length} of {connection?.totalCount}
-                    </span>
-                )
+                return [connection.nodes.length, connection.totalCount ?? 0]
             }
         }
-        return null
-    }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection, setWorkspaceCount])
+        return [null, null]
+    }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection])
+
+    const totalCountDisplay = useMemo(
+        () =>
+            visibleCount !== null && totalCount !== null ? (
+                <span className={styles.totalCount}>
+                    Displaying {visibleCount} of {totalCount}
+                </span>
+            ) : null,
+        [visibleCount, totalCount]
+    )
 
     return (
         <div className="d-flex flex-column align-items-center w-100 h-100">
@@ -233,13 +232,13 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                             />
                         </Tooltip>
                     )}
-                {totalCount}
+                {totalCountDisplay}
             </WorkspacesListHeader>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             <div className="d-flex flex-column align-items-center w-100 mb-3">
                 <LicenseAlert
                     additionalCondition={
-                        workspaceCount + (importingChangesetsConnection?.connection?.totalCount ?? 0) > 5
+                        (totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0) > 5
                     }
                 />
             </div>
