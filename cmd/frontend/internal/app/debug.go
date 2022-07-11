@@ -138,6 +138,22 @@ type sentryHeader struct {
 }
 
 func sentryHandler(logger sglog.Logger) http.Handler {
+	getSiteConfigSentryProjectID := func() (string, error) {
+		var sentryDSN string
+		siteConfig := conf.Get().SiteConfiguration
+		if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
+			sentryDSN = siteConfig.Log.Sentry.Dsn
+		}
+		if sentryDSN == "" {
+			return "", nil
+		}
+		u, err := url.Parse(sentryDSN)
+		if err != nil {
+			return "", err
+		}
+		return strings.TrimPrefix(u.Path, "/"), nil
+	}
+
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
@@ -171,9 +187,20 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
-		projectID := u.Path
-		// TODO
-		if !(projectID == "/1334031" || projectID == "/1391511") {
+		pID := strings.TrimPrefix(u.Path, "/")
+		if pID == "" {
+			w.WriteHeader(http.StatusUnprocessableEntity)
+			return
+		}
+		configProjectID, err := getSiteConfigSentryProjectID()
+		if err != nil {
+			logger.Warn("failed to read sentryDSN from siteconfig", sglog.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		// hardcoded in client/browser/src/shared/sentry/index.ts
+		hardcodedSentryProjectID := "1334031"
+		if !(pID == configProjectID || pID == hardcodedSentryProjectID) {
 			// not our projects, just discard the request.
 			w.WriteHeader(http.StatusUnauthorized)
 			return
@@ -183,7 +210,7 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 			// We want to keep this short, the default client settings are not strict enough.
 			Timeout: 3 * time.Second,
 		}
-		url := fmt.Sprintf("%s/api%s/envelope/", envvar.SentryTunnelEndpoint, projectID)
+		url := fmt.Sprintf("%s/api/%s/envelope/", envvar.SentryTunnelEndpoint, pID)
 		go client.Post(url, "text/plain;charset=UTF-8", bytes.NewReader(b))
 
 		w.WriteHeader(http.StatusOK)

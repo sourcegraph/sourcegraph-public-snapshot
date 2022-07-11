@@ -2,6 +2,7 @@ package app
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -159,9 +160,10 @@ func TestGrafanaLicensing(t *testing.T) {
 }
 
 func TestSentryTunnel(t *testing.T) {
-	var sentryPayload = []byte(`{"event_id":"6af2790372f046689a858b1d914fe0d5","sent_at":"2022-07-07T17:38:47.215Z","sdk":{"name":"sentry.javascript.browser","version":"6.19.7"},"dsn":"https://randomkey@o19358.ingest.sentry.io/1391511"}
+	mockProjectID := "1334031"
+	var sentryPayload = []byte(fmt.Sprintf(`{"event_id":"6af2790372f046689a858b1d914fe0d5","sent_at":"2022-07-07T17:38:47.215Z","sdk":{"name":"sentry.javascript.browser","version":"6.19.7"},"dsn":"https://randomkey@o19358.ingest.sentry.io/%s"}
 {"type":"event","sample_rates":[{}]}
-{"message":"foopff","level":"info","event_id":"6af2790372f046689a858b1d914fe0d5","platform":"javascript","timestamp":1657215527.214,"environment":"production","sdk":{"integrations":["InboundFilters","FunctionToString","TryCatch","Breadcrumbs","GlobalHandlers","LinkedErrors","Dedupe","UserAgent"],"name":"sentry.javascript.browser","version":"6.19.7","packages":[{"name":"npm:@sentry/browser","version":"6.19.7"}]},"request":{"url":"https://sourcegraph.test:3443/search","headers":{"Referer":"https://sourcegraph.test:3443/search","User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36"}},"tags":{},"extra":{}}`)
+{"message":"foopff","level":"info","event_id":"6af2790372f046689a858b1d914fe0d5","platform":"javascript","timestamp":1657215527.214,"environment":"production","sdk":{"integrations":["InboundFilters","FunctionToString","TryCatch","Breadcrumbs","GlobalHandlers","LinkedErrors","Dedupe","UserAgent"],"name":"sentry.javascript.browser","version":"6.19.7","packages":[{"name":"npm:@sentry/browser","version":"6.19.7"}]},"request":{"url":"https://sourcegraph.test:3443/search","headers":{"Referer":"https://sourcegraph.test:3443/search","User-Agent":"Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/103.0.5060.53 Safari/537.36"}},"tags":{},"extra":{}}`, mockProjectID))
 
 	router := mux.NewRouter()
 	addSentry(router)
@@ -204,7 +206,7 @@ func TestSentryTunnel(t *testing.T) {
 		})
 		t.Run("With an invalid project id", func(t *testing.T) {
 			rec := httptest.NewRecorder()
-			invalidProjectIDpayload := bytes.Replace(sentryPayload, []byte("1391511"), []byte("10000"), 1)
+			invalidProjectIDpayload := bytes.Replace(sentryPayload, []byte(mockProjectID), []byte("10000"), 1)
 			req := httptest.NewRequest("POST", "/sentry_tunnel", bytes.NewReader(invalidProjectIDpayload))
 			req.Header.Add("Content-Type", "text/plain;charset=UTF-8")
 			router.ServeHTTP(rec, req)
