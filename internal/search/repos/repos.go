@@ -229,11 +229,8 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		repo, i := repo, i // avoid race
 
 		g.Go(func(ctx context.Context) error {
-
-			var (
-				repoRev = search.RepositoryRevisions{Repo: repo}
-				revs    []search.RevisionSpecifier
-			)
+			repoRev := search.RepositoryRevisions{Repo: repo}
+			revs := []search.RevisionSpecifier(nil)
 
 			if len(dependencyRevs) > 0 {
 				revs = dependencyRevs[repo.Name]
