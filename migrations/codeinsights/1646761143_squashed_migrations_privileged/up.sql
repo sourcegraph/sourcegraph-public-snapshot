@@ -190,7 +190,8 @@ CREATE TABLE insight_view (
     default_filter_include_repo_regex text,
     default_filter_exclude_repo_regex text,
     other_threshold double precision,
-    presentation_type presentation_type_enum DEFAULT 'LINE'::presentation_type_enum NOT NULL
+    presentation_type presentation_type_enum DEFAULT 'LINE'::presentation_type_enum NOT NULL,
+    is_frozen boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE insight_view IS 'Views for insight data series. An insight view is an abstraction on top of an insight data series that allows for lightweight modifications to filters or metadata without regenerating the underlying series.';
