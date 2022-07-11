@@ -1752,7 +1752,11 @@ WHERE extsvcs.deleted_at IS NULL
 
 		switch c := parsed.(type) {
 		case *schema.GitHubConnection:
-			if !c.AutomaticRepoPermissionsSync {
+			if c.DisableAutomaticRepoPermissionsSync {
+				excludedExternalServices = append(excludedExternalServices, externalService.ID)
+			}
+		case *schema.GitLabConnection:
+			if c.DisableAutomaticRepoPermissionsSync {
 				excludedExternalServices = append(excludedExternalServices, externalService.ID)
 			}
 		}

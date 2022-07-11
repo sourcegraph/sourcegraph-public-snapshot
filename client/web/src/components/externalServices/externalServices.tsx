@@ -527,7 +527,8 @@ const GITHUB_DOTCOM: AddExternalServiceOptions = {
     defaultConfig: `{
   "url": "https://github.com",
   "token": "<access token>",
-  "orgs": []
+  "orgs": [],
+  "disableAutomaticRepoPermissionsSync": true
 }`,
 }
 const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
@@ -536,7 +537,8 @@ const GITHUB_ENTERPRISE: AddExternalServiceOptions = {
     defaultConfig: `{
   "url": "https://github.example.com",
   "token": "<access token>",
-  "orgs": []
+  "orgs": [],
+  "disableAutomaticRepoPermissionsSync": true
 }`,
     editorActions: githubEditorActions(true),
     instructions: githubInstructions(true),
@@ -923,7 +925,8 @@ const GITLAB_DOTCOM: AddExternalServiceOptions = {
   "token": "<access token>",
   "projectQuery": [
     "projects?membership=true&archived=no"
-  ]
+  ],
+  "disableAutomaticRepoPermissionsSync": true
 }`,
     editorActions: gitlabEditorActions(false),
     instructions: gitlabInstructions(false),
@@ -938,7 +941,8 @@ const GITLAB_SELF_MANAGED: AddExternalServiceOptions = {
   "token": "<access token>",
   "projectQuery": [
     "projects?membership=true&archived=no"
-  ]
+  ],
+  "disableAutomaticRepoPermissionsSync": true
 }`,
 }
 const SRC_SERVE_GIT: AddExternalServiceOptions = {

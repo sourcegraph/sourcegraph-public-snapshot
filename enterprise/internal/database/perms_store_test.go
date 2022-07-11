@@ -2716,7 +2716,7 @@ func testPermsStore_RepoIDsWithNoPerms(db database.DB) func(*testing.T) {
 			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_2', TRUE)`),                    // ID=3
 			sqlf.Sprintf(`INSERT INTO repo(name, private, deleted_at) VALUES('private_repo_3', TRUE, NOW())`), // ID=4
 			sqlf.Sprintf(`INSERT INTO repo(name, private) VALUES('private_repo_4', TRUE)`),                    // ID=5
-			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{"automaticRepoPermissionsSync": false}')`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{"disableAutomaticRepoPermissionsSync": true}')`),
 			sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
                                  VALUES(5, 1, '')`),
 		}
@@ -2904,8 +2904,8 @@ func testPermsStore_ReposIDsWithOldestPerms(db database.DB) func(*testing.T) {
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(2, 'private_repo_2', TRUE)`),
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private, deleted_at) VALUES(3, 'private_repo_3', TRUE, NOW())`),
 			sqlf.Sprintf(`INSERT INTO repo(id, name, private) VALUES(4, 'private_repo_4', TRUE)`),
-			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{"automaticRepoPermissionsSync": true}')`),
-			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(2, 'GitHub #2', 'GITHUB', '{"automaticRepoPermissionsSync": false}')`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(1, 'GitHub #1', 'GITHUB', '{"disableAutomaticRepoPermissionsSync": false}')`),
+			sqlf.Sprintf(`INSERT INTO external_services(id, display_name, kind, config) VALUES(2, 'GitHub #2', 'GITHUB', '{"disableAutomaticRepoPermissionsSync": true}')`),
 			sqlf.Sprintf(`INSERT INTO external_service_repos(repo_id, external_service_id, clone_url)
                                  VALUES(1, 1, ''), (2, 1, ''), (3, 1, ''), (4, 2, '')`),
 		}

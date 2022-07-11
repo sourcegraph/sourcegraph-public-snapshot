@@ -53,8 +53,8 @@
         "requestsPerHour": 5000
       }
     },
-    "automaticRepoPermissionsSync": {
-      "description": "Automatically schedule repository permission syncing for this connection in the background.",
+    "disableAutomaticRepoPermissionsSync": {
+      "description": "If true, repository-centric permissions syncing will not be automatically scheduled in the background.",
       "type": "boolean",
       "default": false
     },
