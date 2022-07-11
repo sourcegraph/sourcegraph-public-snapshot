@@ -13,7 +13,6 @@ import (
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
@@ -26,73 +25,86 @@ import (
 	yamlv3 "gopkg.in/yaml.v3"
 )
 
-type executionOpts struct {
-	wc          workspace.Creator
+type runStepsOpts struct {
+	// wc is the workspace creator to use. It will be called at the beginning of
+	// runSteps to prepare the workspace for execution.
+	wc workspace.Creator
+	// ensureImage is called in runSteps to make sure the used image has been
+	// pulled from the registry.
 	ensureImage imageEnsurer
-
+	// task is the definition of the workspace execution.
 	task *Task
-
+	// tempDir points to where temporary files of the execution should live at.
 	tempDir string
 
 	logger log.TaskLogger
 
 	ui StepsExecutionUI
 
+	// isRemote toggles server-side execution mode. This disables file mounts using
+	// step.mounts.
 	isRemote bool
 
+	// globalEnv is the os.Environ() for the execution. We don't read from os.Environ()
+	// directly to allow injecting variables and hiding others.
 	globalEnv []string
-
-	writeStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
 }
 
-func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result, stepResults []execution.AfterStepResult, err error) {
+func runSteps(ctx context.Context, opts *runStepsOpts) (stepResults []execution.AfterStepResult, err error) {
 	opts.ui.ArchiveDownloadStarted()
-	err = opts.task.Archive.Ensure(ctx)
+	err = opts.task.RepoArchive.Ensure(ctx)
 	opts.ui.ArchiveDownloadFinished(err)
 	if err != nil {
-		return execution.Result{}, nil, errors.Wrap(err, "fetching repo")
+		return nil, errors.Wrap(err, "fetching repo")
 	}
-	defer opts.task.Archive.Close()
+	defer opts.task.RepoArchive.Close()
 
 	opts.ui.WorkspaceInitializationStarted()
-	ws, err := opts.wc.Create(ctx, opts.task.Repository, opts.task.Steps, opts.task.Archive)
+	ws, err := opts.wc.Create(ctx, opts.task.Repository, opts.task.Steps, opts.task.RepoArchive)
 	if err != nil {
-		return execution.Result{}, nil, errors.Wrap(err, "creating workspace")
+		return nil, errors.Wrap(err, "creating workspace")
 	}
 	defer ws.Close(ctx)
 	opts.ui.WorkspaceInitializationFinished()
 
 	var (
-		execResult = execution.Result{
-			Diff:         "",
-			ChangedFiles: &git.Changes{},
-			Outputs:      make(map[string]interface{}),
-			Path:         opts.task.Path,
-		}
-		previousStepResult execution.StepResult
-		startStep          int
+		// lastOutputs are the step.outputs from the previously run step.
+		// Outputs are additive, so we will only ever append to this map,
+		// but never clear it.
+		lastOutputs        = make(map[string]any)
+		previousStepResult execution.AfterStepResult
+		// startStep is the index of the step we start executing with. Set when
+		// there's a partial cache result for the task.
+		startStep int
 	)
 
-	if opts.task.CachedResultFound {
+	if opts.task.CachedStepResultFound {
 		// Set the Outputs to the cached outputs
-		execResult.Outputs = opts.task.CachedResult.Outputs
-
-		lastStep := opts.task.CachedResult.StepIndex
+		lastOutputs = opts.task.CachedStepResult.Outputs
+		previousStepResult = opts.task.CachedStepResult
+		lastStep := opts.task.CachedStepResult.StepIndex
+		// Add the cached result to the result set. It may be required for building
+		// the changeset specs in the end if we don't need to execute any other steps
+		// due to dynamic skipping.
+		// We remove it at the end of this function if it isn't needed, so we don't
+		// write it to the cache again.
+		stepResults = append(stepResults, previousStepResult)
 
 		// If we have cached results and don't need to execute any more steps,
-		// we can quit
+		// we can quit.
+		// TODO: This doesn't consider skipped steps, but it's not _that_
+		// bad, we will find out about that further down and correctly finish
+		// execution early.
 		if lastStep == len(opts.task.Steps)-1 {
-			// Build the execution result from the step result.
-			changes, err := git.ChangesInDiff([]byte(opts.task.CachedResult.Diff))
-			if err != nil {
-				return execResult, nil, errors.Wrap(err, "parsing cached step diff")
+			return stepResults, nil
+		}
+
+		// If the previous steps made any modifications to the workspace yet,
+		// apply them.
+		if opts.task.CachedStepResult.Diff != "" {
+			if err := ws.ApplyDiff(ctx, []byte(opts.task.CachedStepResult.Diff)); err != nil {
+				return nil, errors.Wrap(err, "applying diff of cache result")
 			}
-
-			execResult.Diff = opts.task.CachedResult.Diff
-			execResult.ChangedFiles = &changes
-			stepResults = append(stepResults, opts.task.CachedResult)
-
-			return execResult, stepResults, nil
 		}
 
 		startStep = lastStep + 1
@@ -103,41 +115,24 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		)
 	}
 
-	var lastDiff string
-
 	for i := startStep; i < len(opts.task.Steps); i++ {
 		step := opts.task.Steps[i]
 
 		stepContext := template.StepContext{
 			BatchChange: *opts.task.BatchChangeAttributes,
 			Repository:  util.NewTemplatingRepo(opts.task.Repository.Name, opts.task.Repository.FileMatches),
-			Outputs:     execResult.Outputs,
+			Outputs:     lastOutputs,
 			Steps: template.StepsContext{
-				Path:    execResult.Path,
-				Changes: previousStepResult.Files,
+				Path:    opts.task.Path,
+				Changes: previousStepResult.ChangedFiles,
 			},
 			PreviousStep: previousStepResult,
 		}
 
-		if opts.task.CachedResultFound && i == startStep {
-			previousStepResult = opts.task.CachedResult.StepResult
-
-			stepContext.PreviousStep = previousStepResult
-			stepContext.Steps.Changes = previousStepResult.Files
-			stepContext.Outputs = opts.task.CachedResult.Outputs
-
-			// If the previous steps made any modifications in the workspace yet,
-			// apply them.
-			if opts.task.CachedResult.Diff != "" {
-				if err := ws.ApplyDiff(ctx, []byte(opts.task.CachedResult.Diff)); err != nil {
-					return execResult, nil, errors.Wrap(err, "applying diff of cache result")
-				}
-			}
-		}
-
+		// Check if the step needs to be skipped.
 		cond, err := template.EvalStepCondition(step.IfCondition(), &stepContext)
 		if err != nil {
-			return execResult, nil, errors.Wrap(err, "evaluating step condition")
+			return nil, errors.Wrap(err, "evaluating step condition")
 		}
 		if !cond {
 			opts.ui.StepSkipped(i + 1)
@@ -147,12 +142,13 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 		// We need to grab the digest for the exact image we're using.
 		img, err := opts.ensureImage(ctx, step.Container)
 		if err != nil {
-			return execResult, nil, err
+			return nil, err
 		}
 		digest, err := img.Digest(ctx)
 		if err != nil {
-			return execResult, nil, err
+			return nil, err
 		}
+
 		stdoutBuffer, stderrBuffer, err := executeSingleStep(ctx, opts, ws, i, step, digest, &stepContext)
 		defer func() {
 			if err != nil {
@@ -165,76 +161,75 @@ func runSteps(ctx context.Context, opts *executionOpts) (result execution.Result
 			}
 		}()
 		if err != nil {
-			return execResult, nil, err
+			return stepResults, err
 		}
 
 		changes, err := ws.Changes(ctx)
 		if err != nil {
-			return execResult, nil, errors.Wrap(err, "getting changed files in step")
-		}
-
-		result := execution.StepResult{Files: changes, Stdout: stdoutBuffer.String(), Stderr: stderrBuffer.String()}
-
-		// Set stepContext.Step to current step's results before rendering outputs
-		stepContext.Step = result
-		// Render and evaluate outputs
-		if err := setOutputs(step.Outputs, execResult.Outputs, &stepContext); err != nil {
-			return execResult, nil, errors.Wrap(err, "setting step outputs")
+			return stepResults, errors.Wrap(err, "getting changed files in step")
 		}
 
 		// Get the current diff and store that away as the per-step result.
 		stepDiff, err := ws.Diff(ctx)
 		if err != nil {
-			return execResult, nil, errors.Wrap(err, "getting diff produced by step")
+			return stepResults, errors.Wrap(err, "getting diff produced by step")
 		}
+
 		stepResult := execution.AfterStepResult{
-			StepIndex:  i,
-			Diff:       string(stepDiff),
-			Outputs:    make(map[string]interface{}),
-			StepResult: result,
+			ChangedFiles: changes,
+			Stdout:       stdoutBuffer.String(),
+			Stderr:       stderrBuffer.String(),
+			StepIndex:    i,
+			Diff:         string(stepDiff),
+			// Those will be set below.
+			Outputs: make(map[string]interface{}),
 		}
-		for k, v := range execResult.Outputs {
+
+		// Set stepContext.Step to current step's results before rendering outputs.
+		stepContext.Step = stepResult
+		// Render and evaluate outputs.
+		if err := setOutputs(step.Outputs, lastOutputs, &stepContext); err != nil {
+			return stepResults, errors.Wrap(err, "setting step outputs")
+		}
+		for k, v := range lastOutputs {
 			stepResult.Outputs[k] = v
 		}
 		stepResults = append(stepResults, stepResult)
-		previousStepResult = result
+		previousStepResult = stepResult
 
-		// cache the result here
-		err = opts.writeStepCacheResult(ctx, stepResult, opts.task)
-		if err != nil {
-			return execResult, nil, errors.Wrap(err, "failed to cache stepResult")
-		}
-
-		opts.ui.StepFinished(i+1, stepResult.Diff, result.Files, stepResult.Outputs)
-
-		lastDiff = stepResult.Diff
+		opts.ui.StepFinished(i+1, stepResult.Diff, stepResult.ChangedFiles, stepResult.Outputs)
 	}
 
-	execResult.Diff = lastDiff
-	execResult.ChangedFiles = previousStepResult.Files
+	// If we ended up executing at least one step in addition to the cached step,
+	// we can remove it from the result set. Otherwise we write it to the cache
+	// again which is unnecessary. We only need to return it when we want to build changeset
+	// specs from it.
+	if len(stepResults) > 1 && opts.task.CachedStepResultFound {
+		stepResults = stepResults[1:]
+	}
 
-	return execResult, stepResults, err
+	return stepResults, err
 }
 
 const workDir = "/work"
 
 func executeSingleStep(
 	ctx context.Context,
-	opts *executionOpts,
+	opts *runStepsOpts,
 	workspace workspace.Workspace,
-	i int,
+	stepIdx int,
 	step batcheslib.Step,
 	imageDigest string,
 	stepContext *template.StepContext,
-) (bytes.Buffer, bytes.Buffer, error) {
+) (stdout bytes.Buffer, stderr bytes.Buffer, err error) {
 	// ----------
 	// PREPARATION
 	// ----------
-	opts.ui.StepPreparingStart(i + 1)
+	opts.ui.StepPreparingStart(stepIdx + 1)
 
 	cidFile, cleanup, err := createCidFile(ctx, opts.tempDir, util.SlugForRepo(opts.task.Repository.Name, opts.task.Repository.Rev()))
 	if err != nil {
-		opts.ui.StepPreparingFailed(i+1, err)
+		opts.ui.StepPreparingFailed(stepIdx+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	defer cleanup()
@@ -243,13 +238,13 @@ func executeSingleStep(
 	shell, containerTemp, err := probeImageForShell(ctx, imageDigest)
 	if err != nil {
 		err = errors.Wrapf(err, "probing image %q for shell", step.Container)
-		opts.ui.StepPreparingFailed(i+1, err)
+		opts.ui.StepPreparingFailed(stepIdx+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 
 	runScriptFile, runScript, cleanup, err := createRunScriptFile(ctx, opts.tempDir, step.Run, stepContext)
 	if err != nil {
-		opts.ui.StepPreparingFailed(i+1, err)
+		opts.ui.StepPreparingFailed(stepIdx+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	defer cleanup()
@@ -257,7 +252,7 @@ func executeSingleStep(
 	// Parse and render the step.Files.
 	filesToMount, cleanup, err := createFilesToMount(opts.tempDir, step, stepContext)
 	if err != nil {
-		opts.ui.StepPreparingFailed(i+1, err)
+		opts.ui.StepPreparingFailed(stepIdx+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	defer cleanup()
@@ -266,23 +261,23 @@ func executeSingleStep(
 	stepEnv, err := step.Env.Resolve(opts.globalEnv)
 	if err != nil {
 		err = errors.Wrap(err, "resolving step environment")
-		opts.ui.StepPreparingFailed(i+1, err)
+		opts.ui.StepPreparingFailed(stepIdx+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 	// Render the step.Env variables as templates.
 	env, err := template.RenderStepMap(stepEnv, stepContext)
 	if err != nil {
 		err = errors.Wrap(err, "parsing step environment")
-		opts.ui.StepPreparingFailed(i+1, err)
+		opts.ui.StepPreparingFailed(stepIdx+1, err)
 		return bytes.Buffer{}, bytes.Buffer{}, err
 	}
 
-	opts.ui.StepPreparingSuccess(i + 1)
+	opts.ui.StepPreparingSuccess(stepIdx + 1)
 
 	// ----------
 	// EXECUTION
 	// ----------
-	opts.ui.StepStarted(i+1, runScript, env)
+	opts.ui.StepStarted(stepIdx+1, runScript, env)
 
 	workspaceOpts, err := workspace.DockerRunOpts(ctx, workDir)
 	if err != nil {
@@ -308,9 +303,9 @@ func executeSingleStep(
 		args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", source.Name(), target))
 	}
 
-	// Temporarily add a guard to prevent a path to mount path for server-side processing
+	// Temporarily add a guard to prevent a path to mount path for server-side processing.
 	if !opts.isRemote {
-		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing
+		// Mount any paths on the local system to the docker container. The paths have already been validated during parsing.
 		for _, mount := range step.Mount {
 			args = append(args, "--mount", fmt.Sprintf("type=bind,source=%s,target=%s,ro", mount.Path, mount.Mountpoint))
 		}
@@ -330,19 +325,18 @@ func executeSingleStep(
 
 	writerCtx, writerCancel := context.WithCancel(ctx)
 	defer writerCancel()
-	outputWriter := opts.ui.StepOutputWriter(writerCtx, opts.task, i+1)
+	outputWriter := opts.ui.StepOutputWriter(writerCtx, opts.task, stepIdx+1)
 	defer func() {
 		outputWriter.Close()
 	}()
 
-	var stdoutBuffer, stderrBuffer bytes.Buffer
-	stdout := io.MultiWriter(&stdoutBuffer, outputWriter.StdoutWriter(), opts.logger.PrefixWriter("stdout"))
-	stderr := io.MultiWriter(&stderrBuffer, outputWriter.StderrWriter(), opts.logger.PrefixWriter("stderr"))
+	stdoutWriter := io.MultiWriter(&stdout, outputWriter.StdoutWriter(), opts.logger.PrefixWriter("stdout"))
+	stderrWriter := io.MultiWriter(&stderr, outputWriter.StderrWriter(), opts.logger.PrefixWriter("stderr"))
 
 	// Setup readers that pipe the output into the given buffers
-	wg, err := process.PipeOutput(ctx, cmd, stdout, stderr)
+	wg, err := process.PipeOutput(ctx, cmd, stdoutWriter, stderrWriter)
 	if err != nil {
-		return bytes.Buffer{}, bytes.Buffer{}, errors.Wrap(err, "piping process output")
+		return stdout, stderr, errors.Wrap(err, "piping process output")
 	}
 
 	newStepFailedErr := func(wrappedErr error) stepFailedErr {
@@ -358,34 +352,35 @@ func executeSingleStep(
 			Run:         runScript,
 			Container:   step.Container,
 			TmpFilename: containerTemp,
-			Stdout:      strings.TrimSpace(stdoutBuffer.String()),
-			Stderr:      strings.TrimSpace(stderrBuffer.String()),
+			Stdout:      strings.TrimSpace(stdout.String()),
+			Stderr:      strings.TrimSpace(stderr.String()),
 		}
 	}
 
-	opts.logger.Logf("[Step %d] run: %q, container: %q", i+1, step.Run, step.Container)
-	opts.logger.Logf("[Step %d] full command: %q", i+1, strings.Join(cmd.Args, " "))
+	opts.logger.Logf("[Step %d] run: %q, container: %q", stepIdx+1, step.Run, step.Container)
+	opts.logger.Logf("[Step %d] full command: %q", stepIdx+1, strings.Join(cmd.Args, " "))
 
-	// Start the command
+	// Start the command.
 	t0 := time.Now()
 	if err := cmd.Start(); err != nil {
-		opts.logger.Logf("[Step %d] error starting Docker container: %+v", i+1, err)
-		return stdoutBuffer, stderrBuffer, newStepFailedErr(err)
+		opts.logger.Logf("[Step %d] error starting Docker container: %+v", stepIdx+1, err)
+		return stdout, stderr, newStepFailedErr(err)
 	}
 
 	// Wait for the readers, because the pipes used by PipeOutput under the
-	// hood are closed when the command exits
+	// hood are closed when the command exits.
 	wg.Wait()
-	// Now wait for the command
+
+	// Now wait for the command.
 	err = cmd.Wait()
 	elapsed := time.Since(t0).Round(time.Millisecond)
 	if err != nil {
-		opts.logger.Logf("[Step %d] took %s; error running Docker container: %+v", i+1, elapsed, err)
-		return stdoutBuffer, stderrBuffer, newStepFailedErr(err)
+		opts.logger.Logf("[Step %d] took %s; error running Docker container: %+v", stepIdx+1, elapsed, err)
+		return stdout, stderr, newStepFailedErr(err)
 	}
 
-	opts.logger.Logf("[Step %d] complete in %s", i+1, elapsed)
-	return stdoutBuffer, stderrBuffer, nil
+	opts.logger.Logf("[Step %d] complete in %s", stepIdx+1, elapsed)
+	return stdout, stderr, nil
 }
 
 func setOutputs(stepOutputs batcheslib.Outputs, global map[string]interface{}, stepCtx *template.StepContext) error {

@@ -48,8 +48,8 @@ func (e TaskExecutionErr) StatusText() string {
 // taskResult is a combination of a Task and the result of its execution.
 type taskResult struct {
 	task        *Task
-	result      execution.Result
 	stepResults []execution.AfterStepResult
+	err         error
 }
 
 type newExecutorOpts struct {
@@ -60,12 +60,11 @@ type newExecutorOpts struct {
 	Logger              log.LogManager
 
 	// Config
-	Parallelism          int
-	Timeout              time.Duration
-	TempDir              string
-	IsRemote             bool
-	GlobalEnv            []string
-	WriteStepCacheResult func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error
+	Parallelism int
+	Timeout     time.Duration
+	TempDir     string
+	IsRemote    bool
+	GlobalEnv   []string
 }
 
 type executor struct {
@@ -167,14 +166,20 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 	}()
 
 	// Now checkout the archive.
-	task.Archive = x.opts.RepoArchiveRegistry.Checkout(repozip.RepoRevision{RepoName: task.Repository.Name, Commit: task.Repository.Rev()}, task.ArchivePathToFetch())
+	task.RepoArchive = x.opts.RepoArchiveRegistry.Checkout(
+		repozip.RepoRevision{
+			RepoName: task.Repository.Name,
+			Commit:   task.Repository.Rev(),
+		},
+		task.ArchivePathToFetch(),
+	)
 
 	// Set up our timeout.
 	runCtx, cancel := context.WithTimeout(ctx, x.opts.Timeout)
 	defer cancel()
 
 	// Actually execute the steps.
-	opts := &executionOpts{
+	opts := &runStepsOpts{
 		task:        task,
 		logger:      l,
 		wc:          x.opts.Creator,
@@ -183,11 +188,12 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		isRemote:    x.opts.IsRemote,
 		globalEnv:   x.opts.GlobalEnv,
 
-		ui:                   ui.StepsExecutionUI(task),
-		writeStepCacheResult: x.opts.WriteStepCacheResult,
+		ui: ui.StepsExecutionUI(task),
 	}
 
-	result, stepResults, err := runSteps(runCtx, opts)
+	stepResults, err := runSteps(runCtx, opts)
+	x.addResult(task, stepResults, err)
+
 	if err != nil {
 		if reachedTimeout(runCtx, err) {
 			err = &errTimeoutReached{timeout: x.opts.Timeout}
@@ -195,18 +201,16 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		return err
 	}
 
-	x.addResult(task, result, stepResults)
-
 	return nil
 }
-func (x *executor) addResult(task *Task, result execution.Result, stepResults []execution.AfterStepResult) {
+func (x *executor) addResult(task *Task, stepResults []execution.AfterStepResult, err error) {
 	x.resultsMu.Lock()
 	defer x.resultsMu.Unlock()
 
 	x.results = append(x.results, taskResult{
 		task:        task,
-		result:      result,
 		stepResults: stepResults,
+		err:         err,
 	})
 }
 

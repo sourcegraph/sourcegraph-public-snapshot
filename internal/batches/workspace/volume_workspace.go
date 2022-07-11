@@ -229,7 +229,7 @@ func (w *dockerVolumeWorkspace) DockerRunOpts(ctx context.Context, target string
 
 func (w *dockerVolumeWorkspace) WorkDir() *string { return nil }
 
-func (w *dockerVolumeWorkspace) Changes(ctx context.Context) (*git.Changes, error) {
+func (w *dockerVolumeWorkspace) Changes(ctx context.Context) (git.Changes, error) {
 	script := `#!/bin/sh
 
 set -e
@@ -241,15 +241,15 @@ exec git status --porcelain
 
 	out, err := w.runScript(ctx, "/work", script)
 	if err != nil {
-		return nil, errors.Wrap(err, "running git status")
+		return git.Changes{}, errors.Wrap(err, "running git status")
 	}
 
 	changes, err := git.ParseGitStatus(out)
 	if err != nil {
-		return nil, errors.Wrapf(err, "parsing git status output:\n\n%s", string(out))
+		return git.Changes{}, errors.Wrapf(err, "parsing git status output:\n\n%s", string(out))
 	}
 
-	return &changes, nil
+	return changes, nil
 }
 
 func (w *dockerVolumeWorkspace) Diff(ctx context.Context) ([]byte, error) {

@@ -32,10 +32,12 @@ type Task struct {
 	// we can make it work with caching
 	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
 
-	Archive repozip.Archive `json:"-"`
+	RepoArchive repozip.Archive `json:"-"`
 
-	CachedResultFound bool                      `json:"-"`
-	CachedResult      execution.AfterStepResult `json:"-"`
+	// CachedStepResultFound is true when a partial execution result was found in the cache.
+	// When this field is true, CachedStepResult is also populated.
+	CachedStepResultFound bool                      `json:"-"`
+	CachedStepResult      execution.AfterStepResult `json:"-"`
 }
 
 func (t *Task) ArchivePathToFetch() string {
@@ -45,33 +47,34 @@ func (t *Task) ArchivePathToFetch() string {
 	return ""
 }
 
-func (t *Task) cacheKey(globalEnv []string, isRemote bool) *cache.ExecutionKeyWithGlobalEnv {
+func (t *Task) cacheKey(globalEnv []string, isRemote bool, stepIndex int) cache.Keyer {
 	var metadataRetriever cache.MetadataRetriever
 	// If the task is being run locally, set the metadata retrieve to use the filesystem based implementation.
 	if !isRemote {
 		metadataRetriever = fileMetadataRetriever{}
 	}
-	return &cache.ExecutionKeyWithGlobalEnv{
-		GlobalEnv: globalEnv,
-		ExecutionKey: &cache.ExecutionKey{
-			Repository: batcheslib.Repository{
-				ID:          t.Repository.ID,
-				Name:        t.Repository.Name,
-				BaseRef:     t.Repository.BaseRef(),
-				BaseRev:     t.Repository.Rev(),
-				FileMatches: t.Repository.SortedFileMatches(),
-			},
-			Path:                  t.Path,
-			OnlyFetchWorkspace:    t.OnlyFetchWorkspace,
-			Steps:                 t.Steps,
-			BatchChangeAttributes: t.BatchChangeAttributes,
-			MetadataRetriever:     metadataRetriever,
+	return &cache.CacheKey{
+		Repository: batcheslib.Repository{
+			ID:          t.Repository.ID,
+			Name:        t.Repository.Name,
+			BaseRef:     t.Repository.BaseRef(),
+			BaseRev:     t.Repository.Rev(),
+			FileMatches: t.Repository.SortedFileMatches(),
 		},
+		Path:                  t.Path,
+		OnlyFetchWorkspace:    t.OnlyFetchWorkspace,
+		Steps:                 t.Steps,
+		BatchChangeAttributes: t.BatchChangeAttributes,
+		// TODO: This should be cached.
+		MetadataRetriever: metadataRetriever,
+
+		GlobalEnv: globalEnv,
+
+		StepIndex: stepIndex,
 	}
 }
 
-type fileMetadataRetriever struct {
-}
+type fileMetadataRetriever struct{}
 
 func (f fileMetadataRetriever) Get(steps []batcheslib.Step) ([]cache.MountMetadata, error) {
 	var mountsMetadata []cache.MountMetadata
@@ -109,6 +112,8 @@ func getMountMetadata(path string) ([]cache.MountMetadata, error) {
 	return metadata, nil
 }
 
+// getDirectoryMountMetadata reads all the files in the directory with the given
+// path and returns the cache.MountMetadata for all of them.
 func getDirectoryMountMetadata(path string) ([]cache.MountMetadata, error) {
 	dir, err := os.ReadDir(path)
 	if err != nil {
@@ -126,14 +131,4 @@ func getDirectoryMountMetadata(path string) ([]cache.MountMetadata, error) {
 		metadata = append(metadata, fileMetadata...)
 	}
 	return metadata, nil
-}
-
-func cacheKeyForStep(key *cache.ExecutionKeyWithGlobalEnv, stepIndex int) *cache.StepsCacheKeyWithGlobalEnv {
-	return &cache.StepsCacheKeyWithGlobalEnv{
-		StepsCacheKey: &cache.StepsCacheKey{
-			ExecutionKey: key.ExecutionKey,
-			StepIndex:    stepIndex,
-		},
-		GlobalEnv: key.GlobalEnv,
-	}
 }

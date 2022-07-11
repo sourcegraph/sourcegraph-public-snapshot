@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/output"
+
 	"github.com/sourcegraph/src-cli/internal/batches/executor"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
 )
@@ -77,7 +78,7 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 	printer.TaskStarted(tasks[2])
 
 	expectOutput(t, buf, []string{
-		"⠋  Executing... (0/4, 0 errored)  ",
+		"⠋  Executing... (0/4, 0 errored)                                              0%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  ...                                   0s",
 		"├── github.com/sourcegraph/src-cli      ...                                   0s",
@@ -91,7 +92,7 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 	printer.TaskCurrentlyExecuting(tasks[2], "echo Hello World > README.md")
 
 	expectOutput(t, buf, []string{
-		"⠋  Executing... (0/4, 0 errored)  ",
+		"⠋  Executing... (0/4, 0 errored)                                              0%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  echo Hello World > README.md          0s",
 		"├── github.com/sourcegraph/src-cli      Downloading archive                   0s",
@@ -105,7 +106,7 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 	printer.TaskCurrentlyExecuting(tasks[2], "echo Hello World > README.md")
 
 	expectOutput(t, buf, []string{
-		"⠋  Executing... (0/4, 0 errored)  ",
+		"⠋  Executing... (0/4, 0 errored)                                              0%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  gofmt                                 0s",
 		"├── github.com/sourcegraph/src-cli      echo Hello World > README.md          0s",
@@ -118,7 +119,7 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 	printer.TaskFinished(tasks[2], nil)
 
 	expectOutput(t, buf, []string{
-		"⠋  Executing... (1/4, 0 errored)  ███████████▌",
+		"⠋  Executing... (1/4, 0 errored)  ██████████▎                                25%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  gofmt                                 0s",
 		"├── github.com/sourcegraph/src-cli      echo Hello World > README.md          0s",
@@ -131,7 +132,7 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 	printer.TaskFinished(tasks[0], nil)
 
 	expectOutput(t, buf, []string{
-		"⠋  Executing... (2/4, 0 errored)  ███████████████████████",
+		"⠋  Executing... (2/4, 0 errored)  ████████████████████▌                      50%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  Done!                                 0s",
 		"├── github.com/sourcegraph/src-cli      echo Hello World > README.md          0s",
@@ -168,7 +169,7 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 		"  3 files changed, 4 insertions, 2 deletions",
 		"  Execution took 10s",
 		"",
-		"⠋  Executing... (2/4, 0 errored)  ███████████████████████",
+		"⠋  Executing... (2/4, 0 errored)  ████████████████████▌                      50%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  Done!                                 0s",
 		"├── github.com/sourcegraph/src-cli      echo Hello World > README.md          0s",
@@ -188,7 +189,7 @@ func TestTaskExecTUI_Integration(t *testing.T) {
 		"  3 files changed, 4 insertions, 2 deletions",
 		"  Execution took 10s",
 		"",
-		"⠋  Executing... (2/4, 0 errored)  ███████████████████████",
+		"⠋  Executing... (2/4, 0 errored)  ████████████████████▌                      50%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/tiny-go-...  rm -rf ~/.horse-ascii-art             0s",
 		"├── github.com/sourcegraph/src-cli      echo Hello World > README.md          0s",
@@ -236,7 +237,7 @@ func TestProgressUpdateAfterComplete(t *testing.T) {
 	printer.TaskCurrentlyExecuting(tasks[1], "Downloading archive")
 
 	expectOutput(t, buf, []string{
-		"⠋  Executing... (0/2, 0 errored)  ",
+		"⠋  Executing... (0/2, 0 errored)                                              0%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  echo Hello World > README.md          0s",
 		"└── github.com/sourcegraph/src-cli      Downloading archive                   0s",
@@ -253,7 +254,7 @@ func TestProgressUpdateAfterComplete(t *testing.T) {
 	// The actual output is slightly less important at this point, but let's
 	// check it anyway.
 	expectOutput(t, buf, []string{
-		"✅ Executing... (0/2, 0 errored)  ██████████████████████████████████████████████",
+		"✅ Executing... (0/2, 0 errored)  ████████████████████████████████████████  100%",
 		"│                                                                               ",
 		"├── github.com/sourcegraph/sourcegraph  exit 42                               0s",
 		"└── github.com/sourcegraph/src-cli      Downloading archive                   0s",

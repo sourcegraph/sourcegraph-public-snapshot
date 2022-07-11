@@ -165,7 +165,7 @@ func executeBatchSpecInWorkspaces(ctx context.Context, flags *executorModeFlags)
 		Client: &deadClient{},
 	})
 
-	if err := svc.SetFeatureFlagsForRelease(flags.sourcegraphVersion); err != nil {
+	if err := svc.SetFeatureFlagsForVersion(flags.sourcegraphVersion); err != nil {
 		return err
 	}
 

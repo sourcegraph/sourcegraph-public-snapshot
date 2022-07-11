@@ -129,22 +129,22 @@ func (w *dockerBindWorkspace) DockerRunOpts(ctx context.Context, target string) 
 
 func (w *dockerBindWorkspace) WorkDir() *string { return &w.dir }
 
-func (w *dockerBindWorkspace) Changes(ctx context.Context) (*git.Changes, error) {
+func (w *dockerBindWorkspace) Changes(ctx context.Context) (git.Changes, error) {
 	if _, err := runGitCmd(ctx, w.dir, "add", "--all"); err != nil {
-		return nil, errors.Wrap(err, "git add failed")
+		return git.Changes{}, errors.Wrap(err, "git add failed")
 	}
 
 	statusOut, err := runGitCmd(ctx, w.dir, "status", "--porcelain", "--no-ahead-behind")
 	if err != nil {
-		return nil, errors.Wrap(err, "git status failed")
+		return git.Changes{}, errors.Wrap(err, "git status failed")
 	}
 
 	changes, err := git.ParseGitStatus(statusOut)
 	if err != nil {
-		return nil, errors.Wrap(err, "parsing git status output")
+		return git.Changes{}, errors.Wrap(err, "parsing git status output")
 	}
 
-	return &changes, nil
+	return changes, nil
 }
 
 func (w *dockerBindWorkspace) Diff(ctx context.Context) ([]byte, error) {

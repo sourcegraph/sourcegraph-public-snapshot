@@ -41,7 +41,7 @@ type Workspace interface {
 
 	// Changes is called after each step is executed, and should return the
 	// cumulative file changes that have occurred since Prepare was called.
-	Changes(ctx context.Context) (*git.Changes, error)
+	Changes(ctx context.Context) (git.Changes, error)
 
 	// Diff should return the total diff for the workspace. This may be called
 	// multiple times in the life of a workspace.

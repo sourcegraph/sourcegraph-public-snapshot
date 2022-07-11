@@ -471,7 +471,7 @@ func (ui stepsExecTUI) StepOutputWriter(ctx context.Context, task *executor.Task
 	return executor.NoopStepOutputWriter{}
 }
 
-func (ui stepsExecTUI) StepFinished(idx int, diff string, changes *git.Changes, outputs map[string]interface{}) {
+func (ui stepsExecTUI) StepFinished(idx int, diff string, changes git.Changes, outputs map[string]interface{}) {
 	// noop right now
 }
 func (ui stepsExecTUI) StepFailed(idx int, err error, exitCode int) {

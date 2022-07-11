@@ -32,7 +32,7 @@ if [[ "${1}" == "run" ]]; then
         # 2. The script that we need to execute
         #
         # We need (1) to execute (2) in the correct subfolder.
-        # And (2) is in the in the matching host temp file, which should
+        # And (2) is in the matching host temp file, which should
         # be mounted into the temp file inside the container.
         #
         # We need to find it in the args and then execute it.
@@ -59,6 +59,11 @@ if [[ "${1}" == "run" ]]; then
 
         # Let's strip the prefix off the workdir
         relative_workdir="${workdir#"${workdir_prefix}"}"
+        if [[ "$relative_workdir" = "/work" ]]; then
+          # If we couldn't strip of the prefix, it's still "/work", so we set
+          # it to "".
+          relative_workdir=""
+        fi
         # If the non-prefixed version is not blank, then we need to `cd` into it
         if [[ ! -z "${relative_workdir}" ]]; then
           cd "${relative_workdir}"

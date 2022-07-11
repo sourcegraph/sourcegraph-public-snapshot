@@ -446,11 +446,11 @@ func TestVolumeWorkspace_Changes(t *testing.T) {
 	t.Run("success", func(t *testing.T) {
 		for name, tc := range map[string]struct {
 			stdout string
-			want   *git.Changes
+			want   git.Changes
 		}{
 			"empty": {
 				stdout: "",
-				want:   &git.Changes{},
+				want:   git.Changes{},
 			},
 			"valid": {
 				stdout: `
@@ -458,7 +458,7 @@ M  go.mod
 M  internal/campaigns/volume_workspace.go
 M  internal/campaigns/volume_workspace_test.go				
 				`,
-				want: &git.Changes{Modified: []string{
+				want: git.Changes{Modified: []string{
 					"go.mod",
 					"internal/campaigns/volume_workspace.go",
 					"internal/campaigns/volume_workspace_test.go",

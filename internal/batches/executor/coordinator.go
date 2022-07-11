@@ -67,10 +67,6 @@ func NewCoordinator(opts NewCoordinatorOpts, logger log.LogManager) *Coordinator
 		TempDir:     opts.TempDir,
 		IsRemote:    opts.IsRemote,
 		GlobalEnv:   opts.GlobalEnv,
-		WriteStepCacheResult: func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error {
-			cacheKey := task.cacheKey(opts.GlobalEnv, opts.IsRemote)
-			return writeToCache(ctx, opts.Cache, stepResult, task, cacheKey)
-		},
 	})
 
 	return &Coordinator{
@@ -115,12 +111,8 @@ func (c *Coordinator) CheckStepResultsCache(ctx context.Context, tasks []*Task, 
 
 func (c *Coordinator) ClearCache(ctx context.Context, tasks []*Task) error {
 	for _, task := range tasks {
-		cacheKey := task.cacheKey(c.opts.GlobalEnv, c.opts.IsRemote)
-		if err := c.cache.Clear(ctx, cacheKey); err != nil {
-			return errors.Wrapf(err, "clearing cache for %q", task.Repository.Name)
-		}
 		for i := len(task.Steps) - 1; i > -1; i-- {
-			key := cacheKeyForStep(cacheKey, i)
+			key := task.cacheKey(c.opts.GlobalEnv, c.opts.IsRemote, i)
 			if err := c.cache.Clear(ctx, key); err != nil {
 				return errors.Wrapf(err, "clearing cache for step %d in %q", i, task.Repository.Name)
 			}
@@ -130,42 +122,30 @@ func (c *Coordinator) ClearCache(ctx context.Context, tasks []*Task) error {
 }
 
 func (c *Coordinator) checkCacheForTask(ctx context.Context, batchSpec *batcheslib.BatchSpec, task *Task) (specs []*batcheslib.ChangesetSpec, found bool, err error) {
-	// Check if the task is cached.
-	cacheKey := task.cacheKey(c.opts.GlobalEnv, c.opts.IsRemote)
-
-	var result execution.Result
-	result, found, err = c.cache.Get(ctx, cacheKey)
-	if err != nil {
-		return specs, false, errors.Wrapf(err, "checking cache for %q", task.Repository.Name)
-	}
-
-	if !found {
-		// If we are here, that means we didn't find anything in the cache for the
-		// complete task. So, what if we have cached results for the steps?
-		if err := c.loadCachedStepResults(ctx, task, c.opts.GlobalEnv); err != nil {
-			return specs, false, err
-		}
-
-		return specs, false, nil
-	}
-
-	// If the cached result resulted in an empty diff, we don't need to
-	// add it to the list of specs that are displayed to the user and
-	// send to the server. Instead, we can just report that the task is
-	// complete and move on.
-	if result.Diff == "" {
-		return specs, true, nil
-	}
-
-	specs, err = c.buildChangesetSpecs(task, batchSpec, result)
-	if err != nil {
+	if err := c.loadCachedStepResults(ctx, task, c.opts.GlobalEnv); err != nil {
 		return specs, false, err
 	}
 
-	return specs, true, nil
+	// If we have cached results and don't need to execute any more steps,
+	// we build changeset specs and return.
+	// TODO: This doesn't consider skipped steps.
+	if task.CachedStepResultFound && task.CachedStepResult.StepIndex == len(task.Steps)-1 {
+		// If the cached result resulted in an empty diff, we don't need to
+		// add it to the list of specs that are displayed to the user and
+		// send to the server. Instead, we can just report that the task is
+		// complete and move on.
+		if task.CachedStepResult.Diff == "" {
+			return specs, true, nil
+		}
+
+		specs, err = c.buildChangesetSpecs(task, batchSpec, task.CachedStepResult)
+		return specs, true, err
+	}
+
+	return specs, false, nil
 }
 
-func (c Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.BatchSpec, result execution.Result) ([]*batcheslib.ChangesetSpec, error) {
+func (c Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.BatchSpec, result execution.AfterStepResult) ([]*batcheslib.ChangesetSpec, error) {
 	input := &batcheslib.ChangesetSpecInput{
 		Repository: batcheslib.Repository{
 			ID:          task.Repository.ID,
@@ -178,11 +158,10 @@ func (c Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.Batch
 		Template:              batchSpec.ChangesetTemplate,
 		TransformChanges:      batchSpec.TransformChanges,
 
-		Result: execution.Result{
+		Result: execution.AfterStepResult{
 			Diff:         result.Diff,
 			ChangedFiles: result.ChangedFiles,
 			Outputs:      result.Outputs,
-			Path:         result.Path,
 		},
 	}
 
@@ -195,19 +174,18 @@ func (c Coordinator) buildChangesetSpecs(task *Task, batchSpec *batcheslib.Batch
 func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task, globalEnv []string) error {
 	// We start at the back so that we can find the _last_ cached step,
 	// then restart execution on the following step.
-	taskKey := task.cacheKey(globalEnv, c.opts.IsRemote)
 	for i := len(task.Steps) - 1; i > -1; i-- {
-		key := cacheKeyForStep(taskKey, i)
+		key := task.cacheKey(globalEnv, c.opts.IsRemote, i)
 
-		result, found, err := c.cache.GetStepResult(ctx, key)
+		result, found, err := c.cache.Get(ctx, key)
 		if err != nil {
 			return errors.Wrapf(err, "checking for cached diff for step %d", i)
 		}
 
-		// Found a cached result, we're done
+		// Found a cached result, we're done.
 		if found {
-			task.CachedResultFound = true
-			task.CachedResult = result
+			task.CachedStepResultFound = true
+			task.CachedStepResult = result
 			return nil
 		}
 	}
@@ -215,36 +193,21 @@ func (c *Coordinator) loadCachedStepResults(ctx context.Context, task *Task, glo
 	return nil
 }
 
-func writeToCache(ctx context.Context, cache cache.Cache, stepResult execution.AfterStepResult, task *Task, cacheKey *cache.ExecutionKeyWithGlobalEnv) error {
-	key := cacheKeyForStep(cacheKey, stepResult.StepIndex)
-	if err := cache.SetStepResult(ctx, key, stepResult); err != nil {
-		return errors.Wrapf(err, "caching result for step %d in %q", stepResult.StepIndex, task.Repository.Name)
+func (c *Coordinator) buildSpecs(ctx context.Context, batchSpec *batcheslib.BatchSpec, taskResult taskResult, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, error) {
+	if len(taskResult.stepResults) == 0 {
+		return nil, nil
 	}
 
-	return nil
-}
-
-func (c *Coordinator) writeExecutionCacheResult(ctx context.Context, taskResult taskResult) error {
-	// Add to the cache, even if no diff was produced.
-	cacheKey := taskResult.task.cacheKey(c.opts.GlobalEnv, c.opts.IsRemote)
-	if err := c.cache.Set(ctx, cacheKey, taskResult.result); err != nil {
-		return errors.Wrapf(err, "caching result for %q", taskResult.task.Repository.Name)
-	}
-
-	return nil
-}
-
-func (c *Coordinator) writeCacheAndBuildSpecs(ctx context.Context, batchSpec *batcheslib.BatchSpec, taskResult taskResult, ui TaskExecutionUI) ([]*batcheslib.ChangesetSpec, error) {
-	c.writeExecutionCacheResult(ctx, taskResult)
+	lastStepResult := taskResult.stepResults[len(taskResult.stepResults)-1]
 
 	// If the steps didn't result in any diff, we don't need to create a
 	// changeset spec that's displayed to the user and send to the server.
-	if taskResult.result.Diff == "" {
+	if lastStepResult.Diff == "" {
 		return nil, nil
 	}
 
 	// Build the changeset specs.
-	specs, err := c.buildChangesetSpecs(taskResult.task, batchSpec, taskResult.result)
+	specs, err := c.buildChangesetSpecs(taskResult.task, batchSpec, lastStepResult)
 	if err != nil {
 		return nil, err
 	}
@@ -255,14 +218,7 @@ func (c *Coordinator) writeCacheAndBuildSpecs(ctx context.Context, batchSpec *ba
 
 // Execute executes the given tasks. It calls the ui on updates.
 func (c *Coordinator) Execute(ctx context.Context, tasks []*Task, ui TaskExecutionUI) error {
-	results, err := c.doExecute(ctx, tasks, ui)
-
-	// Write results to cache.
-	for _, taskResult := range results {
-		if cacheErr := c.writeExecutionCacheResult(ctx, taskResult); cacheErr != nil {
-			return cacheErr
-		}
-	}
+	_, err := c.doExecute(ctx, tasks, ui)
 
 	return err
 }
@@ -276,7 +232,12 @@ func (c *Coordinator) ExecuteAndBuildSpecs(ctx context.Context, batchSpec *batch
 
 	// Write results to cache, build ChangesetSpecs if possible and add to list.
 	for _, taskResult := range results {
-		taskSpecs, err := c.writeCacheAndBuildSpecs(ctx, batchSpec, taskResult, ui)
+		// Don't build changeset specs for failed workspaces.
+		if taskResult.err != nil {
+			continue
+		}
+
+		taskSpecs, err := c.buildSpecs(ctx, batchSpec, taskResult, ui)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -292,5 +253,17 @@ func (c *Coordinator) doExecute(ctx context.Context, tasks []*Task, ui TaskExecu
 
 	// Run executor
 	c.exec.Start(ctx, tasks, ui)
-	return c.exec.Wait(ctx)
+	results, err = c.exec.Wait(ctx)
+
+	// Write all step cache results for all results.
+	for _, res := range results {
+		for _, stepRes := range res.stepResults {
+			cacheKey := res.task.cacheKey(c.opts.GlobalEnv, c.opts.IsRemote, stepRes.StepIndex)
+			if err := c.cache.Set(ctx, cacheKey, stepRes); err != nil {
+				return nil, errors.Wrapf(err, "caching result for step %d", stepRes.StepIndex)
+			}
+		}
+	}
+
+	return results, err
 }

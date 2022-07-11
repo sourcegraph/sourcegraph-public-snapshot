@@ -1027,7 +1027,7 @@ changesetTemplate:
     message: Test
 `,
 			isRemote:    true,
-			expectedErr: errors.New("handling mount: mounts are not support for server-side processing"),
+			expectedErr: errors.New("handling mount: mounts are not supported for server-side processing"),
 		},
 	}
 	for _, test := range tests {

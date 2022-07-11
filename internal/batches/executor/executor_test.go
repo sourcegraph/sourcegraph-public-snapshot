@@ -10,7 +10,6 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 	"testing"
 	"time"
 
@@ -378,9 +377,6 @@ func TestExecutor_Integration(t *testing.T) {
 			// Temp dir for log files and downloaded archives
 			testTempDir := t.TempDir()
 
-			cacheCount := 0
-			var cacheLock sync.Mutex
-
 			cr, _ := workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images)
 			// Setup executor
 			opts := newExecutorOpts{
@@ -392,12 +388,6 @@ func TestExecutor_Integration(t *testing.T) {
 				TempDir:     testTempDir,
 				Parallelism: runtime.GOMAXPROCS(0),
 				Timeout:     tc.executorTimeout,
-				WriteStepCacheResult: func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error {
-					cacheLock.Lock()
-					cacheCount += 1
-					cacheLock.Unlock()
-					return nil
-				},
 			}
 
 			if opts.Timeout == 0 {
@@ -423,9 +413,6 @@ func TestExecutor_Integration(t *testing.T) {
 				}
 			}
 
-			if tc.wantCacheCount != cacheCount {
-				t.Errorf("wrong cache count. have=%d want=%d", cacheCount, tc.wantCacheCount)
-			}
 			wantResults := 0
 			resultsFound := map[string]map[string]bool{}
 			for repo, byPath := range tc.wantFilesChanged {
@@ -436,11 +423,22 @@ func TestExecutor_Integration(t *testing.T) {
 				}
 			}
 
-			if have, want := len(results), wantResults; have != want {
-				t.Fatalf("wrong number of execution results. want=%d, have=%d", want, have)
+			haveResults := 0
+			for _, res := range results {
+				if res.err == nil {
+					haveResults++
+				}
+			}
+
+			if have, want := haveResults, wantResults; have != want {
+				t.Fatalf("wrong number of results. want=%d, have=%d", want, have)
 			}
 
 			for _, taskResult := range results {
+				if taskResult.err != nil {
+					continue
+				}
+
 				repoID := taskResult.task.Repository.ID
 				path := taskResult.task.Path
 
@@ -456,7 +454,9 @@ func TestExecutor_Integration(t *testing.T) {
 					t.Fatalf("spec for repo %q and path %q but no files expected in that branch", repoID, path)
 				}
 
-				fileDiffs, err := diff.ParseMultiFileDiff([]byte(taskResult.result.Diff))
+				lastStepResult := taskResult.stepResults[len(taskResult.stepResults)-1]
+
+				fileDiffs, err := diff.ParseMultiFileDiff([]byte(lastStepResult.Diff))
 				if err != nil {
 					t.Fatalf("failed to parse diff: %s", err)
 				}
@@ -544,12 +544,11 @@ index 02a19af..c9644dd 100644
 			Steps: []batcheslib.Step{
 				{Run: `echo -e "foobar\n" >> README.md`},
 			},
-			CachedResultFound: true,
-			CachedResult: execution.AfterStepResult{
-				StepIndex:  0,
-				Diff:       cachedDiff,
-				Outputs:    map[string]interface{}{},
-				StepResult: execution.StepResult{},
+			CachedStepResultFound: true,
+			CachedStepResult: execution.AfterStepResult{
+				StepIndex: 0,
+				Diff:      cachedDiff,
+				Outputs:   map[string]interface{}{},
 			},
 			Repository: testRepo1,
 		}
@@ -560,22 +559,22 @@ index 02a19af..c9644dd 100644
 		}
 
 		if have, want := len(results), 1; have != want {
-			t.Fatalf("wrong number of execution results. want=%d, have=%d", want, have)
-		}
-
-		// We want the diff to be the same as the cached one, since we only had to
-		// execute a single step
-		executionResult := results[0].result
-		if diff := cmp.Diff(executionResult.Diff, cachedDiff); diff != "" {
-			t.Fatalf("wrong diff: %s", diff)
+			t.Fatalf("wrong number of results. want=%d, have=%d", want, have)
 		}
 
 		if have, want := len(results[0].stepResults), 1; have != want {
 			t.Fatalf("wrong length of step results. have=%d, want=%d", have, want)
 		}
 
+		// We want the diff to be the same as the cached one, since we only had to
+		// execute a single step
+		executionResult := results[0].stepResults[0]
+		if diff := cmp.Diff(executionResult.Diff, cachedDiff); diff != "" {
+			t.Fatalf("wrong diff: %s", diff)
+		}
+
 		stepResult := results[0].stepResults[0]
-		if diff := cmp.Diff(stepResult, task.CachedResult); diff != "" {
+		if diff := cmp.Diff(stepResult, task.CachedStepResult); diff != "" {
 			t.Fatalf("wrong stepResult: %s", diff)
 		}
 	})
@@ -660,21 +659,19 @@ echo "previous_step.modified_files=${{ previous_step.modified_files }}" >> READM
 `},
 				{Run: `echo "this is step 5" >> ${{ outputs.myOutput }}`},
 			},
-			CachedResultFound: true,
-			CachedResult: execution.AfterStepResult{
+			CachedStepResultFound: true,
+			CachedStepResult: execution.AfterStepResult{
 				StepIndex: 2,
 				Diff:      cachedDiff,
 				Outputs: map[string]interface{}{
 					"myOutput": "my-output.txt",
 				},
-				StepResult: execution.StepResult{
-					Files: &git.Changes{
-						Modified: []string{"README.md"},
-						Added:    []string{"README.txt"},
-					},
-					Stdout: "",
-					Stderr: "",
+				ChangedFiles: git.Changes{
+					Modified: []string{"README.md"},
+					Added:    []string{"README.txt"},
 				},
+				Stdout: "",
+				Stderr: "",
 			},
 		}
 
@@ -684,15 +681,15 @@ echo "previous_step.modified_files=${{ previous_step.modified_files }}" >> READM
 		}
 
 		if have, want := len(results), 1; have != want {
-			t.Fatalf("wrong number of execution results. want=%d, have=%d", want, have)
+			t.Fatalf("wrong number of results. want=%d, have=%d", want, have)
 		}
 
-		executionResult := results[0].result
+		executionResult := results[0].stepResults[len(results[0].stepResults)-1]
 		if diff := cmp.Diff(executionResult.Diff, wantFinalDiff); diff != "" {
 			t.Fatalf("wrong diff: %s", diff)
 		}
 
-		if diff := cmp.Diff(executionResult.Outputs, task.CachedResult.Outputs); diff != "" {
+		if diff := cmp.Diff(executionResult.Outputs, task.CachedStepResult.Outputs); diff != "" {
 			t.Fatalf("wrong execution result outputs: %s", diff)
 		}
 
@@ -706,7 +703,7 @@ echo "previous_step.modified_files=${{ previous_step.modified_files }}" >> READM
 			t.Fatalf("wrong stepIndex. have=%d, want=%d", have, want)
 		}
 
-		if diff := cmp.Diff(lastStepResult.Outputs, task.CachedResult.Outputs); diff != "" {
+		if diff := cmp.Diff(lastStepResult.Outputs, task.CachedStepResult.Outputs); diff != "" {
 			t.Fatalf("wrong step result outputs: %s", diff)
 		}
 	})
@@ -738,16 +735,14 @@ index 3040106..5f2f924 100644
 				{Run: "echo -n Hello world"},
 				{Run: `echo ${{ previous_step.stdout }} >> README.md`},
 			},
-			CachedResultFound: true,
-			CachedResult: execution.AfterStepResult{
-				StepIndex: 0,
-				Diff:      "",
-				Outputs:   map[string]interface{}{},
-				StepResult: execution.StepResult{
-					Files:  &git.Changes{},
-					Stdout: "hello world",
-					Stderr: "",
-				},
+			CachedStepResultFound: true,
+			CachedStepResult: execution.AfterStepResult{
+				StepIndex:    0,
+				Diff:         "",
+				Outputs:      map[string]interface{}{},
+				ChangedFiles: git.Changes{},
+				Stdout:       "hello world",
+				Stderr:       "",
 			},
 		}
 
@@ -757,15 +752,15 @@ index 3040106..5f2f924 100644
 		}
 
 		if have, want := len(results), 1; have != want {
-			t.Fatalf("wrong number of execution results. want=%d, have=%d", want, have)
+			t.Fatalf("wrong number of results. want=%d, have=%d", want, have)
 		}
 
-		executionResult := results[0].result
+		executionResult := results[0].stepResults[len(results[0].stepResults)-1]
 		if diff := cmp.Diff(executionResult.Diff, wantFinalDiff); diff != "" {
 			t.Fatalf("wrong diff: %s", diff)
 		}
 
-		if diff := cmp.Diff(executionResult.Outputs, task.CachedResult.Outputs); diff != "" {
+		if diff := cmp.Diff(executionResult.Outputs, task.CachedStepResult.Outputs); diff != "" {
 			t.Fatalf("wrong execution result outputs: %s", diff)
 		}
 
@@ -779,7 +774,7 @@ index 3040106..5f2f924 100644
 			t.Fatalf("wrong stepIndex. have=%d, want=%d", have, want)
 		}
 
-		if diff := cmp.Diff(lastStepResult.Outputs, task.CachedResult.Outputs); diff != "" {
+		if diff := cmp.Diff(lastStepResult.Outputs, task.CachedStepResult.Outputs); diff != "" {
 			t.Fatalf("wrong step result outputs: %s", diff)
 		}
 	})
@@ -823,9 +818,6 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 		TempDir:     testTempDir,
 		Parallelism: runtime.GOMAXPROCS(0),
 		Timeout:     30 * time.Second,
-		WriteStepCacheResult: func(ctx context.Context, stepResult execution.AfterStepResult, task *Task) error {
-			return nil
-		},
 	})
 
 	executor.Start(context.Background(), tasks, newDummyTaskExecutionUI())

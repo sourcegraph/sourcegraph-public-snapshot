@@ -24,8 +24,8 @@ import (
 
 func TestCoordinator_Execute(t *testing.T) {
 	publishedFalse := overridable.FromBoolOrString(false)
-	srcCLITask := &Task{Repository: testRepo1}
-	sourcegraphTask := &Task{Repository: testRepo2}
+	srcCLITask := &Task{Repository: testRepo1, Steps: []batcheslib.Step{{Run: "echo Hello World"}}}
+	sourcegraphTask := &Task{Repository: testRepo2, Steps: []batcheslib.Step{{Run: "echo Hello Sourcegraph"}}}
 
 	buildSpecFor := func(repo *graphql.Repository, modify func(*batcheslib.ChangesetSpec)) *batcheslib.ChangesetSpec {
 		spec := &batcheslib.ChangesetSpec{
@@ -78,8 +78,8 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, result: execution.Result{Diff: `dummydiff1`}},
-					{task: sourcegraphTask, result: execution.Result{Diff: `dummydiff2`}},
+					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff1`}}},
+					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff2`}}},
 				},
 			},
 			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
@@ -132,7 +132,7 @@ func TestCoordinator_Execute(t *testing.T) {
 				results: []taskResult{
 					{
 						task: srcCLITask,
-						result: execution.Result{
+						stepResults: []execution.AfterStepResult{{
 							Diff: `dummydiff1`,
 							Outputs: map[string]interface{}{
 								"output1": "myOutputValue1",
@@ -140,13 +140,13 @@ func TestCoordinator_Execute(t *testing.T) {
 									"subField": "subFieldValue",
 								},
 							},
-							ChangedFiles: &git.Changes{
+							ChangedFiles: git.Changes{
 								Modified: []string{"modified.txt"},
 								Added:    []string{"added.txt"},
 								Deleted:  []string{"deleted.txt"},
 								Renamed:  []string{"renamed.txt"},
 							},
-						},
+						}},
 					},
 				},
 			},
@@ -197,12 +197,13 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, result: execution.Result{Diff: nestedChangesDiff}},
-					{task: sourcegraphTask, result: execution.Result{Diff: nestedChangesDiff}},
+					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Diff: nestedChangesDiff}}},
+					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: nestedChangesDiff}}},
 				},
 			},
 			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
 
+			// TODO: Fix comment.
 			// We have 4 ChangesetSpecs, but we only want 2 cache entries,
 			// since we cache per Task, not per resulting changeset spec.
 			wantCacheEntries: 2,
@@ -244,8 +245,8 @@ func TestCoordinator_Execute(t *testing.T) {
 
 			executor: &dummyExecutor{
 				results: []taskResult{
-					{task: srcCLITask, result: execution.Result{Diff: `dummydiff1`}},
-					{task: sourcegraphTask, result: execution.Result{Diff: `dummydiff2`}},
+					{task: srcCLITask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff1`, StepIndex: 0}}},
+					{task: sourcegraphTask, stepResults: []execution.AfterStepResult{{Diff: `dummydiff2`, StepIndex: 0}}},
 				},
 			},
 			opts: NewCoordinatorOpts{Features: featuresAllEnabled()},
@@ -330,7 +331,7 @@ func TestCoordinator_Execute(t *testing.T) {
 			// Sanity check, since we're going to be looking at the side effects
 			// on the cache.
 			if c.size() != 0 {
-				t.Fatalf("unexpectedly hot cache: %+v", c)
+				t.Fatalf("unexpected hot cache: %+v", c)
 			}
 
 			// Run with a cold cache.
@@ -366,12 +367,6 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	executor := &dummyExecutor{}
 	executor.results = []taskResult{{
 		task: task,
-		result: execution.Result{
-			Diff:         "dummydiff",
-			ChangedFiles: &git.Changes{},
-			Outputs:      map[string]interface{}{},
-			Path:         "",
-		},
 		stepResults: []execution.AfterStepResult{
 			{StepIndex: 0, Diff: `step-0-diff`},
 			{StepIndex: 1, Diff: `step-1-diff`},
@@ -386,47 +381,47 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 
 	// First execution. Make sure that the Task executes all steps.
 	execAndEnsure(t, coord, executor, batchSpec, task, assertNoCachedResult(t))
-	// We now expect the cache to have 1+N entries: 1 for the complete task, N
-	// for the steps.
-
-	assertCacheSize(t, cache, 1)
+	// We now expect the cache to have N entries for N steps.
+	assertCacheSize(t, cache, 3)
 
 	// Reset task
-	task.CachedResultFound = false
+	task.CachedStepResultFound = false
 
 	// Change the 2nd step's definition:
 	task.Steps[1].Run = `echo "two modified"`
 	// Re-execution should start with the diff produced by steps[0] as the
 	// start state from which steps[1] is then re-executed.
-	execAndEnsure(t, coord, executor, batchSpec, task, assertNoCachedResult(t))
+	execAndEnsure(t, coord, executor, batchSpec, task, func(ctx context.Context, t []*Task, teu TaskExecutionUI) {})
 	// Cache now contains old entries, plus another "complete task" entry and
 	// two entries for newly executed steps.
-	assertCacheSize(t, cache, 2)
+	assertCacheSize(t, cache, 5)
 
 	// Reset task
-	task.CachedResultFound = false
+	task.CachedStepResultFound = false
 
 	// Change the 3rd step's definition:
 	task.Steps[2].Run = `echo "three modified"`
 	// Re-execution should use the diff from steps[1] as start state
-	execAndEnsure(t, coord, executor, batchSpec, task, assertNoCachedResult(t))
+	execAndEnsure(t, coord, executor, batchSpec, task, func(ctx context.Context, t []*Task, teu TaskExecutionUI) {})
 	// Cache now contains old entries, plus another "complete task" entry and
 	// a single new step entry
-	assertCacheSize(t, cache, 3)
+	assertCacheSize(t, cache, 6)
 
 	// Reset task
-	task.CachedResultFound = false
+	task.CachedStepResultFound = false
 
 	// Now we execute the spec with -clear-cache:
 	if err := coord.ClearCache(context.Background(), []*Task{task}); err != nil {
 		t.Fatal(err)
 	}
+	assertCacheSize(t, cache, 3)
+
 	// We don't want any cached results set on the task:
 	execAndEnsure(t, coord, executor, batchSpec, task, assertNoCachedResult(t))
 	// Cache should have the same number of entries: the cached step results should
 	// have been cleared (the complete-task-result is cleared in another
 	// code path) and the same amount of cached entries has been added.
-	assertCacheSize(t, cache, 3)
+	assertCacheSize(t, cache, 6)
 }
 
 // execAndEnsure executes the given Task with the given cache and dummyExecutor
@@ -479,7 +474,7 @@ func assertNoCachedResult(t *testing.T) func(context.Context, []*Task, TaskExecu
 		t.Helper()
 
 		task := tasks[0]
-		if task.CachedResultFound {
+		if task.CachedStepResultFound {
 			t.Fatalf("CachedResultFound but not expected")
 		}
 	}
@@ -582,7 +577,7 @@ func (c *inMemoryExecutionCache) size() int {
 func (c *inMemoryExecutionCache) getCacheItem(key cache.Keyer) (interface{}, bool, error) {
 	k, err := key.Key()
 	if err != nil {
-		return execution.Result{}, false, err
+		return execution.AfterStepResult{}, false, err
 	}
 
 	c.mu.RLock()
@@ -592,30 +587,7 @@ func (c *inMemoryExecutionCache) getCacheItem(key cache.Keyer) (interface{}, boo
 	return res, ok, nil
 }
 
-func (c *inMemoryExecutionCache) Get(ctx context.Context, key cache.Keyer) (execution.Result, bool, error) {
-	res, ok, err := c.getCacheItem(key)
-	if err != nil || !ok {
-		return execution.Result{}, ok, err
-	}
-
-	execResult, ok := res.(execution.Result)
-	return execResult, ok, nil
-}
-
-func (c *inMemoryExecutionCache) Set(ctx context.Context, key cache.Keyer, result execution.Result) error {
-	k, err := key.Key()
-	if err != nil {
-		return err
-	}
-
-	c.mu.Lock()
-	defer c.mu.Unlock()
-
-	c.cache[k] = result
-	return nil
-}
-
-func (c *inMemoryExecutionCache) GetStepResult(ctx context.Context, key cache.Keyer) (execution.AfterStepResult, bool, error) {
+func (c *inMemoryExecutionCache) Get(ctx context.Context, key cache.Keyer) (execution.AfterStepResult, bool, error) {
 	res, ok, err := c.getCacheItem(key)
 	if err != nil || !ok {
 		return execution.AfterStepResult{}, ok, err
@@ -625,7 +597,7 @@ func (c *inMemoryExecutionCache) GetStepResult(ctx context.Context, key cache.Ke
 	return execResult, ok, nil
 }
 
-func (c *inMemoryExecutionCache) SetStepResult(ctx context.Context, key cache.Keyer, result execution.AfterStepResult) error {
+func (c *inMemoryExecutionCache) Set(ctx context.Context, key cache.Keyer, result execution.AfterStepResult) error {
 	k, err := key.Key()
 	if err != nil {
 		return err

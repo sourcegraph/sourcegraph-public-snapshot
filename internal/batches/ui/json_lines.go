@@ -174,10 +174,6 @@ func (ui *JSONLines) ExecutionError(err error) {
 
 var _ executor.JSONCacheWriter = &JSONLines{}
 
-func (ui *JSONLines) WriteExecutionResult(key string, value execution.Result) {
-	// Noop, we don't need execution results.
-}
-
 func (ui *JSONLines) WriteAfterStepResult(key string, value execution.AfterStepResult) {
 	logOperationSuccess(batcheslib.LogEventOperationCacheAfterStepResult, &batcheslib.CacheAfterStepResultMetadata{
 		Key:   key,
@@ -210,8 +206,8 @@ func (ui *taskExecutionJSONLines) Start(tasks []*executor.Task) {
 			Repository:             t.Repository.Name,
 			Workspace:              t.Path,
 			Steps:                  t.Steps,
-			CachedStepResultsFound: t.CachedResultFound,
-			StartStep:              t.CachedResult.StepIndex,
+			CachedStepResultsFound: t.CachedStepResultFound,
+			StartStep:              t.CachedStepResult.StepIndex,
 		}
 		ui.linesTasks[t] = linesTask
 		linesTasks = append(linesTasks, linesTask)
@@ -329,7 +325,7 @@ func (ui *stepsExecutionJSONLines) StepOutputWriter(ctx context.Context, task *e
 	return NewIntervalProcessWriter(ctx, stepFlushDuration, sink)
 }
 
-func (ui *stepsExecutionJSONLines) StepFinished(step int, diff string, changes *git.Changes, outputs map[string]interface{}) {
+func (ui *stepsExecutionJSONLines) StepFinished(step int, diff string, changes git.Changes, outputs map[string]interface{}) {
 	logOperationSuccess(
 		batcheslib.LogEventOperationTaskStep,
 		&batcheslib.TaskStepMetadata{

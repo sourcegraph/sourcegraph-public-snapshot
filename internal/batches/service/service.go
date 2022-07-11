@@ -99,8 +99,8 @@ func (svc *Service) DetermineFeatureFlags(ctx context.Context) error {
 	return svc.features.SetFromVersion(version)
 }
 
-func (svc *Service) SetFeatureFlagsForRelease(release string) error {
-	return svc.features.SetFromVersion(release)
+func (svc *Service) SetFeatureFlagsForVersion(version string) error {
+	return svc.features.SetFromVersion(version)
 }
 
 // TODO(campaigns-deprecation): this shim can be removed in Sourcegraph 4.0.
@@ -396,7 +396,7 @@ func validateMount(batchSpecDir string, spec *batcheslib.BatchSpec, isRemote boo
 	for i, step := range spec.Steps {
 		for j, mount := range step.Mount {
 			if isRemote {
-				return errors.New("mounts are not support for server-side processing")
+				return errors.New("mounts are not supported for server-side processing")
 			}
 			p := mount.Path
 			if !filepath.IsAbs(p) {
@@ -419,6 +419,7 @@ func validateMount(batchSpecDir string, spec *batcheslib.BatchSpec, isRemote boo
 			}
 			// Update the mount path to the absolute path so building the absolute path (above) does not need to be
 			// redone when adding the mount argument to the Docker container.
+			// TODO: Can this mess with caching? We wouldn't be doing that server-side.
 			step.Mount[j].Path = p
 		}
 	}

@@ -43,23 +43,23 @@ index 0000000..3363c39
 func TestExecutionDiskCache_GetSet(t *testing.T) {
 	ctx := context.Background()
 
-	cacheKey1 := &cache.ExecutionKey{
+	cacheKey1 := &cache.CacheKey{
 		Repository: cacheRepo1,
 		Steps: []batcheslib.Step{
 			{Run: "echo 'Hello World'", Container: "alpine:3"},
 		},
 	}
 
-	cacheKey2 := &cache.ExecutionKey{
+	cacheKey2 := &cache.CacheKey{
 		Repository: cacheRepo2,
 		Steps: []batcheslib.Step{
 			{Run: "echo 'Hello World'", Container: "alpine:3"},
 		},
 	}
 
-	value := execution.Result{
+	value := execution.AfterStepResult{
 		Diff: testDiff,
-		ChangedFiles: &git.Changes{
+		ChangedFiles: git.Changes{
 			Added: []string{"README.md"},
 		},
 		Outputs: map[string]interface{}{},
@@ -89,7 +89,7 @@ func TestExecutionDiskCache_GetSet(t *testing.T) {
 	assertCacheMiss(t, cache, cacheKey1)
 }
 
-func assertCacheHit(t *testing.T, c ExecutionDiskCache, k *cache.ExecutionKey, want execution.Result) {
+func assertCacheHit(t *testing.T, c ExecutionDiskCache, k cache.Keyer, want execution.AfterStepResult) {
 	t.Helper()
 
 	have, found, err := c.Get(context.Background(), k)
@@ -105,7 +105,7 @@ func assertCacheHit(t *testing.T, c ExecutionDiskCache, k *cache.ExecutionKey, w
 	}
 }
 
-func assertCacheMiss(t *testing.T, c ExecutionDiskCache, k *cache.ExecutionKey) {
+func assertCacheMiss(t *testing.T, c ExecutionDiskCache, k cache.Keyer) {
 	t.Helper()
 
 	_, found, err := c.Get(context.Background(), k)
