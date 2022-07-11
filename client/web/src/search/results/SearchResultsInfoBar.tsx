@@ -6,7 +6,6 @@ import {
     mdiMenu,
     mdiMenuDown,
     mdiMenuUp,
-    mdiArrowCollapse,
     mdiArrowExpandDown,
     mdiArrowCollapseUp,
 } from '@mdi/js'
