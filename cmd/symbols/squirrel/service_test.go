@@ -158,6 +158,10 @@ func TestNonLocalDefinition(t *testing.T) {
 				t.Fatalf("no definition range for symbol %s", symbol)
 			}
 
+			if m["print"] != nil {
+				squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
+			}
+
 			got := types.RepoCommitPathPoint{
 				RepoCommitPath: gotSymbolInfo.Definition.RepoCommitPath,
 				Point: types.Point{
