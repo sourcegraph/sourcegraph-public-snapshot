@@ -235,7 +235,7 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 	t.Cleanup(func() { conf.Mock(nil) })
 	repoName := api.RepoName("repo")
 
-	for _, tc := range []struct {
+	testCases := []struct {
 		pathIncludes  []string
 		canReadAll    []string
 		cannotReadAny []string
@@ -247,7 +247,7 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 		},
 		{
 			pathIncludes: []string{"foo/bar/**"},
-			canReadAll:   []string{"foo/", "foo/bar/", "foo/bar/baz/"},
+			canReadAll:   []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
 		},
 		{
 			pathIncludes:  []string{"foo/bar/"},
@@ -255,16 +255,22 @@ func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
 			cannotReadAny: []string{"foo/thing.txt", "foo/bar/thing.txt"},
 		},
 		{
-			pathIncludes:  []string{"**/foo/bar/thing.txt"},
-			canReadAll:    []string{"a/b/foo/bar/", "a/foo/", "a/foo/bar/"},
-			cannotReadAny: []string{"foo/", "foo/bar/"},
-		},
-		{
 			pathIncludes:  []string{"baz/*/foo/bar/thing.txt"},
 			canReadAll:    []string{"baz/", "baz/x/", "baz/x/foo/bar/"},
 			cannotReadAny: []string{"baz/thing.txt"},
 		},
-	} {
+		// We can't support rules that start with a wildcard, see comment in expandDirs
+		{
+			pathIncludes:  []string{"**/foo/bar/thing.txt"},
+			cannotReadAny: []string{"foo/", "foo/bar/"},
+		},
+		{
+			pathIncludes:  []string{"*/foo/bar/thing.txt"},
+			cannotReadAny: []string{"foo/", "foo/bar/"},
+		},
+	}
+
+	for _, tc := range testCases {
 		t.Run("", func(t *testing.T) {
 			getter := NewMockSubRepoPermissionsGetter()
 			getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {

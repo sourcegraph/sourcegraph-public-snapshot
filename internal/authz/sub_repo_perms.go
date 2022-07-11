@@ -333,8 +333,17 @@ func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoNa
 	return s.permissionsGetter.RepoSupported(ctx, repo)
 }
 
+// expandDirs will return rules that match all parent directories of the given
+// rule.
 func expandDirs(rule string) []string {
 	dirs := make([]string, 0)
+
+	// We can't support rules that start with a wildcard because we can only
+	// see one level of the tree at a time so we have no way of knowing which path leads
+	// to a file the user is allowed to see.
+	if strings.HasPrefix(rule, "*") {
+		return dirs
+	}
 
 	for {
 		lastSlash := strings.LastIndex(rule, "/")
@@ -343,6 +352,7 @@ func expandDirs(rule string) []string {
 		}
 		// Drop anything after the last slash
 		rule = rule[:lastSlash]
+
 		dirs = append(dirs, rule+"/")
 	}
 
