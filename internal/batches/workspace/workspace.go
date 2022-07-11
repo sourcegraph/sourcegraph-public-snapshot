@@ -5,7 +5,6 @@ import (
 	"runtime"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
@@ -39,15 +38,12 @@ type Workspace interface {
 	// delete the workspace when Close is called.
 	Close(ctx context.Context) error
 
-	// Changes is called after each step is executed, and should return the
-	// cumulative file changes that have occurred since Prepare was called.
-	Changes(ctx context.Context) (git.Changes, error)
-
 	// Diff should return the total diff for the workspace. This may be called
 	// multiple times in the life of a workspace.
 	Diff(ctx context.Context) ([]byte, error)
 
-	// ApplyDiff applies the given diff
+	// ApplyDiff applies the given diff to the current workspace. Used when replaying
+	// a cache entry onto the workspace.
 	ApplyDiff(ctx context.Context, diff []byte) error
 }
 

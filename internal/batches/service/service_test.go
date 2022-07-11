@@ -163,9 +163,9 @@ func TestResolveRepositories_Unsupported(t *testing.T) {
 	}
 
 	t.Run("allowUnsupported:true", func(t *testing.T) {
-		svc := &Service{client: client, allowUnsupported: true, allowIgnored: true}
+		svc := &Service{client: client}
 
-		repos, err := svc.ResolveRepositories(context.Background(), spec)
+		repos, err := svc.ResolveRepositories(context.Background(), spec, true, true)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -175,9 +175,9 @@ func TestResolveRepositories_Unsupported(t *testing.T) {
 	})
 
 	t.Run("allowUnsupported:false", func(t *testing.T) {
-		svc := &Service{client: client, allowUnsupported: false, allowIgnored: true}
+		svc := &Service{client: client}
 
-		repos, err := svc.ResolveRepositories(context.Background(), spec)
+		repos, err := svc.ResolveRepositories(context.Background(), spec, false, true)
 		repoSet, ok := err.(batches.UnsupportedRepoSet)
 		if !ok {
 			t.Fatalf("err is not UnsupportedRepoSet")
@@ -246,9 +246,9 @@ func TestResolveRepositories_Ignored(t *testing.T) {
 		client, done := mockGraphQLClient(testResolveRepositories, testBatchIgnoreInRepos)
 		defer done()
 
-		svc := &Service{client: client, allowIgnored: true}
+		svc := &Service{client: client}
 
-		repos, err := svc.ResolveRepositories(context.Background(), spec)
+		repos, err := svc.ResolveRepositories(context.Background(), spec, false, true)
 		if err != nil {
 			t.Fatalf("unexpected error: %s", err)
 		}
@@ -261,9 +261,9 @@ func TestResolveRepositories_Ignored(t *testing.T) {
 		client, done := mockGraphQLClient(testResolveRepositories, testBatchIgnoreInRepos)
 		defer done()
 
-		svc := &Service{client: client, allowIgnored: false}
+		svc := &Service{client: client}
 
-		repos, err := svc.ResolveRepositories(context.Background(), spec)
+		repos, err := svc.ResolveRepositories(context.Background(), spec, false, false)
 		ignored, ok := err.(batches.IgnoredRepoSet)
 		if !ok {
 			t.Fatalf("err is not IgnoredRepoSet: %s", err)
@@ -343,9 +343,9 @@ func TestResolveRepositories_RepoWithoutBranch(t *testing.T) {
 	client, done := mockGraphQLClient(testResolveRepositoriesNoBranch, testBatchIgnoreInReposNoBranch)
 	defer done()
 
-	svc := &Service{client: client, allowIgnored: false}
+	svc := &Service{client: client}
 
-	repos, err := svc.ResolveRepositories(context.Background(), spec)
+	repos, err := svc.ResolveRepositories(context.Background(), spec, false, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -584,11 +584,7 @@ func TestEnsureDockerImages(t *testing.T) {
 	ctx := context.Background()
 	parallelCases := []int{0, 1, 2, 4, 8}
 
-	newServiceWithImages := func(images map[string]docker.Image) *Service {
-		return &Service{
-			imageCache: &mock.ImageCache{Images: images},
-		}
-	}
+	svc := &Service{}
 
 	t.Run("success", func(t *testing.T) {
 		t.Run("single image", func(t *testing.T) {
@@ -605,10 +601,8 @@ func TestEnsureDockerImages(t *testing.T) {
 				t.Run(name, func(t *testing.T) {
 					for _, parallelism := range parallelCases {
 						t.Run(fmt.Sprintf("%d worker(s)", parallelism), func(t *testing.T) {
-							svc := newServiceWithImages(images)
 							progress := &mock.Progress{}
-
-							have, err := svc.EnsureDockerImages(ctx, steps, parallelism, progress.Callback())
+							have, err := svc.EnsureDockerImages(ctx, &mock.ImageCache{Images: images}, steps, parallelism, progress.Callback())
 							assert.Nil(t, err)
 							assert.Equal(t, images, have)
 							assert.Equal(t, []mock.ProgressCall{
@@ -635,16 +629,21 @@ func TestEnsureDockerImages(t *testing.T) {
 
 			for _, parallelism := range parallelCases {
 				t.Run(fmt.Sprintf("%d worker(s)", parallelism), func(t *testing.T) {
-					svc := newServiceWithImages(images)
 					progress := &mock.Progress{}
 
-					have, err := svc.EnsureDockerImages(ctx, []batcheslib.Step{
-						{Container: "a"},
-						{Container: "a"},
-						{Container: "a"},
-						{Container: "b"},
-						{Container: "c"},
-					}, parallelism, progress.Callback())
+					have, err := svc.EnsureDockerImages(
+						ctx,
+						&mock.ImageCache{Images: images},
+						[]batcheslib.Step{
+							{Container: "a"},
+							{Container: "a"},
+							{Container: "a"},
+							{Container: "b"},
+							{Container: "c"},
+						},
+						parallelism,
+						progress.Callback(),
+					)
 					assert.Nil(t, err)
 					assert.Equal(t, images, have)
 					assert.Equal(t, []mock.ProgressCall{
@@ -686,10 +685,9 @@ func TestEnsureDockerImages(t *testing.T) {
 
 		for _, parallelism := range parallelCases {
 			t.Run(fmt.Sprintf("%d worker(s)", parallelism), func(t *testing.T) {
-				svc := newServiceWithImages(images)
 				progress := &mock.Progress{}
 
-				have, err := svc.EnsureDockerImages(ctx, steps, parallelism, progress.Callback())
+				have, err := svc.EnsureDockerImages(ctx, &mock.ImageCache{Images: images}, steps, parallelism, progress.Callback())
 				assert.ErrorIs(t, err, wantErr)
 				assert.Nil(t, have)
 

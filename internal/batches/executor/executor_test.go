@@ -379,7 +379,7 @@ func TestExecutor_Integration(t *testing.T) {
 
 			cr, _ := workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images)
 			// Setup executor
-			opts := newExecutorOpts{
+			opts := NewExecutorOpts{
 				Creator:             cr,
 				RepoArchiveRegistry: repozip.NewArchiveRegistry(client, testTempDir, false),
 				Logger:              mock.LogNoOpManager{},
@@ -395,7 +395,7 @@ func TestExecutor_Integration(t *testing.T) {
 			}
 
 			dummyUI := newDummyTaskExecutionUI()
-			executor := newExecutor(opts)
+			executor := NewExecutor(opts)
 
 			// Run executor
 			executor.Start(context.Background(), tc.tasks, dummyUI)
@@ -809,7 +809,7 @@ func testExecuteTasks(t *testing.T, tasks []*Task, archives ...mock.RepoArchive)
 
 	cr, _ := workspace.NewCreator(context.Background(), "bind", testTempDir, testTempDir, images)
 	// Setup executor
-	executor := newExecutor(newExecutorOpts{
+	executor := NewExecutor(NewExecutorOpts{
 		Creator:             cr,
 		RepoArchiveRegistry: repozip.NewArchiveRegistry(client, testTempDir, false),
 		Logger:              mock.LogNoOpManager{},

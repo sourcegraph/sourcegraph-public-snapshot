@@ -275,10 +275,10 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	}()
 
 	svc := service.New(&service.Opts{
-		AllowUnsupported: opts.flags.allowUnsupported,
-		AllowIgnored:     opts.flags.allowIgnored,
-		Client:           opts.client,
+		Client: opts.client,
 	})
+
+	imageCache := docker.NewImageCache()
 
 	if err := svc.DetermineFeatureFlags(ctx); err != nil {
 		return err
@@ -324,7 +324,10 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	if len(batchSpec.Steps) > 0 {
 		ui.PreparingContainerImages()
 		images, err := svc.EnsureDockerImages(
-			ctx, batchSpec.Steps, parallelism,
+			ctx,
+			imageCache,
+			batchSpec.Steps,
+			parallelism,
 			ui.PreparingContainerImagesProgress,
 		)
 		if err != nil {
@@ -336,7 +339,8 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		var typ workspace.CreatorType
 		workspaceCreator, typ = workspace.NewCreator(ctx, opts.flags.workspace, opts.flags.cacheDir, opts.flags.tempDir, images)
 		if typ == workspace.CreatorTypeVolume {
-			_, err = svc.EnsureImage(ctx, workspace.DockerVolumeWorkspaceImage)
+			// This creator type requires an additional image, so let's ensure it exists.
+			_, err = imageCache.Ensure(ctx, workspace.DockerVolumeWorkspaceImage)
 			if err != nil {
 				return err
 			}
@@ -345,7 +349,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	}
 
 	ui.ResolvingRepositories()
-	repos, err := svc.ResolveRepositories(ctx, batchSpec)
+	repos, err := svc.ResolveRepositories(ctx, batchSpec, opts.flags.allowUnsupported, opts.flags.allowIgnored)
 	if err != nil {
 		if repoSet, ok := err.(batches.UnsupportedRepoSet); ok {
 			ui.ResolvingRepositoriesDone(repos, repoSet, nil)
@@ -366,19 +370,25 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	ui.DeterminingWorkspacesSuccess(len(workspaces))
 
 	archiveRegistry := repozip.NewArchiveRegistry(opts.client, opts.flags.cacheDir, opts.flags.cleanArchives)
-
-	// EXECUTION OF TASKS
-	coord := svc.NewCoordinator(
-		archiveRegistry,
-		log.NewDiskManager(opts.flags.tempDir, opts.flags.keepLogs),
+	logManager := log.NewDiskManager(opts.flags.tempDir, opts.flags.keepLogs)
+	coord := executor.NewCoordinator(
 		executor.NewCoordinatorOpts{
-			Creator:     workspaceCreator,
-			Cache:       executor.NewDiskCache(opts.flags.cacheDir),
-			Parallelism: parallelism,
-			Timeout:     opts.flags.timeout,
-			TempDir:     opts.flags.tempDir,
-			GlobalEnv:   os.Environ(),
-			IsRemote:    false,
+			ExecOpts: executor.NewExecutorOpts{
+				Logger:              logManager,
+				RepoArchiveRegistry: archiveRegistry,
+				Creator:             workspaceCreator,
+				EnsureImage:         imageCache.Ensure,
+				Parallelism:         parallelism,
+				Timeout:             opts.flags.timeout,
+				TempDir:             opts.flags.tempDir,
+				GlobalEnv:           os.Environ(),
+				IsRemote:            false,
+			},
+			Features:  svc.Features(),
+			Logger:    logManager,
+			Cache:     executor.NewDiskCache(opts.flags.cacheDir),
+			GlobalEnv: os.Environ(),
+			IsRemote:  false,
 		},
 	)
 

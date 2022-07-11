@@ -1,9 +1,15 @@
 package docker
 
-import "sync"
+import (
+	"context"
+	"sync"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+)
 
 type ImageCache interface {
 	Get(name string) Image
+	Ensure(ctx context.Context, name string) (Image, error)
 }
 
 // imageCache is a cache of metadata about Docker images, indexed by name.
@@ -33,4 +39,16 @@ func (ic *imageCache) Get(name string) Image {
 	image := &image{name: name}
 	ic.images[name] = image
 	return image
+}
+
+// Ensure returns the image cache entry for the given Docker image and makes sure
+// it exists on disk.
+func (ic *imageCache) Ensure(ctx context.Context, name string) (Image, error) {
+	img := ic.Get(name)
+
+	if err := img.Ensure(ctx); err != nil {
+		return nil, errors.Wrapf(err, "pulling image %q", name)
+	}
+
+	return img, nil
 }

@@ -60,9 +60,7 @@ Examples:
 		out := output.NewOutput(flagSet.Output(), output.OutputOpts{Verbose: *verbose})
 		ui := &ui.TUI{Out: out}
 		svc := service.New(&service.Opts{
-			Client:           cfg.apiClient(apiFlags, flagSet.Output()),
-			AllowUnsupported: allowUnsupported,
-			AllowIgnored:     allowIgnored,
+			Client: cfg.apiClient(apiFlags, flagSet.Output()),
 		})
 
 		if err := svc.DetermineFeatureFlags(ctx); err != nil {

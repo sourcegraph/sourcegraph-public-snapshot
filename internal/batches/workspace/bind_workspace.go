@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -129,25 +128,11 @@ func (w *dockerBindWorkspace) DockerRunOpts(ctx context.Context, target string) 
 
 func (w *dockerBindWorkspace) WorkDir() *string { return &w.dir }
 
-func (w *dockerBindWorkspace) Changes(ctx context.Context) (git.Changes, error) {
-	if _, err := runGitCmd(ctx, w.dir, "add", "--all"); err != nil {
-		return git.Changes{}, errors.Wrap(err, "git add failed")
-	}
-
-	statusOut, err := runGitCmd(ctx, w.dir, "status", "--porcelain", "--no-ahead-behind")
-	if err != nil {
-		return git.Changes{}, errors.Wrap(err, "git status failed")
-	}
-
-	changes, err := git.ParseGitStatus(statusOut)
-	if err != nil {
-		return git.Changes{}, errors.Wrap(err, "parsing git status output")
-	}
-
-	return changes, nil
-}
-
 func (w *dockerBindWorkspace) Diff(ctx context.Context) ([]byte, error) {
+	if _, err := runGitCmd(ctx, w.dir, "add", "--all"); err != nil {
+		return nil, errors.Wrap(err, "git add failed")
+	}
+
 	// As of Sourcegraph 3.14 we only support unified diff format.
 	// That means we need to strip away the `a/` and `/b` prefixes with `--no-prefix`.
 	// See: https://github.com/sourcegraph/sourcegraph/blob/82d5e7e1562fef6be5c0b17f18631040fd330835/enterprise/internal/campaigns/service.go#L324-L329

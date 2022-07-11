@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 
 	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
@@ -229,29 +228,6 @@ func (w *dockerVolumeWorkspace) DockerRunOpts(ctx context.Context, target string
 
 func (w *dockerVolumeWorkspace) WorkDir() *string { return nil }
 
-func (w *dockerVolumeWorkspace) Changes(ctx context.Context) (git.Changes, error) {
-	script := `#!/bin/sh
-
-set -e
-# No set -x here, since we're going to parse the git status output.
-
-git add --all > /dev/null
-exec git status --porcelain
-`
-
-	out, err := w.runScript(ctx, "/work", script)
-	if err != nil {
-		return git.Changes{}, errors.Wrap(err, "running git status")
-	}
-
-	changes, err := git.ParseGitStatus(out)
-	if err != nil {
-		return git.Changes{}, errors.Wrapf(err, "parsing git status output:\n\n%s", string(out))
-	}
-
-	return changes, nil
-}
-
 func (w *dockerVolumeWorkspace) Diff(ctx context.Context) ([]byte, error) {
 	// As of Sourcegraph 3.14 we only support unified diff format.
 	// That means we need to strip away the `a/` and `/b` prefixes with `--no-prefix`.
@@ -262,7 +238,11 @@ func (w *dockerVolumeWorkspace) Diff(ctx context.Context) ([]byte, error) {
 	// ATTENTION: When you change the options here, be sure to also update the
 	// ApplyDiff method accordingly.
 	script := `#!/bin/sh
-	
+
+set -e
+# No set -x here, since we're going to parse the git status output.
+
+git add --all > /dev/null
 exec git diff --cached --no-prefix --binary
 `
 

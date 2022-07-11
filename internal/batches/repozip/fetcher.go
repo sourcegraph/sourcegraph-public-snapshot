@@ -27,7 +27,7 @@ type ArchiveRegistry interface {
 	// Checkout returns an Archive for the given repository and the given
 	// relative path in the repository. The Archive is possibly unfetched.
 	// Users need to call `Ensure()` on the Archive before using it and
-	// `Close()` once // they're done using it.
+	// `Close()` once they're done using it.
 	Checkout(repo RepoRevision, path string) Archive
 }
 

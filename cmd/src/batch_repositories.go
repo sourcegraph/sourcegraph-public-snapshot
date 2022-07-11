@@ -60,9 +60,7 @@ Examples:
 		client := cfg.apiClient(apiFlags, flagSet.Output())
 
 		svc := service.New(&service.Opts{
-			Client:           client,
-			AllowUnsupported: allowUnsupported,
-			AllowIgnored:     allowIgnored,
+			Client: client,
 		})
 
 		if err := svc.DetermineFeatureFlags(ctx); err != nil {

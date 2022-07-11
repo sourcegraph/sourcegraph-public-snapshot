@@ -3,7 +3,6 @@ package executor
 import (
 	"context"
 	"fmt"
-	"os/exec"
 	"sync"
 	"time"
 
@@ -11,6 +10,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
+	"github.com/sourcegraph/src-cli/internal/batches/docker"
 	"github.com/sourcegraph/src-cli/internal/batches/log"
 	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 	"github.com/sourcegraph/src-cli/internal/batches/util"
@@ -52,7 +52,9 @@ type taskResult struct {
 	err         error
 }
 
-type newExecutorOpts struct {
+type imageEnsurer func(ctx context.Context, name string) (docker.Image, error)
+
+type NewExecutorOpts struct {
 	// Dependencies
 	Creator             workspace.Creator
 	RepoArchiveRegistry repozip.ArchiveRegistry
@@ -68,7 +70,7 @@ type newExecutorOpts struct {
 }
 
 type executor struct {
-	opts newExecutorOpts
+	opts NewExecutorOpts
 
 	par           *parallel.Run
 	doneEnqueuing chan struct{}
@@ -77,7 +79,7 @@ type executor struct {
 	resultsMu sync.Mutex
 }
 
-func newExecutor(opts newExecutorOpts) *executor {
+func NewExecutor(opts NewExecutorOpts) *executor {
 	return &executor{
 		opts: opts,
 
@@ -153,20 +155,10 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 	if err != nil {
 		return errors.Wrap(err, "creating log file")
 	}
-	defer func() {
-		if err != nil {
-			err = TaskExecutionErr{
-				Err:        err,
-				Logfile:    l.Path(),
-				Repository: task.Repository.Name,
-			}
-			l.MarkErrored()
-		}
-		l.Close()
-	}()
+	defer l.Close()
 
 	// Now checkout the archive.
-	task.RepoArchive = x.opts.RepoArchiveRegistry.Checkout(
+	repoArchive := x.opts.RepoArchiveRegistry.Checkout(
 		repozip.RepoRevision{
 			RepoName: task.Repository.Name,
 			Commit:   task.Repository.Rev(),
@@ -174,35 +166,35 @@ func (x *executor) do(ctx context.Context, task *Task, ui TaskExecutionUI) (err 
 		task.ArchivePathToFetch(),
 	)
 
-	// Set up our timeout.
-	runCtx, cancel := context.WithTimeout(ctx, x.opts.Timeout)
-	defer cancel()
-
 	// Actually execute the steps.
-	opts := &runStepsOpts{
-		task:        task,
-		logger:      l,
-		wc:          x.opts.Creator,
-		ensureImage: x.opts.EnsureImage,
-		tempDir:     x.opts.TempDir,
-		isRemote:    x.opts.IsRemote,
-		globalEnv:   x.opts.GlobalEnv,
+	opts := &RunStepsOpts{
+		Task:        task,
+		Logger:      l,
+		WC:          x.opts.Creator,
+		EnsureImage: x.opts.EnsureImage,
+		TempDir:     x.opts.TempDir,
+		IsRemote:    x.opts.IsRemote,
+		GlobalEnv:   x.opts.GlobalEnv,
+		Timeout:     x.opts.Timeout,
+		RepoArchive: repoArchive,
 
-		ui: ui.StepsExecutionUI(task),
+		UI: ui.StepsExecutionUI(task),
 	}
-
-	stepResults, err := runSteps(runCtx, opts)
+	stepResults, err := RunSteps(ctx, opts)
+	if err != nil {
+		// Create a more visual error for the UI.
+		err = TaskExecutionErr{
+			Err:        err,
+			Logfile:    l.Path(),
+			Repository: task.Repository.Name,
+		}
+		l.MarkErrored()
+	}
 	x.addResult(task, stepResults, err)
 
-	if err != nil {
-		if reachedTimeout(runCtx, err) {
-			err = &errTimeoutReached{timeout: x.opts.Timeout}
-		}
-		return err
-	}
-
-	return nil
+	return err
 }
+
 func (x *executor) addResult(task *Task, stepResults []execution.AfterStepResult, err error) {
 	x.resultsMu.Lock()
 	defer x.resultsMu.Unlock()
@@ -212,20 +204,4 @@ func (x *executor) addResult(task *Task, stepResults []execution.AfterStepResult
 		stepResults: stepResults,
 		err:         err,
 	})
-}
-
-type errTimeoutReached struct{ timeout time.Duration }
-
-func (e *errTimeoutReached) Error() string {
-	return fmt.Sprintf("Timeout reached. Execution took longer than %s.", e.timeout)
-}
-
-func reachedTimeout(cmdCtx context.Context, err error) bool {
-	if ee, ok := errors.Cause(err).(*exec.ExitError); ok {
-		if ee.String() == "signal: killed" && cmdCtx.Err() == context.DeadlineExceeded {
-			return true
-		}
-	}
-
-	return errors.Is(errors.Cause(err), context.DeadlineExceeded)
 }

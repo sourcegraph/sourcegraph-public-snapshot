@@ -276,13 +276,14 @@ func TestCoordinator_Execute(t *testing.T) {
 			}
 
 			logManager := mock.LogNoOpManager{}
-
 			c := newInMemoryExecutionCache()
+
+			tc.opts.Cache = c
+			tc.opts.Logger = logManager
+
 			coord := Coordinator{
-				cache:      c,
-				exec:       tc.executor,
-				logManager: logManager,
-				opts:       tc.opts,
+				exec: tc.executor,
+				opts: tc.opts,
 			}
 
 			// execute contains the actual logic for executing the tasks and
@@ -375,7 +376,13 @@ func TestCoordinator_Execute_StepCaching(t *testing.T) {
 	}}
 
 	// Build Coordinator
-	coord := &Coordinator{cache: cache, exec: executor, logManager: logManager}
+	coord := &Coordinator{
+		opts: NewCoordinatorOpts{
+			Cache:  cache,
+			Logger: logManager,
+		},
+		exec: executor,
+	}
 
 	batchSpec := &batcheslib.BatchSpec{ChangesetTemplate: testChangesetTemplate}
 

@@ -11,12 +11,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/src-cli/internal/batches/graphql"
-	"github.com/sourcegraph/src-cli/internal/batches/repozip"
 )
 
 type Task struct {
 	Repository *graphql.Repository
-
 	// Path is the folder relative to the repository's root in which the steps
 	// should be executed. "" means root.
 	Path string
@@ -24,20 +22,13 @@ type Task struct {
 	// the complete repository or just the files in Path (and additional files,
 	// see RepoFetcher).
 	// If Path is "" then this setting has no effect.
-	OnlyFetchWorkspace bool
-
-	Steps []batcheslib.Step
-
-	// TODO(mrnugget): this should just be a single BatchSpec field instead, if
-	// we can make it work with caching
-	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
-
-	RepoArchive repozip.Archive `json:"-"`
-
+	OnlyFetchWorkspace    bool
+	Steps                 []batcheslib.Step
+	BatchChangeAttributes *template.BatchChangeAttributes
 	// CachedStepResultFound is true when a partial execution result was found in the cache.
 	// When this field is true, CachedStepResult is also populated.
-	CachedStepResultFound bool                      `json:"-"`
-	CachedStepResult      execution.AfterStepResult `json:"-"`
+	CachedStepResultFound bool
+	CachedStepResult      execution.AfterStepResult
 }
 
 func (t *Task) ArchivePathToFetch() string {
@@ -47,7 +38,7 @@ func (t *Task) ArchivePathToFetch() string {
 	return ""
 }
 
-func (t *Task) cacheKey(globalEnv []string, isRemote bool, stepIndex int) cache.Keyer {
+func (t *Task) CacheKey(globalEnv []string, isRemote bool, stepIndex int) cache.Keyer {
 	var metadataRetriever cache.MetadataRetriever
 	// If the task is being run locally, set the metadata retrieve to use the filesystem based implementation.
 	if !isRemote {
