@@ -7,7 +7,7 @@ import { RouteComponentProps } from 'react-router'
 
 import { H3, Text, Icon } from '@sourcegraph/wildcard'
 
-import { AnalyticsPageTitle } from './components/AnalyticsPageTitle'
+import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 
 import styles from './index.module.scss'
 

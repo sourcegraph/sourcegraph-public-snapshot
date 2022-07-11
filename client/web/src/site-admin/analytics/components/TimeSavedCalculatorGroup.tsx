@@ -4,9 +4,9 @@ import classNames from 'classnames'
 
 import { Card, Input, Text } from '@sourcegraph/wildcard'
 
-import { formatNumber } from '../lib'
+import { formatNumber } from '../utils'
 
-import styles from '../index.module.scss'
+import styles from './index.module.scss'
 
 interface TimeSavedCalculatorGroupItem {
     label: string
