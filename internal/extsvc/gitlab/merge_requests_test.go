@@ -123,6 +123,23 @@ func TestCreateMergeRequest(t *testing.T) {
 	})
 }
 
+func TestCreateMergeRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+	client := createTestClient(t)
+
+	project := &Project{ProjectCommon: ProjectCommon{ID: 37741563}}
+	opts := CreateMergeRequestOpts{
+		SourceBranch: "branch-without-pr",
+		TargetBranch: "main",
+		Title:        "This MR should never be created",
+		Description:  "This merge request was created by a test against an archived repository, and should therefore not exist.",
+	}
+	mr, err := client.CreateMergeRequest(ctx, project, opts)
+	assert.Nil(t, mr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
+}
+
 func TestGetMergeRequest(t *testing.T) {
 	ctx := context.Background()
 	project := &Project{}
