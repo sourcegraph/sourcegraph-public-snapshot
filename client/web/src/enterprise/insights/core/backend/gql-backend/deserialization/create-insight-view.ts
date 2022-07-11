@@ -73,6 +73,26 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
             const { presentation, appliedFilters } = insight
 
+            const isComputeInsight = insight.dataSeriesDefinitions.some(series => !!series.groupBy)
+
+            if (isComputeInsight) {
+                return {
+                    ...baseInsight,
+                    executionType: InsightExecutionType.Backend,
+                    type: InsightType.Compute,
+                    title: presentation.title,
+                    repositories,
+                    series,
+                    step,
+                    filters: {
+                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
+                        context: appliedFilters.searchContexts?.[0] ?? '',
+                    },
+                    groupBy: insight.dataSeriesDefinitions[0].groupBy,
+                }
+            }
+
             return {
                 ...baseInsight,
                 executionType: InsightExecutionType.Backend,

@@ -1,5 +1,6 @@
 import { InsightExecutionType, InsightType, InsightFilters, InsightDashboardReference } from './common'
 import { CaptureGroupInsight } from './types/capture-group-insight'
+import { ComputeInsight } from './types/compute-insight'
 import { LangStatsInsight } from './types/lang-stat-insight'
 import { SearchBasedInsight, SearchBasedInsightSeries } from './types/search-insight'
 
@@ -18,12 +19,12 @@ export type {
  * Main insight model. Union of all different insights by execution type (backend, runtime)
  * and insight type (lang-stats, search based, capture group) insights.
  */
-export type Insight = SearchBasedInsight | LangStatsInsight | CaptureGroupInsight
+export type Insight = SearchBasedInsight | LangStatsInsight | CaptureGroupInsight | ComputeInsight
 
 /**
  * Backend insights - insights that have all data series points already in gql API.
  */
-export type BackendInsight = SearchBasedInsight | CaptureGroupInsight
+export type BackendInsight = SearchBasedInsight | CaptureGroupInsight | ComputeInsight
 
 /**
  * Extension insights - insights that are processed in FE runtime via search API.
@@ -44,4 +45,8 @@ export function isCaptureGroupInsight(insight: Insight): insight is CaptureGroup
 
 export function isLangStatsInsight(insight: Insight): insight is LangStatsInsight {
     return insight.type === InsightType.LangStats
+}
+
+export function isComputeInsight(insight: Insight): insight is ComputeInsight {
+    return insight.type === InsightType.Compute
 }

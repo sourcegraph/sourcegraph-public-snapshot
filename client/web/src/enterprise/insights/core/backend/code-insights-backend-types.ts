@@ -11,6 +11,7 @@ import {
     SearchBasedInsight,
 } from '../types'
 import { InsightContentType } from '../types/insight/common'
+import { ComputeInsight } from '../types/insight/types/compute-insight'
 
 export interface CategoricalChartContent<Datum> {
     data: Datum[]
@@ -69,6 +70,7 @@ export interface FindInsightByNameInput {
 }
 
 export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalComputeInsightData = Omit<ComputeInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
@@ -77,6 +79,7 @@ export type CreationInsightInput =
     | MinimalSearchBasedInsightData
     | MinimalCaptureGroupInsightData
     | MinimalLangStatsInsightData
+    | MinimalComputeInsightData
 
 export interface InsightCreateInput {
     insight: CreationInsightInput

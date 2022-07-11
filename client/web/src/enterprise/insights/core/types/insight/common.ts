@@ -17,6 +17,7 @@ export enum InsightType {
     SearchBased = 'SearchBased',
     LangStats = 'LangStats',
     CaptureGroup = 'CaptureGroup',
+    Compute = 'Compute',
 }
 
 export enum InsightContentType {
