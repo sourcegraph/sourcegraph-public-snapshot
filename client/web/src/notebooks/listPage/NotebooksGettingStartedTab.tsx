@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -127,7 +127,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                             rel="noopener noreferrer"
                             to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MQ=="
                         >
-                            Find Log4J dependencies <Icon aria-hidden={true} as={OpenInNewIcon} />
+                            Find Log4J dependencies <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                         </Link>
                         <div className="mt-2">Find Log4J dependencies across all your code.</div>
                     </Container>
@@ -140,7 +140,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                             to="https://sourcegraph.com/notebooks/Tm90ZWJvb2s6MTM="
                         >
                             Learn Sourcegraph / Find code across all of your repositories{' '}
-                            <Icon aria-hidden={true} as={OpenInNewIcon} />
+                            <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                         </Link>
                         <div className="mt-2">Learn how to find and reference code across all your repositories.</div>
                     </Container>
@@ -208,7 +208,7 @@ export const NotebooksGettingStartedTab: React.FunctionComponent<
                     </div>
                     <div className="mb-2">Read in-depth material about all of notebooks' features.</div>
                     <Link target="_blank" rel="noopener noreferrer" to="/help/notebooks">
-                        Documentation <Icon aria-hidden={true} as={OpenInNewIcon} />
+                        Documentation <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                     </Link>
                 </div>
             </div>

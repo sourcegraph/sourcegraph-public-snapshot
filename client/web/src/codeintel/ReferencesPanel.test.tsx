@@ -156,7 +156,7 @@ describe('ReferencesPanel', () => {
         // Wait for response
         await waitForNextApolloResponse()
 
-        const closeCodeViewButton = result.getByRole('button', { name: 'Close code view' })
+        const closeCodeViewButton = result.getByTestId('close-code-view')
         expect(closeCodeViewButton).toBeVisible()
 
         const rightPane = result.getByTestId('right-pane')

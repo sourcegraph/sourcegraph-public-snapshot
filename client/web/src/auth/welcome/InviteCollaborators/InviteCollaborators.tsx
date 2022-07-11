@@ -5,7 +5,6 @@ import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
 
 import { AuthenticatedUser } from '../../../auth'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { UserExternalServicesOrRepositoriesUpdateProps } from '../../../util'
 import { getPostSignUpEvent, RepoSelectionMode, FinishWelcomeFlow } from '../../PostSignUpPage'
 import { useExternalServicesWithCollaborators } from '../../useExternalServicesWithCollaborators'
 import { useRepoCloningStatus } from '../../useRepoCloningStatus'
@@ -18,7 +17,6 @@ import { InvitePane } from './InvitePane'
 interface InviteCollaborators {
     user: AuthenticatedUser
     repoSelectionMode: RepoSelectionMode
-    onUserExternalServicesOrRepositoriesUpdate: UserExternalServicesOrRepositoriesUpdateProps['onUserExternalServicesOrRepositoriesUpdate']
     setSelectedSearchContextSpec: (spec: string) => void
     onError: (error: ErrorLike) => void
     className?: string

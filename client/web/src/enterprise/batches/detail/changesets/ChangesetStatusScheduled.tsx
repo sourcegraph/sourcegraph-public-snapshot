@@ -5,6 +5,7 @@ import { formatDistanceToNow, isBefore, parseISO } from 'date-fns'
 import TimerOutlineIcon from 'mdi-react/TimerOutlineIcon'
 
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import { getChangesetScheduleEstimate } from '../backend'
 
@@ -85,15 +86,12 @@ const DynamicChangesetStatusScheduled: React.FunctionComponent<React.PropsWithCh
     }, [estimate, id])
 
     return (
-        <div
-            className={classNames(iconClassNames, className)}
-            onMouseOver={onMouseOver}
-            onFocus={onMouseOver}
-            data-tooltip={tooltip}
-        >
-            <TimerOutlineIcon />
-            {label}
-        </div>
+        <Tooltip content={tooltip}>
+            <div className={classNames(iconClassNames, className)} onMouseOver={onMouseOver} onFocus={onMouseOver}>
+                <TimerOutlineIcon />
+                {label}
+            </div>
+        </Tooltip>
     )
 }
 

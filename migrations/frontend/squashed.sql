@@ -3551,7 +3551,11 @@ CREATE INDEX changesets_publication_state_idx ON changesets USING btree (publica
 
 CREATE INDEX changesets_reconciler_state_idx ON changesets USING btree (reconciler_state);
 
+CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
+
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
+
+CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
 

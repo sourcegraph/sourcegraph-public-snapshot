@@ -262,14 +262,20 @@ export class HierarchicalLocationsView extends React.PureComponent<HierarchicalL
                                             data-testid="hierarchical-locations-view-list"
                                             className={styles.groupList}
                                         >
-                                            {groups[index].map((group, innerIndex) => (
+                                            {groups[index].map((subordinateGroup, innerIndex) => (
                                                 <HierarchicalLocationsViewButton
                                                     key={innerIndex}
-                                                    groupKey={group.key}
-                                                    groupCount={group.count}
-                                                    isActive={selectedGroups[index] === group.key}
+                                                    groupKey={subordinateGroup.key}
+                                                    groupName={group.name}
+                                                    groupCount={subordinateGroup.count}
+                                                    isActive={selectedGroups[index] === subordinateGroup.key}
                                                     onClick={event =>
-                                                        this.onSelectTree(event, selectedGroups, index, group.key)
+                                                        this.onSelectTree(
+                                                            event,
+                                                            selectedGroups,
+                                                            index,
+                                                            subordinateGroup.key
+                                                        )
                                                     }
                                                 />
                                             ))}

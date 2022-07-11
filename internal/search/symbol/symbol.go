@@ -103,6 +103,7 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 		ShardMaxImportantMatch: match * 25,
 		TotalMaxImportantMatch: match * 25,
 		MaxDocDisplayCount:     match,
+		ChunkMatches:           true,
 	})
 	if err != nil {
 		return nil, err
@@ -136,6 +137,32 @@ func searchZoekt(ctx context.Context, repoName types.MinimalRepo, commitID api.C
 					m.SymbolInfo.ParentKind,
 					file.Language,
 					string(l.Line),
+					false,
+				))
+			}
+		}
+
+		for _, cm := range file.ChunkMatches {
+			if cm.FileName || len(cm.SymbolInfo) == 0 {
+				continue
+			}
+
+			for i, r := range cm.Ranges {
+				si := cm.SymbolInfo[i]
+				if si == nil {
+					continue
+				}
+
+				res = append(res, result.NewSymbolMatch(
+					newFile,
+					int(r.Start.LineNumber),
+					int(r.Start.Column),
+					si.Sym,
+					si.Kind,
+					si.Parent,
+					si.ParentKind,
+					file.Language,
+					"", // unused when column is set
 					false,
 				))
 			}

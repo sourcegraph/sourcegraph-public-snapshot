@@ -99,7 +99,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline"
+              class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
               role="img"
@@ -159,16 +159,16 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
                 >
                   <rect
                     class="bar"
-                    data-tooltip="8 users"
                     height="160"
+                    title="8 users"
                     width="248"
                     x="1"
                     y="39.99999999999999"
                   />
                   <rect
                     class="bar"
-                    data-tooltip="8 users"
                     height="160"
+                    title="8 users"
                     width="248"
                     x="1"
                     y="39.99999999999999"
@@ -179,16 +179,16 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
                 >
                   <rect
                     class="bar"
-                    data-tooltip="2 users"
                     height="39.99999999999999"
+                    title="2 users"
                     width="248"
                     x="1"
                     y="0"
                   />
                   <rect
                     class="bar"
-                    data-tooltip="2 users"
                     height="39.99999999999999"
+                    title="2 users"
                     width="248"
                     x="1"
                     y="0"
@@ -327,7 +327,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
           >
             <svg
               aria-hidden="true"
-              class="iconInline"
+              class="mdi-icon iconInline"
               fill="currentColor"
               height="24"
               role="img"
@@ -370,7 +370,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                     >
                       <svg
                         aria-hidden="true"
-                        class="iconInline icon iconDown"
+                        class="mdi-icon iconInline icon iconDown"
                         fill="currentColor"
                         height="24"
                         role="img"
@@ -383,7 +383,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                       </svg>
                       <svg
                         aria-hidden="true"
-                        class="iconInline icon iconRight"
+                        class="mdi-icon iconInline icon iconRight"
                         fill="currentColor"
                         height="24"
                         role="img"
@@ -402,7 +402,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                   <div>
                     <svg
                       aria-label="Not completed"
-                      class="iconInline text-muted"
+                      class="mdi-icon iconInline text-muted"
                       fill="currentColor"
                       height="24"
                       role="img"

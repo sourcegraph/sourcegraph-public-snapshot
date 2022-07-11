@@ -25,7 +25,7 @@ type QueueStore interface {
 
 var _ workerutil.Store = &storeShim{}
 
-func (s *storeShim) QueuedCount(ctx context.Context, extraArguments any) (int, error) {
+func (s *storeShim) QueuedCount(ctx context.Context) (int, error) {
 	return 0, errors.New("unimplemented")
 }
 

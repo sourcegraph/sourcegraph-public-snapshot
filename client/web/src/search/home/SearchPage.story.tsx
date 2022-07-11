@@ -15,7 +15,6 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { WebStory } from '../../components/WebStory'
 import { MockedFeatureFlagsProvider } from '../../featureFlags/FeatureFlagsProvider'
-import { SourcegraphContext } from '../../jscontext'
 import { useExperimentalFeatures } from '../../stores'
 import { ThemePreference } from '../../stores/themeState'
 import {
@@ -59,15 +58,9 @@ const defaultProps = (props: ThemeProps): SearchPageProps => ({
     now: () => parseISO('2020-09-16T23:15:01Z'),
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 })
 
-if (!window.context) {
-    // eslint-disable-next-line @typescript-eslint/consistent-type-assertions
-    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
-}
 window.context.allowSignup = true
 
 const decorator: DecoratorFn = Story => {

@@ -1,0 +1,32 @@
+name: monorepo-dynamic
+description: |
+  Create one changeset per workspace in the sourcegraph frontend monorepo
+  Workspaces are set where some file is present, eg. package.json in this example
+on:
+  - repository: github.com/sourcegraph/sourcegraph
+
+
+# Each time a package.json is found at a path, batch change will treat it as a workspace
+workspaces:
+  - rootAtLocationOf: package.json
+    in: "*"
+
+# Batch change steps will run in each workspace
+steps:
+  - run: |
+      if [[ $(pwd) = "/work" ]]; then
+        echo "This is the root workspace, skipping"
+      else
+        echo "I'm running in $PWD" > hello-world.md
+      fi
+    container: alpine:3
+
+changesetTemplate:
+  title: Run in each workspace of a monorepo
+  body: |
+    Run in each workspace of a monorepo
+# Each branch needs to be unique, so we're using templating to define them
+# https://docs.sourcegraph.com/batch_changes/references/batch_spec_templating
+  branch: batch-changes/monorepo/${{ replace steps.path "/" "-" }}
+  commit:
+    message: opening several changesets in a monorepo

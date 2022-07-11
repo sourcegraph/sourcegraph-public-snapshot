@@ -12,7 +12,6 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
@@ -75,13 +74,13 @@ type service interface {
 type Service struct {
 	store           store.Store
 	lsifstore       lsifstore.LsifStore
-	gitserverClient *gitserver.Client
+	gitserverClient shared.GitserverClient
 	locker          Locker
 	logger          logger.Logger
 	operations      *operations
 }
 
-func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc *gitserver.Client, locker Locker, observationCtx *observation.Context) *Service {
+func newService(store store.Store, lsifstore lsifstore.LsifStore, gsc shared.GitserverClient, locker Locker, observationCtx *observation.Context) *Service {
 	return &Service{
 		store:           store,
 		lsifstore:       lsifstore,
