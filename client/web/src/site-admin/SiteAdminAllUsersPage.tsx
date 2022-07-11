@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiCog, mdiDelete, mdiRadioactive, mdiPlus } from '@mdi/js'
+import { mdiCog, mdiPlus } from '@mdi/js'
 import * as H from 'history'
 import { isEqual } from 'lodash'
 import { RouteComponentProps } from 'react-router'
@@ -205,7 +205,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     variant="danger"
                                     size="sm"
                                 >
-                                    <Icon aria-hidden={true} svgPath={mdiDelete} />
+                                    Delete
                                 </Button>
                             </Tooltip>
                         )}
@@ -218,7 +218,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     variant="danger"
                                     size="sm"
                                 >
-                                    <Icon aria-hidden={true} svgPath={mdiRadioactive} />
+                                    Delete forever
                                 </Button>
                             </Tooltip>
                         )}
