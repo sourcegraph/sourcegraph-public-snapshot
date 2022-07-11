@@ -142,7 +142,7 @@ public class PreviewContent {
 
     @Nullable
     public String getSymbolName() {
-        return symbolName;
+        return convertBase64ToString(symbolName);
     }
 
     @Nullable
