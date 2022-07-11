@@ -12,7 +12,7 @@ var repoName = "susantoscott/Task-Tracker"
 func TestGitHubWebhooks_CreateAndList(t *testing.T) {
 	err := godotenv.Load(".env")
 	if err != nil {
-		t.Fatal(err)
+		t.Skip()
 	}
 	token := os.Getenv("ACCESS_TOKEN")
 
@@ -55,7 +55,7 @@ func TestGitHubWebhooks_CreateAndList(t *testing.T) {
 func TestGitHubWebhooks_Find(t *testing.T) {
 	err := godotenv.Load(".env")
 	if err != nil {
-		t.Fatal(err)
+		t.Skip()
 	}
 	token := os.Getenv("ACCESS_TOKEN")
 
