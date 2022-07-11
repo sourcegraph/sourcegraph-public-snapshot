@@ -3,6 +3,7 @@ package background
 import (
 	"bytes"
 	"context"
+	"strings"
 	"sync"
 	"time"
 
@@ -42,7 +43,7 @@ func Run(ctx context.Context, job func(out *std.Output), verbose bool) {
 	out := std.NewOutput(b, verbose)
 	go func() {
 		job(out)
-		jobs.results <- b.String()
+		jobs.results <- strings.TrimSpace(b.String())
 	}()
 }
 
@@ -54,6 +55,7 @@ func Wait(ctx context.Context, out *std.Output) {
 	}
 	start := time.Now() // start clock for additional time waited
 
+	out.Write("") // separator for background output
 	out.VerboseLine(output.Styledf(output.StylePending, "Waiting for remaining background jobs to complete (%d total)...", count))
 	go func() {
 		for r := range jobs.results {

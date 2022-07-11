@@ -28,7 +28,7 @@ func main() {
 	// workaround because we don't have control over the bash completion flag, which is
 	// part of urfave/cli internals.
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
-		batchCompletionMode = true
+		bashCompletionsMode = true
 	}
 
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
@@ -65,11 +65,11 @@ var (
 	// slice.
 	postInitHooks []func(cmd *cli.Context)
 
-	// batchCompletionMode determines if we are in bash completion mode. In this mode,
+	// bashCompletionsMode determines if we are in bash completion mode. In this mode,
 	// sg should respond quickly, so most setup tasks (e.g. postInitHooks) are skipped.
 	//
 	// Do not run complicated tasks, etc. in Before or After hooks when in this mode.
-	batchCompletionMode bool
+	bashCompletionsMode bool
 )
 
 const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/new?template=sg_bug.md"
@@ -128,7 +128,7 @@ var sg = &cli.App{
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
-		if batchCompletionMode {
+		if bashCompletionsMode {
 			// All other setup pertains to running commands - to keep completions fast,
 			// we skip all other setup.
 			return nil
@@ -230,8 +230,10 @@ var sg = &cli.App{
 		return nil
 	},
 	After: func(cmd *cli.Context) error {
-		// Wait for background jobs to finish up
-		background.Wait(cmd.Context, std.Out)
+		if !bashCompletionsMode {
+			// Wait for background jobs to finish up, iff not in autocomplete mode
+			background.Wait(cmd.Context, std.Out)
+		}
 
 		return nil
 	},
