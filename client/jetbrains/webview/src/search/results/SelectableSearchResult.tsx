@@ -12,6 +12,7 @@ interface Props {
     match: SearchMatch
     selectedResult: null | string
     selectResult: (id: string) => void
+    openResult: (id: string) => void
 }
 
 export const SelectableSearchResult: React.FunctionComponent<Props> = ({
@@ -20,9 +21,11 @@ export const SelectableSearchResult: React.FunctionComponent<Props> = ({
     match,
     selectedResult,
     selectResult,
+    openResult,
 }: Props) => {
     const resultId = getResultId(match, lineOrSymbolMatch)
     const onClick = useCallback((): void => selectResult(resultId), [selectResult, resultId])
+    const onDoubleClick = useCallback((): void => openResult(resultId), [openResult, resultId])
     const isActive = resultId === selectedResult
 
     return (
@@ -33,6 +36,7 @@ export const SelectableSearchResult: React.FunctionComponent<Props> = ({
             id={`search-result-list-item-${resultId}`}
             className={styles.selectableSearchResult}
             onClick={onClick}
+            onDoubleClick={onDoubleClick}
             key={resultId}
         >
             {children(isActive)}

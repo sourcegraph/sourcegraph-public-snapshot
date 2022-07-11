@@ -17,16 +17,11 @@ import { getResultId } from './utils'
 
 import styles from './FileSearchResult.module.scss'
 
-interface Props {
-    selectResult: (resultId: string) => void
-    selectedResult: null | string
-    match: ContentMatch | SymbolMatch
-}
-
 function renderResultElementsForContentMatch(
     match: ContentMatch,
+    selectedResult: string | null,
     selectResult: (resultId: string) => void,
-    selectedResult: string | null
+    openResult: (resultId: string) => void
 ): JSX.Element[] {
     return match.lineMatches.map(line => (
         <SelectableSearchResult
@@ -35,6 +30,7 @@ function renderResultElementsForContentMatch(
             match={match}
             selectedResult={selectedResult}
             selectResult={selectResult}
+            openResult={openResult}
         >
             {isActive => (
                 <SearchResultLayout infoColumn={line.lineNumber + 1} className={styles.code} isActive={isActive}>
@@ -45,10 +41,18 @@ function renderResultElementsForContentMatch(
     ))
 }
 
+interface Props {
+    selectResult: (resultId: string) => void
+    selectedResult: null | string
+    match: ContentMatch | SymbolMatch
+    openResult: (resultId: string) => void
+}
+
 function renderResultElementsForSymbolMatch(
     match: SymbolMatch,
+    selectedResult: string | null,
     selectResult: (resultId: string) => void,
-    selectedResult: string | null
+    openResult: (resultId: string) => void
 ): JSX.Element[] {
     return match.symbols.map(symbol => (
         <SelectableSearchResult
@@ -57,6 +61,7 @@ function renderResultElementsForSymbolMatch(
             match={match}
             selectedResult={selectedResult}
             selectResult={selectResult}
+            openResult={openResult}
         >
             {isActive => (
                 <SearchResultLayout className={styles.code} isActive={isActive}>
@@ -68,11 +73,16 @@ function renderResultElementsForSymbolMatch(
     ))
 }
 
-export const FileSearchResult: React.FunctionComponent<Props> = ({ match, selectedResult, selectResult }: Props) => {
+export const FileSearchResult: React.FunctionComponent<Props> = ({
+    match,
+    selectedResult,
+    selectResult,
+    openResult,
+}: Props) => {
     const lines =
         match.type === 'content'
-            ? renderResultElementsForContentMatch(match, selectResult, selectedResult)
-            : renderResultElementsForSymbolMatch(match, selectResult, selectedResult)
+            ? renderResultElementsForContentMatch(match, selectedResult, selectResult, openResult)
+            : renderResultElementsForSymbolMatch(match, selectedResult, selectResult, openResult)
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
