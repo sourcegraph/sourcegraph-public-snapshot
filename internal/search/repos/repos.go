@@ -50,11 +50,11 @@ func (r *Resolved) String() string {
 }
 
 func NewResolver(db database.DB) *Resolver {
-	return &Resolver{DB: db}
+	return &Resolver{db: db}
 }
 
 type Resolver struct {
-	DB database.DB
+	db database.DB
 }
 
 func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
@@ -157,7 +157,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		return Resolved{}, ErrNoResolvedRepos
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
 	}
@@ -200,7 +200,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}
 
 	tr.LazyPrintf("Repos.ListMinimalRepos - start")
-	repos, err := r.DB.Repos().ListMinimalRepos(ctx, options)
+	repos, err := r.db.Repos().ListMinimalRepos(ctx, options)
 	tr.LazyPrintf("Repos.ListMinimalRepos - done (%d repos, err %v)", len(repos), err)
 
 	if err != nil {
@@ -239,7 +239,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
-		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
+		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.db, searchContext.ID)
 		if err != nil {
 			return Resolved{}, err
 		}
@@ -339,7 +339,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 				}
 
 				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				client := gitserver.NewClient(r.DB)
+				client := gitserver.NewClient(r.db)
 				commitID, err := client.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
@@ -538,14 +538,14 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
+	repoRevs, err := listDependencyRepos(ctx, r.db.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// TODO: We'll make this value depend on user input, but for now we include all dependencies.
 	includeTransitive := true
-	dependencyRepoRevs, notFound, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs, includeTransitive)
+	dependencyRepoRevs, notFound, err := livedependencies.GetService(r.db, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs, includeTransitive)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -623,12 +623,12 @@ func (r *Resolver) dependents(ctx context.Context, op *search.RepoOptions) (_ []
 		return nil, nil, errors.Errorf("support for `repo:dependents()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependents, op.CaseSensitiveRepoFilters)
+	repoRevs, err := listDependencyRepos(ctx, r.db.Repos(), op.Dependents, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	dependencyRepoRevs, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependents(ctx, repoRevs)
+	dependencyRepoRevs, err := livedependencies.GetService(r.db, livedependencies.NewSyncer()).Dependents(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
