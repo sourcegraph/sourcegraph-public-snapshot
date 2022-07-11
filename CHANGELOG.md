@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Resource Estimator: Ability to export the estimated results as override file for Helm and Docker Compose. [#18](https://github.com/sourcegraph/resource-estimator/pull/18)
 - A toggle to enable/disable a beta simplified UI has been added to the user menu. This new UI is still actively in development and any changes visible with the toggle enabled may not be stable are subject to change. [#38763](https://github.com/sourcegraph/sourcegraph/pull/38763)
 - Search query inputs are now backed by the CodeMirror library instead of Monaco. Monaco can be re-enabled by setting `experimentalFeatures.editor` to `"monaco"`. []()
+- Search query inputs are now backed by the CodeMirror library instead of Monaco. Monaco can be re-enabled by setting `experimentalFeatures.editor` to `"monaco"`. [38584](https://github.com/sourcegraph/sourcegraph/pull/38584)
 
 ### Changed
 
