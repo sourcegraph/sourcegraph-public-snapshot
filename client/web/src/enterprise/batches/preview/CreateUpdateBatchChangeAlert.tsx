@@ -92,7 +92,13 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
 
     return (
         <>
-            <LicenseAlert totalChangesetCount={totalCount} onLicenseRetrieved={onLicenseRetrieved} />
+            <LicenseAlert totalChangesetCount={totalCount} onLicenseRetrieved={onLicenseRetrieved}>
+                <div className="mb-2">
+                    <strong>Your license only allows for 5 changesets per batch change</strong>
+                </div>
+                You are running a free version of batch changes. It is fully functional, however it will only generate 5
+                changesets per batch change. If you would like to learn more about our pricing, contact us.
+            </LicenseAlert>
             <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     {batchChange ? (
