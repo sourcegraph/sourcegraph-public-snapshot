@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { Card, CardBody, H4, Text } from '@sourcegraph/wildcard'
 
-import { CodeInsightsBatchesIcon } from './CodeInsightsBatchesIcon'
+import { BatchesTemplateIcon } from './BatchesTemplateIcon'
 
 import styles from './TemplateBanner.module.scss'
 
@@ -18,7 +18,7 @@ export const TemplateBanner: React.FunctionComponent<TemplatesBannerProps> = ({ 
     <Card className={classNames(className, styles.banner)}>
         <CardBody>
             <div className="d-flex justify-content-between align-items-center">
-                <CodeInsightsBatchesIcon className={styles.icon} />
+                <BatchesTemplateIcon className={styles.icon} />
                 <div className="flex-grow-1">
                     <H4 className="mb-1">{heading}</H4>
                     <Text className={styles.bannerDescription}>{description}</Text>
