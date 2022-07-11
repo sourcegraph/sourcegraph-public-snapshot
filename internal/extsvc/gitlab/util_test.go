@@ -16,13 +16,18 @@ type mockHTTPResponseBody struct {
 	count        int
 	header       http.Header
 	responseBody string
+	statusCode   int
 }
 
 func (s *mockHTTPResponseBody) Do(req *http.Request) (*http.Response, error) {
 	s.count++
+	statusCode := http.StatusOK
+	if s.statusCode != 0 {
+		statusCode = s.statusCode
+	}
 	return &http.Response{
 		Request:    req,
-		StatusCode: http.StatusOK,
+		StatusCode: statusCode,
 		Body:       io.NopCloser(strings.NewReader(s.responseBody)),
 		Header:     s.header,
 	}, nil
