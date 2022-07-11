@@ -534,6 +534,35 @@ func TestMergePullRequest(t *testing.T) {
 	})
 }
 
+func TestUpdatePullRequest_Archived(t *testing.T) {
+	ctx := context.Background()
+
+	cli, save := newV4Client(t, "UpdatePullRequest_Archived")
+	defer save()
+
+	// Repository used: sourcegraph-testing/archived
+	//
+	// This test can be updated at any time with `-update`, provided
+	// `sourcegraph-testing/archived` is still archived.
+	//
+	// You can update just this test with `-update UpdatePullRequest_Archived`.
+	input := &UpdatePullRequestInput{
+		PullRequestID: "PR_kwDOHpFg8M47NV9e",
+		Body:          "This PR should never have its body changed.",
+	}
+
+	pr, err := cli.UpdatePullRequest(ctx, input)
+	assert.Nil(t, pr)
+	assert.Error(t, err)
+	assert.True(t, errcode.IsArchived(err))
+
+	testutil.AssertGolden(t,
+		"testdata/golden/UpdatePullRequest_Archived",
+		update("UpdatePullRequest_Archived"),
+		pr,
+	)
+}
+
 func TestEstimateGraphQLCost(t *testing.T) {
 	for _, tc := range []struct {
 		name  string
