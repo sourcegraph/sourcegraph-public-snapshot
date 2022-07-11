@@ -14,6 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -99,6 +100,30 @@ func (s *SyncRegistry) EnqueueChangesetSyncs(ctx context.Context, ids []int64) e
 		return errors.New("high priority sync capacity reached")
 	}
 	return nil
+}
+
+func (s *SyncRegistry) EnqueueChangesetSyncsForRepos(ctx context.Context, repoIDs []api.RepoID) error {
+	cs, _, err := s.syncStore.ListChangesets(ctx, store.ListChangesetsOpts{
+		RepoIDs: repoIDs,
+	})
+	if err != nil {
+		return errors.Wrapf(err, "listing changesets for repos %v", repoIDs)
+	} else if len(cs) == 0 {
+		return nil
+	}
+
+	ids := make([]int64, len(cs))
+	for _, c := range cs {
+		ids = append(ids, c.ID)
+	}
+
+	s.logger.Debug(
+		"enqueuing syncs for changesets on repos",
+		log.Int("repo count", len(repoIDs)),
+		log.Int("changeset count", len(ids)),
+	)
+
+	return s.EnqueueChangesetSyncs(ctx, ids)
 }
 
 // addCodeHostSyncer adds a syncer for the code host associated with the supplied code host if the syncer hasn't

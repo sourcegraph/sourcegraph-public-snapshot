@@ -1000,6 +1000,30 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	return nil
 }
 
+func (s *Service) EnqueueChangesetSyncsForRepo(ctx context.Context, repoID api.RepoID) error {
+	// TODO: observation stuff.
+	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
+		RepoIDs:      []api.RepoID{repoID},
+		EnforceAuthz: true,
+	})
+	if err != nil {
+		return errors.Wrap(err, "listing changesets")
+	} else if len(cs) == 0 {
+		return nil
+	}
+
+	ids := make([]int64, len(cs))
+	for i, changeset := range cs {
+		ids[i] = changeset.ID
+	}
+
+	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, ids); err != nil {
+		return errors.Wrap(err, "enqueuing syncs")
+	}
+
+	return nil
+}
+
 // ReenqueueChangeset loads the given changeset from the database, checks
 // whether the actor in the context has permission to enqueue a reconciler run and then
 // enqueues it by calling ResetReconcilerState.

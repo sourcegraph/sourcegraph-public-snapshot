@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -576,6 +577,7 @@ func (e *executor) handleArchivedRepo(ctx context.Context) error {
 	return handleArchivedRepo(
 		ctx,
 		repos.NewStore(e.logger, e.tx.DatabaseDB()),
+		service.New(e.tx),
 		repo,
 		e.ch,
 	)
@@ -583,20 +585,27 @@ func (e *executor) handleArchivedRepo(ctx context.Context) error {
 
 func handleArchivedRepo(
 	ctx context.Context,
-	store repos.Store,
+	rstore repos.Store,
+	svc *service.Service,
 	repo *types.Repo,
 	ch *btypes.Changeset,
 ) error {
 	// We need to mark the repo as archived so that the later check for whether
 	// the repo is still archived isn't confused.
 	repo.Archived = true
-	if _, err := store.UpdateRepo(ctx, repo); err != nil {
+	if _, err := rstore.UpdateRepo(ctx, repo); err != nil {
 		return errors.Wrapf(err, "updating archived status of repo %d", int(repo.ID))
 	}
 
 	// Now we can set the ExternalState, and SetDerivedState will do the rest
 	// later with that and the updated repo.
 	ch.ExternalState = btypes.ChangesetExternalStateReadOnly
+
+	// We should also enqueue syncs for the other changesets on the repo so they
+	// update as quickly as possible.
+	if err := svc.EnqueueChangesetSyncsForRepo(ctx, repo.ID); err != nil {
+		return errors.Wrap(err, "enqueuing changeset syncs")
+	}
 
 	return nil
 }
