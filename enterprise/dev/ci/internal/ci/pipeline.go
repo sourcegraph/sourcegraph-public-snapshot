@@ -125,10 +125,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
 	case runtype.BackendIntegrationTests:
+		ops.Append(buildCandidateDockerImage("server", c.Version, c.candidateImageTag()))
 		for i := 0; i < 10; i++ {
-			ops.Append(
-				buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
-				backendIntegrationTests(c.candidateImageTag(), i))
+			ops.Append(backendIntegrationTests(c.candidateImageTag(), i))
 		}
 
 		// always include very backend-oriented changes in this set of tests
