@@ -843,6 +843,9 @@ func (c *Changeset) Attach(batchChangeID int64) {
 		}
 	}
 	c.BatchChanges = append(c.BatchChanges, BatchChangeAssoc{BatchChangeID: batchChangeID})
+	if !c.DetachedAt.IsZero() {
+		c.DetachedAt = time.Time{}
+	}
 }
 
 // Detach marks the given batch change as to-be-detached. Returns true, if the
