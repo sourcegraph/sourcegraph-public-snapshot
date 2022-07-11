@@ -9,11 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { useMutation } from '@sourcegraph/http-client'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
-import {
-    SettingsCascadeProps,
-    // SettingsOrgSubject,
-    // SettingsUserSubject,
-} from '@sourcegraph/shared/src/settings/settings'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { Button, Container, Icon, Input, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
@@ -139,7 +135,14 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
     return (
         <Form className={styles.form} onSubmit={handleCreate}>
             <Container className="mb-4">
-                <LicenseAlert />
+                <LicenseAlert>
+                    <div className="mb-2">
+                        <strong>Your license only allows for 5 changesets per batch change</strong>
+                    </div>
+                    You are running a free version of batch changes. It is fully functional, however it will only
+                    generate 5 changesets per batch change. If you would like to learn more about our pricing, contact
+                    us.
+                </LicenseAlert>
                 {error && <ErrorAlert error={error} />}
                 <NamespaceSelector
                     namespaces={namespaces}

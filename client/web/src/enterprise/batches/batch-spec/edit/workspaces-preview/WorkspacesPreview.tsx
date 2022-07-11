@@ -240,7 +240,14 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     totalChangesetCount={
                         (totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0)
                     }
-                />
+                >
+                    <div className="mb-2">
+                        <strong>Your license only allows for 5 changesets per batch change</strong>
+                    </div>
+                    You are running a free version of batch changes. It is fully functional, however it will only
+                    generate 5 changesets per batch change. If you would like to learn more about our pricing, contact
+                    us.
+                </LicenseAlert>
             </div>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             {!isReadOnly && (
