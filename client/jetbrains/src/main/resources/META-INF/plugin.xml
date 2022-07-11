@@ -70,6 +70,13 @@
             <keyboard-shortcut first-keystroke="alt s" keymap="$default"/>
             <add-to-group group-id="FindMenuGroup" anchor="after" relative-to-action="ReplaceInPath"/>
         </action>
+        <action
+            id="sourcegraph.login"
+            class="com.sourcegraph.config.OpenPluginSettingsAction"
+            text="Log in to Sourcegraph"
+            description="Log in to Sourcegraph"
+            icon="/icons/sourcegraphLogo.png">
+        </action>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.png" popup="true" text="Sourcegraph">
             <reference ref="sourcegraph.openFindPopup"/>
