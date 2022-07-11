@@ -94,16 +94,4 @@ func gitlabClientFromAuthURL(config *oauth2.Config, token *oauth2.Token, db data
 	}
 
 	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil, helper.RefreshToken).GetOAuthClient(token.AccessToken), nil
-
-	//func(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
-	//	// todo
-	//
-	//	newToken, err := helper.RefreshToken(ctx)
-	//	if err != nil {
-	//		return "", errors.Wrap(err, "refresh token")
-	//		// todo
-	//	}
-	//	fmt.Println(".....OAuth token refresh request")
-	//	return newToken, nil
-	//},
 }
