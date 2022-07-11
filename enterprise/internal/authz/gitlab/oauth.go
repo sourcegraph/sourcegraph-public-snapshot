@@ -2,15 +2,16 @@ package gitlab
 
 import (
 	"context"
-	"fmt"
-	"net/url"
-
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/auth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"golang.org/x/oauth2"
+	"net/url"
 )
 
 var _ authz.Provider = (*OAuthProvider)(nil)
@@ -41,23 +42,33 @@ type OAuthProviderOp struct {
 
 	// TokenType is the type of the access token. Default is gitlab.TokenTypePAT.
 	TokenType gitlab.TokenType
+
+	db database.DB
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer) *OAuthProvider {
+	oauth2Config := auth.Oauth2ConfigFromGitLabProvider()
+
+	oauth2Token := &oauth2.Token{
+		AccessToken: op.Token,
+		// todo: check if the helpe and its RefreshToken metbod will work without the other fields present here
+	}
+
+	helper := auth.RefreshTokenHelper{
+		DB:          op.db,
+		Config:      oauth2Config,
+		Token:       oauth2Token,
+		ServiceType: extsvc.TypeGitLab,
+	}
+
 	return &OAuthProvider{
 		token:     op.Token,
 		tokenType: op.TokenType,
 
-		urn: op.URN,
-		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli,
-			func(ctx context.Context, doer httpcli.Doer) (string, error) {
-				// todo
-				fmt.Println("OAuth token refresh request")
-				return "", nil
-			},
-		),
-		clientURL: op.BaseURL,
-		codeHost:  extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
+		urn:            op.URN,
+		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli, helper.RefreshToken),
+		clientURL:      op.BaseURL,
+		codeHost:       extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 	}
 }
 

@@ -9,6 +9,8 @@ import (
 
 	"golang.org/x/oauth2"
 
+	oauthUtils "github.com/sourcegraph/sourcegraph/enterprise/internal/auth"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -42,8 +44,8 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
-	oauth2Config := oauth.Oauth2ConfigFromGitLabProvider()
-	helper := oauth.RefreshTokenHelper{
+	oauth2Config := oauthUtils.Oauth2ConfigFromGitLabProvider()
+	helper := oauthUtils.RefreshTokenHelper{
 		DB:          s.db,
 		Config:      oauth2Config,
 		Token:       token,
