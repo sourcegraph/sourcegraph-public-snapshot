@@ -1053,7 +1053,7 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 				licensing.MockCheckFeature = oldMock
 			}()
 
-			// Create enough changeset specs to hit the licence check.
+			// Create enough changeset specs to hit the license check.
 			changesetSpecs := make([]*btypes.ChangesetSpec, test.numChangesets)
 			for i := range changesetSpecs {
 				changesetSpecs[i] = &btypes.ChangesetSpec{
