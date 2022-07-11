@@ -61,7 +61,7 @@ var auditCommand = &cli.Command{
 			if err != nil {
 				return err
 			}
-			slack, err := sgslack.NewClient(ctx.Context)
+			slack, err := sgslack.NewClient(ctx.Context, std.Out)
 			if err != nil {
 				return err
 			}

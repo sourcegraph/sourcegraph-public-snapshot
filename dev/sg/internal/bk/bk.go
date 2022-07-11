@@ -10,8 +10,8 @@ import (
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -38,7 +38,7 @@ type AnnotationArtifact struct {
 type JobAnnotations map[string]AnnotationArtifact
 
 // retrieveToken obtains a token either from the cached configuration or by asking the user for it.
-func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
+func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 	if tok := os.Getenv("BUILDKITE_API_TOKEN"); tok != "" {
 		// If the token is provided by the environment, use that one.
 		return tok, nil
@@ -67,7 +67,7 @@ func retrieveToken(ctx context.Context, out *output.Output) (string, error) {
 }
 
 // getTokenFromUser prompts the user for a slack OAuth token.
-func getTokenFromUser(out *output.Output) (string, error) {
+func getTokenFromUser(out *std.Output) (string, error) {
 	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StylePending, `Please create and copy a new token from https://buildkite.com/user/api-access-tokens with the following scopes:
 
 - Organization access to %q
@@ -79,7 +79,7 @@ func getTokenFromUser(out *output.Output) (string, error) {
 
 To use functionality that manipulates builds, you must also have the 'write_builds' scope.
 `, BuildkiteOrg))
-	return open.Prompt("Paste your token here:")
+	return out.PromptPasswordf(os.Stdin, "Paste your token here:")
 }
 
 type Client struct {
@@ -89,7 +89,7 @@ type Client struct {
 // NewClient returns an authenticated client that can perform various operation on
 // the organization assigned to buildkiteOrg.
 // If there is no token assigned yet, it will be asked to the user.
-func NewClient(ctx context.Context, out *output.Output) (*Client, error) {
+func NewClient(ctx context.Context, out *std.Output) (*Client, error) {
 	token, err := retrieveToken(ctx, out)
 	if err != nil {
 		return nil, err

@@ -211,7 +211,7 @@ sg ci build --help
 				Usage:   "Open build page in browser",
 			}),
 		Action: func(cmd *cli.Context) error {
-			client, err := bk.NewClient(cmd.Context, std.Out.Output)
+			client, err := bk.NewClient(cmd.Context, std.Out)
 			if err != nil {
 				return err
 			}
@@ -345,7 +345,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 		},
 		Action: func(cmd *cli.Context) error {
 			ctx := cmd.Context
-			client, err := bk.NewClient(ctx, std.Out.Output)
+			client, err := bk.NewClient(ctx, std.Out)
 			if err != nil {
 				return err
 			}
@@ -483,7 +483,7 @@ From there, you can start exploring logs with the Grafana explore panel.
 		),
 		Action: func(cmd *cli.Context) error {
 			ctx := cmd.Context
-			client, err := bk.NewClient(ctx, std.Out.Output)
+			client, err := bk.NewClient(ctx, std.Out)
 			if err != nil {
 				return err
 			}
