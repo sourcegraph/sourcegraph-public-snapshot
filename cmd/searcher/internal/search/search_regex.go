@@ -307,7 +307,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	}
 
 	var (
-		nextFileIdx   = atomic.NewInt32(-1)
+		lastFileIdx   = atomic.NewInt32(-1)
 		filesSkipped  atomic.Uint32
 		filesSearched atomic.Uint32
 	)
@@ -326,7 +326,7 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 		rg := rg.Copy()
 		g.Go(func() error {
 			for !contextCanceled.Load() {
-				idx := int(nextFileIdx.Inc())
+				idx := int(lastFileIdx.Inc())
 				if idx >= len(files) {
 					cancel()
 					return nil
