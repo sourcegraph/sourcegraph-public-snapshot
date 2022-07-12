@@ -47,7 +47,7 @@ export function useObservableWithStatus<T>(observable: Observable<T>): [T | unde
         setStatus('next')
     }, [])
 
-    const handleError = useCallback((error: any) => {
+    const handleError = useCallback((error: unknown) => {
         setError(error)
         setStatus('error')
     }, [])

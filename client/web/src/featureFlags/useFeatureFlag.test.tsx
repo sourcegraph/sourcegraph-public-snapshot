@@ -11,44 +11,51 @@ describe('useFeatureFlag', () => {
     const DISABLED_FLAG = 'disabled-flag' as FeatureFlagName
     const ERROR_FLAG = 'error-flag' as FeatureFlagName
     const NON_EXISTING_FLAG = 'non-existing-flag' as FeatureFlagName
-    interface WrapperProps {
-        flagName: FeatureFlagName
+
+    const Wrapper: React.JSXElementConstructor<{
+        children: React.ReactElement
+        nextOverrides?: Partial<Record<FeatureFlagName, boolean | Error>>
+        refetchInterval?: number
+    }> = ({ nextOverrides, children, refetchInterval }) => {
+        // New `renderHook` doesn't pass any props into Wrapper component like the old one
+        // so couldn't find a way to reproduce `state.setRender(...)` with custom `overrides`
+        // we have to use this state together with `nextOverrides` as an alternative.
+        const [overrides, setOverrides] = React.useState({
+            [ENABLED_FLAG]: true,
+            [DISABLED_FLAG]: false,
+            [ERROR_FLAG]: new Error('Some error'),
+        })
+
+        React.useEffect(() => {
+            setTimeout(() => {
+                setOverrides(current => nextOverrides ?? current)
+            }, refetchInterval)
+        }, [nextOverrides, refetchInterval])
+
+        return (
+            <MockedFeatureFlagsProvider overrides={overrides} refetchInterval={refetchInterval}>
+                {children}
+            </MockedFeatureFlagsProvider>
+        )
     }
+
     const setup = (
         initialFlagName: FeatureFlagName,
         defaultValue = false,
         refetchInterval?: number,
         nextOverrides?: Partial<Record<FeatureFlagName, boolean | Error>>
     ) =>
-        renderHook<ReturnType<typeof useFeatureFlag>, WrapperProps>(
-            ({ flagName }) => useFeatureFlag(flagName, defaultValue),
+        renderHook<
+            ReturnType<typeof useFeatureFlag>,
             {
-                wrapper: ({ children }: React.PropsWithChildren<{}>) => {
-                    // eslint-disable-next-line react-hooks/rules-of-hooks
-                    const [overrides, setOverrides] = React.useState({
-                        [ENABLED_FLAG]: true,
-                        [DISABLED_FLAG]: false,
-                        [ERROR_FLAG]: new Error('Some error'),
-                    })
-
-                    // eslint-disable-next-line react-hooks/rules-of-hooks
-                    React.useEffect(() => {
-                        setTimeout(() => {
-                            setOverrides(current => nextOverrides ?? current)
-                        }, refetchInterval)
-                    }, [])
-
-                    return (
-                        <MockedFeatureFlagsProvider overrides={overrides} refetchInterval={refetchInterval}>
-                            {children}
-                        </MockedFeatureFlagsProvider>
-                    )
-                },
-                initialProps: {
-                    flagName: initialFlagName,
-                },
+                flagName: FeatureFlagName
             }
-        )
+        >(({ flagName }) => useFeatureFlag(flagName, defaultValue), {
+            wrapper: props => <Wrapper refetchInterval={refetchInterval} nextOverrides={nextOverrides} {...props} />,
+            initialProps: {
+                flagName: initialFlagName,
+            },
+        })
 
     it('returns [false] value correctly', async () => {
         const state = setup(DISABLED_FLAG)

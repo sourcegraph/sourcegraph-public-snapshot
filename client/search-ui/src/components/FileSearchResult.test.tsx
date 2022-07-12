@@ -1,7 +1,6 @@
 import { cleanup, getAllByTestId, getByTestId } from '@testing-library/react'
 import { createBrowserHistory } from 'history'
 import FileIcon from 'mdi-react/FileIcon'
-import _VisibilitySensor from 'react-visibility-sensor'
 import sinon from 'sinon'
 
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
@@ -14,17 +13,7 @@ import {
     RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileSearchResult, limitGroup } from './FileSearchResult'
-
-jest.mock(
-    'react-visibility-sensor',
-    (): typeof _VisibilitySensor => ({ children, onChange }: React.ComponentProps<typeof _VisibilitySensor>) => (
-        <>
-            <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
-        </>
-    )
-)
 
 describe('FileSearchResult', () => {
     afterAll(cleanup)

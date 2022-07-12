@@ -1,6 +1,5 @@
 import { cleanup } from '@testing-library/react'
 import * as H from 'history'
-import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import sinon from 'sinon'
 
@@ -13,17 +12,7 @@ import {
     HIGHLIGHTED_FILE_LINES,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
 
-import { MockVisibilitySensor } from './CodeExcerpt.test'
 import { FileMatchChildren } from './FileMatchChildren'
-
-jest.mock(
-    'react-visibility-sensor',
-    (): typeof _VisibilitySensor => ({ children, onChange }: React.ComponentProps<typeof _VisibilitySensor>) => (
-        <>
-            <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
-        </>
-    )
-)
 
 const history = H.createBrowserHistory()
 history.replace({ pathname: '/search' })
