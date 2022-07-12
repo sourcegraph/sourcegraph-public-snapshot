@@ -1,14 +1,5 @@
 # Searching across repositories you've added to Sourcegraph Cloud with search contexts
 
-Once you've [added repositories to Sourcegraph Cloud](./adding_repositories_to_cloud.md), you can search across those repositories by default using search contexts.
-
-Sourcegraph Cloud (Public Beta) currently supports two search contexts: 
-
-- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
-- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
-
-**Coming soon:** create your own search contexts that include the repositories you choose. Want early access? [Let us know](mailto:feedback@sourcegraph.com).
-
 ## Using search contexts
 
 The search contexts selector is shown in the search input. All search queries will target the currently selected search context. 
