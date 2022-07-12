@@ -51,11 +51,15 @@ func (r *Resolved) String() string {
 }
 
 func NewResolver(db database.DB) *Resolver {
-	return &Resolver{db: db}
+	return &Resolver{
+		db: db
+		gitserver: gitserver.NewClient(db),
+	}
 }
 
 type Resolver struct {
-	db database.DB
+	db        database.DB
+	gitserver gitserver.Client
 }
 
 func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
@@ -290,8 +294,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 				}
 
 				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				client := gitserver.NewClient(r.db)
-				commitID, err := client.ResolveRevision(ctx, repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+				commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
 						return err
