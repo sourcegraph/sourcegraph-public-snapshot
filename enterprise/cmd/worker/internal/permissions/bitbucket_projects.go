@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"time"
@@ -13,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
@@ -60,7 +62,7 @@ func (j *bitbucketProjectPermissionsJob) Config() []env.Config {
 
 // Routines is called by the worker service to start the worker.
 // It returns a list of goroutines that the worker service should start and manage.
-func (j *bitbucketProjectPermissionsJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
+func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
 	wdb, err := workerdb.Init()
 	if err != nil {
 		return nil, err
@@ -90,12 +92,12 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 		}
 	}()
 
-	job := record.(*types.BitbucketProjectPermissionJob)
+	workerJob := record.(*types.BitbucketProjectPermissionJob)
 
 	// get the external service
-	svc, err := h.db.ExternalServices().GetByID(ctx, job.ExternalServiceID)
+	svc, err := h.db.ExternalServices().GetByID(ctx, workerJob.ExternalServiceID)
 	if err != nil {
-		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to get external service %d", job.ExternalServiceID))
+		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to get external service %d", workerJob.ExternalServiceID))
 	}
 
 	if svc.Kind != extsvc.KindBitbucketServer {
@@ -107,23 +109,28 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	if err != nil {
 		return errors.Wrapf(err, "failed to build Bitbucket client for external service %d", svc.ID)
 	}
-	repos, err := client.ProjectRepos(ctx, job.ProjectKey)
+
+	projectKey := workerJob.ProjectKey
+
+	// These repos are fetched from Bitbucket, therefore their IDs are Bitbucket IDs
+	// and we need to search for these repos in frontend DB using the name
+	bitbucketRepos, err := client.ProjectRepos(ctx, projectKey)
 	if err != nil {
-		return errors.Wrapf(err, "failed to list repositories of Bitbucket Project %q", job.ProjectKey)
+		return errors.Wrapf(err, "failed to list repositories of Bitbucket Project %q", projectKey)
 	}
 
-	if job.Unrestricted {
-		return h.setReposUnrestricted(ctx, logger, repos, job.ProjectKey)
-	}
-
-	repoIDs := make([]api.RepoID, len(repos))
-	for i, repo := range repos {
-		repoIDs[i] = api.RepoID(repo.ID)
-	}
-
-	err = h.setPermissionsForUsers(ctx, svc, logger, job.Permissions, repoIDs, job.ProjectKey)
+	repoIDs, err := h.getRepoIDsByNames(ctx, svc, projectKey, bitbucketRepos)
 	if err != nil {
-		return errors.Wrapf(err, "failed to set permissions for Bitbucket Project %q", job.ProjectKey)
+		return errors.Wrap(err, "failed to get gitserver repos from the database")
+	}
+
+	if workerJob.Unrestricted {
+		return h.setReposUnrestricted(ctx, logger, repoIDs, projectKey)
+	}
+
+	err = h.setPermissionsForUsers(ctx, svc, logger, workerJob.Permissions, repoIDs, projectKey)
+	if err != nil {
+		return errors.Wrapf(err, "failed to set permissions for Bitbucket Project %q", projectKey)
 	}
 
 	return nil
@@ -154,23 +161,75 @@ func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(svc *types.Exter
 	return bitbucketserver.NewClient(svc.URN(), &c, cli)
 }
 
-func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Context, logger log.Logger, repos []*bitbucketserver.Repo, projectKey string) error {
-	sort.Slice(repos, func(i, j int) bool {
-		return repos[i].ID < repos[j].ID
+func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Context, logger log.Logger, repoIDs []api.RepoID, projectKey string) error {
+	sort.Slice(repoIDs, func(i, j int) bool {
+		return repoIDs[i] < repoIDs[j]
 	})
-	repoIDs := make([]int32, len(repos))
-	for i, repo := range repos {
-		repoIDs[i] = int32(repo.ID)
+
+	// converting api.RepoID to int32
+	repoIntIDs := make([]int32, len(repoIDs))
+	for i, id := range repoIDs {
+		repoIntIDs[i] = int32(id)
 	}
 
 	logger.Info("Setting bitbucket repositories to unrestricted", log.String("project_key", projectKey))
 
-	err := h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIDs, true)
+	err := h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIntIDs, true)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set permissions to unrestricted for Bitbucket Project %q", projectKey)
 	}
 
 	return nil
+}
+
+// getRepoIDsByNames queries repo IDs from frontend database using repo names fetched from
+// Bitbucket code host.
+func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Context, svc *types.ExternalService, projectKey string, repos []*bitbucketserver.Repo) ([]api.RepoID, error) {
+	count := len(repos)
+	IDs := make([]api.RepoID, 0, count)
+	if count == 0 {
+		return IDs, nil
+	}
+
+	// unmarshalling external service config
+	var cfg schema.BitbucketServerConnection
+	if err := jsonc.Unmarshal(svc.Config, &cfg); err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+
+	// parsing the hostname from the URL
+	parsedURL, err := url.Parse(cfg.Url)
+	if err != nil {
+		return nil, errors.Errorf("error during parsing external service URL", err)
+	}
+	hostname := parsedURL.Hostname()
+
+	names := make([]api.RepoName, 0, count)
+	for _, repo := range repos {
+		// this is how repo names are composed before creating repos in `repo` table
+		// we are reconstructing this name for successful pattern matching
+		name := reposource.BitbucketServerRepoName(
+			cfg.RepositoryPathPattern,
+			hostname,
+			projectKey,
+			repo.Slug,
+		)
+
+		names = append(names, name)
+	}
+
+	// searching for repos by names
+	gitserverRepos, err := h.db.GitserverRepos().GetByNames(ctx, names...)
+	if err != nil {
+		return nil, err
+	}
+
+	// mapping repos to repo IDs
+	for _, gitserverRepo := range gitserverRepos {
+		IDs = append(IDs, gitserverRepo.RepoID)
+	}
+
+	return IDs, nil
 }
 
 // setPermissionsForUsers applies user permissions to a list of repos.
