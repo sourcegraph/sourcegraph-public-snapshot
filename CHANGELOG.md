@@ -42,6 +42,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed an issue where multiple activations of the back button are required to navigate back to a previously selected line in a file [#38193](https://github.com/sourcegraph/sourcegraph/pull/38193)
 - Support timestamps with numeric timezone format from Gitlab's Webhook payload [#38250](https://github.com/sourcegraph/sourcegraph/pull/38250)
 - Fixed regression of mismatched `From` address when render emails. [#38589](https://github.com/sourcegraph/sourcegraph/pull/38589)
+- Code Insights: fixed an issue where insights generated from `type:commit` searches would fail to save results in streaming search mode [#38680](https://github.com/sourcegraph/sourcegraph/pull/38680)
 
 ### Removed
 
