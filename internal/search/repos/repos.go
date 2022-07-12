@@ -199,8 +199,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		repos = repos[:len(repos)-1]
 	}
 
-	tr.LazyPrintf("Associate/validate revs - start")
-
 	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
 		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.db, searchContext.ID)
@@ -214,14 +212,21 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		}
 	}
 
+	tr.LazyPrintf("starting rev association")
+
 	associatedRepoRevs, missingRepoRevs := r.associateReposWithRevs(repos, dependencyRevs, searchContextRepositoryRevisions, includePatternRevs)
-	filteredRepoRevs, newMissingRepoRevs, errs, criticalErr := r.filterRepoRevs(ctx, associatedRepoRevs, op)
+
+	tr.LazyPrintf("completed rev association")
+	tr.LazyPrintf("starting rev filtering")
+
+	filteredRepoRevs, filteredMissingRepoRevs, errs, criticalErr := r.filterRepoRevs(ctx, associatedRepoRevs, op)
+	missingRepoRevs = append(missingRepoRevs, filteredMissingRepoRevs...)
+
+	tr.LazyPrintf("completed rev filtering")
+
 	if criticalErr != nil {
 		return Resolved{}, criticalErr
 	}
-	missingRepoRevs = append(missingRepoRevs, newMissingRepoRevs...)
-
-	tr.LazyPrintf("Associate/validate revs - done")
 
 	if len(missingRepoRevs) > 0 {
 		errs = errors.Append(errs, &MissingRepoRevsError{Missing: missingRepoRevs})
