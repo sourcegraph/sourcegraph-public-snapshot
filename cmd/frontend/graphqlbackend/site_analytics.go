@@ -67,3 +67,11 @@ func (r *siteAnalyticsResolver) Repos(ctx context.Context) (*adminanalytics.Repo
 
 	return repos.Summary(ctx)
 }
+
+/* Batch changes */
+
+func (r *siteAnalyticsResolver) BatchChanges(ctx context.Context, args *struct {
+	DateRange *string
+}) *adminanalytics.BatchChanges {
+	return &adminanalytics.BatchChanges{DateRange: *args.DateRange, DB: r.db, Cache: cache}
+}
