@@ -332,6 +332,9 @@ func fatalIfErrorLabel(t *testing.T, err error, label string) {
 }
 
 func children(node *sitter.Node) []*sitter.Node {
+	if node == nil {
+		return nil
+	}
 	var children []*sitter.Node
 	for i := 0; i < int(node.NamedChildCount()); i++ {
 		children = append(children, node.NamedChild(i))

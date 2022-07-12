@@ -2,6 +2,7 @@ package squirrel
 
 import (
 	"context"
+	"fmt"
 
 	sitter "github.com/smacker/go-tree-sitter"
 )
@@ -16,6 +17,7 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 		cur := node.Node
 
 		for {
+			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
 				squirrel.breadcrumb(node, "getDefJava: ran out of parents")
@@ -30,6 +32,22 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 					return found, nil
 				}
 				return squirrel.getDefInImportsOrCurrentModulePython(ctx, swapNode(node, cur), ident)
+
+			case "attribute":
+				object := cur.ChildByFieldName("object")
+				if object == nil {
+					squirrel.breadcrumb(node, "getDefJava: attribute has no object field")
+					return nil, nil
+				}
+				attribute := cur.ChildByFieldName("attribute")
+				if attribute == nil {
+					squirrel.breadcrumb(node, "getDefJava: attribute has no attribute field")
+					return nil, nil
+				}
+				if nodeId(object) == nodeId(prev) {
+					continue
+				}
+				return squirrel.getFieldPython(ctx, swapNode(node, object), attribute.Content(node.Contents))
 
 			case "for_statement":
 				left := cur.ChildByFieldName("left")
@@ -155,6 +173,12 @@ func findNodeInScope(block *sitter.Node, node Node, ident string) *Node {
 				return swapNodePtr(node, name)
 			}
 			continue
+		case "class_definition":
+			name := child.ChildByFieldName("name")
+			if name != nil && name.Type() == "identifier" && name.Content(node.Contents) == ident {
+				return swapNodePtr(node, name)
+			}
+			continue
 		case "expression_statement":
 			query := `(expression_statement (assignment left: (identifier) @ident))`
 			captures, err := allCaptures(query, swapNode(node, child))
@@ -218,6 +242,199 @@ func findNodeInScope(block *sitter.Node, node Node, ident string) *Node {
 	return nil
 }
 
+func (squirrel *SquirrelService) getFieldPython(ctx context.Context, object Node, field string) (ret *Node, err error) {
+	defer squirrel.onCall(object, &Tuple{String(object.Type()), String(field)}, lazyNodeStringer(&ret))()
+
+	ty, err := squirrel.getTypeDefPython(ctx, object)
+	if err != nil {
+		return nil, err
+	}
+	if ty == nil {
+		return nil, nil
+	}
+	return squirrel.lookupFieldPython(ctx, ty, field)
+}
+
+func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty Type, field string) (ret *Node, err error) {
+	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
+
+	switch ty2 := ty.(type) {
+	case ClassType:
+		body := ty2.def.ChildByFieldName("body")
+		if body == nil {
+			return nil, nil
+		}
+		for _, child := range children(body) {
+			switch child.Type() {
+			case "expression_statement":
+				query := `(expression_statement (assignment left: (identifier) @ident))`
+				captures, err := allCaptures(query, swapNode(ty2.def, child))
+				if err != nil {
+					return nil, err
+				}
+				for _, capture := range captures {
+					if capture.Content(capture.Contents) == field {
+						return swapNodePtr(ty2.def, capture.Node), nil
+					}
+				}
+				continue
+			case "function_definition":
+				name := child.ChildByFieldName("name")
+				if name == nil {
+					continue
+				}
+				if name.Content(ty2.def.Contents) == field {
+					return swapNodePtr(ty2.def, name), nil
+				}
+			case "class_definition":
+				name := child.ChildByFieldName("name")
+				if name == nil {
+					continue
+				}
+				if name.Content(ty2.def.Contents) == field {
+					return swapNodePtr(ty2.def, name), nil
+				}
+			}
+		}
+		for _, super := range getSuperclassesPython(ty2.def) {
+			found, err := squirrel.getFieldPython(ctx, super, field)
+			if err != nil {
+				return nil, err
+			}
+			if found != nil {
+				return found, nil
+			}
+		}
+		return nil, nil
+	case FnType:
+		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.variant()))
+		return nil, nil
+	case PrimType:
+		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.variant()))
+		return nil, nil
+	default:
+		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unrecognized type variant %q", ty.variant()))
+		return nil, nil
+	}
+}
+
+func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret Type, err error) {
+	defer squirrel.onCall(node, String(node.Type()), lazyTypeStringer(&ret))()
+
+	onIdent := func() (Type, error) {
+		found, err := squirrel.getDefPython(ctx, node)
+		if err != nil {
+			return nil, err
+		}
+		if found == nil {
+			return nil, nil
+		}
+		return squirrel.defToTypePython(ctx, *found)
+	}
+
+	switch node.Type() {
+	// case "type_identifier":
+	// 	if node.Content(node.Contents) == "var" {
+	// 		localVariableDefinition := node.Parent()
+	// 		if localVariableDefinition == nil {
+	// 			return nil, nil
+	// 		}
+	// 		captures, err := allCaptures("(local_variable_definition declarator: (variable_declarator value: (_) @value))", swapNode(node, localVariableDefinition))
+	// 		if err != nil {
+	// 			return nil, err
+	// 		}
+	// 		for _, capture := range captures {
+	// 			return squirrel.getTypeDefPython(ctx, capture)
+	// 		}
+	// 		return nil, nil
+	// 	} else {
+	// 		return onIdent()
+	// 	}
+	// case "this":
+	// 	fallthrough
+	// case "super":
+	// 	fallthrough
+	case "identifier":
+		return onIdent()
+	// case "field_access":
+	// 	object := node.ChildByFieldName("object")
+	// 	if object == nil {
+	// 		return nil, nil
+	// 	}
+	// 	field := node.ChildByFieldName("field")
+	// 	if field == nil {
+	// 		return nil, nil
+	// 	}
+	// 	objectType, err := squirrel.getTypeDefPython(ctx, swapNode(node, object))
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if objectType == nil {
+	// 		return nil, nil
+	// 	}
+	// 	found, err := squirrel.lookupFieldPython(ctx, objectType, field.Content(node.Contents))
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if found == nil {
+	// 		return nil, nil
+	// 	}
+	// 	return squirrel.defToType(ctx, *found)
+	// case "method_invocation":
+	// 	name := node.ChildByFieldName("name")
+	// 	if name == nil {
+	// 		return nil, nil
+	// 	}
+	// 	ty, err := squirrel.getTypeDefPython(ctx, swapNode(node, name))
+	// 	if err != nil {
+	// 		return nil, err
+	// 	}
+	// 	if ty == nil {
+	// 		return nil, nil
+	// 	}
+	// 	switch ty2 := ty.(type) {
+	// 	case FnType:
+	// 		return ty2.ret, nil
+	// 	default:
+	// 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefPython: expected method, got %q", ty.variant()))
+	// 		return nil, nil
+	// 	}
+	// case "generic_type":
+	// 	for _, child := range children(node.Node) {
+	// 		if child.Type() == "type_identifier" || child.Type() == "scoped_type_identifier" {
+	// 			return squirrel.getTypeDefPython(ctx, swapNode(node, child))
+	// 		}
+	// 	}
+	// 	squirrel.breadcrumb(node, "getTypeDefPython: expected an identifier")
+	// 	return nil, nil
+	// case "scoped_type_identifier":
+	// 	for i := int(node.NamedChildCount()) - 1; i >= 0; i-- {
+	// 		child := node.NamedChild(i)
+	// 		if child.Type() == "type_identifier" {
+	// 			return squirrel.getTypeDefPython(ctx, swapNode(node, child))
+	// 		}
+	// 	}
+	// 	return nil, nil
+	// case "object_creation_expression":
+	// 	ty := node.ChildByFieldName("type")
+	// 	if ty == nil {
+	// 		return nil, nil
+	// 	}
+	// 	return squirrel.getTypeDefPython(ctx, swapNode(node, ty))
+	// case "void_type":
+	// 	return PrimType{noad: node, varient: "void"}, nil
+	// case "integral_type":
+	// 	return PrimType{noad: node, varient: "integral"}, nil
+	// case "floating_point_type":
+	// 	return PrimType{noad: node, varient: "floating"}, nil
+	// case "boolean_type":
+	// 	return PrimType{noad: node, varient: "boolean"}, nil
+	default:
+		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefPython: unrecognized node type %q", node.Type()))
+		return nil, nil
+	}
+}
+
 func (squirrel *SquirrelService) getDefInImportsOrCurrentModulePython(ctx context.Context, program Node, ident string) (ret *Node, err error) {
 	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
@@ -236,4 +453,89 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentModulePython(ctx contex
 	}
 
 	return nil, nil
+}
+
+func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) (Type, error) {
+	parent := def.Node.Parent()
+	if parent == nil {
+		return nil, nil
+	}
+	switch parent.Type() {
+	case "parameters":
+		if def.Node.Type() == "identifier" && def.Node.Content(def.Contents) == "self" {
+			fn := parent.Parent()
+			if fn == nil || fn.Type() != "function_definition" {
+				fmt.Println("🟠1", parent.Type(), fn.Type())
+				return nil, nil
+			}
+			block := fn.Parent()
+			if block == nil || block.Type() != "block" {
+				fmt.Println("🟠2.1")
+				return nil, nil
+			}
+			class := block.Parent()
+			if class == nil || class.Type() != "class_definition" {
+				fmt.Println("🟠2")
+				return nil, nil
+			}
+			name := class.ChildByFieldName("name")
+			if name == nil {
+				fmt.Println("🟠3")
+				return nil, nil
+			}
+			return squirrel.defToTypePython(ctx, swapNode(def, name))
+		}
+		fmt.Println("TODO defToTypePython:", parent.Type())
+		return nil, nil
+	case "class_definition":
+		return (Type)(ClassType{def: swapNode(def, parent)}), nil
+	case "function_definition":
+		retTyNode := parent.ChildByFieldName("type")
+		if retTyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
+			return (Type)(FnType{
+				ret:  nil,
+				noad: swapNode(def, parent),
+			}), nil
+		}
+		retTy, err := squirrel.getTypeDefPython(ctx, swapNode(def, retTyNode))
+		if err != nil {
+			return nil, err
+		}
+		return (Type)(FnType{
+			ret:  retTy,
+			noad: swapNode(def, parent),
+		}), nil
+	case "formal_parameter":
+		fallthrough
+	case "enhanced_for_statement":
+		tyNode := parent.ChildByFieldName("type")
+		if tyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			return nil, nil
+		}
+		return squirrel.getTypeDefPython(ctx, swapNode(def, tyNode))
+	case "variable_declarator":
+		grandparent := parent.Parent()
+		if grandparent == nil {
+			return nil, nil
+		}
+		tyNode := grandparent.ChildByFieldName("type")
+		if tyNode == nil {
+			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
+			return nil, nil
+		}
+		return squirrel.getTypeDefPython(ctx, swapNode(def, tyNode))
+	default:
+		squirrel.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
+		return nil, nil
+	}
+}
+
+func getSuperclassesPython(definition Node) []Node {
+	supers := []Node{}
+	for _, super := range children(definition.ChildByFieldName("superclasses")) {
+		supers = append(supers, swapNode(definition, super))
+	}
+	return supers
 }

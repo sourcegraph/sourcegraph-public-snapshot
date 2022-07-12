@@ -474,7 +474,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		if found == nil {
 			return nil, nil
 		}
-		return squirrel.defToType(ctx, *found)
+		return squirrel.defToTypeJava(ctx, *found)
 	}
 
 	switch node.Type() {
@@ -524,7 +524,7 @@ func (squirrel *SquirrelService) getTypeDefJava(ctx context.Context, node Node) 
 		if found == nil {
 			return nil, nil
 		}
-		return squirrel.defToType(ctx, *found)
+		return squirrel.defToTypeJava(ctx, *found)
 	case "method_invocation":
 		name := node.ChildByFieldName("name")
 		if name == nil {
@@ -772,7 +772,7 @@ func (t PrimType) node() Node {
 	return t.noad
 }
 
-func (squirrel *SquirrelService) defToType(ctx context.Context, def Node) (Type, error) {
+func (squirrel *SquirrelService) defToTypeJava(ctx context.Context, def Node) (Type, error) {
 	parent := def.Node.Parent()
 	if parent == nil {
 		return nil, nil
