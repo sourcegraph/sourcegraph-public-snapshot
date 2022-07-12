@@ -17,7 +17,7 @@ def f(x):
         #    v py.f.i ref
         l2 = i  # < "l2" py.f.l2 def
 
-    while True:
+    while False:
         l3 = 3  # < "l3" py.f.l3 def
 
     try:
@@ -76,4 +76,5 @@ _ = newC1().x
 #                   v py.C1.x ref
 _ = C1().x + C2().y.x
 
-f(3)  # < "f" py.f ref
+if False:
+    f(3)  # < "f" py.f ref
