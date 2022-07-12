@@ -114,7 +114,7 @@ We do not publish data for successful builds or branch builds (for those, you ca
 
 For a brief overview, check out the [CI dashboard](https://sourcegraph.grafana.net/d/iBBWbxFnk/ci?orgId=1), which is a set of graphs based on the contents of uploaded logs.
 
-Some annotations also have a link "View Grafana logs" which will take one to Grafana cloud with a pre-populated query to view the log output of a failure (if any).For more about querying logs, refer to the handbook page: [Grafana Cloud - CI logs](https://handbook.sourcegraph.com/departments/engineering/dev/tools/observability/cloud/#ci-logs).
+Some annotations also have a link "View Grafana logs" which will take one to Grafana cloud with a pre-populated query to view the log output of a failure (if any). For more about querying logs, refer to the handbook page: [Grafana Cloud - CI logs](https://handbook.sourcegraph.com/departments/engineering/dev/tools/observability/cloud/#ci-logs).
 
 #### Pipeline command tracing
 
