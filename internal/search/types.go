@@ -171,6 +171,9 @@ type TextPatternInfo struct {
 	FilePatternsReposMustInclude []string
 	FilePatternsReposMustExclude []string
 
+	FileMustBeOwnedBy    string
+	FileMustNotBeOwnedBy string
+
 	PathPatternsAreCaseSensitive bool
 
 	PatternMatchesContent bool

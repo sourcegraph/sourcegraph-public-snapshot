@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -191,6 +192,7 @@ type MetaEnvironment struct {
 	Date    string
 	Email   string
 	Lang    string
+	Owners  []string
 }
 
 var empty = struct{}{}
@@ -204,6 +206,7 @@ var builtinVariables = map[string]struct{}{
 	"date":    empty,
 	"email":   empty,
 	"lang":    empty,
+	"owners":  empty,
 }
 
 func templatize(pattern string) string {
@@ -257,6 +260,7 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Commit:  string(m.CommitID),
 			Content: content,
 			Lang:    lang,
+			Owners:  codeownership.ForResult(*m),
 		}
 	case *result.CommitMatch:
 		return &MetaEnvironment{

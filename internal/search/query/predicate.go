@@ -44,6 +44,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
 		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
+		"owned.by":         func() Predicate { return &FileOwnershipPredicate{} },
 	},
 }
 
@@ -318,7 +319,7 @@ func (f *RepoDependentsPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 
-/* repo:contains.content(pattern) */
+/* file:contains.content(pattern) */
 
 type FileContainsContentPredicate struct {
 	Pattern string
@@ -382,4 +383,28 @@ func nonPredicateRepos(q Basic) []Node {
 		}
 	})
 	return res
+}
+
+/* file:owned.by(pattern) */
+
+type FileOwnershipPredicate struct {
+	Owner string
+}
+
+func (f *FileOwnershipPredicate) ParseParams(params string) error {
+	if _, err := regexp.Compile(params); err != nil {
+		return errors.Errorf("file:owned.by argument: %w", err)
+	}
+	if params == "" {
+		return errors.Errorf("file:owned.by argument should not be empty")
+	}
+	f.Owner = params
+	return nil
+}
+
+func (f FileOwnershipPredicate) Field() string { return FieldFile }
+func (f FileOwnershipPredicate) Name() string  { return "owned.by" }
+func (f *FileOwnershipPredicate) Plan(parent Basic) (Plan, error) {
+	// Handled by repo search
+	return nil, nil
 }

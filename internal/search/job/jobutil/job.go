@@ -1,6 +1,7 @@
 package jobutil
 
 import (
+	"fmt"
 	"strings"
 	"time"
 
@@ -514,6 +515,7 @@ func count(b query.Basic, p search.Protocol) int {
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
 func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protocol) *search.TextPatternInfo {
+	fmt.Println(b)
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
