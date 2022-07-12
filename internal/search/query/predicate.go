@@ -321,7 +321,9 @@ func (f *RepoDependentsPredicate) Plan(parent Basic) (Plan, error) {
 
 /* repo:description(...) */
 
-type RepoDescriptionPredicate struct{}
+type RepoDescriptionPredicate struct {
+	Pattern string
+}
 
 func (f *RepoDescriptionPredicate) ParseParams(params string) (err error) {
 	if _, err := regexp.Compile(params); err != nil {
@@ -330,6 +332,7 @@ func (f *RepoDescriptionPredicate) ParseParams(params string) (err error) {
 	if len(params) == 0 {
 		return errors.New("empty repo:description predicate parameter")
 	}
+	f.Pattern = params
 	return nil
 }
 

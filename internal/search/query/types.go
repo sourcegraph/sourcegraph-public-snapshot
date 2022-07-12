@@ -394,11 +394,9 @@ func (p Parameters) Dependents() (dependents []string) {
 }
 
 func (p Parameters) Description() (descriptionPatterns []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && name == "description" {
-			split := strings.Split(value, " ")
-			descriptionPatterns = append(descriptionPatterns, "(?:"+strings.Join(split, ").*?(?:")+")")
-		}
+	VisitTypedPredicate(toNodes(p), func(pred *RepoDescriptionPredicate, negated bool) {
+		split := strings.Split(pred.Pattern, " ")
+		descriptionPatterns = append(descriptionPatterns, "(?:"+strings.Join(split, ").*?(?:")+")")
 	})
 	return descriptionPatterns
 }

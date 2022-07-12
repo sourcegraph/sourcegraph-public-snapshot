@@ -179,8 +179,8 @@ func TestRepoDescriptionPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`literal`, `test`, &RepoDescriptionPredicate{}},
-			{`regexp`, `test(.*)package`, &RepoDescriptionPredicate{}},
+			{`literal`, `test`, &RepoDescriptionPredicate{Pattern: "test"}},
+			{`regexp`, `test(.*)package`, &RepoDescriptionPredicate{Pattern: "test(.*)package"}},
 		}
 
 		for _, tc := range valid {
