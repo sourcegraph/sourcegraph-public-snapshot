@@ -112,17 +112,17 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
 export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsSearchPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage'),
         exact: true,
     },
     {
         path: '/analytics/code-intel',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsCodeIntelPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsCodeIntelPage'), 'AnalyticsCodeIntelPage'),
         exact: true,
     },
     {
         path: '/analytics/users',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsUsersPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage'),
         exact: true,
     },
     {
@@ -137,7 +137,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/notebooks',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsNotebooksPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsNotebooksPage'), 'AnalyticsNotebooksPage'),
         exact: true,
     },
     {

@@ -102,3 +102,7 @@ UpdateCommitAuthor.storyName = 'Update commit author'
 export const ForkedRepo = Template.bind({})
 ForkedRepo.args = { node: stories['Forked repo'] }
 ForkedRepo.storyName = 'Forked repo'
+
+export const ReattachedChangeset = Template.bind({})
+ForkedRepo.args = { node: stories['Reattach changeset'] }
+ForkedRepo.storyName = 'Reattach Changeseet'
