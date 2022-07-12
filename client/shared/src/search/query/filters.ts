@@ -146,6 +146,9 @@ interface BaseFilterDefinition {
     alias?: keyof typeof AliasedFilterType
     description: string
     discreteValues?: (value: Literal | undefined, isSourcegraphDotCom?: boolean) => Completion[]
+    /** Placeholder value shown in the input when the filter has no value. */
+    placeholder?: string
+    /** Whether to query the server for completions of this type. */
     suggestions?: SearchMatch['type']
     default?: string
     /** Whether the filter may only be used 0 or 1 times in a query. */
@@ -185,19 +188,22 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.after]: {
         alias: 'since',
         description: 'Commits made after a certain date',
+        placeholder: '"time frame"',
     },
     [FilterType.archived]: {
         description: 'Include results from archived repositories.',
-        discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
+        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
         singular: true,
     },
     [FilterType.author]: {
         negatable: true,
         description: negated => `${negated ? 'Exclude' : 'Include only'} commits or diffs authored by a user.`,
+        placeholder: '"author name/email"',
     },
     [FilterType.before]: {
         alias: 'until',
         description: 'Commits made before a certain date',
+        placeholder: '"time frame"',
     },
     [FilterType.case]: {
         description: 'Treat the search pattern as case-sensitive.',
@@ -208,12 +214,14 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.committer]: {
         description: (negated: boolean): string =>
             `${negated ? 'Exclude' : 'Include only'} commits and diffs committed by a user.`,
+        placeholder: '"author name/email"',
         negatable: true,
         singular: true,
     },
     [FilterType.content]: {
         description: (negated: boolean): string =>
             `${negated ? 'Exclude' : 'Include only'} results from files if their content matches the search pattern.`,
+        placeholder: 'pattern',
         negatable: true,
         singular: true,
     },
@@ -223,6 +231,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.count]: {
         description: 'Number of results to fetch (integer) or "all"',
+        placeholder: 'number',
         singular: true,
     },
     [FilterType.file]: {
@@ -230,10 +239,11 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} results from file paths matching the given search pattern.`,
+        placeholder: 'regex',
         suggestions: 'path',
     },
     [FilterType.fork]: {
-        discreteValues: () => ['yes', 'no', 'only'].map(value => ({ label: value })),
+        discreteValues: () => ['yes', 'only', 'no'].map(value => ({ label: value })),
         description: 'Include results from forked repositories.',
         singular: true,
     },
@@ -248,9 +258,10 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         negatable: true,
         description: negated =>
             `${negated ? 'Exclude' : 'Include only'} Commits with messages matching a certain string`,
+        placeholder: '"content"',
     },
     [FilterType.patterntype]: {
-        discreteValues: () => ['regexp', 'literal', 'structural'].map(value => ({ label: value })),
+        discreteValues: () => ['regexp', 'structural', 'literal'].map(value => ({ label: value })),
         description: 'The pattern type (regexp, literal, structural) in use',
         singular: true,
     },
@@ -267,11 +278,13 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.repogroup]: {
         alias: 'g',
-        description: 'group-name (include results from the named group)',
+        description: 'Include results from the named group.',
+        placeholder: 'group-name',
         singular: true,
     },
     [FilterType.repohascommitafter]: {
-        description: '"string specifying time frame" (filter out stale repositories without recent commits)',
+        description: 'Filter out stale repositories without recent commits',
+        placeholder: '"time frame"',
         singular: true,
     },
     [FilterType.repohasfile]: {
@@ -282,6 +295,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     [FilterType.rev]: {
         alias: 'revision',
         description: 'Search a revision (branch, commit hash, or tag) instead of the default branch.',
+        placeholder: 'branch/commit/tag',
         singular: true,
     },
     [FilterType.select]: {
@@ -291,6 +305,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
     },
     [FilterType.timeout]: {
         description: 'Duration before timeout',
+        placeholder: 'duration-value',
         singular: true,
     },
     [FilterType.type]: {

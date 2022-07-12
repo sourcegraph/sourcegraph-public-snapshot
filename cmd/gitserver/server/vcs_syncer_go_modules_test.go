@@ -15,7 +15,7 @@ import (
 )
 
 func TestGoModulesSyncer_unzip(t *testing.T) {
-	dep := reposource.NewGoDependency(module.Version{
+	dep := reposource.NewGoPackageVersion(module.Version{
 		Path:    "github.com/bad/actor",
 		Version: "v1.0.0",
 	})

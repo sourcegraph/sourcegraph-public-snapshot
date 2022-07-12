@@ -1,11 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronDown, mdiAlertCircle, mdiPencil, mdiClose, mdiSync } from '@mdi/js'
 import { noop } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 import { useHistory, useLocation } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
@@ -113,26 +109,27 @@ const MemoizedActionsMenu: React.FunctionComponent<
                 <div className="d-inline-block" ref={menuReference} aria-hidden={showPreviewButton}>
                     <MenuButton variant="secondary" className={showPreviewButton ? styles.menuButtonHidden : undefined}>
                         Actions
-                        <Icon aria-hidden={true} as={ChevronDownIcon} className={styles.chevronIcon} />
+                        <Icon aria-hidden={true} className={styles.chevronIcon} svgPath={mdiChevronDown} />
                     </MenuButton>
                 </div>
                 <MenuList position={Position.bottomEnd}>
                     {showPreviewMenuItem && (
                         <MenuItem onSelect={() => history.push(`${batchSpec.executionURL}/preview`)}>
-                            <Icon aria-hidden={true} as={AlertCircleIcon} /> Preview with errors
+                            <Icon aria-hidden={true} svgPath={mdiAlertCircle} /> Preview with errors
                         </MenuItem>
                     )}
                     <MenuItem onSelect={onSelectEdit}>
-                        <Icon aria-hidden={true} as={PencilIcon} /> Edit spec{isExecuting ? '...' : ''}
+                        <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit spec{isExecuting ? '...' : ''}
                     </MenuItem>
                     {isExecuting && (
                         <MenuItem onSelect={onSelectCancel}>
-                            <Icon aria-hidden={true} as={CloseIcon} className={styles.cancelIcon} /> Cancel execution...
+                            <Icon aria-hidden={true} className={styles.cancelIcon} svgPath={mdiClose} /> Cancel
+                            execution...
                         </MenuItem>
                     )}
                     {batchSpec.viewerCanRetry && (
                         <MenuItem onSelect={retryBatchSpecExecution} disabled={isRetryLoading}>
-                            <Icon aria-hidden={true} as={SyncIcon} /> Retry failed workspaces
+                            <Icon aria-hidden={true} svgPath={mdiSync} /> Retry failed workspaces
                         </MenuItem>
                     )}
                 </MenuList>

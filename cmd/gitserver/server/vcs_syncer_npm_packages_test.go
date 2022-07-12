@@ -109,7 +109,7 @@ func TestNpmCloneCommand(t *testing.T) {
 		schema.NpmPackagesConnection{Dependencies: []string{}},
 		depsSvc,
 		&client,
-	).(*vcsDependenciesSyncer)
+	).(*vcsPackagesSyncer)
 
 	bareGitDirectory := path.Join(dir, "git")
 	s.runCloneCommand(t, exampleNpmPackageURL, bareGitDirectory, []string{exampleNpmVersionedPackage})

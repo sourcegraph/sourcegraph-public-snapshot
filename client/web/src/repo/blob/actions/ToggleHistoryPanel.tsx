@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiHistory } from '@mdi/js'
 import * as H from 'history'
-import HistoryIcon from 'mdi-react/HistoryIcon'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -90,7 +90,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    <Icon as={HistoryIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiHistory} />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
                 </RepoHeaderActionButtonLink>
             )
@@ -103,7 +103,7 @@ export class ToggleHistoryPanel extends React.PureComponent<
                 data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
                 aria-label={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
             >
-                <Icon as={HistoryIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiHistory} />
             </RepoHeaderActionButtonLink>
         )
     }

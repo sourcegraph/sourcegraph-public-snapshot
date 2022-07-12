@@ -96,10 +96,7 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintln(w, "This is the symbols service status page.")
 	fmt.Fprintln(w, "")
 
-	if os.Getenv("ROCKSKIP_REPOS") == "" {
-		fmt.Fprintln(w, "⚠️ Rockskip is not enabled for any repositories. Remember to set the ROCKSKIP_REPOS environment variable and restart the symbols service.")
-		fmt.Fprintln(w, "")
-	} else {
+	if os.Getenv("ROCKSKIP_REPOS") != "" {
 		fmt.Fprintln(w, "Rockskip is enabled for these repositories:")
 		for _, repo := range strings.Split(os.Getenv("ROCKSKIP_REPOS"), ",") {
 			fmt.Fprintln(w, "  "+repo)
@@ -113,6 +110,12 @@ func (s *Service) HandleStatus(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintln(w, "⚠️ Docs: https://docs.sourcegraph.com/code_intelligence/explanations/rockskip")
 			fmt.Fprintln(w, "")
 		}
+	} else if os.Getenv("ROCKSKIP_MIN_REPO_SIZE_MB") != "" {
+		fmt.Fprintf(w, "Rockskip is enabled for repositories over %sMB in size.\n", os.Getenv("ROCKSKIP_MIN_REPO_SIZE_MB"))
+		fmt.Fprintln(w, "")
+	} else {
+		fmt.Fprintln(w, "⚠️ Rockskip is not enabled for any repositories. Remember to set either ROCKSKIP_REPOS or ROCKSKIP_MIN_REPO_SIZE_MB and restart the symbols service.")
+		fmt.Fprintln(w, "")
 	}
 
 	fmt.Fprintf(w, "Number of rows in rockskip_repos: %d\n", repositoryCount)

@@ -572,7 +572,7 @@ func (r Row) validate() error {
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://handbook.sourcegraph.com/engineering/eng_org#current-organization
+// the handbook: https://handbook.sourcegraph.com/departments/engineering/
 type ObservableOwner struct {
 	// identifier is the team's name on OpsGenie and is used for routing alerts.
 	identifier       string
@@ -597,55 +597,55 @@ var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
 var (
 	ObservableOwnerSearch = ObservableOwner{
 		identifier:       "search",
-		handbookSlug:     "code-graph/search/product",
+		handbookSlug:     "search/product",
 		handbookTeamName: "Search",
 	}
 	ObservableOwnerSearchCore = ObservableOwner{
 		identifier:       "search-core",
-		handbookSlug:     "code-graph/search/core",
+		handbookSlug:     "search/core",
 		handbookTeamName: "Search Core",
 	}
 	ObservableOwnerBatches = ObservableOwner{
 		identifier:       "batch-changes",
-		handbookSlug:     "code-graph/batch-changes",
+		handbookSlug:     "batch-changes",
 		handbookTeamName: "Batch Changes",
 	}
 	ObservableOwnerCodeIntel = ObservableOwner{
 		identifier:       "code-intel",
-		handbookSlug:     "code-graph/code-intelligence",
+		handbookSlug:     "code-intelligence",
 		handbookTeamName: "Code intelligence",
 	}
 	ObservableOwnerSecurity = ObservableOwner{
 		identifier:       "security",
-		handbookSlug:     "cloud/security",
+		handbookSlug:     "security",
 		handbookTeamName: "Security",
 	}
 	ObservableOwnerRepoManagement = ObservableOwner{
 		identifier:       "repo-management",
-		handbookSlug:     "enablement/repo-management",
+		handbookSlug:     "repo-management",
 		handbookTeamName: "Repo Management",
 	}
 	ObservableOwnerCodeInsights = ObservableOwner{
 		identifier:       "code-insights",
-		handbookSlug:     "code-graph/code-insights",
+		handbookSlug:     "code-insights",
 		handbookTeamName: "Code Insights",
 	}
 	ObservableOwnerDevOps = ObservableOwner{
 		identifier:       "devops",
-		handbookSlug:     "cloud/devops",
+		handbookSlug:     "devops",
 		handbookTeamName: "Cloud DevOps",
 	}
-	ObservableOwnerCloudSaaS = ObservableOwner{
-		identifier:       "cloud-saas",
-		handbookSlug:     "cloud/saas",
-		handbookTeamName: "Cloud Software-as-a-Service",
+	ObservableOwnerIAM = ObservableOwner{
+		identifier:       "iam",
+		handbookSlug:     "iam",
+		handbookTeamName: "Identity and Access Management",
 	}
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
 func (o ObservableOwner) toMarkdown() string {
 	return fmt.Sprintf(
-		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/%s)",
+		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/engineering/teams/%s)",
 		o.handbookTeamName, o.handbookSlug,
 	)
 }

@@ -338,6 +338,26 @@ For example, permissions syncs may be scheduled:
 
 When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host - a sync [might not happen immediately](#permissions-sync-duration). Prioritization of permissions sync also happens to, for example, ensure users or repositories with no permissions get processed first.
 
+There are variety of options in the site configuration to tune how the permissions sync requests are scheduled and processed:
+
+```json
+{
+  // Time interval (in seconds) of how often each component picks up authorization changes in external services.
+  "permissions.syncScheduleInterval": 15,
+  // Number of user permissions to schedule for syncing in single scheduler iteration.
+  "permissions.syncOldestUsers": 10,
+  // Number of repo permissions to schedule for syncing in single scheduler iteration.
+  "permissions.syncOldestRepos": 10,
+  // Don't sync a user's permissions if they have synced within the last n seconds.
+  "permissions.syncUsersBackoffSeconds": 60,
+  // Don't sync a repo's permissions if it has synced within the last n seconds.
+  "permissions.syncReposBackoffSeconds": 60,
+  // The maximum number of user-centric permissions syncing jobs that can be spawned concurrently.
+  // Service restart is required to take effect for changes.
+  "permissions.syncUsersMaxConcurrency": 1,
+}
+```
+
 #### Manually scheduling a sync
 
 Permissions syncs are [typically scheduled automatically](#manually-scheduling-a-sync).

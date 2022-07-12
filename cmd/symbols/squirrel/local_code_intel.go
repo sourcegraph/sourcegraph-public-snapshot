@@ -37,10 +37,7 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 	}
 
 	// Collect scopes
-	rootScopeId := nodeId(root.Node)
-	scopes := map[NodeId]Scope{
-		rootScopeId: {},
-	}
+	scopes := map[NodeId]Scope{}
 	err = forEachCapture(root.LangSpec.localsQuery, root, func(captureName string, node Node) {
 		if captureName == "scope" {
 			scopes[nodeId(node.Node)] = map[SymbolName]*PartialSymbol{}

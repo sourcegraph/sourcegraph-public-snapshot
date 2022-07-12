@@ -1,12 +1,6 @@
 import React from 'react'
 
-import AccountIcon from 'mdi-react/AccountIcon'
-import BrainIcon from 'mdi-react/BrainIcon'
-import HistoryIcon from 'mdi-react/HistoryIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
-import TagIcon from 'mdi-react/TagIcon'
+import { mdiSourceCommit, mdiSourceBranch, mdiTag, mdiHistory, mdiAccount, mdiBrain, mdiCog } from '@mdi/js'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
@@ -32,19 +26,19 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
 }) => (
     <ButtonGroup>
         <Button onClick={() => setCurrentTab('commits')} variant="secondary" outline={true}>
-            <Icon as={SourceCommitIcon} aria-hidden={true} /> Commits
+            <Icon aria-hidden={true} svgPath={mdiSourceCommit} /> Commits
         </Button>
         <Button onClick={() => setCurrentTab('branches')} variant="secondary" outline={true}>
-            <Icon as={SourceBranchIcon} aria-hidden={true} /> Branches
+            <Icon aria-hidden={true} svgPath={mdiSourceBranch} /> Branches
         </Button>
         <Button onClick={() => setCurrentTab('tags')} variant="secondary" outline={true}>
-            <Icon as={TagIcon} aria-hidden={true} /> Tags
+            <Icon aria-hidden={true} svgPath={mdiTag} /> Tags
         </Button>
         <Button onClick={() => setCurrentTab('compare')} variant="secondary" outline={true}>
-            <Icon as={HistoryIcon} aria-hidden={true} /> Compare
+            <Icon aria-hidden={true} svgPath={mdiHistory} /> Compare
         </Button>
         <Button onClick={() => setCurrentTab('contributors')} variant="secondary" outline={true}>
-            <Icon as={AccountIcon} aria-hidden={true} /> Contributors
+            <Icon aria-hidden={true} svgPath={mdiAccount} /> Contributors
         </Button>
         {codeIntelligenceEnabled && (
             <Button
@@ -53,7 +47,7 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
                 outline={true}
                 as={Link}
             >
-                <Icon as={BrainIcon} aria-hidden={true} /> Code Intelligence
+                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Intelligence
             </Button>
         )}
         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}
@@ -64,7 +58,7 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
                 outline={true}
                 as={Link}
             >
-                <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
             </Button>
         )}
     </ButtonGroup>

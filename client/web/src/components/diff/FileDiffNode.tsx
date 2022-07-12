@@ -1,15 +1,14 @@
 import React, { useState, useCallback } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import prettyBytes from 'pretty-bytes'
 import { Observable } from 'rxjs'
 
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Badge, Link, Icon, Text, createLinkUrl } from '@sourcegraph/wildcard'
+import { Button, Badge, Link, Icon, Text, createLinkUrl, Tooltip } from '@sourcegraph/wildcard'
 
 import { FileDiffFields } from '../../graphql-operations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
@@ -107,7 +106,7 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         onClick={toggleExpand}
                         size="sm"
                     >
-                        <Icon as={expanded ? ChevronDownIcon : ChevronRightIcon} aria-hidden={true} />
+                        <Icon svgPath={expanded ? mdiChevronDown : mdiChevronRight} aria-hidden={true} />
                     </Button>
                     <div className={classNames('align-items-baseline', styles.headerPathStat)}>
                         {!node.oldPath && (
@@ -127,24 +126,22 @@ export const FileDiffNode: React.FunctionComponent<React.PropsWithChildren<FileD
                         )}
                         {stat}
                         {node.mostRelevantFile.__typename === 'GitBlob' ? (
-                            <Link
-                                to={node.mostRelevantFile.url}
-                                data-tooltip="View file at revision"
-                                className="mr-0 ml-2 fw-bold"
-                            >
-                                <strong>{path}</strong>
-                            </Link>
+                            <Tooltip content="View file at revision">
+                                <Link to={node.mostRelevantFile.url} className="mr-0 ml-2 fw-bold">
+                                    <strong>{path}</strong>
+                                </Link>
+                            </Tooltip>
                         ) : (
                             <span className="ml-2">{path}</span>
                         )}
-                        <Link
-                            to={createLinkUrl({ ...location, hash: anchor })}
-                            className={classNames('ml-2', styles.headerPath)}
-                            data-tooltip="Pin diff"
-                            aria-label="Pin diff"
-                        >
-                            #
-                        </Link>
+                        <Tooltip content="Pin diff">
+                            <Link
+                                to={createLinkUrl({ ...location, hash: anchor })}
+                                className={classNames('ml-2', styles.headerPath)}
+                            >
+                                #
+                            </Link>
+                        </Tooltip>
                     </div>
                 </div>
                 {expanded &&

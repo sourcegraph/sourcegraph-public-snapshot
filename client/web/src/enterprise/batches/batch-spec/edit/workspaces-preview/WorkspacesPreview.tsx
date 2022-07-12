@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiMagnify, mdiAlert } from '@mdi/js'
 import classNames from 'classnames'
-import SearchIcon from 'mdi-react/SearchIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, H4 } from '@sourcegraph/wildcard'
+import { Button, useAccordion, useStopwatch, Icon, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -139,16 +138,17 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             Cancel
         </Button>
     ) : (
-        <Button
-            className="mt-2 mb-2"
-            variant="success"
-            disabled={!!isPreviewDisabled}
-            data-tooltip={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}
-            onClick={() => preview(debouncedCode)}
-        >
-            <Icon aria-hidden={true} className="mr-1" as={SearchIcon} />
-            {error ? 'Retry preview' : 'Preview workspaces'}
-        </Button>
+        <Tooltip content={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}>
+            <Button
+                className="mt-2 mb-2"
+                variant="success"
+                disabled={!!isPreviewDisabled}
+                onClick={() => preview(debouncedCode)}
+            >
+                <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
+                {error ? 'Retry preview' : 'Preview workspaces'}
+            </Button>
+        </Tooltip>
     )
 
     const [exampleReference, exampleOpen, setExampleOpen, exampleStyle] = useAccordion()
@@ -221,12 +221,13 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     shouldShowConnection &&
                     !isWorkspacesPreviewInProgress &&
                     !isReadOnly && (
-                        <Icon
-                            className={classNames('text-muted ml-1', styles.warningIcon)}
-                            data-tooltip="The workspaces previewed below may not be up-to-date."
-                            as={WarningIcon}
-                            aria-label="The workspaces previewed below may not be up-to-date."
-                        />
+                        <Tooltip content="The workspaces previewed below may not be up-to-date.">
+                            <Icon
+                                aria-label="The workspaces previewed below may not be up-to-date."
+                                className={classNames('text-muted ml-1', styles.warningIcon)}
+                                svgPath={mdiAlert}
+                            />
+                        </Tooltip>
                     )}
                 {totalCount}
             </WorkspacesListHeader>

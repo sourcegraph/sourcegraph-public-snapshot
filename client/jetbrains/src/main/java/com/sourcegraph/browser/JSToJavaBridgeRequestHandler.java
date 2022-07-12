@@ -2,11 +2,13 @@ package com.sourcegraph.browser;
 
 import com.google.gson.JsonObject;
 import com.intellij.openapi.application.ApplicationManager;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.ui.jcef.JBCefJSQuery;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.ThemeUtil;
 import com.sourcegraph.find.FindPopupPanel;
+import com.sourcegraph.find.FindService;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.Search;
 import org.jetbrains.annotations.NotNull;
@@ -21,10 +23,12 @@ import java.util.Date;
 public class JSToJavaBridgeRequestHandler {
     private final Project project;
     private final FindPopupPanel findPopupPanel;
+    private final FindService findService;
 
-    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull FindPopupPanel findPopupPanel) {
+    public JSToJavaBridgeRequestHandler(@NotNull Project project, @NotNull FindPopupPanel findPopupPanel, @NotNull FindService findService) {
         this.project = project;
         this.findPopupPanel = findPopupPanel;
+        this.findService = findService;
     }
 
     public JBCefJSQuery.Response handle(@NotNull JsonObject request) {
@@ -88,15 +92,27 @@ public class JSToJavaBridgeRequestHandler {
                     return createSuccessResponse(null);
                 case "open":
                     arguments = request.getAsJsonObject("arguments");
-                    previewContent = PreviewContent.fromJson(project, arguments);
                     try {
-                        previewContent.openInEditorOrBrowser();
+                        previewContent = PreviewContent.fromJson(project, arguments);
                     } catch (Exception e) {
-                        return createErrorResponse("Error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
+                        return createErrorResponse("Parsing error while opening link: " + e.getClass().getName() + ": " + e.getMessage(), convertStackTraceToString(e));
                     }
+
+                    ApplicationManager.getApplication().invokeLater(() -> {
+                        try {
+                            previewContent.openInEditorOrBrowser();
+                        } catch (Exception e) {
+                            Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
+                            logger.warn("Error while opening link.", e);
+                        }
+                    });
                     return createSuccessResponse(null);
                 case "indicateFinishedLoading":
-                    findPopupPanel.setBrowserVisible(true);
+                    arguments = request.getAsJsonObject("arguments");
+                    ApplicationManager.getApplication().invokeLater(() -> findPopupPanel.indicateAuthenticationStatus(arguments.get("wasServerAccessSuccessful").getAsBoolean(), arguments.get("wasAuthenticationSuccessful").getAsBoolean()));
+                    return createSuccessResponse(null);
+                case "windowClose":
+                    ApplicationManager.getApplication().invokeLater(findService::hidePopup);
                     return createSuccessResponse(null);
                 default:
                     return createErrorResponse("Unknown action: '" + action + "'.", "No stack trace");

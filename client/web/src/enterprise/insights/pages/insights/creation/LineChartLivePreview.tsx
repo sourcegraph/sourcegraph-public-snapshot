@@ -4,11 +4,9 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo, Text } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
-import { SeriesBasedChartTypes, SeriesChart } from '../../../components'
 import {
-    getSanitizedRepositories,
-    useLivePreview,
-    StateStatus,
+    SeriesChart,
+    SeriesBasedChartTypes,
     LivePreviewUpdateButton,
     LivePreviewCard,
     LivePreviewLoading,
@@ -16,12 +14,22 @@ import {
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
     LivePreviewLegend,
+    getSanitizedRepositories,
+    useLivePreview,
+    StateStatus,
     SERIES_MOCK_CHART,
-} from '../../../components/creation-ui-kit'
+} from '../../../components'
 import { CodeInsightsBackendContext, SeriesChartContent } from '../../../core'
 
 import { getSanitizedCaptureQuery } from './capture-group/utils/capture-group-insight-sanitizer'
 import { InsightStep } from './search-insight'
+
+export interface LivePreviewSeries {
+    query: string
+    label: string
+    generatedFromCaptureGroup: boolean
+    stroke: string
+}
 
 interface LineChartLivePreviewProps {
     disabled: boolean
@@ -30,12 +38,7 @@ interface LineChartLivePreviewProps {
     step: InsightStep
     isAllReposMode: boolean
     className?: string
-    series: {
-        query: string
-        label: string
-        generatedFromCaptureGroup: boolean
-        stroke: string
-    }[]
+    series: LivePreviewSeries[]
 }
 
 export const LineChartLivePreview: React.FunctionComponent<

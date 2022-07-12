@@ -13,10 +13,10 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -41,15 +41,18 @@ import (
 
 // StreamHandler is an http handler which streams back search results.
 func StreamHandler(db database.DB) http.Handler {
+	logger := log.Scoped("searchStreamHandler", "")
 	return &streamHandler{
+		logger:              logger,
 		db:                  db,
-		searchClient:        client.NewSearchClient(db, search.Indexed(), search.SearcherURLs()),
+		searchClient:        client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs()),
 		flushTickerInternal: 100 * time.Millisecond,
 		pingTickerInterval:  5 * time.Second,
 	}
 }
 
 type streamHandler struct {
+	logger              log.Logger
 	db                  database.DB
 	searchClient        client.SearchClient
 	flushTickerInternal time.Duration
@@ -144,6 +147,7 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 
 	eventHandler := newEventHandler(
 		ctx,
+		h.logger,
 		h.db,
 		eventWriter,
 		progress,
@@ -161,11 +165,11 @@ func (h *streamHandler) serveHTTP(r *http.Request, tr *trace.Trace, eventWriter 
 	if alert != nil {
 		eventWriter.Alert(alert)
 	}
-	logSearch(ctx, alert, err, start, inputs.OriginalQuery, progress)
+	logSearch(ctx, h.logger, alert, err, start, inputs.OriginalQuery, progress)
 	return err
 }
 
-func logSearch(ctx context.Context, alert *search.Alert, err error, start time.Time, originalQuery string, progress *streamclient.ProgressAggregator) {
+func logSearch(ctx context.Context, logger log.Logger, alert *search.Alert, err error, start time.Time, originalQuery string, progress *streamclient.ProgressAggregator) {
 	status := graphqlbackend.DetermineStatusForLogs(alert, progress.Stats, err)
 
 	var alertType string
@@ -191,7 +195,7 @@ func logSearch(ctx context.Context, alert *search.Alert, err error, start time.T
 		}
 
 		if isSlow {
-			log15.Warn("streaming: slow search request", searchlogs.MapToLog15Ctx(ev.Fields())...)
+			logger.Warn("streaming: slow search request", log.String("query", originalQuery))
 		}
 	}
 }
@@ -561,6 +565,7 @@ func repoIDs(results []result.Match) []api.RepoID {
 // an HTTP stream.
 func newEventHandler(
 	ctx context.Context,
+	logger log.Logger,
 	db database.DB,
 	eventWriter *eventWriter,
 	progress *streamclient.ProgressAggregator,
@@ -579,6 +584,7 @@ func newEventHandler(
 
 	eh := &eventHandler{
 		ctx:                ctx,
+		logger:             logger,
 		db:                 db,
 		eventWriter:        eventWriter,
 		matchesBuf:         matchesBuf,
@@ -604,8 +610,9 @@ func newEventHandler(
 }
 
 type eventHandler struct {
-	ctx context.Context
-	db  database.DB
+	ctx    context.Context
+	logger log.Logger
+	db     database.DB
 
 	// Config params
 	enableChunkMatches bool
@@ -642,7 +649,7 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
 	if err != nil {
-		log15.Error("failed to get repo metadata", "error", err)
+		h.logger.Error("failed to get repo metadata", log.Error(err))
 		return
 	}
 

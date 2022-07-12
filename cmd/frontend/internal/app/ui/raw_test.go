@@ -14,10 +14,10 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 )
 
 // initHTTPTestGitServer instantiates an httptest.Server to make it return an HTTP response as set
@@ -249,7 +249,7 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &util.FileInfo{}, os.ErrNotExist
+			return &fileutil.FileInfo{}, os.ErrNotExist
 		}
 		defer gitserver.ResetMocks()
 
@@ -273,14 +273,14 @@ func Test_serveRawWithContentTypePlain(t *testing.T) {
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &util.FileInfo{Mode_: os.ModeDir}, nil
+			return &fileutil.FileInfo{Mode_: os.ModeDir}, nil
 		}
 
 		gitserver.Mocks.ReadDir = func(commit api.CommitID, name string, recurse bool) ([]fs.FileInfo, error) {
 			return []fs.FileInfo{
-				&util.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
-				&util.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
-				&util.FileInfo{Name_: "c.go", Mode_: 0},
+				&fileutil.FileInfo{Name_: "test/a", Mode_: os.ModeDir},
+				&fileutil.FileInfo{Name_: "test/b", Mode_: os.ModeDir},
+				&fileutil.FileInfo{Name_: "c.go", Mode_: 0},
 			}, nil
 		}
 
@@ -314,7 +314,7 @@ c.go`
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &util.FileInfo{Mode_: 0}, nil
+			return &fileutil.FileInfo{Mode_: 0}, nil
 		}
 
 		gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {
@@ -351,7 +351,7 @@ c.go`
 		initHTTPTestGitServer(t, http.StatusOK, "{}")
 
 		gitserver.Mocks.Stat = func(commit api.CommitID, name string) (fs.FileInfo, error) {
-			return &util.FileInfo{Mode_: 0}, nil
+			return &fileutil.FileInfo{Mode_: 0}, nil
 		}
 
 		gitserver.Mocks.NewFileReader = func(commit api.CommitID, name string) (io.ReadCloser, error) {

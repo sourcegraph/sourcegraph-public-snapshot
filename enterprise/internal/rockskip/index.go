@@ -74,10 +74,11 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 		return nil
 	}
 
-	parse, err := s.createParser()
+	parser, err := s.createParser()
 	if err != nil {
 		return errors.Wrap(err, "createParser")
 	}
+	defer parser.Close()
 
 	symbolCache := lru.New(s.symbolsCacheSize)
 	pathSymbolsCache := lru.New(s.pathSymbolsCacheSize)
@@ -168,7 +169,7 @@ func (s *Service) Index(ctx context.Context, db database.DB, repo, givenCommit s
 				defer tasklog.Continue("ArchiveEach")
 
 				tasklog.Start("parse")
-				symbols, err := parse(path, contents)
+				symbols, err := parser.Parse(path, contents)
 				if err != nil {
 					return errors.Wrap(err, "parse")
 				}

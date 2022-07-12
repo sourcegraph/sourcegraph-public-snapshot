@@ -15,17 +15,16 @@ This website is home to Sourcegraph's feature, administration (including deploym
 <div class="cta-group">
 <a class="btn btn-primary" href="#getting-started">★ Try Sourcegraph now</a>
 <a class="btn" href="#core-documentation">Core docs</a>
-<a class="btn" href="#cloud-documentation">Cloud docs</a>
 <a class="btn" href="https://about.sourcegraph.com/">About Sourcegraph</a>
 </div>
 
 ## Getting started
 
 <div class="getting-started">
-  <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph Cloud">
-   <span>★ Sourcegraph Cloud</span>
+  <a href="https://sourcegraph.com/search" class="btn btn-primary" alt="Sourcegraph.com">
+   <span>★ Sourcegraph.com</span>
    </br>
-   <b>Search 1 million+ open source repositories or your own repositories.</b> No installation required.
+   <b>Search millions of open source repositories.</b> No installation required.
   </a>
 
   <a href="admin/deploy" class="btn btn-primary" alt="Self-host">

@@ -1,51 +1,42 @@
 import { formatISO } from 'date-fns'
+import { escapeRegExp } from 'lodash'
 
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { Series } from '../../../../../charts'
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
-import { InsightFilters, SearchBasedInsightSeries } from '../../types'
+import { BackendInsight, InsightFilters, InsightType, SearchBasedInsightSeries } from '../../types'
 import { BackendInsightDatum, SeriesChartContent } from '../code-insights-backend-types'
+import { DATA_SERIES_COLORS_LIST } from '../gql-backend/methods/get-backend-insight-data/deserializators'
 
 type SeriesDefinition = Record<string, SearchBasedInsightSeries>
 
 /**
- * Minimal input type model for {@link createLineChartContent} function
- */
-export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label' | 'points'>
-
-/**
  * Generates line chart content for visx chart. Note that this function relies on the fact that
  * all series are indexed.
- *
- * @param series - insight series with points data
- * @param seriesDefinition - insight definition with line settings (color, name, query)
- * @param filters - insight drill-down filters
  */
 export function createLineChartContent(
-    series: InsightDataSeriesData[],
-    seriesDefinition: SearchBasedInsightSeries[] = [],
-    filters?: InsightFilters
+    insight: BackendInsight,
+    seriesData: InsightDataSeries[]
 ): SeriesChartContent<BackendInsightDatum> {
+    const seriesDefinition = getParsedDataSeriesMetadata(insight, seriesData)
     const seriesDefinitionMap: SeriesDefinition = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id, definition])
     )
 
-    const { includeRepoRegexp = '', excludeRepoRegexp = '' } = filters ?? {}
-
     return {
-        series: series.map<Series<BackendInsightDatum>>(line => ({
+        series: seriesData.map<Series<BackendInsightDatum>>(line => ({
             id: line.seriesId,
             data: line.points.map((point, index) => ({
                 dateTime: new Date(point.dateTime),
                 value: point.value,
                 link: generateLinkURL({
-                    previousPoint: line.points[index - 1],
-                    series: seriesDefinitionMap[line.seriesId],
                     point,
-                    includeRepoRegexp,
-                    excludeRepoRegexp,
+                    previousPoint: line.points[index - 1],
+                    query: seriesDefinitionMap[line.seriesId].query,
+                    filters: insight.filters,
+                    repositories: insight.repositories,
                 }),
             })),
             name: seriesDefinitionMap[line.seriesId]?.name ?? line.label,
@@ -57,16 +48,43 @@ export function createLineChartContent(
     }
 }
 
+function getParsedDataSeriesMetadata(
+    insight: BackendInsight,
+    seriesData: InsightDataSeries[]
+): SearchBasedInsightSeries[] {
+    switch (insight.type) {
+        case InsightType.SearchBased:
+            return insight.series
+
+        case InsightType.CaptureGroup: {
+            const { query } = insight
+
+            return seriesData.map((generatedSeries, index) => ({
+                id: generatedSeries.seriesId,
+                name: generatedSeries.label,
+                query,
+                stroke: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
+            }))
+        }
+    }
+}
+
+/**
+ * Minimal input type model for {@link createLineChartContent} function
+ */
+export type InsightDataSeriesData = Pick<InsightDataSeries, 'seriesId' | 'label' | 'points'>
+
 interface GenerateLinkInput {
-    series: SearchBasedInsightSeries
+    query: string
     previousPoint?: { dateTime: string }
     point: { dateTime: string }
-    includeRepoRegexp?: string
-    excludeRepoRegexp?: string
+    repositories: string[]
+    filters?: InsightFilters
 }
 
 export function generateLinkURL(input: GenerateLinkInput): string {
-    const { series, point, previousPoint, includeRepoRegexp, excludeRepoRegexp } = input
+    const { query, point, previousPoint, filters, repositories } = input
+    const { includeRepoRegexp = '', excludeRepoRegexp = '', context } = filters ?? {}
 
     const date = Date.parse(point.dateTime)
 
@@ -79,11 +97,13 @@ export function generateLinkURL(input: GenerateLinkInput): string {
     const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
     const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
 
+    const scopeRepoFilters = repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
+    const contextFilter = context ? `context:${context}` : ''
     const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
     const afterFilter = after ? `after:${after}` : ''
     const beforeFilter = `before:${before}`
     const dateFilters = `${afterFilter} ${beforeFilter}`
-    const diffQuery = `${repoFilter} type:diff ${dateFilters} ${series.query}`
+    const diffQuery = `${contextFilter} ${scopeRepoFilters} ${repoFilter} type:diff ${dateFilters} ${query}`
     const searchQueryParameter = buildSearchURLQuery(diffQuery, SearchPatternType.literal, false)
 
     return `${window.location.origin}${PageRoutes.Search}?${searchQueryParameter}`

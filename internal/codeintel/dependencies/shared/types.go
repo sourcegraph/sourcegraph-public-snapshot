@@ -51,7 +51,7 @@ func (d PackageDependencyLiteral) Scheme() string            { return d.SchemeVa
 func (d PackageDependencyLiteral) PackageSyntax() string     { return d.PackageSyntaxValue }
 func (d PackageDependencyLiteral) PackageVersion() string    { return d.PackageVersionValue }
 
-func SerializePackageDependencies(deps []reposource.PackageDependency) []PackageDependency {
+func SerializePackageDependencies(deps []reposource.PackageVersion) []PackageDependency {
 	serializableRepoDeps := make([]PackageDependency, 0, len(deps))
 	for _, dep := range deps {
 		serializableRepoDeps = append(serializableRepoDeps, SerializePackageDependency(dep))
@@ -60,7 +60,7 @@ func SerializePackageDependencies(deps []reposource.PackageDependency) []Package
 	return serializableRepoDeps
 }
 
-func SerializePackageDependency(dep reposource.PackageDependency) PackageDependency {
+func SerializePackageDependency(dep reposource.PackageVersion) PackageDependency {
 	return PackageDependencyLiteral{
 		RepoNameValue:          dep.RepoName(),
 		GitTagFromVersionValue: dep.GitTagFromVersion(),
@@ -97,20 +97,23 @@ func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph 
 	}
 
 	var (
-		edges [][]PackageDependency
-		roots []PackageDependency
+		edges           = graph.AllEdges()
+		serializedEdges = make([][]PackageDependency, len(edges))
+
+		roots           = graph.Roots()
+		serializedRoots = make([]PackageDependency, len(roots))
 	)
 
-	for _, edge := range graph.AllEdges() {
-		edges = append(edges, []PackageDependency{
+	for i, edge := range edges {
+		serializedEdges[i] = []PackageDependency{
 			SerializePackageDependency(edge.Source),
 			SerializePackageDependency(edge.Target),
-		})
+		}
 	}
 
-	for _, root := range graph.Roots() {
-		roots = append(roots, SerializePackageDependency(root))
+	for i, root := range roots {
+		serializedRoots[i] = SerializePackageDependency(root)
 	}
 
-	return DependencyGraphLiteral{RootPkgs: roots, Edges: edges}
+	return DependencyGraphLiteral{RootPkgs: serializedRoots, Edges: serializedEdges}
 }

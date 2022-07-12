@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import FileDownloadOutlineIcon from 'mdi-react/FileDownloadOutlineIcon'
+import { mdiFileDownloadOutline } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
@@ -35,7 +35,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
                     onClick={this.onClick.bind(this)}
                     download={true}
                 >
-                    <Icon as={FileDownloadOutlineIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />
                     <span>{descriptiveText}</span>
                 </RepoHeaderActionAnchor>
             )
@@ -51,7 +51,7 @@ export class GoToRawAction extends React.PureComponent<Props> {
                 aria-label={descriptiveText}
                 download={true}
             >
-                <Icon as={FileDownloadOutlineIcon} aria-hidden={true} />
+                <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />
             </RepoHeaderActionAnchor>
         )
     }

@@ -65,6 +65,7 @@ export const SearchContextMenuItem: React.FunctionComponent<
             onClick={setContext}
             role="menuitem"
             data-search-context-spec={spec}
+            data-selected={selected || undefined}
             onKeyDown={event => onKeyDown(event.key)}
         >
             <small
@@ -87,10 +88,7 @@ export const SearchContextMenuItem: React.FunctionComponent<
 }
 
 export interface SearchContextMenuProps
-    extends Omit<
-            SearchContextInputProps,
-            'setSelectedSearchContextSpec' | 'hasUserAddedRepositories' | 'hasUserAddedExternalServices'
-        >,
+    extends Omit<SearchContextInputProps, 'setSelectedSearchContextSpec'>,
         PlatformContextProps<'requestGraphQL'>,
         TelemetryProps {
     showSearchContextManagement: boolean

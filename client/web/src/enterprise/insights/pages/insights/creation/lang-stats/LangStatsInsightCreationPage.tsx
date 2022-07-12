@@ -8,9 +8,8 @@ import { useLocalStorage, Link, PageHeader } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
-import { FORM_ERROR, FormChangeEvent } from '../../../../components/form/hooks/useForm'
-import { MinimalLangStatsInsightData } from '../../../../core/backend/code-insights-backend-types'
+import { CodeInsightsPage, FORM_ERROR, FormChangeEvent } from '../../../../components'
+import { MinimalLangStatsInsightData } from '../../../../core'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
@@ -38,7 +37,7 @@ export interface LangStatsInsightCreationPageProps extends TelemetryProps {
     /**
      * Whenever insight was created and all operations after creation were completed.
      */
-    onSuccessfulCreation: (insight: MinimalLangStatsInsightData) => void
+    onSuccessfulCreation: () => void
 
     /**
      * Whenever the user click on cancel button
@@ -76,7 +75,7 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<
                     { insightType: CodeInsightTrackType.LangStatsInsight }
                 )
 
-                onSuccessfulCreation(insight)
+                onSuccessfulCreation()
             } catch (error) {
                 return { [FORM_ERROR]: asError(error) }
             }

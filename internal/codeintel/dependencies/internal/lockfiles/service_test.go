@@ -124,7 +124,7 @@ type serializableResult struct {
 	Graph    string
 }
 
-func serializeResult(res *Result) serializableResult {
+func serializeResult(res Result) serializableResult {
 	serializable := serializableResult{Lockfile: res.Lockfile}
 
 	if res.Graph != nil {
@@ -134,7 +134,7 @@ func serializeResult(res *Result) serializableResult {
 	}
 
 	for _, dep := range res.Deps {
-		serializable.Deps = append(serializable.Deps, dep.PackageManagerSyntax())
+		serializable.Deps = append(serializable.Deps, dep.PackageVersionSyntax())
 	}
 
 	sort.Strings(serializable.Deps)

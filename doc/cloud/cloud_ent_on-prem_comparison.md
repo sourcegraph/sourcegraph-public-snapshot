@@ -1,5 +1,7 @@
 # Differences between Sourcegraph Cloud and Sourcegraph self-hosted
 
+> WARNING: [Private code on Sourcegraph.com is no longer supported](https://about.sourcegraph.com/blog/single-tenant-cloud) and all previously synced code will be removed on August 1.
+
 ## What is Sourcegraph self-hosted, and who should choose it?
 
 Sourcegraph self-hosted allows users to deploy and manage their own instances of Sourcegraph. Each instance allows an admin to connect code repositories and then invite team members to collaborate within the instance. With this version of Sourcegraph, code never leaves the user’s environment (it stays on-premises). 

@@ -395,9 +395,6 @@ func addGoTests(pipeline *bk.Pipeline) {
 			bk.Env("TESTDB_MAXOPENCONNS", "15"),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
-				TestReports: &bk.TestReportOpts{
-					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
-				},
 			}),
 			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
 		)
@@ -560,7 +557,6 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
-			bk.Skip("Disabled because flaky"),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),

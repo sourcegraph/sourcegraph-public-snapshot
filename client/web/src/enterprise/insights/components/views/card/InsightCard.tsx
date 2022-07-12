@@ -10,7 +10,7 @@ import { ErrorBoundary } from '../../../../../components/ErrorBoundary'
 
 import styles from './InsightCard.module.scss'
 
-const InsightCard = forwardRef((props, reference) => {
+const InsightCard = forwardRef(function InsightCard(props, reference) {
     const { title, children, className, as = 'section', ...otherProps } = props
 
     return (
@@ -33,7 +33,7 @@ export interface InsightCardTitleProps {
     children?: ReactNode
 }
 
-const InsightCardHeader = forwardRef((props, reference) => {
+const InsightCardHeader = forwardRef(function InsightCardHeader(props, reference) {
     const { as: Component = 'header', title, subtitle, className, children, ...attributes } = props
 
     return (

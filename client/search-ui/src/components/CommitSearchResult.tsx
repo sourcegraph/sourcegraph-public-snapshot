@@ -1,6 +1,7 @@
 import React from 'react'
 
 import VisuallyHidden from '@reach/visually-hidden'
+import classNames from 'classnames'
 import SourceCommitIcon from 'mdi-react/SourceCommitIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -8,7 +9,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { CommitMatch, getCommitMatchUrl, getRepositoryUrl } from '@sourcegraph/shared/src/search/stream'
 // eslint-disable-next-line no-restricted-imports
 import { Timestamp } from '@sourcegraph/web/src/components/time/Timestamp'
-import { Link, Code, useIsTruncated } from '@sourcegraph/wildcard'
+import { Link, Code } from '@sourcegraph/wildcard'
 
 import { CommitSearchResultMatch } from './CommitSearchResultMatch'
 import { ResultContainer } from './ResultContainer'
@@ -34,32 +35,19 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     as,
     index,
 }) => {
-    /**
-     * Use the custom hook useIsTruncated to check if overflow: ellipsis is activated for the element
-     * We want to do it on mouse enter as browser window size might change after the element has been
-     * loaded initially
-     */
-    const [titleReference, truncated, checkTruncation] = useIsTruncated()
-
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <span
-                onMouseEnter={checkTruncation}
-                className="test-search-result-label ml-1 flex-shrink-past-contents text-truncate"
-                ref={titleReference}
-                data-tooltip={(truncated && `${result.authorName}: ${result.message.split('\n', 1)[0]}`) || null}
-            >
+            <span className={classNames('test-search-result-label flex-grow-1', styles.titleInner)}>
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>
                 <Link to={getCommitMatchUrl(result)}>{result.message.split('\n', 1)[0]}</Link>
             </span>
-            <span className={styles.spacer} />
             {/*
                 Relative positioning needed needed to avoid VisuallyHidden creating a scrollable overflow in Chrome.
                 Related bug: https://bugs.chromium.org/p/chromium/issues/detail?id=1154640#c15
             */}
-            <Link to={getCommitMatchUrl(result)} className="position-relative">
+            <Link to={getCommitMatchUrl(result)} className={classNames('position-relative', styles.titleInner)}>
                 <Code className={styles.commitOid}>
                     <VisuallyHidden>Commit hash:</VisuallyHidden>
                     {result.oid.slice(0, 7)}

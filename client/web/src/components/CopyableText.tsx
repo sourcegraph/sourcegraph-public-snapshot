@@ -1,8 +1,8 @@
 import * as React from 'react'
 
+import { mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
 
 import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
@@ -64,7 +64,7 @@ export class CopyableText extends React.PureComponent<Props, State> {
                             variant="secondary"
                             aria-label="Copy"
                         >
-                            <Icon as={ContentCopyIcon} aria-hidden={true} /> {this.state.copied ? 'Copied' : 'Copy'}
+                            <Icon aria-hidden={true} svgPath={mdiContentCopy} /> {this.state.copied ? 'Copied' : 'Copy'}
                         </Button>
                     </div>
                 </div>

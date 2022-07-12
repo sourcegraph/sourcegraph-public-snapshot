@@ -32,8 +32,9 @@ type ChangesetSpecInput struct {
 	BatchChangeAttributes *template.BatchChangeAttributes `json:"-"`
 	Template              *ChangesetTemplate              `json:"-"`
 	TransformChanges      *TransformChanges               `json:"-"`
+	Path                  string
 
-	Result execution.Result
+	Result execution.AfterStepResult
 }
 
 type ChangesetSpecFeatureFlags struct {
@@ -46,7 +47,7 @@ func BuildChangesetSpecs(input *ChangesetSpecInput, features ChangesetSpecFeatur
 		BatchChangeAttributes: *input.BatchChangeAttributes,
 		Steps: template.StepsContext{
 			Changes: input.Result.ChangedFiles,
-			Path:    input.Result.Path,
+			Path:    input.Path,
 		},
 		Outputs: input.Result.Outputs,
 		Repository: template.Repository{

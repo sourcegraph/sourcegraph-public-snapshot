@@ -91,10 +91,15 @@ func (gt generateTargets) Commands() (cmds []*cli.Command) {
 		}
 	}
 	for _, c := range gt {
+		var completions cli.BashCompleteFunc
+		if c.Completer != nil {
+			completions = completeOptions(c.Completer)
+		}
 		cmds = append(cmds, &cli.Command{
-			Name:   c.Name,
-			Usage:  c.Help,
-			Action: actionFactory(c),
+			Name:         c.Name,
+			Usage:        c.Help,
+			Action:       actionFactory(c),
+			BashComplete: completions,
 		})
 	}
 	return cmds

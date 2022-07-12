@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
+import { mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
@@ -291,7 +291,7 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                                             as={Link}
                                                         >
                                                             View all usage statistics{' '}
-                                                            <Icon as={OpenInNewIcon} aria-hidden={true} />
+                                                            <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                                         </Button>
                                                     </H3>
                                                 </div>

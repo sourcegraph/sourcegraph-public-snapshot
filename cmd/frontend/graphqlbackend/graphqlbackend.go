@@ -463,8 +463,16 @@ func NewSchema(
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
+//
+// schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
-	logger sglog.Logger
+	logger            sglog.Logger
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+	nodeByIDFns       map[string]NodeByIDFunc
+
+	// SubResolvers are assigned using the Schema constructor.
+
 	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
@@ -476,15 +484,13 @@ type schemaResolver struct {
 	SearchContextsResolver
 	OrgRepositoryResolver
 	NotebooksResolver
-
-	db                database.DB
-	repoupdaterClient *repoupdater.Client
-	nodeByIDFns       map[string]NodeByIDFunc
 }
 
-// newSchemaResolver will return a new schemaResolver using repoupdater.DefaultClient.
+// newSchemaResolver will return a new, safely instantiated schemaResolver with some
+// defaults. It does not implement any sub-resolvers.
 func newSchemaResolver(db database.DB) *schemaResolver {
 	r := &schemaResolver{
+		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
@@ -557,7 +563,7 @@ var EnterpriseResolvers = struct {
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return &schemaResolver{db: r.db}
+	return newSchemaResolver(r.db)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {

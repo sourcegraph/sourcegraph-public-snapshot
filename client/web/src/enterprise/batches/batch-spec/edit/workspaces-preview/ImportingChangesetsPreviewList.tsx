@@ -1,6 +1,6 @@
 import React from 'react'
 
-import ImportIcon from 'mdi-react/ImportIcon'
+import { mdiImport } from '@mdi/js'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { Icon, H4 } from '@sourcegraph/wildcard'
@@ -47,7 +47,7 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
                                     : undefined
                             }
                         >
-                            <Icon aria-hidden={true} as={ImportIcon} />{' '}
+                            <Icon aria-hidden={true} svgPath={mdiImport} />{' '}
                             {node.description.__typename === 'ExistingChangesetReference' &&
                                 node.description.baseRepository.name}
                         </LinkOrSpan>{' '}

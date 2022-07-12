@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"fmt"
 	"sort"
+	"strconv"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -102,7 +103,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 	}
 
 	// get repos from the Bitbucket project
-	client, err := h.getBitbucketClient(ctx, svc)
+	client, err := h.getBitbucketClient(svc)
 	if err != nil {
 		return errors.Wrapf(err, "failed to build Bitbucket client for external service %d", svc.ID)
 	}
@@ -120,7 +121,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 		repoIDs[i] = api.RepoID(repo.ID)
 	}
 
-	err = h.setPermissionsForUsers(ctx, logger, job.Permissions, repoIDs, job.ProjectKey)
+	err = h.setPermissionsForUsers(ctx, svc, logger, job.Permissions, repoIDs, job.ProjectKey)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set permissions for Bitbucket Project %q", job.ProjectKey)
 	}
@@ -129,7 +130,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 }
 
 // getBitbucketClient creates a Bitbucket client for the given external service.
-func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(ctx context.Context, svc *types.ExternalService) (*bitbucketserver.Client, error) {
+func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(svc *types.ExternalService) (*bitbucketserver.Client, error) {
 	// for testing purpose
 	if h.client != nil {
 		return h.client, nil
@@ -177,7 +178,7 @@ func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Co
 // Each repo is processed atomically. In case of error, the task fails but doesn't rollback the committed changes
 // done on previous repos. This is fine because when the task is retried, previous repos won't incur any
 // additional writes.
-func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, logger log.Logger, perms []types.UserPermission, repoIDs []api.RepoID, projectKey string) error {
+func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, svc *types.ExternalService, logger log.Logger, perms []types.UserPermission, repoIDs []api.RepoID, projectKey string) error {
 	sort.Slice(perms, func(i, j int) bool {
 		return perms[i].BindID < perms[j].BindID
 	})
@@ -194,10 +195,6 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 	mapping, err := h.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
 	if err != nil {
 		return errors.Wrap(err, "failed to map bind IDs to user IDs")
-	}
-
-	if len(mapping) == 0 {
-		return errcode.MakeNonRetryable(errors.Errorf("no users found for bind IDs: %v", bindIDs))
 	}
 
 	userIDs := make(map[int32]struct{}, len(mapping))
@@ -217,7 +214,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 
 	// apply the permissions for each repo
 	for _, repoID := range repoIDs {
-		err = h.setRepoPermissions(ctx, repoID, perms, userIDs, pendingBindIDs)
+		err = h.setRepoPermissions(ctx, svc, repoID, perms, userIDs, pendingBindIDs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to set permissions for repo %d", repoID)
 		}
@@ -226,7 +223,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 	return nil
 }
 
-func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
+func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, svc *types.ExternalService, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
 	if err := h.repoExists(ctx, repoID); err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
@@ -245,8 +242,8 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	defer func() { err = txs.Done(err) }()
 
 	accounts := &extsvc.Accounts{
-		ServiceType: authz.SourcegraphServiceType,
-		ServiceID:   authz.SourcegraphServiceID,
+		ServiceType: extsvc.KindToType(svc.Kind),
+		ServiceID:   strconv.FormatInt(svc.ID, 10),
 		AccountIDs:  pendingBindIDs,
 	}
 

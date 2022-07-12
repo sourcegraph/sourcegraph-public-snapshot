@@ -1,12 +1,7 @@
 import React from 'react'
 
+import { mdiCommentOutline, mdiLinkVariantRemove, mdiSync, mdiSourceBranch, mdiUpload, mdiOpenInNew } from '@mdi/js'
 import classNames from 'classnames'
-import CommentOutlineIcon from 'mdi-react/CommentOutlineIcon'
-import ExternalLinkIcon from 'mdi-react/ExternalLinkIcon'
-import LinkVariantRemoveIcon from 'mdi-react/LinkVariantRemoveIcon'
-import SourceBranchIcon from 'mdi-react/SourceBranchIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
-import UploadIcon from 'mdi-react/UploadIcon'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { pluralize } from '@sourcegraph/common'
@@ -22,32 +17,32 @@ import styles from './BulkOperationNode.module.scss'
 const OPERATION_TITLES: Record<BulkOperationType, JSX.Element> = {
     COMMENT: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={CommentOutlineIcon} /> Comment on changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiCommentOutline} /> Comment on changesets
         </>
     ),
     DETACH: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={LinkVariantRemoveIcon} /> Detach changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiLinkVariantRemove} /> Detach changesets
         </>
     ),
     REENQUEUE: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={SyncIcon} /> Retry changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiSync} /> Retry changesets
         </>
     ),
     MERGE: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={SourceBranchIcon} /> Merge changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiSourceBranch} /> Merge changesets
         </>
     ),
     CLOSE: (
         <>
-            <Icon aria-hidden={true} className="text-danger" as={SourceBranchIcon} /> Close changesets
+            <Icon aria-hidden={true} className="text-danger" svgPath={mdiSourceBranch} /> Close changesets
         </>
     ),
     PUBLISH: (
         <>
-            <Icon aria-hidden={true} className="text-muted" as={UploadIcon} /> Publish changesets
+            <Icon aria-hidden={true} className="text-muted" svgPath={mdiUpload} /> Publish changesets
         </>
     ),
 }
@@ -112,7 +107,7 @@ export const BulkOperationNode: React.FunctionComponent<React.PropsWithChildren<
                                 ) : (
                                     <>
                                         <AlertLink to={error.changeset.externalURL?.url ?? ''}>
-                                            {error.changeset.title} <Icon aria-hidden={true} as={ExternalLinkIcon} />
+                                            {error.changeset.title} <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                                         </AlertLink>{' '}
                                         on{' '}
                                         <AlertLink to={error.changeset.repository.url}>

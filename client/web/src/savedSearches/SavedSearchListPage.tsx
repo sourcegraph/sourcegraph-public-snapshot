@@ -1,11 +1,8 @@
 import * as React from 'react'
 
+import { mdiMessageTextOutline, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import MessageTextOutlineIcon from 'mdi-react/MessageTextOutlineIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
@@ -70,7 +67,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
         return (
             <div className={classNames(styles.row, 'list-group-item test-saved-search-list-page-row')}>
                 <div className="d-flex">
-                    <Icon className={styles.rowIcon} as={MessageTextOutlineIcon} aria-hidden={true} />
+                    <Icon className={styles.rowIcon} aria-hidden={true} svgPath={mdiMessageTextOutline} />
                     <Link
                         to={
                             '/search?' +
@@ -93,7 +90,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         size="sm"
                         as={Link}
                     >
-                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                        <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                     </Button>{' '}
                     <Button
                         className="test-delete-saved-search-button"
@@ -104,7 +101,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                         size="sm"
                         aria-label="Delete saved search"
                     >
-                        <Icon as={DeleteIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiDelete} />
                     </Button>
                 </div>
                 {this.state.isDeleting && (
@@ -160,7 +157,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                             variant="primary"
                             as={Link}
                         >
-                            <Icon as={PlusIcon} aria-hidden={true} /> Add saved search
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search
                         </Button>
                     }
                     className="mb-3"

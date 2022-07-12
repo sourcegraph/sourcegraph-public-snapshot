@@ -1,10 +1,6 @@
-{
-  "GeneratedSearchJob": {
-    "Child": {},
-    "ProposedQuery": {
-      "Description": "AND patterns together",
-      "Query": "context:global (parse AND func)",
-      "PatternType": 3
-    }
+[
+  {
+    "Description": "AND patterns together",
+    "Query": "context:global (parse AND func)"
   }
-}
+]

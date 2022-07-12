@@ -10,8 +10,8 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	"github.com/inconshreveable/log15"
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 
@@ -49,26 +49,21 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit)
 }
 
-// A Pager implements paginated repository resolution.
-type Pager interface {
-	// Paginate calls the given callback with each page of resolved repositories. If the callback
-	// returns an error, Paginate will abort and return that error.
-	Paginate(context.Context, *search.RepoOptions, func(*Resolved) error) error
+func NewResolver(db database.DB) *Resolver {
+	return &Resolver{db: db}
 }
 
 type Resolver struct {
-	DB   database.DB
-	Opts search.RepoOptions
+	db database.DB
 }
 
-func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (err error) {
+func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Paginate", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	opts := r.Opts
 	if opts.Limit == 0 {
 		opts.Limit = 500
 	}
@@ -100,8 +95,7 @@ func (r *Resolver) Paginate(ctx context.Context, handle func(*Resolved) error) (
 	return errs
 }
 
-func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved, error) {
-	var err error
+func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, err error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Resolve", op.String())
 	defer func() {
 		tr.SetError(err)
@@ -163,7 +157,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 		return Resolved{}, ErrNoResolvedRepos
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.DB, op.SearchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, op.SearchContextSpec)
 	if err != nil {
 		return Resolved{}, err
 	}
@@ -206,7 +200,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 	}
 
 	tr.LazyPrintf("Repos.ListMinimalRepos - start")
-	repos, err := r.DB.Repos().ListMinimalRepos(ctx, options)
+	repos, err := r.db.Repos().ListMinimalRepos(ctx, options)
 	tr.LazyPrintf("Repos.ListMinimalRepos - done (%d repos, err %v)", len(repos), err)
 
 	if err != nil {
@@ -245,7 +239,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 
 	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
-		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.DB, searchContext.ID)
+		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.db, searchContext.ID)
 		if err != nil {
 			return Resolved{}, err
 		}
@@ -345,7 +339,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (Resolved
 				}
 
 				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				client := gitserver.NewClient(r.DB)
+				client := gitserver.NewClient(r.db)
 				commitID, err := client.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
@@ -544,14 +538,14 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
+	repoRevs, err := listDependencyRepos(ctx, r.db.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
 	// TODO: We'll make this value depend on user input, but for now we include all dependencies.
 	includeTransitive := true
-	dependencyRepoRevs, notFound, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs, includeTransitive)
+	dependencyRepoRevs, notFound, err := livedependencies.GetService(r.db, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs, includeTransitive)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -629,12 +623,12 @@ func (r *Resolver) dependents(ctx context.Context, op *search.RepoOptions) (_ []
 		return nil, nil, errors.Errorf("support for `repo:dependents()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := listDependencyRepos(ctx, r.DB.Repos(), op.Dependents, op.CaseSensitiveRepoFilters)
+	repoRevs, err := listDependencyRepos(ctx, r.db.Repos(), op.Dependents, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	dependencyRepoRevs, err := livedependencies.GetService(r.DB, livedependencies.NewSyncer()).Dependents(ctx, repoRevs)
+	dependencyRepoRevs, err := livedependencies.GetService(r.db, livedependencies.NewSyncer()).Dependents(ctx, repoRevs)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -839,7 +833,7 @@ func (e MissingLockfileIndexing) Error() string {
 // Get all private repos for the the current actor. On sourcegraph.com, those are
 // only the repos directly added by the user. Otherwise it's all repos the user has
 // access to on all connected code hosts / external services.
-func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
+func PrivateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
 	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
 	defer tr.Finish()
 
@@ -869,7 +863,7 @@ func PrivateReposForActor(ctx context.Context, db database.DB, repoOptions searc
 	})
 
 	if err != nil {
-		log15.Error("doResults: failed to list user private repos", "error", err, "user-id", userID)
+		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos

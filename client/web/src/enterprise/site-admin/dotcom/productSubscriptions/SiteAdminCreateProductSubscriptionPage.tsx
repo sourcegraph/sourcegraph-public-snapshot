@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect } from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import { Redirect, RouteComponentProps } from 'react-router'
 import { merge, of, Observable } from 'rxjs'
 import { catchError, concatMapTo, map, tap } from 'rxjs/operators'
@@ -95,7 +95,7 @@ const UserCreateSubscriptionNode: React.FunctionComponent<React.PropsWithChildre
                                 variant="secondary"
                                 size="sm"
                             >
-                                <Icon aria-hidden={true} as={AddIcon} /> Create new subscription
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Create new subscription
                             </Button>
                         </Form>
                     </div>

@@ -255,11 +255,11 @@ func (sr *SearchResultsResolver) blameFileMatch(ctx context.Context, fm *result.
 		return time.Time{}, nil
 	}
 	hm := fm.ChunkMatches[0]
-	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
+	hunks, err := gitserver.NewClient(sr.db).BlameFile(ctx, authz.DefaultSubRepoPermsChecker, fm.Repo.Name, fm.Path, &gitserver.BlameOptions{
 		NewestCommit: fm.CommitID,
 		StartLine:    hm.Ranges[0].Start.Line,
 		EndLine:      hm.Ranges[0].Start.Line,
-	}, authz.DefaultSubRepoPermsChecker)
+	})
 	if err != nil {
 		return time.Time{}, err
 	}
@@ -441,6 +441,7 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 
 func (r *searchResolver) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
+		Logger:       r.logger,
 		DB:           r.db,
 		Zoekt:        r.zoekt,
 		SearcherURLs: r.searcherURLs,

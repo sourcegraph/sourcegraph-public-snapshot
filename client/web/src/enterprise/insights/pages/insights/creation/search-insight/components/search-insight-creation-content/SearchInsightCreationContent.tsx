@@ -1,18 +1,23 @@
-import React from 'react'
+import { FC } from 'react'
 
-import classNames from 'classnames'
 import { noop } from 'rxjs'
 
-import { styles } from '../../../../../../components/creation-ui-kit'
-import { FormChangeEvent, SubmissionErrors } from '../../../../../../components/form/hooks/useForm'
+import {
+    CreationUiLayout,
+    CreationUIForm,
+    CreationUIPreview,
+    FormChangeEvent,
+    SubmissionErrors,
+    createDefaultEditSeries,
+    EditableDataSeries,
+} from '../../../../../../components'
 import { Insight } from '../../../../../../core'
-import { LineChartLivePreview } from '../../../LineChartLivePreview'
-import { CreateInsightFormFields, EditableDataSeries } from '../../types'
+import { LineChartLivePreview, LivePreviewSeries } from '../../../LineChartLivePreview'
+import { CreateInsightFormFields } from '../../types'
 import { getSanitizedSeries } from '../../utils/insight-sanitizer'
 import { SearchInsightCreationForm } from '../SearchInsightCreationForm'
 
-import { useEditableSeries, createDefaultEditSeries } from './hooks/use-editable-series'
-import { useInsightCreationForm } from './hooks/use-insight-creation-form/use-insight-creation-form'
+import { useInsightCreationForm } from './hooks/use-insight-creation-form'
 
 export interface SearchInsightCreationContentProps {
     /** This component might be used in edit or creation insight case. */
@@ -30,9 +35,7 @@ export interface SearchInsightCreationContentProps {
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
 }
 
-export const SearchInsightCreationContent: React.FunctionComponent<
-    React.PropsWithChildren<SearchInsightCreationContentProps>
-> = props => {
+export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps> = props => {
     const {
         mode = 'creation',
         initialValue,
@@ -59,8 +62,6 @@ export const SearchInsightCreationContent: React.FunctionComponent<
         onSubmit,
     })
 
-    const { editSeries, listen, editRequest, editCommit, cancelEdit, deleteSeries } = useEditableSeries({ series })
-
     const handleFormReset = (): void => {
         // TODO [VK] Change useForm API in order to implement form.reset method.
         title.input.onChange('')
@@ -76,7 +77,7 @@ export const SearchInsightCreationContent: React.FunctionComponent<
     // we should disable live chart preview
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
-        (series.meta.validState === 'VALID' || editSeries.some(series => series.valid)) &&
+        (series.meta.validState === 'VALID' || series.input.value.some(series => series.valid)) &&
         stepValue.meta.validState === 'VALID' &&
         // For the "all repositories" mode we are not able to show the live preview chart
         !allReposMode.input.value
@@ -87,10 +88,10 @@ export const SearchInsightCreationContent: React.FunctionComponent<
         values.title !== ''
 
     return (
-        <div data-testid={dataTestId} className={classNames(styles.content, className)}>
-            <SearchInsightCreationForm
+        <CreationUiLayout data-testid={dataTestId} className={className}>
+            <CreationUIForm
+                as={SearchInsightCreationForm}
                 mode={mode}
-                className={styles.contentForm}
                 innerRef={ref}
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}
@@ -105,29 +106,24 @@ export const SearchInsightCreationContent: React.FunctionComponent<
                 isFormClearActive={hasFilledValue}
                 dashboardReferenceCount={initialValue?.dashboardReferenceCount}
                 insight={insight}
-                onSeriesLiveChange={listen}
                 onCancel={onCancel}
-                onEditSeriesRequest={editRequest}
-                onEditSeriesCancel={cancelEdit}
-                onEditSeriesCommit={editCommit}
-                onSeriesRemove={deleteSeries}
                 onFormReset={handleFormReset}
             />
 
-            <LineChartLivePreview
+            <CreationUIPreview
+                as={LineChartLivePreview}
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
                 isAllReposMode={allReposMode.input.value}
-                series={seriesToPreview(editSeries)}
+                series={seriesToPreview(series.input.value)}
                 step={step.meta.value}
                 stepValue={stepValue.meta.value}
-                className={styles.contentLivePreview}
             />
-        </div>
+        </CreationUiLayout>
     )
 }
 
-function seriesToPreview(currentSeries: EditableDataSeries[]): any {
+function seriesToPreview(currentSeries: EditableDataSeries[]): LivePreviewSeries[] {
     const validSeries = currentSeries.filter(series => series.valid)
     return getSanitizedSeries(validSeries).map(series => ({
         query: series.query,

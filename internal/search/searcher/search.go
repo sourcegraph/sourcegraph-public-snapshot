@@ -4,8 +4,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
@@ -69,8 +69,8 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	}
 
 	tr.LogFields(
-		log.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
-		log.Int64("repos_count", int64(len(s.Repos))),
+		otlog.Int64("fetch_timeout_ms", fetchTimeout.Milliseconds()),
+		otlog.Int64("repos_count", int64(len(s.Repos))),
 	)
 
 	if len(s.Repos) == 0 {
@@ -112,8 +112,8 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 
 					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
-						tr.LogFields(log.String("repo", string(repo.Name)), log.Error(err), log.Bool("timeout", errcode.IsTimeout(err)), log.Bool("temporary", errcode.IsTemporary(err)))
-						log15.Warn("searchFilesInRepo failed", "error", err, "repo", repo.Name)
+						tr.LogFields(otlog.String("repo", string(repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
+						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
 					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []search.RevisionSpecifier{{RevSpec: rev}}, repoLimitHit, false, err)
@@ -138,14 +138,25 @@ func (s *TextSearchJob) Name() string {
 	return "SearcherTextSearchJob"
 }
 
-func (s *TextSearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("patternInfo", s.PatternInfo),
-		log.Int("numRepos", len(s.Repos)),
-		log.Bool("indexed", s.Indexed),
-		log.Bool("useFullDeadline", s.UseFullDeadline),
+func (s *TextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Bool("useFullDeadline", s.UseFullDeadline),
+			trace.Scoped("patternInfo", s.PatternInfo.Fields()...),
+			otlog.Int("numRepos", len(s.Repos)),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			otlog.Bool("indexed", s.Indexed),
+		)
 	}
+	return res
 }
+
+func (s *TextSearchJob) Children() []job.Describer       { return nil }
+func (s *TextSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
 var MockSearchFilesInRepo func(
 	ctx context.Context,

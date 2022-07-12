@@ -1,9 +1,8 @@
 import React from 'react'
 
+import { mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
 import classNames from 'classnames'
 import { identity } from 'lodash'
-import FileDocumentOutlineIcon from 'mdi-react/FileDocumentOutlineIcon'
-import FolderOutlineIcon from 'mdi-react/FolderOutlineIcon'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import * as GQL from '@sourcegraph/shared/src/schema'
@@ -31,35 +30,37 @@ const TreeEntry: React.FunctionComponent<
         path: string
     }>
 > = ({ isDirectory, name, url, isColumnLayout, renderedFileDecorations, path }) => (
-    <Link
-        to={url}
-        className={classNames(
-            'test-page-file-decorable',
-            styles.treeEntry,
-            isDirectory && 'font-weight-bold',
-            `test-tree-entry-${isDirectory ? 'directory' : 'file'}`,
-            !isColumnLayout && styles.treeEntryNoColumns
-        )}
-        title={path}
-        data-testid="tree-entry"
-    >
-        <div
+    <li>
+        <Link
+            to={url}
             className={classNames(
-                'd-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden'
+                'test-page-file-decorable',
+                styles.treeEntry,
+                isDirectory && 'font-weight-bold',
+                `test-tree-entry-${isDirectory ? 'directory' : 'file'}`,
+                !isColumnLayout && styles.treeEntryNoColumns
             )}
+            title={path}
+            data-testid="tree-entry"
         >
-            <span>
-                <Icon
-                    className="mr-1"
-                    as={isDirectory ? FolderOutlineIcon : FileDocumentOutlineIcon}
-                    aria-hidden={true}
-                />
-                {name}
-                {isDirectory && '/'}
-            </span>
-            {renderedFileDecorations}
-        </div>
-    </Link>
+            <div
+                className={classNames(
+                    'd-flex align-items-center justify-content-between test-file-decorable-name overflow-hidden'
+                )}
+            >
+                <span>
+                    <Icon
+                        className="mr-1"
+                        svgPath={isDirectory ? mdiFolderOutline : mdiFileDocumentOutline}
+                        aria-hidden={true}
+                    />
+                    {name}
+                    {isDirectory && '/'}
+                </span>
+                {renderedFileDecorations}
+            </div>
+        </Link>
+    </li>
 )
 
 interface TreeEntriesSectionProps extends ThemeProps {
@@ -109,16 +110,16 @@ export const TreeEntriesSection: React.FunctionComponent<React.PropsWithChildren
     const isColumnLayout = directChildren.length > MIN_ENTRIES_FOR_COLUMN_LAYOUT
 
     return (
-        <div
-            className={
-                isColumnLayout
-                    ? classNames(
-                          'pr-2',
-                          styles.treeEntriesSectionColumns,
-                          noDecorations && styles.treeEntriesSectionNoDecorations
-                      )
-                    : undefined
-            }
+        <ul
+            className={classNames(
+                'list-unstyled',
+                isColumnLayout &&
+                    classNames(
+                        'pr-2',
+                        styles.treeEntriesSectionColumns,
+                        noDecorations && styles.treeEntriesSectionNoDecorations
+                    )
+            )}
         >
             {directChildren.map((entry, index) => (
                 <TreeEntry
@@ -129,6 +130,6 @@ export const TreeEntriesSection: React.FunctionComponent<React.PropsWithChildren
                     {...entry}
                 />
             ))}
-        </div>
+        </ul>
     )
 }

@@ -1,6 +1,9 @@
 :root {
     --monospace-font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     --lead-font-size: calc(var(--font-size-base) * 1.25);
+    --hr-border-color: var(--border-color);
+    --hr-margin-y: 0.25rem;
+    --line-height-typography: 1.2;
 }
 
 h1 {
@@ -8,28 +11,28 @@ h1 {
     font-weight: 600;
     letter-spacing: (0.5/26) + em;
     margin: 0 0 1rem;
-    line-height: 1.2;
+    line-height: var(--line-height-typography);
 }
 
 h2 {
     font-size: 1.25rem; // 20px
     font-weight: 600;
     letter-spacing: (0.25/20) + em;
-    line-height: 1.2;
+    line-height: var(--line-height-typography);
 }
 
 h3 {
     font-size: 1rem; // 16px
     font-weight: 600;
     letter-spacing: (0.25/16) + em;
-    line-height: 1.2;
+    line-height: var(--line-height-typography);
 }
 
 h4 {
     font-size: 0.875rem; // 14px
     font-weight: 500;
     letter-spacing: (0.25/14) + em;
-    line-height: 1.2;
+    line-height: var(--line-height-typography);
 }
 
 h5 {
@@ -38,13 +41,13 @@ h5 {
     letter-spacing: (0.5/10) + em;
     text-transform: uppercase;
     margin: 0;
-    line-height: 1.2;
+    line-height: var(--line-height-typography);
 }
 
 h6 {
     font-size: 0.625rem;
     font-weight: 400;
-    line-height: 1.2;
+    line-height: var(--line-height-typography);
 }
 
 %small {
@@ -143,10 +146,10 @@ label.text-uppercase small,
 }
 
 hr {
-    margin-top: $hr-margin-y;
-    margin-bottom: $hr-margin-y;
+    margin-top: var(--hr-margin-y);
+    margin-bottom: var(--hr-margin-y);
     border: 0;
-    border-top: 1px solid $hr-border-color;
+    border-top: 1px solid var(--hr-border-color);
 }
 
 mark,
