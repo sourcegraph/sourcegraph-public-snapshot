@@ -38,8 +38,9 @@ function docker_cleanup() {
 
 function generate_markdown() {
     if [ -f "$root_dir/server.log" ]; then
-        errors=$(egrep -i "eror|error|panic" "$root_dir/server.log")
+        errors=$(grep -E -i "eror|error|panic" "$root_dir/server.log")
         annotation=$(
+        # shellcheck disable=SC2006
         cat <<EOF
 See below for an exerpt of errors. For more info go HERE
 \`\`\`term
@@ -48,7 +49,7 @@ $errors
 EOF
 )
         echo "--- DEBUG ANNOTATION"
-        echo $annotation
+        echo "$annotation"
         echo "--- END ANNOTATION"
     fi
 }
