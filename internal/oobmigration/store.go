@@ -170,12 +170,12 @@ var yamlMigrations = func() []yamlMigration {
 		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
 	}
 
-	var migrations []yamlMigration
-	if err := yaml.Unmarshal(contents, &migrations); err != nil {
+	var parsedMigrations []yamlMigration
+	if err := yaml.Unmarshal(contents, &parsedMigrations); err != nil {
 		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
 	}
 
-	return migrations
+	return parsedMigrations
 }()
 
 // SynchronizeMetadata upserts the metadata defined in the sibling file oobmigrations.yaml.
