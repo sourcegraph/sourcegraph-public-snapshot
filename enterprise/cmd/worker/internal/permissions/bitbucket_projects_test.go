@@ -25,8 +25,7 @@ import (
 
 func TestStore(t *testing.T) {
 	t.Parallel()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	db := database.NewDB(dbtest.NewDB(t))
 
 	ctx := context.Background()
 	jobID, err := db.BitbucketProjectPermissions().Enqueue(ctx, "project1", 2, []types.UserPermission{
@@ -37,7 +36,7 @@ func TestStore(t *testing.T) {
 	require.NotZero(t, jobID)
 
 	store := createBitbucketProjectPermissionsStore(db, &config{})
-	count, err := store.QueuedCount(ctx, true)
+	count, err := store.QueuedCount(ctx, true, nil)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 }
@@ -102,10 +101,9 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
 
 	// create 3 users
 	users := db.Users()
@@ -296,11 +294,9 @@ func TestHandleRestricted(t *testing.T) {
 	}
 	t.Parallel()
 
-	logger := logtest.Scoped(t)
-
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -397,10 +393,9 @@ func TestHandleUnrestricted(t *testing.T) {
 	}
 	t.Parallel()
 
-	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
+	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
