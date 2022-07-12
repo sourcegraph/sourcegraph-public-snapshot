@@ -8,7 +8,7 @@ import { App } from './App'
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
-    title: 'extensions/ide/jetbrains/App',
+    title: 'jetbrains/App',
     decorators: [decorator],
 }
 
