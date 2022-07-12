@@ -40,7 +40,7 @@ export const PREDICATES: Access[] = [
             },
             {
                 name: 'description',
-            }
+            },
         ],
     },
     {
@@ -203,7 +203,7 @@ export const predicateCompletion = (field: string): Completion[] => {
                 label: 'description(...)',
                 insertText: 'description(${1})',
                 asSnippet: true,
-            }
+            },
         ]
     }
     return []

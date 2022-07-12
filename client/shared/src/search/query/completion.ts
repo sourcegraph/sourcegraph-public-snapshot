@@ -104,7 +104,9 @@ export const repositoryInsertText = (
         return `${depsPredicateMatches[1]}(${insertText})`
     }
 
-    const descriptionPredicateMatches = options.filterValue ? options.filterValue.match(REPO_DESCRIPTION_PREDICATE_REGEX): null
+    const descriptionPredicateMatches = options.filterValue
+        ? options.filterValue.match(REPO_DESCRIPTION_PREDICATE_REGEX)
+        : null
     if (descriptionPredicateMatches) {
         // descriptionPredicateMatches[1] contains `description`
         return `${descriptionPredicateMatches[1]}(${insertText})`

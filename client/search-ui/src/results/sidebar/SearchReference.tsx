@@ -227,8 +227,7 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
     {
         ...createQueryExampleFromString('description({regex-pattern})'),
         field: FilterType.repo,
-        description:
-            'Search inside repositories that have a description matched by the provided regex pattern.',
+        description: 'Search inside repositories that have a description matched by the provided regex pattern.',
         examples: ['repo:description(linux kernel)', 'repo:description(go.*library)'],
         showSuggestions: false,
     },

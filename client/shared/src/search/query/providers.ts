@@ -5,7 +5,7 @@ import { map, delay, takeUntil, switchMap } from 'rxjs/operators'
 import { SearchPatternType } from '../../graphql-operations'
 import { isSearchMatchOfType, SearchMatch } from '../stream'
 
-import {getCompletionItems, REPO_DEPS_PREDICATE_REGEX, REPO_DESCRIPTION_PREDICATE_REGEX} from './completion'
+import { getCompletionItems, REPO_DEPS_PREDICATE_REGEX, REPO_DESCRIPTION_PREDICATE_REGEX } from './completion'
 import { getMonacoTokens } from './decoratedToken'
 import { FilterType } from './filters'
 import { getHoverResult } from './hover'
@@ -67,7 +67,8 @@ export function getSuggestionQuery(tokens: Token[], tokenAtColumn: Token, sugges
     }
 
     if (suggestionType === 'repo') {
-        const predicateMatch = tokenValue.match(REPO_DEPS_PREDICATE_REGEX) || tokenValue.match(REPO_DESCRIPTION_PREDICATE_REGEX)
+        const predicateMatch =
+            tokenValue.match(REPO_DEPS_PREDICATE_REGEX) || tokenValue.match(REPO_DESCRIPTION_PREDICATE_REGEX)
         const repoValue = predicateMatch ? predicateMatch[2] : tokenValue
         const relevantFilters =
             !hasAndOrOperators && !predicateMatch ? serializeFilters(tokens, REPO_SUGGESTION_FILTERS) : ''
