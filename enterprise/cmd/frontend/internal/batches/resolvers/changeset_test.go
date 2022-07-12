@@ -168,6 +168,30 @@ func TestChangesetResolver(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	readOnlyGitHubChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
+		Repo:                repo.ID,
+		ExternalServiceType: "github",
+		ExternalID:          "123456",
+		ExternalBranch:      "read-only-pr",
+		ExternalState:       btypes.ChangesetExternalStateReadOnly,
+		ExternalCheckState:  btypes.ChangesetCheckStatePending,
+		ExternalReviewState: btypes.ChangesetReviewStateChangesRequested,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		Metadata: &github.PullRequest{
+			ID:          "123456",
+			Title:       "GitHub PR Title",
+			Body:        "GitHub PR Body",
+			Number:      123456,
+			State:       "OPEN",
+			URL:         "https://github.com/sourcegraph/archived/pull/123456",
+			HeadRefName: "read-only-pr",
+			HeadRefOid:  headRev,
+			BaseRefOid:  baseRev,
+			BaseRefName: "master",
+		},
+	})
+
 	unsyncedChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
 		Repo:                repo.ID,
 		ExternalServiceType: "github",
@@ -296,6 +320,27 @@ func TestChangesetResolver(t *testing.T) {
 					Typename:  "RepositoryComparison",
 					FileDiffs: testDiffGraphQL,
 				},
+			},
+		},
+		{
+			name:      "read-only github changeset",
+			changeset: readOnlyGitHubChangeset,
+			want: apitest.Changeset{
+				Typename:           "ExternalChangeset",
+				Title:              "GitHub PR Title",
+				Body:               "GitHub PR Body",
+				ExternalID:         "123456",
+				CheckState:         "PENDING",
+				ReviewState:        "CHANGES_REQUESTED",
+				ScheduleEstimateAt: "",
+				Repository:         apitest.Repository{Name: string(repo.Name)},
+				ExternalURL: apitest.ExternalURL{
+					URL:         "https://github.com/sourcegraph/archived/pull/123456",
+					ServiceKind: "GITHUB",
+					ServiceType: "github",
+				},
+				Labels: []apitest.Label{},
+				State:  string(btypes.ChangesetStateReadOnly),
 			},
 		},
 		{

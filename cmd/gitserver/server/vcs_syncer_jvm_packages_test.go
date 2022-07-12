@@ -130,7 +130,7 @@ func TestNoMaliciousFiles(t *testing.T) {
 
 	s := jvmPackagesSyncer{
 		config: &schema.JVMPackagesConnection{Maven: &schema.Maven{Dependencies: []string{}}},
-		fetch: func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenPackageVersion) (sourceCodeJarPath string, err error) {
+		fetch: func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
 			jarPath := path.Join(dir, "sampletext.zip")
 			createMaliciousJar(t, jarPath)
 			return jarPath, nil
@@ -139,7 +139,7 @@ func TestNoMaliciousFiles(t *testing.T) {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // cancel now  to prevent any network IO
-	dep := &reposource.MavenPackageVersion{MavenModule: &reposource.MavenModule{}}
+	dep := &reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{}}
 	err := s.Download(ctx, extractPath, dep)
 	assert.NotNil(t, err)
 

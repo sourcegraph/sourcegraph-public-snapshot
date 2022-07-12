@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { ChangesetApplyPreviewFields } from '../../../../graphql-operations'
+import { ChangesetApplyPreviewFields, ChangesetSpecOperation } from '../../../../graphql-operations'
 import { ChangesetAddedIcon, ChangesetModifiedIcon, ChangesetRemovedIcon } from '../icons'
 
 import styles from './PreviewNodeIndicator.module.scss'
@@ -41,6 +41,22 @@ export const PreviewNodeIndicator: React.FunctionComponent<React.PropsWithChildr
             if (node.__typename === 'HiddenChangesetApplyPreview' || node.operations.length === 0) {
                 // If no operations, no update :P
                 return <div />
+            }
+            if (node.operations.includes(ChangesetSpecOperation.REATTACH)) {
+                return (
+                    <div className={containerClassName}>
+                        <span className={styles.previewNodeIndicatorAttachBar}>&nbsp;</span>
+                        <span
+                            className={classNames(
+                                styles.previewNodeIndicatorAttachIcon,
+                                'd-flex justify-content-center align-items-center'
+                            )}
+                        >
+                            <ChangesetAddedIcon />
+                        </span>
+                        <span className={styles.previewNodeIndicatorAttachBar}>&nbsp;</span>
+                    </div>
+                )
             }
             return (
                 <div className={containerClassName}>

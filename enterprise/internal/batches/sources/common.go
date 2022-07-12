@@ -27,6 +27,16 @@ func (e ChangesetNotFoundError) Error() string {
 
 func (e ChangesetNotFoundError) NonRetryable() bool { return true }
 
+// ArchivableChangesetSource represents a changeset source that has a
+// concept of archived repositories.
+type ArchivableChangesetSource interface {
+	ChangesetSource
+
+	// IsArchivedPushError parses the given error output from `git push` to
+	// detect whether the error was caused by the repository being archived.
+	IsArchivedPushError(output string) bool
+}
+
 // A DraftChangesetSource can create draft changesets and undraft them.
 type DraftChangesetSource interface {
 	ChangesetSource

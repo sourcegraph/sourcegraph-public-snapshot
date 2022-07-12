@@ -1,6 +1,6 @@
 [
   {
-    "Description": "apply search type for pattern and apply language filter for pattern",
+    "Description": "apply search type for pattern ⚬ apply language filter for pattern",
     "Query": "type:commit lang:Go yikes derp"
   },
   {

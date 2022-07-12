@@ -946,6 +946,7 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 			btypes.ChangesetStateClosed:      {ExternalState: btypes.ChangesetExternalStateClosed},
 			btypes.ChangesetStateMerged:      {ExternalState: btypes.ChangesetExternalStateMerged},
 			btypes.ChangesetStateDeleted:     {ExternalState: btypes.ChangesetExternalStateDeleted},
+			btypes.ChangesetStateReadOnly:    {ExternalState: btypes.ChangesetExternalStateReadOnly},
 		}
 	)
 	for state, opts := range states {

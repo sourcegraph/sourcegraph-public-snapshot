@@ -3,6 +3,9 @@ package jobutil
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"regexp"
+	"regexp/syntax"
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
@@ -27,7 +30,7 @@ import (
 func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
 	generators := make([]next, 0, len(plan))
 	for _, b := range plan {
-		generators = append(generators, NewGenerator(inputs, b, rules))
+		generators = append(generators, NewGenerator(b, rulesNarrow, rulesWiden))
 	}
 
 	jobGenerator := &jobGenerator{SearchInputs: inputs}
@@ -159,38 +162,6 @@ type autoQuery struct {
 // next is the continuation for the query generator.
 type next func() (*autoQuery, next)
 
-// NewGenerator creates a new generator using rules and a seed Basic query. It
-// returns a `next` function which, when called, returns the next job
-// generated, and the `next` continuation. A `nil` continuation means query
-// generation is exhausted. Currently it implements a simple strategy that tries
-// to apply rule transforms in order, and generates jobs for transforms that
-// apply successfully.
-func NewGenerator(inputs *run.SearchInputs, seed query.Basic, rules []rule) next {
-	var n func(i int) next // i keeps track of rule index in the continuation
-	n = func(i int) next {
-		if i >= len(rules) {
-			return func() (*autoQuery, next) { return nil, nil }
-		}
-
-		return func() (*autoQuery, next) {
-			generated := applyTransformation(seed, rules[i].transform)
-			if generated == nil {
-				// Rule doesn't apply, go to next rule.
-				return nil, n(i + 1)
-			}
-
-			q := autoQuery{
-				description: rules[i].description,
-				query:       *generated,
-			}
-
-			return &q, n(i + 1)
-		}
-	}
-
-	return n(0)
-}
-
 // rule represents a transformation function on a Basic query. Transformation
 // cannot fail: either they apply in sequence and produce a valid, non-nil,
 // Basic query, or they do not apply, in which case they return nil. See the
@@ -201,58 +172,6 @@ type rule struct {
 }
 
 type transform []func(query.Basic) *query.Basic
-
-// rules is an ordered list of rules. Each item represents one possible query
-// production, if the sequence of the transformation functions associated with
-// this item apply successfully. Example:
-//
-// If we have input query B0 and a list with two items like this:
-//
-// {
-//   "first rule list"  : [ R1, R2 ],
-//   "second rule list" : [ R2 ],
-// }
-//
-// Then:
-//
-// - If both entries apply, we output [ B1, B2 ] where B1 is generated
-//   from applying R1 then R2, and B2 is generated from just applying R2.
-// - If only the first item applies, R1 then R2, we get the output [ B1 ].
-// - If only the second item applies, R2 on its own, we get the output [ B2 ].
-var rules = []rule{
-	{
-		description: "unquote patterns",
-		transform:   transform{unquotePatterns},
-	},
-	{
-		description: "apply search type and language filter for patterns",
-		transform:   transform{typePatterns, langPatterns},
-	},
-	{
-		description: "apply search type for pattern",
-		transform:   transform{typePatterns},
-	},
-	{
-		description: "apply language filter for pattern",
-		transform:   transform{langPatterns},
-	},
-	{
-		description: "apply search type and language filter for patterns with AND patterns",
-		transform:   transform{typePatterns, langPatterns, unorderedPatterns},
-	},
-	{
-		description: "apply search type with AND patterns",
-		transform:   transform{typePatterns, unorderedPatterns},
-	},
-	{
-		description: "apply language filter with AND patterns",
-		transform:   transform{langPatterns, unorderedPatterns},
-	},
-	{
-		description: "AND patterns together",
-		transform:   transform{unorderedPatterns},
-	},
-}
 
 // applyTransformation applies a transformation on `b`. If any function does not apply, it returns nil.
 func applyTransformation(b query.Basic, transform transform) *query.Basic {
@@ -298,6 +217,130 @@ func unquotePatterns(b query.Basic) *query.Basic {
 
 	if !changed {
 		// No unquoting happened, so we don't run the search.
+		return nil
+	}
+
+	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	if err != nil {
+		return nil
+	}
+
+	newBasic, err := query.ToBasicQuery(newNodes)
+	if err != nil {
+		return nil
+	}
+
+	return &newBasic
+}
+
+// regexpPatterns converts literal patterns into regular expression patterns.
+// The conversion is a heuristic and happens based on whether the pattern has
+// indicative regular expression metasyntax. It would be overly aggressive to
+// convert patterns containing _any_ potential metasyntax, since a pattern like
+// my.config.yaml contains two `.` (match any character in regexp).
+func regexpPatterns(b query.Basic) *query.Basic {
+	rawParseTree, err := query.Parse(query.StringHuman(b.ToParseTree()), query.SearchTypeStandard)
+	if err != nil {
+		return nil
+	}
+
+	// we decide to interpret patterns as regular expressions if the number of
+	// significant metasyntax operators exceed this threshold
+	METASYNTAX_THRESHOLD := 2
+
+	// countMetaSyntax counts the number of significant regular expression
+	// operators in string when it is interpreted as a regular expression. A
+	// rough map of operators to syntax can be found here:
+	// https://sourcegraph.com/github.com/golang/go@bf5898ef53d1693aa572da0da746c05e9a6f15c5/-/blob/src/regexp/syntax/regexp.go?L116-244
+	var countMetaSyntax func([]*syntax.Regexp) int
+	countMetaSyntax = func(res []*syntax.Regexp) int {
+		count := 0
+		for _, r := range res {
+			switch r.Op {
+			case
+				// operators that are weighted 0 on their own
+				syntax.OpAnyCharNotNL,
+				syntax.OpAnyChar,
+				syntax.OpNoMatch,
+				syntax.OpEmptyMatch,
+				syntax.OpLiteral,
+				syntax.OpCapture,
+				syntax.OpConcat:
+				count += countMetaSyntax(r.Sub)
+			case
+				// operators that are weighted 1 on their own
+				syntax.OpCharClass,
+				syntax.OpBeginLine,
+				syntax.OpEndLine,
+				syntax.OpBeginText,
+				syntax.OpEndText,
+				syntax.OpWordBoundary,
+				syntax.OpNoWordBoundary,
+				syntax.OpAlternate:
+				count += countMetaSyntax(r.Sub) + 1
+
+			case
+				// quantifiers *, +, ?, {...} on metasyntax like
+				// `.` or `(...)` are weighted 2. If the
+				// quantifier applies to other syntax like
+				// literals (not metasyntax) it's weighted 1.
+				syntax.OpStar,
+				syntax.OpPlus,
+				syntax.OpQuest,
+				syntax.OpRepeat:
+				switch r.Sub[0].Op {
+				case
+					syntax.OpAnyChar,
+					syntax.OpAnyCharNotNL,
+					syntax.OpCapture:
+					count += countMetaSyntax(r.Sub) + 2
+				default:
+					count += countMetaSyntax(r.Sub) + 1
+				}
+			}
+		}
+		return count
+	}
+
+	changed := false
+	newParseTree := query.MapPattern(rawParseTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		if annotation.Labels.IsSet(query.Regexp) {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		re, err := syntax.Parse(value, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+		if err != nil {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		count := countMetaSyntax([]*syntax.Regexp{re})
+		if count < METASYNTAX_THRESHOLD {
+			return query.Pattern{
+				Value:      value,
+				Negated:    negated,
+				Annotation: annotation,
+			}
+		}
+
+		changed = true
+		annotation.Labels.Unset(query.Literal)
+		annotation.Labels.Set(query.Regexp)
+		return query.Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !changed {
 		return nil
 	}
 
@@ -482,6 +525,170 @@ func typePatterns(b query.Basic) *query.Basic {
 	}
 }
 
+var lookup = map[string]struct{}{
+	"github.com": {},
+	"gitlab.com": {},
+}
+
+// patternToCodeHostFilters checks if a pattern contains a code host URL and
+// extracts the org/repo/branch and path and lifts these to filters, as
+// applicable.
+func patternToCodeHostFilters(v string, negated bool) *[]query.Node {
+	if !strings.HasPrefix(v, "https://") {
+		// normalize v with https:// prefix.
+		v = "https://" + v
+	}
+
+	u, err := url.Parse(v)
+	if err != nil {
+		return nil
+	}
+
+	domain := strings.TrimPrefix(u.Host, "www.")
+	if _, ok := lookup[domain]; !ok {
+		return nil
+	}
+
+	var value string
+	path := strings.Trim(u.Path, "/")
+	pathElems := strings.Split(path, "/")
+	if len(pathElems) == 0 {
+		value = regexp.QuoteMeta(domain)
+		value = fmt.Sprintf("^%s", value)
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      value,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			}}
+	} else if len(pathElems) == 1 {
+		value = regexp.QuoteMeta(domain)
+		value = fmt.Sprintf("^%s/%s", value, strings.Join(pathElems, "/"))
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      value,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			}}
+	} else if len(pathElems) == 2 {
+		value = regexp.QuoteMeta(domain)
+		value = fmt.Sprintf("^%s/%s$", value, strings.Join(pathElems, "/"))
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      value,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			}}
+	} else if len(pathElems) == 4 && (pathElems[2] == "tree" || pathElems[2] == "commit") {
+		repoValue := regexp.QuoteMeta(domain)
+		repoValue = fmt.Sprintf("^%s/%s$", repoValue, strings.Join(pathElems[:2], "/"))
+		revision := pathElems[3]
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      repoValue,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+			query.Parameter{
+				Field:      query.FieldRev,
+				Value:      revision,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+		}
+	} else if len(pathElems) >= 5 {
+		repoValue := regexp.QuoteMeta(domain)
+		repoValue = fmt.Sprintf("^%s/%s$", repoValue, strings.Join(pathElems[:2], "/"))
+
+		revision := pathElems[3]
+
+		pathValue := strings.Join(pathElems[4:], "/")
+		pathValue = regexp.QuoteMeta(pathValue)
+
+		if pathElems[2] == "blob" {
+			pathValue = fmt.Sprintf("^%s$", pathValue)
+		} else if pathElems[2] == "tree" {
+			pathValue = fmt.Sprintf("^%s", pathValue)
+		} else {
+			// We don't know what this is.
+			return nil
+		}
+
+		return &[]query.Node{
+			query.Parameter{
+				Field:      query.FieldRepo,
+				Value:      repoValue,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+			query.Parameter{
+				Field:      query.FieldRev,
+				Value:      revision,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+			query.Parameter{
+				Field:      query.FieldFile,
+				Value:      pathValue,
+				Negated:    negated,
+				Annotation: query.Annotation{},
+			},
+		}
+	}
+
+	return nil
+}
+
+// patternsToCodeHostFilters converts patterns to `repo` or `path` filters if they
+// can be interpreted as URIs.
+func patternsToCodeHostFilters(b query.Basic) *query.Basic {
+	rawPatternTree, err := query.Parse(query.StringHuman([]query.Node{b.Pattern}), query.SearchTypeStandard)
+	if err != nil {
+		return nil
+	}
+
+	filterParams := []query.Node{}
+	changed := false
+	newParseTree := query.MapPattern(rawPatternTree, func(value string, negated bool, annotation query.Annotation) query.Node {
+		if params := patternToCodeHostFilters(value, negated); params != nil {
+			changed = true
+			filterParams = append(filterParams, *params...)
+			// Collect the param and delete pattern. We're going to
+			// add those parameters after. We can't map patterns
+			// in-place because that might create parameters in
+			// concat nodes.
+			return nil
+		}
+
+		return query.Pattern{
+			Value:      value,
+			Negated:    negated,
+			Annotation: annotation,
+		}
+	})
+
+	if !changed {
+		return nil
+	}
+
+	newParseTree = query.NewOperator(append(newParseTree, filterParams...), query.And) // Reduce with NewOperator to obtain valid partitioning.
+	newNodes, err := query.Sequence(query.For(query.SearchTypeStandard))(newParseTree)
+	if err != nil {
+		return nil
+	}
+
+	newBasic, err := query.ToBasicQuery(newNodes)
+	if err != nil {
+		return nil
+	}
+
+	return &newBasic
+}
+
 func NewGeneratedSearchJob(inputs *run.SearchInputs, autoQ *autoQuery) (job.Job, error) {
 	child, err := NewBasicJob(inputs, autoQ.query)
 	if err != nil {
@@ -580,9 +787,17 @@ var rulesNarrow = []rule{
 		description: "apply language filter for pattern",
 		transform:   transform{langPatterns},
 	},
+	{
+		description: "expand URL to filters",
+		transform:   transform{patternsToCodeHostFilters},
+	},
 }
 
 var rulesWiden = []rule{
+	{
+		description: "patterns as regular expressions",
+		transform:   transform{regexpPatterns},
+	},
 	{
 		description: "AND patterns together",
 		transform:   transform{unorderedPatterns},
@@ -646,7 +861,7 @@ const (
 // To avoid spending time on generator invalid combinations, the generator
 // prunes the initial rule set to only those rules that do successively apply
 // individually to the seed query.
-func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
+func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 	narrow = pruneRules(seed, narrow)
 	widen = pruneRules(seed, widen)
 	num := len(narrow)
@@ -742,7 +957,7 @@ func NewComboGenerator(seed query.Basic, narrow, widen []rule) next {
 		}
 
 		q := autoQuery{
-			description: strings.Join(descriptions, " and "),
+			description: strings.Join(descriptions, " ⚬ "),
 			query:       *generated,
 		}
 

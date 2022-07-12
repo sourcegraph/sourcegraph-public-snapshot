@@ -56,8 +56,8 @@ interface UserNodeState {
 }
 
 const nukeDetails = `
-- By deleting a user, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
-- By nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this). When deleting data at a user's request, nuking is used.
+- When deleting a user normally, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
+- By deleting a user forever, the user and ALL associated data will be permanently removed from the DB (you CANNOT undo this). When deleting data at a user's request, "Delete forever" is used.
 
 Beware this includes e.g. deleting extensions authored by the user, deleting ANY settings authored or updated by the user, etc.
 
@@ -198,29 +198,20 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 </Button>
                             ))}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <Tooltip content="Delete user">
-                                <Button
-                                    onClick={this.deleteUser}
-                                    disabled={this.state.loading}
-                                    variant="danger"
-                                    size="sm"
-                                >
-                                    Delete
-                                </Button>
-                            </Tooltip>
+                            <Button onClick={this.deleteUser} disabled={this.state.loading} variant="danger" size="sm">
+                                Delete
+                            </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <Tooltip content="Hard delete user (click for more information)">
-                                <Button
-                                    className="ml-1"
-                                    onClick={this.nukeUser}
-                                    disabled={this.state.loading}
-                                    variant="danger"
-                                    size="sm"
-                                >
-                                    Delete forever
-                                </Button>
-                            </Tooltip>
+                            <Button
+                                className="ml-1"
+                                onClick={this.nukeUser}
+                                disabled={this.state.loading}
+                                variant="danger"
+                                size="sm"
+                            >
+                                Delete forever
+                            </Button>
                         )}
                     </div>
                 </div>
@@ -332,7 +323,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     private doDeleteUser = (hard: boolean): void => {
         let message = `Delete the user ${this.props.node.username}?`
         if (hard) {
-            message = `Nuke the user ${this.props.node.username}?${nukeDetails}`
+            message = `Delete the user ${this.props.node.username} forever?${nukeDetails}`
         }
         if (!window.confirm(message)) {
             return
