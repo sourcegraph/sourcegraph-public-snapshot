@@ -1,4 +1,5 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
+import classNames from 'classnames'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { SearchPatternType } from '@sourcegraph/search'
@@ -22,7 +23,7 @@ export const JetBrainsPluginApp: Story = () => {
     usePrependStyles('branded-story-styles', globalStyles)
 
     return (
-        <div className="theme theme-light">
+        <div className={classNames('theme', useDarkMode() ? 'theme-dark' : 'theme-light')}>
             <div className="d-flex justify-content-center">
                 <div className="mx-6">
                     <App
