@@ -319,7 +319,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 				}
 
 				if op.CommitAfter != "" {
-
 					if hasCommitAfter, err := client.HasCommitAfter(ctx, repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
 							res.Lock()
