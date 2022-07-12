@@ -882,7 +882,7 @@ func addJhTestStuff() operations.Operation {
 			bk.Plugin(
 				"https://github.com/sourcegraph/step-slack-notify-buildkite-plugin.git#main",
 				map[string]any{
-					"message":                  "CodeIntelQA :brain:, cc <@jh>",
+					"message":                  "CodeIntelQA :brain:,  soft fail cc <@jh>",
 					"channel_name":             "jh-bot-testing",
 					"slack_token_env_var_name": "CI_CUSTOM_SLACK_BUILDKITE_PLUGIN_TOKEN",
 					"conditions": map[string]any{
@@ -891,6 +891,7 @@ func addJhTestStuff() operations.Operation {
 				},
 			),
 			bk.Cmd("wfopwfowfp"),
+			bk.SoftFail(127),
 		)
 	}
 }
