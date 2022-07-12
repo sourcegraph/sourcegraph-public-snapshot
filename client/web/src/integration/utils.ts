@@ -151,7 +151,7 @@ export interface EditorAPI {
     /**
      * Replaces the editor's content with the provided input.
      */
-    replace: (input: string) => Promise<void>
+    replace: (input: string, method?: 'type' | 'paste') => Promise<void>
     /**
      * Triggers application of the specified suggestion.
      */
@@ -159,7 +159,6 @@ export interface EditorAPI {
 }
 
 const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAPI> = {
-    // Using id selector rather than `test-` classes as Monaco doesn't allow customizing classes
     monaco: (driver: Driver, rootSelector: string) => {
         const inputSelector = `${rootSelector} textarea`
         const completionSelector = `${rootSelector} .suggest-widget.visible`
@@ -180,11 +179,12 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     inputSelector
                 )
             },
-            replace(newText: string) {
+            replace(newText: string, method = 'type') {
                 return driver.replaceText({
                     selector: rootSelector,
                     newText,
-                    enterTextMethod: 'type',
+                    enterTextMethod: method,
+                    selectMethod: 'keyboard',
                 })
             },
             async waitForSuggestion(suggestion?: string) {
@@ -227,11 +227,12 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     inputSelector
                 )
             },
-            replace(newText: string) {
+            replace(newText: string, method = 'type') {
                 return driver.replaceText({
                     selector: rootSelector,
                     newText,
-                    enterTextMethod: 'type',
+                    enterTextMethod: method,
+                    selectMethod: 'selectall',
                 })
             },
             async waitForSuggestion(suggestion?: string) {
@@ -275,23 +276,32 @@ export function enableEditor(editor: Editor): Partial<Settings> {
 /**
  * Returns an object for accessing editor related information at `rootSelector`.
  */
-export const createEditorAPI = (driver: Driver, editor: Editor, rootSelector: string): EditorAPI =>
-    editors[editor](driver, rootSelector)
+export const createEditorAPI = async (driver: Driver, rootSelector: string): Promise<EditorAPI> => {
+    await driver.page.waitForSelector(rootSelector)
+    const editor = await driver.page.evaluate<(selector: string) => string | undefined>(
+        selector => (document.querySelector(selector) as HTMLElement).dataset.editor,
+        rootSelector
+    )
+    switch (editor) {
+        case 'monaco':
+        case 'codemirror6':
+            break
+        default:
+            throw new Error(`${editor} is not a supported editor`)
+    }
+    return editors[editor](driver, rootSelector)
+}
 
 /**
  * Helper function for abstracting away testing different search query input
- * implementations. The callback function gets passed the editor name and the
- * main search query input selector, which can be used with {@link enableEditor}
- * and {@link createEditorAPI}.
+ * implementations. The callback function gets passed the editor name which can
+ * be used with {@link enableEditor} and {@link createEditorAPI}.
  */
-export const withSearchQueryInput = (callback: (editorName: Editor, rootSelector: string) => void): void => {
-    const editorNames: [Editor, string][] = [
-        ['monaco', '#monaco-query-input'],
-        ['codemirror6', '[data-test-id="codemirror-query-input"]'],
-    ]
-    for (const [editor, selector] of editorNames) {
+export const withSearchQueryInput = (callback: (editorName: Editor) => void): void => {
+    const editorNames: Editor[] = ['monaco', 'codemirror6']
+    for (const editor of editorNames) {
         // This callback is supposed to be called multiple times
         // eslint-disable-next-line callback-return
-        callback(editor, selector)
+        callback(editor)
     }
 }
