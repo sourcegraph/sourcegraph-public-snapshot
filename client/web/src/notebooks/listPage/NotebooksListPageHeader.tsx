@@ -19,6 +19,7 @@ import {
     Input,
     Modal,
     Icon,
+    useMatchMedia,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -50,6 +51,8 @@ export const NotebooksListPageHeader: React.FunctionComponent<
     React.PropsWithChildren<NotebooksListPageHeaderProps>
 > = ({ authenticatedUser, telemetryService, setImportState, importNotebook }) => {
     const fileInputReference = useRef<HTMLInputElement>(null)
+    // Taken from global-styles/breakpoints.css , $viewport-md
+    const isWideScreen = useMatchMedia('(min-width: 768px)')
 
     const onImportMenuItemSelect = useCallback(() => {
         telemetryService.log('SearchNotebookImportMarkdownNotebookButtonClick')
@@ -96,7 +99,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
 
     return (
         <>
-            <ToggleNotepadButton telemetryService={telemetryService} />
+            {isWideScreen && <ToggleNotepadButton telemetryService={telemetryService} className="mr-2" />}
             {/* The file upload input has to always be present in the DOM, otherwise the upload process
             does not complete when the menu below closes.  */}
             <Input
@@ -108,7 +111,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
                 data-testid="import-markdown-notebook-file-input"
             />
             <Menu>
-                <ButtonGroup className="ml-2">
+                <ButtonGroup>
                     <Button to={PageRoutes.NotebookCreate} variant="primary" as={Link}>
                         Create notebook
                     </Button>
@@ -130,9 +133,9 @@ export const NotebooksListPageHeader: React.FunctionComponent<
 export const NOTEPAD_ENABLED_EVENT = 'SearchNotepadEnabled'
 const NOTEPAD_DISABLED_EVENT = 'SearchNotepadDisabled'
 
-const ToggleNotepadButton: React.FunctionComponent<React.PropsWithChildren<TelemetryProps>> = ({
-    telemetryService,
-}) => {
+const ToggleNotepadButton: React.FunctionComponent<
+    React.PropsWithChildren<TelemetryProps & { className?: string }>
+> = ({ telemetryService, className }) => {
     const [notepadEnabled, setNotepadEnabled] = useTemporarySetting('search.notepad.enabled')
     const [ctaSeen, setCTASeen] = useTemporarySetting('search.notepad.ctaSeen')
     const [showCTA, setShowCTA] = useState(false)
@@ -164,7 +167,7 @@ const ToggleNotepadButton: React.FunctionComponent<React.PropsWithChildren<Telem
 
     return (
         <>
-            <Button variant="secondary" type="button" onClick={onClick}>
+            <Button variant="secondary" type="button" onClick={onClick} className={className}>
                 <NotepadIcon /> {notepadEnabled ? 'Disable' : 'Enable'} notepad
             </Button>
             {showCTA && (

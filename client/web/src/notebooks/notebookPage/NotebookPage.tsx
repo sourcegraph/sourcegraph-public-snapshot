@@ -24,6 +24,7 @@ import {
     Icon,
     H3,
     Text,
+    useMatchMedia,
 } from '@sourcegraph/wildcard'
 
 import { Block } from '..'
@@ -109,6 +110,8 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     const outlineContainerElement = useRef<HTMLDivElement | null>(null)
     const [notepadCTASeen, setNotepadCTASeen] = useTemporarySetting('search.notepad.ctaSeen')
     const [notepadEnabled, setNotepadEnabled] = useTemporarySetting('search.notepad.enabled')
+    // Taken from global-styles/breakpoints.css , $viewport-md
+    const isWideScreen = useMatchMedia('(min-width: 768px)')
 
     const exportedFileName = useMemo(
         () => `${notebookTitle ? convertNotebookTitleToFileName(notebookTitle) : 'notebook'}.snb.md`,
@@ -191,12 +194,8 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
     )
 
     const showNotepadCTA = useMemo(
-        () =>
-            !notepadEnabled &&
-            !notepadCTASeen &&
-            isNotebookLoaded(latestNotebook) &&
-            latestNotebook.blocks.length === 0,
-        [latestNotebook, notepadCTASeen, notepadEnabled]
+        () => isNotebookLoaded(latestNotebook) && latestNotebook.blocks.length === 0 && isWideScreen,
+        [latestNotebook, notepadCTASeen, notepadEnabled, isWideScreen]
     )
 
     return (
