@@ -875,3 +875,22 @@ func prPreview() operations.Operation {
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }
+
+func addJhTestStuff() operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		pipeline.AddStep(":camel: JH tstuff",
+			bk.Plugin(
+				"https://github.com/sourcegraph/step-slack-notify-buildkite-plugin.git#main",
+				map[string]any{
+					"message":                  "CodeIntelQA :brain:, cc <@jh>",
+					"channel_name":             "jh-bot-testing",
+					"slack_token_env_var_name": "CI_CUSTOM_SLACK_BUILDKITE_PLUGIN_TOKEN",
+					"conditions": map[string]any{
+						"failed": true,
+					},
+				},
+			),
+			bk.Cmd("wfopwfowfp"),
+		)
+	}
+}
