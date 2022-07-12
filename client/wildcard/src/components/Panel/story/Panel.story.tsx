@@ -114,14 +114,14 @@ export const Simple: Story = () => {
     )
 }
 
-export const WithChildren: Story = () => {
+export const WithChildren: Story = (props = {}) => {
     const [tabIndex, setTabIndex] = React.useState(0)
     const activeTab = panels[tabIndex]
 
     const closePanel = () => setTabIndex(-1)
 
     return (
-        <Panel>
+        <Panel {...props}>
             <Tabs index={tabIndex} size="small">
                 <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top')}>
                     <TabList>
