@@ -215,7 +215,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				check := check
 
 				// run checks concurrently
-				checksGroup.Go(func() (string, error) {
+				checksGroup.Go(func() (event string, err error) {
 					if err := check.IsEnabled(ctx, args); err != nil {
 						progress.StatusBarUpdatef(i, "Check %s skipped: %s", check.Name, err.Error())
 						return "skipped", nil
