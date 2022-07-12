@@ -122,9 +122,10 @@ var sg = &cli.App{
 			Value:   BuildCommit == "dev", // Default to skip in dev
 		},
 		&cli.BoolFlag{
-			Name:    "disable-output-detection",
-			Usage:   "use fixed output configuration instead of detecting terminal capabilities",
-			EnvVars: []string{"SG_DISABLE_OUTPUT_DETECTION"},
+			Name:        "disable-output-detection",
+			Usage:       "use fixed output configuration instead of detecting terminal capabilities",
+			EnvVars:     []string{"SG_DISABLE_OUTPUT_DETECTION"},
+			Destination: &std.DisableOutputDetection,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
@@ -135,20 +136,15 @@ var sg = &cli.App{
 		}
 
 		var (
-			start                  = time.Now()
-			disableAnalytics       = cmd.Bool("disable-analytics")
-			disableOutputDetection = cmd.Bool("disable-output-detection")
+			start            = time.Now()
+			disableAnalytics = cmd.Bool("disable-analytics")
 		)
 
 		// Let sg components register pre-interrupt hooks
 		interrupt.Listen()
 
 		// Configure global output
-		if disableOutputDetection {
-			std.Out = std.NewFixedOutput(cmd.App.Writer, verbose)
-		} else {
-			std.Out = std.NewOutput(cmd.App.Writer, verbose)
-		}
+		std.Out = std.NewOutput(cmd.App.Writer, verbose)
 
 		// Initialize context
 		cmd.Context = background.Context(cmd.Context)
