@@ -392,36 +392,6 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 			squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefPython: expected function, got %q", ty.variant()))
 			return nil, nil
 		}
-	// case "generic_type":
-	// 	for _, child := range children(node.Node) {
-	// 		if child.Type() == "type_identifier" || child.Type() == "scoped_type_identifier" {
-	// 			return squirrel.getTypeDefPython(ctx, swapNode(node, child))
-	// 		}
-	// 	}
-	// 	squirrel.breadcrumb(node, "getTypeDefPython: expected an identifier")
-	// 	return nil, nil
-	// case "scoped_type_identifier":
-	// 	for i := int(node.NamedChildCount()) - 1; i >= 0; i-- {
-	// 		child := node.NamedChild(i)
-	// 		if child.Type() == "type_identifier" {
-	// 			return squirrel.getTypeDefPython(ctx, swapNode(node, child))
-	// 		}
-	// 	}
-	// 	return nil, nil
-	// case "object_creation_expression":
-	// 	ty := node.ChildByFieldName("type")
-	// 	if ty == nil {
-	// 		return nil, nil
-	// 	}
-	// 	return squirrel.getTypeDefPython(ctx, swapNode(node, ty))
-	// case "void_type":
-	// 	return PrimType{noad: node, varient: "void"}, nil
-	// case "integral_type":
-	// 	return PrimType{noad: node, varient: "integral"}, nil
-	// case "floating_point_type":
-	// 	return PrimType{noad: node, varient: "floating"}, nil
-	// case "boolean_type":
-	// 	return PrimType{noad: node, varient: "boolean"}, nil
 	default:
 		squirrel.breadcrumb(node, fmt.Sprintf("getTypeDefPython: unrecognized node type %q", node.Type()))
 		return nil, nil
