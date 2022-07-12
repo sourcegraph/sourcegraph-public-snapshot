@@ -54,8 +54,6 @@ func mustParseTime(v string) time.Time {
 }
 
 func TestGetBitbucketClient(t *testing.T) {
-	t.Parallel()
-
 	var c schema.BitbucketServerConnection
 	c.Token = "secret"
 	c.Url = "http://some-url"
@@ -75,7 +73,6 @@ func TestGetBitbucketClient(t *testing.T) {
 }
 
 func TestHandle_UnsupportedCodeHost(t *testing.T) {
-	t.Parallel()
 	ctx := context.Background()
 
 	externalServices := database.NewMockExternalServiceStore()
@@ -292,7 +289,6 @@ func TestHandleRestricted(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx := context.Background()
 
@@ -391,7 +387,6 @@ func TestHandleUnrestricted(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
-	t.Parallel()
 
 	ctx := context.Background()
 
