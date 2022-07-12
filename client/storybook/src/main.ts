@@ -5,31 +5,31 @@ import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 
 import {
-    NODE_MODULES_PATH,
-    ROOT_PATH,
+    getBabelLoader,
+    getBasicCSSLoader,
+    getCacheConfig,
     getCSSLoaders,
     getCSSModulesLoader,
-    getCacheConfig,
     getMonacoCSSRule,
     getMonacoTTFRule,
     getMonacoWebpackPlugin,
     getProvidePlugin,
-    getTerserPlugin,
-    getBabelLoader,
-    getBasicCSSLoader,
     getStatoscopePlugin,
+    getTerserPlugin,
+    NODE_MODULES_PATH,
+    ROOT_PATH,
     STATIC_ASSETS_PATH,
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import {
-    monacoEditorPath,
-    dllPluginConfig,
     dllBundleManifestPath,
+    dllPluginConfig,
+    monacoEditorPath,
     readJsonFile,
     storybookWorkspacePath,
 } from './webpack.config.common'
