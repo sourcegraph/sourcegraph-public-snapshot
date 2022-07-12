@@ -44,7 +44,7 @@ func (dg *DependencyGraph) Roots() (roots []reposource.VersionedPackage) {
 		delete(set, edge.Target)
 	}
 
-	roots = make([]reposource.PackageVersion, 0, len(set))
+	roots = make([]reposource.VersionedPackage, 0, len(set))
 	for k := range set {
 		roots = append(roots, k)
 	}
