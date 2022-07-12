@@ -116,10 +116,9 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 			cloneable = append(cloneable, d)
 		}
 	}
-
-	defer func() {
-		err = errors.Append(errs, err)
-	}()
+	if errs != nil {
+		return errs
+	}
 
 	// We sort in descending order, so that the latest version is in the first position.
 	sort.SliceStable(cloneable, func(i, j int) bool {
@@ -141,25 +140,30 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		tags[line] = struct{}{}
 	}
 
+	var cloned []reposource.VersionedPackage
 	for _, dependency := range cloneable {
 		if _, tagExists := tags[dependency.GitTagFromVersion()]; tagExists {
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
 			errs = errors.Append(errs, errors.Wrapf(err, "error pushing dependency %q", dependency))
+		} else {
+			cloned = append(cloned, dependency)
 		}
-	}
-	if errs != nil {
-		return errs
 	}
 
-	// Set the latest version as the default branch.
-	if len(cloneable) > 0 {
-		latest := cloneable[0]
+	// Set the latest version as the default branch, if there was a successful download.
+	if len(cloned) > 0 {
+		latest := cloned[0]
 		cmd := exec.CommandContext(ctx, "git", "branch", "--force", "latest", latest.GitTagFromVersion())
 		if _, err := runCommandInDirectory(ctx, cmd, string(dir), latest); err != nil {
-			return err
+			return errors.Append(errs, err)
 		}
+	}
+
+	// Return error if at least one version failed to download.
+	if errs != nil {
+		return errs
 	}
 
 	// Delete tags for versions we no longer track if there were no errors so far.

@@ -28,9 +28,9 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 	placeholder, _ := parseFakeDependency("sourcegraph/placeholder@0.0.0")
 
 	depsSource := &fakeDepsSource{
-		deps:     map[string]reposource.VersionedPackage{},
-		get:      map[string]error{},
-		download: map[string]error{},
+		deps:          map[string]reposource.VersionedPackage{},
+		download:      map[string]error{},
+		downloadCount: map[string]int{},
 	}
 	depsService := &fakeDepsService{deps: map[string][]dependencies.Repo{}}
 
@@ -61,67 +61,63 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 			"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
 			"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
 		})
+		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 1})
 	})
 
 	s.configDeps = []string{"foo@0.0.2"}
 	depsSource.Add("foo@0.0.2")
+	allVersionsHaveRefs := map[string]string{
+		"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
+		"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
+		"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
+		"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
+		"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
+	}
+	oneVersionOneDownload := map[string]int{"foo@0.0.1": 1, "foo@0.0.2": 1}
 
 	t.Run("two versions, service and config", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir)
 		require.NoError(t, err)
 
-		s.assertRefs(t, dir, map[string]string{
-			"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-			"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
-			"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
-			"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
-			"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		})
+		s.assertRefs(t, dir, allVersionsHaveRefs)
+		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
 	})
 
 	depsSource.Delete("foo@0.0.2")
 
-	t.Run("one version missing in source", func(t *testing.T) {
+	t.Run("cached tag not re-downloaded (404 not found)", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir)
 		require.NoError(t, err)
 
-		s.assertRefs(t, dir, map[string]string{
-			"refs/heads/latest":   "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
-			"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
-			"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
-		})
+		// v0.0.2 is still present in the git repo because we didn't send a second download request.
+		s.assertRefs(t, dir, allVersionsHaveRefs)
+		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
 	})
 
 	depsSource.Add("foo@0.0.2")
-	depsSource.get["foo@0.0.1"] = errors.New("401 unauthorized")
+	depsSource.download["foo@0.0.1"] = errors.New("401 unauthorized")
 
-	t.Run("error tolerance", func(t *testing.T) {
+	t.Run("cached tag not re-downloaded (401 unauthorized)", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir)
-		require.ErrorContains(t, err, "401 unauthorized")
-		// When any fatal error is returned by source.Get, we add other new versions
-		// that didn't return an error and delete no versions since we can't know
-		// they have really been deleted in the presence of fatal errors.
-		s.assertRefs(t, dir, map[string]string{
-			"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-			"refs/tags/v0.0.1":    "b47eb15deed08abc9d437c81f42c1635febaa218",
-			"refs/tags/v0.0.1^{}": "759dab7e4a7fc384522cb75519660cb0d6f6e49d",
-			"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
-			"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		})
+		// v0.0.1 is still present in the git repo because we didn't send a second download request.
+		require.NoError(t, err)
+		s.assertRefs(t, dir, allVersionsHaveRefs)
+		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
 	})
 
-	depsSource.get = map[string]error{}
 	depsService.Delete("foo@0.0.1")
+	onlyV2Refs := map[string]string{
+		"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
+		"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
+		"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
+	}
 
 	t.Run("service version deleted", func(t *testing.T) {
 		err := s.Fetch(ctx, remoteURL, dir)
 		require.NoError(t, err)
 
-		s.assertRefs(t, dir, map[string]string{
-			"refs/heads/latest":   "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-			"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
-			"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
-		})
+		s.assertRefs(t, dir, onlyV2Refs)
+		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
 	})
 
 	s.configDeps = []string{}
@@ -131,6 +127,23 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		require.NoError(t, err)
 
 		s.assertRefs(t, dir, map[string]string{})
+		s.assertDownloadCounts(t, depsSource, oneVersionOneDownload)
+	})
+
+	depsService.Add("foo@0.0.1")
+	depsSource.Add("foo@0.0.1")
+	depsService.Add("foo@0.0.2")
+	depsSource.Add("foo@0.0.2")
+	t.Run("error aggregation", func(t *testing.T) {
+		err := s.Fetch(ctx, remoteURL, dir)
+		require.ErrorContains(t, err, "401 unauthorized")
+
+		// The foo@0.0.1 tag was not created because of the 401 error.
+		// The foo@0.0.2 tag was created despite the 401 error for foo@0.0.1
+		s.assertRefs(t, dir, onlyV2Refs)
+
+		// We re-downloaded both v0.0.1 and v0.0.2 since their git refs had been deleted.
+		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 2, "foo@0.0.2": 2})
 	})
 
 	depsSource.download["org.springframework.boot:spring-boot:3.0"] = notFoundError{errors.New("Please contact Josh Long")}
@@ -182,7 +195,8 @@ func (s *fakeDepsService) Delete(deps ...string) {
 
 type fakeDepsSource struct {
 	deps          map[string]reposource.VersionedPackage
-	get, download map[string]error
+	download      map[string]error
+	downloadCount map[string]int
 }
 
 func (s *fakeDepsSource) Add(deps ...string) {
@@ -199,6 +213,8 @@ func (s *fakeDepsSource) Delete(deps ...string) {
 }
 
 func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	s.downloadCount[dep.VersionedPackageSyntax()] = 1 + s.downloadCount[dep.VersionedPackageSyntax()]
+
 	err := s.download[dep.VersionedPackageSyntax()]
 	if err != nil {
 		return err
@@ -253,6 +269,12 @@ func (s vcsPackagesSyncer) runCloneCommand(t *testing.T, examplePackageURL, bare
 	cmd, err := s.CloneCommand(context.Background(), &u, bareGitDirectory)
 	assert.Nil(t, err)
 	assert.Nil(t, cmd.Run())
+}
+
+func (s vcsPackagesSyncer) assertDownloadCounts(t *testing.T, depsSource *fakeDepsSource, want map[string]int) {
+	t.Helper()
+
+	require.Equal(t, want, depsSource.downloadCount)
 }
 
 func (s vcsPackagesSyncer) assertRefs(t *testing.T, dir GitDir, want map[string]string) {
