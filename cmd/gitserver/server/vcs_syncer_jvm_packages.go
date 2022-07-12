@@ -34,7 +34,7 @@ const (
 )
 
 func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *dependencies.Service) VCSSyncer {
-	placeholder, err := reposource.ParseMavenPackageVersion("com.sourcegraph:sourcegraph:1.0.0")
+	placeholder, err := reposource.ParseMavenVersionedPackage("com.sourcegraph:sourcegraph:1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
@@ -57,32 +57,27 @@ func NewJVMPackagesSyncer(connection *schema.JVMPackagesConnection, svc *depende
 
 type jvmPackagesSyncer struct {
 	config *schema.JVMPackagesConnection
-	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenPackageVersion) (sourceCodeJarPath string, err error)
+	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
 }
 
-func (jvmPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseMavenPackageVersion(dep)
+func (jvmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseMavenVersionedPackage(name + ":" + version)
+}
+
+func (jvmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseMavenVersionedPackage(dep)
+}
+
+func (jvmPackagesSyncer) ParsePackageFromName(name string) (reposource.Package, error) {
+	return reposource.ParseMavenPackageFromName(name)
 }
 
 func (jvmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
 	return reposource.ParseMavenPackageFromRepoName(repoName)
 }
 
-func (s *jvmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	dep, err := reposource.ParseMavenPackageVersion(name + ":" + version)
-	if err != nil {
-		return nil, errors.Wrap(err, "reposource.ParseMavenPackageVersion")
-	}
-
-	err = coursier.Exists(ctx, s.config, dep)
-	if err != nil {
-		return nil, errors.Wrap(err, "coursier.Exists")
-	}
-	return dep, nil
-}
-
-func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
-	mavenDep := dep.(*reposource.MavenPackageVersion)
+func (s *jvmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	mavenDep := dep.(*reposource.MavenVersionedPackage)
 	sourceCodeJarPath, err := s.fetch(ctx, s.config, mavenDep)
 	if err != nil {
 		return notFoundError{errors.Errorf("%s not found", dep)}
@@ -178,7 +173,7 @@ func copyZipFileEntry(entry *zip.File, outputPath string) (err error) {
 // inferJVMVersionFromByteCode returns the JVM version that was used to compile
 // the bytecode in the given jar file.
 func (s *jvmPackagesSyncer) inferJVMVersionFromByteCode(ctx context.Context,
-	dependency *reposource.MavenPackageVersion,
+	dependency *reposource.MavenVersionedPackage,
 ) (string, error) {
 	if dependency.IsJDK() {
 		return dependency.Version, nil

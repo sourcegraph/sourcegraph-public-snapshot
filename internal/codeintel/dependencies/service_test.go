@@ -288,10 +288,10 @@ func TestIndexLockfiles(t *testing.T) {
 			return []lockfiles.Result{}, nil
 		}
 
-		mavenPackages := []reposource.PackageVersion{
-			&reposource.MavenPackageVersion{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
-			&reposource.MavenPackageVersion{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
-			&reposource.MavenPackageVersion{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
+		mavenPackages := []reposource.VersionedPackage{
+			&reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
+			&reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
+			&reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
 		}
 
 		graph1 := &lockfiles.DependencyGraph{}

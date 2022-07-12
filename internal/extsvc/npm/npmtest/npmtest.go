@@ -21,7 +21,7 @@ func NewMockClient(t testing.TB, deps ...string) *MockClient {
 
 	packages := map[string]*npm.PackageInfo{}
 	for _, dep := range deps {
-		d, err := reposource.ParseNpmPackageVersion(dep)
+		d, err := reposource.ParseNpmVersionedPackage(dep)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -55,7 +55,7 @@ func (m *MockClient) GetPackageInfo(ctx context.Context, pkg *reposource.NpmPack
 	return info, nil
 }
 
-func (m *MockClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmPackageVersion) (info *npm.DependencyInfo, err error) {
+func (m *MockClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmVersionedPackage) (info *npm.DependencyInfo, err error) {
 	pkg, err := m.GetPackageInfo(ctx, dep.NpmPackageName)
 	if err != nil {
 		return nil, err
@@ -63,21 +63,21 @@ func (m *MockClient) GetDependencyInfo(ctx context.Context, dep *reposource.NpmP
 
 	info = pkg.Versions[dep.Version]
 	if info == nil {
-		return nil, errors.Newf("package version not found: %s", dep.PackageVersionSyntax())
+		return nil, errors.Newf("package version not found: %s", dep.VersionedPackageSyntax())
 	}
 
 	return info, nil
 }
 
-func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NpmPackageVersion) (io.ReadCloser, error) {
+func (m *MockClient) FetchTarball(_ context.Context, dep *reposource.NpmVersionedPackage) (io.ReadCloser, error) {
 	info, ok := m.Packages[dep.PackageSyntax()]
 	if !ok {
-		return nil, errors.Newf("Unknown dependency: %s", dep.PackageVersionSyntax())
+		return nil, errors.Newf("Unknown dependency: %s", dep.VersionedPackageSyntax())
 	}
 
 	version, ok := info.Versions[dep.Version]
 	if !ok {
-		return nil, errors.Newf("Unknown dependency: %s", dep.PackageVersionSyntax())
+		return nil, errors.Newf("Unknown dependency: %s", dep.VersionedPackageSyntax())
 	}
 
 	tgz, ok := m.Tarballs[version.Dist.TarballURL]
