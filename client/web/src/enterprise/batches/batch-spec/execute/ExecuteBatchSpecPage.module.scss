@@ -10,11 +10,7 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 0.5rem;
-
-    @media (--sm-breakpoint-up) {
-        gap: 1rem;
-    }
+    gap: 1rem;
 }
 
 .state-badge {
