@@ -229,51 +229,49 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		repo, i := repo, i // avoid race
 
 		g.Go(func(ctx context.Context) error {
-			repoRev := search.RepositoryRevisions{Repo: repo}
-			revs := []search.RevisionSpecifier(nil)
-
-			if len(dependencyRevs) > 0 {
-				revs = dependencyRevs[repo.Name]
-			}
-
-			if len(searchContextRepositoryRevisions) > 0 && len(revs) == 0 {
-				if scRepoRev := searchContextRepositoryRevisions[repo.ID]; scRepoRev != nil {
-					revs = scRepoRev.Revs
+			var revs []search.RevisionSpecifier
+			{
+				if len(dependencyRevs) > 0 {
+					revs = dependencyRevs[repo.Name]
 				}
-			}
 
-			if len(revs) == 0 {
-				var clashingRevs []search.RevisionSpecifier
-				revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
+				if len(searchContextRepositoryRevisions) > 0 && len(revs) == 0 {
+					if scRepoRev := searchContextRepositoryRevisions[repo.ID]; scRepoRev != nil {
+						revs = scRepoRev.Revs
+					}
+				}
 
-				// if multiple specified revisions clash, report this usefully:
-				if len(revs) == 0 && clashingRevs != nil {
-					res.Lock()
-					res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
-						Repo: repo,
-						Revs: clashingRevs,
-					})
-					res.Unlock()
+				if len(revs) == 0 {
+					var clashingRevs []search.RevisionSpecifier
+					revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
+
+					// if multiple specified revisions clash, report this usefully:
+					if len(revs) == 0 && clashingRevs != nil {
+						res.Lock()
+						res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
+							Repo: repo,
+							Revs: clashingRevs,
+						})
+						res.Unlock()
+					}
 				}
 			}
 
 			// We do in place filtering to reduce allocations. Common path is no
 			// filtering of revs.
-			if len(revs) > 0 {
-				repoRev.Revs = revs[:0]
-			}
+			filteredRevs := revs[:0]
 
 			// Check if the repository actually has the revisions that the user specified.
 			for _, rev := range revs {
 				if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
 					// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
 					// invalid, so it's not clear what validation would even mean.
-					repoRev.Revs = append(repoRev.Revs, rev)
+					filteredRevs = append(filteredRevs, rev)
 					continue
 				}
 
 				if rev.RevSpec == "" && op.CommitAfter == "" { // skip default branch resolution to save time
-					repoRev.Revs = append(repoRev.Revs, rev)
+					filteredRevs = append(filteredRevs, rev)
 					continue
 				}
 
@@ -293,7 +291,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
 				client := gitserver.NewClient(r.db)
-				commitID, err := client.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+				commitID, err := client.ResolveRevision(ctx, repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
 						return err
@@ -319,7 +317,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 				if op.CommitAfter != "" {
 
-					if hasCommitAfter, err := client.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
+					if hasCommitAfter, err := client.HasCommitAfter(ctx, repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
 							res.Lock()
 							res.MultiError = errors.Append(res.MultiError, err)
@@ -331,12 +329,15 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 					}
 				}
 
-				repoRev.Revs = append(repoRev.Revs, rev)
+				filteredRevs = append(filteredRevs, rev)
 			}
 
-			if len(repoRev.Revs) > 0 {
+			if len(filteredRevs) > 0 {
 				res.Lock()
-				res.RepoRevs[i] = &repoRev
+				res.RepoRevs[i] = &search.RepositoryRevisions{
+					Repo: repo,
+					Revs: filteredRevs,
+				}
 				res.Unlock()
 			}
 
