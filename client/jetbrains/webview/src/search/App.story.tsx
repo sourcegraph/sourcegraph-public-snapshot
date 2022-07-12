@@ -1,5 +1,3 @@
-import globalStyles from '../index.scss'
-
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { useDarkMode } from 'storybook-dark-mode'
 
@@ -7,6 +5,8 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { usePrependStyles } from '@sourcegraph/storybook'
 
 import { App } from './App'
+
+import globalStyles from '../index.scss'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -26,7 +26,7 @@ export const JetBrainsPluginApp: Story = () => {
                 <div className="mx-6">
                     <App
                         isDarkTheme={useDarkMode()}
-                        instanceURL="https://sourcegraph.com"
+                        instanceURL="https://sourcegraph.com/"
                         isGlobbingEnabled={false}
                         accessToken=""
                         initialSearch={null}
