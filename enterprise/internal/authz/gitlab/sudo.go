@@ -3,9 +3,7 @@ package gitlab
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"golang.org/x/oauth2"
 	"net/url"
 	"strconv"
 	"time"
@@ -67,27 +65,11 @@ type SudoProviderOp struct {
 }
 
 func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
-	oauth2Config := oauth.Oauth2ConfigFromGitLabProvider()
-
-	oauth2Token := &oauth2.Token{
-		AccessToken: op.SudoToken, // todo: question - is this always an oauth token ?
-		// todo: check if the helpe and its RefreshToken metbod will work without the other fields present here
-	}
-
-	helper := oauth.RefreshTokenHelper{
-		DB:          op.DB,
-		Config:      oauth2Config,
-		Token:       oauth2Token,
-		ServiceType: extsvc.TypeGitLab,
-	}
-
 	return &SudoProvider{
 		sudoToken: op.SudoToken,
 
-		urn:            op.URN,
-		clientProvider: gitlab.NewClientProvider(op.URN, op.BaseURL, cli, helper.RefreshToken), //func(ctx context.Context, doer httpcli.Doer) (string, error) {
-		//	return "", errors.New("personal access token cannot be refreshed")
-		//},
+		urn:               op.URN,
+		clientProvider:    gitlab.NewClientProvider(op.URN, op.BaseURL, cli, nil),
 		clientURL:         op.BaseURL,
 		codeHost:          extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab),
 		authnConfigID:     op.AuthnConfigID,

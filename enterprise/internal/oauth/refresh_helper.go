@@ -2,53 +2,86 @@ package oauth
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"strconv"
+	"strings"
+	"time"
+
+	"golang.org/x/oauth2"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-	"golang.org/x/oauth2"
-	"strconv"
-	"strings"
 )
 
-type RefreshTokenHelper struct {
-	DB          database.DB
-	Config      *oauth2.Config
-	Token       *oauth2.Token
-	ServiceType string
+// Next steps
+// 0 - Use ids to retrieve the objects
+// 1 - Fix compiling errors
+// 2 - gilaboauath / githuboauth providers
+//
+
+type RefreshTokenHelperForExternalAccount struct {
+	DB                database.DB
+	ExternalAccountID int32
 }
 
-func (s *RefreshTokenHelper) RefreshToken(ctx context.Context, doer httpcli.Doer) (string, error) {
-	userID := actor.FromContext(ctx).UID
-	accts, err := s.DB.UserExternalAccounts().List(ctx,
-		database.ExternalAccountsListOptions{
-			UserID:         userID,
-			ExcludeExpired: true,
-			ServiceType:    s.ServiceType,
-		},
-	)
+type RefreshTokenHelperForExternalService struct {
+	DB                database.DB
+	ExternalServiceID int64
+}
+
+func (r *RefreshTokenHelperForExternalAccount) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, oauthutil.AuthStyleInParams)
+
+	defer func() {
+		success := err == nil
+		gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
+	}()
+
+	acct, err := r.DB.UserExternalAccounts().Get(ctx, r.ExternalAccountID)
 	if err != nil {
-		return "", errors.Wrap(err, "list external accounts")
+		return "", errors.Wrap(err, "getting user external account")
 	}
 
-	refreshedToken, err := s.Config.TokenSource(ctx, s.Token).Token()
+	acct.SetAuthData(refreshedToken)
+	_, err = r.DB.UserExternalAccounts().LookupUserAndSave(ctx, acct.AccountSpec, acct.AccountData)
 	if err != nil {
-		return "", errors.Wrap(err, "refresh token")
+		return "", errors.Wrap(err, "save refreshed token")
 	}
 
-	/// todo - remove/replace hardcoded accts
-	if refreshedToken.AccessToken != s.Token.AccessToken {
-		defer func() {
-			success := err == nil
-			gitlab.TokenRefreshCounter.WithLabelValues("external_account", strconv.FormatBool(success)).Inc()
-		}()
-		accts[0].AccountData.SetAuthData(refreshedToken)                                                         // todo
-		_, err := s.DB.UserExternalAccounts().LookupUserAndSave(ctx, accts[0].AccountSpec, accts[0].AccountData) // todo
-		if err != nil {
-			return "", errors.Wrap(err, "save refreshed token")
-		}
+	return "", nil
+}
+
+func (r *RefreshTokenHelperForExternalService) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, oauthutil.AuthStyleInParams)
+
+	defer func() {
+		success := err == nil
+		gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
+	}()
+
+	extsvc, err := r.DB.ExternalServices().GetByID(ctx, r.ExternalServiceID)
+	if err != nil {
+		return "", errors.Wrap(err, "getting external service")
+	}
+	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.AccessToken, "token")
+	if err != nil {
+		return "", errors.Wrap(err, "updating OAuth token")
+	}
+	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
+	if err != nil {
+		return "", errors.Wrap(err, "updating OAuth refresh token")
+	}
+	extsvc.Config, err = jsonc.Edit(extsvc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
+	if err != nil {
+		return "", errors.Wrap(err, "updating OAuth token expiry")
+	}
+	extsvc.UpdatedAt = time.Now()
+	if err := r.DB.ExternalServices().Upsert(ctx, extsvc); err != nil {
+		return "", errors.Wrap(err, "upserting external service")
 	}
 
 	return "", nil

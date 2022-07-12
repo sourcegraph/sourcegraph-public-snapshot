@@ -2,9 +2,12 @@ package gitlab
 
 import (
 	"net/url"
+	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -115,7 +118,18 @@ func newAuthzProvider(urn string, a *schema.GitLabAuthorization, instanceURL, to
 
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
-	return newOAuthProvider(op, nil)
+	extSvc := extsvc.NewCodeHost(op.BaseURL, extsvc.TypeGitLab)
+	id, err := strconv.ParseInt(extSvc.ServiceID, 10, 64)
+	if err != nil {
+		// todo: log error
+		return nil
+	}
+
+	helper := &oauth.RefreshTokenHelperForExternalService{
+		DB:                op.db,
+		ExternalServiceID: id,
+	}
+	return newOAuthProvider(op, nil, helper.RefreshToken)
 }
 
 // NewSudoProvider is a mockable constructor for new SudoProvider instances.

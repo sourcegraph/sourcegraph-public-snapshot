@@ -22,6 +22,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -102,7 +103,7 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 	}
 
 	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli,
-		func(ctx context.Context, doer httpcli.Doer) (string, error) {
+		func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.Context) (string, error) {
 			return maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc) // todo get rid of maybeRefreshGitLabOAuthTokenFromCodeHost
 		},
 	)

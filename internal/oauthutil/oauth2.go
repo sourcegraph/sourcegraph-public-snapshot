@@ -20,23 +20,22 @@ type Endpoint = oauth2.Endpoint
 // todo docstring
 // todo Maybe can be deleted based on how do token refresh (i.e. need access to external service object anyway)
 type Context struct {
-	ServiceType string
-
-	//// ClientID is the application's ID.
-	//ClientID string
-	//// ClientSecret is the application's secret.
-	//ClientSecret string
-	//// Endpoint contains the resource server's token endpoint
-	//// URLs. These are constants specific to each server and are
-	//// often available via site-specific packages, such as
-	//// google.Endpoint or github.Endpoint.
-	//Endpoint Endpoint
-	//// Scope specifies optional requested permissions.
-	//Scopes []string
-	//// RefreshToken is a token that's used by the application
-	//// (as opposed to the user) to refresh the access token
-	//// if it expires.
-	//RefreshToken string
+	//ServiceType string
+	// ClientID is the application's ID.
+	ClientID string
+	// ClientSecret is the application's secret.
+	ClientSecret string
+	// Endpoint contains the resource server's token endpoint
+	// URLs. These are constants specific to each server and are
+	// often available via site-specific packages, such as
+	// google.Endpoint or github.Endpoint.
+	Endpoint Endpoint
+	// Scope specifies optional requested permissions.
+	Scopes []string
+	// RefreshToken is a token that's used by the application
+	// (as opposed to the user) to refresh the access token
+	// if it expires.
+	RefreshToken string
 }
 
 type oauthError struct {
@@ -71,10 +70,10 @@ func getOAuthErrorDetails(body []byte) error {
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.
-type TokenRefresher func(ctx context.Context, doer httpcli.Doer) (string, error)
+type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx Context) (string, error)
 
 // todo docstring
-func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher) (code int, header http.Header, body []byte, err error) {
+func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx Context) (code int, header http.Header, body []byte, err error) {
 	for i := 0; i < 2; i++ {
 		if auther != nil {
 			if err := auther.Authenticate(req); err != nil {
@@ -98,7 +97,7 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 			if err = getOAuthErrorDetails(body); err != nil {
 				if _, ok := err.(*oauthError); ok {
 					// Refresh the token
-					newToken, err := tokenRefresher(ctx, doer)
+					newToken, err := tokenRefresher(ctx, doer, oauthCtx)
 					if err != nil {
 						return 0, nil, nil, errors.Wrap(err, "refresh token")
 					}

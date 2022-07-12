@@ -1,10 +1,10 @@
-package gitlaboauth
+enterprise/internal/authz/gitlab/oauth.gopackage gitlaboauth
 
 import (
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/auth"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"net/http"
 	"net/url"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/dghubble/gologin"
 	oauth2Login "github.com/dghubble/gologin/oauth2"
@@ -86,13 +86,6 @@ func gitlabClientFromAuthURL(config *oauth2.Config, token *oauth2.Token, db data
 	baseURL.RawQuery = ""
 	baseURL.Fragment = ""
 
-	helper := auth.RefreshTokenHelper{
-		DB:          db,
-		Config:      config,
-		Token:       token,
-		ServiceType: extsvc.TypeGitLab,
-	}
-
 	//  todo: question: why are passing nil here instead of a httpcli Doer?
-	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil, helper.RefreshToken).GetOAuthClient(token.AccessToken), nil
+	return gitlab.NewClientProvider(extsvc.URNGitLabOAuth, baseURL, nil, nil).GetOAuthClient(token.AccessToken), nil
 }

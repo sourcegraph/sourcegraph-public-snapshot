@@ -9,8 +9,6 @@ import (
 
 	"golang.org/x/oauth2"
 
-	oauthUtils "github.com/sourcegraph/sourcegraph/enterprise/internal/auth"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/hubspot"
@@ -44,15 +42,7 @@ func (s *sessionIssuerHelper) GetOrCreateUser(ctx context.Context, token *oauth2
 		return nil, fmt.Sprintf("Error normalizing the username %q. See https://docs.sourcegraph.com/admin/auth/#username-normalization.", login), err
 	}
 
-	oauth2Config := oauthUtils.Oauth2ConfigFromGitLabProvider()
-	helper := oauthUtils.RefreshTokenHelper{
-		DB:          s.db,
-		Config:      oauth2Config,
-		Token:       token,
-		ServiceType: extsvc.TypeGitLab,
-	}
-
-	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil, helper.RefreshToken)
+	provider := gitlab.NewClientProvider(extsvc.URNGitLabOAuth, s.BaseURL, nil, nil)
 	glClient := provider.GetOAuthClient(token.AccessToken)
 
 	// 🚨 SECURITY: Ensure that the user is part of one of the allowed groups or subgroups when the allowGroups option is set.
