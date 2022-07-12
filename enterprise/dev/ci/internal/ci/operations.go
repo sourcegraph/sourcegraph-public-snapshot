@@ -875,18 +875,3 @@ func prPreview() operations.Operation {
 			bk.Cmd("dev/ci/render-pr-preview.sh"))
 	}
 }
-
-func addJhTestStuff() operations.Operation {
-	return func(pipeline *bk.Pipeline) {
-		pipeline.AddStep(":camel: JH tstuff",
-			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
-				Message:              "CodeIntelQA :brain:,  plugin fail cc <@jh>",
-				ChannelName:          "jh-bot-testing",
-				SlackTokenEnvVarName: "CI_CUSTOM_SLACK_BUILDKITE_PLUGIN_TOKEN",
-				Conditions:           bk.SlackStepNotifyPayloadConditions{Failed: true},
-			}),
-			bk.Cmd("wfopwfowfp"),
-			bk.SoftFail(127),
-		)
-	}
-}
