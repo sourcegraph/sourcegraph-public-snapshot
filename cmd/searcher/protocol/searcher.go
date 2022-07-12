@@ -224,6 +224,7 @@ func (fm *FileMatch) Limit(limit int) {
 			continue
 		}
 
+		// invariant: limit < l
 		fm.ChunkMatches[i].Ranges = fm.ChunkMatches[i].Ranges[:limit]
 		if limit > 0 {
 			fm.ChunkMatches = fm.ChunkMatches[:i+1]

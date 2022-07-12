@@ -68,11 +68,19 @@ func (m *limitedStream) Send(match protocol.FileMatch) {
 }
 
 func (m *limitedStream) SentCount() int {
-	return m.limit - int(m.remaining.Load())
+	remaining := int(m.remaining.Load())
+	if remaining < 0 {
+		remaining = 0
+	}
+	return m.limit - remaining
 }
 
 func (m *limitedStream) Remaining() int {
-	return int(m.remaining.Load())
+	remaining := int(m.remaining.Load())
+	if remaining < 0 {
+		remaining = 0
+	}
+	return remaining
 }
 
 func (m *limitedStream) LimitHit() bool {
