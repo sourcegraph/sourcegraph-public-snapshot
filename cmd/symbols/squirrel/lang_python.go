@@ -380,25 +380,25 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 	// 		return nil, nil
 	// 	}
 	// 	return squirrel.defToType(ctx, *found)
-	// case "method_invocation":
-	// 	name := node.ChildByFieldName("name")
-	// 	if name == nil {
-	// 		return nil, nil
-	// 	}
-	// 	ty, err := squirrel.getTypeDefPython(ctx, swapNode(node, name))
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	if ty == nil {
-	// 		return nil, nil
-	// 	}
-	// 	switch ty2 := ty.(type) {
-	// 	case FnType:
-	// 		return ty2.ret, nil
-	// 	default:
-	// 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefPython: expected method, got %q", ty.variant()))
-	// 		return nil, nil
-	// 	}
+	case "call":
+		fn := node.ChildByFieldName("function")
+		if fn == nil {
+			return nil, nil
+		}
+		ty, err := squirrel.getTypeDefPython(ctx, swapNode(node, fn))
+		if err != nil {
+			return nil, err
+		}
+		if ty == nil {
+			return nil, nil
+		}
+		switch ty2 := ty.(type) {
+		case FnTypePython:
+			return ty2.ret, nil
+		default:
+			squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefPython: expected function, got %q", ty.variant()))
+			return nil, nil
+		}
 	// case "generic_type":
 	// 	for _, child := range children(node.Node) {
 	// 		if child.Type() == "type_identifier" || child.Type() == "scoped_type_identifier" {
@@ -486,15 +486,24 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 	case "class_definition":
 		return (TypePython)(ClassTypePython{def: swapNode(def, parent)}), nil
 	case "function_definition":
-		retTyNode := parent.ChildByFieldName("type")
-		if retTyNode == nil {
-			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
+		retTyTyNode := parent.ChildByFieldName("return_type")
+		if retTyTyNode == nil {
 			return (TypePython)(FnTypePython{
 				ret:  nil,
 				noad: swapNode(def, parent),
 			}), nil
 		}
-		retTy, err := squirrel.getTypeDefPython(ctx, swapNode(def, retTyNode))
+		retTyNode, err := firstCapture("(type (_) @ty)", swapNode(def, retTyTyNode))
+		if err != nil {
+			return nil, err
+		}
+		if retTyNode == nil {
+			return (TypePython)(FnTypePython{
+				ret:  nil,
+				noad: swapNode(def, parent),
+			}), nil
+		}
+		retTy, err := squirrel.getTypeDefPython(ctx, *retTyNode)
 		if err != nil {
 			return nil, err
 		}

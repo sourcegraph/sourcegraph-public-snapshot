@@ -61,4 +61,11 @@ class C2(C1):
         return self.g()
 
 
+def newC1() -> C1:
+    return C1()
+
+
+#           v py.C1.x ref
+_ = newC1().x
+
 f(3)  # < "f" py.f ref
