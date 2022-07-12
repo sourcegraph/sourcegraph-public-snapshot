@@ -283,9 +283,9 @@ func TestIndexLockfiles(t *testing.T) {
 	})
 
 	// Return archive dependencies for repos `foo` and `bar`
-	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]*lockfiles.Result, error) {
+	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]lockfiles.Result, error) {
 		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
-			return []*lockfiles.Result{}, nil
+			return []lockfiles.Result{}, nil
 		}
 
 		mavenPackages := []reposource.PackageVersion{
@@ -299,14 +299,14 @@ func TestIndexLockfiles(t *testing.T) {
 
 		switch rev {
 		case "deadbeef1":
-			return []*lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: graph1}}, nil
+			return []lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: graph1}}, nil
 		case "deadbeef2":
-			return []*lockfiles.Result{
+			return []lockfiles.Result{
 				{Lockfile: "pom.xml", Deps: mavenPackages, Graph: graph2},
 				{Lockfile: "pom2.xml", Deps: mavenPackages, Graph: nil},
 			}, nil
 		default:
-			return []*lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: nil}}, nil
+			return []lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: nil}}, nil
 		}
 	})
 

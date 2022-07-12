@@ -18,7 +18,7 @@ type GitService interface {
 }
 
 type LockfilesService interface {
-	ListDependencies(ctx context.Context, repo api.RepoName, rev string) ([]*lockfiles.Result, error)
+	ListDependencies(ctx context.Context, repo api.RepoName, rev string) ([]lockfiles.Result, error)
 }
 
 type Syncer interface {

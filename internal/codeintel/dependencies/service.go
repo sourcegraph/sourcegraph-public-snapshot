@@ -232,7 +232,7 @@ func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCo
 		// the result to make sure we can tell the user that we have or haven't
 		// indexed the repository.
 		// TODO: There should be a better solution for that.
-		results = append(results, &lockfiles.Result{Lockfile: "NOT-FOUND", Deps: []reposource.PackageVersion{}})
+		results = append(results, lockfiles.Result{Lockfile: "NOT-FOUND", Deps: []reposource.PackageVersion{}})
 	}
 
 	var (
