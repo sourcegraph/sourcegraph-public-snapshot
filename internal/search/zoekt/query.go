@@ -32,7 +32,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	}
 
 	// Handle file:owned.by() predicates
-	fileOwnersMustInclude, fileOwnersMustExclude := b.FileOwnership()
+	fileOwnersMustInclude, _ := b.FileOwnership()
 	fmt.Printf("query: %+v\n", b)
 
 	// Handle file: and -file: filters.
@@ -109,32 +109,15 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 	if len(fileOwnersMustInclude) > 0 {
 		or := &zoekt.Or{}
 		for _, owner := range fileOwnersMustInclude {
-			files := codeownership.ForOwner(owner)
-			for _, file := range files {
-				q, err := FileRe(file, isCaseSensitive)
-				if err != nil {
-					return nil, err
-				}
+			fileRe, err := FileRe(codeownership.PotentialFileReForOwner("??", owner), isCaseSensitive)
 
-				or.Children = append(or.Children, &zoekt.Type{Type: zoekt.TypeFileName, Child: q})
+			fmt.Printf("fileRe: %+v\n", fileRe)
+			if err != nil {
+				return nil, err
 			}
+			or.Children = append(or.Children, &zoekt.Type{Type: zoekt.TypeFileName, Child: fileRe})
 		}
 		and = append(and, or)
-	}
-	if len(fileOwnersMustExclude) > 0 {
-		or := &zoekt.Or{}
-		for _, owner := range fileOwnersMustExclude {
-			files := codeownership.ForOwner(owner)
-			for _, file := range files {
-				q, err := FileRe(file, isCaseSensitive)
-				if err != nil {
-					return nil, err
-				}
-
-				or.Children = append(or.Children, &zoekt.Type{Type: zoekt.TypeFileName, Child: q})
-			}
-		}
-		and = append(and, &zoekt.Not{Child: or})
 	}
 
 	fmt.Printf("Result: %+v\n", and)
