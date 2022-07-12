@@ -181,7 +181,6 @@ ComplexDiagram(
         Terminal("case", {href: "#case"}),
         Terminal("fork", {href: "#fork"}),
         Terminal("archived", {href: "#archived"}),
-        Terminal("repogroup", {href: "#repogroup"}),
         Terminal("repohasfile", {href: "#repo-has-file"}),
         Terminal("repohascommitafter", {href: "#repo-has-commit-after"}),
         Terminal("count", {href: "#count"}),
@@ -490,23 +489,6 @@ Set to `yes` if archived repositories should be included or `only` if only
 archives should be searched. Archived repositories are excluded by default.
 
 **Example:** [`archived:only repo:sourcegraph` ↗](https://sourcegraph.com/search?q=archived:only+repo:sourcegraph&patternType=regexp)
-
-### Repo group
-
-<script>
-ComplexDiagram(
-    Choice(0,
-        Terminal("repogroup:"),
-        Terminal("g:")),
-        Terminal("string")).addTo()
-</script>
-
-Only include results from the named group of repositories (defined by the server
-admin). Same as using [repo](#repo) that matches all of the group’s
-repositories. Use [repo](#repo) unless you know that the group
-exists.
-
-**Example:** [`repogroup:go-gh-100 helm` ↗](https://sourcegraph.com/search?q=repogroup:go-gh-100+helm&patternType=literal)  – searches the top 100 Go repositories on GitHub, ranked by stars.
 
 ### Repo has file
 
