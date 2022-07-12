@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .page-container {
     display: flex;
     flex-direction: column;
@@ -11,6 +13,8 @@
     flex: 0;
     justify-content: space-between;
     align-items: flex-end;
+    gap: 0.75rem;
+    flex-wrap: wrap;
 }
 
 .action-buttons-container {
