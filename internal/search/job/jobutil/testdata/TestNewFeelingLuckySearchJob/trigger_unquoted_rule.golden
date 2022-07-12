@@ -2,13 +2,5 @@
   {
     "Description": "unquote patterns",
     "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ monitor *Monitor"
-  },
-  {
-    "Description": "unquote patterns ⚬ AND patterns together",
-    "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ (monitor AND *Monitor)"
-  },
-  {
-    "Description": "AND patterns together",
-    "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ (\"monitor\" AND \"*Monitor\")"
   }
 ]
