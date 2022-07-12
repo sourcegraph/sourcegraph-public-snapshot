@@ -75,22 +75,31 @@ func (s npmPackagesSyncer) GetPackage(ctx context.Context, name string) (reposou
 		return nil, err
 	}
 
-	info, err := s.client.GetDependencyInfo(ctx, dep)
+	err = s.UpdateTarballURL(ctx, dep)
 	if err != nil {
 		return nil, err
 	}
 
-	dep.TarballURL = info.Dist.TarballURL
 	return dep, nil
+}
+
+func (s *npmPackagesSyncer) UpdateTarballURL(ctx context.Context, dep *reposource.NpmVersionedPackage) error {
+	f, err := s.client.GetDependencyInfo(ctx, dep)
+	if err != nil {
+		return err
+	}
+	dep.TarballURL = f.Dist.TarballURL
+	return nil
 }
 
 func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
 	npmDep := dep.(*reposource.NpmVersionedPackage)
-	f, err := s.client.GetDependencyInfo(ctx, npmDep)
-	if err != nil {
-		return err
+	if npmDep.TarballURL == "" {
+		err := s.UpdateTarballURL(ctx, npmDep)
+		if err != nil {
+			return err
+		}
 	}
-	npmDep.TarballURL = f.Dist.TarballURL
 	tgz, err := npm.FetchSources(ctx, s.client, npmDep)
 	if err != nil {
 		return errors.Wrap(err, "fetch tarball")
