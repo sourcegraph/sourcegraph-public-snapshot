@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -39,7 +40,7 @@ type Server struct {
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
 	}
-	ChangesetSyncRegistry ChangesetSyncRegistry
+	ChangesetSyncRegistry batches.ChangesetSyncRegistry
 	RateLimitSyncer       interface {
 		// SyncRateLimiters should be called when an external service changes so that
 		// our internal rate limiters are kept in sync
@@ -51,18 +52,6 @@ type Server struct {
 		// ScheduleRepos schedules new permissions syncing requests for given repositories.
 		ScheduleRepos(ctx context.Context, repoIDs ...api.RepoID)
 	}
-}
-
-type ChangesetSyncRegistry interface {
-	UnarchivedChangesetSyncRegistry
-	// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
-	EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
-}
-
-type UnarchivedChangesetSyncRegistry interface {
-	// EnqueueChangesetSyncsForRepos will queue a sync for every changeset in
-	// every given repo ASAP.
-	EnqueueChangesetSyncsForRepos(ctx context.Context, repoIDs []api.RepoID) error
 }
 
 // Handler returns the http.Handler that should be used to serve requests.
