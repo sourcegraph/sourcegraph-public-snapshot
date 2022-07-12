@@ -89,12 +89,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
-            data-placement="bottom"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
@@ -176,7 +176,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         />
         <li
           class="mr-2 button navItem"
-          data-placement="bottom"
+          data-state="closed"
         >
           <a
             class="anchorLink btn btnOutlineSecondary btnSm text-decoration-none a11y-ignore create-code-monitor-button"
@@ -263,12 +263,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
-            data-placement="bottom"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
@@ -350,7 +350,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
         />
         <li
           class="mr-2 button navItem"
-          data-placement="bottom"
+          data-state="closed"
         >
           <button
             class="btn btnOutlineSecondary btnSm a11y-ignore create-code-monitor-button"
@@ -434,12 +434,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
-            data-placement="bottom"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
@@ -521,8 +521,7 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
         />
         <li
           class="mr-2 button navItem"
-          data-placement="bottom"
-          data-tooltip="Code monitors only support type:diff or type:commit searches."
+          data-state="closed"
         >
           <a
             aria-disabled="true"
@@ -613,12 +612,12 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
-            data-placement="bottom"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
@@ -700,7 +699,7 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
         />
         <li
           class="mr-2 button navItem"
-          data-placement="bottom"
+          data-state="closed"
         >
           <button
             class="btn btnOutlineSecondary btnSm a11y-ignore create-code-monitor-button"
@@ -784,12 +783,12 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
-            data-placement="bottom"
+            data-state="closed"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
-            data-tooltip="Hide more matches on all results"
             type="button"
           >
             <svg
