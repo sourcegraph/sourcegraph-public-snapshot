@@ -65,13 +65,13 @@ func (b *BuildEvent) JobName() string {
 }
 
 type BuildStore struct {
-	builds map[int]Build
+	builds map[int]*Build
 	m      sync.RWMutex
 }
 
 func NewBuildStore() *BuildStore {
 	return &BuildStore{
-		builds: make(map[int]Build),
+		builds: make(map[int]*Build),
 		m:      sync.RWMutex{},
 	}
 }
@@ -79,12 +79,14 @@ func NewBuildStore() *BuildStore {
 func (s *BuildStore) Add(event *BuildEvent) {
 	s.m.Lock()
 	defer s.m.Unlock()
-	build, ok := s.builds[*event.Build.Number]
+	build, ok := s.builds[event.BuildNumber()]
 	if !ok {
-		build = *NewBuildFrom(event)
+		build = NewBuildFrom(event)
+		s.builds[event.BuildNumber()] = build
 	}
 	build.Jobs = append(build.Jobs, event.Job)
-	log.Printf("job %s added for build %d", event.JobName(), event.BuildNumber())
+
+	log.Printf("job '%s' added for build %d total jobs %d", event.JobName(), event.BuildNumber(), len(build.Jobs))
 }
 
 func (s *BuildStore) DelByBuildNumber(num int) {
@@ -94,7 +96,7 @@ func (s *BuildStore) DelByBuildNumber(num int) {
 	log.Printf("build %d deleted", num)
 }
 
-func (s *BuildStore) GetByBuildNumber(num int) Build {
+func (s *BuildStore) GetByBuildNumber(num int) *Build {
 	s.m.RLock()
 	defer s.m.RUnlock()
 
@@ -189,10 +191,6 @@ func readBody[T any](req *http.Request, target T) error {
 	return nil
 }
 
-func isFailedJob(j *buildkite.Job) bool {
-	return j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0
-}
-
 func (s *BuildTrackingServer) notify(build *Build) error {
 	if len(build.Jobs) == 0 {
 		log.Printf("build %d has no jobs", *build.Number)
@@ -200,9 +198,11 @@ func (s *BuildTrackingServer) notify(build *Build) error {
 	}
 
 	if build.hasFailed() {
-		log.Printf("sending notifcation for failed build %d", *build.Number)
+		log.Printf("build %d failed - sending notifcation", *build.Number)
 		return s.slack.sendNotification(build)
 	}
+
+	log.Printf("build %d successful", *build.Number)
 	return nil
 }
 
@@ -211,11 +211,14 @@ func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 		//Build number is required!
 		return
 	}
+
 	s.store.Add(event)
 	if event.IsBuildFinished() {
-		build := s.store.GetByBuildNumber(*event.Build.Number)
-		s.notify(&build)
-		// since we've sent a notification of the job we can remove it
+		build := s.store.GetByBuildNumber(event.BuildNumber())
+		if err := s.notify(build); err != nil {
+			log.Printf("failed to send notification for build %d: %v", event.BuildNumber(), err)
+		}
+		// since the build is done we don't need it anymore
 		s.store.DelByBuildNumber(*event.Build.Number)
 	}
 }
