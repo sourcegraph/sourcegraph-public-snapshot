@@ -210,8 +210,8 @@ var sg = &cli.App{
 
 		// Check for updates, unless we are running update manually.
 		if cmd.Args().First() != "update" {
-			background.Run(cmd.Context, func(out *std.Output) {
-				err := checkSgVersionAndUpdate(cmd.Context, out, cmd.Bool("skip-auto-update"))
+			background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
+				err := checkSgVersionAndUpdate(ctx, out, cmd.Bool("skip-auto-update"))
 				if err != nil {
 					out.WriteWarningf("update check: %s", err)
 				}

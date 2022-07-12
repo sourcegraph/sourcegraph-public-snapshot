@@ -25,9 +25,10 @@ type backgroundJobs struct {
 	results chan string
 }
 
+// Context creates a context that can have background jobs added to it with background.Run
 func Context(ctx context.Context) context.Context {
 	return context.WithValue(ctx, jobsKey, &backgroundJobs{
-		results: make(chan string, 10),
+		results: make(chan string, 10), // reasonable default
 	})
 }
 
@@ -35,7 +36,11 @@ func loadFromContext(ctx context.Context) *backgroundJobs {
 	return ctx.Value(jobsKey).(*backgroundJobs)
 }
 
-func Run(ctx context.Context, job func(out *std.Output), verbose bool) {
+// Run starts the given job and registers it so that background.Wait does not exit until
+// this job is complete.
+//
+// Jobs get a context timeout of 30 seconds.
+func Run(ctx context.Context, job func(ctx context.Context, out *std.Output), verbose bool) {
 	jobs := loadFromContext(ctx)
 	jobs.wg.Add(1)
 	jobs.count.Add(1)
@@ -43,11 +48,15 @@ func Run(ctx context.Context, job func(out *std.Output), verbose bool) {
 	b := new(bytes.Buffer)
 	out := std.NewOutput(b, verbose)
 	go func() {
-		job(out)
+		jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
+		defer cancel()
+		job(jobCtx, out)
 		jobs.results <- strings.TrimSpace(b.String())
 	}()
 }
 
+// Wait blocks until jobs registered in context are complete, rendering their results as
+// they complete.
 func Wait(ctx context.Context, out *std.Output) {
 	jobs := loadFromContext(ctx)
 	count := jobs.count.Load()
