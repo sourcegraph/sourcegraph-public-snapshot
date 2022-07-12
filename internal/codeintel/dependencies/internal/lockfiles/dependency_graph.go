@@ -44,6 +44,7 @@ func (dg *DependencyGraph) Roots() (roots []reposource.PackageVersion) {
 		delete(set, edge.Target)
 	}
 
+	roots = make([]reposource.PackageVersion, 0, len(set))
 	for k := range set {
 		roots = append(roots, k)
 	}
@@ -52,6 +53,7 @@ func (dg *DependencyGraph) Roots() (roots []reposource.PackageVersion) {
 }
 
 func (dg *DependencyGraph) AllEdges() (edges []Edge) {
+	edges = make([]Edge, 0, len(dg.edges))
 	for edge := range dg.edges {
 		edges = append(edges, edge)
 	}
