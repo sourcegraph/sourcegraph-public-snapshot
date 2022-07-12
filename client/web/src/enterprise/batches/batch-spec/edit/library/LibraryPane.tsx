@@ -1,9 +1,9 @@
-import React, { useState, useCallback } from 'react'
+import React, { useState, useCallback, useEffect } from 'react'
 
 import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Icon, Link, Text, useWindowSize } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
@@ -58,7 +58,9 @@ type LibraryPaneProps =
 export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({ name, ...props }) => {
     // Remember the last collapsed state of the pane
     const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
-    const [collapsed, setCollapsed] = useState(defaultCollapsed)
+    // Start with the library collapsed by default if the viewport is less than 1200px
+    // wide (xl breakpoint size)
+    const [collapsed, setCollapsed] = useState(defaultCollapsed || window.innerWidth < 1200)
     const [selectedItem, setSelectedItem] = useState<LibraryItem>()
 
     const [containerStyle, animateContainer] = useSpring(() => ({
@@ -116,7 +118,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                     onConfirm={onConfirm}
                 />
             ) : null}
-            <animated.div style={containerStyle} className="d-flex flex-column mr-3">
+            <animated.div style={containerStyle} className="d-none d-md-flex flex-column mr-3">
                 <div className={styles.header}>
                     <animated.h4 className="m-0" style={headerStyle}>
                         Library
