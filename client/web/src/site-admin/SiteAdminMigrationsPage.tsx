@@ -1,10 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiAlertCircle, mdiAlert, mdiArrowLeftBold, mdiArrowRightBold } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import ArrowLeftBoldIcon from 'mdi-react/ArrowLeftBoldIcon'
-import ArrowRightBoldIcon from 'mdi-react/ArrowRightBoldIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, of, timer } from 'rxjs'
 import { catchError, concatMap, delay, map, repeatWhen, takeWhile } from 'rxjs/operators'
@@ -209,7 +206,7 @@ const MigrationInvalidBanner: React.FunctionComponent<React.PropsWithChildren<Mi
 }) => (
     <Alert variant="danger">
         <Text>
-            <Icon className="mr-2" as={AlertCircleIcon} aria-hidden={true} />
+            <Icon className="mr-2" aria-hidden={true} svgPath={mdiAlertCircle} />
             <strong>Contact support.</strong> The following migrations are not in the expected state. You have partially
             migrated or un-migrated data in a format that is incompatible with the currently deployed version of
             Sourcegraph.{' '}
@@ -255,7 +252,7 @@ const MigrationDowngradeWarningBanner: React.FunctionComponent<
 > = ({ migrations }) => (
     <Alert variant="warning">
         <Text>
-            <Icon className="mr-2" as={WarningIcon} aria-hidden={true} />
+            <Icon className="mr-2" aria-hidden={true} svgPath={mdiAlert} />
             <span>
                 The previous version of Sourcegraph does not support reading data that has been migrated into a new
                 format. Your Sourcegraph instance must undo the following migrations to ensure your data can be read by
@@ -312,9 +309,9 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
             <div className="m-0 text-nowrap d-flex flex-column align-items-center justify-content-center">
                 <div>
                     {node.applyReverse ? (
-                        <Icon className="mr-1 text-danger" as={ArrowLeftBoldIcon} aria-hidden={true} />
+                        <Icon className="mr-1 text-danger" aria-hidden={true} svgPath={mdiArrowLeftBold} />
                     ) : (
-                        <Icon className="mr-1" as={ArrowRightBoldIcon} aria-hidden={true} />
+                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiArrowRightBold} />
                     )}
                     {Math.floor(node.progress * 100)}%
                 </div>

@@ -416,6 +416,7 @@ export interface StreamSearchOptions {
     sourcegraphURL?: string
     decorationKinds?: string[]
     decorationContextLines?: number
+    displayLimit?: number
 }
 
 function initiateSearchStream(
@@ -427,6 +428,7 @@ function initiateSearchStream(
         trace,
         decorationKinds,
         decorationContextLines,
+        displayLimit = 1500,
         sourcegraphURL = '',
     }: StreamSearchOptions,
     messageHandlers: MessageHandlers
@@ -441,7 +443,7 @@ function initiateSearchStream(
             ['dl', '0'],
             ['dk', (decorationKinds || ['html']).join('|')],
             ['dc', (decorationContextLines || '1').toString()],
-            ['display', '1500'],
+            ['display', displayLimit.toString()],
         ]
         if (trace) {
             parameters.push(['trace', trace])

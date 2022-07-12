@@ -5,14 +5,14 @@ import { isEmpty } from 'lodash'
 
 import styles from './Tooltip.module.scss'
 
-interface TooltipProps {
+export interface TooltipProps {
     /** A single child element that will trigger the Tooltip to open on hover. */
     children: React.ReactElement
     /** The text that will be displayed in the Tooltip. If `null`, no Tooltip will be rendered, allowing for Tooltips to be shown conditionally. */
     content: string | null | undefined
     /** The open state of the tooltip when it is initially rendered. Defaults to `false`. */
     defaultOpen?: boolean
-    /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `right`. */
+    /** The preferred side of the trigger to render against when open. Will be reversed if a collision is detected. Defaults to `bottom`. */
     placement?: TooltipPrimitive.TooltipContentProps['side']
 }
 
@@ -39,7 +39,12 @@ function onPointerDownOutside(event: Event): void {
  *
  * Related accessibility documentation: https://developer.mozilla.org/en-US/docs/Web/Accessibility/ARIA/Roles/tooltip_role
  *
- * To test for the correct content in test suites where the tooltip won't be opened, please use `data-*` attributes on the toggle element.
+ * In most cases, the child element (trigger) of the Tooltip will not need an `aria-label` attribute, and it should be avoided
+ * to prevent repetitive text from being read by a screen reader. However, there are a couple exceptions:
+ * - If the trigger is an `<Icon>`, it must have an `aria-label` (and NOT be `aria-hidden`).
+ * - If the trigger is a `<Button>` with no visible text within it (e.g., only an icon), it must have an `aria-label`.
+ *
+ * To test for the correct content in test suites where the tooltip won't be opened, please use `data-*` attributes on the trigger element.
  */
 export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     children,

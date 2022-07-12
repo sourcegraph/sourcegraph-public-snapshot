@@ -4,6 +4,7 @@ import (
 	"context"
 	"io/fs"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/gobwas/glob"
@@ -104,8 +105,9 @@ type cachedRules struct {
 }
 
 type compiledRules struct {
-	includes []glob.Glob
-	excludes []glob.Glob
+	includes    []glob.Glob
+	excludes    []glob.Glob
+	dirIncludes []glob.Glob
 }
 
 // NewSubRepoPermsClient instantiates an instance of authz.SubRepoPermsClient
@@ -221,6 +223,16 @@ func (s *SubRepoPermsClient) Permissions(ctx context.Context, userID int32, cont
 		}
 	}
 
+	// We also want to match any directories above paths that we include so that we
+	// can browse down the file hierarchy.
+	if strings.HasSuffix(content.Path, "/") {
+		for _, rule := range rules.dirIncludes {
+			if rule.Match(content.Path) {
+				return Read, nil
+			}
+		}
+	}
+
 	// Return None if no rule matches to be safe
 	return None, nil
 }
@@ -256,13 +268,30 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 		}
 		for repo, perms := range repoPerms {
 			includes := make([]glob.Glob, 0, len(perms.PathIncludes))
+			dirIncludes := make([]glob.Glob, 0)
+			dirSeen := make(map[string]struct{})
 			for _, rule := range perms.PathIncludes {
 				g, err := glob.Compile(rule, '/')
 				if err != nil {
 					return nil, errors.Wrap(err, "building include matcher")
 				}
 				includes = append(includes, g)
+
+				// We should include all directories above an include rule
+				dirs := expandDirs(rule)
+				for _, dir := range dirs {
+					if _, ok := dirSeen[dir]; ok {
+						continue
+					}
+					g, err := glob.Compile(dir, '/')
+					if err != nil {
+						return nil, errors.Wrap(err, "building include matcher for dir")
+					}
+					dirIncludes = append(dirIncludes, g)
+					dirSeen[dir] = struct{}{}
+				}
 			}
+
 			excludes := make([]glob.Glob, 0, len(perms.PathExcludes))
 			for _, rule := range perms.PathExcludes {
 				g, err := glob.Compile(rule, '/')
@@ -272,8 +301,9 @@ func (s *SubRepoPermsClient) getCompiledRules(ctx context.Context, userID int32)
 				excludes = append(excludes, g)
 			}
 			toCache.rules[repo] = compiledRules{
-				includes: includes,
-				excludes: excludes,
+				includes:    includes,
+				excludes:    excludes,
+				dirIncludes: dirIncludes,
 			}
 		}
 		toCache.timestamp = s.clock()
@@ -301,6 +331,32 @@ func (s *SubRepoPermsClient) EnabledForRepoId(ctx context.Context, id api.RepoID
 
 func (s *SubRepoPermsClient) EnabledForRepo(ctx context.Context, repo api.RepoName) (bool, error) {
 	return s.permissionsGetter.RepoSupported(ctx, repo)
+}
+
+// expandDirs will return rules that match all parent directories of the given
+// rule.
+func expandDirs(rule string) []string {
+	dirs := make([]string, 0)
+
+	// We can't support rules that start with a wildcard because we can only
+	// see one level of the tree at a time so we have no way of knowing which path leads
+	// to a file the user is allowed to see.
+	if strings.HasPrefix(rule, "*") {
+		return dirs
+	}
+
+	for {
+		lastSlash := strings.LastIndex(rule, "/")
+		if lastSlash == -1 {
+			break
+		}
+		// Drop anything after the last slash
+		rule = rule[:lastSlash]
+
+		dirs = append(dirs, rule+"/")
+	}
+
+	return dirs
 }
 
 // NewSimpleChecker is exposed for testing and allows creation of a simple

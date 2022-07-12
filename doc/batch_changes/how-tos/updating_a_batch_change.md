@@ -93,7 +93,7 @@ If you apply the updated batch spec new changesets will be created for each addi
 
 You can also decrease the number of repositories to which a batch change applies the by modifying the entries in the [`on`](../references/batch_spec_yaml_reference.md#on) property.
 
-If you, for example, started with this batch spec
+For example, let's say you started with this batch spec:
 
 ```yaml
 # [...]
@@ -105,7 +105,7 @@ on:
 # [...]
 ```
 
-and applied it and [published changesets](publishing_changesets.md) and then change it to this
+Next, you applied it and [published changesets](publishing_changesets.md) to multiple repositories. You can then modify your repo query to only target a subset of the repositories, for example by adding the `repo` parameter:
 
 ```yaml
 # [...]
@@ -117,15 +117,17 @@ on:
 # [...]
 ```
 
-and apply it, then all the changesets that were published in repositories other than `my-one-repository` will be closed on the code host and archived from the batch change. Archived changesets are still associated with the batch change, but they will appear under the "Archived" tab on the batch change page instead:
+When you apply this new batch spec, all the changesets that were published in repositories other than `my-one-repository` will be closed on the code host and archived from the batch change. Archived changesets are still associated with the batch change, but they will appear under the "Archived" tab on the batch change page instead:
 
 <img src="https://sourcegraphstatic.com/docs/images/batch_changes/archived-tab.png" class="screenshot">
 
 To fully remove the changesets from the batch change, you can detach them from this tab in the UI.
 
+> NOTE: Unpublished and [imported changesets](./tracking_existing_changesets.md) will skip archiving and immediately be detached from the batch change instead.
+
 #### Unarchiving changesets
 
-Archiving is not permanent, and changesets can be unarchived just as easily by reversing the process that archived them. To unarchive a changeset, modify your `on` property once more to match the repository whose changeset you want to bring back. The easiest way to target an individual repository is by adding an [`on.repository`](../references/batch_spec_yaml_reference.md#on-repository) statement for it:
+Archiving is not permanent, and published changesets can be unarchived just as easily by reversing the process that archived them. To unarchive a changeset, modify your `on` property once more to match the repository whose changeset you want to bring back. The easiest way to target an individual repository is by adding an [`on.repository`](../references/batch_spec_yaml_reference.md#on-repository) statement for it:
 
 ```yaml
 # [...]

@@ -187,6 +187,9 @@ func (rg *readerGrep) Find(zf *zipFile, f *srcFile, limit int) (matches []protoc
 
 	// find limit+1 matches so we know whether we hit the limit
 	locs := rg.re.FindAllIndex(fileMatchBuf, limit+1)
+	if len(locs) == 0 {
+		return nil, nil // short-circuit if we have no matches
+	}
 	ranges := locsToRanges(fileBuf, locs)
 	chunks := chunkRanges(ranges, 0)
 	return chunksToMatches(fileBuf, chunks), nil

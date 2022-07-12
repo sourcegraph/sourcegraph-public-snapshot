@@ -179,6 +179,63 @@ type TextPatternInfo struct {
 	Languages []string
 }
 
+func (p *TextPatternInfo) Fields() []otlog.Field {
+	res := make([]otlog.Field, 0, 4)
+	add := func(fs ...otlog.Field) {
+		res = append(res, fs...)
+	}
+
+	add(otlog.String("pattern", p.Pattern))
+
+	if p.IsNegated {
+		add(otlog.Bool("isNegated", p.IsNegated))
+	}
+	if p.IsRegExp {
+		add(otlog.Bool("isRegexp", p.IsRegExp))
+	}
+	if p.IsStructuralPat {
+		add(otlog.Bool("isStructural", p.IsStructuralPat))
+	}
+	if p.CombyRule != "" {
+		add(otlog.String("combyRule", p.CombyRule))
+	}
+	if p.IsWordMatch {
+		add(otlog.Bool("isWordMatch", p.IsWordMatch))
+	}
+	if p.IsCaseSensitive {
+		add(otlog.Bool("isCaseSensitive", p.IsCaseSensitive))
+	}
+	add(otlog.Int32("fileMatchLimit", p.FileMatchLimit))
+	if p.Index != query.Yes {
+		add(otlog.String("index", string(p.Index)))
+	}
+	if len(p.Select) > 0 {
+		add(trace.Strings("select", p.Select))
+	}
+	if len(p.IncludePatterns) > 0 {
+		add(trace.Strings("includePatterns", p.IncludePatterns))
+	}
+	if p.ExcludePattern != "" {
+		add(otlog.String("excludePattern", p.ExcludePattern))
+	}
+	if len(p.FilePatternsReposMustInclude) > 0 {
+		add(trace.Strings("filePatternsReposMustInclude", p.FilePatternsReposMustInclude))
+	}
+	if len(p.FilePatternsReposMustExclude) > 0 {
+		add(trace.Strings("filePatternsReposMustExclude", p.FilePatternsReposMustExclude))
+	}
+	if p.PathPatternsAreCaseSensitive {
+		add(otlog.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive))
+	}
+	if p.PatternMatchesPath {
+		add(otlog.Bool("patternMatchesPath", p.PatternMatchesPath))
+	}
+	if len(p.Languages) > 0 {
+		add(trace.Strings("languages", p.Languages))
+	}
+	return res
+}
+
 func (p *TextPatternInfo) String() string {
 	args := []string{fmt.Sprintf("%q", p.Pattern)}
 	if p.IsRegExp {

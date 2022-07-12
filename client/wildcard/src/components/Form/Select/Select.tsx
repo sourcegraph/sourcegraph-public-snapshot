@@ -29,6 +29,10 @@ export type SelectProps = AccessibleFieldProps<React.SelectHTMLAttributes<HTMLSe
          * Optional label position. Default is 'inline'
          */
         labelVariant?: 'inline' | 'block'
+        /**
+         * Custom class name for label element.
+         */
+        labelClassName?: string
     }
 
 /**
@@ -53,24 +57,28 @@ export const getSelectStyles = ({
  *
  * Please note that this component takes <option> elements as children. This is to easily support advanced functionality such as usage of <optgroup>.
  */
-export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps>> = React.forwardRef(
-    (
-        {
-            children,
-            className,
-            selectClassName,
-            message,
-            isValid,
-            isCustomStyle,
-            selectSize,
-            labelVariant = 'inline',
-            ...props
-        },
-        reference
-    ) => (
+export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps>> = React.forwardRef(function Select(
+    {
+        children,
+        className,
+        selectClassName,
+        labelClassName,
+        message,
+        isValid,
+        isCustomStyle,
+        selectSize,
+        labelVariant = 'inline',
+        ...props
+    },
+    reference
+) {
+    return (
         <div className={classNames('form-group', className)}>
             {'label' in props && (
-                <FormFieldLabel htmlFor={props.id} className={labelVariant === 'block' ? styles.labelBlock : undefined}>
+                <FormFieldLabel
+                    htmlFor={props.id}
+                    className={classNames(labelVariant === 'block' && styles.labelBlock, labelClassName)}
+                >
                     {props.label}
                 </FormFieldLabel>
             )}
@@ -89,4 +97,4 @@ export const Select: React.FunctionComponent<React.PropsWithChildren<SelectProps
             {message && <FormFieldMessage isValid={isValid}>{message}</FormFieldMessage>}
         </div>
     )
-)
+})

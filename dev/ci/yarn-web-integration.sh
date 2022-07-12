@@ -11,7 +11,7 @@ echo "--- Yarn install in root"
 yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent
 
 echo "--- Run integration test suite"
-yarn percy exec --quiet yarn _cover-integration "$@"
+yarn percy exec --quiet -- yarn _cover-integration "$@"
 
 echo "--- Process NYC report"
 yarn nyc report -r json

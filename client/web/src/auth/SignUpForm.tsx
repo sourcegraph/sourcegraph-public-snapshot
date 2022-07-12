@@ -1,10 +1,8 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiHelpCircleOutline, mdiGithub, mdiGitlab } from '@mdi/js'
 import classNames from 'classnames'
 import cookies from 'js-cookie'
-import GithubIcon from 'mdi-react/GithubIcon'
-import GitlabIcon from 'mdi-react/GitlabIcon'
-import HelpCircleOutlineIcon from 'mdi-react/HelpCircleOutlineIcon'
 import { Observable, of } from 'rxjs'
 import { fromFetch } from 'rxjs/fetch'
 import { catchError, switchMap } from 'rxjs/operators'
@@ -287,7 +285,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                         {' '}
                                         30 days{' '}
                                         <Link target="_blank" rel="noopener" to="https://about.sourcegraph.com/pricing">
-                                            <Icon as={HelpCircleOutlineIcon} aria-label="See Sourcegraph pricing" />
+                                            <Icon aria-label="See Sourcegraph pricing" svgPath={mdiHelpCircleOutline} />
                                         </Link>
                                     </span>
                                 </>
@@ -320,9 +318,9 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                                     as="a"
                                 >
                                     {provider.serviceType === 'github' ? (
-                                        <Icon as={GithubIcon} aria-hidden={true} />
+                                        <Icon aria-hidden={true} svgPath={mdiGithub} />
                                     ) : provider.serviceType === 'gitlab' ? (
-                                        <Icon as={GitlabIcon} aria-hidden={true} />
+                                        <Icon aria-hidden={true} svgPath={mdiGitlab} />
                                     ) : null}{' '}
                                     Continue with {provider.displayName}
                                 </Button>

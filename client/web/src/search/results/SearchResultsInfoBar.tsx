@@ -1,14 +1,16 @@
 import React, { useMemo, useState } from 'react'
 
+import {
+    mdiFormatQuoteOpen,
+    mdiBookmarkOutline,
+    mdiMenu,
+    mdiMenuDown,
+    mdiMenuUp,
+    mdiArrowExpandDown,
+    mdiArrowCollapseUp,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ArrowCollapseUpIcon from 'mdi-react/ArrowCollapseUpIcon'
-import ArrowExpandDownIcon from 'mdi-react/ArrowExpandDownIcon'
-import BookmarkOutlineIcon from 'mdi-react/BookmarkOutlineIcon'
-import FormatQuoteOpenIcon from 'mdi-react/FormatQuoteOpenIcon'
-import MenuDownIcon from 'mdi-react/MenuDownIcon'
-import MenuIcon from 'mdi-react/MenuIcon'
-import MenuUpIcon from 'mdi-react/MenuUpIcon'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { SearchPatternTypeProps, CaseSensitivityProps } from '@sourcegraph/search'
@@ -125,7 +127,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
             data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
         >
             <span>
-                <Icon aria-hidden={true} as={FormatQuoteOpenIcon} />
+                <Icon aria-hidden={true} svgPath={mdiFormatQuoteOpen} />
                 Searching literally <strong>(including quotes)</strong>
             </span>
         </small>
@@ -253,7 +255,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     className="test-save-search-link"
                     button={
                         <>
-                            <Icon aria-hidden={true} className="mr-1" as={BookmarkOutlineIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiBookmarkOutline} />
                             Save search
                         </>
                     }
@@ -303,9 +305,9 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     size="sm"
                     aria-label={`${showFilters ? 'Hide' : 'Show'} filters`}
                 >
-                    <Icon aria-hidden={true} className="mr-1" as={MenuIcon} />
+                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiMenu} />
                     Filters
-                    <Icon aria-hidden={true} as={showFilters ? MenuUpIcon : MenuDownIcon} />
+                    <Icon aria-hidden={true} svgPath={showFilters ? mdiMenuUp : mdiMenuDown} />
                 </Button>
 
                 {props.stats}
@@ -402,7 +404,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                     <Icon
                                         aria-hidden={true}
                                         className="mr-0"
-                                        as={props.allExpanded ? ArrowCollapseUpIcon : ArrowExpandDownIcon}
+                                        svgPath={props.allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown}
                                     />
                                 </Button>
                             </li>

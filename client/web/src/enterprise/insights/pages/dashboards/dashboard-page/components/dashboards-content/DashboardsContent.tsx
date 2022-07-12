@@ -5,7 +5,7 @@ import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { useHistory } from 'react-router-dom'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../../../../components/HeroPage'
 import { LimitedAccessLabel } from '../../../../../components/limited-access-label/LimitedAccessLabel'
@@ -112,17 +112,17 @@ export const DashboardsContent: React.FunctionComponent<React.PropsWithChildren<
                     className="mr-auto"
                 />
 
-                <Button
-                    outline={true}
-                    variant="secondary"
-                    disabled={addRemovePermissions.disabled}
-                    data-tooltip={addRemovePermissions.tooltip}
-                    data-placement="bottom"
-                    aria-label="add or remove insights"
-                    onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
-                >
-                    Add or remove insights
-                </Button>
+                <Tooltip content={addRemovePermissions.tooltip} placement="bottom">
+                    <Button
+                        outline={true}
+                        variant="secondary"
+                        disabled={addRemovePermissions.disabled}
+                        onClick={() => handleSelect(DashboardMenuAction.AddRemoveInsights)}
+                        data-testid="add-or-remove-insights"
+                    >
+                        Add or remove insights
+                    </Button>
+                </Tooltip>
             </DashboardHeader>
 
             {!licensed && (

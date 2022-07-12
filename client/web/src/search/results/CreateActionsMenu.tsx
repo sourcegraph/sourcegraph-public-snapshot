@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
-import PlusIcon from 'mdi-react/PlusIcon'
 
 import { Position, Menu, MenuButton, MenuList, MenuLink, Icon, Link } from '@sourcegraph/wildcard'
 
@@ -36,7 +36,7 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                         outline={true}
                         size="sm"
                     >
-                        <Icon aria-hidden={true} className="mr-1" as={PlusIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiPlus} />
                         Create …
                     </MenuButton>
                 </li>

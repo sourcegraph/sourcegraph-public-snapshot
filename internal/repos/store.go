@@ -77,6 +77,10 @@ type Store interface {
 	// external service, respectively in the repo and external_service_repos table.
 	// The associated external service must already exist.
 	UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
+	// UpdateRepo updates a single repo without updating its association to an
+	// external service. This must only be used when updating metadata on a repo
+	// that cannot affect its associations.
+	UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error)
 	// EnqueueSingleSyncJob enqueues a single sync job for the given external service
 	// if it is not already queued or processing. Additionally, it also skips
 	// queueing up a sync job for cloud_default external services. This is done to
@@ -545,6 +549,59 @@ WHERE
 	external_service_repos.user_id   != excluded.user_id OR
 	external_service_repos.org_id    != excluded.org_id
 `
+
+func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error) {
+	tr, ctx := s.trace(ctx, "Store.UpdateRepo")
+	tr.LogFields(
+		otlog.String("name", string(r.Name)),
+		otlog.Int32("id", int32(r.ID)),
+	)
+	logger := trace.Logger(ctx, s.Logger).With(
+		log.Int32("id", int32(r.ID)),
+		log.String("name", string(r.Name)),
+	)
+
+	defer func(began time.Time) {
+		secs := time.Since(began).Seconds()
+
+		s.Metrics.UpdateRepo.Observe(secs, 1, &err)
+		if err != nil {
+			logger.Error("store.update-repo", log.Error(err))
+		}
+
+		tr.SetError(err)
+		tr.Finish()
+	}(time.Now())
+
+	if r.ID == 0 {
+		return nil, errors.New("empty repo id in update")
+	}
+
+	metadata, err := metadataColumn(r.Metadata)
+	if err != nil {
+		return nil, errors.Wrap(err, "metadata marshalling failed")
+	}
+
+	q := sqlf.Sprintf(updateRepoQuery,
+		r.Name,
+		r.URI,
+		r.Description,
+		r.ExternalRepo.ServiceType,
+		r.ExternalRepo.ServiceID,
+		r.ExternalRepo.ID,
+		r.Archived,
+		r.Fork,
+		r.Stars,
+		r.Private,
+		metadata,
+		r.ID,
+	)
+
+	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
+		return nil, err
+	}
+	return r, nil
+}
 
 func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.UpdateExternalServiceRepo")

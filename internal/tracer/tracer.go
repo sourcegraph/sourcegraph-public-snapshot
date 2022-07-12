@@ -5,6 +5,8 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log"
+	"go.opentelemetry.io/otel"
+	oteltrace "go.opentelemetry.io/otel/trace"
 	"go.uber.org/automaxprocs/maxprocs"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -70,8 +72,12 @@ func Init(logger log.Logger, c conftypes.WatchableSiteConfig) {
 
 // initTracer is a helper that should be called exactly once (from Init).
 func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfig) {
-	globalTracer := newSwitchableTracer(logger.Scoped("global", "the global tracer"))
-	opentracing.SetGlobalTracer(globalTracer)
+	// Initialize global, hot-swappable implementations of OpenTracing and OpenTelemetry
+	// tracing.
+	globalOTTracer := newSwitchableOTTracer(logger.Scoped("ot.global", "the global OpenTracing tracer"))
+	opentracing.SetGlobalTracer(globalOTTracer)
+	globalOTelTracerProvider := newSwitchableOtelTracerProvider(logger.Scoped("otel.global", "the global OpenTelemetry tracer"))
+	otel.SetTracerProvider(globalOTelTracerProvider)
 
 	// Initially everything is disabled since we haven't read conf yet. This variable is
 	// also updated to compare against new version of configuration.
@@ -135,27 +141,29 @@ func initTracer(logger log.Logger, opts *options, c conftypes.WatchableSiteConfi
 		tracerLogger := logger.With(
 			log.String("tracerType", string(opts.TracerType)),
 			log.Bool("debug", opts.debug))
-		t, closer, err := newTracer(tracerLogger, &opts)
+		otImpl, otelImpl, closer, err := newTracer(tracerLogger, &opts)
 		if err != nil {
 			tracerLogger.Warn("failed to initialize tracer", log.Error(err))
 			return
 		}
-		globalTracer.set(tracerLogger, t, closer, opts.debug)
+		globalOTTracer.set(tracerLogger, otImpl, closer, opts.debug)
+		globalOTelTracerProvider.set(otelImpl, opts.debug)
 	})
 }
 
 // newTracer creates a tracer based on options
-func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, io.Closer, error) {
+func newTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
 	logger.Debug("configuring tracer")
 
 	switch opts.TracerType {
 	case OpenTracing:
-		return newJaegerTracer(logger, opts)
+		ot, closer, err := newJaegerTracer(logger, opts)
+		return ot, nil, closer, err
 
 	case OpenTelemetry:
 		return newOTelBridgeTracer(logger, opts)
 
 	default:
-		return opentracing.NoopTracer{}, nil, nil
+		return opentracing.NoopTracer{}, nil, nil, nil
 	}
 }
