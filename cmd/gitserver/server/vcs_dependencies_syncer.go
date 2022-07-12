@@ -111,15 +111,7 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	cloneable := make([]reposource.VersionedPackage, 0, len(versions))
 	for _, version := range versions {
 		if d, err := s.source.ParseVersionedPackageFromNameAndVersion(depName, version); err != nil {
-			if errcode.IsNotFound(err) {
-				s.logger.Warn("skipping invalid dependency",
-					log.String("dep", depName),
-					log.String("version", version),
-					log.String("type", s.typ),
-				)
-			} else {
-				errs = errors.Append(errs, err)
-			}
+			errs = errors.Append(errs, err)
 		} else {
 			cloneable = append(cloneable, d)
 		}
@@ -154,8 +146,11 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
-			return errors.Wrapf(err, "error pushing dependency %q", dependency)
+			errs = errors.Append(errs, errors.Wrapf(err, "error pushing dependency %q", dependency))
 		}
+	}
+	if errs != nil {
+		return errs
 	}
 
 	// Set the latest version as the default branch.
@@ -168,10 +163,6 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	}
 
 	// Delete tags for versions we no longer track if there were no errors so far.
-	if errs != nil {
-		return errs
-	}
-
 	dependencyTags := make(map[string]struct{}, len(cloneable))
 	for _, dependency := range cloneable {
 		dependencyTags[dependency.GitTagFromVersion()] = struct{}{}
