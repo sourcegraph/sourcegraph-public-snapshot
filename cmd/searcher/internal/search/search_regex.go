@@ -315,11 +315,13 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	g, ctx := errgroup.WithContext(ctx)
 
 	contextCanceled := atomic.NewBool(false)
-	g.Go(func() error {
+	done := make(chan struct{})
+	go func() {
 		<-ctx.Done()
 		contextCanceled.Store(true)
 		return nil
-	})
+	}()
+	defer func() { <-done }()
 
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
@@ -328,7 +330,6 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 			for !contextCanceled.Load() {
 				idx := int(lastFileIdx.Inc())
 				if idx >= len(files) {
-					cancel()
 					return nil
 				}
 
