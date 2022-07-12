@@ -19,24 +19,25 @@ var ErrInvalidToken = fmt.Errorf("buildkite token is invalid")
 var ErrInvalidHeader = fmt.Errorf("Header of request is invalid")
 var ErrUnwantedEvent = fmt.Errorf("Unwanted event received")
 
-type BuildStep struct {
-	Build int `json:"number"`
-	buildkite.Job
+type BuildEvent struct {
+	Event    string          `json:"event"`
+	Build    buildkite.Build `json:"build,omitempty"`
+	Job      buildkite.Job   `json:"job,omitempty"`
 	Finished bool
 }
 
-func (b *BuildStep) HasFailed() bool {
-	if b.ExitStatus == nil {
+func (b *BuildEvent) HasFailed() bool {
+	if b.Job.ExitStatus == nil {
 		return false
 	}
-	if b.SoftFailed || *b.ExitStatus == 0 {
+	if b.Job.SoftFailed || *b.Job.ExitStatus == 0 {
 		return false
 	}
 
 	return true
 }
 
-func (b *BuildStep) GetName() string {
+func (b *BuildEvent) GetName() string {
 	if b.Job.Name != nil {
 		return *b.Job.Name
 	}
@@ -45,31 +46,31 @@ func (b *BuildStep) GetName() string {
 }
 
 type BuildStore struct {
-	builds map[int][]BuildStep
+	builds map[int][]BuildEvent
 	m      sync.RWMutex
 }
 
 func NewBuildStore() *BuildStore {
 	return &BuildStore{
-		builds: make(map[int][]BuildStep),
+		builds: make(map[int][]BuildEvent),
 		m:      sync.RWMutex{},
 	}
 }
 
-func (s *BuildStore) addIfFailed(step *BuildStep) {
-	if !step.HasFailed() {
-		log.Printf("skipping step %+v - not failed", step.GetName())
+func (s *BuildStore) addIfFailed(event *BuildEvent) {
+	if !event.HasFailed() {
+		log.Printf("skipping step %+v - not failed", event.GetName())
 		return
 	}
 
 	s.m.Lock()
 	defer s.m.Unlock()
-	v, ok := s.builds[step.Build]
+	v, ok := s.builds[*event.Build.Number]
 	if !ok {
-		v = make([]BuildStep, 0)
+		v = make([]BuildEvent, 0)
 	}
-	s.builds[step.Build] = append(v, *step)
-	log.Printf("step %s added", step.GetName())
+	s.builds[*event.Build.Number] = append(v, *event)
+	log.Printf("step %s added", event.GetName())
 }
 
 func (s *BuildStore) DelByBuildNumber(num int) {
@@ -79,7 +80,7 @@ func (s *BuildStore) DelByBuildNumber(num int) {
 	log.Printf("build %d deleted", num)
 }
 
-func (s *BuildStore) GetByBuildNumber(num int) []BuildStep {
+func (s *BuildStore) GetByBuildNumber(num int) []BuildEvent {
 	s.m.RLock()
 	defer s.m.RUnlock()
 
@@ -151,7 +152,7 @@ func (s *StepServer) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var step BuildStep
+	var step BuildEvent
 	// read the build number from the Build payload
 	err = json.Unmarshal(payload["build"], &step)
 	if err != nil {
@@ -162,7 +163,7 @@ func (s *StepServer) handleEvent(w http.ResponseWriter, req *http.Request) {
 
 	switch event {
 	case "build.finished":
-		step.Name = &event
+		step.Job.Name = &event
 		step.Finished = true
 	case "job.finished":
 		err = json.Unmarshal(payload["job"], &step.Job)
@@ -198,22 +199,22 @@ func readBody[T any](req *http.Request, target T) error {
 	return nil
 }
 
-func (s *StepServer) shouldNotify(step *BuildStep) bool {
+func (s *StepServer) shouldNotify(step *BuildEvent) bool {
 	if !step.Finished {
-		log.Printf("build %d isn't finished - not notifying", step.Build)
+		log.Printf("build %d isn't finished - not notifying", *step.Build.Number)
 		return false
 	}
 	return true
 }
 
-func (s *StepServer) notify(step *BuildStep) error {
-	steps := s.store.GetByBuildNumber(step.Build)
+func (s *StepServer) notify(event *BuildEvent) error {
+	steps := s.store.GetByBuildNumber(*event.Build.Number)
 	if len(steps) == 0 {
-		log.Printf("build %d has no failed steps - not notifying\n", step.Build)
+		log.Printf("build %d has no failed steps - not notifying\n", *event.Build.Number)
 		return nil
 	}
 
-	failed := make([]BuildStep, 0)
+	failed := make([]BuildEvent, 0)
 	for _, step := range steps {
 		if *step.Job.ExitStatus != 0 {
 			failed = append(failed, step)
@@ -224,16 +225,16 @@ func (s *StepServer) notify(step *BuildStep) error {
 	for _, f := range failed {
 		out = fmt.Sprintf("%s\n%s", out, f.GetName())
 	}
-	log.Printf("\nBuild %d failed%s", step.Build, out)
+	log.Printf("\nBuild %d failed%s", *event.Build.Number, out)
 	return nil
 }
 
-func (s *StepServer) processStep(step *BuildStep) {
+func (s *StepServer) processStep(step *BuildEvent) {
 	s.store.addIfFailed(step)
 	if s.shouldNotify(step) {
 		s.notify(step)
 		// since we've sent a notification of the job we can remove it
-		s.store.DelByBuildNumber(step.Build)
+		s.store.DelByBuildNumber(*step.Build.Number)
 	}
 }
 
