@@ -11,6 +11,15 @@ Feature | Supported?
 [Repository permissions](#repository-syncing) | ❌
 [Multiple JVM dependencies code hosts](#multiple-jvm-dependency-code-hosts) | ❌
 
+## Setup
+
+To add JVM dependencies to Sourcegraph you need to setup a JVM Dependencies code host:
+
+1. As *site admin*: go to **Site admin > Manage code hosts**
+1. Select **JVM Dependencies**.
+1. Configure the connection by following the instructions above the text field. Additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
+
 ## Repository syncing
 
 There are two ways to sync JVM dependency repositories.
@@ -55,3 +64,9 @@ This increases the risk of overloading the code host.
 
 ⚠️ It's only possible to create one JVM dependency code host for each Sourcegraph instance.
 See the issue [sourcegraph#32461](https://github.com/sourcegraph/sourcegraph/issues/32461) for more details about this limitation. In most situations, it's possible to work around this limitation by configurating multiple Maven repositories to the same JVM dependency code host.
+
+## Configuration
+
+JVM dependencies code host connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
+
+<div markdown-func=jsonschemadoc jsonschemadoc:path="integration/jvm-packages.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/integration/jvm) to see rendered content.</div>
