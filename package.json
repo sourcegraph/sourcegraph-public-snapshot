@@ -41,6 +41,7 @@
     "storybook:dll": "yarn workspace @sourcegraph/storybook run start:dll",
     "storybook:branded": "yarn workspace @sourcegraph/branded run storybook",
     "storybook:browser": "yarn workspace @sourcegraph/browser run storybook",
+    "storybook:jetbrains": "yarn workspace @sourcegraph/jetbrains run storybook",
     "storybook:shared": "yarn workspace @sourcegraph/shared run storybook",
     "storybook:web": "yarn workspace @sourcegraph/web run storybook",
     "storybook:search-ui": "yarn workspace @sourcegraph/search-ui run storybook",
