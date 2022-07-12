@@ -133,6 +133,11 @@ func addGrafana(r *mux.Router, db database.DB) {
 	}
 }
 
+// addSentry declares a route for handling tunneled sentry events from the client.
+// See https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers.
+//
+// The route only forwards known project ids, so a DSN must be defined in siteconfig.Log.Sentry.Dsn
+// to allow events to be forwarded. Sentry responses are ignored.
 func addSentry(r *mux.Router) {
 	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
 
@@ -212,7 +217,16 @@ func addSentry(r *mux.Router) {
 			Timeout: 3 * time.Second,
 		}
 		url := fmt.Sprintf("%s/api/%s/envelope/", sentryHost, pID)
-		go client.Post(url, "text/plain;charset=UTF-8", bytes.NewReader(b))
+
+		// Asynchronously forward to Sentry, there's no need to keep holding this connection
+		// opened any longer.
+		go func() {
+			resp, err := client.Post(url, "text/plain;charset=UTF-8", bytes.NewReader(b))
+			if err != nil || resp.StatusCode >= 400 {
+				logger.Warn("failed to forward", sglog.Error(err), sglog.Int("statusCode", resp.StatusCode))
+				return
+			}
+		}()
 
 		w.WriteHeader(http.StatusOK)
 		return
