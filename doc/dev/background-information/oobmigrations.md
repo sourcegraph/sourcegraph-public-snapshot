@@ -274,6 +274,7 @@ New fields can be added to the existing migration metadata entry in the file `in
   introduced_major_version: 3
   introduced_minor_version: 34
   non_destructive: true
+  # NEW FIELDS:
   deprecated_major_version: 3   -- The current major release
   deprecated_minor_version: 39  -- The current minor release
 ```
