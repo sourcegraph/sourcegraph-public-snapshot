@@ -19,11 +19,26 @@ var ErrInvalidToken = fmt.Errorf("buildkite token is invalid")
 var ErrInvalidHeader = fmt.Errorf("Header of request is invalid")
 var ErrUnwantedEvent = fmt.Errorf("Unwanted event received")
 
+type Build struct {
+	buildkite.Build
+	Jobs []buildkite.Job
+}
+
+func NewBuildFrom(event *BuildEvent) *Build {
+	return &Build{
+		Build: event.Build,
+		Jobs:  make([]buildkite.Job, 0),
+	}
+}
+
 type BuildEvent struct {
-	Event    string          `json:"event"`
-	Build    buildkite.Build `json:"build,omitempty"`
-	Job      buildkite.Job   `json:"job,omitempty"`
-	Finished bool
+	Event string          `json:"event"`
+	Build buildkite.Build `json:"build,omitempty"`
+	Job   buildkite.Job   `json:"job,omitempty"`
+}
+
+func (b *BuildEvent) IsBuildFinished() bool {
+	return b.Event == "build.finished"
 }
 
 func (b *BuildEvent) HasFailed() bool {
@@ -37,40 +52,27 @@ func (b *BuildEvent) HasFailed() bool {
 	return true
 }
 
-func (b *BuildEvent) GetName() string {
-	if b.Job.Name != nil {
-		return *b.Job.Name
-	}
-
-	return ""
-}
-
 type BuildStore struct {
-	builds map[int][]BuildEvent
+	builds map[int]Build
 	m      sync.RWMutex
 }
 
 func NewBuildStore() *BuildStore {
 	return &BuildStore{
-		builds: make(map[int][]BuildEvent),
+		builds: make(map[int]Build),
 		m:      sync.RWMutex{},
 	}
 }
 
-func (s *BuildStore) addIfFailed(event *BuildEvent) {
-	if !event.HasFailed() {
-		log.Printf("skipping step %+v - not failed", event.GetName())
-		return
-	}
-
+func (s *BuildStore) Add(event *BuildEvent) {
 	s.m.Lock()
 	defer s.m.Unlock()
-	v, ok := s.builds[*event.Build.Number]
+	build, ok := s.builds[*event.Build.Number]
 	if !ok {
-		v = make([]BuildEvent, 0)
+		build = *NewBuildFrom(event)
 	}
-	s.builds[*event.Build.Number] = append(v, *event)
-	log.Printf("step %s added", event.GetName())
+	build.Jobs = append(build.Jobs, event.Job)
+	log.Printf("job %s added for build %d", *event.Job.Name, *build.Number)
 }
 
 func (s *BuildStore) DelByBuildNumber(num int) {
@@ -80,7 +82,7 @@ func (s *BuildStore) DelByBuildNumber(num int) {
 	log.Printf("build %d deleted", num)
 }
 
-func (s *BuildStore) GetByBuildNumber(num int) []BuildEvent {
+func (s *BuildStore) GetByBuildNumber(num int) Build {
 	s.m.RLock()
 	defer s.m.RUnlock()
 
@@ -104,37 +106,37 @@ func NewStepServer() *StepServer {
 	}
 }
 
-func processBuildkiteRequest(req *http.Request, token string) (map[string]json.RawMessage, string, error) {
+func processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, error) {
 	h, ok := req.Header["X-Buildkite-Token"]
 	if !ok || len(h) == 0 {
-		return nil, "", ErrInvalidToken
+		return nil, ErrInvalidToken
 	} else if h[0] != token {
-		return nil, "", ErrInvalidToken
+		return nil, ErrInvalidToken
 	}
 
 	h, ok = req.Header["X-Buildkite-Event"]
 	if !ok || len(h) == 0 {
-		return nil, "", ErrInvalidHeader
+		return nil, ErrInvalidHeader
 	}
 
-	event := h[0]
-	log.Printf("received event: %s", event)
+	eventName := h[0]
+	log.Printf("received event: %s", eventName)
 
-	var payload map[string]json.RawMessage
-	err := readBody(req, &payload)
+	var event BuildEvent
+	err := readBody(req, &event)
 	if errors.Is(err, ErrRequestBody) {
 		log.Printf("faield to read body of request")
-		return nil, "", ErrRequestBody
+		return nil, ErrRequestBody
 	} else if errors.Is(err, ErrJSONUnmarshall) {
 		log.Printf("faield to unmarshall body of request")
-		return nil, "", ErrJSONUnmarshall
+		return nil, ErrJSONUnmarshall
 	}
 
-	return payload, event, nil
+	return &event, nil
 }
 
 func (s *StepServer) handleEvent(w http.ResponseWriter, req *http.Request) {
-	payload, event, err := processBuildkiteRequest(req, s.bkToken)
+	event, err := processBuildkiteRequest(req, s.bkToken)
 
 	switch err {
 	case ErrInvalidToken:
@@ -152,38 +154,12 @@ func (s *StepServer) handleEvent(w http.ResponseWriter, req *http.Request) {
 		return
 	}
 
-	var step BuildEvent
-	// read the build number from the Build payload
-	err = json.Unmarshal(payload["build"], &step)
-	if err != nil {
-		log.Printf("failed to unmarshall build from payload: %v", err)
-		w.WriteHeader(http.StatusUnprocessableEntity)
-		return
-	}
-
-	switch event {
-	case "build.finished":
-		step.Job.Name = &event
-		step.Finished = true
-	case "job.finished":
-		err = json.Unmarshal(payload["job"], &step.Job)
-		if err != nil {
-			log.Printf("failed to unmarshall job from payload: %v", err)
-			w.WriteHeader(http.StatusUnprocessableEntity)
-			return
-		}
-	default:
-		w.WriteHeader(http.StatusOK)
-		return
-
-	}
-
-	go s.processStep(&step)
+	go s.processEvent(event)
 	w.WriteHeader(http.StatusOK)
 }
 
 func readBody[T any](req *http.Request, target T) error {
-	log.Println("reading step detail from request")
+	log.Println("reading event detail from request")
 	data, err := ioutil.ReadAll(req.Body)
 	if err != nil {
 		log.Println("failed to read request body")
@@ -199,42 +175,46 @@ func readBody[T any](req *http.Request, target T) error {
 	return nil
 }
 
-func (s *StepServer) shouldNotify(step *BuildEvent) bool {
-	if !step.Finished {
-		log.Printf("build %d isn't finished - not notifying", *step.Build.Number)
+func (s *StepServer) shouldNotify(event *BuildEvent) bool {
+	if !event.IsBuildFinished() {
+		log.Printf("build %d isn't finished - not notifying", *event.Build.Number)
 		return false
 	}
 	return true
 }
 
-func (s *StepServer) notify(event *BuildEvent) error {
-	steps := s.store.GetByBuildNumber(*event.Build.Number)
-	if len(steps) == 0 {
-		log.Printf("build %d has no failed steps - not notifying\n", *event.Build.Number)
+func (s *StepServer) notify(build *Build) error {
+	if len(build.Jobs) == 0 {
+		log.Printf("build %d has no jobs", *build.Number)
 		return nil
 	}
 
-	failed := make([]BuildEvent, 0)
-	for _, step := range steps {
-		if *step.Job.ExitStatus != 0 {
+	failed := make([]buildkite.Job, 0)
+	for _, step := range build.Jobs {
+		if *step.ExitStatus != 0 {
 			failed = append(failed, step)
 		}
 	}
 
 	out := ""
 	for _, f := range failed {
-		out = fmt.Sprintf("%s\n%s", out, f.GetName())
+		out = fmt.Sprintf("%s\n%s", out, *f.Name)
 	}
-	log.Printf("\nBuild %d failed%s", *event.Build.Number, out)
+	log.Printf("\nBuild %d failed%s", build.Number, out)
 	return nil
 }
 
-func (s *StepServer) processStep(step *BuildEvent) {
-	s.store.addIfFailed(step)
-	if s.shouldNotify(step) {
-		s.notify(step)
+func (s *StepServer) processEvent(event *BuildEvent) {
+	if event.Build.Number == nil {
+		//Build number is required!
+		return
+	}
+	s.store.Add(event)
+	if s.shouldNotify(event) {
+		build := s.store.GetByBuildNumber(*event.Build.Number)
+		s.notify(&build)
 		// since we've sent a notification of the job we can remove it
-		s.store.DelByBuildNumber(*step.Build.Number)
+		s.store.DelByBuildNumber(*event.Build.Number)
 	}
 }
 
