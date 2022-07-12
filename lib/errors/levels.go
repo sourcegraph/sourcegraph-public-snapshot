@@ -17,29 +17,29 @@ const (
 	LevelError
 )
 
-// classifiedError is the error that wraps an error with an error level.
-type classifiedError struct {
+// ClassifiedError is the error that wraps an error with an error level.
+type ClassifiedError struct {
 	error error
 	level Level
 }
 
-func (ce *classifiedError) Error() string {
+func (ce *ClassifiedError) Error() string {
 	return ce.error.Error()
 }
 
-func (ce *classifiedError) IsLevelWarn() bool {
+func (ce *ClassifiedError) IsLevelWarn() bool {
 	return ce.level == LevelWarn
 }
 
-func (ce *classifiedError) IsLevelError() bool {
+func (ce *ClassifiedError) IsLevelError() bool {
 	return ce.level == LevelError
 }
 
 // Ensure that classifiedError always implements the error interface.
-var _ error = (*classifiedError)(nil)
+var _ error = (*ClassifiedError)(nil)
 
 func NewClassifiedError(err error, l Level) error {
-	return &classifiedError{
+	return &ClassifiedError{
 		error: err,
 		level: l,
 	}
