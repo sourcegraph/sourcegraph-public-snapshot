@@ -31,8 +31,6 @@ func init() {
 }
 
 func main() {
-	// FIXME: Flaky test in CI. Re-enable https://github.com/sourcegraph/sourcegraph/issues/37671
-	return
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
