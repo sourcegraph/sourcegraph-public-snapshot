@@ -1,12 +1,11 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
-import { BrandedStory } from '@sourcegraph/branded/out/src/components/BrandedStory'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { H1, H2 } from '@sourcegraph/wildcard'
 
 import { App } from './App'
 
-const decorator: DecoratorFn = story => <BrandedStory>{() => story()}</BrandedStory>
+const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
 const config: Meta = {
     title: 'extensions/ide/jetbrains/App',
@@ -24,7 +23,7 @@ export const JetBrainsPluginApp: Story = () => (
                     <H2 className="text-center">Light</H2>
                     <App
                         isDarkTheme={false}
-                        instanceURL="https://k8s.sgdev.org"
+                        instanceURL="https://sourcegraph.com"
                         isGlobbingEnabled={false}
                         accessToken=""
                         initialSearch={null}
