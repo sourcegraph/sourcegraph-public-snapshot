@@ -623,19 +623,20 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
-		RepoFilters:       repoFilters,
-		MinusRepoFilters:  minusRepoFilters,
-		Dependencies:      b.Dependencies(),
-		Dependents:        b.Dependents(),
-		SearchContextSpec: searchContextSpec,
-		ForkSet:           b.Fork() != nil,
-		OnlyForks:         fork == query.Only,
-		NoForks:           fork == query.No,
-		ArchivedSet:       b.Archived() != nil,
-		OnlyArchived:      archived == query.Only,
-		NoArchived:        archived == query.No,
-		Visibility:        visibility,
-		CommitAfter:       b.RepoContainsCommitAfter(),
+		RepoFilters:         repoFilters,
+		MinusRepoFilters:    minusRepoFilters,
+		Dependencies:        b.Dependencies(),
+		Dependents:          b.Dependents(),
+		DescriptionPatterns: b.Description(),
+		SearchContextSpec:   searchContextSpec,
+		ForkSet:             b.Fork() != nil,
+		OnlyForks:           fork == query.Only,
+		NoForks:             fork == query.No,
+		ArchivedSet:         b.Archived() != nil,
+		OnlyArchived:        archived == query.Only,
+		NoArchived:          archived == query.No,
+		Visibility:          visibility,
+		CommitAfter:         b.RepoContainsCommitAfter(),
 	}
 }
 
