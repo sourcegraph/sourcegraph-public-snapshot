@@ -133,10 +133,6 @@ func addGrafana(r *mux.Router, db database.DB) {
 	}
 }
 
-type sentryHeader struct {
-	DSN string `json:"dsn"`
-}
-
 func addSentry(r *mux.Router) {
 	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
 
@@ -178,7 +174,9 @@ func addSentry(r *mux.Router) {
 			w.WriteHeader(http.StatusUnprocessableEntity)
 			return
 		}
-		h := sentryHeader{}
+		h := struct {
+			DSN string `json:"dsn"`
+		}{}
 		err = json.Unmarshal(b[0:n], &h)
 		if err != nil {
 			logger.Warn("failed to parse request body", sglog.Error(err))
