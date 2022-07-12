@@ -519,24 +519,16 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 			ret:  retTy,
 			noad: swapNode(def, parent),
 		}), nil
-	case "enhanced_for_statement":
-		tyNode := parent.ChildByFieldName("type")
-		if tyNode == nil {
-			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
-			return nil, nil
+	case "assignment":
+		ty := parent.ChildByFieldName("type")
+		if ty == nil {
+			right := parent.ChildByFieldName("right")
+			if right == nil {
+				return nil, nil
+			}
+			return squirrel.getTypeDefPython(ctx, swapNode(def, right))
 		}
-		return squirrel.getTypeDefPython(ctx, swapNode(def, tyNode))
-	case "variable_declarator":
-		grandparent := parent.Parent()
-		if grandparent == nil {
-			return nil, nil
-		}
-		tyNode := grandparent.ChildByFieldName("type")
-		if tyNode == nil {
-			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find type")
-			return nil, nil
-		}
-		return squirrel.getTypeDefPython(ctx, swapNode(def, tyNode))
+		return squirrel.getTypeDefPython(ctx, swapNode(def, ty))
 	default:
 		squirrel.breadcrumb(swapNode(def, parent), fmt.Sprintf("unrecognized def parent %q", parent.Type()))
 		return nil, nil
