@@ -5,33 +5,6 @@ import (
 	"unicode"
 )
 
-// PackageVersion is a Package that additionally includes a concrete version.
-// The version must be a concrete version, it cannot be a version range.
-type PackageVersion interface {
-	Package
-
-	// The version of the package.
-	PackageVersion() string
-
-	// Returns the git tag associated with the given dependency version, used
-	// rev: or repo:foo@rev
-	GitTagFromVersion() string
-
-	// PackageVersionSyntax is the string-formatted encoding of this PackageVersion.
-	PackageVersionSyntax() string
-
-	// Less implements a comparison method with another PackageVersion for sorting.
-	Less(PackageVersion) bool
-}
-
-var (
-	_ PackageVersion = (*MavenPackageVersion)(nil)
-	_ PackageVersion = (*NpmPackageVersion)(nil)
-	_ PackageVersion = (*GoPackageVersion)(nil)
-	_ PackageVersion = (*PythonPackageVersion)(nil)
-	_ PackageVersion = (*RustPackageVersion)(nil)
-)
-
 // versionGreaterThan is a generalized version of comparing two strings
 // using semantic versioning that allows for non-numeric characters.
 // When a non-numeric character is encountered, the comparison switches to

@@ -24,7 +24,7 @@ type reporter interface {
 }
 
 func (r *externalEmitter) Handle(ctx context.Context) error {
-	count, err := r.store.QueuedCount(context.Background(), true, nil)
+	count, err := r.store.QueuedCount(context.Background(), true)
 	if err != nil {
 		return errors.Wrap(err, "dbworkerstore.QueuedCount")
 	}

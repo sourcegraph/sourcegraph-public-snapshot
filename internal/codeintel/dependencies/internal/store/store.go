@@ -253,7 +253,13 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency, lockfile,
 	return ch
 }
 
-// UpsertLockfileGraph TODO
+// UpsertLockfileGraph insert the given `deps` as `codeintel_lockfile_references`
+// and creates an entry in `codeintel_lockfiles` with the given `repoName`,
+// `commit`, `lockfile` that references the inserted `deps`.
+//
+// If `graph` is not nil, only the direct dependencies are referenced in the
+// `codeintel_lockfiles` entry and the full graph is represented in
+// `codeintel_lockfile_references` as edges in the `depends_on` column.
 func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockfile string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error) {
 	ctx, _, endObservation := s.operations.upsertLockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", repoName),

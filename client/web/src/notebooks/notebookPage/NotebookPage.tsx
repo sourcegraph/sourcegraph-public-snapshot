@@ -1,8 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { mdiCheckCircle, mdiBookOutline } from '@mdi/js'
+import { mdiClose, mdiCheckCircle, mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { RouteComponentProps } from 'react-router'
 import { useStickyBox } from 'react-sticky-box'
 import { Observable } from 'rxjs'
@@ -371,7 +370,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     size="sm"
                     className={styles.notepadCtaCloseButton}
                 >
-                    <Icon aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
                 <img
                     className="flex-shrink-0 mr-3"

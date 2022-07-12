@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useState } from 'react'
 import { Subject } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Alert, Input, Label } from '@sourcegraph/wildcard'
+import { Button, Alert, Input, Label, Link } from '@sourcegraph/wildcard'
 
 import { useEnqueueIndexJob } from '../hooks/useEnqueueIndexJob'
 
@@ -51,9 +51,19 @@ export const EnqueueForm: FunctionComponent<React.PropsWithChildren<EnqueueFormP
     return (
         <>
             {enqueueError && <ErrorAlert prefix="Error enqueueing index job" error={enqueueError} />}
-
+            <div className="mb-3">
+                Provide a{' '}
+                <Link
+                    to="https://git-scm.com/docs/git-rev-parse.html#_specifying_revisions"
+                    rel="noopener noreferrer"
+                    target="_blank"
+                >
+                    Git revspec
+                </Link>{' '}
+                to enqueue a new auto-indexing job.
+            </div>
             <div className="form-inline">
-                <Label htmlFor="revlike">Git revlike</Label>
+                <Label htmlFor="revlike">Git revspec</Label>
 
                 <Input
                     id="revlike"

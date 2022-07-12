@@ -122,7 +122,7 @@
     "@mermaid-js/mermaid-cli": "^8.13.4",
     "@octokit/rest": "^16.36.0",
     "@peculiar/webcrypto": "^1.1.7",
-    "@percy/cli": "^1.2.1",
+    "@percy/cli": "^1.6.0",
     "@percy/puppeteer": "^2.0.0",
     "@pmmmwh/react-refresh-webpack-plugin": "0.5.0-rc.1",
     "@pollyjs/adapter": "^5.0.0",

@@ -1,8 +1,7 @@
 import { FunctionComponent, HTMLAttributes, PropsWithChildren, ReactElement } from 'react'
 
+import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronUpIcon from 'mdi-react/ChevronUpIcon'
 
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon } from '@sourcegraph/wildcard'
@@ -41,7 +40,7 @@ export function FilterCollapseSection(props: PropsWithChildren<FilterCollapseSec
                     <Icon
                         aria-hidden={true}
                         className={styles.collapseIcon}
-                        as={open ? ChevronUpIcon : ChevronDownIcon}
+                        svgPath={open ? mdiChevronUp : mdiChevronDown}
                     />
 
                     <span className={styles.buttonText}>{title}</span>
