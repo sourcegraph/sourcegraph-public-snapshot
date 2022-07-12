@@ -10,9 +10,6 @@ import (
 type PythonVersionedPackage struct {
 	Name    string
 	Version string
-
-	// The URL of the package to download. Possibly empty.
-	PackageURL string
 }
 
 func NewPythonVersionedPackage(name, version string) *PythonVersionedPackage {
