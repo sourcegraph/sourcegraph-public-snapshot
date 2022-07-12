@@ -14,21 +14,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/require"
 )
 
 func TestNewFeelingLuckySearchJob(t *testing.T) {
-	test := func(q string) string {
-		inputs := &run.SearchInputs{
-			UserSettings: &schema.Settings{},
-			Protocol:     search.Streaming,
-			PatternType:  query.SearchTypeLucky,
-		}
-		plan, _ := query.Pipeline(query.InitLiteral(q))
-		fj := NewFeelingLuckySearchJob(nil, inputs, plan)
+	test := func(input string) string {
+		q, _ := query.ParseStandard(input)
+		b, _ := query.ToBasicQuery(q)
+		g := NewGenerator(b, rulesNarrow, rulesWiden)
+
 		var autoQ *autoQuery
 		type want struct {
 			Description string
@@ -36,22 +31,22 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 		}
 		generated := []want{}
 
-		for _, next := range fj.generators {
-			for {
-				autoQ, next = next()
-				if autoQ == nil {
-					if next == nil {
-						// No job and generator is exhausted.
-						break
-					}
-					continue
-				}
-				generated = append(generated, want{Description: autoQ.description, Query: query.StringHuman(autoQ.query.ToParseTree())})
-				if next == nil {
-					break
-				}
+		for {
+			autoQ, g = g()
+			if autoQ != nil {
+				generated = append(
+					generated,
+					want{
+						Description: autoQ.description,
+						Query:       query.StringHuman(autoQ.query.ToParseTree()),
+					})
+			}
+
+			if g == nil {
+				break
 			}
 		}
+
 		result, _ := json.MarshalIndent(generated, "", "  ")
 		return string(result)
 	}
@@ -62,10 +57,6 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 
 	t.Run("trigger unordered patterns", func(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`context:global parse func`)))
-	})
-
-	t.Run("two basic jobs", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`context:global ((type:file parse func) or (type:commit parse func))`)))
 	})
 
 	t.Run("single pattern as lang", func(t *testing.T) {
@@ -148,16 +139,13 @@ func TestGeneratedSearchJob(t *testing.T) {
 
 	test := func(resultSize int) string {
 		setMockJobResultSize(resultSize)
-		inputs := &run.SearchInputs{
-			UserSettings: &schema.Settings{},
-			Protocol:     search.Streaming,
-			PatternType:  query.SearchTypeLucky,
-		}
-
 		q, _ := query.ParseStandard("test")
 		mockQuery, _ := query.ToBasicQuery(q)
-		j, _ := NewGeneratedSearchJob(inputs, &autoQuery{description: "test", query: mockQuery})
-		j.(*generatedSearchJob).Child = mockJob
+		notifier := &notifier{autoQuery: &autoQuery{description: "test", query: mockQuery}}
+		j := &generatedSearchJob{
+			Child:           mockJob,
+			NewNotification: notifier.New,
+		}
 		_, err := j.Run(context.Background(), job.RuntimeClients{}, streaming.NewAggregatingStream())
 		if err == nil {
 			return ""
