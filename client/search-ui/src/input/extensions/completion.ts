@@ -454,7 +454,7 @@ const FILTER_SUGGESTIONS: Completion[] = createFilterSuggestions(Object.keys(FIL
 )
 
 /**
- * This helper function creates a function suitable for CodeMirro's 'getMatch'
+ * This helper function creates a function suitable for CodeMirror's 'getMatch'
  * option. This is used to allow CodeMirror to highlight the matching part of
  * the label.
  * See https://codemirror.net/docs/ref/#autocomplete.CompletionResult.getMatch
@@ -468,7 +468,7 @@ function createMatchFunction(token: Filter): ((completion: Completion) => number
         // regex characters in invalid positions. In that case we don't
         // highlight.
         const pattern = new RegExp(token.value.value, 'ig')
-        return completion => Array.from(completion.label.matchAll(pattern), matchToIndexTupel).flat()
+        return completion => Array.from(completion.label.matchAll(pattern), matchToIndexTuple).flat()
     } catch {
         return undefined
     }
@@ -478,7 +478,7 @@ function createMatchFunction(token: Filter): ((completion: Completion) => number
  * Converts a regular expression match into an (possibly empty) number tuple
  * representing the start index and the end index of the match.
  */
-function matchToIndexTupel(match: RegExpMatchArray): number[] {
+function matchToIndexTuple(match: RegExpMatchArray): number[] {
     return match.index !== undefined ? [match.index, match.index + match[0].length] : []
 }
 
