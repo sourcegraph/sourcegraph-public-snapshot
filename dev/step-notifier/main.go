@@ -24,6 +24,15 @@ type Build struct {
 	Jobs []buildkite.Job
 }
 
+func (b *Build) hasFailed() bool {
+	for _, j := range b.Jobs {
+		if j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0 {
+			return true
+		}
+	}
+	return false
+}
+
 func NewBuildFrom(event *BuildEvent) *Build {
 	return &Build{
 		Build: event.Build,
@@ -39,17 +48,6 @@ type BuildEvent struct {
 
 func (b *BuildEvent) IsBuildFinished() bool {
 	return b.Event == "build.finished"
-}
-
-func (b *BuildEvent) HasFailed() bool {
-	if b.Job.ExitStatus == nil {
-		return false
-	}
-	if b.Job.SoftFailed || *b.Job.ExitStatus == 0 {
-		return false
-	}
-
-	return true
 }
 
 func (b *BuildEvent) BuildNumber() int {
@@ -191,12 +189,8 @@ func readBody[T any](req *http.Request, target T) error {
 	return nil
 }
 
-func (s *BuildTrackingServer) shouldNotify(event *BuildEvent) bool {
-	if !event.IsBuildFinished() {
-		log.Printf("build %d isn't finished - not notifying", *event.Build.Number)
-		return false
-	}
-	return true
+func isFailedJob(j *buildkite.Job) bool {
+	return j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0
 }
 
 func (s *BuildTrackingServer) notify(build *Build) error {
@@ -205,8 +199,11 @@ func (s *BuildTrackingServer) notify(build *Build) error {
 		return nil
 	}
 
-	log.Printf("sending notifcation for failed build %d", *build.Number)
-	return s.slack.sendNotification(build)
+	if build.hasFailed() {
+		log.Printf("sending notifcation for failed build %d", *build.Number)
+		return s.slack.sendNotification(build)
+	}
+	return nil
 }
 
 func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
@@ -215,7 +212,7 @@ func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 		return
 	}
 	s.store.Add(event)
-	if s.shouldNotify(event) {
+	if event.IsBuildFinished() {
 		build := s.store.GetByBuildNumber(*event.Build.Number)
 		s.notify(&build)
 		// since we've sent a notification of the job we can remove it
