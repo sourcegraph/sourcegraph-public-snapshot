@@ -6,6 +6,8 @@ import { SearchPatternType } from '@sourcegraph/search'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { usePrependStyles } from '@sourcegraph/storybook'
 
+import { callJava } from '../bridge-mock/call-java-mock'
+
 import { App } from './App'
 
 import globalStyles from '../index.scss'
@@ -16,6 +18,8 @@ const config: Meta = {
     title: 'jetbrains/App',
     decorators: [decorator],
 }
+
+window.callJava = callJava
 
 export default config
 
@@ -54,5 +58,6 @@ JetBrainsPluginApp.parameters = {
     chromatic: {
         enableDarkMode: true,
         disableSnapshot: false,
+        delay: 10000,
     },
 }
