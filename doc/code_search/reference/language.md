@@ -710,7 +710,7 @@ Search only inside dependencies of repositories matching the given `regex@rev:a:
 ComplexDiagram(
     Terminal("description:"),
     Terminal("("),
-    Terminal("regexp", {href: "#regexp"}),
+    Terminal("regexp", {href: "#regular-expression"}),
     Terminal(")")).addTo();
 </script>
 
