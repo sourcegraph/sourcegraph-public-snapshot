@@ -85,7 +85,13 @@ func (s npmPackagesSyncer) GetPackage(ctx context.Context, name string) (reposou
 }
 
 func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
-	tgz, err := npm.FetchSources(ctx, s.client, dep.(*reposource.NpmVersionedPackage))
+	npmDep := dep.(*reposource.NpmVersionedPackage)
+	f, err := s.client.GetDependencyInfo(ctx, npmDep)
+	if err != nil {
+		return err
+	}
+	npmDep.TarballURL = f.Dist.TarballURL
+	tgz, err := npm.FetchSources(ctx, s.client, npmDep)
 	if err != nil {
 		return errors.Wrap(err, "fetch tarball")
 	}
