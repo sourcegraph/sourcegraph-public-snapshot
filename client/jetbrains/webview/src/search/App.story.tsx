@@ -1,6 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { useDarkMode } from 'storybook-dark-mode'
 
+import { SearchPatternType } from '@sourcegraph/search'
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { usePrependStyles } from '@sourcegraph/storybook'
 
@@ -29,7 +30,13 @@ export const JetBrainsPluginApp: Story = () => {
                         instanceURL="https://sourcegraph.com/"
                         isGlobbingEnabled={false}
                         accessToken=""
-                        initialSearch={null}
+                        initialSearch={{
+                            query:
+                                'repo:^github\\.com/sourcegraph/sourcegraph$@03af036 file:^client/storybook/src/main\\.ts',
+                            caseSensitive: false,
+                            patternType: SearchPatternType.standard,
+                            selectedSearchContextSpec: 'global',
+                        }}
                         onOpen={async () => {}}
                         onPreviewChange={async () => {}}
                         onPreviewClear={async () => {}}
