@@ -255,11 +255,11 @@ func (squirrel *SquirrelService) getFieldPython(ctx context.Context, object Node
 	return squirrel.lookupFieldPython(ctx, ty, field)
 }
 
-func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty Type, field string) (ret *Node, err error) {
+func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeJava, field string) (ret *Node, err error) {
 	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
 
 	switch ty2 := ty.(type) {
-	case ClassType:
+	case ClassTypeJava:
 		body := ty2.def.ChildByFieldName("body")
 		if body == nil {
 			return nil, nil
@@ -306,10 +306,10 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty Type,
 			}
 		}
 		return nil, nil
-	case FnType:
+	case FnTypeJava:
 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.variant()))
 		return nil, nil
-	case PrimType:
+	case PrimTypeJava:
 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.variant()))
 		return nil, nil
 	default:
@@ -318,10 +318,10 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty Type,
 	}
 }
 
-func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret Type, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyTypeStringer(&ret))()
+func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret TypeJava, err error) {
+	defer squirrel.onCall(node, String(node.Type()), lazyTypeJavaStringer(&ret))()
 
-	onIdent := func() (Type, error) {
+	onIdent := func() (TypeJava, error) {
 		found, err := squirrel.getDefPython(ctx, node)
 		if err != nil {
 			return nil, err
@@ -455,7 +455,7 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentModulePython(ctx contex
 	return nil, nil
 }
 
-func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) (Type, error) {
+func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) (TypeJava, error) {
 	parent := def.Node.Parent()
 	if parent == nil {
 		return nil, nil
@@ -488,12 +488,12 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 		fmt.Println("TODO defToTypePython:", parent.Type())
 		return nil, nil
 	case "class_definition":
-		return (Type)(ClassType{def: swapNode(def, parent)}), nil
+		return (TypeJava)(ClassTypeJava{def: swapNode(def, parent)}), nil
 	case "function_definition":
 		retTyNode := parent.ChildByFieldName("type")
 		if retTyNode == nil {
 			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
-			return (Type)(FnType{
+			return (TypeJava)(FnTypeJava{
 				ret:  nil,
 				noad: swapNode(def, parent),
 			}), nil
@@ -502,7 +502,7 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 		if err != nil {
 			return nil, err
 		}
-		return (Type)(FnType{
+		return (TypeJava)(FnTypeJava{
 			ret:  retTy,
 			noad: swapNode(def, parent),
 		}), nil
