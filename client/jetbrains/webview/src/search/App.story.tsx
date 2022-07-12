@@ -36,8 +36,7 @@ export const JetBrainsPluginApp: Story = () => {
                         isGlobbingEnabled={false}
                         accessToken=""
                         initialSearch={{
-                            query:
-                                'repo:^github\\.com/sourcegraph/sourcegraph$@03af036 file:^client/storybook/src/main\\.ts',
+                            query: 'repo:^github\\.com/sourcegraph/sourcegraph$@03af036 file:main\\.ts',
                             caseSensitive: false,
                             patternType: SearchPatternType.standard,
                             selectedSearchContextSpec: 'global',
