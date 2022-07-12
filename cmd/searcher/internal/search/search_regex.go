@@ -319,9 +319,9 @@ func regexSearch(ctx context.Context, rg *readerGrep, zf *zipFile, patternMatche
 	go func() {
 		<-ctx.Done()
 		contextCanceled.Store(true)
-		return nil
+		close(done)
 	}()
-	defer func() { <-done }()
+	defer func() { cancel(); <-done }()
 
 	// Start workers. They read from files and write to matches.
 	for i := 0; i < numWorkers; i++ {
