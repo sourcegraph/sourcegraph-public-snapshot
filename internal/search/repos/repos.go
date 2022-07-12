@@ -214,21 +214,16 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		}
 	}
 
-	var res struct {
-		sync.Mutex
-		Resolved
-		errors.MultiError
-	}
-
-	res.Resolved = Resolved{
-		RepoRevs: make([]*search.RepositoryRevisions, len(repos)),
-		Next:     next,
-	}
+	var (
+		mu              sync.Mutex
+		repoRevs        = make([]*search.RepositoryRevisions, 0, len(repos))
+		missingRepoRevs []*search.RepositoryRevisions
+	)
 
 	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
 
-	for i, repo := range repos {
-		repo, i := repo, i // avoid race
+	for _, repo := range repos {
+		repo := repo // avoid race
 
 		g.Go(func(ctx context.Context) error {
 			var revs []search.RevisionSpecifier
@@ -249,19 +244,22 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 					// if multiple specified revisions clash, report this usefully:
 					if len(revs) == 0 && clashingRevs != nil {
-						res.Lock()
-						res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
+						mu.Lock()
+						missingRepoRevs = append(missingRepoRevs, &search.RepositoryRevisions{
 							Repo: repo,
 							Revs: clashingRevs,
 						})
-						res.Unlock()
+						mu.Unlock()
 					}
 				}
 			}
 
 			// We do in place filtering to reduce allocations. Common path is no
 			// filtering of revs.
-			filteredRevs := revs[:0]
+			var (
+				filteredRevs = revs[:0]
+				filterErr    error
+			)
 
 			// Check if the repository actually has the revisions that the user specified.
 			for _, rev := range revs {
@@ -295,17 +293,18 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 				commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
-						return err
+						mu.Lock()
+						filterErr = errors.Append(filterErr, err)
 					}
 
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 						// The revspec does not exist, so don't include it, and report that it's missing.
-						res.Lock()
-						res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
+						mu.Lock()
+						missingRepoRevs = append(missingRepoRevs, &search.RepositoryRevisions{
 							Repo: repo,
 							Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
 						})
-						res.Unlock()
+						mu.Unlock()
 					}
 					// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
 					// if there is one.
@@ -315,9 +314,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 				if op.CommitAfter != "" {
 					if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
-							res.Lock()
-							res.MultiError = errors.Append(res.MultiError, err)
-							res.Unlock()
+							mu.Lock()
+							filterErr = errors.Append(filterErr, err)
+							mu.Unlock()
 						}
 						continue
 					} else if !hasCommitAfter {
@@ -329,36 +328,24 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 			}
 
 			if len(filteredRevs) > 0 {
-				res.Lock()
-				res.RepoRevs[i] = &search.RepositoryRevisions{
+				mu.Lock()
+				repoRevs = append(repoRevs, &search.RepositoryRevisions{
 					Repo: repo,
 					Revs: filteredRevs,
-				}
-				res.Unlock()
+				})
+				mu.Unlock()
 			}
 
-			return nil
+			return filterErr
 		})
 	}
 
-	if err = g.Wait(); err != nil {
-		return Resolved{}, err
-	}
-
-	// Remove any repos that failed to have their revs validated. We do this to preserve the original order.
-	valid := res.RepoRevs[:0]
-	for _, r := range res.RepoRevs {
-		if r != nil {
-			valid = append(valid, r)
-		}
-	}
-	res.RepoRevs = valid
+	err = g.Wait()
 
 	tr.LazyPrintf("Associate/validate revs - done")
 
-	err = res.MultiError
-	if len(res.MissingRepoRevs) > 0 {
-		err = errors.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
+	if len(missingRepoRevs) > 0 {
+		err = errors.Append(err, &MissingRepoRevsError{Missing: missingRepoRevs})
 	}
 
 	if len(dependencyNotFoundRevs) > 0 {
@@ -367,7 +354,11 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		}
 	}
 
-	return res.Resolved, err
+	return Resolved{
+		RepoRevs:        repoRevs,
+		MissingRepoRevs: missingRepoRevs,
+		Next:            next,
+	}, err
 }
 
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
