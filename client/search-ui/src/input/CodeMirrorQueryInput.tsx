@@ -12,6 +12,7 @@ import {
     RangeSetBuilder,
     MapMode,
     Compartment,
+    Range,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -22,6 +23,7 @@ import {
     ViewPlugin,
     hoverTooltip,
     TooltipView,
+    WidgetType,
 } from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
@@ -466,6 +468,24 @@ const querySyntaxHighlighting = EditorView.decorations.compute([decoratedTokens]
     return builder.finish()
 })
 
+class PlaceholderWidget extends WidgetType {
+    constructor(private placeholder: string) {
+        super()
+    }
+
+    /* eslint-disable-next-line id-length */
+    public eq(other: PlaceholderWidget): boolean {
+        return this.placeholder === other.placeholder
+    }
+
+    public toDOM(): HTMLElement {
+        const span = document.createElement('span')
+        span.className = styles.placeholder
+        span.textContent = this.placeholder
+        return span
+    }
+}
+
 // Determines whether the cursor is over a filter and if yes, decorates that
 // filter.
 const highlightFocusedFilter = ViewPlugin.define(
@@ -478,15 +498,34 @@ const highlightFocusedFilter = ViewPlugin.define(
                     const position = update.state.selection.main.head
                     const focusedFilter = query.tokens.find(
                         (token): token is Filter =>
-                            // Inclusive end so that the filter is highlighed when
+                            // Inclusive end so that the filter is highlighted when
                             // the cursor is positioned directly after the value
                             token.type === 'filter' && token.range.start <= position && token.range.end >= position
                     )
-                    this.decorations = focusedFilter
-                        ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-                        : Decoration.none
+                    const decorations: Range<Decoration>[] = []
+                    if (focusedFilter) {
+                        decorations.push(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
+
+                        if (!focusedFilter.value?.value) {
+                            const resolvedFilter = resolveFilter(focusedFilter.field.value)
+                            if (resolvedFilter?.definition.placeholder) {
+                                decorations.push(
+                                    Decoration.widget({
+                                        widget: new PlaceholderWidget(resolvedFilter.definition.placeholder),
+                                        side: 1, // show after the cursor
+                                    }).range(focusedFilter.range.end)
+                                )
+                            }
+                        }
+                    }
+                    this.decorations = Decoration.set(decorations)
                 } else {
-                    this.decorations = Decoration.none
+                    // Ideally we would remove the decoration when the input
+                    // looses focus, but there is a bug that re-focuses the
+                    // input when a filter is highlighted and the menu is
+                    // clicked.
+                    // See https://github.com/sourcegraph/sourcegraph/issues/38677
+                    // this.decorations = Decoration.none
                 }
             }
         },

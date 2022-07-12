@@ -20,6 +20,7 @@ import {
     Position,
     PageSelector,
     H3,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -175,12 +176,9 @@ const InvitationItem: React.FunctionComponent<React.PropsWithChildren<Invitation
                 >
                     <div className={styles.avatarContainer}>
                         {invite.recipient && (
-                            <UserAvatar
-                                size={24}
-                                className={styles.avatar}
-                                user={invite.recipient}
-                                data-tooltip={invite.recipient.displayName || invite.recipient.username}
-                            />
+                            <Tooltip content={invite.recipient.displayName || invite.recipient.username}>
+                                <UserAvatar size={24} className={styles.avatar} user={invite.recipient} />
+                            </Tooltip>
                         )}
                         {!invite.recipient && invite.recipientEmail && <EmailIcon className={styles.emailIcon} />}
                     </div>
