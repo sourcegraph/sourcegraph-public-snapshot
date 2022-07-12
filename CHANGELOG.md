@@ -22,6 +22,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
 - Code Insights over some repos now get 12 historic data points in addition to a current daily value and future points that align with the defined interval. [#37756](https://github.com/sourcegraph/sourcegraph/pull/37756)
 - A Kustomize overlay and Helm override file to apply envoy filter for networking error caused by service mesh. [#4150](https://github.com/sourcegraph/deploy-sourcegraph/pull/4150) & [#148](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/148)
+- Resource Estimator: Ability to export the estimated results as override file for Helm and Docker Compose. [#18](https://github.com/sourcegraph/resource-estimator/pull/18)
 
 ### Changed
 
