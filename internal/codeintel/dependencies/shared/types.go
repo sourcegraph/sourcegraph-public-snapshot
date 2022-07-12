@@ -51,7 +51,7 @@ func (d PackageDependencyLiteral) Scheme() string            { return d.SchemeVa
 func (d PackageDependencyLiteral) PackageSyntax() string     { return d.PackageSyntaxValue }
 func (d PackageDependencyLiteral) PackageVersion() string    { return d.PackageVersionValue }
 
-func SerializePackageDependencies(deps []reposource.PackageVersion) []PackageDependency {
+func SerializePackageDependencies(deps []reposource.VersionedPackage) []PackageDependency {
 	serializableRepoDeps := make([]PackageDependency, 0, len(deps))
 	for _, dep := range deps {
 		serializableRepoDeps = append(serializableRepoDeps, SerializePackageDependency(dep))
@@ -60,7 +60,7 @@ func SerializePackageDependencies(deps []reposource.PackageVersion) []PackageDep
 	return serializableRepoDeps
 }
 
-func SerializePackageDependency(dep reposource.PackageVersion) PackageDependency {
+func SerializePackageDependency(dep reposource.VersionedPackage) PackageDependency {
 	return PackageDependencyLiteral{
 		RepoNameValue:          dep.RepoName(),
 		GitTagFromVersionValue: dep.GitTagFromVersion(),

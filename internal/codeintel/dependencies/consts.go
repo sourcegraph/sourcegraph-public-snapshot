@@ -5,7 +5,7 @@ import "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/share
 const (
 	JVMPackagesScheme    = shared.JVMPackagesScheme
 	NpmPackagesScheme    = shared.NpmPackagesScheme
-	GoModulesScheme      = shared.GoModulesScheme
+	GoPackagesScheme     = shared.GoPackagesScheme
 	PythonPackagesScheme = shared.PythonPackagesScheme
 	RustPackagesScheme   = shared.RustPackagesScheme
 )

@@ -14,7 +14,7 @@ import (
 // yarn.lock
 //
 
-func parseYarnLockFile(r io.Reader) (deps []reposource.PackageVersion, graph *DependencyGraph, err error) {
+func parseYarnLockFile(r io.Reader) (deps []reposource.VersionedPackage, graph *DependencyGraph, err error) {
 	var (
 		yarnLockfileV1 bool
 
@@ -23,11 +23,11 @@ func parseYarnLockFile(r io.Reader) (deps []reposource.PackageVersion, graph *De
 		skip        bool
 		errs        errors.MultiError
 
-		current             *reposource.NpmPackageVersion
+		current             *reposource.NpmVersionedPackage
 		parsingDependencies bool
 
-		dependencies        = map[*reposource.NpmPackageVersion][]npmDependency{}
-		dependencyToPackage = map[npmDependency]*reposource.NpmPackageVersion{}
+		dependencies        = map[*reposource.NpmVersionedPackage][]npmDependency{}
+		dependencyToPackage = map[npmDependency]*reposource.NpmVersionedPackage{}
 	)
 
 	/* yarn.lock
@@ -159,7 +159,7 @@ type constraint struct {
 	Version  string // e.g. "~1.2.3 || 1.2.0"
 }
 
-func buildPackage(name, version string, constraints []string) (*reposource.NpmPackageVersion, []npmDependency, error) {
+func buildPackage(name, version string, constraints []string) (*reposource.NpmVersionedPackage, []npmDependency, error) {
 	if name == "" {
 		return nil, nil, errors.New("invalid yarn.lock format: version not following a name")
 	}
@@ -168,7 +168,7 @@ func buildPackage(name, version string, constraints []string) (*reposource.NpmPa
 		return nil, nil, errors.New("invalid yarn.lock format: version not following a name with constraints")
 	}
 
-	pkg, err := reposource.ParseNpmPackageVersion(name + "@" + version)
+	pkg, err := reposource.ParseNpmVersionedPackage(name + "@" + version)
 	if err != nil {
 		return nil, nil, err
 	}

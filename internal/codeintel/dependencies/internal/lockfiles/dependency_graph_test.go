@@ -98,20 +98,20 @@ func TestDependencyGraph(t *testing.T) {
 	})
 }
 
-var _ reposource.PackageVersion = &testPkg{}
+var _ reposource.VersionedPackage = &testPkg{}
 
 type testPkg struct {
 	name    string
 	version string
 }
 
-func (t *testPkg) PackageVersionSyntax() string { return t.name }
-func (t *testPkg) PackageSyntax() string        { return t.name }
-func (t *testPkg) RepoName() api.RepoName       { return api.RepoName("test/" + t.name) }
-func (t *testPkg) PackageVersion() string       { return t.version }
-func (t *testPkg) Scheme() string               { return "test" }
-func (t *testPkg) Description() string          { return "" }
-func (t *testPkg) GitTagFromVersion() string    { return t.version }
-func (t *testPkg) Less(other reposource.PackageVersion) bool {
-	return t.PackageSyntax() < other.PackageSyntax()
+func (t *testPkg) VersionedPackageSyntax() string { return t.name }
+func (t *testPkg) PackageSyntax() string          { return t.name }
+func (t *testPkg) RepoName() api.RepoName         { return api.RepoName("test/" + t.name) }
+func (t *testPkg) PackageVersion() string         { return t.version }
+func (t *testPkg) Scheme() string                 { return "test" }
+func (t *testPkg) Description() string            { return "" }
+func (t *testPkg) GitTagFromVersion() string      { return t.version }
+func (t *testPkg) Less(other reposource.VersionedPackage) bool {
+	return t.PackageSyntax() < other.VersionedPackageSyntax()
 }
