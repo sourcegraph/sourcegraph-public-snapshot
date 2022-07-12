@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
 var updateCommand = &cli.Command{
@@ -23,10 +24,13 @@ var updateCommand = &cli.Command{
     sg version changelog -next`,
 	Category: CategoryUtil,
 	Action: func(cmd *cli.Context) error {
+		p := std.Out.Pending(output.Styled(output.StylePending, "Downloading latest sg release..."))
 		if _, err := updateToPrebuiltSG(cmd.Context); err != nil {
+			p.Destroy()
 			return err
 		}
-		std.Out.WriteSuccessf("sg has been updated!")
+		p.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "sg has been updated!"))
+
 		std.Out.Write("To see what's new, run 'sg version changelog'.")
 		return nil
 	},
