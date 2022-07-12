@@ -10,8 +10,9 @@ import {
     QueryState,
     SearchPatternType,
 } from '@sourcegraph/search'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
     LATEST_VERSION,
@@ -24,7 +25,6 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/sha
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
-import { EventLogger } from '../telemetry/EventLogger'
 
 import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'
 import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
@@ -47,7 +47,7 @@ interface Props {
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     initialSearch: Search | null
     authenticatedUser: AuthenticatedUser | null
-    telemetryService: EventLogger
+    telemetryService: TelemetryService
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
