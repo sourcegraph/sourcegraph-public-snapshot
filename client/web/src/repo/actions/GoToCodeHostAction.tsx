@@ -20,6 +20,7 @@ import {
     PopoverTail,
     PopoverOpenEvent,
     Icon,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
@@ -255,17 +256,18 @@ export const GoToCodeHostAction: React.FunctionComponent<
         id: TARGET_ID,
         onClick,
         onAuxClick: onClick,
-        'data-tooltip': descriptiveText,
-        'aria-label': descriptiveText,
         className: 'btn-icon test-go-to-code-host',
+        'aria-label': descriptiveText,
     }
 
     if (hijackLink) {
         return (
             <Popover isOpen={isPopoverOpen} onOpenChange={onToggle}>
-                <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
-                    <Icon as={exportIcon} aria-hidden={true} />
-                </PopoverTrigger>
+                <Tooltip content={descriptiveText}>
+                    <PopoverTrigger as={RepoHeaderActionAnchor} {...commonProps}>
+                        <Icon as={exportIcon} aria-hidden={true} />
+                    </PopoverTrigger>
+                </Tooltip>
                 <InstallBrowserExtensionPopover
                     url={url}
                     serviceKind={externalURL.serviceKind}
@@ -279,9 +281,11 @@ export const GoToCodeHostAction: React.FunctionComponent<
     }
 
     return (
-        <RepoHeaderActionAnchor {...commonProps}>
-            <Icon as={exportIcon} aria-hidden={true} />
-        </RepoHeaderActionAnchor>
+        <Tooltip content={descriptiveText}>
+            <RepoHeaderActionAnchor {...commonProps}>
+                <Icon as={exportIcon} aria-hidden={true} />
+            </RepoHeaderActionAnchor>
+        </Tooltip>
     )
 }
 

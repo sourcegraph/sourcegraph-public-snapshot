@@ -10,7 +10,7 @@ exports[`FileDecorator renders after text content 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after"
-        data-placement="bottom"
+        data-state="closed"
       >
         src decoration
       </small>
@@ -29,18 +29,19 @@ exports[`FileDecorator renders both after text content and meter 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after"
-        data-placement="bottom"
+        data-state="closed"
       >
         src decoration
       </small>
-      <div>
+      <div
+        data-state="closed"
+      >
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
         />
         <meter
           aria-hidden="true"
           class="test-file-decoration-meter meter ml-2"
-          data-placement="bottom"
           high="60"
           low="50"
           max="100"
@@ -62,14 +63,15 @@ exports[`FileDecorator renders meter 1`] = `
     <div
       class="d-flex align-items-center fileDecoration"
     >
-      <div>
+      <div
+        data-state="closed"
+      >
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
         />
         <meter
           aria-hidden="true"
           class="test-file-decoration-meter meter"
-          data-placement="bottom"
           high="60"
           low="50"
           max="100"
@@ -93,7 +95,7 @@ exports[`FileDecorator respects active state 1`] = `
     >
       <small
         class="text-monospace font-weight-normal test-file-decoration-text after afterActive"
-        data-placement="bottom"
+        data-state="closed"
       >
         src decoration
       </small>

@@ -1,7 +1,7 @@
 import React, { useCallback, useRef, useState } from 'react'
 
+import { mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import * as uuid from 'uuid'
 
 import { ErrorLike } from '@sourcegraph/common'
@@ -113,7 +113,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
                         Create notebook
                     </Button>
                     <MenuButton variant="primary" className={styles.dropdownButton}>
-                        <Icon as={ChevronDownIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                         <VisuallyHidden>Actions</VisuallyHidden>
                     </MenuButton>
                 </ButtonGroup>

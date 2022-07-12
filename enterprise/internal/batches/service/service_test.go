@@ -2428,6 +2428,25 @@ changesetTemplate:
 			}
 		})
 
+		t.Run("read-only changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:             rs[0].ID,
+				PublicationState: btypes.ChangesetPublicationStatePublished,
+				ExternalState:    btypes.ChangesetExternalStateReadOnly,
+				BatchChange:      batchChange.ID,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			assert.NoError(t, err)
+			assert.Empty(t, bulkOperations)
+		})
+
 		t.Run("draft, archived and failed changesets with no common bulk operation", func(t *testing.T) {
 			failedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
 				Repo:             rs[0].ID,

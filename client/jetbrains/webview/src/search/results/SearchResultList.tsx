@@ -61,7 +61,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                         .then(() => {})
                         .catch(() => {})
                 } else {
-                    console.log(`No match found for result id: ${resultId}`)
+                    console.log(`No match found for result id for selection: ${resultId}`)
                 }
             } else {
                 onPreviewClear()
@@ -71,6 +71,28 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
             setSelectedResultId(resultId)
         },
         [onPreviewChange, onPreviewClear, matchIdToMatchMap]
+    )
+
+    const openResult = useCallback(
+        (resultId: null | string) => {
+            if (resultId !== null) {
+                const matchId = getMatchIdForResult(resultId)
+                const match = matchIdToMatchMap.get(matchId)
+                if (match) {
+                    onOpen(
+                        match,
+                        match.type === 'content' || match.type === 'symbol'
+                            ? getLineOrSymbolMatchIndexForFileResult(resultId)
+                            : undefined
+                    )
+                        .then(() => {})
+                        .catch(() => {})
+                } else {
+                    console.log(`No match found for result id for opening: ${resultId}`)
+                }
+            }
+        },
+        [onOpen, matchIdToMatchMap]
     )
 
     useEffect(() => {
@@ -161,6 +183,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 match={match}
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
+                                openResult={openResult}
                             />
                         )
                     case 'content':
@@ -170,6 +193,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 match={match}
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
+                                openResult={openResult}
                             />
                         )
                     case 'symbol':
@@ -179,6 +203,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 match={match}
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
+                                openResult={openResult}
                             />
                         )
                     case 'repo':
@@ -188,6 +213,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 match={match}
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
+                                openResult={openResult}
                             />
                         )
                     case 'path':
@@ -197,6 +223,7 @@ export const SearchResultList: React.FunctionComponent<Props> = ({
                                 match={match}
                                 selectedResult={selectedResultId}
                                 selectResult={selectResult}
+                                openResult={openResult}
                             />
                         )
                     default:

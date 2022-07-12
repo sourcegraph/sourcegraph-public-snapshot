@@ -30,7 +30,7 @@ describe('Input', () => {
               <div
                 aria-label="Loading"
                 aria-live="polite"
-                class="loadingSpinner spinner"
+                class="mdi-icon loadingSpinner spinner"
                 role="img"
               />
             </div>
@@ -71,7 +71,7 @@ describe('Input', () => {
                 <div
                   aria-label="Loading"
                   aria-live="polite"
-                  class="loadingSpinner spinner"
+                  class="mdi-icon loadingSpinner spinner"
                   role="img"
                 />
               </div>

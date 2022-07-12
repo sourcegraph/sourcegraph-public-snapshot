@@ -161,12 +161,12 @@ func TestNewPackage(t *testing.T) {
 		{
 			name: "go no-op",
 			in: shared.Package{
-				Scheme:  dependencies.GoModulesScheme,
+				Scheme:  dependencies.GoPackagesScheme,
 				Name:    "github.com/tsenart/vegeta/v12",
 				Version: "12.7.0",
 			},
 			out: precise.Package{
-				Scheme:  dependencies.GoModulesScheme,
+				Scheme:  dependencies.GoPackagesScheme,
 				Name:    "github.com/tsenart/vegeta/v12",
 				Version: "12.7.0",
 			},
