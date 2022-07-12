@@ -1,8 +1,9 @@
 package query
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestDescription(t *testing.T) {
