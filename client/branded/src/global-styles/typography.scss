@@ -1,7 +1,6 @@
 :root {
     --monospace-font-family: SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;
     --lead-font-size: calc(var(--font-size-base) * 1.25);
-    --hr-border-color: var(--border-color);
     --hr-margin-y: 0.25rem;
     --line-height-typography: 1.2;
 }
@@ -149,7 +148,7 @@ hr {
     margin-top: var(--hr-margin-y);
     margin-bottom: var(--hr-margin-y);
     border: 0;
-    border-top: 1px solid var(--hr-border-color);
+    border-top: 1px solid var(--border-color);
 }
 
 mark,
