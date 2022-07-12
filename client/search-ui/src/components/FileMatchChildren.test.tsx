@@ -11,6 +11,7 @@ import {
     NOOP_SETTINGS_CASCADE,
     HIGHLIGHTED_FILE_LINES,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
 import { FileMatchChildren } from './FileMatchChildren'
 

@@ -12,6 +12,7 @@ import {
     NOOP_SETTINGS_CASCADE,
     RESULT,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
 import { FileSearchResult, limitGroup } from './FileSearchResult'
 
