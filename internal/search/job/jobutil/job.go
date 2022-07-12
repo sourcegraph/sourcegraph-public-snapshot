@@ -43,7 +43,10 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
+		newJob := func(b query.Basic) (job.Job, error) {
+			return NewBasicJob(inputs, b)
+		}
+		jobTree = NewFeelingLuckySearchJob(jobTree, newJob, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil

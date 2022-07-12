@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -27,20 +26,34 @@ import (
 // queries that alter its interpretation (e.g., search literally for quotes or
 // not, attempt to search the pattern as a regexp, and so on). There is no
 // random choice when applying rules.
-func NewFeelingLuckySearchJob(initialJob job.Job, inputs *run.SearchInputs, plan query.Plan) *FeelingLuckySearchJob {
+func NewFeelingLuckySearchJob(initialJob job.Job, newJob newJob, plan query.Plan) *FeelingLuckySearchJob {
 	generators := make([]next, 0, len(plan))
 	for _, b := range plan {
 		generators = append(generators, NewGenerator(b, rulesNarrow, rulesWiden))
 	}
 
-	jobGenerator := &jobGenerator{SearchInputs: inputs}
+	newGeneratedJob := func(autoQ *autoQuery) job.Job {
+		child, err := newJob(autoQ.query)
+		if err != nil {
+			return nil
+		}
+
+		notifier := &notifier{autoQuery: autoQ}
+
+		return &generatedSearchJob{
+			Child:           child,
+			NewNotification: notifier.New,
+		}
+	}
 
 	return &FeelingLuckySearchJob{
 		initialJob:      initialJob,
 		generators:      generators,
-		newGeneratedJob: jobGenerator.New,
+		newGeneratedJob: newGeneratedJob,
 	}
 }
+
+type newJob func(query.Basic) (job.Job, error)
 
 // FeelingLuckySearchJob represents a lucky search. Note `newGeneratedJob`
 // returns a job given an autoQuery. It is a function so that generated queries
@@ -50,21 +63,6 @@ type FeelingLuckySearchJob struct {
 	initialJob      job.Job
 	generators      []next
 	newGeneratedJob func(*autoQuery) job.Job
-}
-
-// jobGenerator stores static values that should not be exposed to runtime
-// concerns. jobGenerator exposes a method `New` for constructing jobs that
-// require runtime information.
-type jobGenerator struct {
-	*run.SearchInputs
-}
-
-func (g *jobGenerator) New(autoQ *autoQuery) job.Job {
-	j, err := NewGeneratedSearchJob(g.SearchInputs, autoQ)
-	if err != nil {
-		return nil
-	}
-	return j
 }
 
 func (f *FeelingLuckySearchJob) Run(ctx context.Context, clients job.RuntimeClients, parentStream streaming.Sender) (alert *search.Alert, err error) {
@@ -687,20 +685,6 @@ func patternsToCodeHostFilters(b query.Basic) *query.Basic {
 	}
 
 	return &newBasic
-}
-
-func NewGeneratedSearchJob(inputs *run.SearchInputs, autoQ *autoQuery) (job.Job, error) {
-	child, err := NewBasicJob(inputs, autoQ.query)
-	if err != nil {
-		return nil, err
-	}
-
-	notifier := &notifier{autoQuery: autoQ}
-
-	return &generatedSearchJob{
-		Child:           child,
-		NewNotification: notifier.New,
-	}, nil
 }
 
 // generatedSearchJob represents a generated search at run time. Note
