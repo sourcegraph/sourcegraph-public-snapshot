@@ -167,7 +167,7 @@ func TestSentryTunnel(t *testing.T) {
 	router := mux.NewRouter()
 	addSentry(router)
 
-	t.Run("POST /_sentry_tunnel", func(t *testing.T) {
+	t.Run("POST sentry_tunnel", func(t *testing.T) {
 		t.Run("With a valid event", func(t *testing.T) {
 			ch := make(chan struct{})
 			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -223,7 +223,7 @@ func TestSentryTunnel(t *testing.T) {
 			}
 		})
 	})
-	t.Run("GET /_sentry_tunnel", func(t *testing.T) {
+	t.Run("GET sentry_tunnel", func(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/sentry_tunnel", nil)
 		router.ServeHTTP(rec, req)
