@@ -3,8 +3,7 @@ import React, { useState, useCallback } from 'react'
 import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage, Icon, Link, Text } from '@sourcegraph/wildcard'
-import { VIEWPORT_XL } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
