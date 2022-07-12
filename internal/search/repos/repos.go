@@ -245,6 +245,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}, errs
 }
 
+// associateReposWithRevs re-associates revisions with the repositories fetched from the db
 func (r *Resolver) associateReposWithRevs(
 	repos []types.MinimalRepo,
 	dependencyRevs map[api.RepoName][]search.RevisionSpecifier,
@@ -310,6 +311,9 @@ func (r *Resolver) associateReposWithRevs(
 	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
 }
 
+// filterRepoRevs filters the revisions on each of a set of RepositoryRevisionsto ensure that:
+// 1) the revision exists and is resolvable on the given repository
+// 2) any repo-level filters (e.g. `repo:contains.commit.after()`) apply to this repo/rev combo.
 func (r *Resolver) filterRepoRevs(
 	ctx context.Context,
 	repoRevs []*search.RepositoryRevisions,
