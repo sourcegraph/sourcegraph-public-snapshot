@@ -345,53 +345,32 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 			return squirrel.getTypeDefPython(ctx, swapNode(node, child))
 		}
 		return nil, nil
-	// case "type_identifier":
-	// 	if node.Content(node.Contents) == "var" {
-	// 		localVariableDefinition := node.Parent()
-	// 		if localVariableDefinition == nil {
-	// 			return nil, nil
-	// 		}
-	// 		captures, err := allCaptures("(local_variable_definition declarator: (variable_declarator value: (_) @value))", swapNode(node, localVariableDefinition))
-	// 		if err != nil {
-	// 			return nil, err
-	// 		}
-	// 		for _, capture := range captures {
-	// 			return squirrel.getTypeDefPython(ctx, capture)
-	// 		}
-	// 		return nil, nil
-	// 	} else {
-	// 		return onIdent()
-	// 	}
-	// case "this":
-	// 	fallthrough
-	// case "super":
-	// 	fallthrough
 	case "identifier":
 		return onIdent()
-	// case "field_access":
-	// 	object := node.ChildByFieldName("object")
-	// 	if object == nil {
-	// 		return nil, nil
-	// 	}
-	// 	field := node.ChildByFieldName("field")
-	// 	if field == nil {
-	// 		return nil, nil
-	// 	}
-	// 	objectType, err := squirrel.getTypeDefPython(ctx, swapNode(node, object))
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	if objectType == nil {
-	// 		return nil, nil
-	// 	}
-	// 	found, err := squirrel.lookupFieldPython(ctx, objectType, field.Content(node.Contents))
-	// 	if err != nil {
-	// 		return nil, err
-	// 	}
-	// 	if found == nil {
-	// 		return nil, nil
-	// 	}
-	// 	return squirrel.defToType(ctx, *found)
+	case "attribute":
+		object := node.ChildByFieldName("object")
+		if object == nil {
+			return nil, nil
+		}
+		attribute := node.ChildByFieldName("attribute")
+		if attribute == nil {
+			return nil, nil
+		}
+		objectType, err := squirrel.getTypeDefPython(ctx, swapNode(node, object))
+		if err != nil {
+			return nil, err
+		}
+		if objectType == nil {
+			return nil, nil
+		}
+		found, err := squirrel.lookupFieldPython(ctx, objectType, attribute.Content(node.Contents))
+		if err != nil {
+			return nil, err
+		}
+		if found == nil {
+			return nil, nil
+		}
+		return squirrel.defToTypePython(ctx, *found)
 	case "call":
 		fn := node.ChildByFieldName("function")
 		if fn == nil {
