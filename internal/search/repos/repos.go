@@ -39,7 +39,6 @@ type Resolved struct {
 	RepoRevs []*search.RepositoryRevisions
 
 	MissingRepoRevs []*search.RepositoryRevisions
-	OverLimit       bool
 
 	// Next points to the next page of resolved repository revisions. It will
 	// be nil if there are no more pages left.
@@ -47,7 +46,7 @@ type Resolved struct {
 }
 
 func (r *Resolved) String() string {
-	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d, OverLimit=%v}", len(r.RepoRevs), len(r.MissingRepoRevs), r.OverLimit)
+	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d}", len(r.RepoRevs), len(r.MissingRepoRevs))
 }
 
 func NewResolver(db database.DB) *Resolver {
