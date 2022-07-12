@@ -97,9 +97,7 @@ func TestSearch(t *testing.T) {
 	// Adding and deleting the dependency repos external services in between all other tests is
 	// flaky since deleting an external service doesn't cancel a running external
 	// service sync job for it.
-	//
-	// DISABLED because flaky
-	// t.Run("repo:deps", testDependenciesSearch(client, streamClient))
+	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
 }
 
 // searchClient is an interface so we can swap out a streaming vs graphql
