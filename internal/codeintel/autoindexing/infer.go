@@ -18,6 +18,7 @@ func InferRepositoryAndRevision(pkg precise.Package) (repoName api.RepoName, git
 		inferJVMRepositoryAndRevision,
 		inferNpmRepositoryAndRevision,
 		inferRustRepositoryAndRevision,
+		inferPythonRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -80,4 +81,19 @@ func inferRustRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, 
 	}
 
 	return rustPkg.RepoName(), "v" + pkg.Version, true
+}
+
+func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+	if pkg.Scheme != dependencies.PythonPackagesScheme {
+		return "", "", false
+	}
+
+	pythonPkg, err := reposource.ParsePythonPackageFromRepoName(pkg.Name)
+	if err != nil {
+		log15.Error("invalid python package name in database", "error", err, "pkg", pkg.Name)
+		return "", "", false
+	}
+
+	return pythonPkg.RepoName(), pkg.Version, true
+
 }
