@@ -61,7 +61,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -109,7 +109,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -157,7 +157,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -194,7 +194,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Deleted Line
+            deleted line
           </span>
           <div
             class="d-inline-block"
@@ -231,7 +231,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Added Line
+            added line
           </span>
           <div
             class="d-inline-block"
@@ -279,7 +279,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -327,7 +327,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -375,7 +375,7 @@ exports[`DiffHunk renders a unified diff view for the given diff hunk 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -451,7 +451,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -507,7 +507,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -555,7 +555,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -593,7 +593,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Deleted Line
+            deleted line
           </span>
           <div
             class="d-inline-block"
@@ -638,7 +638,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Added Line
+            added line
           </span>
           <div
             class="d-inline-block"
@@ -686,7 +686,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -734,7 +734,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -782,7 +782,7 @@ exports[`DiffHunk renders dark theme decorations if dark theme is active 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -858,7 +858,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -914,7 +914,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -962,7 +962,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -1000,7 +1000,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Deleted Line
+            deleted line
           </span>
           <div
             class="d-inline-block"
@@ -1045,7 +1045,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Added Line
+            added line
           </span>
           <div
             class="d-inline-block"
@@ -1093,7 +1093,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -1141,7 +1141,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
@@ -1189,7 +1189,7 @@ exports[`DiffHunk renders decorations if given 1`] = `
           <span
             style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
           >
-            Unchanged Line
+            unchanged line
           </span>
           <div
             class="d-inline-block"
