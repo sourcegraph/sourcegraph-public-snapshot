@@ -5905,16 +5905,16 @@ type AnalyticsStatItemNode {
     """
     Total number of events.
     """
-    count: Int!
+    count: Float!
     """
     Unique number of users who triggered event.
     This counts deleted users as well as anonymous users.
     """
-    uniqueUsers: Int!
+    uniqueUsers: Float!
     """
     Unique number of currently registered users who triggered event.
     """
-    registeredUsers: Int!
+    registeredUsers: Float!
 }
 
 """
@@ -5924,16 +5924,16 @@ type AnalyticsStatItemSummary {
     """
     Total number of events.
     """
-    totalCount: Int!
+    totalCount: Float!
     """
     Total unique number of users who triggered event.
     This counts deleted users as well as anonymous users.
     """
-    totalUniqueUsers: Int!
+    totalUniqueUsers: Float!
     """
     Total unique number of currently registered users who triggered event.
     """
-    totalRegisteredUsers: Int!
+    totalRegisteredUsers: Float!
 }
 
 """
@@ -5997,11 +5997,11 @@ type AnalyticsUsersFrequencyItem {
     """
     Number of days used
     """
-    daysUsed: Int!
+    daysUsed: Float!
     """
     Number of users.
     """
-    frequency: Int!
+    frequency: Float!
     """
     Percentage of users from total frequencies.
     """
@@ -6081,11 +6081,11 @@ type AnalyticsReposSummartResult {
     """
     Total number of repositories.
     """
-    count: Int!
+    count: Float!
     """
     Total number of repositories with precise code-intel.
     """
-    preciseCodeIntelCount: Int!
+    preciseCodeIntelCount: Float!
 }
 
 """

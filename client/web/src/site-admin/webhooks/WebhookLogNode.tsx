@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import { format } from 'date-fns'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
 
@@ -39,7 +38,7 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
                     aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                     onClick={toggleExpanded}
                 >
-                    <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                    <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
                 </Button>
             </span>
             <span className={styles.statusCode}>
@@ -52,9 +51,9 @@ export const WebhookLogNode: React.FunctionComponent<React.PropsWithChildren<Pro
             <span className={styles.smDetailsButton}>
                 <Button onClick={toggleExpanded} outline={true} variant="secondary">
                     {isExpanded ? (
-                        <Icon aria-hidden={true} as={ChevronDownIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronDown} />
                     ) : (
-                        <Icon aria-hidden={true} as={ChevronRightIcon} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                     )}{' '}
                     {isExpanded ? 'Hide' : 'Show'} details
                 </Button>

@@ -147,6 +147,14 @@ func IsTemporary(err error) bool {
 	return errors.As(err, &e) && e.Temporary()
 }
 
+// IsArchived will check if err or one of its causes is an archived error.
+// (This is generally going to be in the context of repositories being
+// archived.)
+func IsArchived(err error) bool {
+	var e interface{ Archived() bool }
+	return errors.As(err, &e) && e.Archived()
+}
+
 // IsBlocked will check if err or one of its causes is a blocked error.
 func IsBlocked(err error) bool {
 	var e interface{ Blocked() bool }

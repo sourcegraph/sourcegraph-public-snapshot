@@ -1,11 +1,11 @@
 import React from 'react'
 
+import { mdiCloudOffOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
 import AlertIcon from 'mdi-react/AlertIcon'
 import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
-import CloudOffOutlineIcon from 'mdi-react/CloudOffOutlineIcon'
 import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
 import SyncIcon from 'mdi-react/SyncIcon'
 import { Observable, Subscription, of } from 'rxjs'
@@ -421,9 +421,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             return (
                 <Icon
                     data-tooltip={codeHostMessage}
-                    as={CloudOffOutlineIcon}
                     size="md"
                     {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                    svgPath={mdiCloudOffOutline}
                 />
             )
         }

@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
+import classNames from 'classnames'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps } from 'react-router'
 
@@ -103,7 +104,7 @@ export const BatchSpecList: React.FunctionComponent<React.PropsWithChildren<Batc
             defaultFirst={20}
             noun="batch spec"
             pluralNoun="batch specs"
-            listClassName={styles.specsGrid}
+            listClassName={classNames(styles.specsGrid, 'test-batches-executions')}
             listComponent="div"
             withCenteredSummary={true}
             headComponent={Header}
