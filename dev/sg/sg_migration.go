@@ -173,7 +173,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
 	config, _ := sgconf.Get(configFile, configOverwriteFile)
-	logger := log.Scoped("makeRunner", "")
+	logger := log.Scoped("migrations.runner", "migration runner")
 	if config != nil {
 		getEnv = config.GetEnv
 	} else {

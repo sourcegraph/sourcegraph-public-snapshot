@@ -72,7 +72,12 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			}
 		}
 
-		return r.Run(ctx, makeOptions(cmd, schemaNames))
+		if err := r.Run(ctx, makeOptions(cmd, schemaNames)); err != nil {
+			return err
+		}
+
+		out.WriteLine(output.Emoji(output.EmojiSuccess, "migrations okay!"))
+		return nil
 	})
 
 	return &cli.Command{

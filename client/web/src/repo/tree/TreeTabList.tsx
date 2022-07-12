@@ -2,6 +2,7 @@ import React, { useMemo } from 'react'
 
 import { mdiFileDocument, mdiSourceCommit, mdiSourceBranch, mdiTag, mdiHistory, mdiAccount } from '@mdi/js'
 import classNames from 'classnames'
+import { useCallbackRef } from 'use-callback-ref'
 
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { Icon, Link } from '@sourcegraph/wildcard'
@@ -73,16 +74,18 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
         [selectedTab, tree.url]
     )
 
+    const callbackReference = useCallbackRef<HTMLAnchorElement>(null, ref => ref?.focus())
+
     return (
-        <div className="d-flex mb-4">
-            <div className="nav nav-tabs w-100">
+        <nav className="d-flex mb-4">
+            <ul className="nav nav-tabs w-100">
                 {tabs.map(({ tab, title, isActive, icon, url }) => (
-                    <div className="nav-item" key={`repo-${tab}-tab`}>
+                    <li className="nav-item" key={`repo-${tab}-tab`}>
                         <Link
                             to={url}
-                            role="button"
                             className={classNames('nav-link text-content bg-transparent', isActive && 'active')}
                             onClick={() => setSelectedTab(tab)}
+                            ref={selectedTab === tab ? callbackReference : null}
                         >
                             <div>
                                 {icon}
@@ -91,9 +94,9 @@ export const TreeTabList: React.FunctionComponent<React.PropsWithChildren<TreeTa
                                 </span>
                             </div>
                         </Link>
-                    </div>
+                    </li>
                 ))}
-            </div>
-        </div>
+            </ul>
+        </nav>
     )
 }

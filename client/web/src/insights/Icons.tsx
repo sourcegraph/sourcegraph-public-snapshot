@@ -1,3 +1,3 @@
-import BarChartIcon from 'mdi-react/BarChartIcon'
+import { mdiPoll } from '@mdi/js'
 
-export const CodeInsightsIcon = BarChartIcon
+export const CodeInsightsIcon = mdiPoll

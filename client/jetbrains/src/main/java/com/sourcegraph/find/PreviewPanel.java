@@ -15,7 +15,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.ui.components.JBPanelWithEmptyText;
 import com.sourcegraph.Icons;
 import com.sourcegraph.website.Copy;
-import com.sourcegraph.website.FileAction;
+import com.sourcegraph.website.FileActionBase;
 import com.sourcegraph.website.OpenFile;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -123,7 +123,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     @NotNull
     private ActionGroup createActionGroup() {
         DefaultActionGroup group = new DefaultActionGroup();
-        group.add(new DumbAwareAction("Open File in Editor", "Open file in editor", Icons.Logo) {
+        group.add(new DumbAwareAction("Open File in Editor", "Open file in editor", Icons.SourcegraphLogo) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 try {
@@ -148,11 +148,11 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     }
 
     class SimpleEditorFileAction extends DumbAwareAction {
-        FileAction action;
+        FileActionBase action;
         Editor editor;
 
-        SimpleEditorFileAction(String text, FileAction action, Editor editor) {
-            super(text, text, Icons.Logo);
+        SimpleEditorFileAction(String text, FileActionBase action, Editor editor) {
+            super(text, text, Icons.SourcegraphLogo);
             this.action = action;
             this.editor = editor;
         }

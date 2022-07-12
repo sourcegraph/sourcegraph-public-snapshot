@@ -1,9 +1,10 @@
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
+import { mdiMagnify } from '@mdi/js'
 
 import { SearchPatternType } from '@sourcegraph/search'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
+import { IconType } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BatchChangesIcon } from '../../batches/icons'
@@ -12,7 +13,7 @@ import { CodeInsightsIcon } from '../../insights/Icons'
 
 export interface CreateAction {
     url: string
-    icon: React.ElementType
+    icon: IconType
     label: string
     tooltip: string
 }
@@ -35,7 +36,7 @@ export function getSearchContextCreateAction(
     searchParameters.set('q', sanitizedQuery)
     const url = `/contexts/new?${searchParameters.toString()}`
 
-    return { url, icon: MagnifyIcon, label: 'Create Context', tooltip: 'Create a search context based on this query' }
+    return { url, icon: mdiMagnify, label: 'Create Context', tooltip: 'Create a search context based on this query' }
 }
 
 export function getInsightsCreateAction(

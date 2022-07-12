@@ -4,7 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { pluralize } from '@sourcegraph/common'
-import { Link, Icon, H3 } from '@sourcegraph/wildcard'
+import { Link, Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     NormalizedUploadRetentionMatch,
@@ -57,21 +57,23 @@ const RetentionPolicyRetentionMatchNode: FunctionComponent<
                                 .slice(0, 4)
                                 .map(hash => hash.slice(0, 7))
                                 .join(', ')}
-                            <Icon
-                                className="ml-1"
-                                aria-label="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
-                                data-tooltip="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
-                                svgPath={mdiInformationOutline}
-                            />
+                            <Tooltip content="This upload is retained to service code-intel queries for commit(s) with applicable retention policies.">
+                                <Icon
+                                    aria-label="This upload is retained to service code-intel queries for commit(s) with applicable retention policies."
+                                    className="ml-1"
+                                    svgPath={mdiInformationOutline}
+                                />
+                            </Tooltip>
                         </>
                     )}
                     {!match.configurationPolicy && (
-                        <Icon
-                            className="ml-1"
-                            aria-label="Uploads at the tip of the default branch are always retained indefinitely."
-                            data-tooltip="Uploads at the tip of the default branch are always retained indefinitely."
-                            svgPath={mdiInformationOutline}
-                        />
+                        <Tooltip content="Uploads at the tip of the default branch are always retained indefinitely.">
+                            <Icon
+                                aria-label="Uploads at the tip of the default branch are always retained indefinitely."
+                                className="ml-1"
+                                svgPath={mdiInformationOutline}
+                            />
+                        </Tooltip>
                     )}
                 </div>
             </div>
@@ -98,12 +100,13 @@ const UploadReferenceRetentionMatchNode: FunctionComponent<
                             </Link>
                         ))
                         .reduce((previous, current) => [previous, ', ', current])}
-                    <Icon
-                        className="ml-1"
-                        aria-label="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
-                        data-tooltip="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
-                        svgPath={mdiInformationOutline}
-                    />
+                    <Tooltip content="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries.">
+                        <Icon
+                            aria-label="Uploads that are dependencies of other upload(s) are retained to service cross-repository code-intel queries."
+                            className="ml-1"
+                            svgPath={mdiInformationOutline}
+                        />
+                    </Tooltip>
                 </div>
             </div>
         </div>

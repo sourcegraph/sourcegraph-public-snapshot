@@ -118,6 +118,9 @@ func (c *Client) CreateMergeRequest(ctx context.Context, project *Project, opts 
 		if code == http.StatusConflict {
 			return nil, ErrMergeRequestAlreadyExists
 		}
+		if aerr := c.convertToArchivedError(ctx, err, project); aerr != nil {
+			return nil, aerr
+		}
 
 		return nil, errors.Wrap(err, "sending request to create a merge request")
 	}
@@ -198,8 +201,8 @@ func (c *Client) GetOpenMergeRequestByRefs(ctx context.Context, project *Project
 }
 
 type UpdateMergeRequestOpts struct {
-	TargetBranch string                       `json:"target_branch"`
-	Title        string                       `json:"title"`
+	TargetBranch string                       `json:"target_branch,omitempty"`
+	Title        string                       `json:"title,omitempty"`
 	Description  string                       `json:"description,omitempty"`
 	StateEvent   UpdateMergeRequestStateEvent `json:"state_event,omitempty"`
 }
@@ -238,6 +241,9 @@ func (c *Client) UpdateMergeRequest(ctx context.Context, project *Project, mr *M
 
 	resp := &MergeRequest{}
 	if _, _, err := c.do(ctx, req, resp); err != nil {
+		if aerr := c.convertToArchivedError(ctx, err, project); aerr != nil {
+			return nil, aerr
+		}
 		return nil, errors.Wrap(err, "sending request to update a merge request")
 	}
 
@@ -313,6 +319,31 @@ func (c *Client) CreateMergeRequestNote(ctx context.Context, project *Project, m
 	}
 	if _, _, err := c.do(ctx, req, &resp); err != nil {
 		return errors.Wrap(err, "sending request to comment on a merge request")
+	}
+
+	return nil
+}
+
+// convertToArchivedError converts the given error to a ProjectArchivedError if
+// the error wraps a HTTP 403 and the project is actually archived. If the
+// error does not represent a project being archived, then nil is returned, and
+// the caller should perform whatever other error handling is appropriate on
+// the original error.
+//
+// This should only be used on errors returned from requests that return a 403
+// if the project is archived, such as the merge request mutation endpoints.
+func (c *Client) convertToArchivedError(ctx context.Context, rerr error, project *Project) error {
+	var e HTTPError
+	if errors.As(rerr, &e) && e.Code() == http.StatusForbidden {
+		// 403 _may_ mean that the project is now archived, but we need to check.
+		// We'll bypass the cache because it's likely that the cache is out of date
+		// if we got here.
+		project, perr := c.getProjectFromAPI(ctx, project.ID, project.PathWithNamespace)
+		// We won't bother bubbling up the nested error if one occurred; let's just
+		// check if the project is archived if we got the project back.
+		if perr == nil && project.Archived {
+			return &ProjectArchivedError{Name: project.PathWithNamespace}
+		}
 	}
 
 	return nil

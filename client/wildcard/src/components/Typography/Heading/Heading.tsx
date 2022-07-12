@@ -17,8 +17,11 @@ type InternalHeadingProps = HeadingProps & {
 const getStyleAs = (headerX: HeadingElement | undefined): string | undefined =>
     headerX && styles[headerX as keyof typeof styles]
 
-export const Heading = React.forwardRef(
-    ({ children, as: Component = 'h1', styleAs = Component, alignment, mode, className, ...props }, reference) => (
+export const Heading = React.forwardRef(function Heading(
+    { children, as: Component = 'h1', styleAs = Component, alignment, mode, className, ...props },
+    reference
+) {
+    return (
         <Component
             className={classNames(
                 getStyleAs(styleAs),
@@ -32,4 +35,4 @@ export const Heading = React.forwardRef(
             {children}
         </Component>
     )
-) as ForwardReferenceComponent<'h1' | HeadingElement, InternalHeadingProps>
+}) as ForwardReferenceComponent<'h1' | HeadingElement, InternalHeadingProps>

@@ -59,6 +59,7 @@ type SearchSeriesPreviewInput struct {
 	Query                      string
 	Label                      string
 	GeneratedFromCaptureGroups bool
+	GroupBy                    *string
 }
 
 type SearchInsightLivePreviewInput struct {
@@ -67,6 +68,7 @@ type SearchInsightLivePreviewInput struct {
 	RepositoryScope            RepositoryScopeInput
 	TimeScope                  TimeScopeInput
 	GeneratedFromCaptureGroups bool
+	GroupBy                    *string
 }
 
 type InsightsArgs struct {

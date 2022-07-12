@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestParseNpmDependency(t *testing.T) {
+func TestParseNpmPackageVersion(t *testing.T) {
 	table := []struct {
 		testName string
 		expect   bool

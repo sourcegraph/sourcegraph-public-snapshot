@@ -592,6 +592,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1,
 				// changesets[0].CurrentSpecID
 				spec2,
+				nil,
 				changesets[0],
 			)
 			if err != nil {
@@ -631,6 +632,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1,
 				// changesets[0].CurrentSpecID
 				spec3,
+				nil,
 				changesets[0],
 			)
 			if err != nil {
@@ -672,6 +674,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1,
 				// changesets[0].CurrentSpecID
 				spec4,
+				nil,
 				changesets[0],
 			)
 			if err != nil {
@@ -791,6 +794,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				nil,
 				// c2.currentSpec is newSpec2
 				newSpec2,
+				nil,
 				c2,
 			)
 			if err != nil {

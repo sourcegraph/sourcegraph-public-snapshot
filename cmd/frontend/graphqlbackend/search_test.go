@@ -395,12 +395,8 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 			RepositoryID: uint32(i),
 			Repository:   repoName, // Important: this needs to match a name in `repos`
 			Branches:     []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
+			ChunkMatches: make([]zoekt.ChunkMatch, 1),
+			Checksum:     []byte{0, 1, 2},
 		})
 	}
 	return zoektFileMatches

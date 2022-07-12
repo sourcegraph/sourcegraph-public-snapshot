@@ -36,7 +36,7 @@ export function render(tether: Tether, eventTarget: HTMLElement | null, preserve
     const layout = getLayout(tether)
     const state = getState(layout)
 
-    if (state === null || !isVisible(tether.target) || tether.forceHidden) {
+    if (state === null || !isVisible(tether.target)) {
         setVisibility(tether.element, false)
         setVisibility((tether.marker as HTMLElement) ?? null, false)
 

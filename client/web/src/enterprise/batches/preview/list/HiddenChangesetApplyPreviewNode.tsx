@@ -4,7 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon, H3 } from '@sourcegraph/wildcard'
+import { Icon, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { InputTooltip } from '../../../../components/InputTooltip'
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
@@ -73,11 +73,12 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
             </H3>
             <span className="text-danger">
                 No action will be taken on apply.{' '}
-                <Icon
-                    aria-label="You have no permissions to access this repository."
-                    data-tooltip="You have no permissions to access this repository."
-                    svgPath={mdiInformationOutline}
-                />
+                <Tooltip content="You have no permissions to access this repository.">
+                    <Icon
+                        aria-label="You have no permissions to access this repository."
+                        svgPath={mdiInformationOutline}
+                    />
+                </Tooltip>
             </span>
         </div>
         <span />

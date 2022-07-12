@@ -9,7 +9,7 @@ import (
 )
 
 type LsifStore interface {
-	Clear(ctx context.Context, bundleIDs ...int) (err error)
+	DeleteLsifDataByUploadIds(ctx context.Context, bundleIDs ...int) (err error)
 }
 
 type store struct {
