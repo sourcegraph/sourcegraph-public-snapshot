@@ -300,10 +300,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 						// The revspec does not exist, so don't include it, and report that it's missing.
-						if rev.RevSpec == "" {
-							// Report as HEAD not "" (empty string) to avoid user confusion.
-							rev.RevSpec = "HEAD"
-						}
 						res.Lock()
 						res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
 							Repo: repo,
