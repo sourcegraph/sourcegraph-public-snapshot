@@ -56,9 +56,10 @@ class C1:
 
 
 class C2(C1):
-    def f(self):
+    def f(self, c1: C1):
         #           v py.C1.g ref
-        return self.g()
+        #                    v py.C1.x ref
+        return self.g() + c1.x
 
 
 def newC1() -> C1:

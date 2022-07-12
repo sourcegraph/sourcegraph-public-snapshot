@@ -117,6 +117,13 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 						(default_parameter name: (identifier) @ident)
 						(list_splat_pattern (identifier) @ident)
 						(dictionary_splat_pattern (identifier) @ident)
+
+						(typed_parameter [
+							(identifier) @ident
+							(list_splat_pattern (identifier) @ident)
+							(dictionary_splat_pattern (identifier) @ident)
+						])
+						(typed_default_parameter name: (identifier) @ident)
 					])
 				`
 				captures, err := allCaptures(query, swapNode(node, parameters))
@@ -333,6 +340,11 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 	}
 
 	switch node.Type() {
+	case "type":
+		for _, child := range children(node.Node) {
+			return squirrel.getTypeDefPython(ctx, swapNode(node, child))
+		}
+		return nil, nil
 	// case "type_identifier":
 	// 	if node.Content(node.Contents) == "var" {
 	// 		localVariableDefinition := node.Parent()
@@ -483,27 +495,23 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 		}
 		fmt.Println("TODO defToTypePython:", parent.Type())
 		return nil, nil
+	case "typed_parameter":
+		ty := parent.ChildByFieldName("type")
+		if ty == nil {
+			return nil, nil
+		}
+		return squirrel.getTypeDefPython(ctx, swapNode(def, ty))
 	case "class_definition":
 		return (TypePython)(ClassTypePython{def: swapNode(def, parent)}), nil
 	case "function_definition":
-		retTyTyNode := parent.ChildByFieldName("return_type")
-		if retTyTyNode == nil {
-			return (TypePython)(FnTypePython{
-				ret:  nil,
-				noad: swapNode(def, parent),
-			}), nil
-		}
-		retTyNode, err := firstCapture("(type (_) @ty)", swapNode(def, retTyTyNode))
-		if err != nil {
-			return nil, err
-		}
+		retTyNode := parent.ChildByFieldName("return_type")
 		if retTyNode == nil {
 			return (TypePython)(FnTypePython{
 				ret:  nil,
 				noad: swapNode(def, parent),
 			}), nil
 		}
-		retTy, err := squirrel.getTypeDefPython(ctx, *retTyNode)
+		retTy, err := squirrel.getTypeDefPython(ctx, swapNode(def, retTyNode))
 		if err != nil {
 			return nil, err
 		}
@@ -511,8 +519,6 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 			ret:  retTy,
 			noad: swapNode(def, parent),
 		}), nil
-	case "formal_parameter":
-		fallthrough
 	case "enhanced_for_statement":
 		tyNode := parent.ChildByFieldName("type")
 		if tyNode == nil {
