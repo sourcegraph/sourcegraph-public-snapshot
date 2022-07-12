@@ -309,7 +309,7 @@ func TestHandleRestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
+		Config:      `{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`,
 	})
 	require.NoError(t, err)
 
@@ -344,12 +344,12 @@ func TestHandleRestricted(t *testing.T) {
 	_, err = db.ExecContext(ctx, `--sql
 	INSERT INTO repo (id, name, fork)
 	VALUES
-		(10060, 'go', false),
-		(10056, 'jenkins', false),
-		(10061, 'mux', false),
-		(10058, 'sentry', false),
-		(10059, 'sinatra', false),
-		(10072, 'sourcegraph', false)
+		(1, 'bitbucket.sgdev.org/SGDEMO/go', false),
+		(2, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
+		(3, 'bitbucket.sgdev.org/SGDEMO/mux', false),
+		(4, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
+		(5, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
+		(6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false)
 `)
 	require.NoError(t, err)
 
@@ -373,7 +373,7 @@ func TestHandleRestricted(t *testing.T) {
 	// check that the permissions were set
 	perms := db.Perms()
 
-	for _, repoID := range []int32{10060, 10056, 10061, 10058, 10059, 10072} {
+	for _, repoID := range []int32{1, 2, 3, 4, 5, 6} {
 		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
 		err = perms.LoadRepoPermissions(ctx, &p)
 		require.NoError(t, err)
@@ -387,7 +387,7 @@ func TestHandleRestricted(t *testing.T) {
 	err = perms.LoadUserPermissions(ctx, &up)
 	require.NoError(t, err)
 	require.Equal(t, map[int32]struct{}{
-		10060: {}, 10056: {}, 10061: {}, 10058: {}, 10059: {}, 10072: {},
+		1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {},
 	}, up.IDs)
 }
 
@@ -409,7 +409,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
+		Config:      `{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`,
 	})
 	require.NoError(t, err)
 
@@ -444,21 +444,21 @@ func TestHandleUnrestricted(t *testing.T) {
 	_, err = db.ExecContext(ctx, `--sql
 	INSERT INTO repo (id, name, fork)
 	VALUES
-		(10060, 'go', false),
-		(10056, 'jenkins', false),
-		(10061, 'mux', false),
-		(10058, 'sentry', false),
-		(10059, 'sinatra', false),
-		(10072, 'sourcegraph', false);
+		(1, 'bitbucket.sgdev.org/SGDEMO/go', false),
+		(2, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
+		(3, 'bitbucket.sgdev.org/SGDEMO/mux', false),
+		(4, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
+		(5, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
+		(6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
 
 	INSERT INTO repo_permissions (repo_id, permission, updated_at)
 	VALUES
-		(10060, 'read', now()),
-		(10056, 'read', now()),
-		(10061, 'read', now()),
-		(10058, 'read', now()),
-		(10059, 'read', now()),
-		(10072, 'read', now());
+		(1, 'read', now()),
+		(2, 'read', now()),
+		(3, 'read', now()),
+		(4, 'read', now()),
+		(5, 'read', now()),
+		(6, 'read', now());
 `)
 	require.NoError(t, err)
 
@@ -478,7 +478,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	// check that the permissions were set
 	perms := db.Perms()
 
-	for _, repoID := range []int32{10060, 10056, 10061, 10058, 10059, 10072} {
+	for _, repoID := range []int32{1, 2, 3, 4, 5, 6} {
 		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
 		err = perms.LoadRepoPermissions(ctx, &p)
 		require.NoError(t, err)
