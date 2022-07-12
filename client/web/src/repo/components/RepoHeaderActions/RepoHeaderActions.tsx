@@ -102,7 +102,7 @@ export const RepoHeaderActionMenuItem = React.forwardRef((props: RepoHeaderActio
             // keep Menu open on select (mouse only)
             onMouseUp={event => event.preventDefault()}
             // we still need `onSelect` binding for keyboard users
-            // but we don't know how to keep Menu open for keyboard usages
+            // but we don't know how to keep Menu open in this case
             onSelect={onSelect}
             // `onClick` will be triggered when using mouse
             // instead of `onSelect` because we already catch `onMouseUp`
