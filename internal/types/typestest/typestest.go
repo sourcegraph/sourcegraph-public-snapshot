@@ -265,6 +265,7 @@ var Opt = struct {
 	RepoDeletedAt             func(time.Time) func(*types.Repo)
 	RepoSources               func(...string) func(*types.Repo)
 	RepoMetadata              func(any) func(*types.Repo)
+	RepoArchived              func(bool) func(*types.Repo)
 	RepoExternalID            func(string) func(*types.Repo)
 }{
 	ExternalServiceID: func(n int64) func(*types.ExternalService) {
@@ -325,6 +326,11 @@ var Opt = struct {
 	RepoMetadata: func(md any) func(*types.Repo) {
 		return func(r *types.Repo) {
 			r.Metadata = md
+		}
+	},
+	RepoArchived: func(b bool) func(*types.Repo) {
+		return func(r *types.Repo) {
+			r.Archived = b
 		}
 	},
 	RepoExternalID: func(id string) func(*types.Repo) {

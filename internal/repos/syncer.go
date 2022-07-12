@@ -215,6 +215,9 @@ type Diff struct {
 	// the code host between the previous sync and the current one. This is
 	// required for Batch Changes to migrate changesets on those repositories in
 	// and out of the read-only state.
+	//
+	// This field is always a strict subset of Modified, and is therefore not
+	// counted in Len() or iterated over in Repos().
 	Archived types.Repos
 }
 
@@ -225,6 +228,7 @@ func (d *Diff) Sort() {
 		d.Deleted,
 		d.Modified,
 		d.Unmodified,
+		d.Archived,
 	} {
 		sort.Sort(ds)
 	}
