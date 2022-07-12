@@ -164,7 +164,7 @@ func TestRevisionValidation(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: tt.repoFilters}
-			repositoryResolver := &Resolver{DB: db}
+			repositoryResolver := NewResolver(db)
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
@@ -320,7 +320,7 @@ func TestResolverPaginate(t *testing.T) {
 		}
 	}
 
-	all, err := (&Resolver{DB: db}).Resolve(ctx, search.RepoOptions{})
+	all, err := NewResolver(db).Resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -371,10 +371,10 @@ func TestResolverPaginate(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := Resolver{Opts: tc.opts, DB: db}
+			r := NewResolver(db)
 
 			var pages []Resolved
-			err := r.Paginate(ctx, func(page *Resolved) error {
+			err := r.Paginate(ctx, tc.opts, func(page *Resolved) error {
 				pages = append(pages, *page)
 				return nil
 			})
@@ -447,7 +447,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "@" + wantName,
 	}
-	repositoryResolver := &Resolver{DB: db}
+	repositoryResolver := NewResolver(db)
 	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
@@ -525,7 +525,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "searchcontext",
 	}
-	repositoryResolver := &Resolver{DB: db}
+	repositoryResolver := NewResolver(db)
 	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
