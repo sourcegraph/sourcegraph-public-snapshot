@@ -91,7 +91,6 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 
 	for {
 		packageReference, exists, err := scanner.Next()
-
 		if err != nil {
 			return errors.Wrap(err, "dbstore.ReferencesForUpload.Next")
 		}
@@ -193,9 +192,8 @@ func newPackage(pkg shared.Package) precise.Package {
 		p.Name = strings.TrimPrefix(p.Name, "maven/")
 		p.Name = strings.ReplaceAll(p.Name, "/", ":")
 	case "scip-python":
-		// TODO: I'm not 100% sure this is necessary, but I think it is
-		//   I still don't understand why the pkg.Scheme should be a
-		//   string that is dependent in so many places?
+		// Override scip-python scheme so that we are able to autoindex
+		// index.scip created by scip-python
 		p.Scheme = dependencies.PythonPackagesScheme
 	}
 

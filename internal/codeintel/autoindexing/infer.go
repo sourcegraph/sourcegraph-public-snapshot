@@ -88,7 +88,7 @@ func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string
 		return "", "", false
 	}
 
-	pythonPkg, err := reposource.ParsePythonDependency(pkg.Name)
+	pythonPkg, err := reposource.ParsePythonPackageFromRepoName(pkg.Name)
 	if err != nil {
 		log15.Error("invalid python package name in database", "error", err, "pkg", pkg.Name)
 		return "", "", false
