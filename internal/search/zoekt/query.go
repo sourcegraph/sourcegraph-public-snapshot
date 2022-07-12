@@ -33,7 +33,6 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 
 	// Handle file:owned.by() predicates
 	fileOwnersMustInclude, _ := b.FileOwnership()
-	fmt.Printf("query: %+v\n", b)
 
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
@@ -110,8 +109,6 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		or := &zoekt.Or{}
 		for _, owner := range fileOwnersMustInclude {
 			fileRe, err := FileRe(codeownership.PotentialFileReForOwner("??", owner), isCaseSensitive)
-
-			fmt.Printf("fileRe: %+v\n", fileRe)
 			if err != nil {
 				return nil, err
 			}

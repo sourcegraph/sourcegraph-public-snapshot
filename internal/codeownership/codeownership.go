@@ -3,7 +3,6 @@ package codeownership
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -72,10 +71,7 @@ func (s *codeownershipFilterJob) Run(ctx context.Context, clients job.RuntimeCli
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	var (
-		_    sync.Mutex
-		errs error
-	)
+	var errs error
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 

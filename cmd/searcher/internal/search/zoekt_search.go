@@ -3,7 +3,6 @@ package search
 import (
 	"archive/tar"
 	"context"
-	"fmt"
 	"path/filepath"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"strings"
@@ -134,10 +133,6 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	if len(branchRepos) == 0 {
 		return nil
 	}
-
-	fmt.Println("_+++++")
-	fmt.Printf("%+v", args)
-	fmt.Println("------")
 
 	numRepos := 0
 	for _, br := range branchRepos {

@@ -1,7 +1,6 @@
 package jobutil
 
 import (
-	"fmt"
 	"strings"
 	"time"
 
@@ -79,13 +78,9 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			selector:       selector,
 		}
 
-		fmt.Printf("%+v\n", inputs)
-
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Global Text Search jobs.
 			if repoUniverseSearch {
-
-				fmt.Printf("newZoektGlobalSearch\n")
 				job, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
@@ -94,7 +89,6 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
-				fmt.Printf("newZoektSearch\n")
 				job, err := builder.newZoektSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
