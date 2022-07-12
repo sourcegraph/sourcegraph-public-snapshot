@@ -249,7 +249,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">
                     {error && <ErrorAlert error={error} className="w-100 mb-0" />}
-                    <div className={styles.iconContainer}>
+                    <div className={styles.iconContainer} aria-hidden={true}>
                         <PreviewLoadingSpinner
                             className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
                         />
