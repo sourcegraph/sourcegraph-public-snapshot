@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -27,7 +28,7 @@ func main() {
 	// workaround because we don't have control over the bash completion flag, which is
 	// part of urfave/cli internals.
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
-		batchCompletionMode = true
+		bashCompletionsMode = true
 	}
 
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
@@ -64,11 +65,11 @@ var (
 	// slice.
 	postInitHooks []func(cmd *cli.Context)
 
-	// batchCompletionMode determines if we are in bash completion mode. In this mode,
+	// bashCompletionsMode determines if we are in bash completion mode. In this mode,
 	// sg should respond quickly, so most setup tasks (e.g. postInitHooks) are skipped.
 	//
 	// Do not run complicated tasks, etc. in Before or After hooks when in this mode.
-	batchCompletionMode bool
+	bashCompletionsMode bool
 )
 
 const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/new?template=sg_bug.md"
@@ -121,35 +122,32 @@ var sg = &cli.App{
 			Value:   BuildCommit == "dev", // Default to skip in dev
 		},
 		&cli.BoolFlag{
-			Name:    "disable-output-detection",
-			Usage:   "use fixed output configuration instead of detecting terminal capabilities",
-			EnvVars: []string{"SG_DISABLE_OUTPUT_DETECTION"},
+			Name:        "disable-output-detection",
+			Usage:       "use fixed output configuration instead of detecting terminal capabilities",
+			EnvVars:     []string{"SG_DISABLE_OUTPUT_DETECTION"},
+			Destination: &std.DisableOutputDetection,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
-		if batchCompletionMode {
+		if bashCompletionsMode {
 			// All other setup pertains to running commands - to keep completions fast,
 			// we skip all other setup.
 			return nil
 		}
 
 		var (
-			start                  = time.Now()
-			disableAnalytics       = cmd.Bool("disable-analytics")
-			disableOutputDetection = cmd.Bool("disable-output-detection")
+			start            = time.Now()
+			disableAnalytics = cmd.Bool("disable-analytics")
 		)
 
 		// Let sg components register pre-interrupt hooks
 		interrupt.Listen()
 
 		// Configure global output
-		if disableOutputDetection {
-			std.Out = std.NewFixedOutput(cmd.App.Writer, verbose)
-		} else {
-			std.Out = std.NewOutput(cmd.App.Writer, verbose)
-		}
+		std.Out = std.NewOutput(cmd.App.Writer, verbose)
 
 		// Initialize context
+		cmd.Context = background.Context(cmd.Context)
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
@@ -212,17 +210,25 @@ var sg = &cli.App{
 
 		// Check for updates, unless we are running update manually.
 		if cmd.Args().First() != "update" {
-			err := checkSgVersionAndUpdate(cmd.Context, cmd.Bool("skip-auto-update"))
-			if err != nil {
-				std.Out.WriteWarningf("update check: %s", err)
-				// Do not exit here, so we don't break user flow when they want to
-				// run `sg` but updating fails
-			}
+			background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
+				err := checkSgVersionAndUpdate(ctx, out, cmd.Bool("skip-auto-update"))
+				if err != nil {
+					out.WriteWarningf("update check: %s", err)
+				}
+			}, verbose)
 		}
 
 		// Call registered hooks last
 		for _, hook := range postInitHooks {
 			hook(cmd)
+		}
+
+		return nil
+	},
+	After: func(cmd *cli.Context) error {
+		if !bashCompletionsMode {
+			// Wait for background jobs to finish up, iff not in autocomplete mode
+			background.Wait(cmd.Context, std.Out)
 		}
 
 		return nil
