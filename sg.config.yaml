@@ -111,7 +111,7 @@ env:
   CODEINSIGHTS_PGDATASOURCE: postgres://$PGUSER:$PGPASSWORD@$PGHOST:$PGPORT/$PGDATABASE
   DB_STARTUP_TIMEOUT: 120s # codeinsights-db needs more time to start in some instances.
   DISABLE_CODE_INSIGHTS_HISTORICAL: true
-  DISABLE_CODE_INSIGHTS: false
+  DISABLE_CODE_INSIGHTS: true
   ENABLE_STREAMING_REPOS_SYNCER: true
 
 commands:
@@ -348,7 +348,7 @@ commands:
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: 'installDocsite'
+    install_func: "installDocsite"
     env:
       DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
 
@@ -365,9 +365,6 @@ commands:
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
       # Pull syntax-highlighter latest insider image, only during install
       docker pull -q sourcegraph/syntax-highlighter:insiders
-    env:
-      # This is not needed actually
-      INSECURE_DEV: 1
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |
@@ -752,7 +749,7 @@ commandsets:
     env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
-      EXTSVC_CONFIG_FILE: ''
+      EXTSVC_CONFIG_FILE: ""
 
   dotcom:
     <<: *enterprise_set
@@ -1000,9 +997,9 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        provider: 'gcloud'
-        project: 'sourcegraph-ci'
-        name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
+        provider: "gcloud"
+        project: "sourcegraph-ci"
+        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
