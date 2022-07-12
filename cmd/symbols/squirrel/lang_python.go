@@ -407,6 +407,8 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 		switch ty2 := ty.(type) {
 		case FnTypePython:
 			return ty2.ret, nil
+		case ClassTypePython:
+			return ty2, nil
 		default:
 			squirrel.breadcrumb(ty.node(), fmt.Sprintf("getTypeDefPython: expected function, got %q", ty.variant()))
 			return nil, nil

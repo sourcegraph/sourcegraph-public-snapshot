@@ -70,4 +70,7 @@ def newC1() -> C1:
 #           v py.C1.x ref
 _ = newC1().x
 
+#        v py.C1.x ref
+_ = C1().x
+
 f(3)  # < "f" py.f ref
