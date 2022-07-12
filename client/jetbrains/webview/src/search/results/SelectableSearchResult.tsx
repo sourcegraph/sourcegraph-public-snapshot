@@ -6,7 +6,7 @@ import { getResultId, LineMatchItem, SymbolMatchItem } from './utils'
 
 import styles from './SelectableSearchResult.module.scss'
 
-interface Props {
+export interface SelectableSearchResultProps {
     children: (isActive: boolean) => React.ReactNode
     lineOrSymbolMatch?: LineMatchItem | SymbolMatchItem
     match: SearchMatch
@@ -15,14 +15,14 @@ interface Props {
     openResult: (id: string) => void
 }
 
-export const SelectableSearchResult: React.FunctionComponent<Props> = ({
+export const SelectableSearchResult: React.FunctionComponent<SelectableSearchResultProps> = ({
     children,
     lineOrSymbolMatch,
     match,
     selectedResult,
     selectResult,
     openResult,
-}: Props) => {
+}: SelectableSearchResultProps) => {
     const resultId = getResultId(match, lineOrSymbolMatch)
     const onClick = useCallback((): void => selectResult(resultId), [selectResult, resultId])
     const onDoubleClick = useCallback((): void => openResult(resultId), [openResult, resultId])
@@ -31,13 +31,14 @@ export const SelectableSearchResult: React.FunctionComponent<Props> = ({
     return (
         // The below element's accessibility is handled via a document level event listener.
         //
-        // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-static-element-interactions
+        // eslint-disable-next-line jsx-a11y/click-events-have-key-events,jsx-a11y/no-noninteractive-element-interactions
         <div
             id={`search-result-list-item-${resultId}`}
             className={styles.selectableSearchResult}
             onClick={onClick}
             onDoubleClick={onDoubleClick}
             key={resultId}
+            role="listitem"
         >
             {children(isActive)}
         </div>

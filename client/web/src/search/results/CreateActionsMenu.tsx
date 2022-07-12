@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiPlus } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Position, Menu, MenuButton, MenuList, MenuLink, Icon, Link } from '@sourcegraph/wildcard'
+import { Position, Menu, MenuButton, MenuList, MenuLink, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 
@@ -54,30 +54,28 @@ export const CreateActionsMenu: React.FunctionComponent<CreateActionsMenuProps> 
                         </MenuLink>
                     ))}
                     {createCodeMonitorAction && (
-                        <MenuLink
-                            as={Link}
-                            disabled={!authenticatedUser || !canCreateMonitor}
-                            data-tooltip={
+                        <Tooltip
+                            content={
                                 authenticatedUser && !canCreateMonitor
                                     ? 'Code monitors only support type:diff or type:commit searches.'
                                     : undefined
                             }
-                            aria-label={
-                                authenticatedUser && !canCreateMonitor
-                                    ? 'Code monitors only support type:diff or type:commit searches.'
-                                    : undefined
-                            }
-                            to={createCodeMonitorAction.url}
                         >
-                            <Icon
-                                aria-hidden={true}
-                                className="mr-1"
-                                {...(typeof createCodeMonitorAction.icon === 'string'
-                                    ? { svgPath: createCodeMonitorAction.icon }
-                                    : { as: createCodeMonitorAction.icon })}
-                            />
-                            Create Monitor
-                        </MenuLink>
+                            <MenuLink
+                                as={Link}
+                                disabled={!authenticatedUser || !canCreateMonitor}
+                                to={createCodeMonitorAction.url}
+                            >
+                                <Icon
+                                    aria-hidden={true}
+                                    className="mr-1"
+                                    {...(typeof createCodeMonitorAction.icon === 'string'
+                                        ? { svgPath: createCodeMonitorAction.icon }
+                                        : { as: createCodeMonitorAction.icon })}
+                                />
+                                Create Monitor
+                            </MenuLink>
+                        </Tooltip>
                     )}
                 </MenuList>
             </>

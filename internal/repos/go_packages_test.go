@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"sort"
 	"testing"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -11,37 +12,37 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func TestGoModulesSource_ListRepos(t *testing.T) {
+func TestGoPackagesSource_ListRepos(t *testing.T) {
 	ctx := context.Background()
 	depsSvc := testDependenciesService(ctx, t, []dependencies.Repo{
 		{
 			ID:      1,
-			Scheme:  dependencies.GoModulesScheme,
+			Scheme:  dependencies.GoPackagesScheme,
+			Name:    "github.com/foo/barbaz",
+			Version: "v0.0.1", // test that we create a repo for this module even if it's missing.
+		},
+		{
+			ID:      2,
+			Scheme:  dependencies.GoPackagesScheme,
 			Name:    "github.com/gorilla/mux",
 			Version: "v1.8.0", // test deduplication with version from config
 		},
 		{
-			ID:      2,
-			Scheme:  dependencies.GoModulesScheme,
+			ID:      3,
+			Scheme:  dependencies.GoPackagesScheme,
 			Name:    "github.com/gorilla/mux",
 			Version: "v1.7.4", // test multiple versions of the same module
 		},
 		{
-			ID:      3,
-			Scheme:  dependencies.GoModulesScheme,
+			ID:      4,
+			Scheme:  dependencies.GoPackagesScheme,
 			Name:    "github.com/goware/urlx",
 			Version: "v0.3.1",
-		},
-		{
-			ID:      4,
-			Scheme:  dependencies.GoModulesScheme,
-			Name:    "github.com/foo/barbaz",
-			Version: "v0.0.1", // Test missing modules are skipped.
 		},
 	})
 
 	svc := types.ExternalService{
-		Kind: extsvc.KindGoModules,
+		Kind: extsvc.KindGoPackages,
 		Config: marshalJSON(t, &schema.GoModulesConnection{
 			Urls: []string{
 				"https://proxy.golang.org",
@@ -58,7 +59,7 @@ func TestGoModulesSource_ListRepos(t *testing.T) {
 	cf, save := newClientFactory(t, t.Name())
 	t.Cleanup(func() { save(t) })
 
-	src, err := NewGoModulesSource(&svc, cf)
+	src, err := NewGoPackagesSource(&svc, cf)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -69,6 +70,10 @@ func TestGoModulesSource_ListRepos(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	sort.SliceStable(repos, func(i, j int) bool {
+		return repos[i].Name < repos[j].Name
+	})
 
 	testutil.AssertGolden(t, "testdata/sources/"+t.Name(), update(t.Name()), repos)
 }

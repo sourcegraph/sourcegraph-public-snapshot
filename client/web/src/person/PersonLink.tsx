@@ -5,6 +5,7 @@ import classNames from 'classnames'
 
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import { PersonLinkFields } from '../graphql-operations'
 
@@ -42,16 +43,16 @@ export const PersonLink: React.FunctionComponent<
         userClassName?: string
     }>
 > = ({ person, className = '', userClassName = '' }) => (
-    <LinkOrSpan
-        to={person.user?.url}
-        className={classNames(className, person.user && userClassName)}
-        data-tooltip={
+    <Tooltip
+        content={
             person.user && (person.user.displayName || person.displayName)
                 ? `${person.user.displayName || person.displayName} <${person.email}>`
                 : person.email
         }
     >
-        <VisuallyHidden>Github User:</VisuallyHidden>
-        {formatPersonName(person)}
-    </LinkOrSpan>
+        <LinkOrSpan to={person.user?.url} className={classNames(className, person.user && userClassName)}>
+            <VisuallyHidden>User:</VisuallyHidden>
+            {formatPersonName(person)}
+        </LinkOrSpan>
+    </Tooltip>
 )
