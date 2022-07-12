@@ -93,7 +93,7 @@ func NewGenerator(seed query.Basic, narrow, widen []rule) next {
 				// Base case: we exhausted the set of narrow
 				// rules (if any) and we've attempted every
 				// widen rule with the sets of narrow rules.
-				return func() (*autoQuery, next) { return nil, nil }
+				return nil
 			}
 
 			transform = append(transform, widen[w].transform...)

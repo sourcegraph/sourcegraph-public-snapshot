@@ -31,20 +31,15 @@ func TestNewFeelingLuckySearchJob(t *testing.T) {
 		}
 		generated := []want{}
 
-		for {
+		for g != nil {
 			autoQ, g = g()
-			if autoQ != nil {
-				generated = append(
-					generated,
-					want{
-						Description: autoQ.description,
-						Query:       query.StringHuman(autoQ.query.ToParseTree()),
-					})
-			}
+			generated = append(
+				generated,
+				want{
+					Description: autoQ.description,
+					Query:       query.StringHuman(autoQ.query.ToParseTree()),
+				})
 
-			if g == nil {
-				break
-			}
 		}
 
 		result, _ := json.MarshalIndent(generated, "", "  ")
@@ -171,20 +166,14 @@ func TestCombinations(t *testing.T) {
 		}
 		generated := []want{}
 
-		for {
+		for g != nil {
 			autoQ, g = g()
-			if autoQ != nil {
-				generated = append(
-					generated,
-					want{
-						Description: autoQ.description,
-						Query:       query.StringHuman(autoQ.query.ToParseTree()),
-					})
-			}
-
-			if g == nil {
-				break
-			}
+			generated = append(
+				generated,
+				want{
+					Description: autoQ.description,
+					Query:       query.StringHuman(autoQ.query.ToParseTree()),
+				})
 		}
 
 		result, _ := json.MarshalIndent(generated, "", "  ")
@@ -218,21 +207,15 @@ func Test_patternsAsFilters(t *testing.T) {
 		}
 		generated := []want{}
 
-		for {
+		for g != nil {
 			autoQ, g = g()
-			if autoQ != nil {
-				generated = append(
-					generated,
-					want{
-						Description: autoQ.description,
-						Input:       input,
-						Query:       query.StringHuman(autoQ.query.ToParseTree()),
-					})
-			}
-
-			if g == nil {
-				break
-			}
+			generated = append(
+				generated,
+				want{
+					Description: autoQ.description,
+					Input:       input,
+					Query:       query.StringHuman(autoQ.query.ToParseTree()),
+				})
 		}
 
 		result, _ := json.MarshalIndent(generated, "", "  ")
@@ -289,21 +272,15 @@ func Test_regexpPatterns(t *testing.T) {
 		}
 		generated := []want{}
 
-		for {
+		for g != nil {
 			autoQ, g = g()
-			if autoQ != nil {
-				generated = append(
-					generated,
-					want{
-						Description: autoQ.description,
-						Input:       input,
-						Query:       query.StringHuman(autoQ.query.ToParseTree()),
-					})
-			}
-
-			if g == nil {
-				break
-			}
+			generated = append(
+				generated,
+				want{
+					Description: autoQ.description,
+					Input:       input,
+					Query:       query.StringHuman(autoQ.query.ToParseTree()),
+				})
 		}
 
 		result, _ := json.MarshalIndent(generated, "", "  ")
