@@ -171,7 +171,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         [lastSearch, userQueryState.query, telemetryService, instanceURL]
     )
 
-    const [lastInitialSubmitUser, setLastInitialSubmitUser] = useState<AuthenticatedUser | null>(null)
+    const [lastInitialSubmitUser, setLastInitialSubmitUser] = useState<AuthenticatedUser | null | undefined>(undefined)
     useEffect(() => {
         if (lastInitialSubmitUser === authenticatedUser) {
             return
