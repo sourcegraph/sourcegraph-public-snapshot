@@ -37,7 +37,7 @@ func TestParse(t *testing.T) {
 
 			gotDepsList := make([]string, 0, len(deps))
 			for _, dep := range deps {
-				gotDepsList = append(gotDepsList, dep.PackageVersionSyntax())
+				gotDepsList = append(gotDepsList, dep.VersionedPackageSyntax())
 			}
 
 			sort.Strings(gotDepsList)

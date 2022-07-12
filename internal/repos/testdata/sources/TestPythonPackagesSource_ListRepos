@@ -1,30 +1,6 @@
 [
   {
    "ID": 0,
-   "Name": "python/requests",
-   "URI": "python/requests",
-   "Description": "",
-   "Fork": false,
-   "Archived": false,
-   "Private": false,
-   "CreatedAt": "0001-01-01T00:00:00Z",
-   "UpdatedAt": "0001-01-01T00:00:00Z",
-   "DeletedAt": "0001-01-01T00:00:00Z",
-   "ExternalRepo": {
-    "ID": "python/requests",
-    "ServiceType": "pythonPackages",
-    "ServiceID": "pythonPackages"
-   },
-   "Sources": {
-    "extsvc:pythonpackages:0": {
-     "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "python/requests"
-    }
-   },
-   "Metadata": {}
-  },
-  {
-   "ID": 0,
    "Name": "python/lavaclient",
    "URI": "python/lavaclient",
    "Description": "",
@@ -49,8 +25,8 @@
   },
   {
    "ID": 0,
-   "Name": "python/randio",
-   "URI": "python/randio",
+   "Name": "python/lofi",
+   "URI": "python/lofi",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -59,14 +35,38 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "python/randio",
+    "ID": "python/lofi",
     "ServiceType": "pythonPackages",
     "ServiceID": "pythonPackages"
    },
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "python/randio"
+     "CloneURL": "python/lofi"
+    }
+   },
+   "Metadata": {}
+  },
+  {
+   "ID": 0,
+   "Name": "python/numpy",
+   "URI": "python/numpy",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "python/numpy",
+    "ServiceType": "pythonPackages",
+    "ServiceID": "pythonPackages"
+   },
+   "Sources": {
+    "extsvc:pythonpackages:0": {
+     "ID": "extsvc:pythonpackages:0",
+     "CloneURL": "python/numpy"
     }
    },
    "Metadata": {}
@@ -97,8 +97,8 @@
   },
   {
    "ID": 0,
-   "Name": "python/numpy",
-   "URI": "python/numpy",
+   "Name": "python/randio",
+   "URI": "python/randio",
    "Description": "",
    "Fork": false,
    "Archived": false,
@@ -107,14 +107,38 @@
    "UpdatedAt": "0001-01-01T00:00:00Z",
    "DeletedAt": "0001-01-01T00:00:00Z",
    "ExternalRepo": {
-    "ID": "python/numpy",
+    "ID": "python/randio",
     "ServiceType": "pythonPackages",
     "ServiceID": "pythonPackages"
    },
    "Sources": {
     "extsvc:pythonpackages:0": {
      "ID": "extsvc:pythonpackages:0",
-     "CloneURL": "python/numpy"
+     "CloneURL": "python/randio"
+    }
+   },
+   "Metadata": {}
+  },
+  {
+   "ID": 0,
+   "Name": "python/requests",
+   "URI": "python/requests",
+   "Description": "",
+   "Fork": false,
+   "Archived": false,
+   "Private": false,
+   "CreatedAt": "0001-01-01T00:00:00Z",
+   "UpdatedAt": "0001-01-01T00:00:00Z",
+   "DeletedAt": "0001-01-01T00:00:00Z",
+   "ExternalRepo": {
+    "ID": "python/requests",
+    "ServiceType": "pythonPackages",
+    "ServiceID": "pythonPackages"
+   },
+   "Sources": {
+    "extsvc:pythonpackages:0": {
+     "ID": "extsvc:pythonpackages:0",
+     "CloneURL": "python/requests"
     }
    },
    "Metadata": {}
