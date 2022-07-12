@@ -222,6 +222,102 @@ func TestCanReadAllPaths(t *testing.T) {
 	}
 }
 
+func TestSubRepoPermissionsCanReadDirectoriesInPath(t *testing.T) {
+	conf.Mock(&conf.Unified{
+		SiteConfiguration: schema.SiteConfiguration{
+			ExperimentalFeatures: &schema.ExperimentalFeatures{
+				SubRepoPermissions: &schema.SubRepoPermissions{
+					Enabled: true,
+				},
+			},
+		},
+	})
+	t.Cleanup(func() { conf.Mock(nil) })
+	repoName := api.RepoName("repo")
+
+	testCases := []struct {
+		pathIncludes  []string
+		canReadAll    []string
+		cannotReadAny []string
+	}{
+		{
+			pathIncludes:  []string{"foo/bar/thing.txt"},
+			canReadAll:    []string{"foo/", "foo/bar/"},
+			cannotReadAny: []string{"foo/thing.txt", "foo/bar/other.txt"},
+		},
+		{
+			pathIncludes: []string{"foo/bar/**"},
+			canReadAll:   []string{"foo/", "foo/bar/", "foo/bar/baz/", "foo/bar/baz/fox/"},
+		},
+		{
+			pathIncludes:  []string{"foo/bar/"},
+			canReadAll:    []string{"foo/", "foo/bar/"},
+			cannotReadAny: []string{"foo/thing.txt", "foo/bar/thing.txt"},
+		},
+		{
+			pathIncludes:  []string{"baz/*/foo/bar/thing.txt"},
+			canReadAll:    []string{"baz/", "baz/x/", "baz/x/foo/bar/"},
+			cannotReadAny: []string{"baz/thing.txt"},
+		},
+		// We can't support rules that start with a wildcard, see comment in expandDirs
+		{
+			pathIncludes:  []string{"**/foo/bar/thing.txt"},
+			cannotReadAny: []string{"foo/", "foo/bar/"},
+		},
+		{
+			pathIncludes:  []string{"*/foo/bar/thing.txt"},
+			cannotReadAny: []string{"foo/", "foo/bar/"},
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run("", func(t *testing.T) {
+			getter := NewMockSubRepoPermissionsGetter()
+			getter.GetByUserFunc.SetDefaultHook(func(ctx context.Context, i int32) (map[api.RepoName]SubRepoPermissions, error) {
+				return map[api.RepoName]SubRepoPermissions{
+					repoName: {
+						PathIncludes: tc.pathIncludes,
+					},
+				}, nil
+			})
+			client, err := NewSubRepoPermsClient(getter)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.Background()
+
+			for _, path := range tc.canReadAll {
+				content := RepoContent{
+					Repo: repoName,
+					Path: path,
+				}
+				perm, err := client.Permissions(ctx, 1, content)
+				if err != nil {
+					t.Error(err)
+				}
+				if !perm.Include(Read) {
+					t.Errorf("Should be able to read %q, cannot", path)
+				}
+			}
+
+			for _, path := range tc.cannotReadAny {
+				content := RepoContent{
+					Repo: repoName,
+					Path: path,
+				}
+				perm, err := client.Permissions(ctx, 1, content)
+				if err != nil {
+					t.Error(err)
+				}
+				if perm.Include(Read) {
+					t.Errorf("Should not be able to read %q, can", path)
+				}
+			}
+		})
+	}
+}
+
 func TestSubRepoPermsPermissionsCache(t *testing.T) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
