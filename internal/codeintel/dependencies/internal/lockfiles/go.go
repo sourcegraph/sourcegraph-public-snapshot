@@ -13,9 +13,9 @@ import (
 //
 
 // based on https://go.dev/ref/mod#go-mod-file.
-func parseGoModFile(r io.Reader) ([]reposource.PackageVersion, error) {
+func parseGoModFile(r io.Reader) ([]reposource.VersionedPackage, error) {
 	var (
-		deps    []reposource.PackageVersion
+		deps    []reposource.VersionedPackage
 		ignore  = make(map[string]string)
 		replace = make(map[string]*modfile.Replace)
 	)
@@ -56,7 +56,7 @@ func parseGoModFile(r io.Reader) ([]reposource.PackageVersion, error) {
 			r.Mod.Version = s.New.Version
 		}
 
-		deps = append(deps, reposource.NewGoPackageVersion(r.Mod))
+		deps = append(deps, reposource.NewGoVersionedPackage(r.Mod))
 	}
 	return deps, nil
 }

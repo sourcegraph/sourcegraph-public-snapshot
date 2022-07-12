@@ -36,7 +36,7 @@ type Result struct {
 	Lockfile string
 
 	// Deps is the flat list of all dependencies found in Lockfile.
-	Deps []reposource.PackageVersion
+	Deps []reposource.VersionedPackage
 	// Graph is the dependency graph found in the Lockfile. If no graph could
 	// be built (`package.json` without `yarn.lock` doesn't allow building a
 	// fully-resolved dependency graph).
@@ -123,7 +123,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 
 		set := make(map[string]struct{})
 		for _, d := range ds {
-			k := d.PackageVersionSyntax()
+			k := d.VersionedPackageSyntax()
 			if _, ok := set[k]; !ok {
 				set[k] = struct{}{}
 				result.Deps = append(result.Deps, d)
@@ -136,7 +136,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	return nil
 }
 
-func parseZipLockfile(f *zip.File) ([]reposource.PackageVersion, *DependencyGraph, error) {
+func parseZipLockfile(f *zip.File) ([]reposource.VersionedPackage, *DependencyGraph, error) {
 	r, err := f.Open()
 	if err != nil {
 		return nil, nil, err
@@ -151,7 +151,7 @@ func parseZipLockfile(f *zip.File) ([]reposource.PackageVersion, *DependencyGrap
 	return deps, graph, nil
 }
 
-func parse(file string, r io.Reader) ([]reposource.PackageVersion, *DependencyGraph, error) {
+func parse(file string, r io.Reader) ([]reposource.VersionedPackage, *DependencyGraph, error) {
 	parser, ok := parsers[path.Base(file)]
 	if !ok {
 		return nil, nil, ErrUnsupported

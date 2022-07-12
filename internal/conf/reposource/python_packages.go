@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type PythonPackageVersion struct {
+type PythonVersionedPackage struct {
 	Name    string
 	Version string
 
@@ -15,17 +15,17 @@ type PythonPackageVersion struct {
 	PackageURL string
 }
 
-func NewPythonPackageVersion(name, version string) *PythonPackageVersion {
-	return &PythonPackageVersion{
+func NewPythonVersionedPackage(name, version string) *PythonVersionedPackage {
+	return &PythonVersionedPackage{
 		Name:    name,
 		Version: version,
 	}
 }
 
-// ParsePackageVersion parses a string in a '<name>(==<version>)?' format into an
-// PythonPackageVersion.
-func ParsePackageVersion(dependency string) (*PythonPackageVersion, error) {
-	var dep PythonPackageVersion
+// ParseVersionedPackage parses a string in a '<name>(==<version>)?' format into an
+// PythonVersionedPackage.
+func ParseVersionedPackage(dependency string) (*PythonVersionedPackage, error) {
+	var dep PythonVersionedPackage
 	if i := strings.LastIndex(dependency, "=="); i == -1 {
 		dep.Name = dependency
 	} else {
@@ -35,48 +35,52 @@ func ParsePackageVersion(dependency string) (*PythonPackageVersion, error) {
 	return &dep, nil
 }
 
+func ParsePythonPackageFromName(name string) (*PythonVersionedPackage, error) {
+	return ParseVersionedPackage(name)
+}
+
 // ParsePythonPackageFromRepoName is a convenience function to parse a repo name in a
-// 'python/<name>(==<version>)?' format into a PythonPackageVersion.
-func ParsePythonPackageFromRepoName(name string) (*PythonPackageVersion, error) {
+// 'python/<name>(==<version>)?' format into a PythonVersionedPackage.
+func ParsePythonPackageFromRepoName(name string) (*PythonVersionedPackage, error) {
 	dependency := strings.TrimPrefix(name, "python/")
 	if len(dependency) == len(name) {
 		return nil, errors.New("invalid python dependency repo name, missing python/ prefix")
 	}
-	return ParsePackageVersion(dependency)
+	return ParseVersionedPackage(dependency)
 }
 
-func (p *PythonPackageVersion) Scheme() string {
+func (p *PythonVersionedPackage) Scheme() string {
 	return "python"
 }
 
-func (p *PythonPackageVersion) PackageSyntax() string {
+func (p *PythonVersionedPackage) PackageSyntax() string {
 	return p.Name
 }
 
-func (p *PythonPackageVersion) PackageVersionSyntax() string {
+func (p *PythonVersionedPackage) VersionedPackageSyntax() string {
 	if p.Version == "" {
 		return p.Name
 	}
 	return p.Name + "==" + p.Version
 }
 
-func (p *PythonPackageVersion) PackageVersion() string {
+func (p *PythonVersionedPackage) PackageVersion() string {
 	return p.Version
 }
 
-func (p *PythonPackageVersion) Description() string { return "" }
+func (p *PythonVersionedPackage) Description() string { return "" }
 
-func (p *PythonPackageVersion) RepoName() api.RepoName {
+func (p *PythonVersionedPackage) RepoName() api.RepoName {
 	return api.RepoName("python/" + p.Name)
 }
 
-func (p *PythonPackageVersion) GitTagFromVersion() string {
+func (p *PythonVersionedPackage) GitTagFromVersion() string {
 	version := strings.TrimPrefix(p.Version, "v")
 	return "v" + version
 }
 
-func (p *PythonPackageVersion) Less(other PackageVersion) bool {
-	o := other.(*PythonPackageVersion)
+func (p *PythonVersionedPackage) Less(other VersionedPackage) bool {
+	o := other.(*PythonVersionedPackage)
 
 	if p.Name == o.Name {
 		// TODO: validate once we add a dependency source for vcs syncer.
