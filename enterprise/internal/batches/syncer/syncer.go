@@ -117,8 +117,8 @@ func (s *SyncRegistry) EnqueueChangesetSyncsForRepos(ctx context.Context, repoID
 	}
 
 	ids := make([]int64, len(cs))
-	for _, c := range cs {
-		ids = append(ids, c.ID)
+	for i, c := range cs {
+		ids[i] = c.ID
 	}
 
 	s.logger.Debug(
