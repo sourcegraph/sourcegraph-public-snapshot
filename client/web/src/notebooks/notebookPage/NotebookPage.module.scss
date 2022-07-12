@@ -1,6 +1,9 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .search-notebook-page {
+    background: var(--color-bg-1);
+    height: min-content; // Make background fill height of container
+
     display: grid;
     grid-template-columns: minmax(0, 1fr) 3fr;
     gap: 1rem;
