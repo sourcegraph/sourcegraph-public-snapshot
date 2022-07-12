@@ -30,6 +30,13 @@ type capabilities struct {
 // that if an override is indicated in opts, no inference of the relevant capabilities
 // is done at all.
 func detectCapabilities(opts OutputOpts) (caps capabilities, err error) {
+	// Workaround: For some reason the dark background detection hangs indefinitely in
+	// Buildkite, so ForceDarkBackground being set is a required (Buildkite output is
+	// always against a dark background anyway, so for the user this should be fine)
+	if os.Getenv("BUILDKITE") == "true" {
+		opts.ForceDarkBackground = true
+	}
+
 	// Set atty
 	caps.Isatty = opts.ForceTTY
 	if !opts.ForceTTY {

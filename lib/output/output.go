@@ -69,6 +69,10 @@ type OutputOpts struct {
 
 	// ForceDarkBackground ignores all terminal detection and sets whether the terminal
 	// background is dark to this value.
+	//
+	// Workaround: For some reason the dark background detection hangs indefinitely in
+	// Buildkite, so ForceDarkBackground being set is a required (Buildkite output is
+	// always against a dark background anyway, so for the user this should be fine)
 	ForceDarkBackground bool
 
 	Verbose bool
