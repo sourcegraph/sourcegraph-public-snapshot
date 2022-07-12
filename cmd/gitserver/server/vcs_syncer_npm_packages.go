@@ -75,7 +75,7 @@ func (s npmPackagesSyncer) GetPackage(ctx context.Context, name string) (reposou
 		return nil, err
 	}
 
-	err = s.UpdateTarballURL(ctx, dep)
+	err = s.updateTarballURL(ctx, dep)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,9 @@ func (s npmPackagesSyncer) GetPackage(ctx context.Context, name string) (reposou
 	return dep, nil
 }
 
-func (s *npmPackagesSyncer) UpdateTarballURL(ctx context.Context, dep *reposource.NpmVersionedPackage) error {
+// updateTarballURL sends a GET request to find the URL to download the tarball of this package, and
+// sets the `NpmVersionedPackage.TarballURL` field accordingly.
+func (s *npmPackagesSyncer) updateTarballURL(ctx context.Context, dep *reposource.NpmVersionedPackage) error {
 	f, err := s.client.GetDependencyInfo(ctx, dep)
 	if err != nil {
 		return err
@@ -95,7 +97,7 @@ func (s *npmPackagesSyncer) UpdateTarballURL(ctx context.Context, dep *reposourc
 func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
 	npmDep := dep.(*reposource.NpmVersionedPackage)
 	if npmDep.TarballURL == "" {
-		err := s.UpdateTarballURL(ctx, npmDep)
+		err := s.updateTarballURL(ctx, npmDep)
 		if err != nil {
 			return err
 		}
