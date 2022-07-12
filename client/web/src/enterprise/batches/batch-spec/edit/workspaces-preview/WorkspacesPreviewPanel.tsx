@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Panel, useWindowSize } from '@sourcegraph/wildcard'
+import { Panel, useWindowSize, VIEWPORT_LG } from '@sourcegraph/wildcard'
 
 import { WorkspacesPreview } from './WorkspacesPreview'
 
@@ -13,7 +13,12 @@ export const WorkspacesPreviewPanel: React.FunctionComponent<React.PropsWithChil
 }) => {
     const { width } = useWindowSize()
 
-    return (
+    // On sufficiently small screens, we break out of the 3-column layout and wrap the
+    // workspaces preview panel to its own row. In its own row, we no longer need the
+    // panel to be resizable.
+    return width < VIEWPORT_LG ? (
+        <WorkspacesPreview isReadOnly={isReadOnly} />
+    ) : (
         <Panel
             className="d-flex"
             defaultSize={500}
