@@ -51,7 +51,7 @@ func (r *Resolved) String() string {
 
 func NewResolver(db database.DB) *Resolver {
 	return &Resolver{
-		db: db
+		db:        db,
 		gitserver: gitserver.NewClient(db),
 	}
 }
