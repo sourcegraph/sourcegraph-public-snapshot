@@ -6,6 +6,11 @@ exports[`PersonLink no user account 1`] = `
     class="a"
     data-state="closed"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      User:
+    </span>
     alice
   </span>
 </DocumentFragment>
@@ -18,6 +23,11 @@ exports[`PersonLink with user account 1`] = `
     data-state="closed"
     href="u"
   >
+    <span
+      style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+    >
+      User:
+    </span>
     alice
   </a>
 </DocumentFragment>
