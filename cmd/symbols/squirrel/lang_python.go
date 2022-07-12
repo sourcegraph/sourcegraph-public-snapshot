@@ -465,22 +465,18 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 		if def.Node.Type() == "identifier" && def.Node.Content(def.Contents) == "self" {
 			fn := parent.Parent()
 			if fn == nil || fn.Type() != "function_definition" {
-				fmt.Println("🟠1", parent.Type(), fn.Type())
 				return nil, nil
 			}
 			block := fn.Parent()
 			if block == nil || block.Type() != "block" {
-				fmt.Println("🟠2.1")
 				return nil, nil
 			}
 			class := block.Parent()
 			if class == nil || class.Type() != "class_definition" {
-				fmt.Println("🟠2")
 				return nil, nil
 			}
 			name := class.ChildByFieldName("name")
 			if name == nil {
-				fmt.Println("🟠3")
 				return nil, nil
 			}
 			return squirrel.defToTypePython(ctx, swapNode(def, name))
