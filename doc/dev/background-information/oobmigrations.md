@@ -67,7 +67,7 @@ CREATE TABLE skunk_payloads (
 
 #### Step 1: Add migration record
 
-The first step is to register the migration in the database, which is done automatically by the out-of-band migration store on application initialization. To declare metadata for a new migration, add a new entry to the file `internal/oobmigration/oobmigrations.yaml`.
+The first step is to declare metadata for a new migration. Add a new entry to the file `internal/oobmigration/oobmigrations.yaml`.
 
 ```yaml
 - id: 42                                  -- This must be consistent across all Sourcegraph instances
