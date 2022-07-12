@@ -45,6 +45,7 @@ in the document.
 [`Document`]: https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/scip%24+message+Document+%7B...%7D&patternType=structural
 
 The information covered by an [`Occurrence`][] can be syntactic or semantic:
+
 - Syntactic information such as the `syntax_kind` field
   is used for highlighting.
 - Semantic information such as the `symbol` and `symbol_role` fields
@@ -160,6 +161,7 @@ running `scip-typescript` over itself:
 ```
 
 The carets and contextual information make it easy to visually check that:
+
 - Occurrences are being emitted for the right source ranges.
 - Occurrences have the expected symbol strings.
   The exact syntax for the symbol strings is described
