@@ -19,6 +19,7 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
@@ -35,6 +36,7 @@ import {
     CreateAction,
 } from './createActions'
 import { CreateActionsMenu } from './CreateActionsMenu'
+import { SearchActionsMenu } from './SearchActionsMenu'
 
 import createActionsStyles from './CreateActions.module.scss'
 import styles from './SearchResultsInfoBar.module.scss'
@@ -140,6 +142,8 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
 export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props => {
+    const [coreWorkflowImprovementsEnabled] = useTemporarySetting('coreWorkflowImprovements.enabled')
+
     const canCreateMonitorFromQuery = useMemo(() => {
         if (!props.query) {
             return false
@@ -157,7 +161,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         () =>
             [
                 getBatchChangeCreateAction(
-                    props.query as string,
+                    props.query,
                     props.patternType,
                     props.authenticatedUser,
                     props.batchChangesExecutionEnabled
@@ -342,72 +346,92 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                         )}
                     </ActionsContainer>
 
-                    {(createActions.length > 0 || createCodeMonitorButton || saveSearchButton) && (
-                        <li className={styles.divider} aria-hidden="true" />
-                    )}
+                    {(createActions.length > 0 ||
+                        createCodeMonitorButton ||
+                        saveSearchButton ||
+                        coreWorkflowImprovementsEnabled) && <li className={styles.divider} aria-hidden="true" />}
 
-                    {createActions.map(createActionButton => (
-                        <li
-                            key={createActionButton.label}
-                            data-tooltip={createActionButton.tooltip}
-                            data-placement="bottom"
-                            className={classNames('nav-item mr-2', createActionsStyles.button)}
-                        >
-                            <ButtonLink
-                                to={createActionButton.url}
-                                className="text-decoration-none"
-                                variant="secondary"
-                                outline={true}
-                                size="sm"
-                            >
-                                <Icon
-                                    aria-hidden={true}
-                                    className="mr-1"
-                                    {...(typeof createActionButton.icon === 'string'
-                                        ? { svgPath: createActionButton.icon }
-                                        : { as: createActionButton.icon })}
-                                />
-                                {createActionButton.label}
-                            </ButtonLink>
-                        </li>
-                    ))}
-
-                    {createCodeMonitorButton}
-
-                    {(createActions.length > 0 || createCodeMonitorAction) && (
-                        <CreateActionsMenu
+                    {coreWorkflowImprovementsEnabled ? (
+                        <SearchActionsMenu
+                            authenticatedUser={props.authenticatedUser}
                             createActions={createActions}
                             createCodeMonitorAction={createCodeMonitorAction}
                             canCreateMonitor={canCreateMonitorFromQuery}
-                            authenticatedUser={props.authenticatedUser}
+                            resultsFound={props.resultsFound}
+                            allExpanded={props.allExpanded}
+                            onExpandAllResultsToggle={props.onExpandAllResultsToggle}
+                            onSaveQueryClick={props.onSaveQueryClick}
                         />
-                    )}
-
-                    {saveSearchButton}
-
-                    {props.resultsFound && (
+                    ) : (
                         <>
-                            <li className={styles.divider} aria-hidden="true" />
-                            <li className={classNames(styles.navItem)}>
-                                <Button
-                                    onClick={props.onExpandAllResultsToggle}
-                                    className="text-decoration-none"
+                            {createActions.map(createActionButton => (
+                                <li
+                                    key={createActionButton.label}
+                                    data-tooltip={createActionButton.tooltip}
                                     data-placement="bottom"
-                                    data-tooltip={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
-                                    aria-label={`${props.allExpanded ? 'Hide' : 'Show'} more matches on all results`}
-                                    aria-live="polite"
-                                    data-testid="search-result-expand-btn"
-                                    outline={true}
-                                    variant="secondary"
-                                    size="sm"
+                                    className={classNames('nav-item mr-2', createActionsStyles.button)}
                                 >
-                                    <Icon
-                                        aria-hidden={true}
-                                        className="mr-0"
-                                        svgPath={props.allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown}
-                                    />
-                                </Button>
-                            </li>
+                                    <ButtonLink
+                                        to={createActionButton.url}
+                                        className="text-decoration-none"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                    >
+                                        <Icon
+                                            aria-hidden={true}
+                                            className="mr-1"
+                                            {...(typeof createActionButton.icon === 'string'
+                                                ? { svgPath: createActionButton.icon }
+                                                : { as: createActionButton.icon })}
+                                        />
+                                        {createActionButton.label}
+                                    </ButtonLink>
+                                </li>
+                            ))}
+
+                            {createCodeMonitorButton}
+
+                            {(createActions.length > 0 || createCodeMonitorAction) && (
+                                <CreateActionsMenu
+                                    createActions={createActions}
+                                    createCodeMonitorAction={createCodeMonitorAction}
+                                    canCreateMonitor={canCreateMonitorFromQuery}
+                                    authenticatedUser={props.authenticatedUser}
+                                />
+                            )}
+
+                            {saveSearchButton}
+
+                            {props.resultsFound && (
+                                <>
+                                    <li className={styles.divider} aria-hidden="true" />
+                                    <li className={classNames(styles.navItem)}>
+                                        <Button
+                                            onClick={props.onExpandAllResultsToggle}
+                                            className="text-decoration-none"
+                                            data-placement="bottom"
+                                            data-tooltip={`${
+                                                props.allExpanded ? 'Hide' : 'Show'
+                                            } more matches on all results`}
+                                            aria-label={`${
+                                                props.allExpanded ? 'Hide' : 'Show'
+                                            } more matches on all results`}
+                                            aria-live="polite"
+                                            data-testid="search-result-expand-btn"
+                                            outline={true}
+                                            variant="secondary"
+                                            size="sm"
+                                        >
+                                            <Icon
+                                                aria-hidden={true}
+                                                className="mr-0"
+                                                svgPath={props.allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown}
+                                            />
+                                        </Button>
+                                    </li>
+                                </>
+                            )}
                         </>
                     )}
                 </ul>
