@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -45,7 +46,10 @@ type SyncRegistry struct {
 	syncers map[string]*changesetSyncer
 }
 
-var _ goroutine.BackgroundRoutine = &SyncRegistry{}
+var (
+	_ batches.ChangesetSyncRegistry = &SyncRegistry{}
+	_ goroutine.BackgroundRoutine   = &SyncRegistry{}
+)
 
 // NewSyncRegistry creates a new sync registry which starts a syncer for each code host and will update them
 // when external services are changed, added or removed.
