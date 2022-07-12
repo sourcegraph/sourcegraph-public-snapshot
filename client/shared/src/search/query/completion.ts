@@ -32,37 +32,39 @@ export const COMPLETION_ITEM_SELECTED: Monaco.languages.Command = {
  * entries for negateable filters.
  */
 export const createFilterSuggestions = (
-    filter: FilterType[]
+    filters: FilterType[]
 ): { label: string; insertText: string; filterText: string; detail: string }[] =>
-    filter.flatMap(filterType => {
-        const completionItem = {
-            label: filterType,
-            insertText: `${filterType}:`,
-            filterText: filterType,
-            detail: '',
-        }
-        if (isNegatableFilter(filterType)) {
+    filters
+        .filter(filterType => FILTERS[filterType].deprecated !== true)
+        .flatMap(filterType => {
+            const completionItem = {
+                label: filterType,
+                insertText: `${filterType}:`,
+                filterText: filterType,
+                detail: '',
+            }
+            if (isNegatableFilter(filterType)) {
+                return [
+                    {
+                        ...completionItem,
+                        detail: FILTERS[filterType].description(false),
+                    },
+                    {
+                        ...completionItem,
+                        label: `-${filterType}`,
+                        insertText: `-${filterType}:`,
+                        filterText: `-${filterType}`,
+                        detail: FILTERS[filterType].description(true),
+                    },
+                ]
+            }
             return [
                 {
                     ...completionItem,
-                    detail: FILTERS[filterType].description(false),
-                },
-                {
-                    ...completionItem,
-                    label: `-${filterType}`,
-                    insertText: `-${filterType}:`,
-                    filterText: `-${filterType}`,
-                    detail: FILTERS[filterType].description(true),
+                    detail: FILTERS[filterType].description,
                 },
             ]
-        }
-        return [
-            {
-                ...completionItem,
-                detail: FILTERS[filterType].description,
-            },
-        ]
-    })
+        })
 
 /**
  * Default filter completions for all filters.

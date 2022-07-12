@@ -153,6 +153,8 @@ interface BaseFilterDefinition {
     default?: string
     /** Whether the filter may only be used 0 or 1 times in a query. */
     singular?: boolean
+    /** Whether or not the filter is actively supported. */
+    deprecated?: boolean
 }
 
 interface NegatableFilterDefinition extends Omit<BaseFilterDefinition, 'description'> {
@@ -281,6 +283,7 @@ export const FILTERS: Record<NegatableFilter, NegatableFilterDefinition> &
         description: 'Include results from the named group.',
         placeholder: 'group-name',
         singular: true,
+        deprecated: true,
     },
     [FilterType.repohascommitafter]: {
         description: 'Filter out stale repositories without recent commits',
