@@ -8,7 +8,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
 
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -25,7 +25,8 @@ import (
 
 func TestStore(t *testing.T) {
 	t.Parallel()
-	db := database.NewDB(dbtest.NewDB(t))
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	ctx := context.Background()
 	jobID, err := db.BitbucketProjectPermissions().Enqueue(ctx, "project1", 2, []types.UserPermission{
@@ -36,7 +37,7 @@ func TestStore(t *testing.T) {
 	require.NotZero(t, jobID)
 
 	store := createBitbucketProjectPermissionsStore(db, &config{})
-	count, err := store.QueuedCount(ctx, true, nil)
+	count, err := store.QueuedCount(ctx, true)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 }
@@ -55,7 +56,6 @@ func mustParseTime(v string) time.Time {
 
 func TestGetBitbucketClient(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
 	var c schema.BitbucketServerConnection
 	c.Token = "secret"
@@ -70,7 +70,7 @@ func TestGetBitbucketClient(t *testing.T) {
 	}
 
 	var handler bitbucketProjectPermissionsHandler
-	client, err := handler.getBitbucketClient(ctx, &svc)
+	client, err := handler.getBitbucketClient(&svc)
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }
@@ -93,7 +93,7 @@ func TestHandle_UnsupportedCodeHost(t *testing.T) {
 	db.ExternalServicesFunc.SetDefaultReturn(externalServices)
 
 	handler := &bitbucketProjectPermissionsHandler{db: edb.NewEnterpriseDB(db)}
-	err := handler.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{ExternalServiceID: 1})
+	err := handler.Handle(ctx, logtest.Scoped(t), &types.BitbucketProjectPermissionJob{ExternalServiceID: 1})
 
 	require.True(t, errcode.IsNonRetryable(err))
 }
@@ -102,9 +102,10 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	// create 3 users
 	users := db.Users()
@@ -151,6 +152,11 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	})
 	require.NoError(t, err)
 
+	extSvc := &types.ExternalService{
+		ID:   1,
+		Kind: extsvc.KindBitbucketServer,
+	}
+
 	check := func() {
 		// check that the permissions were set
 		perms := db.Perms()
@@ -172,15 +178,37 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		}, up.IDs)
 	}
 
+	checkPendingPerms := func(bindIDs []string) {
+		perms := db.Perms()
+
+		for _, bindID := range bindIDs {
+			userPerms := &authz.UserPendingPermissions{
+				ServiceType: extsvc.TypeBitbucketServer,
+				ServiceID:   "1",
+				BindID:      bindID,
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
+			}
+
+			err := perms.LoadUserPendingPermissions(ctx, userPerms)
+			require.NoError(t, err)
+			require.Equal(t, map[int32]struct{}{
+				1: {},
+				2: {},
+			}, userPerms.IDs)
+		}
+	}
+
 	h := bitbucketProjectPermissionsHandler{db: db}
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
 	err = h.setPermissionsForUsers(
 		ctx,
-		log.Scoped("test", "test"),
+		extSvc,
+		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -190,15 +218,17 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	check()
+	checkPendingPerms([]string{"username1@foo.bar"})
 
 	// run the same set of permissions again, shouldn't change anything
 	err = h.setPermissionsForUsers(
 		ctx,
-		log.Scoped("test", "test"),
+		extSvc,
+		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -208,15 +238,17 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	check()
+	checkPendingPerms([]string{"username1@foo.bar"})
 
-	// test with wrong bindids
+	// test with only non-existent users
 	err = h.setPermissionsForUsers(
 		ctx,
-		log.Scoped("test", "test"),
+		extSvc,
+		logtest.Scoped(t),
 		[]types.UserPermission{
-			{BindID: "pushpa", Permission: "read"},
-			{BindID: "igor", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
+			{BindID: "username2@foo.bar", Permission: "read"},
+			{BindID: "username3@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -225,7 +257,8 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		"foo",
 	)
 	// should fail if the bind ids are wrong
-	require.Error(t, err)
+	require.NoError(t, err)
+	checkPendingPerms([]string{"username1@foo.bar", "username2@foo.bar", "username3@foo.bar"})
 
 	// ensure this unsets the unrestricted flag
 	_, err = db.ExecContext(ctx, "UPDATE repo_permissions SET unrestricted = true WHERE repo_id = 1")
@@ -234,11 +267,12 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again
 	err = h.setPermissionsForUsers(
 		ctx,
-		log.Scoped("test", "test"),
+		extSvc,
+		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -262,9 +296,11 @@ func TestHandleRestricted(t *testing.T) {
 	}
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
+
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -323,7 +359,7 @@ func TestHandleRestricted(t *testing.T) {
 	}
 
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
-	err = h.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{
+	err = h.Handle(ctx, logtest.Scoped(t), &types.BitbucketProjectPermissionJob{
 		ExternalServiceID: 1,
 		ProjectKey:        "SGDEMO",
 		Permissions: []types.UserPermission{
@@ -361,9 +397,10 @@ func TestHandleUnrestricted(t *testing.T) {
 	}
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
 	ctx := context.Background()
 
-	db := edb.NewEnterpriseDB(database.NewDB(dbtest.NewDB(t)))
+	db := edb.NewEnterpriseDB(database.NewDB(logger, dbtest.NewDB(logger, t)))
 
 	confGet := func() *conf.Unified {
 		return &conf.Unified{}
@@ -431,7 +468,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	}
 
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
-	err = h.Handle(ctx, log.Scoped("test", "test"), &types.BitbucketProjectPermissionJob{
+	err = h.Handle(ctx, logtest.Scoped(t), &types.BitbucketProjectPermissionJob{
 		ExternalServiceID: 1,
 		ProjectKey:        "SGDEMO",
 		Unrestricted:      true,
