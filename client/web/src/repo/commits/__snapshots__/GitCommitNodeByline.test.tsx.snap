@@ -23,6 +23,11 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
         class="font-weight-bold"
         data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        
@@ -60,6 +65,11 @@ exports[`GitCommitNodeByline author 1`] = `
         class="font-weight-bold"
         data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        
@@ -106,6 +116,11 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
         class="font-weight-bold"
         data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        authored and commited by 
@@ -114,6 +129,11 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
         data-state="closed"
         href="https://example.com/bobyang"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         bYang
       </a>
        
@@ -160,6 +180,11 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
         class="font-weight-bold"
         data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        authored and commited by 
@@ -168,6 +193,11 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
         data-state="closed"
         href="https://example.com/bobyang"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         bYang
       </a>
        
@@ -205,6 +235,11 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
         class="font-weight-bold"
         data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        
@@ -242,6 +277,11 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
         class="font-weight-bold"
         data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        

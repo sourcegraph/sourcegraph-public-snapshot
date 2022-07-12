@@ -1,5 +1,6 @@
 import * as React from 'react'
 
+import VisuallyHidden from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { gql } from '@sourcegraph/http-client'
@@ -50,6 +51,7 @@ export const PersonLink: React.FunctionComponent<
         }
     >
         <LinkOrSpan to={person.user?.url} className={classNames(className, person.user && userClassName)}>
+            <VisuallyHidden>User:</VisuallyHidden>
             {formatPersonName(person)}
         </LinkOrSpan>
     </Tooltip>
