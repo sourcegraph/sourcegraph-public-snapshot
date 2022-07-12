@@ -4,13 +4,13 @@ import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
 import com.intellij.openapi.ide.CopyPasteManager;
+import org.jetbrains.annotations.NotNull;
 
 import java.awt.datatransfer.StringSelection;
 
-public class Copy extends FileAction {
-
+public class Copy extends FileActionBase {
     @Override
-    void handleFileUri(String uri) {
+    protected void handleFileUri(@NotNull String uri) {
         // Remove utm tags for sharing
         String urlWithoutUtm = uri.replaceAll("(&utm_product_name=)(.*)", "");
 

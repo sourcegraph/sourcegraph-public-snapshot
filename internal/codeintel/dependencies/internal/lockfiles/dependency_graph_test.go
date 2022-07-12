@@ -1,78 +1,117 @@
 package lockfiles
 
 import (
-	"fmt"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/sebdah/goldie/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
 func TestDependencyGraph(t *testing.T) {
-	a := &testPackageVersion{name: "a", version: "1.0.0"}
-	b := &testPackageVersion{name: "b", version: "1.0.0"}
-	c := &testPackageVersion{name: "c", version: "1.0.0"}
-	d := &testPackageVersion{name: "d", version: "1.0.0"}
-	e := &testPackageVersion{name: "e", version: "1.0.0"}
-	f := &testPackageVersion{name: "f", version: "1.0.0"}
-	g := &testPackageVersion{name: "g", version: "1.0.0"}
+	a := &testPkg{name: "a", version: "1.0.0"}
+	b := &testPkg{name: "b", version: "1.0.0"}
+	c := &testPkg{name: "c", version: "1.0.0"}
+	d := &testPkg{name: "d", version: "1.0.0"}
+	e := &testPkg{name: "e", version: "1.0.0"}
+	f := &testPkg{name: "f", version: "1.0.0"}
+	g := &testPkg{name: "g", version: "1.0.0"}
 
-	dg := newDependencyGraph()
-	dg.addPackage(a)
-	dg.addPackage(b)
-	dg.addPackage(c)
-	dg.addPackage(d)
-	dg.addPackage(e)
-	dg.addPackage(f)
-	dg.addPackage(f)
+	gold := goldie.New(t, goldie.WithFixtureDir("testdata/dependencygraph"))
 
-	// a -> b -> d
-	//   -> c -> e -> f
-	//   -> g
-	dg.addDependency(a, b)
-	dg.addDependency(a, c)
-	dg.addDependency(a, g)
+	t.Run("normal", func(t *testing.T) {
+		dg := newDependencyGraph()
+		dg.addPackage(a)
+		dg.addPackage(b)
+		dg.addPackage(c)
+		dg.addPackage(d)
+		dg.addPackage(e)
+		dg.addPackage(f)
+		dg.addPackage(f)
 
-	dg.addDependency(b, d)
+		// a -> b -> d
+		//   -> c -> e -> f
+		//   -> g
+		dg.addDependency(a, b)
+		dg.addDependency(a, c)
+		dg.addDependency(a, g)
 
-	dg.addDependency(c, e)
-	dg.addDependency(e, f)
+		dg.addDependency(b, d)
 
-	want := `` +
-		`test/a:
-	test/b:
-		test/d
-	test/c:
-		test/e:
-			test/f
-	test/g
-`
+		dg.addDependency(c, e)
+		dg.addDependency(e, f)
 
-	got := dg.String()
-	fmt.Println(got)
+		gold.AssertJson(t, "normal", dg.AsMap())
+	})
 
-	if d := cmp.Diff(want, got); d != "" {
-		t.Fatalf("+want,-got\n%s", d)
-	}
+	t.Run("circular", func(t *testing.T) {
+		dg := newDependencyGraph()
+		dg.addPackage(a)
+		dg.addPackage(b)
+		dg.addPackage(c)
+		dg.addPackage(d)
+		dg.addPackage(e)
+		dg.addPackage(f)
+		dg.addPackage(f)
 
+		// a -> b -> d
+		//   -> c -> e -> f -> c     <-- f depends on c
+		//   -> g
+		dg.addDependency(a, b)
+		dg.addDependency(a, c)
+		dg.addDependency(a, g)
+
+		dg.addDependency(b, d)
+
+		dg.addDependency(c, e)
+		dg.addDependency(e, f)
+		dg.addDependency(f, c)
+
+		gold.AssertJson(t, "circular", dg.AsMap())
+	})
+
+	t.Run("circular root", func(t *testing.T) {
+		dg := newDependencyGraph()
+		dg.addPackage(a)
+		dg.addPackage(b)
+		dg.addPackage(c)
+		dg.addPackage(d)
+		dg.addPackage(e)
+		dg.addPackage(f)
+		dg.addPackage(f)
+
+		// a -> b -> d
+		//   -> c -> e -> f -> a     <-- f depends on a
+		//   -> g
+		dg.addDependency(a, b)
+		dg.addDependency(a, c)
+		dg.addDependency(a, g)
+
+		dg.addDependency(b, d)
+
+		dg.addDependency(c, e)
+		dg.addDependency(e, f)
+		dg.addDependency(f, a)
+
+		gold.AssertJson(t, "circular-root", dg.AsMap())
+	})
 }
 
-var _ reposource.PackageVersion = &testPackageVersion{}
+var _ reposource.PackageVersion = &testPkg{}
 
-type testPackageVersion struct {
+type testPkg struct {
 	name    string
 	version string
 }
 
-func (t *testPackageVersion) PackageVersionSyntax() string { return t.name }
-func (t *testPackageVersion) PackageSyntax() string        { return t.name }
-func (t *testPackageVersion) RepoName() api.RepoName       { return api.RepoName("test/" + t.name) }
-func (t *testPackageVersion) PackageVersion() string       { return t.version }
-func (t *testPackageVersion) Scheme() string               { return "test" }
-func (t *testPackageVersion) Description() string          { return "" }
-func (t *testPackageVersion) GitTagFromVersion() string    { return t.version }
-func (t *testPackageVersion) Less(other reposource.PackageVersion) bool {
+func (t *testPkg) PackageVersionSyntax() string { return t.name }
+func (t *testPkg) PackageSyntax() string        { return t.name }
+func (t *testPkg) RepoName() api.RepoName       { return api.RepoName("test/" + t.name) }
+func (t *testPkg) PackageVersion() string       { return t.version }
+func (t *testPkg) Scheme() string               { return "test" }
+func (t *testPkg) Description() string          { return "" }
+func (t *testPkg) GitTagFromVersion() string    { return t.version }
+func (t *testPkg) Less(other reposource.PackageVersion) bool {
 	return t.PackageSyntax() < other.PackageSyntax()
 }

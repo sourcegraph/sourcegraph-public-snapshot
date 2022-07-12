@@ -1,7 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
-import * as H from 'history'
+import { useLocation } from 'react-router-dom-v5-compat'
 
 import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError } from '@sourcegraph/common'
@@ -13,8 +13,6 @@ import { eventLogger } from '../tracking/eventLogger'
 import { getReturnTo, PasswordInput } from './SignInSignUpCommon'
 
 interface Props {
-    location: H.Location
-    history: H.History
     onAuthError: (error: Error | null) => void
     noThirdPartyProviders?: boolean
     context: Pick<
@@ -27,11 +25,11 @@ interface Props {
  * The form for signing in with a username and password.
  */
 export const UsernamePasswordSignInForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    location,
     onAuthError,
     noThirdPartyProviders,
     context,
 }) => {
+    const location = useLocation()
     const [usernameOrEmail, setUsernameOrEmail] = useState('')
     const [password, setPassword] = useState('')
     const [loading, setLoading] = useState(false)

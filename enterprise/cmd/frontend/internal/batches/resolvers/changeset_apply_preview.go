@@ -209,7 +209,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 		}
 
 		// Then, dry-run the rewirer to simulate how the changeset would look like _after_ an apply operation.
-		rewirer := rewirer.New(btypes.RewirerMappings{{
+		changesetRewirer := rewirer.New(btypes.RewirerMappings{{
 			ChangesetSpecID: r.mapping.ChangesetSpecID,
 			ChangesetID:     r.mapping.ChangesetID,
 			RepoID:          r.mapping.RepoID,
@@ -218,17 +218,17 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 			Changeset:     mappingChangeset,
 			Repo:          mappingRepo,
 		}}, batchChange.ID)
-		changesets, err := rewirer.Rewire()
+		wantedChangesets, err := changesetRewirer.Rewire()
 		if err != nil {
 			r.planErr = err
 			return
 		}
 
-		if len(changesets) != 1 {
+		if len(wantedChangesets) != 1 {
 			r.planErr = errors.New("rewirer did not return changeset")
 			return
 		}
-		changeset := changesets[0]
+		wantedChangeset := wantedChangesets[0]
 
 		// Set the changeset UI publication state if necessary.
 		if r.publicationStates != nil && mappingChangesetSpec != nil {
@@ -237,7 +237,7 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 					r.planErr = errors.Newf("changeset spec %q has the published field set in its spec", mappingChangesetSpec.RandID)
 					return
 				}
-				changeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
+				wantedChangeset.UiPublicationState = btypes.ChangesetUiPublicationStateFromPublishedValue(state)
 			}
 		}
 
@@ -250,26 +250,26 @@ func (r *visibleChangesetApplyPreviewResolver) computePlan(ctx context.Context) 
 
 		// This means that we currently won't show "attach to tracking changeset" and "detach changeset" in this preview API. Close and import non-existing work, though.
 		var previousSpec, currentSpec *btypes.ChangesetSpec
-		if changeset.PreviousSpecID != 0 {
-			previousSpec, err = r.store.GetChangesetSpecByID(ctx, changeset.PreviousSpecID)
+		if wantedChangeset.PreviousSpecID != 0 {
+			previousSpec, err = r.store.GetChangesetSpecByID(ctx, wantedChangeset.PreviousSpecID)
 			if err != nil {
 				r.planErr = err
 				return
 			}
 		}
-		if changeset.CurrentSpecID != 0 {
+		if wantedChangeset.CurrentSpecID != 0 {
 			if r.mapping.ChangesetSpec != nil {
 				// If the current spec was not unset by the rewirer, it will be this resolvers spec.
 				currentSpec = r.mapping.ChangesetSpec
 			} else {
-				currentSpec, err = r.store.GetChangesetSpecByID(ctx, changeset.CurrentSpecID)
+				currentSpec, err = r.store.GetChangesetSpecByID(ctx, wantedChangeset.CurrentSpecID)
 				if err != nil {
 					r.planErr = err
 					return
 				}
 			}
 		}
-		r.plan, r.planErr = reconciler.DeterminePlan(previousSpec, currentSpec, changeset)
+		r.plan, r.planErr = reconciler.DeterminePlan(previousSpec, currentSpec, r.mapping.Changeset, wantedChangeset)
 	})
 	return r.plan, r.planErr
 }

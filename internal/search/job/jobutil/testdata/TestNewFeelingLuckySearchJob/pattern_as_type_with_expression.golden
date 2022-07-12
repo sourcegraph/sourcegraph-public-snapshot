@@ -1,24 +1,10 @@
-{
-  "OR": [
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "apply search type for pattern",
-          "Query": "context:global type:commit (code OR monitor)",
-          "PatternType": 3
-        }
-      }
-    },
-    {
-      "GeneratedSearchJob": {
-        "Child": {},
-        "ProposedQuery": {
-          "Description": "AND patterns together",
-          "Query": "context:global (code OR (monitor AND commit))",
-          "PatternType": 3
-        }
-      }
-    }
-  ]
-}
+[
+  {
+    "Description": "apply search type for pattern",
+    "Query": "context:global type:commit (code OR monitor)"
+  },
+  {
+    "Description": "AND patterns together",
+    "Query": "context:global (code OR (monitor AND commit))"
+  }
+]

@@ -12,7 +12,7 @@ import { addNotepadEntry, NotepadEntry } from '../stores/notepad'
 
 import { NotepadContainer, NotepadProps } from './Notepad'
 
-describe('Search Stack', () => {
+describe('Notepad', () => {
     const renderNotepad = (props?: Partial<NotepadProps>, enabled = true): RenderWithBrandedContextResult =>
         renderWithBrandedContext(
             <MockTemporarySettings settings={{ 'search.notepad.enabled': enabled }}>
@@ -21,7 +21,7 @@ describe('Search Stack', () => {
         )
 
     function open() {
-        userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
+        userEvent.click(screen.getByRole('button', { name: /Open Notepad/ }))
     }
 
     afterEach(cleanup)
@@ -43,7 +43,7 @@ describe('Search Stack', () => {
 
             renderNotepad()
 
-            expect(screen.queryByRole('button', { name: 'Open Notepad' })).toBeInTheDocument()
+            expect(screen.queryByRole('button', { name: /Open Notepad/ })).toBeInTheDocument()
         })
     })
 
@@ -56,7 +56,7 @@ describe('Search Stack', () => {
                 addableEntry: mockEntries[0],
             })
             renderNotepad()
-            userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
+            userEvent.click(screen.getByRole('button', { name: /Open Notepad/ }))
 
             userEvent.click(screen.getByRole('button', { name: 'Restore last session' }))
             expect(useNotepadState.getState().entries).toEqual(mockEntries)
@@ -82,10 +82,10 @@ describe('Search Stack', () => {
         it('opens and closes', () => {
             renderNotepad()
 
-            userEvent.click(screen.getByRole('button', { name: 'Open Notepad' }))
-            userEvent.click(screen.getByRole('button', { name: 'Close Notepad' }))
+            userEvent.click(screen.getByRole('button', { name: /Open Notepad/ }))
+            userEvent.click(screen.getByRole('button', { name: /Close Notepad/ }))
 
-            expect(screen.queryByRole('button', { name: 'Open Notepad' })).toBeInTheDocument()
+            expect(screen.queryByRole('button', { name: /Open Notepad/ })).toBeInTheDocument()
         })
 
         it('redirects to notes', () => {

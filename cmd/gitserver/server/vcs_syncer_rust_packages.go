@@ -70,7 +70,7 @@ func (s *rustDependencySource) Get(ctx context.Context, name, version string) (r
 }
 
 func (s *rustDependencySource) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
-	packageURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/%s", dep.PackageSyntax(), dep.PackageVersion(), "download")
+	packageURL := fmt.Sprintf("https://static.crates.io/crates/%s/%s-%s.crate", dep.PackageSyntax(), dep.PackageSyntax(), dep.PackageVersion())
 
 	pkg, err := s.client.Get(ctx, packageURL)
 	if err != nil {
@@ -91,7 +91,8 @@ func (s *rustDependencySource) Download(ctx context.Context, dir string, dep rep
 func unpackRustPackage(pkg []byte, workDir string) error {
 	r := bytes.NewReader(pkg)
 	opts := unpack.Opts{
-		SkipInvalid: true,
+		SkipInvalid:    true,
+		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 

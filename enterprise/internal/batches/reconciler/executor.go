@@ -12,6 +12,7 @@ import (
 
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -21,14 +22,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(ctx context.Context, logger log.Logger, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
 	e := &executor{
 		gitserverClient:   gitserverClient,
+		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
@@ -41,6 +44,7 @@ func executePlan(ctx context.Context, gitserverClient GitserverClient, sourcer s
 
 type executor struct {
 	gitserverClient   GitserverClient
+	logger            log.Logger
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
@@ -139,6 +143,8 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 	return e.tx.UpdateChangeset(ctx, e.ch)
 }
 
+var errCannotPushToArchivedRepo = errcode.MakeNonRetryable(errors.New("cannot push to an archived repo"))
+
 // pushChangesetPatch creates the commits for the changeset on its codehost.
 func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	existingSameBranch, err := e.tx.GetChangeset(ctx, store.GetChangesetOpts{
@@ -167,6 +173,13 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
+
+	// Short circuit any attempt to push to an archived repo, since we can save
+	// gitserver the work (and it'll keep retrying).
+	if remoteRepo.Archived {
+		return errCannotPushToArchivedRepo
+	}
+
 	pushConf, err := css.GitserverPushConfig(ctx, e.tx.ExternalServices(), remoteRepo)
 	if err != nil {
 		return err
@@ -175,7 +188,21 @@ func (e *executor) pushChangesetPatch(ctx context.Context) (err error) {
 	if err != nil {
 		return err
 	}
-	return e.pushCommit(ctx, opts)
+
+	err = e.pushCommit(ctx, opts)
+	var pce pushCommitError
+	if errors.As(err, &pce) {
+		if acss, ok := css.(sources.ArchivableChangesetSource); ok {
+			if acss.IsArchivedPushError(pce.CombinedOutput) {
+				if err := e.handleArchivedRepo(ctx); err != nil {
+					return errors.Wrap(err, "handling archived repo")
+				}
+				return errCannotPushToArchivedRepo
+			}
+		}
+	}
+
+	return err
 }
 
 // publishChangeset creates the given changeset on its code host.
@@ -326,7 +353,13 @@ func (e *executor) updateChangeset(ctx context.Context) (err error) {
 	}
 
 	if err := css.UpdateChangeset(ctx, &cs); err != nil {
-		return errors.Wrap(err, "updating changeset")
+		if errcode.IsArchived(err) {
+			if err := e.handleArchivedRepo(ctx); err != nil {
+				return err
+			}
+		} else {
+			return errors.Wrap(err, "updating changeset")
+		}
 	}
 
 	return nil
@@ -505,21 +538,65 @@ func loadChangesetSource(ctx context.Context, s *store.Store, sourcer sources.So
 	return css, nil
 }
 
+type pushCommitError struct {
+	*protocol.CreateCommitFromPatchError
+}
+
+func (e pushCommitError) Error() string {
+	return fmt.Sprintf(
+		"creating commit from patch for repository %q: %s\n"+
+			"```\n"+
+			"$ %s\n"+
+			"%s\n"+
+			"```",
+		e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
+}
+
 func (e *executor) pushCommit(ctx context.Context, opts protocol.CreateCommitFromPatchRequest) error {
 	_, err := e.gitserverClient.CreateCommitFromPatch(ctx, opts)
 	if err != nil {
 		var e *protocol.CreateCommitFromPatchError
 		if errors.As(err, &e) {
-			return errors.Errorf(
-				"creating commit from patch for repository %q: %s\n"+
-					"```\n"+
-					"$ %s\n"+
-					"%s\n"+
-					"```",
-				e.RepositoryName, e.InternalError, e.Command, strings.TrimSpace(e.CombinedOutput))
+			return pushCommitError{e}
 		}
 		return err
 	}
+
+	return nil
+}
+
+// handleArchivedRepo updates the changeset and repo once it has been
+// determined that the repo has been archived.
+func (e *executor) handleArchivedRepo(ctx context.Context) error {
+	repo, err := e.remoteRepo(ctx)
+	if err != nil {
+		return errors.Wrap(err, "getting the archived remote repo")
+	}
+
+	return handleArchivedRepo(
+		ctx,
+		repos.NewStore(e.logger, e.tx.DatabaseDB()),
+		repo,
+		e.ch,
+	)
+}
+
+func handleArchivedRepo(
+	ctx context.Context,
+	store repos.Store,
+	repo *types.Repo,
+	ch *btypes.Changeset,
+) error {
+	// We need to mark the repo as archived so that the later check for whether
+	// the repo is still archived isn't confused.
+	repo.Archived = true
+	if _, err := store.UpdateRepo(ctx, repo); err != nil {
+		return errors.Wrapf(err, "updating archived status of repo %d", int(repo.ID))
+	}
+
+	// Now we can set the ExternalState, and SetDerivedState will do the rest
+	// later with that and the updated repo.
+	ch.ExternalState = btypes.ChangesetExternalStateReadOnly
 
 	return nil
 }

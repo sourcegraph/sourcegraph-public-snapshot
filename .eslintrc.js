@@ -189,6 +189,12 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           'The use of data-tooltip has been deprecated. Please wrap your trigger element with the <Tooltip> component from Wildcard instead. If there are problems using the new <Tooltip>, please contact the Frontend Platform Team.',
       },
       {
+        selector:
+          'JSXElement[openingElement.name.name="Tooltip"] > JSXElement[openingElement.name.name="Icon"]:has(JSXIdentifier[name="aria-hidden"])',
+        message:
+          'When using an icon as a Tooltip trigger, it must have an aria-label attribute and should not be hidden.',
+      },
+      {
         selector: 'JSXSpreadAttribute[argument.name=/^(props|rest)$/]',
         message:
           "Spreading props can be unsafe. Prefer destructuring the props object, or continue only if you're sure.",

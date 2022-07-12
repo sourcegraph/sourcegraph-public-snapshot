@@ -3,7 +3,7 @@ import React, { useCallback, useState } from 'react'
 import { mdiAlertCircle, mdiDownload } from '@mdi/js'
 
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, LoadingSpinner, Icon } from '@sourcegraph/wildcard'
+import { Button, LoadingSpinner, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { getChangesetDiff } from '../backend'
 
@@ -62,7 +62,11 @@ export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren
 
     let icon: JSX.Element
     if (isErrorLike(state)) {
-        icon = <Icon aria-hidden={true} className="icon" data-tooltip={state?.message} svgPath={mdiAlertCircle} />
+        icon = (
+            <Tooltip content={state?.message}>
+                <Icon aria-label={state?.message} className="icon" svgPath={mdiAlertCircle} />
+            </Tooltip>
+        )
     } else if (state === DownloadState.LOADING) {
         icon = <LoadingSpinner />
     } else {
@@ -70,18 +74,18 @@ export const DownloadDiffButton: React.FunctionComponent<React.PropsWithChildren
     }
 
     return (
-        <Button
-            className="mb-1"
-            aria-label="Download generated diff"
-            data-tooltip="This is the changeset diff created when src batch preview|apply executed the batch change"
-            onClick={loadDiff}
-            disabled={state === DownloadState.LOADING}
-            outline={true}
-            variant="secondary"
-            size="sm"
-        >
-            {icon}
-            <span className="pl-1">Download generated diff</span>
-        </Button>
+        <Tooltip content="This is the changeset diff created when src batch preview|apply executed the batch change">
+            <Button
+                className="mb-1"
+                onClick={loadDiff}
+                disabled={state === DownloadState.LOADING}
+                outline={true}
+                variant="secondary"
+                size="sm"
+            >
+                {icon}
+                <span className="pl-1">Download generated diff</span>
+            </Button>
+        </Tooltip>
     )
 }

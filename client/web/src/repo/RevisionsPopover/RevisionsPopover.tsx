@@ -124,7 +124,7 @@ export const RevisionsPopover: React.FunctionComponent<React.PropsWithChildren<R
             </TabList>
             <TabPanels>
                 {TABS.map(tab => (
-                    <TabPanel key={tab.id}>
+                    <TabPanel key={tab.id} tabIndex={-1}>
                         {tab.type ? (
                             <RevisionsPopoverReferences
                                 noun={tab.noun}

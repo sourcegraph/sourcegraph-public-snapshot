@@ -37,7 +37,7 @@ func TestStore(t *testing.T) {
 	require.NotZero(t, jobID)
 
 	store := createBitbucketProjectPermissionsStore(db, &config{})
-	count, err := store.QueuedCount(ctx, true, nil)
+	count, err := store.QueuedCount(ctx, true)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 }

@@ -33,16 +33,22 @@ exports[`FileDecorator renders both after text content and meter 1`] = `
       >
         src decoration
       </small>
-      <meter
-        class="test-file-decoration-meter meter ml-2"
-        data-placement="bottom"
-        high="60"
-        low="50"
-        max="100"
-        min="0"
-        optimum="70"
-        value="40"
-      />
+      <div>
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        />
+        <meter
+          aria-hidden="true"
+          class="test-file-decoration-meter meter ml-2"
+          data-placement="bottom"
+          high="60"
+          low="50"
+          max="100"
+          min="0"
+          optimum="70"
+          value="40"
+        />
+      </div>
     </div>
   </div>
 </DocumentFragment>
@@ -56,16 +62,22 @@ exports[`FileDecorator renders meter 1`] = `
     <div
       class="d-flex align-items-center fileDecoration"
     >
-      <meter
-        class="test-file-decoration-meter meter"
-        data-placement="bottom"
-        high="60"
-        low="50"
-        max="100"
-        min="0"
-        optimum="70"
-        value="40"
-      />
+      <div>
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        />
+        <meter
+          aria-hidden="true"
+          class="test-file-decoration-meter meter"
+          data-placement="bottom"
+          high="60"
+          low="50"
+          max="100"
+          min="0"
+          optimum="70"
+          value="40"
+        />
+      </div>
     </div>
   </div>
 </DocumentFragment>

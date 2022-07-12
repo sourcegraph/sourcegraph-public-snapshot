@@ -23,28 +23,35 @@ import type { PluginConfig, Search, Theme } from './types'
 setLinkComponent(AnchorLink)
 
 let isDarkTheme = false
-let instanceURL = 'https://sourcegraph.com'
+let instanceURL = 'https://sourcegraph.com/'
 let isGlobbingEnabled = false
 let accessToken: string | null = null
 let anonymousUserId: string
 let pluginVersion: string
 let initialSearch: Search | null = null
-let initialAuthenticatedUser: AuthenticatedUser | null
+let authenticatedUser: AuthenticatedUser | null = null
 let telemetryService: EventLogger
 
 window.initializeSourcegraph = async () => {
-    const [theme, config, lastSearch, authenticatedUser] = await Promise.allSettled([
+    const [theme, config, lastSearch]: [Theme, PluginConfig, Search | null] = await Promise.all([
         getThemeAlwaysFulfill(),
         getConfigAlwaysFulfill(),
         loadLastSearchAlwaysFulfill(),
-        getAuthenticatedUser(instanceURL, accessToken),
     ])
 
-    applyConfig((config as PromiseFulfilledResult<PluginConfig>).value)
-    applyTheme((theme as PromiseFulfilledResult<Theme>).value)
-    applyLastSearch((lastSearch as PromiseFulfilledResult<Search | null>).value)
-    applyAuthenticatedUser(authenticatedUser.status === 'fulfilled' ? authenticatedUser.value : null)
-    if (accessToken && authenticatedUser.status === 'rejected') {
+    applyConfig(config)
+    applyTheme(theme)
+    applyLastSearch(lastSearch)
+
+    let isServerAccessSuccessful = false
+    try {
+        authenticatedUser = await getAuthenticatedUser(instanceURL, accessToken)
+        isServerAccessSuccessful = true
+    } catch (error) {
+        console.info('Could not authenticate with current URL and token settings', instanceURL, accessToken, error)
+    }
+
+    if (accessToken && !authenticatedUser) {
         console.warn(`No initial authenticated user with access token “${accessToken}”`)
     }
 
@@ -52,7 +59,7 @@ window.initializeSourcegraph = async () => {
 
     renderReactApp()
 
-    await indicateFinishedLoading()
+    await indicateFinishedLoading(isServerAccessSuccessful, !!authenticatedUser)
 }
 
 window.callJS = handleRequest
@@ -69,7 +76,7 @@ export function renderReactApp(): void {
             onOpen={onOpen}
             onPreviewChange={onPreviewChange}
             onPreviewClear={onPreviewClear}
-            initialAuthenticatedUser={initialAuthenticatedUser}
+            authenticatedUser={authenticatedUser}
             telemetryService={telemetryService}
         />,
         node
@@ -100,10 +107,19 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--primary', intelliJTheme['Button.default.startBackground'])
     root.style.setProperty('--subtle-bg', intelliJTheme['ScrollPane.background'])
 
+    root.style.setProperty('--dropdown-bg', intelliJTheme['List.background'])
     root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
+    root.style.setProperty('--dropdown-link-hover-bg', intelliJTheme['ToolbarComboWidget.hoverBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
 
+    root.style.setProperty('--jb-button-bg', intelliJTheme['Button.startBackground'])
+    root.style.setProperty('--jb-text-color', intelliJTheme.text)
+    root.style.setProperty('--jb-inactive-text-color', intelliJTheme.textInactiveText)
+    root.style.setProperty('--jb-hover-button-bg', intelliJTheme['ActionButton.hoverBackground'])
+    root.style.setProperty('--jb-input-bg', intelliJTheme['TextField.background'])
+    root.style.setProperty('--jb-tooltip-bg', intelliJTheme['ToolTip.background'])
     root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
+    root.style.setProperty('--jb-focus-border-color', intelliJTheme['Component.focusedBorderColor'])
     root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
 
     // There is no color for this in the serialized theme, so I have picked this option from the
@@ -114,10 +130,6 @@ export function applyTheme(theme: Theme): void {
 
 function applyLastSearch(lastSearch: Search | null): void {
     initialSearch = lastSearch
-}
-
-function applyAuthenticatedUser(authenticatedUser: AuthenticatedUser | null): void {
-    initialAuthenticatedUser = authenticatedUser
 }
 
 export function getAccessToken(): string | null {

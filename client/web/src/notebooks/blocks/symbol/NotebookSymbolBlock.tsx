@@ -1,12 +1,9 @@
 import React, { useState, useMemo, useCallback } from 'react'
 
 import { EditorView } from '@codemirror/view'
+import { mdiOpenInNew, mdiInformationOutline, mdiCheck, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CheckIcon from 'mdi-react/CheckIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -123,7 +120,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
                     url: symbolURL,
                     isDisabled: symbolURL.length === 0,
                 },
@@ -137,7 +134,7 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={showInputs ? mdiCheck : mdiPencil} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -276,8 +273,8 @@ const NotebookSymbolBlockHeader: React.FunctionComponent<React.PropsWithChildren
                 >
                     <Icon
                         aria-label={`Symbol not found at the latest revision, showing symbol at revision ${effectiveRevision}.`}
-                        as={InformationOutlineIcon}
                         className="ml-1"
+                        svgPath={mdiInformationOutline}
                     />
                 </Tooltip>
             )}

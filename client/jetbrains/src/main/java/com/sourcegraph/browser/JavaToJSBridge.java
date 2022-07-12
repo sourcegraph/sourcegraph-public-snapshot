@@ -25,6 +25,7 @@ public class JavaToJSBridge {
     public JavaToJSBridge(JBCefBrowser browser) {
         this.browser = browser;
         // Using a deprecated method because JBCefBrowserBase is not present in older JetBrains versions
+        //noinspection removal - Using this old method intentionally for backwards compatibility
         this.query = JBCefJSQuery.create(browser);
         this.lock = new ReentrantLock();
     }

@@ -304,10 +304,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     withLatestFrom(urlSearchParameters),
                     tap(([, parameters]) => {
                         parameters.delete('popover')
-                        props.history.push({
-                            ...location,
-                            search: formatSearchParameters(parameters),
-                        })
+                        updateBrowserHistoryIfNecessary(props.history, location, parameters)
                     })
                 ),
             [location, popoverCloses, props.history, urlSearchParameters]
@@ -408,53 +405,47 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
                         const parameters = new URLSearchParams(location.search)
                         parameters.delete('popover')
-                        nextPopoverClose()
 
                         if (position && !('character' in position)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
-                            props.history.push({
-                                ...location,
-                                search: formatSearchParameters(addLineRangeQueryParameter(parameters, query)),
-                            })
+                            updateBrowserHistoryIfNecessary(
+                                props.history,
+                                location,
+                                addLineRangeQueryParameter(parameters, query)
+                            )
                         }
                     }),
                     mapTo(undefined)
                 ),
-            [codeViewElements, hoverifier.hoverState.selectedPosition, location, nextPopoverClose, props.history]
+            [codeViewElements, hoverifier.hoverState.selectedPosition, location, props.history]
         )
     )
-
-    // Trigger line highlighting after React has finished putting new lines into the DOM via
-    // `dangerouslySetInnerHTML`.
-    useEffect(() => codeViewElements.next(codeViewReference.current))
 
     // Line highlighting when position in hash changes
-    useObservable(
-        useMemo(
-            () =>
-                combineLatest([locationPositions, codeViewElements.pipe(filter(isDefined))]).pipe(
-                    tap(([position, codeView]) => {
-                        const codeCells = getCodeElementsInRange({
-                            codeView,
-                            position,
-                            getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
-                        })
-                        // Remove existing highlighting
-                        for (const selected of codeView.querySelectorAll('.selected')) {
-                            selected.classList.remove('selected')
-                        }
-                        for (const { element } of codeCells) {
-                            // Highlight row
-                            const row = element.parentElement as HTMLTableRowElement
-                            row.classList.add('selected')
-                        }
-                    }),
-                    mapTo(undefined)
-                ),
-            [locationPositions, codeViewElements]
-        )
-    )
+    useEffect(() => {
+        if (codeViewReference.current) {
+            const codeCells = getCodeElementsInRange({
+                codeView: codeViewReference.current,
+                position: parsedHash,
+                getCodeElementFromLineNumber: domFunctions.getCodeElementFromLineNumber,
+            })
+            // Remove existing highlighting
+            for (const selected of codeViewReference.current.querySelectorAll('.selected')) {
+                selected.classList.remove('selected')
+            }
+            for (const { element } of codeCells) {
+                // Highlight row
+                const row = element.parentElement as HTMLTableRowElement
+                row.classList.add('selected')
+            }
+        }
+        // It looks like `parsedHash` is updated _before_ `blobInfo` when
+        // navigating between files. That means we have to make this effect
+        // dependent on `blobInfo` even if it is not used inside the effect,
+        // otherwise the highlighting would not be updated when the new file
+        // content is available.
+    }, [parsedHash, blobInfo])
 
     // EXTENSION FEATURES
 
@@ -738,18 +729,18 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const context = { position: point, range }
                 const search = new URLSearchParams(location.search)
                 search.set('popover', 'pinned')
-                props.history.push({
-                    search: formatSearchParameters(
-                        addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
-                    ),
-                })
+                updateBrowserHistoryIfNecessary(
+                    props.history,
+                    location,
+                    addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
+                )
                 await navigator.clipboard.writeText(window.location.href)
             },
         }),
         [
             hoverifier.hoverState.hoveredToken?.line,
             hoverifier.hoverState.hoveredToken?.character,
-            location.search,
+            location,
             nextPopoverClose,
             props.history,
         ]
@@ -854,6 +845,35 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             )}
         </>
     )
+}
+
+/**
+ * Adds an entry to the browser history only if new search parameters differ
+ * from the current ones. This prevents adding a new entry when e.g. the user
+ * clicks the same line multiple times.
+ */
+function updateBrowserHistoryIfNecessary(
+    history: H.History,
+    location: H.Location,
+    newSearchParameters: URLSearchParams
+): void {
+    const currentSearchParameters = [...new URLSearchParams(location.search).entries()]
+
+    // Update history if the number of search params changes or if any parameter
+    // value changes. This will also work for file position changes, which are
+    // encoded as parameter without a value. The old file position will be a
+    // non-existing key in the new search parameters and thus return `null`
+    // (whereas it returns an empty string in the current search parameters).
+    const needsUpdate =
+        currentSearchParameters.length !== [...newSearchParameters.keys()].length ||
+        currentSearchParameters.some(([key, value]) => newSearchParameters.get(key) !== value)
+
+    if (needsUpdate) {
+        history.push({
+            ...location,
+            search: formatSearchParameters(newSearchParameters),
+        })
+    }
 }
 
 export function getLSPTextDocumentPositionParameters(

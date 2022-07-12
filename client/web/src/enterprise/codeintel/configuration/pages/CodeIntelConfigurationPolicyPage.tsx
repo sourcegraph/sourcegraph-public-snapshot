@@ -9,7 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Container, LoadingSpinner, PageHeader, Alert, Icon } from '@sourcegraph/wildcard'
+import { Button, Container, LoadingSpinner, PageHeader, Alert, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../components/PageTitle'
 import { CodeIntelligenceConfigurationPolicyFields } from '../../../../graphql-operations'
@@ -141,12 +141,8 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
             ) : (
                 policy.id !== '' && (
                     <Container className="mb-3">
-                        <Button
-                            type="button"
-                            variant="danger"
-                            disabled={isSaving || isDeleting}
-                            onClick={() => handleDelete(policy.id, policy.name)}
-                            data-tooltip={`Deleting this policy may immediate affect data retention${
+                        <Tooltip
+                            content={`Deleting this policy may immediate affect data retention${
                                 indexingEnabled
                                     ? ' and auto-indexing'
                                     : lockfileIndexingEnabled
@@ -154,17 +150,24 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
                                     : ''
                             }.`}
                         >
-                            {!isDeleting && (
-                                <>
-                                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete policy
-                                </>
-                            )}
-                            {isDeleting && (
-                                <>
-                                    <LoadingSpinner /> Deleting...
-                                </>
-                            )}
-                        </Button>
+                            <Button
+                                type="button"
+                                variant="danger"
+                                disabled={isSaving || isDeleting}
+                                onClick={() => handleDelete(policy.id, policy.name)}
+                            >
+                                {!isDeleting && (
+                                    <>
+                                        <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete policy
+                                    </>
+                                )}
+                                {isDeleting && (
+                                    <>
+                                        <LoadingSpinner /> Deleting...
+                                    </>
+                                )}
+                            </Button>
+                        </Tooltip>
                     </Container>
                 )
             )}

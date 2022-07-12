@@ -24,7 +24,6 @@ import (
 
 	sentrylib "github.com/getsentry/sentry-go"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
@@ -36,7 +35,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
+	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/check"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -57,6 +58,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
 	"github.com/sourcegraph/sourcegraph/internal/version"
+	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -116,7 +118,7 @@ func InitDB(logger sglog.Logger) (*sql.DB, error) {
 		return nil, errors.Errorf("failed to connect to frontend database: %s", err)
 	}
 
-	if err := backend.UpdateServiceVersion(context.Background(), database.NewDB(logger, sqlDB), "frontend", version.Version()); err != nil {
+	if err := upgradestore.New(database.NewDB(logger, sqlDB)).UpdateServiceVersion(context.Background(), "frontend", version.Version()); err != nil {
 		return nil, err
 	}
 
@@ -137,9 +139,19 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	}, sglog.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
 
+	hc := &check.HealthChecker{Checks: []check.Check{
+		checkCanReachGitserver,
+		checkCanReachSearcher,
+	}}
+	hc.Init()
+
 	logger := sglog.Scoped("server", "the frontend server program")
 	ready := make(chan struct{})
-	go debugserver.NewServerRoutine(ready).Start()
+	go debugserver.NewServerRoutine(ready, debugserver.Endpoint{
+		Name:    "Health Checks",
+		Path:    "/aggregate-checks",
+		Handler: check.NewAggregateHealthCheckHandler(check.DefaultEndpointProvider),
+	}).Start()
 
 	sqlDB, err := InitDB(logger)
 	if err != nil {
@@ -259,6 +271,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
+	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
@@ -287,7 +300,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		return err
 	}
 
-	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher)
+	internalAPI, err := makeInternalAPI(schema, db, enterprise, rateLimitWatcher, hc)
 	if err != nil {
 		return err
 	}
@@ -341,7 +354,7 @@ func makeExternalAPI(db database.DB, schema *graphql.Schema, enterprise enterpri
 	return server, nil
 }
 
-func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher) (goroutine.BackgroundRoutine, error) {
+func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterprise.Services, rateLimiter graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) (goroutine.BackgroundRoutine, error) {
 	if httpAddrInternal == "" {
 		return nil, nil
 	}
@@ -358,6 +371,7 @@ func makeInternalAPI(schema *graphql.Schema, db database.DB, enterprise enterpri
 		enterprise.NewCodeIntelUploadHandler,
 		enterprise.NewComputeStreamHandler,
 		rateLimiter,
+		healthCheckHandler,
 	)
 	httpServer := &http.Server{
 		Handler:     internalHandler,

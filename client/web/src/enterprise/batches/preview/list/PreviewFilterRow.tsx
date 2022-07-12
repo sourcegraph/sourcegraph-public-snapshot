@@ -28,14 +28,17 @@ export const PreviewFilterRow: React.FunctionComponent<React.PropsWithChildren<P
 
     // `BatchChangePreviewContext` is responsible for managing the filter arguments for
     // the `applyPreview` connection query.
-    const { filters, setFilters } = useContext(BatchChangePreviewContext)
+    const { filters, setFilters, setFiltersChanged } = useContext(BatchChangePreviewContext)
 
     const onSubmit = useCallback(
         (event: React.FormEvent<HTMLFormElement>): void => {
             event.preventDefault()
             setFilters({ ...filters, search: searchElement.current?.value || null })
+            if (filters.search !== searchElement.current?.value) {
+                setFiltersChanged(true)
+            }
         },
-        [setFilters, filters]
+        [setFilters, filters, setFiltersChanged]
     )
 
     const setAction = useCallback(

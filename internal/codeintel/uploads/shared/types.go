@@ -1,6 +1,12 @@
 package shared
 
-import "time"
+import (
+	"context"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+)
 
 // Upload is a subset of the lsif_uploads table and stores both processed and unprocessed
 // records.
@@ -28,6 +34,28 @@ type Upload struct {
 	AssociatedIndexID *int
 }
 
+// Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
+// and stores only processed records.
+type Dump struct {
+	ID                int
+	Commit            string
+	Root              string
+	VisibleAtTip      bool
+	UploadedAt        time.Time
+	State             string
+	FailureMessage    *string
+	StartedAt         *time.Time
+	FinishedAt        *time.Time
+	ProcessAfter      *time.Time
+	NumResets         int
+	NumFailures       int
+	RepositoryID      int
+	RepositoryName    string
+	Indexer           string
+	IndexerVersion    string
+	AssociatedIndexID *int
+}
+
 type SourcedCommits struct {
 	RepositoryID   int
 	RepositoryName string
@@ -46,6 +74,7 @@ type GetUploadsOptions struct {
 	LastRetentionScanBefore *time.Time
 	AllowExpired            bool
 	AllowDeletedRepo        bool
+	AllowDeletedUpload      bool
 	OldestFirst             bool
 	Limit                   int
 	Offset                  int
@@ -76,3 +105,8 @@ const (
 	DependencyReferenceCountUpdateTypeAdd
 	DependencyReferenceCountUpdateTypeRemove
 )
+
+type GitserverClient interface {
+	CommitGraph(ctx context.Context, repositoryID int, opts gitserver.CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
+	RefDescriptions(ctx context.Context, repositoryID int, pointedAt ...string) (_ map[string][]gitdomain.RefDescription, err error)
+}

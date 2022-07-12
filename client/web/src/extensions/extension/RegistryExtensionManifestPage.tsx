@@ -1,8 +1,7 @@
 import * as React from 'react'
 
+import { mdiInformationOutline, mdiEye } from '@mdi/js'
 import classNames from 'classnames'
-import EyeIcon from 'mdi-react/EyeIcon'
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
@@ -80,14 +79,14 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                         <Icon
                             className="text-muted"
                             data-tooltip="The published JSON description of how to run or access the extension"
-                            as={InformationOutlineIcon}
                             aria-label="The published JSON description of how to run or access the extension"
+                            svgPath={mdiInformationOutline}
                         />
                     </div>
                     <div>
                         {this.props.extension.manifest && (
                             <Button onClick={this.onViewModeButtonClick} variant="secondary">
-                                <Icon as={EyeIcon} aria-hidden={true} /> Use{' '}
+                                <Icon aria-hidden={true} svgPath={mdiEye} /> Use{' '}
                                 {this.state.viewMode === ViewMode.Plain ? ViewMode.Rich : ViewMode.Plain} viewer
                             </Button>
                         )}{' '}

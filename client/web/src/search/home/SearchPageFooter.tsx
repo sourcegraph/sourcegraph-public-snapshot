@@ -4,7 +4,7 @@ import classNames from 'classnames'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, H2, H3, H4 } from '@sourcegraph/wildcard'
+import { Link, H2, H4 } from '@sourcegraph/wildcard'
 
 import { BrandLogo } from '../../components/branding/BrandLogo'
 import { PageRoutes } from '../../routes.constants'
@@ -120,7 +120,7 @@ export const SearchPageFooter: React.FunctionComponent<
         </footer>
     ) : (
         <footer className={classNames(styles.serverFooter, 'd-flex flex-column flex-lg-row align-items-center')}>
-            <H4 as={H3} className="mb-2 mb-lg-0">
+            <H4 as={H2} className="mb-2 mb-lg-0">
                 Explore and extend
             </H4>
             <span className="d-flex flex-column flex-md-row align-items-center">
