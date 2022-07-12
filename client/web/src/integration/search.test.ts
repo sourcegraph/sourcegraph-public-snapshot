@@ -248,6 +248,8 @@ describe('Search', () => {
                     expect(await editor.getValue()).toStrictEqual(undefined)
                     // Field value is restored when the back button is pressed
                     await driver.page.goBack()
+                    await editor.waitForIt()
+                    await driver.page.waitForSelector('[data-testid="results-info-bar"]')
                     expect(await editor.getValue()).toStrictEqual('foo')
                 })
 
