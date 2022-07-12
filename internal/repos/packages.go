@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -25,9 +24,24 @@ type PackagesSource struct {
 }
 
 type packagesSource interface {
-	Get(ctx context.Context, name, version string) (reposource.PackageVersion, error)
-	ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error)
+	// ParseVersionedPackageFromConfiguration parses a package and version from the "dependencies"
+	// field from the site-admin interface.
+	// For example: "react@1.2.0" or "com.google.guava:guava:30.0-jre".
+	ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error)
+	// ParsePackageFromRepoName parses a Sourcegraph repository name of the package.
+	// For example: "npm/react" or "maven/com.google.guava/guava".
 	ParsePackageFromRepoName(repoName string) (reposource.Package, error)
+	// ParsePackageFromName parses a package from the name of the package, as accepted by the ecosystem's package manager.
+	// For example: "react" or "com.google.guava:guava".
+	ParsePackageFromName(name string) (reposource.Package, error)
+	// functions in this file that switch against concrete implementations of this interface:
+	// getPackage(): to fetch the description of this package, only supported by a few implementations.
+	// metadata(): to store gob-encoded structs with implementation-specific metadata.
+}
+
+type packagesDownloadSource interface {
+	// GetPackage sends a request to the package host to get metadata about this package, like the description.
+	GetPackage(ctx context.Context, name string) (reposource.Package, error)
 }
 
 var _ Source = &PackagesSource{}
@@ -39,20 +53,18 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 		return
 	}
 
-	var mu sync.Mutex
-	set := make(map[string]struct{})
+	handledPackages := make(map[string]struct{})
 
 	for _, dep := range deps {
-		_, err := s.src.Get(ctx, dep.PackageSyntax(), dep.PackageVersion())
-		if err != nil {
-			results <- SourceResult{Source: s, Err: err}
-			continue
-		}
-
-		if _, ok := set[dep.PackageSyntax()]; !ok {
+		if _, ok := handledPackages[dep.PackageSyntax()]; !ok {
+			_, err := getPackage(ctx, s.src, dep.PackageSyntax())
+			if err != nil {
+				results <- SourceResult{Source: s, Err: err}
+				continue
+			}
 			repo := s.makeRepo(dep)
 			results <- SourceResult{Source: s, Repo: repo}
-			set[dep.PackageSyntax()] = struct{}{}
+			handledPackages[dep.PackageSyntax()] = struct{}{}
 		}
 	}
 
@@ -87,16 +99,22 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 
 		lastID = depRepos[len(depRepos)-1].ID
 
+		var depReposToHandle []dependencies.Repo
 		for _, depRepo := range depRepos {
+			if _, ok := handledPackages[depRepo.Name]; !ok {
+				handledPackages[depRepo.Name] = struct{}{}
+				depReposToHandle = append(depReposToHandle, depRepo)
+			}
+		}
+
+		for _, depRepo := range depReposToHandle {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return
 			}
-
 			depRepo := depRepo
 			g.Go(func() error {
 				defer sem.Release(1)
-
-				dep, err := s.src.Get(ctx, depRepo.Name, depRepo.Version)
+				pkg, err := getPackage(ctx, s.src, depRepo.Name)
 				if err != nil {
 					if errcode.IsNotFound(err) {
 						return nil
@@ -104,15 +122,8 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 					return err
 				}
 
-				mu.Lock()
-				if _, ok := set[depRepo.Name]; !ok {
-					set[depRepo.Name] = struct{}{}
-					mu.Unlock()
-					repo := s.makeRepo(dep)
-					results <- SourceResult{Source: s, Repo: repo}
-				} else {
-					mu.Unlock()
-				}
+				repo := s.makeRepo(pkg)
+				results <- SourceResult{Source: s, Repo: repo}
 
 				return nil
 			})
@@ -121,17 +132,11 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 }
 
 func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.Repo, error) {
-	dep, err := s.src.ParsePackageFromRepoName(repoName)
+	pkg, err := getPackage(ctx, s.src, repoName)
 	if err != nil {
 		return nil, err
 	}
-
-	dep, err = s.src.Get(ctx, dep.PackageSyntax(), "")
-	if err != nil {
-		return nil, err
-	}
-
-	return s.makeRepo(dep), nil
+	return s.makeRepo(pkg), nil
 }
 
 func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
@@ -157,13 +162,22 @@ func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
 	}
 }
 
+func getPackage(ctx context.Context, s packagesSource, name string) (reposource.Package, error) {
+	switch d := s.(type) {
+	case packagesDownloadSource:
+		return d.GetPackage(ctx, name)
+	default:
+		return d.ParsePackageFromName(name)
+	}
+}
+
 func metadata(dep reposource.Package) any {
 	switch d := dep.(type) {
-	case *reposource.MavenPackageVersion:
+	case *reposource.MavenVersionedPackage:
 		return &reposource.MavenMetadata{
 			Module: d.MavenModule,
 		}
-	case *reposource.NpmPackageVersion:
+	case *reposource.NpmVersionedPackage:
 		return &reposource.NpmMetadata{
 			Package: d.NpmPackageName,
 		}
@@ -181,9 +195,9 @@ func (s *PackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
 	s.depsSvc = depsSvc
 }
 
-func (s *PackagesSource) configDependencies(deps []string) (dependencies []reposource.PackageVersion, err error) {
+func (s *PackagesSource) configDependencies(deps []string) (dependencies []reposource.VersionedPackage, err error) {
 	for _, dep := range deps {
-		dependency, err := s.src.ParsePackageVersionFromConfiguration(dep)
+		dependency, err := s.src.ParseVersionedPackageFromConfiguration(dep)
 		if err != nil {
 			return nil, err
 		}

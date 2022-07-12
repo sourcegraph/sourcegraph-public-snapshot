@@ -1229,14 +1229,14 @@
       "!go": { "pointer": true }
     },
     "insights.compute.graphql": {
-      "description": "Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
+      "description": "DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "CodeInsights",
       "default": false
     },
     "insights.search.graphql": {
-      "description": "Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
+      "description": "DEPRECATED: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "CodeInsights",

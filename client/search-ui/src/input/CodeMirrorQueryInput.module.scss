@@ -188,12 +188,21 @@
         repeat-x bottom left;
 }
 
+// .placeholder needs to explicilty have the same background color because it
+// appears to be placed outside of .focusedFilter rather than within it.
+.placeholder,
 .focusedFilter {
     background-color: var(--gray-02);
 
     :global(.theme-dark) & {
         background-color: var(--gray-08);
     }
+}
+
+.placeholder {
+    color: var(--text-muted);
+    font-style: italic;
+    pointer-events: none;
 }
 
 // Copied and adapted from the Wildcard LoadingSpinner component

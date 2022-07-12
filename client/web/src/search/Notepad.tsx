@@ -145,7 +145,6 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
     selectable = true,
 }) => {
     const [open, setOpen] = useState(initialOpen)
-    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
     const [selectedEntries, setSelectedEntries] = useState<number[]>([])
     const isMacPlatform_ = useMemo(isMacPlatform, [])
 
@@ -327,6 +326,15 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
         [reversedEntries, selectedEntries, deleteSelectedEntries, isMacPlatform_]
     )
 
+    // Focus the cancel button when the remove all confirmation box is shown
+    const [confirmRemoveAll, setConfirmRemoveAll] = useState(false)
+    const cancelRemoveAll = useRef<HTMLButtonElement>(null)
+    useEffect(() => {
+        if (confirmRemoveAll) {
+            cancelRemoveAll.current?.focus()
+        }
+    }, [confirmRemoveAll])
+
     return (
         <aside
             className={classNames(styles.root, className, { [styles.open]: open })}
@@ -396,7 +404,11 @@ export const Notepad: React.FunctionComponent<React.PropsWithChildren<NotepadPro
                         <div className="p-2">
                             <Text>Are you sure you want to delete all entries?</Text>
                             <div className="d-flex justify-content-between">
-                                <Button variant="secondary" onClick={() => setConfirmRemoveAll(false)}>
+                                <Button
+                                    variant="secondary"
+                                    onClick={() => setConfirmRemoveAll(false)}
+                                    ref={cancelRemoveAll}
+                                >
                                     Cancel
                                 </Button>
                                 <Button

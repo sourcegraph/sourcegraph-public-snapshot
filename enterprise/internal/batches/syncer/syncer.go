@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -123,6 +124,7 @@ func (s *SyncRegistry) addCodeHostSyncer(codeHost *btypes.CodeHost) {
 
 	// We need to be able to cancel the syncer if the code host is removed
 	ctx, cancel := context.WithCancel(s.ctx)
+	ctx = metrics.ContextWithTask(ctx, "Batches.ChangesetSyncer")
 
 	syncer := &changesetSyncer{
 		logger:         s.logger.With(log.String("syncer", syncerKey)),
