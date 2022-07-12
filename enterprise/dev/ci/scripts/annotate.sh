@@ -23,7 +23,7 @@ EOF
     )"
     # On Darwin use gdate
     begin=$(date -d '1 hour ago' "+%s")000
-    end=$(date -d 'now + 10 mins' "+%s")000
+    end=$(date -d 'now + 5 mins' "+%s")000
     payload=$(printf '{"datasource":"grafanacloud-sourcegraph-logs","queries":[{"refId":"A","expr":%s}],"range":{"from":"%s","to":"%s"}}' "$expression" "$begin" "$end")
 
     echo "https://sourcegraph.grafana.net/explore?orgId=1&left=$(echo "$payload" | jq -s -R -r @uri)"
