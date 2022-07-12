@@ -9,8 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/discovery"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/compression"
@@ -29,7 +27,7 @@ type CaptureGroupExecutor struct {
 }
 
 func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *CaptureGroupExecutor {
-	executor := CaptureGroupExecutor{
+	return &CaptureGroupExecutor{
 		justInTimeExecutor: justInTimeExecutor{
 			db:        postgres,
 			repoStore: postgres.Repos(),
@@ -39,21 +37,6 @@ func NewCaptureGroupExecutor(postgres database.DB, clock func() time.Time) *Capt
 		},
 		computeSearch: streamCompute,
 	}
-
-	useGraphQL := conf.Get().InsightsComputeGraphql
-	if useGraphQL != nil && *useGraphQL {
-		executor.computeSearch = graphQLCompute
-	}
-
-	return &executor
-}
-
-func graphQLCompute(ctx context.Context, query string) ([]GroupedResults, error) {
-	searchResults, err := ComputeSearch(ctx, query)
-	if err != nil {
-		return nil, err
-	}
-	return GroupByCaptureMatch(searchResults), nil
 }
 
 func streamCompute(ctx context.Context, query string) ([]GroupedResults, error) {

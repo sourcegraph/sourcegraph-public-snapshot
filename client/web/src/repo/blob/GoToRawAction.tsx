@@ -4,7 +4,7 @@ import { mdiFileDownloadOutline } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
@@ -42,17 +42,18 @@ export class GoToRawAction extends React.PureComponent<Props> {
         }
 
         return (
-            <RepoHeaderActionAnchor
-                to={to}
-                target="_blank"
-                onClick={this.onClick.bind(this)}
-                className="btn-icon"
-                data-tooltip={descriptiveText}
-                aria-label={descriptiveText}
-                download={true}
-            >
-                <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />
-            </RepoHeaderActionAnchor>
+            <Tooltip content={descriptiveText}>
+                <RepoHeaderActionAnchor
+                    aria-label={descriptiveText}
+                    to={to}
+                    target="_blank"
+                    onClick={this.onClick.bind(this)}
+                    className="btn-icon"
+                    download={true}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />
+                </RepoHeaderActionAnchor>
+            </Tooltip>
         )
     }
 }

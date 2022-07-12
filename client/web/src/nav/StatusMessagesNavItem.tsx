@@ -19,7 +19,18 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position, Icon, H4, Text } from '@sourcegraph/wildcard'
+import {
+    Button,
+    Link,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+    Icon,
+    H4,
+    Text,
+    Tooltip,
+} from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
@@ -403,12 +414,9 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private renderIcon(): JSX.Element | null {
         if (isErrorLike(this.state.messagesOrError)) {
             return (
-                <Icon
-                    data-tooltip="Sorry, we couldn’t fetch notifications!"
-                    as={CloudAlertIconRefresh}
-                    size="md"
-                    aria-label="Sorry, we couldn’t fetch notifications!"
-                />
+                <Tooltip content="Sorry, we couldn’t fetch notifications!">
+                    <Icon aria-label="Sorry, we couldn’t fetch notifications!" as={CloudAlertIconRefresh} size="md" />
+                </Tooltip>
             )
         }
 
@@ -419,12 +427,13 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             : 'No repositories'
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
-                <Icon
-                    data-tooltip={codeHostMessage}
-                    size="md"
-                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
-                    svgPath={mdiCloudOffOutline}
-                />
+                <Tooltip content={codeHostMessage}>
+                    <Icon
+                        svgPath={mdiCloudOffOutline}
+                        size="md"
+                        {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                    />
+                </Tooltip>
             )
         }
 
@@ -433,33 +442,24 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         ) {
             codeHostMessage = this.state.isOpen ? undefined : 'Syncing repositories failed!'
             return (
-                <Icon
-                    data-tooltip={codeHostMessage}
-                    as={CloudAlertIconRefresh}
-                    size="md"
-                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
-                />
+                <Tooltip content={codeHostMessage}>
+                    <Icon aria-label={codeHostMessage ?? ''} as={CloudAlertIconRefresh} size="md" />
+                </Tooltip>
             )
         }
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
             codeHostMessage = this.state.isOpen ? undefined : 'Cloning repositories...'
             return (
-                <Icon
-                    data-tooltip={codeHostMessage}
-                    as={CloudSyncIconRefresh}
-                    size="md"
-                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
-                />
+                <Tooltip content={codeHostMessage}>
+                    <Icon aria-label={codeHostMessage ?? ''} as={CloudSyncIconRefresh} size="md" />
+                </Tooltip>
             )
         }
         codeHostMessage = this.state.isOpen ? undefined : 'Repositories up-to-date'
         return (
-            <Icon
-                data-tooltip={codeHostMessage}
-                as={CloudCheckIconRefresh}
-                size="md"
-                {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
-            />
+            <Tooltip content={codeHostMessage}>
+                <Icon aria-label={codeHostMessage ?? ''} as={CloudCheckIconRefresh} size="md" />
+            </Tooltip>
         )
     }
 

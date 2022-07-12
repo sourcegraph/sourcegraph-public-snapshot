@@ -100,8 +100,8 @@ func (f *Users) Frequencies(ctx context.Context) ([]*UsersFrequencyNode, error) 
 }
 
 type UsersFrequencyNodeData struct {
-	DaysUsed   int32
-	Frequency  int32
+	DaysUsed   float64
+	Frequency  float64
 	Percentage float64
 }
 
@@ -109,9 +109,9 @@ type UsersFrequencyNode struct {
 	Data UsersFrequencyNodeData
 }
 
-func (n *UsersFrequencyNode) DaysUsed() int32 { return n.Data.DaysUsed }
+func (n *UsersFrequencyNode) DaysUsed() float64 { return n.Data.DaysUsed }
 
-func (n *UsersFrequencyNode) Frequency() int32 { return n.Data.Frequency }
+func (n *UsersFrequencyNode) Frequency() float64 { return n.Data.Frequency }
 
 func (n *UsersFrequencyNode) Percentage() float64 { return n.Data.Percentage }
 
@@ -120,7 +120,7 @@ var (
 	WITH daus AS (
 		SELECT
 			DATE_TRUNC('day', timestamp) AS day,
-			COUNT(*) AS total_count,
+			0 AS total_count,
 			COUNT(DISTINCT anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT user_id) FILTER (
 				WHERE
@@ -135,7 +135,7 @@ var (
 	waus AS (
 		SELECT
 			DATE_TRUNC('week', timestamp) AS week,
-			COUNT(*) AS total_count,
+			0 AS total_count,
 			COUNT(DISTINCT anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT user_id) FILTER (
 				WHERE
@@ -150,7 +150,7 @@ var (
 	maus AS (
 		SELECT
 			DATE_TRUNC('month', timestamp) AS month,
-			COUNT(*) AS total_count,
+			0 AS total_count,
 			COUNT(DISTINCT anonymous_user_id) AS unique_users,
 			COUNT(DISTINCT user_id) FILTER (
 				WHERE

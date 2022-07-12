@@ -7,11 +7,12 @@ import (
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/sourcegraph/log"
+	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
 	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
 	"go.opentelemetry.io/otel"
 	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/propagation"
+	w3cpropagator "go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
@@ -44,7 +45,12 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	// Ensure propagation between services continues to work. This is also done by another
 	// project that uses the OpenTracing bridge:
 	// https://sourcegraph.com/github.com/thanos-io/thanos/-/blob/pkg/tracing/migration/bridge.go?L62
-	compositePropagator := propagation.NewCompositeTextMapPropagator(otpropagator.OT{}, propagation.TraceContext{}, propagation.Baggage{})
+	compositePropagator := w3cpropagator.NewCompositeTextMapPropagator(
+		jaegerpropagator.Jaeger{},
+		otpropagator.OT{},
+		w3cpropagator.TraceContext{},
+		w3cpropagator.Baggage{},
+	)
 	otel.SetTextMapPropagator(compositePropagator)
 
 	// Initialize OpenTelemetry processor and tracer provider
@@ -60,7 +66,7 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 
 	// Set up bridge for converting opentracing API calls to OpenTelemetry.
 	bridge, otelTracerProvider := otelbridge.NewTracerPair(provider.Tracer("tracer.global"))
-	bridge.SetTextMapPropagator(propagation.TraceContext{})
+	bridge.SetTextMapPropagator(compositePropagator)
 
 	// Set up logging
 	otelLogger := logger.AddCallerSkip(1) // no additional scope needed, this is already otel scope
