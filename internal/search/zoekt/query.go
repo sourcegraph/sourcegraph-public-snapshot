@@ -1,9 +1,12 @@
 package zoekt
 
 import (
+	"fmt"
+
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -27,6 +30,10 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 			return nil, err
 		}
 	}
+
+	// Handle file:owned.by() predicates
+	fileOwnersMustInclude, fileOwnersMustExclude := b.FileOwnership()
+	fmt.Printf("query: %+v\n", b)
 
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
@@ -96,6 +103,41 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		}
 		and = append(and, or)
 	}
+
+	// Handle file ownership by getting a list of resolved filenames and filtering on the file
+	// and repo names.
+	if len(fileOwnersMustInclude) > 0 {
+		or := &zoekt.Or{}
+		for _, owner := range fileOwnersMustInclude {
+			files := codeownership.ForOwner(owner)
+			for _, file := range files {
+				q, err := FileRe(file, isCaseSensitive)
+				if err != nil {
+					return nil, err
+				}
+
+				or.Children = append(or.Children, &zoekt.Type{Type: zoekt.TypeFileName, Child: q})
+			}
+		}
+		and = append(and, or)
+	}
+	if len(fileOwnersMustExclude) > 0 {
+		or := &zoekt.Or{}
+		for _, owner := range fileOwnersMustExclude {
+			files := codeownership.ForOwner(owner)
+			for _, file := range files {
+				q, err := FileRe(file, isCaseSensitive)
+				if err != nil {
+					return nil, err
+				}
+
+				or.Children = append(or.Children, &zoekt.Type{Type: zoekt.TypeFileName, Child: q})
+			}
+		}
+		and = append(and, &zoekt.Not{Child: or})
+	}
+
+	fmt.Printf("Result: %+v\n", and)
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
 }

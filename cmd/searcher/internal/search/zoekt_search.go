@@ -3,6 +3,7 @@ package search
 import (
 	"archive/tar"
 	"context"
+	"fmt"
 	"path/filepath"
 	"regexp/syntax" //nolint:depguard // zoekt requires this pkg
 	"strings"
@@ -14,6 +15,7 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -132,6 +134,10 @@ func zoektSearch(ctx context.Context, args *search.TextPatternInfo, branchRepos 
 	if len(branchRepos) == 0 {
 		return nil
 	}
+
+	fmt.Println("_+++++")
+	fmt.Printf("%+v", args)
+	fmt.Println("------")
 
 	numRepos := 0
 	for _, br := range branchRepos {

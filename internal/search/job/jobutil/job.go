@@ -78,9 +78,13 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			selector:       selector,
 		}
 
+		fmt.Printf("%+v\n", inputs)
+
 		if resultTypes.Has(result.TypeFile | result.TypePath) {
 			// Create Global Text Search jobs.
 			if repoUniverseSearch {
+
+				fmt.Printf("newZoektGlobalSearch\n")
 				job, err := builder.newZoektGlobalSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
@@ -89,6 +93,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			}
 
 			if !skipRepoSubsetSearch && runZoektOverRepos {
+				fmt.Printf("newZoektSearch\n")
 				job, err := builder.newZoektSearch(search.TextRequest)
 				if err != nil {
 					return nil, err
@@ -515,7 +520,6 @@ func count(b query.Basic, p search.Protocol) int {
 // nil, or comprises only one Pattern node (hence, an atom, and not an
 // expression). See TextPatternInfo for the values it computes and populates.
 func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protocol) *search.TextPatternInfo {
-	fmt.Println(b)
 	// Handle file: and -file: filters.
 	filesInclude, filesExclude := b.IncludeExcludeValues(query.FieldFile)
 	// Handle lang: and -lang: filters.
@@ -523,6 +527,7 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
 	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
+	fileOwnersMustInclude, fileOwnersMustExclude := b.FileOwnership()
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(b, p)
 
@@ -556,6 +561,8 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 		ExcludePattern:               query.UnionRegExps(filesExclude),
 		FilePatternsReposMustInclude: filesReposMustInclude,
 		FilePatternsReposMustExclude: filesReposMustExclude,
+		FileOwnersMustInclude:        fileOwnersMustInclude,
+		FileOwnersMustExclude:        fileOwnersMustExclude,
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),
 		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
 		Languages:                    langInclude,

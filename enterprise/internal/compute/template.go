@@ -8,7 +8,7 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/codeownership"
+	"github.com/sourcegraph/sourcegraph/internal/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 

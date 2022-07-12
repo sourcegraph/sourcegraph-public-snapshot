@@ -405,6 +405,6 @@ func (f *FileOwnershipPredicate) ParseParams(params string) error {
 func (f FileOwnershipPredicate) Field() string { return FieldFile }
 func (f FileOwnershipPredicate) Name() string  { return "owned.by" }
 func (f *FileOwnershipPredicate) Plan(parent Basic) (Plan, error) {
-	// Handled by repo search
+	// Handled by idk what
 	return nil, nil
 }

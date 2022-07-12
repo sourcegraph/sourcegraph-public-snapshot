@@ -19,12 +19,12 @@ func ForResult(r result.FileMatch) []string {
 	}
 }
 
-func ForOwner(owner string) {
+func ForOwner(owner string) []string {
 	switch owner {
 	case "@philipp-spiess":
-		return
+		return []string{"frontend/frontend-code.ts", "unowned/legacy-code.php", "CODEOWNERS", "README.md"}
 	case "@nicolasdular":
-		return
+		return []string{"backend/backend-code.go", "unowned/legacy-code.php", "CODEOWNERS", "README.md"}
 	default:
 		panic("unexpected owner")
 	}

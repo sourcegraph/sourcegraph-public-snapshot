@@ -3,6 +3,7 @@ package query
 import (
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
@@ -321,6 +322,11 @@ type Parameters []Parameter
 // (include) and negated (exclude) values.
 func (p Parameters) IncludeExcludeValues(field string) (include, exclude []string) {
 	VisitField(toNodes(p), field, func(v string, negated bool, _ Annotation) {
+		// This is not handled as an includes pattern.
+		if strings.HasPrefix(v, "owned.by(") {
+			return
+		}
+
 		if negated {
 			exclude = append(exclude, v)
 		} else {
@@ -345,6 +351,20 @@ func (p Parameters) RepoContainsFile() (include, exclude []string) {
 			exclude = append(exclude, pred.Pattern)
 		} else {
 			include = append(include, pred.Pattern)
+		}
+	})
+
+	return include, exclude
+}
+
+func (p Parameters) FileOwnership() (include, exclude []string) {
+	nodes := toNodes(p)
+
+	VisitTypedPredicate(nodes, func(pred *FileOwnershipPredicate, negated bool) {
+		if negated {
+			exclude = append(exclude, pred.Owner)
+		} else {
+			include = append(include, pred.Owner)
 		}
 	})
 
