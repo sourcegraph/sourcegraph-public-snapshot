@@ -130,6 +130,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		IncludePatterns:       includePatterns,
 		Names:                 dependencyNames,
 		ExcludePattern:        query.UnionRegExps(excludePatterns),
+		DescriptionPatterns:   op.DescriptionPatterns,
 		CaseSensitivePatterns: op.CaseSensitiveRepoFilters,
 		Cursors:               op.Cursors,
 		// List N+1 repos so we can see if there are repos omitted due to our repo limit.
