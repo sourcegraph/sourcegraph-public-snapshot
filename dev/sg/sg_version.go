@@ -155,7 +155,7 @@ func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bo
 		return nil
 	}
 
-	std.Out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
+	out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
 	if _, err := updateToPrebuiltSG(ctx); err != nil {
 		analytics.LogEvent(ctx, "auto_update", []string{"failed"}, start)
 		return errors.Newf("failed to install update: %s", err)
