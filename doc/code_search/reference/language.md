@@ -619,7 +619,8 @@ ComplexDiagram(
         Terminal("contains.file(...)", {href: "#repo-contains-file"}),
         Terminal("contains(...)", {href: "#repo-contains-file-and-content"}),
         Terminal("contains.commit.after(...)", {href: "#repo-contains-commit-after"}),
-        Terminal("dependencies(...)", {href: "#repo-dependencies"}))).addTo();
+        Terminal("dependencies(...)", {href: "#repo-dependencies"}),
+        Terminal("description(...)", {href: "#repo-description"}))).addTo();
 </script>
 
 ### Repo contains file
@@ -702,6 +703,20 @@ ComplexDiagram(
 Search only inside dependencies of repositories matching the given `regex@rev:a:b:c` input.
 
 **Example:** [`repo:dependencies(^github\.com/sourcegraph/sourcegraph$@3.36:3.35) count:all` ↗](https://sourcegraph.com/search?q=context:global+repo:dependencies%28%5Egithub%5C.com/sourcegraph/sourcegraph%24%403.36:3.35%29+count:all&patternType=literal)
+
+### Repo description
+
+<script>
+ComplexDiagram(
+    Terminal("description:"),
+    Terminal("("),
+    Terminal("regexp", {href: "#regexp"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositores which have a description matching the given regular expresion.
+
+**Example:** [`repo:description(go package)` ↗](https://sourcegraph.com/search?q=context%3Aglobal+repo%3Adescription%28go+package%29&patternType=literal)
 
 ## Built-in file predicate
 
