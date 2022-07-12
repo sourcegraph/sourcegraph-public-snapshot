@@ -352,7 +352,6 @@ func TestUpsertLockfileGraph(t *testing.T) {
 		if diff := cmp.Diff(wantNames, names); diff != "" {
 			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
 		}
-
 	})
 
 	t.Run("multiple lockfiles", func(t *testing.T) {
@@ -804,6 +803,57 @@ func TestUpsertDependencyRepo(t *testing.T) {
 	}
 	if diff := cmp.Diff(have, want); diff != "" {
 		t.Fatalf("mismatch (-have, +want): %s", diff)
+	}
+}
+
+func TestListDependencyRepos(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	batches := []shared.Repo{
+		{Scheme: "npm", Name: "bar", Version: "2.0.0"},    // id=1
+		{Scheme: "npm", Name: "foo", Version: "1.0.0"},    // id=2
+		{Scheme: "npm", Name: "bar", Version: "2.0.1"},    // id=3
+		{Scheme: "npm", Name: "foo", Version: "1.0.0"},    // id=4
+		{Scheme: "npm", Name: "bar", Version: "3.0.0"},    // id=5
+		{Scheme: "npm", Name: "banana", Version: "2.0.0"}, // id=6
+		{Scheme: "npm", Name: "turtle", Version: "4.2.0"}, // id=7
+	}
+
+	if _, err := store.UpsertDependencyRepos(ctx, batches); err != nil {
+		t.Fatal(err)
+	}
+
+	lastName := ""
+	for _, test := range [][]shared.Repo{
+		{{Scheme: "npm", Name: "banana"}, {Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}},
+		{{Scheme: "npm", Name: "turtle"}},
+	} {
+		depRepos, err := store.ListDependencyRepos(ctx, ListDependencyReposOpts{
+			Scheme:          "npm",
+			After:           lastName,
+			Limit:           3,
+			ExcludeVersions: true,
+		})
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+
+		for i := range depRepos {
+			depRepos[i].ID = 0
+		}
+
+		lastName = depRepos[len(depRepos)-1].Name
+
+		if diff := cmp.Diff(depRepos, test); diff != "" {
+			t.Fatalf("mismatch (-have, +want): %s", diff)
+		}
 	}
 }
 
