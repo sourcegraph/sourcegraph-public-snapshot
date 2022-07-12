@@ -137,7 +137,10 @@ type sentryHeader struct {
 	DSN string `json:"dsn"`
 }
 
-func sentryHandler(logger sglog.Logger) http.Handler {
+func addSentry(r *mux.Router) {
+	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
+
+	// Helper to fetch Sentry configuration from siteConfig.
 	getConfig := func() (string, string, error) {
 		var sentryDSN string
 		siteConfig := conf.Get().SiteConfiguration
@@ -154,7 +157,7 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 		return fmt.Sprintf("%s://%s", u.Scheme, u.Host), strings.TrimPrefix(u.Path, "/"), nil
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	r.HandleFunc("/sentry_tunnel", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			w.WriteHeader(http.StatusMethodNotAllowed)
 			return
@@ -216,11 +219,6 @@ func sentryHandler(logger sglog.Logger) http.Handler {
 		w.WriteHeader(http.StatusOK)
 		return
 	})
-}
-
-func addSentry(r *mux.Router) {
-	logger := sglog.Scoped("sentryTunnel", "A Sentry.io specific HTTP route that allows to forward client-side reports, https://docs.sentry.io/platforms/javascript/troubleshooting/#dealing-with-ad-blockers")
-	r.Handle("/sentry_tunnel", sentryHandler(logger))
 }
 
 func addNoJaegerHandler(r *mux.Router, db database.DB) {
