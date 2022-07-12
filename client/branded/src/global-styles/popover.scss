@@ -18,12 +18,7 @@
     display: block;
     max-width: var(--popover-max-width);
 
-    // Our parent element can be arbitrary since tooltips are by default inserted as a sibling of their target element.
-    // So reset our font and text properties to avoid inheriting weird values.
-    // rules from reset-text() mixin
-    font-family: var(--font-family-base);
     // We deliberately do NOT reset font-size.
-    font-style: normal;
     font-weight: 400;
     line-height: var(--line-height-base);
     line-break: auto;
