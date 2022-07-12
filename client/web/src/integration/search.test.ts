@@ -126,7 +126,8 @@ describe('Search', () => {
 
     describe('Filter completion', () => {
         withSearchQueryInput((editorName, editorSelector) => {
-            test(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
+            // skipping because it's flaky, see: https://github.com/sourcegraph/sourcegraph/issues/38633
+            test.skip(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
                 const editor = createEditorAPI(driver, editorName, editorSelector)
 
                 testContext.overrideGraphQL({

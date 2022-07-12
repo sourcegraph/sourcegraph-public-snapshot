@@ -8,7 +8,7 @@ import { Subject } from 'rxjs'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike, pluralize } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Alert, Icon, H2, H3, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, H3, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { FilteredConnection } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -62,39 +62,32 @@ const OrgNode: React.FunctionComponent<React.PropsWithChildren<OrgNodeProps>> = 
                     <span className="text-muted">{node.displayName}</span>
                 </div>
                 <div>
-                    <Button
-                        to={`${orgURL(node.name)}/settings`}
-                        data-tooltip="Organization settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
-                    </Button>{' '}
-                    <Button
-                        to={`${orgURL(node.name)}/settings/members`}
-                        data-tooltip="Organization members"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
-                        {node.members && (
-                            <>
-                                {node.members.totalCount} {pluralize('member', node.members.totalCount)}
-                            </>
-                        )}
-                    </Button>{' '}
-                    <Button
-                        onClick={deleteOrg}
-                        disabled={loading === true}
-                        data-tooltip="Delete organization"
-                        variant="danger"
-                        size="sm"
-                        aria-label="Delete organization"
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiDelete} />
-                    </Button>
+                    <Tooltip content="Organization settings">
+                        <Button to={`${orgURL(node.name)}/settings`} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Organization members">
+                        <Button to={`${orgURL(node.name)}/settings/members`} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiAccount} />{' '}
+                            {node.members && (
+                                <>
+                                    {node.members.totalCount} {pluralize('member', node.members.totalCount)}
+                                </>
+                            )}
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Delete organization">
+                        <Button
+                            aria-label="Delete"
+                            onClick={deleteOrg}
+                            disabled={loading === true}
+                            variant="danger"
+                            size="sm"
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
+                        </Button>
+                    </Tooltip>
                 </div>
             </div>
             {isErrorLike(loading) && <ErrorAlert className="mt-2" error={loading.message} />}

@@ -365,9 +365,6 @@ commands:
       docker inspect syntax-highlighter >/dev/null 2>&1 && docker rm -f syntax-highlighter || true
       # Pull syntax-highlighter latest insider image, only during install
       docker pull -q sourcegraph/syntax-highlighter:insiders
-    env:
-      # This is not needed actually
-      INSECURE_DEV: 1
 
   zoekt-indexserver-template: &zoekt_indexserver_template
     cmd: |

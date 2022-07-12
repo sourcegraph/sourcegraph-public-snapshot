@@ -1,10 +1,10 @@
 import React, { ReactNode, useCallback, useEffect, useRef, useState } from 'react'
 
-import CloseIcon from 'mdi-react/CloseIcon'
-import TickIcon from 'mdi-react/TickIcon'
+import { mdiClose, mdiCheck } from '@mdi/js'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
@@ -105,11 +105,11 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
     return (
         <>
             <Button className={styles.close} onClick={onClose}>
-                <CloseIcon className={styles.icon} />
+                <Icon inline={false} svgPath={mdiClose} className={styles.icon} aria-label="Close" />
             </Button>
             {submitResponse?.isHappinessFeedback ? (
                 <div className={styles.success}>
-                    <TickIcon className={styles.successTick} />
+                    <Icon inline={false} svgPath={mdiCheck} className={styles.successTick} aria-label="Success" />
                     <H3>We‘ve received your feedback!</H3>
                     <Text className="d-inline">
                         Thank you for your help.
@@ -127,9 +127,12 @@ const FeedbackPromptContent: React.FunctionComponent<React.PropsWithChildren<Fee
                 </div>
             ) : (
                 <Form onSubmit={handleSubmit}>
-                    <H3 className="mb-3">What’s on your mind?</H3>
+                    <H3 className="mb-3" id="feedback-prompt-question">
+                        What’s on your mind?
+                    </H3>
 
                     <FlexTextArea
+                        aria-labelledby="feedback-prompt-question"
                         onChange={handleTextChange}
                         value={text}
                         minRows={3}
