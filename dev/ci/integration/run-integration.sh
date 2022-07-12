@@ -47,7 +47,9 @@ $errors
 \`\`\`
 EOF
 )
-    echo $annotation >
+        echo "--- DEBUG ANNOTATION"
+        echo $annotation
+        echo "--- END ANNOTATION"
     fi
 }
 
@@ -71,6 +73,7 @@ function cleanup() {
   docker_cleanup
 
   if [ $exit_status -ne 0 ]; then
+    generate_markdown
     # This command will fail, so our last step will be expanded. We don't want
     # to expand "docker cleanup" so we add in a dummy section.
     echo "--- integration test failed"
