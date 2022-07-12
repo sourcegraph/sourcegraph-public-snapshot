@@ -1,7 +1,10 @@
+import globalStyles from '../index.scss'
+
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { usePrependStyles } from '@sourcegraph/storybook'
 
 import { App } from './App'
 
@@ -14,9 +17,11 @@ const config: Meta = {
 
 export default config
 
-export const JetBrainsPluginApp: Story = () => (
-    <div>
-        <div>
+export const JetBrainsPluginApp: Story = () => {
+    usePrependStyles('branded-story-styles', globalStyles)
+
+    return (
+        <div className="theme theme-light">
             <div className="d-flex justify-content-center">
                 <div className="mx-6">
                     <App
@@ -34,8 +39,8 @@ export const JetBrainsPluginApp: Story = () => (
                 </div>
             </div>
         </div>
-    </div>
-)
+    )
+}
 
 JetBrainsPluginApp.parameters = {
     chromatic: {
