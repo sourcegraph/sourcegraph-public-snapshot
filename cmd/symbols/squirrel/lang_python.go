@@ -20,7 +20,7 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 			prev := cur
 			cur = cur.Parent()
 			if cur == nil {
-				squirrel.breadcrumb(node, "getDefJava: ran out of parents")
+				squirrel.breadcrumb(node, "getDefPython: ran out of parents")
 				return nil, nil
 			}
 
@@ -36,12 +36,12 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 			case "attribute":
 				object := cur.ChildByFieldName("object")
 				if object == nil {
-					squirrel.breadcrumb(node, "getDefJava: attribute has no object field")
+					squirrel.breadcrumb(node, "getDefPython: attribute has no object field")
 					return nil, nil
 				}
 				attribute := cur.ChildByFieldName("attribute")
 				if attribute == nil {
-					squirrel.breadcrumb(node, "getDefJava: attribute has no attribute field")
+					squirrel.breadcrumb(node, "getDefPython: attribute has no attribute field")
 					return nil, nil
 				}
 				if nodeId(object) == nodeId(prev) {
@@ -255,11 +255,11 @@ func (squirrel *SquirrelService) getFieldPython(ctx context.Context, object Node
 	return squirrel.lookupFieldPython(ctx, ty, field)
 }
 
-func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeJava, field string) (ret *Node, err error) {
+func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypePython, field string) (ret *Node, err error) {
 	defer squirrel.onCall(ty.node(), &Tuple{String(ty.variant()), String(field)}, lazyNodeStringer(&ret))()
 
 	switch ty2 := ty.(type) {
-	case ClassTypeJava:
+	case ClassTypePython:
 		body := ty2.def.ChildByFieldName("body")
 		if body == nil {
 			return nil, nil
@@ -306,10 +306,10 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeJ
 			}
 		}
 		return nil, nil
-	case FnTypeJava:
+	case FnTypePython:
 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.variant()))
 		return nil, nil
-	case PrimTypeJava:
+	case PrimTypePython:
 		squirrel.breadcrumb(ty.node(), fmt.Sprintf("lookupFieldPython: unexpected object type %s", ty.variant()))
 		return nil, nil
 	default:
@@ -318,10 +318,10 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeJ
 	}
 }
 
-func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret TypeJava, err error) {
-	defer squirrel.onCall(node, String(node.Type()), lazyTypeJavaStringer(&ret))()
+func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node) (ret TypePython, err error) {
+	defer squirrel.onCall(node, String(node.Type()), lazyTypePythonStringer(&ret))()
 
-	onIdent := func() (TypeJava, error) {
+	onIdent := func() (TypePython, error) {
 		found, err := squirrel.getDefPython(ctx, node)
 		if err != nil {
 			return nil, err
@@ -455,7 +455,7 @@ func (squirrel *SquirrelService) getDefInImportsOrCurrentModulePython(ctx contex
 	return nil, nil
 }
 
-func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) (TypeJava, error) {
+func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) (TypePython, error) {
 	parent := def.Node.Parent()
 	if parent == nil {
 		return nil, nil
@@ -488,12 +488,12 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 		fmt.Println("TODO defToTypePython:", parent.Type())
 		return nil, nil
 	case "class_definition":
-		return (TypeJava)(ClassTypeJava{def: swapNode(def, parent)}), nil
+		return (TypePython)(ClassTypePython{def: swapNode(def, parent)}), nil
 	case "function_definition":
 		retTyNode := parent.ChildByFieldName("type")
 		if retTyNode == nil {
 			squirrel.breadcrumb(swapNode(def, parent), "defToType: could not find return type")
-			return (TypeJava)(FnTypeJava{
+			return (TypePython)(FnTypePython{
 				ret:  nil,
 				noad: swapNode(def, parent),
 			}), nil
@@ -502,7 +502,7 @@ func (squirrel *SquirrelService) defToTypePython(ctx context.Context, def Node) 
 		if err != nil {
 			return nil, err
 		}
-		return (TypeJava)(FnTypeJava{
+		return (TypePython)(FnTypePython{
 			ret:  retTy,
 			noad: swapNode(def, parent),
 		}), nil
@@ -538,4 +538,57 @@ func getSuperclassesPython(definition Node) []Node {
 		supers = append(supers, swapNode(definition, super))
 	}
 	return supers
+}
+
+type TypePython interface {
+	variant() string
+	node() Node
+}
+
+type FnTypePython struct {
+	ret  TypePython
+	noad Node
+}
+
+func (t FnTypePython) variant() string {
+	return "fn"
+}
+
+func (t FnTypePython) node() Node {
+	return t.noad
+}
+
+type ClassTypePython struct {
+	def Node
+}
+
+func (t ClassTypePython) variant() string {
+	return "class"
+}
+
+func (t ClassTypePython) node() Node {
+	return t.def
+}
+
+type PrimTypePython struct {
+	noad    Node
+	varient string
+}
+
+func (t PrimTypePython) variant() string {
+	return fmt.Sprintf("prim:%s", t.varient)
+}
+
+func (t PrimTypePython) node() Node {
+	return t.noad
+}
+
+func lazyTypePythonStringer(ty *TypePython) func() fmt.Stringer {
+	return func() fmt.Stringer {
+		if ty != nil && *ty != nil {
+			return String((*ty).variant())
+		} else {
+			return String("<nil>")
+		}
+	}
 }
