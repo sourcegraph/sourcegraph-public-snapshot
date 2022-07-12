@@ -1,4 +1,4 @@
-package jobutil
+package lucky
 
 import (
 	"context"

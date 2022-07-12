@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/internal/search/lucky"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -46,7 +47,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 		newJob := func(b query.Basic) (job.Job, error) {
 			return NewBasicJob(inputs, b)
 		}
-		jobTree = NewFeelingLuckySearchJob(jobTree, newJob, plan)
+		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
