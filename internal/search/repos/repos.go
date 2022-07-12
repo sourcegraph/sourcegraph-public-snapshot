@@ -98,17 +98,17 @@ func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle
 	return errs
 }
 
-func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, err error) {
+func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolved, errs error) {
 	tr, ctx := trace.New(ctx, "searchrepos.Resolve", op.String())
 	defer func() {
-		tr.SetError(err)
+		tr.SetError(errs)
 		tr.Finish()
 	}()
 
 	excludePatterns := op.MinusRepoFilters
-	includePatterns, includePatternRevs, err := findPatternRevs(op.RepoFilters)
-	if err != nil {
-		return Resolved{}, err
+	includePatterns, includePatternRevs, errs := findPatternRevs(op.RepoFilters)
+	if errs != nil {
+		return Resolved{}, errs
 	}
 
 	limit := op.Limit
@@ -116,14 +116,14 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		limit = limits.SearchLimits(conf.Get()).MaxRepos
 	}
 
-	dependencyNames, dependencyRevs, dependencyNotFoundRevs, err := r.fetchDependencyInfo(ctx, &op)
-	if err != nil {
-		return Resolved{}, err
+	dependencyNames, dependencyRevs, dependencyNotFoundRevs, errs := r.fetchDependencyInfo(ctx, &op)
+	if errs != nil {
+		return Resolved{}, errs
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, op.SearchContextSpec)
-	if err != nil {
-		return Resolved{}, err
+	searchContext, errs := searchcontexts.ResolveSearchContextSpec(ctx, r.db, op.SearchContextSpec)
+	if errs != nil {
+		return Resolved{}, errs
 	}
 
 	options := database.ReposListOptions{
@@ -164,11 +164,11 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}
 
 	tr.LazyPrintf("Repos.ListMinimalRepos - start")
-	repos, err := r.db.Repos().ListMinimalRepos(ctx, options)
-	tr.LazyPrintf("Repos.ListMinimalRepos - done (%d repos, err %v)", len(repos), err)
+	repos, errs := r.db.Repos().ListMinimalRepos(ctx, options)
+	tr.LazyPrintf("Repos.ListMinimalRepos - done (%d repos, err %v)", len(repos), errs)
 
-	if err != nil {
-		return Resolved{}, err
+	if errs != nil {
+		return Resolved{}, errs
 	}
 
 	if len(repos) == 0 && len(op.Cursors) == 0 { // Is the first page empty?
@@ -199,8 +199,6 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		repos = repos[:len(repos)-1]
 	}
 
-	tr.LazyPrintf("Associate/validate revs - start")
-
 	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
 		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.db, searchContext.ID)
@@ -214,57 +212,132 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		}
 	}
 
-	var res struct {
-		sync.Mutex
-		Resolved
-		errors.MultiError
+	tr.LazyPrintf("starting rev association")
+
+	associatedRepoRevs, missingRepoRevs := r.associateReposWithRevs(repos, dependencyRevs, searchContextRepositoryRevisions, includePatternRevs)
+
+	tr.LazyPrintf("completed rev association")
+	tr.LazyPrintf("starting rev filtering")
+
+	filteredRepoRevs, filteredMissingRepoRevs, errs, criticalErr := r.filterRepoRevs(ctx, associatedRepoRevs, op)
+	missingRepoRevs = append(missingRepoRevs, filteredMissingRepoRevs...)
+
+	tr.LazyPrintf("completed rev filtering")
+
+	if criticalErr != nil {
+		return Resolved{}, criticalErr
 	}
 
-	res.Resolved = Resolved{
-		RepoRevs: make([]*search.RepositoryRevisions, len(repos)),
-		Next:     next,
+	if len(missingRepoRevs) > 0 {
+		errs = errors.Append(errs, &MissingRepoRevsError{Missing: missingRepoRevs})
 	}
 
-	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
+	if len(dependencyNotFoundRevs) > 0 {
+		for repo, revs := range dependencyNotFoundRevs {
+			errs = errors.Append(errs, &MissingLockfileIndexing{repo: repo, revs: revs})
+		}
+	}
+
+	return Resolved{
+		RepoRevs:        filteredRepoRevs,
+		MissingRepoRevs: missingRepoRevs,
+		Next:            next,
+	}, errs
+}
+
+// associateReposWithRevs re-associates revisions with the repositories fetched from the db
+func (r *Resolver) associateReposWithRevs(
+	repos []types.MinimalRepo,
+	dependencyRevs map[api.RepoName][]search.RevisionSpecifier,
+	searchContextRepoRevs map[api.RepoID]*search.RepositoryRevisions,
+	includePatternRevs []patternRevspec,
+) (
+	repoRevs []*search.RepositoryRevisions,
+	missingRepoRevs []*search.RepositoryRevisions,
+) {
+	g := group.New().WithMaxConcurrency(8)
+
+	associatedRevs := make([]*search.RepositoryRevisions, len(repos))
+	revsAreMissing := make([]bool, len(repos))
 
 	for i, repo := range repos {
-		repo, i := repo, i // avoid race
+		i, repo := i, repo
+		g.Go(func() {
+			var (
+				revs      []search.RevisionSpecifier
+				isMissing bool
+			)
 
-		g.Go(func(ctx context.Context) error {
-			var revs []search.RevisionSpecifier
-			{
-				if len(dependencyRevs) > 0 {
-					revs = dependencyRevs[repo.Name]
-				}
+			if len(dependencyRevs) > 0 {
+				revs = dependencyRevs[repo.Name]
+			}
 
-				if len(searchContextRepositoryRevisions) > 0 && len(revs) == 0 {
-					if scRepoRev := searchContextRepositoryRevisions[repo.ID]; scRepoRev != nil {
-						revs = scRepoRev.Revs
-					}
-				}
-
-				if len(revs) == 0 {
-					var clashingRevs []search.RevisionSpecifier
-					revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
-
-					// if multiple specified revisions clash, report this usefully:
-					if len(revs) == 0 && clashingRevs != nil {
-						res.Lock()
-						res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
-							Repo: repo,
-							Revs: clashingRevs,
-						})
-						res.Unlock()
-					}
+			if len(searchContextRepoRevs) > 0 && len(revs) == 0 {
+				if scRepoRev := searchContextRepoRevs[repo.ID]; scRepoRev != nil {
+					revs = scRepoRev.Revs
 				}
 			}
 
+			if len(revs) == 0 {
+				var clashingRevs []search.RevisionSpecifier
+				revs, clashingRevs = getRevsForMatchedRepo(repo.Name, includePatternRevs)
+
+				// if multiple specified revisions clash, report this usefully:
+				if len(revs) == 0 && len(clashingRevs) != 0 {
+					revs = clashingRevs
+					isMissing = true
+				}
+			}
+
+			associatedRevs[i] = &search.RepositoryRevisions{Repo: repo, Revs: revs}
+			revsAreMissing[i] = isMissing
+		})
+	}
+
+	g.Wait()
+
+	// Sort missing revs to the end, but maintain order otherwise.
+	sort.SliceStable(associatedRevs, func(i, j int) bool {
+		return !revsAreMissing[i] && revsAreMissing[j]
+	})
+
+	notMissingCount := 0
+	for _, isMissing := range revsAreMissing {
+		if !isMissing {
+			notMissingCount++
+		}
+	}
+
+	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
+}
+
+// filterRepoRevs filters the revisions on each of a set of RepositoryRevisionsto ensure that:
+// 1) the revision exists and is resolvable on the given repository
+// 2) any repo-level filters (e.g. `repo:contains.commit.after()`) apply to this repo/rev combo.
+func (r *Resolver) filterRepoRevs(
+	ctx context.Context,
+	repoRevs []*search.RepositoryRevisions,
+	op search.RepoOptions,
+) (
+	filtered, missing []*search.RepositoryRevisions,
+	nonCriticalErr, criticalErr error,
+) {
+	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
+
+	var (
+		mu              sync.Mutex
+		missingRepoRevs []*search.RepositoryRevisions
+	)
+
+	for _, repoRev := range repoRevs {
+		repoRev := repoRev
+		g.Go(func(ctx context.Context) error {
 			// We do in place filtering to reduce allocations. Common path is no
 			// filtering of revs.
-			filteredRevs := revs[:0]
+			filteredRevs := repoRev.Revs[:0]
 
 			// Check if the repository actually has the revisions that the user specified.
-			for _, rev := range revs {
+			for _, rev := range repoRev.Revs {
 				if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
 					// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
 					// invalid, so it's not clear what validation would even mean.
@@ -292,7 +365,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 				}
 
 				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+				commitID, err := r.gitserver.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
 						return err
@@ -304,12 +377,12 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 							// Report as HEAD not "" (empty string) to avoid user confusion.
 							rev.RevSpec = "HEAD"
 						}
-						res.Lock()
-						res.MissingRepoRevs = append(res.MissingRepoRevs, &search.RepositoryRevisions{
-							Repo: repo,
+						mu.Lock()
+						missingRepoRevs = append(missingRepoRevs, &search.RepositoryRevisions{
+							Repo: repoRev.Repo,
 							Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
 						})
-						res.Unlock()
+						mu.Unlock()
 					}
 					// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
 					// if there is one.
@@ -317,11 +390,11 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 				}
 
 				if op.CommitAfter != "" {
-					if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
+					if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
 						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
-							res.Lock()
-							res.MultiError = errors.Append(res.MultiError, err)
-							res.Unlock()
+							mu.Lock()
+							nonCriticalErr = errors.Append(nonCriticalErr, err)
+							mu.Unlock()
 						}
 						continue
 					} else if !hasCommitAfter {
@@ -332,46 +405,22 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 				filteredRevs = append(filteredRevs, rev)
 			}
 
-			if len(filteredRevs) > 0 {
-				res.Lock()
-				res.RepoRevs[i] = &search.RepositoryRevisions{
-					Repo: repo,
-					Revs: filteredRevs,
-				}
-				res.Unlock()
-			}
-
+			repoRev.Revs = filteredRevs
 			return nil
 		})
 	}
 
-	if err = g.Wait(); err != nil {
-		return Resolved{}, err
-	}
+	criticalErr = g.Wait()
 
-	// Remove any repos that failed to have their revs validated. We do this to preserve the original order.
-	valid := res.RepoRevs[:0]
-	for _, r := range res.RepoRevs {
-		if r != nil {
-			valid = append(valid, r)
-		}
-	}
-	res.RepoRevs = valid
-
-	tr.LazyPrintf("Associate/validate revs - done")
-
-	err = res.MultiError
-	if len(res.MissingRepoRevs) > 0 {
-		err = errors.Append(err, &MissingRepoRevsError{Missing: res.MissingRepoRevs})
-	}
-
-	if len(dependencyNotFoundRevs) > 0 {
-		for repo, revs := range dependencyNotFoundRevs {
-			err = errors.Append(err, &MissingLockfileIndexing{repo: repo, revs: revs})
+	// Filter out any repo revs with empty revs
+	filteredRepoRevs := repoRevs[:0]
+	for _, repoRev := range repoRevs {
+		if len(repoRev.Revs) > 0 {
+			filteredRepoRevs = append(filteredRepoRevs, repoRev)
 		}
 	}
 
-	return res.Resolved, err
+	return filteredRepoRevs, missingRepoRevs, nonCriticalErr, criticalErr
 }
 
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
