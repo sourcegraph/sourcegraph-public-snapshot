@@ -394,7 +394,7 @@ func (p Parameters) Dependents() (dependents []string) {
 }
 
 func (p Parameters) Description() (descriptionPatterns []string) {
-	VisitTypedPredicate(toNodes(p), func(pred *RepoDescriptionPredicate, negated bool) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoDescriptionPredicate, _ bool) {
 		split := strings.Split(pred.Pattern, " ")
 		descriptionPatterns = append(descriptionPatterns, "(?:"+strings.Join(split, ").*?(?:")+")")
 	})
