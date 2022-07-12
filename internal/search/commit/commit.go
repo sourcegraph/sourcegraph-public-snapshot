@@ -94,8 +94,8 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
-	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.NewResolver(clients.DB)
+	return nil, repos.Paginate(ctx, j.RepoOpts, func(page *searchrepos.Resolved) error {
 		g := group.New().WithContext(ctx).WithMaxConcurrency(j.Concurrency).WithFirstError()
 
 		for _, repoRev := range page.RepoRevs {
