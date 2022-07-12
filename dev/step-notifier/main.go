@@ -52,6 +52,20 @@ func (b *BuildEvent) HasFailed() bool {
 	return true
 }
 
+func (b *BuildEvent) BuildNumber() int {
+	if b.Build.Number == nil {
+		return -1
+	}
+	return *b.Build.Number
+}
+
+func (b *BuildEvent) JobName() string {
+	if b.Job.Name == nil {
+		return "N/A"
+	}
+	return *b.Job.Name
+}
+
 type BuildStore struct {
 	builds map[int]Build
 	m      sync.RWMutex
@@ -72,7 +86,7 @@ func (s *BuildStore) Add(event *BuildEvent) {
 		build = *NewBuildFrom(event)
 	}
 	build.Jobs = append(build.Jobs, event.Job)
-	log.Printf("job %s added for build %d", *event.Job.Name, *build.Number)
+	log.Printf("job %s added for build %d", event.JobName(), event.BuildNumber())
 }
 
 func (s *BuildStore) DelByBuildNumber(num int) {
@@ -89,20 +103,22 @@ func (s *BuildStore) GetByBuildNumber(num int) Build {
 	return s.builds[num]
 }
 
-type StepServer struct {
+type BuildTrackingServer struct {
 	store   *BuildStore
 	bkToken string
+	slack   *SlackWebhookClient
 }
 
-func NewStepServer() *StepServer {
+func NewStepServer() *BuildTrackingServer {
 	token := os.Getenv("BK_WEBHOOK_TOKEN")
 
 	if token == "" {
 		panic("Environment variable BK_WEBHOOK_TOKEN cannot be empty")
 	}
-	return &StepServer{
+	return &BuildTrackingServer{
 		store:   NewBuildStore(),
 		bkToken: token,
+		slack:   NewSlackWebhookClient(),
 	}
 }
 
@@ -135,7 +151,7 @@ func processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, erro
 	return &event, nil
 }
 
-func (s *StepServer) handleEvent(w http.ResponseWriter, req *http.Request) {
+func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Request) {
 	event, err := processBuildkiteRequest(req, s.bkToken)
 
 	switch err {
@@ -175,7 +191,7 @@ func readBody[T any](req *http.Request, target T) error {
 	return nil
 }
 
-func (s *StepServer) shouldNotify(event *BuildEvent) bool {
+func (s *BuildTrackingServer) shouldNotify(event *BuildEvent) bool {
 	if !event.IsBuildFinished() {
 		log.Printf("build %d isn't finished - not notifying", *event.Build.Number)
 		return false
@@ -183,28 +199,17 @@ func (s *StepServer) shouldNotify(event *BuildEvent) bool {
 	return true
 }
 
-func (s *StepServer) notify(build *Build) error {
+func (s *BuildTrackingServer) notify(build *Build) error {
 	if len(build.Jobs) == 0 {
 		log.Printf("build %d has no jobs", *build.Number)
 		return nil
 	}
 
-	failed := make([]buildkite.Job, 0)
-	for _, step := range build.Jobs {
-		if *step.ExitStatus != 0 {
-			failed = append(failed, step)
-		}
-	}
-
-	out := ""
-	for _, f := range failed {
-		out = fmt.Sprintf("%s\n%s", out, *f.Name)
-	}
-	log.Printf("\nBuild %d failed%s", build.Number, out)
-	return nil
+	log.Printf("sending notifcation for failed build %d", *build.Number)
+	return s.slack.sendNotification(build)
 }
 
-func (s *StepServer) processEvent(event *BuildEvent) {
+func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 	if event.Build.Number == nil {
 		//Build number is required!
 		return
@@ -218,7 +223,7 @@ func (s *StepServer) processEvent(event *BuildEvent) {
 	}
 }
 
-func (s *StepServer) Serve() error {
+func (s *BuildTrackingServer) Serve() error {
 	http.HandleFunc("/buildkite", s.handleEvent)
 	log.Print("listening on :8080")
 	return http.ListenAndServe(":8080", nil)
