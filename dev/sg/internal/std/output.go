@@ -19,9 +19,17 @@ type Output struct {
 // Out is the standard output which is instantiated when sg gets run.
 var Out *Output
 
+// DisableOutputDetection, if enabled, replaces all calls to NewOutput with NewFixedOutput.
+var DisableOutputDetection bool
+
 // NewOutput instantiates a new output instance for local use with inferred configuration.
 func NewOutput(dst io.Writer, verbose bool) *Output {
 	inBuildkite := os.Getenv("BUILDKITE") == "true"
+	if DisableOutputDetection {
+		o := NewFixedOutput(dst, verbose)
+		o.buildkite = inBuildkite
+		return o
+	}
 
 	return &Output{
 		Output: output.NewOutput(dst, output.OutputOpts{
