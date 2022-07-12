@@ -58,8 +58,11 @@ type LibraryPaneProps =
 export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<LibraryPaneProps>> = ({ name, ...props }) => {
     // Remember the last collapsed state of the pane
     const [defaultCollapsed, setDefaultCollapsed] = useLocalStorage(LIBRARY_PANE_DEFAULT_COLLAPSED, false)
-    // Start with the library collapsed by default if the viewport is sufficiently narrow
-    const [collapsed, setCollapsed] = useState(defaultCollapsed || window.innerWidth < VIEWPORT_XL)
+    // Start with the library collapsed by default if the batch spec is read-only, or if
+    // the viewport is sufficiently narrow
+    const [collapsed, setCollapsed] = useState(
+        defaultCollapsed || ('isReadOnly' in props && props.isReadOnly) || window.innerWidth < VIEWPORT_XL
+    )
     const [selectedItem, setSelectedItem] = useState<LibraryItem>()
 
     const [containerStyle, animateContainer] = useSpring(() => ({
