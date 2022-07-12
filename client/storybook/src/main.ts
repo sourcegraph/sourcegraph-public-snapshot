@@ -214,6 +214,23 @@ const config: Config = {
             },
         })
 
+        // Node.js polyfills for JetBrains plugin
+        config.module.rules.push({
+            test: /(?:client\/(?:shared|jetbrains)|node_modules\/https-browserify)\/.*\.(ts|tsx|js|jsx)$/,
+            resolve: {
+                alias: {
+                    path: require.resolve('path-browserify'),
+                },
+                fallback: {
+                    path: require.resolve('path-browserify'),
+                    process: require.resolve('process/browser'),
+                    util: require.resolve('util'),
+                    http: require.resolve('stream-http'),
+                    https: require.resolve('https-browserify'),
+                },
+            },
+        })
+
         // Disable `CaseSensitivePathsPlugin` by default to speed up development build.
         // Similar discussion: https://github.com/vercel/next.js/issues/6927#issuecomment-480579191
         remove(config.plugins, plugin => plugin instanceof CaseSensitivePathsPlugin)
