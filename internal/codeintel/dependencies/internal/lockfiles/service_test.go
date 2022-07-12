@@ -124,7 +124,7 @@ type serializableResult struct {
 	Graph    string
 }
 
-func serializeResult(res *Result) serializableResult {
+func serializeResult(res Result) serializableResult {
 	serializable := serializableResult{Lockfile: res.Lockfile}
 
 	if res.Graph != nil {
