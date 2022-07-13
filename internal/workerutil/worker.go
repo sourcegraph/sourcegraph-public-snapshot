@@ -188,6 +188,10 @@ func (w *Worker) Start() {
 					continue
 				}
 
+				if len(canceled) > 0 {
+					w.options.Metrics.logger.Info("found jobs to cancel", log.Ints("IDs", canceled))
+				}
+
 				for _, id := range canceled {
 					w.runningIDSet.Cancel(id)
 				}

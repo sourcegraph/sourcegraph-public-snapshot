@@ -177,5 +177,5 @@ func (h *handler) canceled(ctx context.Context, executorName string, knownIDs []
 		// Otherwise we would be getting record IDs for all the workers, which is unnecessary.
 		WorkerHostname: executorName,
 	})
-	return knownIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
+	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
 }

@@ -29,6 +29,7 @@ func (s BatchSpecWorkspaceExecutionJobState) Valid() bool {
 	case BatchSpecWorkspaceExecutionJobStateQueued,
 		BatchSpecWorkspaceExecutionJobStateProcessing,
 		BatchSpecWorkspaceExecutionJobStateFailed,
+		BatchSpecWorkspaceExecutionJobStateCanceled,
 		BatchSpecWorkspaceExecutionJobStateCompleted:
 		return true
 	default:
