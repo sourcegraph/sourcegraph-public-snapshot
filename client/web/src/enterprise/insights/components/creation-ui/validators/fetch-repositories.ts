@@ -3,8 +3,8 @@ import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 
-import { requestGraphQL } from '../../../../../../../../backend/graphql'
-import { BulkSearchRepositories } from '../../../../../../../../graphql-operations'
+import { requestGraphQL } from '../../../../../backend/graphql'
+import { BulkSearchRepositories } from '../../../../../graphql-operations'
 
 const bulkSearchRepositoriesFragment = gql`
     fragment BulkSearchRepositories on Repository {
