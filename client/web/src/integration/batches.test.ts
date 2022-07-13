@@ -588,7 +588,8 @@ describe('Batches', () => {
         })
     })
 
-    describe('Batch changes details', () => {
+    // Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/37233
+    describe.skip('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
             it(`displays a single batch change for ${entityType}`, async () => {
                 testContext.overrideGraphQL({

@@ -152,17 +152,32 @@ export const EditLatestBatchSpec: Story = () => (
 
 EditLatestBatchSpec.storyName = 'editing the latest batch spec'
 
+const NOT_FOUND_MOCKS = new WildcardMockLink([
+    {
+        request: {
+            query: getDocumentNode(GET_BATCH_CHANGE_TO_EDIT),
+            variables: MATCH_ANY_PARAMETERS,
+        },
+        result: { data: { batchChange: null } },
+        nMatches: Number.POSITIVE_INFINITY,
+    },
+    ACTIVE_EXECUTORS_MOCK,
+    ...UNSTARTED_CONNECTION_MOCKS,
+])
+
 export const BatchChangeNotFound: Story = () => (
     <WebStory>
         {props => (
-            <EditBatchSpecPage
-                {...props}
-                batchChange={{
-                    name: 'doesnt-exist',
-                    namespace: 'test1234',
-                }}
-                settingsCascade={SETTINGS_CASCADE}
-            />
+            <MockedTestProvider link={NOT_FOUND_MOCKS}>
+                <EditBatchSpecPage
+                    {...props}
+                    batchChange={{
+                        name: 'doesnt-exist',
+                        namespace: 'test1234',
+                    }}
+                    settingsCascade={SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
         )}
     </WebStory>
 )

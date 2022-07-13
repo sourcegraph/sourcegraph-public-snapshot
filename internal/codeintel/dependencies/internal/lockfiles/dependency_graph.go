@@ -9,33 +9,33 @@ import (
 )
 
 type Edge struct {
-	Source, Target reposource.PackageVersion
+	Source, Target reposource.VersionedPackage
 }
 
 func newDependencyGraph() *DependencyGraph {
 	return &DependencyGraph{
-		dependencies: make(map[reposource.PackageVersion][]reposource.PackageVersion),
+		dependencies: make(map[reposource.VersionedPackage][]reposource.VersionedPackage),
 		edges:        map[Edge]struct{}{},
 	}
 }
 
 type DependencyGraph struct {
-	dependencies map[reposource.PackageVersion][]reposource.PackageVersion
+	dependencies map[reposource.VersionedPackage][]reposource.VersionedPackage
 	edges        map[Edge]struct{}
 }
 
-func (dg *DependencyGraph) addPackage(pkg reposource.PackageVersion) {
+func (dg *DependencyGraph) addPackage(pkg reposource.VersionedPackage) {
 	if _, ok := dg.dependencies[pkg]; !ok {
-		dg.dependencies[pkg] = []reposource.PackageVersion{}
+		dg.dependencies[pkg] = []reposource.VersionedPackage{}
 	}
 }
-func (dg *DependencyGraph) addDependency(a, b reposource.PackageVersion) {
+func (dg *DependencyGraph) addDependency(a, b reposource.VersionedPackage) {
 	dg.dependencies[a] = append(dg.dependencies[a], b)
 	dg.edges[Edge{a, b}] = struct{}{}
 }
 
-func (dg *DependencyGraph) Roots() (roots []reposource.PackageVersion) {
-	set := make(map[reposource.PackageVersion]struct{}, len(dg.dependencies))
+func (dg *DependencyGraph) Roots() (roots []reposource.VersionedPackage, undeterminable bool) {
+	set := make(map[reposource.VersionedPackage]struct{}, len(dg.dependencies))
 	for pkg := range dg.dependencies {
 		set[pkg] = struct{}{}
 	}
@@ -44,21 +44,34 @@ func (dg *DependencyGraph) Roots() (roots []reposource.PackageVersion) {
 		delete(set, edge.Target)
 	}
 
+	roots = make([]reposource.VersionedPackage, 0, len(set))
 	for k := range set {
 		roots = append(roots, k)
 	}
 
-	return roots
+	if len(roots) == 0 {
+		// If we don't have roots (because of circular dependencies), we use
+		// every package as a root.
+		// Ideally we'd use other information (such as the data in
+		// `package.json` files) to find out what the direct dependencies are.
+		for pkg := range dg.dependencies {
+			roots = append(roots, pkg)
+		}
+		return roots, true
+	}
+
+	return roots, false
 }
 
 func (dg *DependencyGraph) AllEdges() (edges []Edge) {
+	edges = make([]Edge, 0, len(dg.edges))
 	for edge := range dg.edges {
 		edges = append(edges, edge)
 	}
 	return edges
 }
 
-type pkgSet = map[reposource.PackageVersion]struct{}
+type pkgSet = map[reposource.VersionedPackage]struct{}
 
 func (dg *DependencyGraph) String() string {
 	var out strings.Builder
@@ -69,23 +82,12 @@ func (dg *DependencyGraph) String() string {
 }
 
 func (dg *DependencyGraph) AsMap() map[string]interface{} {
-	roots := dg.Roots()
-	if len(roots) == 0 {
-		// If we don't have roots (because of circular dependencies), we use
-		// every package as a root.
-		// Ideally we'd use other information (such as the data in
-		// `package.json` files) to find out what the direct dependencies are.
-		//
-		// TODO: this should probably go to `Roots()` with a boolean that says
-		// `circular bool` and that we persist to the database.
-		for pkg := range dg.dependencies {
-			roots = append(roots, pkg)
-		}
-	}
+	roots, _ := dg.Roots()
+
 	sort.Slice(roots, func(i, j int) bool { return roots[i].Less(roots[j]) })
 
 	type item struct {
-		pkg reposource.PackageVersion
+		pkg reposource.VersionedPackage
 		out map[string]interface{}
 	}
 
@@ -103,7 +105,7 @@ func (dg *DependencyGraph) AsMap() map[string]interface{} {
 
 		subOut := map[string]interface{}{}
 		// Write current item to its out map
-		current.out[current.pkg.PackageVersionSyntax()] = subOut
+		current.out[current.pkg.VersionedPackageSyntax()] = subOut
 
 		_, alreadyVisited := visited[current.pkg]
 		visited[current.pkg] = struct{}{}
@@ -124,11 +126,11 @@ func (dg *DependencyGraph) AsMap() map[string]interface{} {
 	return out
 }
 
-func printDependenciesToMap(out map[string]interface{}, graph *DependencyGraph, visited pkgSet, node reposource.PackageVersion) {
+func printDependenciesToMap(out map[string]interface{}, graph *DependencyGraph, visited pkgSet, node reposource.VersionedPackage) {
 	_, alreadyVisited := visited[node]
 	visited[node] = struct{}{}
 
-	key := node.PackageVersionSyntax()
+	key := node.VersionedPackageSyntax()
 	val := map[string]interface{}{}
 	out[key] = val
 

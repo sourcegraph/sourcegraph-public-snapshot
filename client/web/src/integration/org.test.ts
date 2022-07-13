@@ -12,7 +12,7 @@ import { WebGraphQlOperations, OrganizationResult } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { percySnapshotWithVariants } from './utils'
+import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 describe('Organizations', () => {
     const testOrg = subtypeOf<OrganizationResult['organization']>()({
@@ -156,13 +156,8 @@ describe('Organizations', () => {
                 })
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/organizations/sourcegraph/settings')
                 const updatedSettings = '// updated'
-                await driver.page.waitForSelector('.test-settings-file .monaco-editor')
-                await driver.replaceText({
-                    selector: '.test-settings-file .monaco-editor',
-                    newText: updatedSettings,
-                    selectMethod: 'keyboard',
-                    enterTextMethod: 'paste',
-                })
+                const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
+                await editor.replace(updatedSettings, 'paste')
 
                 const variables = await testContext.waitForGraphQLRequest(async () => {
                     await driver.page.click('.test-save-toolbar-save')
