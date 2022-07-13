@@ -89,7 +89,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.PullRequest:
 		// Crude QA 🐗🔥
 		ops.Append(
-			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
+			// buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
 			codeIntelQA(c.candidateImageTag()),
 		)
 

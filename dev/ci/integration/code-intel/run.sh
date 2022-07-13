@@ -9,6 +9,8 @@ set -ex
 echo "--- :terminal: Installing src-cli latest release"
 curl -L https://sourcegraph.com/.api/src-cli/src_linux_amd64 -o /usr/local/bin/src
 chmod +x /usr/local/bin/src
+src version
+exit 1
 
 echo "--- :spiral_note_pad: test.sh"
 export IMAGE="us.gcr.io/sourcegraph-dev/server:${CANDIDATE_VERSION}"
