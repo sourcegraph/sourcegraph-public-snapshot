@@ -65,3 +65,5 @@ export function buildStandardDatum(datums: StandardDatum[], dateRange: Analytics
 
     return newDatums
 }
+
+export const formatNumber = (value: number): string => Intl.NumberFormat('en', { notation: 'compact' }).format(value)

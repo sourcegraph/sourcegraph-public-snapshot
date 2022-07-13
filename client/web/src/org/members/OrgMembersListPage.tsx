@@ -20,6 +20,7 @@ import {
     Position,
     PageSelector,
     H3,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -105,12 +106,9 @@ const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProp
                     )}
                 >
                     <div className={styles.avatarContainer}>
-                        <UserAvatar
-                            size={36}
-                            className={styles.avatar}
-                            user={member}
-                            data-tooltip={member.displayName || member.username}
-                        />
+                        <Tooltip content={member.displayName || member.username}>
+                            <UserAvatar size={36} className={styles.avatar} user={member} />
+                        </Tooltip>
                     </div>
 
                     <div className="d-flex flex-column">

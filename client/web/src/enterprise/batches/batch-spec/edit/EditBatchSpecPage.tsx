@@ -253,7 +253,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
 
     return (
         <div className={layoutStyles.pageContainer}>
-            {searchQuery && <SearchTemplatesBanner />}
+            {searchQuery && <SearchTemplatesBanner className="mb-3" />}
             {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-3" />}
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader
@@ -277,6 +277,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                         <H4 className={styles.header}>Batch spec</H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
+                            autoFocus={true}
                             batchChangeName={batchChange.name}
                             className={styles.editor}
                             isLightTheme={isLightTheme}

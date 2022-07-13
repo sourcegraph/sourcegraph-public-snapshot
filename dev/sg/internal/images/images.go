@@ -20,6 +20,7 @@ import (
 	k8syaml "sigs.k8s.io/yaml"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -155,9 +156,16 @@ var _ kio.Filter = &imageFilter{}
 // Analogous to http://www.linfo.org/filters.html
 func (filter imageFilter) Filter(in []*yaml.RNode) ([]*yaml.RNode, error) {
 	for _, r := range in {
+		switch k := r.GetKind(); k {
+		case "Deployment", "StatefulSet", "DaemonSet", "Job":
+			// We only look for those kinds, which are containing images.
+		default:
+			std.Out.Verbosef("Skipping manifest of kind: %v", k)
+			continue
+		}
 		if err := findImage(r, *filter.credentials, filter.pinTag); err != nil {
 			if errors.As(err, &ErrNoImage{}) || errors.Is(err, ErrNoUpdateNeeded) {
-				std.Out.Verbosef("Encountered expected err: %v\n", err)
+				std.Out.Verbosef("Encountered expected err: %v", err)
 				continue
 			}
 			return nil, err
@@ -196,6 +204,20 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 		if err != nil {
 			return err
 		}
+		str := strings.Split(s, "/")
+		imageName := str[len(str)-1]
+
+		var found bool
+		for _, ourImages := range images.DeploySourcegraphDockerImages {
+			if strings.HasPrefix(imageName, ourImages) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return nil
+		}
+
 		updatedImage, err := updateImage(s, credential, pinTag)
 		if err != nil {
 			return err

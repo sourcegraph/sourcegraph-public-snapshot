@@ -10,12 +10,20 @@ import { requestGraphQL } from './requestGraphQl'
 const THIRTY_MINUTES = 30 * 60 * 1000
 
 const cachedContentRequests = new ExpirationCache<string, Promise<string | null>>(THIRTY_MINUTES)
+const inflightRequestAbortControllers: Set<AbortController> = new Set()
 
 export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
     const cacheKey = getMatchId(match)
 
     if (cachedContentRequests.has(cacheKey)) {
         return (await cachedContentRequests.get(cacheKey)) as string
+    }
+
+    // Before we start new content requests, abort any inflight requests.
+    // Aborting will mark the promise as failed so the catch rule below will
+    // also clean up the cache.
+    for (const abortController of inflightRequestAbortControllers) {
+        abortController.abort()
     }
 
     const loadPromise = fetchBlobContent(match)
@@ -28,18 +36,28 @@ export async function loadContent(match: ContentMatch | PathMatch | SymbolMatch)
 }
 
 async function fetchBlobContent(match: ContentMatch | PathMatch | SymbolMatch): Promise<string | null> {
-    const response = await requestGraphQL<BlobContentResult, BlobContentVariables>(blobContentQuery, {
-        commitID: match.commit ?? '',
-        filePath: match.path,
-        repoName: match.repository,
-    })
+    const abortController = new AbortController()
+    inflightRequestAbortControllers.add(abortController)
+    try {
+        const response = await requestGraphQL<BlobContentResult, BlobContentVariables>(
+            blobContentQuery,
+            {
+                commitID: match.commit ?? '',
+                filePath: match.path,
+                repoName: match.repository,
+            },
+            abortController.signal
+        )
 
-    const content: undefined | string = response.data?.repository?.commit?.file?.content
-    if (content === undefined) {
-        console.error('No content found in query response', response)
-        return null
+        const content: undefined | string = response.data?.repository?.commit?.file?.content
+        if (content === undefined) {
+            console.error('No content found in query response', response)
+            return null
+        }
+        return content
+    } finally {
+        inflightRequestAbortControllers.delete(abortController)
     }
-    return content
 }
 
 const blobContentQuery = gql`

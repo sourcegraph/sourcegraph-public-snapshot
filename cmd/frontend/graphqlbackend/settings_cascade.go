@@ -7,9 +7,9 @@ import (
 	"sort"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -87,34 +87,31 @@ func (r *settingsCascade) finalTyped(ctx context.Context) (*schema.Settings, err
 		return nil, err
 	}
 
-	allSettings := make([]*schema.Settings, len(subjects))
-
 	// Each LatestSettings is a roundtrip to the database. So we do the requests concurrently.
-	bounded := goroutine.NewBounded(8)
-	for i := range subjects {
-		i := i
-		bounded.Go(func() error {
-			settings, err := subjects[i].LatestSettings(ctx)
+	g := group.NewWithResults[*schema.Settings]().WithContext(ctx).WithMaxConcurrency(8)
+	for _, subject := range subjects {
+		subject := subject
+		g.Go(func(ctx context.Context) (*schema.Settings, error) {
+			settings, err := subject.LatestSettings(ctx)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			if settings == nil {
-				return nil
+				return nil, nil
 			}
 
 			var unmarshalled schema.Settings
 			if err := jsonc.Unmarshal(settings.settings.Contents, &unmarshalled); err != nil {
-				return err
+				return nil, err
 			}
 
-			allSettings[i] = &unmarshalled
-
-			return nil
+			return &unmarshalled, nil
 		})
 	}
 
-	if err := bounded.Wait(); err != nil {
+	allSettings, err := g.Wait()
+	if err != nil {
 		return nil, err
 	}
 
