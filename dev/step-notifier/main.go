@@ -230,6 +230,11 @@ func (s *BuildTrackingServer) Serve() error {
 }
 
 func main() {
+	var b Build
+	num := 160444
+	b.Number = &num
+	fmt.Println(grafanaURLFor(&b))
+	return
 	server := NewStepServer()
 	if err := server.Serve(); err != nil {
 		log.Fatal(err)
