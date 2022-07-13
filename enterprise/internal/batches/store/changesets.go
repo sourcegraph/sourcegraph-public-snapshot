@@ -1479,10 +1479,10 @@ func (s *Store) CleanDetachedChangesets(ctx context.Context, retention time.Dura
 	}})
 	defer endObservation(1, observation.Args{})
 
-	return s.Exec(ctx, sqlf.Sprintf(cleanDetachedChangesetsFmtstr, s.now(), retention/time.Second))
+	return s.Exec(ctx, sqlf.Sprintf(cleanDetachedChangesetsFmtstr, retention/time.Second))
 }
 
 const cleanDetachedChangesetsFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:CleanDetachedChangesets
-DELETE FROM changesets WHERE detached_at < (%s - (%s * interval '1 second'));
+DELETE FROM changesets WHERE detached_at < (NOW() - (%s * interval '1 second'));
 `
