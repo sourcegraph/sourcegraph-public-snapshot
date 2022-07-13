@@ -3,6 +3,8 @@ package store
 import (
 	"database/sql"
 
+	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -62,6 +64,32 @@ func scanDependencyRepo(s dbutil.Scanner) (shared.Repo, error) {
 // Scans `[]shared.Repo`
 
 var scanDependencyRepos = basestore.NewSliceScanner(scanDependencyRepo)
+
+// scanLockfileIndex scans `shared.LockfileIndex`
+func scanLockfileIndex(s dbutil.Scanner) (shared.LockfileIndex, error) {
+	var (
+		i            shared.LockfileIndex
+		commit       dbutil.CommitBytea
+		referenceIDs pq.Int32Array
+	)
+
+	err := s.Scan(&i.ID, &i.RepositoryID, &commit, &referenceIDs, &i.Lockfile, &i.Fidelity)
+	if err != nil {
+		return i, err
+	}
+
+	i.Commit = string(commit)
+
+	i.LockfileReferenceIDs = make([]int, 0, len(referenceIDs))
+	for _, id := range referenceIDs {
+		i.LockfileReferenceIDs = append(i.LockfileReferenceIDs, int(id))
+	}
+
+	return i, nil
+}
+
+// scanLockfileIndexes scans `[]shared.LockfileIndex`
+var scanLockfileIndexes = basestore.NewSliceScanner(scanLockfileIndex)
 
 // scanIntString scans a int, string pair.
 func scanIntString(s dbutil.Scanner) (int, string, error) {
