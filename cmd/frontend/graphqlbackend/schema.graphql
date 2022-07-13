@@ -6015,15 +6015,15 @@ type AnalyticsUsersSummaryResult {
     """
     Average DAUs
     """
-    avgDAU: AnalyticsStatItemSummary!
+    avgDAU: Float!
     """
     Average WAUs
     """
-    avgWAU: AnalyticsStatItemSummary!
+    avgWAU: Float!
     """
     Average MAUs
     """
-    avgMAU: AnalyticsStatItemSummary!
+    avgMAU: Float!
 }
 
 """
