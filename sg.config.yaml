@@ -383,7 +383,7 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
-      GOGC: 50
+      GOGC: 25
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
 
   zoekt-index-0:
@@ -409,7 +409,7 @@ commands:
     checkBinary: .bin/zoekt-webserver
     env:
       JAEGER_DISABLED: false
-      GOGC: 50
+      GOGC: 25
 
   zoekt-web-0:
     <<: *zoekt_webserver_template
