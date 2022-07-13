@@ -129,7 +129,7 @@ export const CommunitySearchContextPage: React.FunctionComponent<
             {!props.communitySearchContextMetadata.lowProfile && (
                 <div className="row">
                     <div className={classNames('col-xs-12 col-lg-7', styles.column)}>
-                        <Text weight="regular" className={classNames('h5 mb-4', styles.contentDescription)}>
+                        <Text weight="regular" className={classNames('mb-4', styles.contentDescription)}>
                             {props.communitySearchContextMetadata.description}
                         </Text>
 
