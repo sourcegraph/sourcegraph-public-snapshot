@@ -79,6 +79,7 @@ type operations struct {
 	closeBatchChange                     *observation.Operation
 	deleteBatchChange                    *observation.Operation
 	enqueueChangesetSync                 *observation.Operation
+	enqueueChangesetSyncsForRepo         *observation.Operation
 	reenqueueChangeset                   *observation.Operation
 	checkNamespaceAccess                 *observation.Operation
 	fetchUsernameForBitbucketServerToken *observation.Operation
@@ -129,6 +130,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			closeBatchChange:                     op("CloseBatchChange"),
 			deleteBatchChange:                    op("DeleteBatchChange"),
 			enqueueChangesetSync:                 op("EnqueueChangesetSync"),
+			enqueueChangesetSyncsForRepo:         op("EnqueueChangesetSyncsForRepo"),
 			reenqueueChangeset:                   op("ReenqueueChangeset"),
 			checkNamespaceAccess:                 op("CheckNamespaceAccess"),
 			fetchUsernameForBitbucketServerToken: op("FetchUsernameForBitbucketServerToken"),
@@ -1000,8 +1002,14 @@ func (s *Service) EnqueueChangesetSync(ctx context.Context, id int64) (err error
 	return nil
 }
 
-func (s *Service) EnqueueChangesetSyncsForRepo(ctx context.Context, repoID api.RepoID) error {
-	// TODO: observation stuff.
+func (s *Service) EnqueueChangesetSyncsForRepo(ctx context.Context, repoID api.RepoID) (err error) {
+	ctx, _, endObservation := s.operations.enqueueChangesetSyncsForRepo.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	// Get all the changesets on the given repo.
+	//
+	// 🚨 SECURITY: we enable EnforceAuthz to check whether the user has access
+	// to the given repos.
 	cs, _, err := s.store.ListChangesets(ctx, store.ListChangesetsOpts{
 		RepoIDs:      []api.RepoID{repoID},
 		EnforceAuthz: true,
@@ -1017,6 +1025,10 @@ func (s *Service) EnqueueChangesetSyncsForRepo(ctx context.Context, repoID api.R
 		ids[i] = changeset.ID
 	}
 
+	// Ask repo-updater to enqueue changeset syncs for the changesets we found.
+	//
+	// TODO: once we've migrated the changeset syncer to be a dbworker, we can
+	// remove the RPC here and just update the database directly.
 	if err := repoupdater.DefaultClient.EnqueueChangesetSync(ctx, ids); err != nil {
 		return errors.Wrap(err, "enqueuing syncs")
 	}

@@ -10,6 +10,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -2602,6 +2603,47 @@ changesetTemplate:
 				t.Fatal("expected different spec ID for batch change")
 			}
 		})
+	})
+
+	t.Run("EnqueueChangesetSyncsForRepo", func(t *testing.T) {
+		repo, _ := ct.CreateTestRepo(t, ctx, s.DatabaseDB())
+
+		spec := testBatchSpec(user.ID)
+		require.NoError(t, s.CreateBatchSpec(ctx, spec))
+
+		bcs := []*btypes.BatchChange{
+			testBatchChange(user.ID, spec),
+			testBatchChange(admin.ID, spec),
+		}
+		require.NoError(t, s.CreateBatchChange(ctx, bcs[0]))
+		require.NoError(t, s.CreateBatchChange(ctx, bcs[1]))
+
+		cs := []*btypes.Changeset{
+			testChangeset(repo.ID, bcs[0].ID, btypes.ChangesetExternalStateOpen),
+			testChangeset(repo.ID, bcs[1].ID, btypes.ChangesetExternalStateOpen),
+		}
+		require.NoError(t, s.CreateChangeset(ctx, cs[0]))
+		require.NoError(t, s.CreateChangeset(ctx, cs[1]))
+
+		called := false
+		repoupdater.MockEnqueueChangesetSync = func(_ context.Context, ids []int64) error {
+			assert.ElementsMatch(t, []int64{cs[0].ID, cs[1].ID}, ids)
+			called = true
+			return nil
+		}
+		t.Cleanup(func() { repoupdater.MockEnqueueChangesetSync = nil })
+
+		assert.NoError(t, svc.EnqueueChangesetSyncsForRepo(ctx, repo.ID))
+		assert.True(t, called, "MockEnqueueChangesetSync not called")
+
+		// repo is filtered out
+		ct.MockRepoPermissions(t, db, user.ID)
+
+		// Shouldn't result in an error, but another call to
+		// MockEnqueueChangesetSync shouldn't occur.
+		called = false
+		assert.NoError(t, svc.EnqueueChangesetSyncsForRepo(userCtx, repo.ID))
+		assert.False(t, called, "MockEnqueueChangesetSync unexpectedly called")
 	})
 }
 
