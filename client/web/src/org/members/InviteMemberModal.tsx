@@ -1,7 +1,7 @@
 import React, { Component, FunctionComponent, useCallback, useEffect, useState } from 'react'
 
 import { useMutation } from '@apollo/client'
-import { mdiClose, mdiClose } from '@mdi/js'
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
