@@ -338,7 +338,7 @@ func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs)
 			case rev.ExcludeRefGlob != "":
 				globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
 			case rev.RevSpec != "":
-				revs = append(revs, rev.RevSpec)
+				revs = append(revs, strings.TrimPrefix(rev.RevSpec, "refs/heads/"))
 			default:
 				revs = append(revs, "HEAD")
 			}
