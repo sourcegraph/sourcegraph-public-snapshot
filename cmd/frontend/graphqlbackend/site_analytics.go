@@ -11,10 +11,9 @@ import (
 )
 
 type siteAnalyticsResolver struct {
-	db database.DB
+	db    database.DB
+	cache bool
 }
-
-var cache = false
 
 /* Analytics root resolver */
 func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, error) {
@@ -25,7 +24,10 @@ func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, e
 	if !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-enabled", false) {
 		return nil, errors.New("'admin-analytics-enabled' feature flag is not enabled")
 	}
-	return &siteAnalyticsResolver{r.db}, nil
+
+	cache := !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-cache-disabled", false)
+
+	return &siteAnalyticsResolver{r.db, cache}, nil
 }
 
 /* Search */
@@ -33,7 +35,7 @@ func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, e
 func (r *siteAnalyticsResolver) Search(ctx context.Context, args *struct {
 	DateRange *string
 }) *adminanalytics.Search {
-	return &adminanalytics.Search{DateRange: *args.DateRange, DB: r.db, Cache: cache}
+	return &adminanalytics.Search{DateRange: *args.DateRange, DB: r.db, Cache: r.cache}
 }
 
 /* Notebooks */
@@ -41,7 +43,7 @@ func (r *siteAnalyticsResolver) Search(ctx context.Context, args *struct {
 func (r *siteAnalyticsResolver) Notebooks(ctx context.Context, args *struct {
 	DateRange *string
 }) *adminanalytics.Notebooks {
-	return &adminanalytics.Notebooks{DateRange: *args.DateRange, DB: r.db, Cache: cache}
+	return &adminanalytics.Notebooks{DateRange: *args.DateRange, DB: r.db, Cache: r.cache}
 }
 
 /* Users */
@@ -49,7 +51,7 @@ func (r *siteAnalyticsResolver) Notebooks(ctx context.Context, args *struct {
 func (r *siteAnalyticsResolver) Users(ctx context.Context, args *struct {
 	DateRange *string
 }) (*adminanalytics.Users, error) {
-	return &adminanalytics.Users{DateRange: *args.DateRange, DB: r.db, Cache: cache}, nil
+	return &adminanalytics.Users{DateRange: *args.DateRange, DB: r.db, Cache: r.cache}, nil
 }
 
 /* Code-intel */
@@ -57,13 +59,13 @@ func (r *siteAnalyticsResolver) Users(ctx context.Context, args *struct {
 func (r *siteAnalyticsResolver) CodeIntel(ctx context.Context, args *struct {
 	DateRange *string
 }) *adminanalytics.CodeIntel {
-	return &adminanalytics.CodeIntel{DateRange: *args.DateRange, DB: r.db, Cache: cache}
+	return &adminanalytics.CodeIntel{DateRange: *args.DateRange, DB: r.db, Cache: r.cache}
 }
 
 /* Repos */
 
 func (r *siteAnalyticsResolver) Repos(ctx context.Context) (*adminanalytics.ReposSummary, error) {
-	repos := adminanalytics.Repos{DB: r.db, Cache: cache}
+	repos := adminanalytics.Repos{DB: r.db, Cache: r.cache}
 
 	return repos.Summary(ctx)
 }
@@ -73,5 +75,5 @@ func (r *siteAnalyticsResolver) Repos(ctx context.Context) (*adminanalytics.Repo
 func (r *siteAnalyticsResolver) BatchChanges(ctx context.Context, args *struct {
 	DateRange *string
 }) *adminanalytics.BatchChanges {
-	return &adminanalytics.BatchChanges{DateRange: *args.DateRange, DB: r.db, Cache: cache}
+	return &adminanalytics.BatchChanges{DateRange: *args.DateRange, DB: r.db, Cache: r.cache}
 }
