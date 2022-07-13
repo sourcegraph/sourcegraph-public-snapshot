@@ -1,7 +1,7 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 // eslint-disable-next-line no-restricted-imports
-import { ExtensionRadialGradientIcon } from '@sourcegraph/web/src/components/CtaIcons'
+import { BookmarkRadialGradientIcon } from '@sourcegraph/web/src/components/CtaIcons'
 // eslint-disable-next-line no-restricted-imports
 import { WebStory } from '@sourcegraph/web/src/components/WebStory'
 
@@ -28,7 +28,7 @@ export const Default: Story = () => (
         title="Title"
         description="Description"
         cta={{ label: 'Label', href: '#' }}
-        icon={<ExtensionRadialGradientIcon />}
+        icon={<BookmarkRadialGradientIcon />}
         onClose={() => {}}
     />
 )
