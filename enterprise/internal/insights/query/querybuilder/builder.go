@@ -16,7 +16,7 @@ import (
 // in the base query. For example an input query of `repo:myrepo test` might be provided a default `archived:no`,
 // and the result would be generated as `repo:myrepo test archive:no`. This preserves the semantics of the original query
 // by fully parsing and reconstructing the tree, and does **not** overwrite user supplied values for the default fields.
-func withDefaults(inputQuery string, defaults searchquery.Parameters) (string, error) {
+func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (BasicQuery, error) {
 	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", errors.Wrap(err, "Pipeline")
