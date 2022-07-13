@@ -29,9 +29,7 @@ func TestNonLocalDefinition(t *testing.T) {
 	annotations := []annotation{}
 
 	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
-		contents, err := os.ReadFile(filepath.Join("test_repos", path.Repo, path.Path))
-		fatalIfErrorLabel(t, err, "reading a file")
-		return contents, nil
+		return os.ReadFile(filepath.Join("test_repos", path.Repo, path.Path))
 	}
 
 	tempSquirrel := New(readFile, nil)
