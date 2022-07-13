@@ -647,10 +647,10 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			},
 		}
 
-		clock := timeutil.NewFakeClock(time.Now(), 0)
+		now := time.Now().UTC()
 		oldRepo := repo.With(func(r *types.Repo) {
-			r.CreatedAt = clock.Now()
-			r.UpdatedAt = clock.Now()
+			r.UpdatedAt = now.Add(-time.Hour)
+			r.CreatedAt = r.UpdatedAt.Add(-time.Hour)
 			r.Stars = 0
 		})
 
@@ -774,14 +774,9 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 					}
 				}
 
-				// The clock has to advance a minute on each step to prevent SyncRepo
-				// from short circuiting because the last repo update was less than a
-				// minute ago.
-				clock := timeutil.NewFakeClock(time.Now(), 1*time.Minute)
-
 				syncer := &repos.Syncer{
 					Logger: logtest.Scoped(t),
-					Now:    clock.Now,
+					Now:    time.Now,
 					Store:  s,
 					Synced: make(chan repos.Diff, 1),
 					Sourcer: repos.NewFakeSourcer(nil,
