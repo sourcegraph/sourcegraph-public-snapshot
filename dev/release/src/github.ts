@@ -721,7 +721,7 @@ async function validateToken(): Promise<boolean> {
     })
 
     if (response.status !== 200) {
-        console.log(`Error! status: ${response.statusText}`)
+        console.log(`Existing GitHub token is invalid, got status ${response.statusText}`)
         return false
     }
     return true
