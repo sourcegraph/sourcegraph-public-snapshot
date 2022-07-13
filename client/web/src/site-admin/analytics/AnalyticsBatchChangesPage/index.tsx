@@ -88,7 +88,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
             value: changesetsMerged.summary.totalCount,
             minPerItem: 15,
             description:
-                'Batch Changes automates opening changesets across many repositories and codehosts. It also significantly reduces the time required to manage campaigns via tracking and management functions that are superior to custom solutions, spreadsheets and manually reaching out to developers.',
+                'Batch Changes automates opening changesets across many repositories and codehosts. It also significantly reduces the time required to manage cross-repository changes via tracking and management functions that are superior to custom solutions, spreadsheets and manually reaching out to developers.',
         }
 
         return [stats, legends, calculatorProps]

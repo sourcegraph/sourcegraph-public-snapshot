@@ -1,31 +1,30 @@
 import { gql } from '@sourcegraph/http-client'
 
-const analyticsStatItemFragment = gql`
-    fragment AnalyticsStatItemFragment on AnalyticsStatItem {
-        nodes {
-            date
-            count
-        }
-        summary {
-            totalCount
-        }
-    }
-`
-
 export const BATCHCHANGES_STATISTICS = gql`
     query BatchChangesStatistics($dateRange: AnalyticsDateRange!) {
         site {
             analytics {
                 batchChanges(dateRange: $dateRange) {
                     changesetsCreated {
-                        ...AnalyticsStatItemFragment
+                        nodes {
+                            date
+                            count
+                        }
+                        summary {
+                            totalCount
+                        }
                     }
                     changesetsMerged {
-                        ...AnalyticsStatItemFragment
+                        nodes {
+                            date
+                            count
+                        }
+                        summary {
+                            totalCount
+                        }
                     }
                 }
             }
         }
     }
-    ${analyticsStatItemFragment}
 `

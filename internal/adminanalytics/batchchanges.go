@@ -2,6 +2,7 @@ package adminanalytics
 
 import (
 	"context"
+
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -22,7 +23,7 @@ var changesetsCreatedNodesQuery = `
 	FROM
 		changesets
 		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changesets.created_at %s
+	WHERE changesets.created_at %s AND changesets.publication_state = 'PUBLISHED'
 	GROUP BY date
 `
 
@@ -34,7 +35,7 @@ var changesetsCreatedSummaryQuery = `
 	FROM
 		changesets
 		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changesets.created_at %s
+	WHERE changesets.created_at %s AND changesets.publication_state = 'PUBLISHED'
 `
 
 func (s *BatchChanges) ChangesetsCreated() (*AnalyticsFetcher, error) {
@@ -66,7 +67,7 @@ var changesetsMergedNodesQuery = `
 		changeset_events
 		INNER JOIN changesets ON changesets.id = changeset_events.changeset_id
 		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
-	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s) 
+	WHERE changeset_events.created_at %s AND changeset_events.kind IN (%s)
 	GROUP BY date
 `
 
@@ -86,6 +87,7 @@ var mergeEventKinds = sqlf.Join([]*sqlf.Query{
 	sqlf.Sprintf("'github:merged'"),
 	sqlf.Sprintf("'bitbucketserver:merged'"),
 	sqlf.Sprintf("'gitlab:merged'"),
+	sqlf.Sprintf("'bitbucketcloud:pullrequest:fulfilled'"),
 }, ",")
 
 func (s *BatchChanges) ChangesetsMerged() (*AnalyticsFetcher, error) {

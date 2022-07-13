@@ -14,7 +14,7 @@ type siteAnalyticsResolver struct {
 	db database.DB
 }
 
-var cache = true
+var cache = false
 
 /* Analytics root resolver */
 func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, error) {
