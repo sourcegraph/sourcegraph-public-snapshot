@@ -225,20 +225,16 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	tr.LazyPrintf("completed rev association")
 
 	tr.LazyPrintf("starting glob expansion")
-	expanded, err := r.expandGlobs(ctx, associatedRepoRevs)
+	normalized, normalizedMissingRepoRevs, err := r.normalizeRefs(ctx, associatedRepoRevs)
+	missingRepoRevs = append(missingRepoRevs, normalizedMissingRepoRevs...)
 	if err != nil {
 		return Resolved{}, err
 	}
 	tr.LazyPrintf("finished glob expansion")
 
 	tr.LazyPrintf("starting rev filtering")
-	filteredRepoRevs, filteredMissingRepoRevs, errs, criticalErr := r.filterRepoRevs(ctx, expanded, op)
-	missingRepoRevs = append(missingRepoRevs, filteredMissingRepoRevs...)
+	filteredRepoRevs, err := r.filterHasCommitAfter(ctx, normalized, op)
 	tr.LazyPrintf("completed rev filtering")
-
-	if criticalErr != nil {
-		return Resolved{}, criticalErr
-	}
 
 	if len(missingRepoRevs) > 0 {
 		errs = errors.Append(errs, &MissingRepoRevsError{Missing: missingRepoRevs})
@@ -323,37 +319,54 @@ func (r *Resolver) associateReposWithRevs(
 	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
 }
 
-func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs) ([]*search.RepositoryRevisions, error) {
+func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpecs) ([]*search.RepositoryRevisions, []RepoRevSpecs, error) {
 	results := make([]*search.RepositoryRevisions, len(repoRevSpecs))
+
+	var (
+		mu         sync.Mutex
+		missing    []RepoRevSpecs
+		addMissing = func(revSpecs RepoRevSpecs) {
+			mu.Lock()
+			missing = append(missing, revSpecs)
+			mu.Unlock()
+		}
+	)
 
 	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
 	for i, repoRev := range repoRevSpecs {
 		i, repoRev := i, repoRev
-		revs := make([]string, 0, len(repoRev.Revs))
-		var globs []gitdomain.RefGlob
-		for _, rev := range repoRev.Revs {
-			switch {
-			case rev.RefGlob != "":
-				globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
-			case rev.ExcludeRefGlob != "":
-				globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
-			case rev.RevSpec != "":
-				revs = append(revs, strings.TrimPrefix(rev.RevSpec, "refs/heads/"))
-			default:
-				revs = append(revs, "HEAD")
-			}
-		}
-
-		// Happy path with no goroutines
-		if len(globs) == 0 {
-			results[i] = &search.RepositoryRevisions{
-				Repo: repoRev.Repo,
-				Revs: revs,
-			}
-			continue
-		}
-
 		g.Go(func(ctx context.Context) error {
+			revs := make([]string, 0, len(repoRev.Revs))
+			var globs []gitdomain.RefGlob
+			for _, rev := range repoRev.Revs {
+				switch {
+				case rev.RefGlob != "":
+					globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
+				case rev.ExcludeRefGlob != "":
+					globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
+				case rev.RevSpec == "" || rev.RevSpec == "HEAD":
+					revs = append(revs, "HEAD")
+				case rev.RevSpec != "":
+					trimmedRev := strings.TrimPrefix(rev.RevSpec, "refs/heads/")
+					_, err := r.gitserver.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+					if err != nil {
+						if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
+							return err
+						}
+						addMissing(RepoRevSpecs{Repo: repoRev.Repo, Revs: []search.RevisionSpecifier{rev}})
+					}
+				}
+			}
+
+			// Happy path with no globs
+			if len(globs) == 0 {
+				results[i] = &search.RepositoryRevisions{
+					Repo: repoRev.Repo,
+					Revs: revs,
+				}
+				return nil
+			}
+
 			rg, err := gitdomain.CompileRefGlobs(globs)
 			if err != nil {
 				return err
@@ -379,7 +392,7 @@ func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs)
 	}
 
 	if err := g.Wait(); err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	// Filter out any results whose revSpecs expanded to nothing
@@ -390,95 +403,57 @@ func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs)
 		}
 	}
 
-	return filteredResults, nil
+	return filteredResults, missing, nil
 }
 
-// filterRepoRevs filters the revisions on each of a set of RepositoryRevisionsto ensure that:
-// 1) the revision exists and is resolvable on the given repository
-// 2) any repo-level filters (e.g. `repo:contains.commit.after()`) apply to this repo/rev combo.
-func (r *Resolver) filterRepoRevs(
+// filterHasCommitAfter filters the revisions on each of a set of RepositoryRevisions to ensure that
+// any repo-level filters (e.g. `repo:contains.commit.after()`) apply to this repo/rev combo.
+func (r *Resolver) filterHasCommitAfter(
 	ctx context.Context,
 	repoRevs []*search.RepositoryRevisions,
 	op search.RepoOptions,
 ) (
-	filtered []*search.RepositoryRevisions,
-	missing []RepoRevSpecs,
-	nonCriticalErr, criticalErr error,
+	[]*search.RepositoryRevisions,
+	error,
 ) {
-	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
-
-	var (
-		mu              sync.Mutex
-		missingRepoRevs []RepoRevSpecs
-	)
-
-	for i, repoRev := range repoRevs {
-		i, repoRev := i, repoRev
-		g.Go(func(ctx context.Context) error {
-			// We do in place filtering to reduce allocations. Common path is no
-			// filtering of revs.
-			filteredRevs := repoRev.Revs[:0]
-
-			// Check if the repository actually has the revisions that the user specified.
-			for _, rev := range repoRev.Revs {
-				if rev == "HEAD" && op.CommitAfter == "" { // skip default branch resolution to save time
-					filteredRevs = append(filteredRevs, rev)
-					continue
-				}
-
-				// Validate the revspec.
-				// Do not trigger a repo-updater lookup (e.g.,
-				// backend.{GitRepo,Repos.ResolveRev}) because that would slow this operation
-				// down by a lot (if we're looping over many repos). This means that it'll fail if a
-				// repo is not on gitserver.
-				//
-				// TODO(sqs): make this NOT send gitserver this revspec in EnsureRevision, to avoid
-				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
-				// taking a long time because they all ask gitserver to try to fetch from the remote
-				// repo.
-				trimmedRev := strings.TrimPrefix(rev, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				commitID, err := r.gitserver.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
-				if err != nil {
-					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
-						return err
-					}
-
-					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
-						// The revspec does not exist, so don't include it, and report that it's missing.
-						mu.Lock()
-						missingRepoRevs = append(missingRepoRevs, RepoRevSpecs{
-							Repo: repoRev.Repo,
-							Revs: []search.RevisionSpecifier{{RevSpec: rev}},
-						})
-						mu.Unlock()
-					}
-					// If err != nil and is not one of the err values checked for above, cloning and other errors will be handled later, so just ignore an error
-					// if there is one.
-					continue
-				}
-
-				if op.CommitAfter != "" {
-					if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, string(commitID), authz.DefaultSubRepoPermsChecker); err != nil {
-						if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
-							mu.Lock()
-							nonCriticalErr = errors.Append(nonCriticalErr, err)
-							mu.Unlock()
-						}
-						continue
-					} else if !hasCommitAfter {
-						continue
-					}
-				}
-
-				filteredRevs = append(filteredRevs, rev)
-			}
-
-			repoRevs[i].Revs = filteredRevs
-			return nil
-		})
+	// Early return if HasCommitAfter is not set
+	if op.CommitAfter == "" {
+		return repoRevs, nil
 	}
 
-	criticalErr = g.Wait()
+	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
+
+	for _, repoRev := range repoRevs {
+		repoRev := repoRev
+
+		allRevs := repoRev.Revs
+
+		var mu sync.Mutex
+		repoRev.Revs = make([]string, 0, len(allRevs))
+
+		for _, rev := range allRevs {
+			rev := rev
+			g.Go(func(ctx context.Context) error {
+				if hasCommitAfter, err := r.gitserver.HasCommitAfter(ctx, repoRev.Repo.Name, op.CommitAfter, rev, authz.DefaultSubRepoPermsChecker); err != nil {
+					if !errors.HasType(err, &gitdomain.RevisionNotFoundError{}) && !gitdomain.IsRepoNotExist(err) {
+						return err
+					}
+					return err
+				} else if !hasCommitAfter {
+					return nil
+				}
+
+				mu.Lock()
+				repoRev.Revs = append(repoRev.Revs, rev)
+				mu.Unlock()
+				return nil
+			})
+		}
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
 
 	// Filter out any repo revs with empty revs
 	filteredRepoRevs := repoRevs[:0]
@@ -488,7 +463,7 @@ func (r *Resolver) filterRepoRevs(
 		}
 	}
 
-	return filteredRepoRevs, missingRepoRevs, nonCriticalErr, criticalErr
+	return filteredRepoRevs, nil
 }
 
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
