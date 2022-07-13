@@ -10,7 +10,7 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Link, Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
@@ -271,10 +271,10 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                     <div className="nav nav-tabs">
                         {tabs.map(({ tab, title, isActive, logEventName }) => (
                             <div className="nav-item" key={tab}>
-                                <Link
+                                <ButtonLink
                                     to=""
                                     role="button"
-                                    onClick={event => {
+                                    onSelect={event => {
                                         event.preventDefault()
                                         onSelectTab(tab, `SearchNotebooks${logEventName}TabClick`)
                                     }}
@@ -283,7 +283,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                     <span className="text-content" data-tab-content={title}>
                                         {title}
                                     </span>
-                                </Link>
+                                </ButtonLink>
                             </div>
                         ))}
                     </div>
