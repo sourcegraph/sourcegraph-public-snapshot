@@ -124,9 +124,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
-	case runtype.ReleaseBranch:
-		ops.Append(buildWebAppWithSentrySourcemaps(c.Version))
-
 	case runtype.BackendIntegrationTests:
 		ops.Append(
 			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
@@ -286,6 +283,9 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			publishOps.Append(publishExecutor(c.Version, skipHashCompare))
 			if c.RunType.Is(runtype.ReleaseBranch) || c.Diff.Has(changed.ExecutorDockerRegistryMirror) {
 				publishOps.Append(publishExecutorDockerMirror(c.Version))
+			}
+			if c.RunType.Is(runtype.ReleaseBranch) {
+				ops.Append(buildWebAppWithSentrySourcemaps(c.Version))
 			}
 		}
 		ops.Merge(publishOps)
