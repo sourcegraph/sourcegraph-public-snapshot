@@ -1520,8 +1520,8 @@ describe('getMonacoTokens()', () => {
         `)
     })
 
-    test('highlight repo:description predicate', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:description(.*)')))).toMatchInlineSnapshot(`
+    test('highlight repo:has.description predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.description(.*)')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1536,19 +1536,27 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaPredicateNameAccess"
               },
               {
-                "startIndex": 16,
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 20,
                 "scopes": "metaPredicateParenthesis"
               },
               {
-                "startIndex": 17,
+                "startIndex": 21,
                 "scopes": "metaRegexpCharacterSet"
               },
               {
-                "startIndex": 18,
+                "startIndex": 22,
                 "scopes": "metaRegexpRangeQuantifier"
               },
               {
-                "startIndex": 19,
+                "startIndex": 23,
                 "scopes": "metaPredicateParenthesis"
               }
             ]
