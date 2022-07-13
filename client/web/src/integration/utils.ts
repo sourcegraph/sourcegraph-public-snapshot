@@ -46,8 +46,9 @@ type ColorScheme = 'dark' | 'light'
 export const convertImgSourceHttpToBase64 = async (page: Page): Promise<void> => {
     await page.evaluate(() => {
         // Skip images with data-skip-percy
+        // Skip images with .cm-widgetBuffer, which CodeMirror uses when using a widget decoration
         // See https://github.com/sourcegraph/sourcegraph/issues/28949
-        const imgs = document.querySelectorAll<HTMLImageElement>('img:not([data-skip-percy])')
+        const imgs = document.querySelectorAll<HTMLImageElement>('img:not([data-skip-percy]):not(.cm-widgetBuffer)')
 
         for (const img of imgs) {
             if (img.src.startsWith('data:image')) {
