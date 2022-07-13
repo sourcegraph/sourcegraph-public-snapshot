@@ -124,9 +124,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	case runtype.ReleaseNightly:
 		ops.Append(triggerReleaseBranchHealthchecks(minimumUpgradeableVersion))
 
-	case runtype.ReleaseBranch:
-		ops.Append(buildWebAppWithSentrySourcemaps(c.Version))
-
 	case runtype.BackendIntegrationTests:
 		ops.Append(
 			buildCandidateDockerImage("server", c.Version, c.candidateImageTag()),
@@ -272,6 +269,10 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			clusterQA(c.candidateImageTag()),
 			testUpgrade(c.candidateImageTag(), minimumUpgradeableVersion),
 		))
+
+		if c.RunType.Is(runtype.ReleaseBranch) {
+			ops.Append(buildWebAppWithSentrySourcemaps(c.Version))
+		}
 
 		// All operations before this point are required
 		ops.Append(wait)
