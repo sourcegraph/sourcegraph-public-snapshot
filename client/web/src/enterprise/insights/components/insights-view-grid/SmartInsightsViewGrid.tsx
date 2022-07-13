@@ -28,13 +28,16 @@ interface SmartInsightsViewGridProps extends TelemetryProps {
 export const SmartInsightsViewGrid: React.FunctionComponent<React.PropsWithChildren<SmartInsightsViewGridProps>> = memo(
     props => {
         const { telemetryService, insights, className } = props
+        const [isLayoutInitialized, setIsLayoutInitialized] = useState(false)
 
         const [layouts, setLayouts] = useState<Layouts>({})
         const [resizingView, setResizeView] = useState<Layout | null>(null)
 
         useEffect(() => {
-            setLayouts(insightLayoutGenerator(insights))
-        }, [insights])
+            if (isLayoutInitialized) {
+                setLayouts(insightLayoutGenerator(insights))
+            }
+        }, [insights, isLayoutInitialized])
 
         const trackUICustomization = useCallback(
             (item: Layout) => {
@@ -67,6 +70,11 @@ export const SmartInsightsViewGrid: React.FunctionComponent<React.PropsWithChild
 
         const handleLayoutChange = useCallback(
             (currentLayout: Layout[], allLayouts: Layouts): void => {
+                // After upgraded React 18, this callBack is called and steal the layouts which is set in `useEffect` above
+                // this makes all layouts have 1 col like the default one, so using `isLayoutInitialized` to prevent it
+                // Maybe we can use `insightLayoutGenerator(...)` here instead of reuse `allLayout`...
+                setIsLayoutInitialized(true)
+
                 setLayouts(recalculateGridLayout(allLayouts, insights))
             },
             [insights]
