@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -48,6 +49,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -174,7 +176,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer)
+	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)
 	go func() {
 		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -473,6 +475,7 @@ func watchSyncer(
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
 	permsSyncer permsSyncer,
+	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
 
@@ -491,6 +494,13 @@ func watchSyncer(
 				// modified.
 				permsSyncer.ScheduleRepos(ctx, getPrivateAddedOrModifiedRepos(diff)...)
 			}
+
+			// Similarly, changesetSyncer is only available in enterprise mode.
+			if changesetSyncer != nil && len(diff.Archived) > 0 {
+				if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repoIDs(diff.Archived)); err != nil {
+					logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
+				}
+			}
 		}
 	}
 }
@@ -508,6 +518,16 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 		if r.Private {
 			repoIDs = append(repoIDs, r.ID)
 		}
+	}
+
+	return repoIDs
+}
+
+func repoIDs(repos types.Repos) []api.RepoID {
+	repoIDs := make([]api.RepoID, 0, len(repos))
+
+	for _, r := range repos {
+		repoIDs = append(repoIDs, r.ID)
 	}
 
 	return repoIDs

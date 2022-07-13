@@ -1195,7 +1195,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				RepoID: repoID,
+				RepoIDs: []api.RepoID{repoID},
 			},
 		},
 		// onlyClosable changesets
