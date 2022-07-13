@@ -42,6 +42,7 @@ def f(x):
     _ = y + l1 + l2 + l3 + l4 + l5 + g()
 
 
+#     vv py.C1 def
 class C1:
     x = 5  # < "x" py.C1.x def
 
