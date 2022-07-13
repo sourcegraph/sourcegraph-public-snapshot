@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo } from 'react'
 
 import { mdiOpenInNew } from '@mdi/js'
+import classNames from 'classnames'
 import { Observable, of } from 'rxjs'
 import { map, catchError } from 'rxjs/operators'
 
@@ -19,6 +20,8 @@ import { PageTitle } from '../../components/PageTitle'
 import { Scalars } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { UsageChart } from '../SiteAdminUsageStatisticsPage'
+
+import styles from './SiteAdminOverviewPage.module.scss'
 
 interface Props extends ActivationProps, ThemeProps {
     overviewComponents: readonly React.ComponentType<React.PropsWithChildren<unknown>>[]
@@ -160,15 +163,15 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                         className="p-0 list-group-item font-weight-normal"
                         data-testid="site-admin-overview-menu"
                         buttonClassName="mb-0 py-3 px-3"
-                        titleClassName="h5 mb-0 font-weight-bold"
-                        detailClassName="h5 mb-0 font-weight-normal"
+                        titleClassName={classNames('mb-0 font-weight-bold', styles.adminOverviewMenuText)}
+                        detailClassName={classNames('mb-0 font-weight-normal', styles.adminOverviewMenuText)}
                         titleAtStart={true}
                     >
                         {activation.completed && (
                             <ActivationChecklist
                                 steps={activation.steps}
                                 completed={activation.completed}
-                                buttonClassName="h5 mb-0 font-weight-normal"
+                                buttonClassName={classNames('mb-0 font-weight-normal', styles.adminOverviewMenuText)}
                             />
                         )}
                     </Collapsible>
@@ -181,7 +184,10 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                         {info.repositories !== null && (
                             <Link
                                 to="/site-admin/repositories"
-                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                                className={classNames(
+                                    'list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3',
+                                    styles.adminOverviewMenuText
+                                )}
                             >
                                 {numberWithCommas(info.repositories)}{' '}
                                 {pluralize('repository', info.repositories, 'repositories')}
@@ -190,7 +196,10 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                         {info.repositoryStats !== null && (
                             <Link
                                 to="/site-admin/repositories"
-                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                                className={classNames(
+                                    'list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3',
+                                    styles.adminOverviewMenuText
+                                )}
                             >
                                 {BigInt(info.repositoryStats.gitDirBytes).toLocaleString()}{' '}
                                 {pluralize('byte stored', BigInt(info.repositoryStats.gitDirBytes), 'bytes stored')}
@@ -199,7 +208,10 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                         {info.repositoryStats !== null && (
                             <Link
                                 to="/site-admin/repositories"
-                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                                className={classNames(
+                                    'list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3',
+                                    styles.adminOverviewMenuText
+                                )}
                             >
                                 {BigInt(info.repositoryStats.indexedLinesCount).toLocaleString()}{' '}
                                 {pluralize(
@@ -212,7 +224,10 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                         {info.users > 1 && (
                             <Link
                                 to="/site-admin/users"
-                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                                className={classNames(
+                                    'list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3',
+                                    styles.adminOverviewMenuText
+                                )}
                             >
                                 {numberWithCommas(info.users)} {pluralize('user', info.users)}
                             </Link>
@@ -220,7 +235,10 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                         {info.orgs > 1 && (
                             <Link
                                 to="/site-admin/organizations"
-                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                                className={classNames(
+                                    'list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3',
+                                    styles.adminOverviewMenuText
+                                )}
                             >
                                 {numberWithCommas(info.orgs)} {pluralize('organization', info.orgs)}
                             </Link>
@@ -228,7 +246,10 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                         {info.users > 1 && (
                             <Link
                                 to="/site-admin/surveys"
-                                className="list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+                                className={classNames(
+                                    'list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3',
+                                    styles.adminOverviewMenuText
+                                )}
                             >
                                 {numberWithCommas(info.surveyResponses.totalCount)}{' '}
                                 {pluralize('user survey response', info.surveyResponses.totalCount)}
@@ -248,7 +269,10 @@ export const SiteAdminOverviewPage: React.FunctionComponent<React.PropsWithChild
                                     }
                                     defaultExpanded={true}
                                     className="list-group-item"
-                                    titleClassName="h5 mb-0 font-weight-normal p-2"
+                                    titleClassName={classNames(
+                                        'mb-0 font-weight-normal p-2',
+                                        styles.adminOverviewMenuText
+                                    )}
                                     titleAtStart={true}
                                 >
                                     {stats && (

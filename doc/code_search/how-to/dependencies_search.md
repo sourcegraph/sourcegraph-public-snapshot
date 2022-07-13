@@ -6,11 +6,11 @@ Dependencies search is a code search feature that lets you search through the de
 
 ### Setup
 
-1. Configure a package host connection for each kind of dependency you want to search over:
-  - [JVM](../../integration/jvm.md)
-  - [npm and Yarn](../../integration/npm.md)
-  - [Go](../../integration/go.md)
-  - [Python dependencies](../../integration/python.md)
+1. Setup a package host connection for each kind of dependency you want to search over:
+  - [JVM](../../admin/external_service/jvm.md)
+  - [npm and Yarn](../../admin/external_service/npm.md)
+  - [Go](../../admin/external_service/go.md)
+  - [Python dependencies](../../admin/external_service/python.md)
 1. Add `"codeIntelLockfileIndexing.enabled": true` to your [site configuration](../../admin/config/site_config.md) to enable the lockfile-indexing feature.
 1. Add `"codeIntelAutoIndexing.allowGlobalPolicies": true` to your [site configuration](../../admin/config/site_config.md) to allow a lockfile-indexing policy to match multiple repositories. This is **optional** if you want to lockfile-index only single repositories.
 1. Go to **Site admin > Code intelligence > Configuration** and click on **Create new policy** to create a policy with **Lockfile-indexing** enabled to index the repositories matching this policy. Example: lockfile-index all repositories matching the name `go-*` and `go/`.

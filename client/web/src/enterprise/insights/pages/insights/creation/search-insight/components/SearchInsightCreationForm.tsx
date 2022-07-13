@@ -1,36 +1,27 @@
-import { FC, FormEventHandler, RefObject, useMemo } from 'react'
+import { FC, FormEventHandler, ReactNode } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Checkbox, Input, Link, useObservable } from '@sourcegraph/wildcard'
+import { Checkbox, Input, Link } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import {
     FormSeries,
-    LimitedAccessLabel,
     CodeInsightDashboardsVisibility,
     CodeInsightTimeStepPicker,
     RepositoriesField,
     FormGroup,
     getDefaultInputProps,
     useFieldAPI,
-    FORM_ERROR,
     SubmissionErrors,
 } from '../../../../../components'
-import { Insight } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 import { CreateInsightFormFields } from '../types'
 
 interface CreationSearchInsightFormProps {
-    /** This component might be used in edit or creation insight case. */
-    mode?: 'creation' | 'edit'
-
-    innerRef: RefObject<any>
     handleSubmit: FormEventHandler
     submitErrors: SubmissionErrors
     submitting: boolean
     submitted: boolean
     className?: string
-    isFormClearActive?: boolean
+    isFormClearActive: boolean
     dashboardReferenceCount?: number
 
     title: useFieldAPI<CreateInsightFormFields['title']>
@@ -40,10 +31,15 @@ interface CreationSearchInsightFormProps {
     series: useFieldAPI<CreateInsightFormFields['series']>
     step: useFieldAPI<CreateInsightFormFields['step']>
     stepValue: useFieldAPI<CreateInsightFormFields['stepValue']>
-    insight?: Insight
 
-    onCancel: () => void
+    children: (inputs: RenderPropertyInputs) => ReactNode
     onFormReset: () => void
+}
+
+export interface RenderPropertyInputs {
+    submitting: boolean
+    submitErrors: SubmissionErrors
+    isFormClearActive: boolean
 }
 
 /**
@@ -52,8 +48,6 @@ interface CreationSearchInsightFormProps {
  */
 export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = props => {
     const {
-        mode,
-        innerRef,
         handleSubmit,
         submitErrors,
         submitting,
@@ -67,27 +61,15 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
         className,
         isFormClearActive,
         dashboardReferenceCount,
-        insight,
-        onCancel,
+        children,
         onFormReset,
     } = props
 
-    const isEditMode = mode === 'edit'
-    const { licensed, insight: insightFeatures } = useUiFeatures()
-
-    const creationPermission = useObservable(
-        useMemo(
-            () =>
-                isEditMode && insight
-                    ? insightFeatures.getEditPermissions(insight)
-                    : insightFeatures.getCreationPermissions(),
-            [insightFeatures, isEditMode, insight]
-        )
-    )
+    const { licensed } = useUiFeatures()
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form noValidate={true} ref={innerRef} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
+        <form noValidate={true} onSubmit={handleSubmit} onReset={onFormReset} className={className}>
             <FormGroup
                 name="insight repositories"
                 title="Targeted repositories"
@@ -175,38 +157,7 @@ export const SearchInsightCreationForm: FC<CreationSearchInsightFormProps> = pro
 
             <hr className="my-4 w-100" />
 
-            {!licensed && (
-                <LimitedAccessLabel message="Unlock Code Insights to create unlimited insights" className="mb-3" />
-            )}
-
-            <div className="d-flex flex-wrap align-items-center">
-                {submitErrors?.[FORM_ERROR] && <ErrorAlert className="w-100" error={submitErrors[FORM_ERROR]} />}
-
-                <LoaderButton
-                    alwaysShowLabel={true}
-                    loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
-                    type="submit"
-                    disabled={submitting || !creationPermission?.available}
-                    data-testid="insight-save-button"
-                    className="mr-2 mb-2"
-                    variant="primary"
-                />
-
-                <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>
-                    Cancel
-                </Button>
-
-                <Button
-                    type="reset"
-                    disabled={!isFormClearActive}
-                    variant="secondary"
-                    outline={true}
-                    className="border-0"
-                >
-                    Clear all fields
-                </Button>
-            </div>
+            {children({ submitting, submitErrors, isFormClearActive })}
         </form>
     )
 }

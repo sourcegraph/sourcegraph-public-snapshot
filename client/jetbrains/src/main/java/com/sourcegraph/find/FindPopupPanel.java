@@ -75,6 +75,12 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         splitter.setSecondComponent(bottomPanel);
 
         lastPreviewUpdate = new Date();
+
+        UIManager.addPropertyChangeListener(propertyChangeEvent -> {
+            if (propertyChangeEvent.getPropertyName().equals("lookAndFeel")) {
+                SwingUtilities.updateComponentTreeUI(this);
+            }
+        });
     }
 
     @Nullable

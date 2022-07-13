@@ -1,0 +1,6 @@
+[
+  {
+    "Description": "unquote patterns",
+    "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ monitor *Monitor"
+  }
+]

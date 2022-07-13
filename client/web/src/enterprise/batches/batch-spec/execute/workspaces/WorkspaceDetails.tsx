@@ -492,10 +492,6 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 outputLines.push('stdout: This command did not produce any output')
             }
 
-            if (step.exitCode !== null) {
-                outputLines.push(`\nstdout: \nstdout: Command exited with status ${step.exitCode}`)
-            }
-
             if (step.exitCode === 0) {
                 outputLines.push(`\nstdout: \nstdout: Command exited successfully with status ${step.exitCode}`)
             }

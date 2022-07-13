@@ -18,7 +18,6 @@ export function buildFrequencyDatum(
     max: number,
     isGradual = true
 ): FrequencyDatum[] {
-    console.log('isGradual', isGradual)
     const result: FrequencyDatum[] = []
     for (let days = min; days <= max; ++days) {
         const index = datums.findIndex(datum => datum.daysUsed >= days)
