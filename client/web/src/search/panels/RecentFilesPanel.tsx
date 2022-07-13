@@ -144,7 +144,7 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                               </tr>
                           ))
                         : processedResults?.map((recentFile, index) => (
-                              <tr key="index" className={styles.resultsTableRow}>
+                              <tr key={index} className={styles.resultsTableRow}>
                                   <td>
                                       <small>
                                           <Link
