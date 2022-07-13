@@ -355,13 +355,13 @@ func children(node *sitter.Node) []*sitter.Node {
 
 func snippet(node *Node) string {
 	contextChars := 5
-	start := node.StartByte() - uint32(contextChars)
+	start := int(node.StartByte()) - contextChars
 	if start < 0 {
 		start = 0
 	}
-	end := node.StartByte() + uint32(contextChars)
-	if end > uint32(len(node.Contents)) {
-		end = uint32(len(node.Contents))
+	end := int(node.StartByte()) + contextChars
+	if end > len(node.Contents) {
+		end = len(node.Contents)
 	}
 	ret := string(node.Contents[start:end])
 	ret = strings.ReplaceAll(ret, "\n", "\\n")
