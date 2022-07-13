@@ -34,7 +34,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
         <div className="flex-1">
             <H4 className={styles.name}>{workspace?.repository.name ?? 'Workspace in hidden repository'}</H4>
             {workspace && workspace.path !== '' && workspace.path !== '/' ? (
-                <span className={styles.path}>{workspace?.path || '/some/path'}</span>
+                <span className={styles.path}>{workspace?.path}</span>
             ) : null}
             {workspace && (
                 <div className={classNames(styles.workspaceDetails, '.text-monospace')}>
