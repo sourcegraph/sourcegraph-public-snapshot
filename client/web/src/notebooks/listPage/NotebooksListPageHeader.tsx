@@ -50,7 +50,6 @@ export const NotebooksListPageHeader: React.FunctionComponent<
     React.PropsWithChildren<NotebooksListPageHeaderProps>
 > = ({ authenticatedUser, telemetryService, setImportState, importNotebook }) => {
     const fileInputReference = useRef<HTMLInputElement>(null)
-    // Taken from global-styles/breakpoints.css , $viewport-md
 
     const onImportMenuItemSelect = useCallback(() => {
         telemetryService.log('SearchNotebookImportMarkdownNotebookButtonClick')
