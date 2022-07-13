@@ -1583,8 +1583,6 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		isChangesetCommentable := isChangesetOpen || isChangesetDraft || isChangesetMerged || isChangesetClosed
 		isChangesetClosable := isChangesetOpen || isChangesetDraft || isChangesetJobFailed
 
-		isChangesetImported := changeset.OwnedByBatchChangeID == 0
-
 		// check what operations this changeset support, most likely from the state
 		// so get the changeset then derive the operations from it's state.
 
@@ -1604,7 +1602,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		}
 
 		// PUBLISH
-		if !isChangesetArchived && !isChangesetImported {
+		if !isChangesetArchived && !changeset.IsImported() {
 			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
 		}
 
