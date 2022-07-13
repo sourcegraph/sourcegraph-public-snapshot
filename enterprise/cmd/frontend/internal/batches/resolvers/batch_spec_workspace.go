@@ -303,7 +303,6 @@ func (r *batchSpecWorkspaceResolver) State() string {
 	if r.execution == nil {
 		return "PENDING"
 	}
-	// TODO: Should this somehow become a proper state, too?
 	if r.execution.Cancel && r.execution.State == btypes.BatchSpecWorkspaceExecutionJobStateProcessing {
 		return "CANCELING"
 	}
