@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { H3, H5, Input, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, H3, H5, Tooltip } from '@sourcegraph/wildcard'
 
 export interface BatchChangeChangesetsHeaderProps {
     allSelected?: boolean
@@ -18,11 +18,12 @@ export const BatchChangeChangesetsHeader: React.FunctionComponent<
                 content={
                     disabled ? 'You do not have permission to perform this operation' : 'Click to select all changesets'
                 }
+                placement="right"
             >
-                <Input
+                <Button
+                    as="input"
+                    type={'checkbox' as ButtonProps['type']}
                     aria-label="Select all changesets"
-                    type="checkbox"
-                    className="ml-2"
                     checked={allSelected}
                     onChange={toggleSelectAll}
                     disabled={!!disabled}

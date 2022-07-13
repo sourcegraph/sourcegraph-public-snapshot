@@ -53,28 +53,12 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     defaultOpen = false,
     placement = 'bottom',
 }) => {
-    let trigger: React.ReactElement
-    // Disabled buttons come through with a disabled prop and must be wrapped with a span in order for the Tooltip to work properly
-    // Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
-    if (children.props?.disabled) {
-        trigger = (
-            <span className={styles.tooltipWrapper}>
-                <div className={styles.tooltipTriggerContainer}>
-                    {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
-                    <div className={styles.tooltipTriggerDisabledOverlay} tabIndex={0} />
-                    {children}
-                </div>
-            </span>
-        )
-    } else {
-        trigger = children
-    }
-
     // NOTE: We plan to consolidate this logic with our Popover component in the future, but chose Radix first to support short-term accessibility needs.
     // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/36080
-    return (
-        <TooltipPrimitive.Root delayDuration={0} defaultOpen={defaultOpen}>
+    const tooltipRender = (trigger: React.ReactElement): JSX.Element => (
+        // A very small delay with the offset below helps prevent the tooltip from immediately closing when it gets triggered in the
+        // exact spot the arrow is overlapping the content
+        <TooltipPrimitive.Root delayDuration={100} defaultOpen={defaultOpen}>
             <TooltipPrimitive.Trigger asChild={true}>{trigger}</TooltipPrimitive.Trigger>
             {
                 // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
@@ -100,4 +84,24 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
             }
         </TooltipPrimitive.Root>
     )
+
+    // Disabled buttons and inputs come through with a disabled prop and must be wrapped with a span in order for the Tooltip to work properly
+    // Reference: https://www.radix-ui.com/docs/primitives/components/tooltip#displaying-a-tooltip-from-a-disabled-button
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    if (children.props?.disabled) {
+        return (
+            <span className={styles.tooltipWrapper}>
+                {tooltipRender(
+                    <div className={styles.tooltipTriggerContainer}>
+                        {/* eslint-disable-next-line jsx-a11y/no-noninteractive-tabindex */}
+                        <div className={styles.tooltipTriggerDisabledOverlay} tabIndex={0} />
+                        {children}
+                    </div>
+                )}
+            </span>
+        )
+    }
+
+    // By default, just pass the child as the trigger, no other wrapping elements needed
+    return tooltipRender(children)
 }

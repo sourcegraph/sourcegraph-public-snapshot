@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { H3, H5, Input, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, H3, H5, Tooltip } from '@sourcegraph/wildcard'
 
 export interface PreviewListHeaderProps {
     allSelected?: boolean
@@ -15,10 +15,11 @@ export const PreviewListHeader: React.FunctionComponent<React.PropsWithChildren<
         <span className="p-2 d-none d-sm-block" />
         {toggleSelectAll && (
             <div className="d-flex p-2 align-items-center">
-                <Tooltip content="Click to select all changesets">
-                    <Input
+                <Tooltip content="Click to select all changesets" placement="right">
+                    <Button
+                        as="input"
+                        type={'checkbox' as ButtonProps['type']}
                         aria-label="Select all changesets"
-                        type="checkbox"
                         checked={allSelected}
                         onChange={toggleSelectAll}
                     />

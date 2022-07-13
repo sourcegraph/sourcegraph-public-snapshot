@@ -2,7 +2,7 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Input, Tooltip } from '@sourcegraph/wildcard'
+import { Button, ButtonProps, Tooltip } from '@sourcegraph/wildcard'
 
 import { HiddenExternalChangesetFields } from '../../../../graphql-operations'
 
@@ -21,11 +21,15 @@ export const HiddenExternalChangesetNode: React.FunctionComponent<
     <>
         <span className="d-none d-sm-block" />
         <div className="p-2">
-            <Tooltip content="You do not have permission to perform a bulk operation on this changeset">
-                <Input
+            <Tooltip
+                content="You do not have permission to perform a bulk operation on this changeset"
+                placement="right"
+            >
+                <Button
+                    as="input"
+                    type={'checkbox' as ButtonProps['type']}
                     aria-label="You do not have permission to perform a bulk operation on this changeset"
                     id={`select-changeset-${node.id}`}
-                    type="checkbox"
                     checked={false}
                     disabled={true}
                 />

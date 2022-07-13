@@ -4,7 +4,7 @@ import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
 
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon, H3, Tooltip, Input } from '@sourcegraph/wildcard'
+import { Icon, H3, Tooltip, Button, ButtonProps } from '@sourcegraph/wildcard'
 
 import { ChangesetSpecType, HiddenChangesetApplyPreviewFields } from '../../../../graphql-operations'
 import { ChangesetStatusCell } from '../../detail/changesets/ChangesetStatusCell'
@@ -24,11 +24,12 @@ export const HiddenChangesetApplyPreviewNode: React.FunctionComponent<
     <>
         <span className={classNames(styles.hiddenChangesetApplyPreviewNodeListCell, 'd-none d-sm-block')} />
         <div className="p-2">
-            <Tooltip content="You do not have permission to publish to this repository.">
-                <Input
+            <Tooltip content="You do not have permission to publish to this repository." placement="right">
+                <Button
+                    as="input"
+                    type={'checkbox' as ButtonProps['type']}
                     aria-label="You do not have permission to publish to this repository."
                     id="select-changeset-hidden"
-                    type="checkbox"
                     checked={false}
                     disabled={true}
                 />

@@ -13,7 +13,7 @@ import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/co
 import { ChangesetState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RepoSpec, RevisionSpec, FileSpec, ResolvedRevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Alert, Icon, H4, Text, Tooltip, Input } from '@sourcegraph/wildcard'
+import { Button, Alert, Icon, H4, Text, Tooltip, ButtonProps } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
 import { ChangesetSpecType, ExternalChangesetFields } from '../../../../graphql-operations'
@@ -93,18 +93,17 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                 <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             {selectable ? (
-                <div className="p-2">
-                    <Tooltip content={tooltipLabel}>
-                        <Input
-                            aria-label="Select changeset"
-                            id={`select-changeset-${node.id}`}
-                            type="checkbox"
-                            checked={selected}
-                            onChange={toggleSelected}
-                            disabled={!viewerCanAdminister}
-                        />
-                    </Tooltip>
-                </div>
+                <Tooltip content={tooltipLabel} placement="right">
+                    <Button
+                        as="input"
+                        type={'checkbox' as ButtonProps['type']}
+                        aria-label="Select changeset"
+                        id={`select-changeset-${node.id}`}
+                        checked={selected}
+                        onChange={toggleSelected}
+                        disabled={!viewerCanAdminister}
+                    />
+                </Tooltip>
             ) : (
                 // 0-width empty element to allow us to keep the identical grid template of the parent
                 // list, regardless of whether or not the nodes have the checkbox selector

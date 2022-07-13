@@ -25,7 +25,7 @@ import {
     Tab,
     H3,
     Tooltip,
-    Input,
+    ButtonProps,
 } from '@sourcegraph/wildcard'
 
 import { DiffStatStack } from '../../../../components/diff/DiffStat'
@@ -236,21 +236,23 @@ const SelectBox: React.FunctionComponent<
     }, [selectable, isPublishableResult])
 
     const input = isPublishableResult.publishable ? (
-        <Tooltip content="Click to select changeset for bulk-modifying the publication state">
-            <Input
+        <Tooltip content="Click to select changeset for bulk-modifying the publication state" placement="right">
+            <Button
+                as="input"
+                type={'checkbox' as ButtonProps['type']}
                 aria-label="Select changeset"
                 id={`select-changeset-${isPublishableResult.changesetSpecID}`}
-                type="checkbox"
                 checked={selectable.isSelected(isPublishableResult.changesetSpecID)}
                 onChange={toggleSelected}
             />
         </Tooltip>
     ) : (
-        <Tooltip content={isPublishableResult.reason}>
-            <Input
+        <Tooltip content={isPublishableResult.reason} placement="right">
+            <Button
+                as="input"
+                type={'checkbox' as ButtonProps['type']}
                 aria-label={isPublishableResult.reason}
                 id="select-changeset-hidden"
-                type="checkbox"
                 checked={false}
                 disabled={true}
             />

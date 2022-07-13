@@ -30,12 +30,12 @@
 /////////////////////////////////////////////////////////////////////////////////////////////////
 
 .tooltip-wrapper {
-    display: inline-flex;
+    display: flex;
     user-select: text;
 }
 
 .tooltip-trigger-container {
-    display: inline-block;
+    display: flex;
     position: relative;
 }
 
