@@ -76,14 +76,6 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
 
     const { state, update } = useLivePreview(getLivePreview)
 
-    const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] =>
-        series.map(series => ({
-            name: series.name,
-            value: series.data[0].value ?? 0,
-            fill: series.color ?? 'var(--blue)',
-            linkURL: series.data[0].link ?? '',
-        }))
-
     return (
         <aside className={className}>
             <LivePreviewUpdateButton disabled={disabled} onClick={update} />
@@ -112,6 +104,7 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
                                         as={BarChart}
                                         width={parent.width}
                                         height={parent.height}
+                                        getCategory={(datum: unknown) => (datum as LanguageUsageDatum).group}
                                         // We cast to unknown here because ForwardReferenceComponent
                                         // doesn't support types inferring if component has a generic parameter.
                                         {...(COMPUTE_MOCK_CHART as CategoricalChartContent<unknown>)}
@@ -134,3 +127,12 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
         </aside>
     )
 }
+
+const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] =>
+    series.map(series => ({
+        group: series.name,
+        name: series.name,
+        value: series.data[0].value ?? 0,
+        fill: series.color ?? 'var(--blue)',
+        linkURL: series.data[0].link ?? '',
+    }))
