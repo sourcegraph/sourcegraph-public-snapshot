@@ -15,6 +15,7 @@ const (
 	BatchSpecWorkspaceExecutionJobStateQueued     BatchSpecWorkspaceExecutionJobState = "queued"
 	BatchSpecWorkspaceExecutionJobStateProcessing BatchSpecWorkspaceExecutionJobState = "processing"
 	BatchSpecWorkspaceExecutionJobStateFailed     BatchSpecWorkspaceExecutionJobState = "failed"
+	BatchSpecWorkspaceExecutionJobStateCanceled   BatchSpecWorkspaceExecutionJobState = "canceled"
 	BatchSpecWorkspaceExecutionJobStateCompleted  BatchSpecWorkspaceExecutionJobState = "completed"
 
 	// There is no Errored state because automatic-retry of

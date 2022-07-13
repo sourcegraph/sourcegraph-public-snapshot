@@ -56,8 +56,6 @@ var batchSpecWorkspaceExecutionWorkerStoreOptions = dbworkerstore.Options{
 
 type BatchSpecWorkspaceExecutionWorkerStore interface {
 	dbworkerstore.Store
-
-	FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
 // NewBatchSpecWorkspaceExecutionWorkerStore creates a dbworker store that
@@ -82,27 +80,6 @@ type batchSpecWorkspaceExecutionWorkerStore struct {
 	logger log.Logger
 
 	observationContext *observation.Context
-}
-
-func (s *batchSpecWorkspaceExecutionWorkerStore) FetchCanceled(ctx context.Context, executorName string) (canceledIDs []int, err error) {
-	batchesStore := New(database.NewDBWith(s.logger, s.Store), s.observationContext, nil)
-
-	t := true
-	cs, err := batchesStore.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
-		Cancel:         &t,
-		State:          btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
-		WorkerHostname: executorName,
-		ExcludeRank:    true,
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	ids := make([]int, 0, len(cs))
-	for _, c := range cs {
-		ids = append(ids, c.RecordID())
-	}
-	return ids, nil
 }
 
 type markFinal func(ctx context.Context, tx dbworkerstore.Store) (_ bool, err error)

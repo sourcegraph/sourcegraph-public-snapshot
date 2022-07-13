@@ -23,9 +23,8 @@ func QueueOptions(db database.DB, _ func() string, observationContext *observati
 
 	store := store.NewBatchSpecWorkspaceExecutionWorkerStore(db.Handle(), observationContext)
 	return handler.QueueOptions{
-		Name:                   "batches",
-		Store:                  store,
-		RecordTransformer:      recordTransformer,
-		CanceledRecordsFetcher: store.FetchCanceled,
+		Name:              "batches",
+		Store:             store,
+		RecordTransformer: recordTransformer,
 	}
 }
