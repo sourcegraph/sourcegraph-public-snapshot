@@ -6,16 +6,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestDescription(t *testing.T) {
+func TestRepoHasDescription(t *testing.T) {
 	ps := Parameters{
 		Parameter{
 			Field:      FieldRepo,
-			Value:      "description(test)",
+			Value:      "has.description(test)",
 			Annotation: Annotation{Labels: IsPredicate},
 		},
 		Parameter{
 			Field:      FieldRepo,
-			Value:      "description(test input)",
+			Value:      "has.description(test input)",
 			Annotation: Annotation{Labels: IsPredicate},
 		},
 	}
