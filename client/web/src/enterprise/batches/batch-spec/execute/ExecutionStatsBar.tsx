@@ -8,7 +8,7 @@ import { BatchSpecWorkspaceStats } from '../../../../graphql-operations'
 import styles from './ExecutionStatsBar.module.scss'
 
 export const ExecutionStatsBar: React.FunctionComponent<React.PropsWithChildren<BatchSpecWorkspaceStats>> = stats => (
-    <div className="d-flex align-items-center">
+    <>
         <ExecutionStat>
             <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} />
             {stats.errored} {pluralize('error', stats.errored)}
@@ -29,7 +29,7 @@ export const ExecutionStatsBar: React.FunctionComponent<React.PropsWithChildren<
             <Icon aria-hidden={true} svgPath={mdiCircleOffOutline} />
             {stats.ignored} ignored
         </ExecutionStat>
-    </div>
+    </>
 )
 
 export const ExecutionStat: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (

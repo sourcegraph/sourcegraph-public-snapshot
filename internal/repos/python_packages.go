@@ -39,16 +39,20 @@ type pythonPackagesSource struct {
 
 var _ packagesSource = &pythonPackagesSource{}
 
-func (s *pythonPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
+func (s *pythonPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
 	_, err := s.client.Version(ctx, name, version)
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewPythonPackageVersion(name, version), nil
+	return reposource.NewPythonVersionedPackage(name, version), nil
 }
 
-func (pythonPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParsePackageVersion(dep)
+func (pythonPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseVersionedPackage(dep)
+}
+
+func (pythonPackagesSource) ParsePackageFromName(name string) (reposource.Package, error) {
+	return reposource.ParsePythonPackageFromName(name)
 }
 
 func (pythonPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {

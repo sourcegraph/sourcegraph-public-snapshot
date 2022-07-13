@@ -11,6 +11,15 @@ Feature | Supported?
 [Repository permissions](#repository-syncing) | ❌
 [Multiple npm dependencies code hosts](#multiple-npm-dependency-code-hosts) | ❌
 
+## Setup
+
+To add npm dependencies to Sourcegraph you need to setup an npm dependencies code host:
+
+1. As *site admin*: go to **Site admin > Manage code hosts**
+1. Select **npm Dependencies**.
+1. Configure the connection by following the instructions above the text field. Additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
+
 ## Repository syncing
 
 There are three ways to sync npm dependency repositories.
@@ -52,3 +61,9 @@ This increases the risk of overloading the code host.
 
 ⚠️ It's only possible to create one npm dependency code host for each Sourcegraph instance.
 See the issue [sourcegraph#32499](https://github.com/sourcegraph/sourcegraph/issues/32499) for more details about this limitation. In most situations, it's possible to work around this limitation by configurating a single private npm registry to proxy multiple underlying registries.
+
+## Configuration
+
+npm dependencies code host connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
+
+<div markdown-func=jsonschemadoc jsonschemadoc:path="integration/npm-packages.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/integration/npm) to see rendered content.</div>

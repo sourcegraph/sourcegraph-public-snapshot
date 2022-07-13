@@ -6,6 +6,26 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 )
 
+// IndexFidelity describes the fidelity of the indexed dependency graph we
+// could get by parsing a lockfile.
+type IndexFidelity string
+
+const (
+	// IndexFidelityFlat is the default fidelity if we couldn't build a graph
+	// and create a flat list of all dependencies found in a lockfile.
+	IndexFidelityFlat IndexFidelity = "flat"
+
+	// IndexFidelityCircular is the fidelity if we couldn't determine the roots
+	// of the dependency, since it's circular, and create a forest of
+	// dependencies.
+	// That means we can't say what's a direct dependency and what not, but we
+	// can tell which dependency depends on which other dependency.
+	IndexFidelityCircular IndexFidelity = "circular"
+
+	// IndexFidelityGraph is the fidelity of a full graph.
+	IndexFidelityGraph IndexFidelity = "graph"
+)
+
 type Repo struct {
 	ID      int
 	Scheme  string
@@ -51,7 +71,7 @@ func (d PackageDependencyLiteral) Scheme() string            { return d.SchemeVa
 func (d PackageDependencyLiteral) PackageSyntax() string     { return d.PackageSyntaxValue }
 func (d PackageDependencyLiteral) PackageVersion() string    { return d.PackageVersionValue }
 
-func SerializePackageDependencies(deps []reposource.PackageVersion) []PackageDependency {
+func SerializePackageDependencies(deps []reposource.VersionedPackage) []PackageDependency {
 	serializableRepoDeps := make([]PackageDependency, 0, len(deps))
 	for _, dep := range deps {
 		serializableRepoDeps = append(serializableRepoDeps, SerializePackageDependency(dep))
@@ -60,7 +80,7 @@ func SerializePackageDependencies(deps []reposource.PackageVersion) []PackageDep
 	return serializableRepoDeps
 }
 
-func SerializePackageDependency(dep reposource.PackageVersion) PackageDependency {
+func SerializePackageDependency(dep reposource.VersionedPackage) PackageDependency {
 	return PackageDependencyLiteral{
 		RepoNameValue:          dep.RepoName(),
 		GitTagFromVersionValue: dep.GitTagFromVersion(),
@@ -71,25 +91,29 @@ func SerializePackageDependency(dep reposource.PackageVersion) PackageDependency
 }
 
 type DependencyGraph interface {
-	Roots() []PackageDependency
+	Roots() ([]PackageDependency, bool)
 	AllEdges() [][]PackageDependency
 	Empty() bool
 }
 
 var _ DependencyGraph = DependencyGraphLiteral{}
 
-func TestDependencyGraphLiteral(roots []PackageDependency, edges [][]PackageDependency) DependencyGraph {
-	return DependencyGraphLiteral{Edges: edges, RootPkgs: roots}
+func TestDependencyGraphLiteral(roots []PackageDependency, rootsUndeterminable bool, edges [][]PackageDependency) DependencyGraph {
+	return DependencyGraphLiteral{Edges: edges, RootPkgs: roots, RootsUndeterminable: rootsUndeterminable}
 }
 
 type DependencyGraphLiteral struct {
-	RootPkgs []PackageDependency
-	Edges    [][]PackageDependency
+	RootPkgs            []PackageDependency
+	RootsUndeterminable bool
+
+	Edges [][]PackageDependency
 }
 
 func (dg DependencyGraphLiteral) AllEdges() [][]PackageDependency { return dg.Edges }
-func (dg DependencyGraphLiteral) Roots() []PackageDependency      { return dg.RootPkgs }
-func (dg DependencyGraphLiteral) Empty() bool                     { return len(dg.RootPkgs) == 0 }
+func (dg DependencyGraphLiteral) Roots() ([]PackageDependency, bool) {
+	return dg.RootPkgs, dg.RootsUndeterminable
+}
+func (dg DependencyGraphLiteral) Empty() bool { return len(dg.RootPkgs) == 0 }
 
 func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph {
 	if graph == nil {
@@ -97,20 +121,27 @@ func SerializeDependencyGraph(graph *lockfiles.DependencyGraph) DependencyGraph 
 	}
 
 	var (
-		edges [][]PackageDependency
-		roots []PackageDependency
+		edges           = graph.AllEdges()
+		serializedEdges = make([][]PackageDependency, len(edges))
+
+		roots, rootsUndeterminable = graph.Roots()
+		serializedRoots            = make([]PackageDependency, len(roots))
 	)
 
-	for _, edge := range graph.AllEdges() {
-		edges = append(edges, []PackageDependency{
+	for i, edge := range edges {
+		serializedEdges[i] = []PackageDependency{
 			SerializePackageDependency(edge.Source),
 			SerializePackageDependency(edge.Target),
-		})
+		}
 	}
 
-	for _, root := range graph.Roots() {
-		roots = append(roots, SerializePackageDependency(root))
+	for i, root := range roots {
+		serializedRoots[i] = SerializePackageDependency(root)
 	}
 
-	return DependencyGraphLiteral{RootPkgs: roots, Edges: edges}
+	return DependencyGraphLiteral{
+		RootPkgs:            serializedRoots,
+		RootsUndeterminable: rootsUndeterminable,
+		Edges:               serializedEdges,
+	}
 }

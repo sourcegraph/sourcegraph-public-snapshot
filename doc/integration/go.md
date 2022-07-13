@@ -10,6 +10,15 @@ Feature | Supported?
 [Rate limiting](#rate-limiting) | ✅
 [Repository permissions](#repository-syncing) | ❌
 
+## Setup
+
+To add Go dependencies to Sourcegraph you need to setup a Go dependencies code host:
+
+1. As *site admin*: go to **Site admin > Manage code hosts**
+1. Select **JVM Dependencies**.
+1. Configure the connection by following the instructions above the text field. Additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
+
 ## Repository syncing
 
 There are currently two ways to sync Go dependency repositories.
@@ -48,3 +57,9 @@ This increases the risk of overloading the proxy.
 ## Repository permissions
 
 ⚠️ Go dependency repositories are visible by all users of the Sourcegraph instance.
+
+## Configuration
+
+Go dependencies code host connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
+
+<div markdown-func=jsonschemadoc jsonschemadoc:path="integration/go-modules.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/integration/go) to see rendered content.</div>

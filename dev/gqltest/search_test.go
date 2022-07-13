@@ -1400,7 +1400,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				}),
 			},
 			{
-				Kind:        extsvc.KindGoModules,
+				Kind:        extsvc.KindGoPackages,
 				DisplayName: "gqltest-go-search",
 				Config: mustMarshalJSONString(&schema.GoModulesConnection{
 					Urls: []string{"https://proxy.golang.org"},

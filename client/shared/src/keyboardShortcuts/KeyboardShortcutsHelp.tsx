@@ -28,9 +28,10 @@ const LEGACY_KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
     },
 ]
 
-const KEY_TO_NAMES: { [P in Key | ModifierKey]?: string } = {
+const KEY_TO_NAMES: { [P in Key | ModifierKey | string]?: string } = {
     Meta: 'Cmd',
     Control: 'Ctrl',
+    '†': 't',
 }
 
 const MODAL_LABEL_ID = 'keyboard-shortcuts-help-modal-title'

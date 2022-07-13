@@ -315,10 +315,11 @@ type Features struct {
 }
 
 type RepoOptions struct {
-	RepoFilters      []string
-	MinusRepoFilters []string
-	Dependencies     []string
-	Dependents       []string
+	RepoFilters         []string
+	MinusRepoFilters    []string
+	Dependencies        []string
+	Dependents          []string
+	DescriptionPatterns []string
 
 	CaseSensitiveRepoFilters bool
 	SearchContextSpec        string
@@ -360,6 +361,9 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	}
 	if len(op.Dependents) > 0 {
 		add(trace.Strings("dependents", op.Dependents))
+	}
+	if len(op.DescriptionPatterns) > 0 {
+		add(trace.Strings("descriptionPatterns", op.DescriptionPatterns))
 	}
 	if op.CaseSensitiveRepoFilters {
 		add(otlog.Bool("caseSensitiveRepoFilters", true))
@@ -415,6 +419,10 @@ func (op *RepoOptions) String() string {
 		fmt.Fprintf(&b, "MinusRepoFilters: %q\n", op.MinusRepoFilters)
 	} else {
 		b.WriteString("MinusRepoFilters: []\n")
+	}
+
+	if len(op.DescriptionPatterns) > 0 {
+		fmt.Fprintf(&b, "DescriptionPatterns: %q\n", op.DescriptionPatterns)
 	}
 
 	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)

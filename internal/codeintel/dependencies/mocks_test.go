@@ -35,7 +35,7 @@ type MockLockfilesService struct {
 func NewMockLockfilesService() *MockLockfilesService {
 	return &MockLockfilesService{
 		ListDependenciesFunc: &LockfilesServiceListDependenciesFunc{
-			defaultHook: func(context.Context, api.RepoName, string) (r0 []*lockfiles.Result, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string) (r0 []lockfiles.Result, r1 error) {
 				return
 			},
 		},
@@ -47,7 +47,7 @@ func NewMockLockfilesService() *MockLockfilesService {
 func NewStrictMockLockfilesService() *MockLockfilesService {
 	return &MockLockfilesService{
 		ListDependenciesFunc: &LockfilesServiceListDependenciesFunc{
-			defaultHook: func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error) {
+			defaultHook: func(context.Context, api.RepoName, string) ([]lockfiles.Result, error) {
 				panic("unexpected invocation of MockLockfilesService.ListDependencies")
 			},
 		},
@@ -69,15 +69,15 @@ func NewMockLockfilesServiceFrom(i LockfilesService) *MockLockfilesService {
 // ListDependencies method of the parent MockLockfilesService instance is
 // invoked.
 type LockfilesServiceListDependenciesFunc struct {
-	defaultHook func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error)
-	hooks       []func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error)
+	defaultHook func(context.Context, api.RepoName, string) ([]lockfiles.Result, error)
+	hooks       []func(context.Context, api.RepoName, string) ([]lockfiles.Result, error)
 	history     []LockfilesServiceListDependenciesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListDependencies delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockLockfilesService) ListDependencies(v0 context.Context, v1 api.RepoName, v2 string) ([]*lockfiles.Result, error) {
+func (m *MockLockfilesService) ListDependencies(v0 context.Context, v1 api.RepoName, v2 string) ([]lockfiles.Result, error) {
 	r0, r1 := m.ListDependenciesFunc.nextHook()(v0, v1, v2)
 	m.ListDependenciesFunc.appendCall(LockfilesServiceListDependenciesFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -86,7 +86,7 @@ func (m *MockLockfilesService) ListDependencies(v0 context.Context, v1 api.RepoN
 // SetDefaultHook sets function that is called when the ListDependencies
 // method of the parent MockLockfilesService instance is invoked and the
 // hook queue is empty.
-func (f *LockfilesServiceListDependenciesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error)) {
+func (f *LockfilesServiceListDependenciesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) ([]lockfiles.Result, error)) {
 	f.defaultHook = hook
 }
 
@@ -95,7 +95,7 @@ func (f *LockfilesServiceListDependenciesFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LockfilesServiceListDependenciesFunc) PushHook(hook func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error)) {
+func (f *LockfilesServiceListDependenciesFunc) PushHook(hook func(context.Context, api.RepoName, string) ([]lockfiles.Result, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -103,20 +103,20 @@ func (f *LockfilesServiceListDependenciesFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LockfilesServiceListDependenciesFunc) SetDefaultReturn(r0 []*lockfiles.Result, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error) {
+func (f *LockfilesServiceListDependenciesFunc) SetDefaultReturn(r0 []lockfiles.Result, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) ([]lockfiles.Result, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LockfilesServiceListDependenciesFunc) PushReturn(r0 []*lockfiles.Result, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error) {
+func (f *LockfilesServiceListDependenciesFunc) PushReturn(r0 []lockfiles.Result, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string) ([]lockfiles.Result, error) {
 		return r0, r1
 	})
 }
 
-func (f *LockfilesServiceListDependenciesFunc) nextHook() func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error) {
+func (f *LockfilesServiceListDependenciesFunc) nextHook() func(context.Context, api.RepoName, string) ([]lockfiles.Result, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -161,7 +161,7 @@ type LockfilesServiceListDependenciesFuncCall struct {
 	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*lockfiles.Result
+	Result0 []lockfiles.Result
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

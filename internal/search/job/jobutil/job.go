@@ -18,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/internal/search/lucky"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -44,7 +45,10 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
+		newJob := func(b query.Basic) (job.Job, error) {
+			return NewBasicJob(inputs, b)
+		}
+		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
@@ -630,19 +634,20 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
-		RepoFilters:       repoFilters,
-		MinusRepoFilters:  minusRepoFilters,
-		Dependencies:      b.Dependencies(),
-		Dependents:        b.Dependents(),
-		SearchContextSpec: searchContextSpec,
-		ForkSet:           b.Fork() != nil,
-		OnlyForks:         fork == query.Only,
-		NoForks:           fork == query.No,
-		ArchivedSet:       b.Archived() != nil,
-		OnlyArchived:      archived == query.Only,
-		NoArchived:        archived == query.No,
-		Visibility:        visibility,
-		CommitAfter:       b.RepoContainsCommitAfter(),
+		RepoFilters:         repoFilters,
+		MinusRepoFilters:    minusRepoFilters,
+		Dependencies:        b.Dependencies(),
+		Dependents:          b.Dependents(),
+		DescriptionPatterns: b.Description(),
+		SearchContextSpec:   searchContextSpec,
+		ForkSet:             b.Fork() != nil,
+		OnlyForks:           fork == query.Only,
+		NoForks:             fork == query.No,
+		ArchivedSet:         b.Archived() != nil,
+		OnlyArchived:        archived == query.Only,
+		NoArchived:          archived == query.No,
+		Visibility:          visibility,
+		CommitAfter:         b.RepoContainsCommitAfter(),
 	}
 }
 

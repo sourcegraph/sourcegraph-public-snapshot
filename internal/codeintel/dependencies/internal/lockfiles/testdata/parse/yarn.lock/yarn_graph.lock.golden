@@ -1,0 +1,32 @@
+{
+  "Dependencies": [
+    "@types/tinycolor2@1.4.3",
+    "ansi-styles@4.3.0",
+    "chalk@4.1.2",
+    "color-convert@2.0.1",
+    "color-name@1.1.4",
+    "gradient-string@2.0.1",
+    "has-flag@4.0.0",
+    "supports-color@7.2.0",
+    "tinycolor2@1.4.2",
+    "tinygradient@1.1.5"
+  ],
+  "Graph": {
+    "gradient-string@2.0.1": {
+      "chalk@4.1.2": {
+        "ansi-styles@4.3.0": {
+          "color-convert@2.0.1": {
+            "color-name@1.1.4": {}
+          }
+        },
+        "supports-color@7.2.0": {
+          "has-flag@4.0.0": {}
+        }
+      },
+      "tinygradient@1.1.5": {
+        "@types/tinycolor2@1.4.3": {},
+        "tinycolor2@1.4.2": {}
+      }
+    }
+  }
+}

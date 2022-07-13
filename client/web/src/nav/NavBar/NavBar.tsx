@@ -39,24 +39,24 @@ export interface NavLinkProps extends NavItemProps, Pick<LinkProps<H.LocationSta
     variant?: 'compact'
 }
 
-const useOutsideClickDetector = (
+const useOnClickDetector = (
     reference: React.RefObject<HTMLDivElement>
 ): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
-    const [outsideClick, setOutsideClick] = useState(false)
+    const [onClick, setOnClick] = useState(false)
 
     useEffect(() => {
-        function handleClickOutside(event: MouseEvent): void {
-            if (reference.current && !reference.current.contains(event.target as Node | null)) {
-                setOutsideClick(false)
+        function handleToggleOpen(): void {
+            if (reference.current) {
+                setOnClick(false)
             }
         }
-        document.addEventListener('mouseup', handleClickOutside)
+        document.addEventListener('mouseup', handleToggleOpen)
         return () => {
-            document.removeEventListener('mouseup', handleClickOutside)
+            document.removeEventListener('mouseup', handleToggleOpen)
         }
-    }, [reference, setOutsideClick])
+    }, [reference, setOnClick])
 
-    return [outsideClick, setOutsideClick]
+    return [onClick, setOnClick]
 }
 
 export const NavBar = forwardRef(
@@ -75,7 +75,7 @@ export const NavBar = forwardRef(
 
 export const NavGroup = ({ children }: NavGroupProps): JSX.Element => {
     const menuReference = useRef<HTMLDivElement>(null)
-    const [open, setOpen] = useOutsideClickDetector(menuReference)
+    const [open, setOpen] = useOnClickDetector(menuReference)
 
     return (
         <div className={navBarStyles.menu} ref={menuReference}>

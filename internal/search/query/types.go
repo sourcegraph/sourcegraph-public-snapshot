@@ -412,6 +412,14 @@ func (p Parameters) Dependents() (dependents []string) {
 	return dependents
 }
 
+func (p Parameters) Description() (descriptionPatterns []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *RepoDescriptionPredicate, _ bool) {
+		split := strings.Split(pred.Pattern, " ")
+		descriptionPatterns = append(descriptionPatterns, "(?:"+strings.Join(split, ").*?(?:")+")")
+	})
+	return descriptionPatterns
+}
+
 func (p Parameters) MaxResults(defaultLimit int) int {
 	if count := p.Count(); count != nil {
 		return *count

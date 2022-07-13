@@ -268,7 +268,12 @@ func (g *contextGroup) Go(f func(context.Context) error) {
 
 		err := f(ctx)
 		if err != nil && g.cancel != nil {
+			// Add the error directly because otherwise, canceling could cause
+			// another goroutine to exit and return an error before this error
+			// was added, which breaks the expectations of WithFirstError().
+			g.errorGroup.addErr(err)
 			g.cancel()
+			return nil
 		}
 		return err
 	})

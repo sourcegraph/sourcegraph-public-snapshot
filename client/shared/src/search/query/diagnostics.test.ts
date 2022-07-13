@@ -376,31 +376,4 @@ describe('getDiagnostics()', () => {
             ).toMatchInlineSnapshot('[]')
         })
     })
-
-    describe('removed repogroup: filter', () => {
-        test('detects repogroup filter and aliased version', () => {
-            expect(parseAndDiagnose('repogroup:g1 g:g2', SearchPatternType.literal)).toMatchInlineSnapshot(
-                `
-                [
-                  {
-                    "severity": 8,
-                    "message": "Error: repogroup filter is not available. Repository groups have been removed in favor of search contexts.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 10
-                  },
-                  {
-                    "severity": 8,
-                    "message": "Error: repogroup filter is not available. Repository groups have been removed in favor of search contexts.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 14,
-                    "endColumn": 15
-                  }
-                ]
-            `
-            )
-        })
-    })
 })
