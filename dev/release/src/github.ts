@@ -1,4 +1,4 @@
-import { mkdtemp as original_mkdtemp } from 'fs'
+import { mkdtemp as original_mkdtemp, readFileSync, existsSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
@@ -6,16 +6,24 @@ import { promisify } from 'util'
 import Octokit from '@octokit/rest'
 import commandExists from 'command-exists'
 import execa from 'execa'
+import fetch from 'node-fetch'
 import * as semver from 'semver'
 
 import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
 const mkdtemp = promisify(original_mkdtemp)
+let githubPAT: string
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
-    const githubPAT = await readLine(
-        'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
-        `${cacheFolder}/github.txt`
-    )
+    const cacheFile = `${cacheFolder}/github.txt`
+    if (existsSync(cacheFile) && (await validateToken()) === true) {
+        githubPAT = readFileSync(`${cacheFolder}/github.txt`, 'utf-8')
+    } else {
+        githubPAT = await readLine(
+            'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
+            cacheFile
+        )
+    }
+
     const trimmedGithubPAT = githubPAT.trim()
     return new Octokit({ auth: trimmedGithubPAT })
 }
@@ -700,4 +708,21 @@ export async function createLatestRelease(
     }
     const response = await octokit.repos.createRelease(request)
     return response.data.html_url
+}
+
+async function validateToken(): Promise<boolean> {
+    const githubPAT: string = readFileSync(`${cacheFolder}/github.txt`, 'utf-8')
+    const trimmedGithubPAT = githubPAT.trim()
+    const response = await fetch('https://api.github.com/repos/sourcegraph/sourcegraph', {
+        method: 'GET',
+        headers: {
+            Authorization: `token ${trimmedGithubPAT}`,
+        },
+    })
+
+    if (response.status !== 200) {
+        console.log(`Existing GitHub token is invalid, got status ${response.statusText}`)
+        return false
+    }
+    return true
 }
