@@ -271,10 +271,14 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
                     history(),
                     themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
                     parseInputAsQuery({ patternType, interpretComments }),
-                    querySyntaxHighlighting,
                     queryDiagnostic,
                     tokenInfo(),
                     highlightFocusedFilter,
+                    // It baffels me but the syntax highlighting extension has
+                    // to come after the highlight current filter extension,
+                    // otherwise CodeMirror keeps steeling the focus.
+                    // See https://github.com/sourcegraph/sourcegraph/issues/38677
+                    querySyntaxHighlighting,
                     externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
@@ -503,9 +507,12 @@ const highlightFocusedFilter = ViewPlugin.define(
                             token.type === 'filter' && token.range.start <= position && token.range.end >= position
                     )
                     const decorations: Range<Decoration>[] = []
+
                     if (focusedFilter) {
+                        // Adds decoration for background highlighting
                         decorations.push(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
 
+                        // Adds widget decoration for filter placeholder
                         if (!focusedFilter.value?.value) {
                             const resolvedFilter = resolveFilter(focusedFilter.field.value)
                             if (resolvedFilter?.definition.placeholder) {
@@ -518,14 +525,10 @@ const highlightFocusedFilter = ViewPlugin.define(
                             }
                         }
                     }
+
                     this.decorations = Decoration.set(decorations)
                 } else {
-                    // Ideally we would remove the decoration when the input
-                    // looses focus, but there is a bug that re-focuses the
-                    // input when a filter is highlighted and the menu is
-                    // clicked.
-                    // See https://github.com/sourcegraph/sourcegraph/issues/38677
-                    // this.decorations = Decoration.none
+                    this.decorations = Decoration.none
                 }
             }
         },
