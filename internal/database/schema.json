@@ -5838,6 +5838,19 @@
           "Comment": "A 40-char revhash. Note that this commit may not be resolvable in the future."
         },
         {
+          "Name": "fidelity",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'flat'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ..."
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",

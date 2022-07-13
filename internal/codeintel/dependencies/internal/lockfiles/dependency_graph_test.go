@@ -42,6 +42,11 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(c, e)
 		dg.addDependency(e, f)
 
+		_, undeterminable := dg.Roots()
+		if undeterminable {
+			t.Errorf("graph with non-root cycle has undeterminable roots")
+		}
+
 		gold.AssertJson(t, "normal", dg.AsMap())
 	})
 
@@ -68,6 +73,11 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(e, f)
 		dg.addDependency(f, c)
 
+		_, undeterminable := dg.Roots()
+		if undeterminable {
+			t.Errorf("graph with non-root cycle has undeterminable roots")
+		}
+
 		gold.AssertJson(t, "circular", dg.AsMap())
 	})
 
@@ -93,6 +103,11 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(c, e)
 		dg.addDependency(e, f)
 		dg.addDependency(f, a)
+
+		_, undeterminable := dg.Roots()
+		if !undeterminable {
+			t.Errorf("graph with root cycle is not undeterminable")
+		}
 
 		gold.AssertJson(t, "circular-root", dg.AsMap())
 	})
