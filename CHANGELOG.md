@@ -63,7 +63,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
-- p4 fusion version is upgraded to 1.10 [#38272](https://github.com/sourcegraph/sourcegraph/pull/38272)
+- p4-fusion version is upgraded to 1.10 [#38272](https://github.com/sourcegraph/sourcegraph/pull/38272)
 
 ## 3.41.0
 
