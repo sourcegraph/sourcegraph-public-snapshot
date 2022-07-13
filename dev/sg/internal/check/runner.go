@@ -324,7 +324,6 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 					// Build the markdown for the annotation summary
 					annotationSummary := fmt.Sprintf("```\n%s\n```", check.cachedCheckErr)
-					// TODO
 
 					// Render additional details
 					if check.cachedCheckOutput != "" {
@@ -332,6 +331,10 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 							strings.TrimSpace(check.cachedCheckOutput))
 
 						annotationSummary += outputMarkdown
+					}
+
+					if suggestion != "" {
+						annotationSummary += fmt.Sprintf("\n\n%s", suggestion)
 					}
 
 					if r.GenerateAnnotations {
