@@ -16,7 +16,7 @@ import { fetchRepositories } from './fetch-repositories'
 export const insightTitleValidator = createRequiredValidator('Title is a required field.')
 
 /**
- * Primary is used in creation and edit insight pages and also on the landing page where
+ * Primarily used in creation and edit insight pages and also on the landing page where
  * we have a creation UI insight sandbox demo widget.
  */
 export const insightRepositoriesValidator: Validator<string> = value => {
