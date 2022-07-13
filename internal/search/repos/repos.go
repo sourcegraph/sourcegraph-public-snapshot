@@ -319,6 +319,10 @@ func (r *Resolver) associateReposWithRevs(
 	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
 }
 
+// normalizeRefs handles three jobs:
+// 1) expanding each ref glob into a set of refs
+// 2) checking that every revision (except HEAD) exists
+// 3) expanding the empty string revision (which implicitly means HEAD) into an explicit "HEAD"
 func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpecs) ([]*search.RepositoryRevisions, []RepoRevSpecs, error) {
 	results := make([]*search.RepositoryRevisions, len(repoRevSpecs))
 
@@ -345,6 +349,10 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 				case rev.ExcludeRefGlob != "":
 					globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
 				case rev.RevSpec == "" || rev.RevSpec == "HEAD":
+					// NOTE: HEAD is the only case here that we don't resolve to a
+					// commit ID. We should consider building []gitdomain.Ref here
+					// instead of just []string because we have the exact commit hashes,
+					// so we coudl avoid resolving later.
 					revs = append(revs, "HEAD")
 				case rev.RevSpec != "":
 					trimmedRev := strings.TrimPrefix(rev.RevSpec, "refs/heads/")
