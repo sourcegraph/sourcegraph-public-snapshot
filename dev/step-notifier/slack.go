@@ -52,7 +52,7 @@ func (c *SlackWebhookClient) sendNotification(build *Build) error {
 func createSlackJSON(build *Build) (string, error) {
 	failed := make([]string, 0)
 	for _, j := range build.Jobs {
-		if j.ExitStatus != nil && *j.ExitStatus != 0 && j.SoftFailed {
+		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
 			failed = append(failed, *j.Name)
 		}
 	}
@@ -85,7 +85,7 @@ func createSlackJSON(build *Build) (string, error) {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "The following steps failed\n{{.FailedSteps}}"
+                "text": "The following steps failed:{{range .FailedSteps}}\n{{.}}{{end}}"
             }
         },
         {
@@ -98,16 +98,7 @@ func createSlackJSON(build *Build) (string, error) {
                     "text": "View Build",
                     "emoji": true
                 },
-                "value": {{.BuildURL}}
-            },
-            {
-                "type": "button",
-                "text": {
-                    "type": "plain_text",
-                    "text": "View Build",
-                    "emoji": true
-                },
-                "value": {{.BuildURL}}
+                "value": "{{.BuildURL}}"
             },
             {
                 "type": "button",
@@ -116,7 +107,7 @@ func createSlackJSON(build *Build) (string, error) {
                     "text": "View Grafana Logs",
                     "emoji": true
                 },
-                "value": {{.GrafanaURL}}
+                "value": "{{.GrafanaURL}}"
             },
             {
                 "type": "button",
@@ -125,7 +116,7 @@ func createSlackJSON(build *Build) (string, error) {
                     "text": "Is this a flake?",
                     "emoji": true
                 },
-                "value": {{.FlakeURL}}
+                "value": "{{.FlakeURL}}"
             },
             ]
         }
