@@ -19,6 +19,7 @@ export interface CategoricalChartContent<Datum> {
     getDatumName: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink?: (datum: Datum) => string | undefined
+    getDatumGroup?: (datum: Datum) => string | undefined
 }
 
 export interface SeriesChartContent<Datum> {

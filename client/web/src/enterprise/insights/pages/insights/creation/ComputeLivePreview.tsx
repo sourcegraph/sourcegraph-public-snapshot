@@ -19,7 +19,7 @@ import {
     StateStatus,
     COMPUTE_MOCK_CHART,
 } from '../../../components'
-import { BackendInsightDatum, CodeInsightsBackendContext } from '../../../core'
+import { BackendInsightDatum, CategoricalChartContent, CodeInsightsBackendContext } from '../../../core'
 
 interface LanguageUsageDatum {
     name: string
@@ -100,7 +100,6 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
                                 <BarChart
                                     width={parent.width}
                                     height={parent.height}
-                                    data-testid="code-search-insight-live-preview"
                                     data={mapSeriesToCompute(state.data.series)}
                                     getCategory={(datum: LanguageUsageDatum) => datum.group}
                                     getDatumName={(datum: LanguageUsageDatum) => datum.name}
@@ -113,11 +112,9 @@ export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren
                                         as={BarChart}
                                         width={parent.width}
                                         height={parent.height}
-                                        data={COMPUTE_MOCK_CHART}
-                                        getCategory={(datum: LanguageUsageDatum) => datum.group}
-                                        getDatumName={(datum: LanguageUsageDatum) => datum.name}
-                                        getDatumValue={(datum: LanguageUsageDatum) => datum.value}
-                                        getDatumColor={(datum: LanguageUsageDatum) => datum.fill}
+                                        // We cast to unknown here because ForwardReferenceComponent
+                                        // doesn't support types inferring if component has a generic parameter.
+                                        {...(COMPUTE_MOCK_CHART as CategoricalChartContent<unknown>)}
                                     />
                                     <LivePreviewBanner>You’ll see your insight’s chart preview here</LivePreviewBanner>
                                 </>
