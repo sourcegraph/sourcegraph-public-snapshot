@@ -595,11 +595,12 @@ ORDER BY r.name, lf.commit_bytea
 
 // ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
-	Scheme      string
-	Name        string
-	After       int
-	Limit       int
-	NewestFirst bool
+	Scheme          string
+	Name            string
+	After           any
+	Limit           int
+	NewestFirst     bool
+	ExcludeVersions bool
 }
 
 // ListDependencyRepos returns dependency repositories to be synced by gitserver.
@@ -613,25 +614,35 @@ func (s *store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
-	sortDirection := "ASC"
-	if opts.NewestFirst {
-		sortDirection = "DESC"
+	sortExpr := "id ASC"
+	switch {
+	case opts.NewestFirst && !opts.ExcludeVersions:
+		sortExpr = "id DESC"
+	case opts.ExcludeVersions:
+		sortExpr = "name ASC"
+	}
+
+	selectCols := sqlf.Sprintf("id, scheme, name, version")
+	if opts.ExcludeVersions {
+		// id is likely not stable here, so no one should actually use it. Should we set it to 0?
+		selectCols = sqlf.Sprintf("DISTINCT ON(name) id, scheme, name, '' AS version")
 	}
 
 	return scanDependencyRepos(s.db.Query(ctx, sqlf.Sprintf(
 		listDependencyReposQuery,
+		selectCols,
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
-		sqlf.Sprintf(sortDirection),
+		sqlf.Sprintf(sortExpr),
 		makeLimit(opts.Limit),
 	)))
 }
 
 const listDependencyReposQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:ListDependencyRepos
-SELECT id, scheme, name, version
+SELECT %s
 FROM lsif_dependency_repos
 WHERE %s
-ORDER BY id %s
+ORDER BY %s
 %s
 `
 
@@ -642,11 +653,25 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 	if opts.Name != "" {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
-	if opts.After != 0 {
-		if opts.NewestFirst {
+
+	switch after := opts.After.(type) {
+	case nil:
+		break
+	case int:
+		switch {
+		case opts.ExcludeVersions:
+			panic("cannot set ExcludeVersions and pass ID-based offset")
+		case opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
-		} else {
+		case !opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+		}
+	case string:
+		switch {
+		case opts.NewestFirst:
+			panic("cannot set NewestFirst and pass name-based offset")
+		case opts.ExcludeVersions && after != "":
+			conds = append(conds, sqlf.Sprintf("name > %s", opts.After))
 		}
 	}
 

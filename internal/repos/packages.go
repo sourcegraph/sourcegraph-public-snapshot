@@ -68,8 +68,6 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 		}
 	}
 
-	lastID := 0
-
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
@@ -82,12 +80,14 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 		}
 	}()
 
+	const batchLimit = 100
+	lastName := ""
 	for {
 		depRepos, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
-			Scheme:      s.scheme,
-			After:       lastID,
-			Limit:       100,
-			NewestFirst: true,
+			Scheme:          s.scheme,
+			After:           lastName,
+			Limit:           batchLimit,
+			ExcludeVersions: true,
 		})
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
@@ -97,12 +97,14 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 			break
 		}
 
-		lastID = depRepos[len(depRepos)-1].ID
+		lastName = depRepos[len(depRepos)-1].Name
 
-		var depReposToHandle []dependencies.Repo
+		// at most batchLimit because of the limit above
+		depReposToHandle := make([]dependencies.Repo, 0, len(depRepos))
 		for _, depRepo := range depRepos {
 			if _, ok := handledPackages[depRepo.Name]; !ok {
-				handledPackages[depRepo.Name] = struct{}{}
+				// don't need to add to handledPackages here, as the results from
+				// depRepos should be unique
 				depReposToHandle = append(depReposToHandle, depRepo)
 			}
 		}
