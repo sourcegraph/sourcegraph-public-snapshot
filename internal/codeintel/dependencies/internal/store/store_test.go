@@ -1073,7 +1073,6 @@ func TestLockfileDependents(t *testing.T) {
 }
 
 func TestListLockfileIndexes(t *testing.T) {
-
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
