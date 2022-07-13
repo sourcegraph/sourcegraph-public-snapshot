@@ -1,6 +1,7 @@
 import { ReactElement } from 'react'
 
 import { mdiSourceBranch } from '@mdi/js'
+import classNames from 'classnames'
 
 import { Icon, H4, Badge } from '@sourcegraph/wildcard'
 
@@ -28,7 +29,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
     statusIndicator,
     workspace,
 }: DescriptorProps<Workspace>): ReactElement => (
-    <div className="d-flex flex-1 align-items-center pt-3 pb-3 pl-2 pr-2">
+    <div className={styles.container}>
         <div className={styles.status}>{statusIndicator}</div>
         <div className="flex-1">
             <H4 className={styles.name}>{workspace?.repository.name ?? 'Workspace in hidden repository'}</H4>
@@ -36,7 +37,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
                 <span className={styles.path}>{workspace?.path}</span>
             ) : null}
             {workspace && (
-                <div className="d-flex align-items-center text-muted text-monospace pt-1">
+                <div className={classNames(styles.workspaceDetails, '.text-monospace')}>
                     {workspace.ignored && (
                         <Badge
                             className={styles.badge}
