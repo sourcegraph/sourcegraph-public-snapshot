@@ -319,8 +319,8 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
         return (
             <div
                 ref={setContainer}
-                className={classNames(styles.root, className)}
-                data-test-id="codemirror-query-input"
+                className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
+                data-editor="codemirror6"
             />
         )
     }
