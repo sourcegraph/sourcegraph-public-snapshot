@@ -91,7 +91,8 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
                     isEditAvailable={editPermission?.available}
                     insight={insight}
                     onSubmit={handleSubmit}
-                    onCancel={handleCancel} />
+                    onCancel={handleCancel}
+                />
             )}
 
             {isCaptureGroupInsight(insight) && (
@@ -100,7 +101,8 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
                     isEditAvailable={editPermission?.available}
                     insight={insight}
                     onSubmit={handleSubmit}
-                    onCancel={handleCancel} />
+                    onCancel={handleCancel}
+                />
             )}
 
             {isLangStatsInsight(insight) && (
