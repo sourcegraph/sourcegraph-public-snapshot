@@ -40,7 +40,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
 		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
 		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
-		"description":           func() Predicate { return &RepoDescriptionPredicate{} },
+		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -319,26 +319,26 @@ func (f *RepoDependentsPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 
-/* repo:description(...) */
+/* repo:has.description(...) */
 
-type RepoDescriptionPredicate struct {
+type RepoHasDescriptionPredicate struct {
 	Pattern string
 }
 
-func (f *RepoDescriptionPredicate) ParseParams(params string) (err error) {
+func (f *RepoHasDescriptionPredicate) ParseParams(params string) (err error) {
 	if _, err := regexp.Compile(params); err != nil {
-		return errors.Errorf("invalid repo:description argument: %w", err)
+		return errors.Errorf("invalid repo:has.description() argument: %w", err)
 	}
 	if len(params) == 0 {
-		return errors.New("empty repo:description predicate parameter")
+		return errors.New("empty repo:has.description() predicate parameter")
 	}
 	f.Pattern = params
 	return nil
 }
 
-func (f *RepoDescriptionPredicate) Field() string { return FieldRepo }
-func (f *RepoDescriptionPredicate) Name() string  { return "description" }
-func (f *RepoDescriptionPredicate) Plan(parent Basic) (Plan, error) {
+func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
+func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
+func (f *RepoHasDescriptionPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 
