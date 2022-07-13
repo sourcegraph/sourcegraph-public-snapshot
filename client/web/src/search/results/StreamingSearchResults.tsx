@@ -13,7 +13,6 @@ import {
     FetchFileParameters,
 } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
@@ -23,11 +22,9 @@ import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/sea
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 
 import { SearchStreamingProps } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { SearchBetaIcon } from '../../components/CtaIcons'
 import { PageTitle } from '../../components/PageTitle'
 import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
@@ -40,7 +37,7 @@ import {
 } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
-import { getSubmittedSearchesCount, submitSearch } from '../helpers'
+import { submitSearch } from '../helpers'
 import { DidYouMean } from '../suggestion/DidYouMean'
 import { LuckySearch } from '../suggestion/LuckySearch'
 
@@ -223,18 +220,6 @@ export const StreamingSearchResults: React.FunctionComponent<
     }, [telemetryService])
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
-    const submittedSearchesCount = getSubmittedSearchesCount()
-    const isValidSignUpCtaCadence = submittedSearchesCount < 5 || submittedSearchesCount % 5 === 0
-    const showSignUpCta = !authenticatedUser && resultsFound && isValidSignUpCtaCadence
-
-    // TODO: decide on the signup banner and uncomment/remove
-    // // Log view event when signup CTA is shown
-    // useEffect(() => {
-    //     if (ctaToDisplay === 'signup') {
-    //         telemetryService.log('SearchResultResultsCTAShown')
-    //     }
-    //     // eslint-disable-next-line react-hooks/exhaustive-deps
-    // }, [ctaToDisplay])
 
     return (
         <div className={styles.streamingSearchResults}>
@@ -312,21 +297,6 @@ export const StreamingSearchResults: React.FunctionComponent<
                     <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
                         <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
                     </div>
-                )}
-                {showSignUpCta && (
-                    <CtaAlert
-                        title="Sign up to add your public and private repositories and unlock search flow"
-                        description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
-                searches and more."
-                        cta={{
-                            label: 'Get started',
-                            href: buildGetStartedURL('search-cta', '/user/settings/repositories'),
-                            onClick: onSignUpClick,
-                        }}
-                        icon={<SearchBetaIcon />}
-                        className="mr-3 percy-display-none"
-                        onClose={() => undefined || onCtaAlertDismissed} // TODO: decide on the signup banner and fix/remove
-                    />
                 )}
 
                 <StreamingSearchResultsList
