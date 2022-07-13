@@ -10,6 +10,15 @@ Feature | Supported?
 [Rate limiting](#rate-limiting) | ✅
 Repository permissions | ❌
 
+## Setup
+
+To add Python dependencies to Sourcegraph you need to setup a Python dependencies code host:
+
+1. As *site admin*: go to **Site admin > Manage code hosts**
+1. Select **Python Dependencies**.
+1. Configure the connection by following the instructions above the text field. Additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
+1. Press **Add repositories**.
+
 ## Repository syncing
 
 There are currently two ways to sync Python dependency repositories.
@@ -47,3 +56,9 @@ This increases the risk of overloading the proxy.
 ## Repository permissions
 
 ⚠️ Python dependency repositories are visible by all users of the Sourcegraph instance.
+
+## Configuration
+
+Python dependencies code host connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
+
+<div markdown-func=jsonschemadoc jsonschemadoc:path="integration/python-packages.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/integration/python) to see rendered content.</div>

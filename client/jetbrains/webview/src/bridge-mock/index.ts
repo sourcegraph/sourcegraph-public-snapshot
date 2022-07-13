@@ -1,3 +1,5 @@
+import { decode } from 'js-base64'
+
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
 
 import type { PreviewRequest, Request } from '../search/js-to-java-bridge'
@@ -87,7 +89,7 @@ function handleRequest(
             if (previewContent.content === null) {
                 htmlContent = 'No preview available'
             } else {
-                const decodedContent = atob(previewContent.content || '')
+                const decodedContent = decode(previewContent.content || '')
                 htmlContent = escapeHTML(decodedContent.slice(0, start))
                 htmlContent += `<span id="code-details-highlight">${escapeHTML(
                     decodedContent.slice(start, start + length)

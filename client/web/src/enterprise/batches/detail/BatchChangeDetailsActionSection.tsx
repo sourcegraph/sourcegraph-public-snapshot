@@ -6,7 +6,7 @@ import * as H from 'history'
 import { isErrorLike, asError } from '@sourcegraph/common'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { isBatchChangesExecutionEnabled } from '../../../batches'
 import { Scalars } from '../../../graphql-operations'
@@ -52,19 +52,22 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
     }, [batchChangeID, deleteBatchChange, history, batchChangeNamespaceURL])
     if (batchChangeClosed) {
         return (
-            <Button
-                className="test-batches-delete-btn"
-                onClick={onDeleteBatchChange}
-                data-tooltip="Deleting this batch change is a final action."
-                disabled={isDeleting === true}
-                outline={true}
-                variant="danger"
-            >
-                {isErrorLike(isDeleting) && (
-                    <Icon aria-hidden={true} data-tooltip={isDeleting} svgPath={mdiInformation} />
-                )}
-                <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
-            </Button>
+            <Tooltip content="Deleting this batch change is a final action." placement="left">
+                <Button
+                    className="test-batches-delete-btn"
+                    onClick={onDeleteBatchChange}
+                    disabled={isDeleting === true}
+                    outline={true}
+                    variant="danger"
+                >
+                    {isErrorLike(isDeleting) && (
+                        <Tooltip content={isDeleting.message} placement="left">
+                            <Icon aria-label={isDeleting.message} svgPath={mdiInformation} />
+                        </Tooltip>
+                    )}
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete
+                </Button>
+            </Tooltip>
         )
     }
     return (
@@ -74,16 +77,17 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                     <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
                 </Button>
             )}
-            <Button
-                to={`${batchChangeURL}/close`}
-                className="test-batches-close-btn"
-                data-tooltip="View a preview of all changes that will happen when you close this batch change."
-                variant="danger"
-                outline={true}
-                as={Link}
-            >
-                <Icon aria-hidden={true} svgPath={mdiDelete} /> Close
-            </Button>
+            <Tooltip content="View a preview of all changes that will happen when you close this batch change.">
+                <Button
+                    to={`${batchChangeURL}/close`}
+                    className="test-batches-close-btn"
+                    variant="danger"
+                    outline={true}
+                    as={Link}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Close
+                </Button>
+            </Tooltip>
         </div>
     )
 }

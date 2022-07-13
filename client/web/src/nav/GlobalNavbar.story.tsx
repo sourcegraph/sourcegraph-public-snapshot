@@ -54,8 +54,6 @@ const defaultProps = (
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 })
 

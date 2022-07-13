@@ -1,12 +1,16 @@
 import React from 'react'
 
+import classNames from 'classnames'
 import { compact } from 'lodash'
 
 import { PageHeader, FeedbackBadge } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../../batches/icons'
 
+import styles from './BatchChangeHeader.module.scss'
+
 interface BatchChangeHeaderProps {
+    className?: string
     /** The namespace to display in the `PageHeader`. */
     namespace?: { to: string; text: string }
     /** The secondary title to use in the `PageHeader`, after the namespace. */
@@ -15,10 +19,10 @@ interface BatchChangeHeaderProps {
     description?: React.ReactNode
 }
 
-export const BatchChangeHeader: React.FC<BatchChangeHeaderProps> = ({ namespace, title, description }) => (
+export const BatchChangeHeader: React.FC<BatchChangeHeaderProps> = ({ className, namespace, title, description }) => (
     <PageHeader
         path={compact([{ icon: BatchChangesIcon }, namespace, title])}
-        className="flex-1 pb-2"
+        className={classNames('flex-1 pb-2', styles.header, className)}
         description={
             description || 'Run custom code over hundreds of repositories and manage the resulting changesets.'
         }

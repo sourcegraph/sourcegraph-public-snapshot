@@ -113,7 +113,7 @@ const GitObjectPreview: FunctionComponent<React.PropsWithChildren<GitObjectPrevi
                 {preview.preview.length === 0 ? (
                     <div className="mt-2 pt-2">
                         <div className={styles.empty}>
-                            <Text className="text-monospace">N/A</Text>
+                            <Text className="text-monospace">Not applicable</Text>
                         </div>
                     </div>
                 ) : (

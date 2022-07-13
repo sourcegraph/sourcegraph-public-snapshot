@@ -5,7 +5,7 @@ import * as H from 'history'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -58,27 +58,29 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                     {node.displayName}
                 </div>
                 <div>
-                    <Button
-                        className="test-edit-external-service-button"
-                        to={`${routingPrefix}/external-services/${node.id}`}
-                        data-tooltip="External service settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
-                    </Button>{' '}
-                    <Button
-                        className="test-delete-external-service-button"
-                        onClick={onDelete}
-                        disabled={isDeleting === true}
-                        data-tooltip="Delete external service"
-                        aria-label="Delete external service"
-                        variant="danger"
-                        size="sm"
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiDelete} />
-                    </Button>
+                    <Tooltip content="External service settings">
+                        <Button
+                            className="test-edit-external-service-button"
+                            to={`${routingPrefix}/external-services/${node.id}`}
+                            variant="secondary"
+                            size="sm"
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Delete external service">
+                        <Button
+                            aria-label="Delete"
+                            className="test-delete-external-service-button"
+                            onClick={onDelete}
+                            disabled={isDeleting === true}
+                            variant="danger"
+                            size="sm"
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
+                        </Button>
+                    </Tooltip>
                 </div>
             </div>
             {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}

@@ -4,7 +4,7 @@ import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Icon, Text } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
@@ -63,7 +63,7 @@ interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFie
 export const BatchSpecDownloadLink: React.FunctionComponent<
     React.PropsWithChildren<BatchSpecDownloadLinkProps>
 > = React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
-    return asButton ? (
+    const component = asButton ? (
         <Button
             variant="primary"
             as="a"
@@ -72,7 +72,6 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             target="_blank"
             rel="noopener noreferrer"
             className={className}
-            data-tooltip={`Download ${getFileName(name)}`}
         >
             {children}
         </Button>
@@ -81,11 +80,12 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             download={getFileName(name)}
             to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
             className={className}
-            data-tooltip={`Download ${getFileName(name)}`}
         >
             {children}
         </Link>
     )
+
+    return <Tooltip content={`Download ${getFileName(name)}`}>{component}</Tooltip>
 })
 
 // TODO: Consider merging this component with BatchSpecDownloadLink

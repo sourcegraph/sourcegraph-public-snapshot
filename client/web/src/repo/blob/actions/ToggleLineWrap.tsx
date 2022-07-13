@@ -1,11 +1,11 @@
 import * as React from 'react'
 
-import { mdiWrap } from '@mdi/js'
+import { mdiWrap, mdiWrapDisabled } from '@mdi/js'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { DeprecatedTooltipController, Icon } from '@sourcegraph/wildcard'
+import { DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -87,19 +87,16 @@ export class ToggleLineWrap extends React.PureComponent<
         }
 
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                onSelect={this.onClick}
-                data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
-                aria-label={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
-            >
-                <Icon
-                    as={this.state.value ? WrapDisabledIcon : undefined}
-                    svgPath={!this.state.value ? mdiWrap : undefined}
-                    aria-hidden={true}
-                />
-            </RepoHeaderActionButtonLink>
+            <Tooltip content={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}>
+                <RepoHeaderActionButtonLink
+                    aria-label={this.state.value ? 'Disable' : 'Enable'}
+                    className="btn-icon"
+                    file={false}
+                    onSelect={this.onClick}
+                >
+                    <Icon svgPath={this.state.value ? mdiWrapDisabled : mdiWrap} aria-hidden={true} />
+                </RepoHeaderActionButtonLink>
+            </Tooltip>
         )
     }
 

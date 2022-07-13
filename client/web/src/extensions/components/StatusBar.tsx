@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiChevronLeft, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { Observable, Subscription, timer } from 'rxjs'
 import { filter, first, mapTo, switchMap } from 'rxjs/operators'
 import { tabbable } from 'tabbable'
@@ -15,7 +14,7 @@ import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { syncRemoteSubscription } from '@sourcegraph/shared/src/api/util'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { Badge, Button, useObservable, Link, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
@@ -168,7 +167,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                         variant="link"
                         aria-label="Scroll left"
                     >
-                        <Icon as={ChevronLeftIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronLeft} />
                     </Button>
                 )}
                 <div className={classNames('d-flex align-items-center px-2', styles.items)} ref={carouselReference}>
@@ -205,7 +204,7 @@ export const StatusBar: React.FunctionComponent<React.PropsWithChildren<StatusBa
                         variant="link"
                         aria-label="Scroll right"
                     >
-                        <Icon as={ChevronRightIcon} aria-hidden={true} />
+                        <Icon aria-hidden={true} svgPath={mdiChevronRight} />
                     </Button>
                 )}
             </ErrorBoundary>
@@ -253,24 +252,25 @@ const StatusBarItem: React.FunctionComponent<
     const noop = !command
 
     return (
-        <ButtonLink
-            className={classNames(
-                'h-100 d-flex align-items-center px-1',
-                styles.item,
-                noop && classNames('text-decoration-none', styles.itemNoop),
-                className
-            )}
-            data-tooltip={statusBarItem.tooltip}
-            onSelect={handleCommand}
-            tabIndex={noop ? -1 : 0}
-            to={to}
-            disabled={commandState === 'loading'}
-        >
-            {component || (
-                <small className={classNames(styles.text, commandState === 'loading' && 'text-muted')}>
-                    {statusBarItem.text}
-                </small>
-            )}
-        </ButtonLink>
+        <Tooltip content={statusBarItem.tooltip}>
+            <ButtonLink
+                className={classNames(
+                    'h-100 d-flex align-items-center px-1',
+                    styles.item,
+                    noop && classNames('text-decoration-none', styles.itemNoop),
+                    className
+                )}
+                onSelect={handleCommand}
+                tabIndex={noop ? -1 : 0}
+                to={to}
+                disabled={commandState === 'loading'}
+            >
+                {component || (
+                    <small className={classNames(styles.text, commandState === 'loading' && 'text-muted')}>
+                        {statusBarItem.text}
+                    </small>
+                )}
+            </ButtonLink>
+        </Tooltip>
     )
 }

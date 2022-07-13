@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { startCompletion } from '@codemirror/autocomplete'
+import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import {
     EditorSelection,
@@ -12,6 +12,7 @@ import {
     RangeSetBuilder,
     MapMode,
     Compartment,
+    Range,
 } from '@codemirror/state'
 import {
     EditorView,
@@ -22,6 +23,7 @@ import {
     ViewPlugin,
     hoverTooltip,
     TooltipView,
+    WidgetType,
 } from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
@@ -35,14 +37,21 @@ import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/q
 import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
-import { Filter } from '@sourcegraph/shared/src/search/query/token'
+import { Node } from '@sourcegraph/shared/src/search/query/parser'
+import { Filter, KeywordKind } from '@sourcegraph/shared/src/search/query/token'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { fetchStreamSuggestions as defaultFetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestions'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
 
 import { createDefaultSuggestions, createUpdateableField, singleLine } from './extensions'
-import { decoratedTokens, parsedQuery, parseInputAsQuery, setQueryParseOptions } from './extensions/parsedQuery'
+import {
+    decoratedTokens,
+    queryTokens,
+    parseInputAsQuery,
+    setQueryParseOptions,
+    parsedQuery,
+} from './extensions/parsedQuery'
 import { MonacoQueryInputProps } from './MonacoQueryInput'
 
 import styles from './CodeMirrorQueryInput.module.scss'
@@ -262,10 +271,14 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
                     history(),
                     themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
                     parseInputAsQuery({ patternType, interpretComments }),
-                    querySyntaxHighlighting,
                     queryDiagnostic,
                     tokenInfo(),
                     highlightFocusedFilter,
+                    // It baffels me but the syntax highlighting extension has
+                    // to come after the highlight current filter extension,
+                    // otherwise CodeMirror keeps steeling the focus.
+                    // See https://github.com/sourcegraph/sourcegraph/issues/38677
+                    querySyntaxHighlighting,
                     externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
@@ -290,24 +303,24 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
 
         // Update pattern type and/or interpretComments when changed
         useEffect(() => {
-            editor?.dispatch({ effects: [setQueryParseOptions.of({ patternType, interpretComments })] })
+            editor?.dispatch({ effects: setQueryParseOptions.of({ patternType, interpretComments }) })
         }, [editor, patternType, interpretComments])
 
         // Update theme if it changes
         useEffect(() => {
-            editor?.dispatch({ effects: [themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false))] })
+            editor?.dispatch({ effects: themeExtension.reconfigure(EditorView.darkTheme.of(isLightTheme === false)) })
         }, [editor, themeExtension, isLightTheme])
 
         // Update external extensions if they changed
         useEffect(() => {
-            editor?.dispatch({ effects: [externalExtensions.reconfigure(extensions)] })
+            editor?.dispatch({ effects: externalExtensions.reconfigure(extensions) })
         }, [editor, externalExtensions, extensions])
 
         return (
             <div
                 ref={setContainer}
-                className={classNames(styles.root, className)}
-                data-test-id="codemirror-query-input"
+                className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
+                data-editor="codemirror6"
             />
         )
     }
@@ -377,6 +390,8 @@ const [callbacksField, setCallbacks] = createUpdateableField<
                     run: view => {
                         const { onSubmit } = view.state.field(callbacks)
                         if (onSubmit) {
+                            // Cancel/close any open completion popovers
+                            closeCompletion(view)
                             onSubmit()
                             return true
                         }
@@ -399,11 +414,12 @@ const [callbacksField, setCallbacks] = createUpdateableField<
             },
         ]),
         EditorView.updateListener.of((update: ViewUpdate) => {
-            const { onChange, onFocus, onBlur, onCompletionItemSelected } = update.state.field(callbacks)
+            const { state, view } = update
+            const { onChange, onFocus, onBlur, onCompletionItemSelected } = state.field(callbacks)
 
             if (update.docChanged) {
                 onChange({
-                    query: update.state.sliceDoc(),
+                    query: state.sliceDoc(),
                     changeSource: QueryChangeSource.userInput,
                 })
             }
@@ -413,9 +429,10 @@ const [callbacksField, setCallbacks] = createUpdateableField<
             // the moment they are bound if the editor is already in that state ((not)
             // focused). See https://github.com/sourcegraph/sourcegraph/issues/37721#issuecomment-1166300433
             if (update.focusChanged) {
-                if (update.view.hasFocus) {
+                if (view.hasFocus) {
                     onFocus?.()
                 } else {
+                    closeCompletion(view)
                     onBlur?.()
                 }
             }
@@ -455,6 +472,24 @@ const querySyntaxHighlighting = EditorView.decorations.compute([decoratedTokens]
     return builder.finish()
 })
 
+class PlaceholderWidget extends WidgetType {
+    constructor(private placeholder: string) {
+        super()
+    }
+
+    /* eslint-disable-next-line id-length */
+    public eq(other: PlaceholderWidget): boolean {
+        return this.placeholder === other.placeholder
+    }
+
+    public toDOM(): HTMLElement {
+        const span = document.createElement('span')
+        span.className = styles.placeholder
+        span.textContent = this.placeholder
+        return span
+    }
+}
+
 // Determines whether the cursor is over a filter and if yes, decorates that
 // filter.
 const highlightFocusedFilter = ViewPlugin.define(
@@ -463,17 +498,35 @@ const highlightFocusedFilter = ViewPlugin.define(
         update(update) {
             if (update.docChanged || update.selectionSet || update.focusChanged) {
                 if (update.view.hasFocus) {
-                    const query = update.state.facet(parsedQuery)
+                    const query = update.state.facet(queryTokens)
                     const position = update.state.selection.main.head
                     const focusedFilter = query.tokens.find(
                         (token): token is Filter =>
-                            // Inclusive end so that the filter is highlighed when
+                            // Inclusive end so that the filter is highlighted when
                             // the cursor is positioned directly after the value
                             token.type === 'filter' && token.range.start <= position && token.range.end >= position
                     )
-                    this.decorations = focusedFilter
-                        ? Decoration.set(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
-                        : Decoration.none
+                    const decorations: Range<Decoration>[] = []
+
+                    if (focusedFilter) {
+                        // Adds decoration for background highlighting
+                        decorations.push(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
+
+                        // Adds widget decoration for filter placeholder
+                        if (!focusedFilter.value?.value) {
+                            const resolvedFilter = resolveFilter(focusedFilter.field.value)
+                            if (resolvedFilter?.definition.placeholder) {
+                                decorations.push(
+                                    Decoration.widget({
+                                        widget: new PlaceholderWidget(resolvedFilter.definition.placeholder),
+                                        side: 1, // show after the cursor
+                                    }).range(focusedFilter.range.end)
+                                )
+                            }
+                        }
+                    }
+
+                    this.decorations = Decoration.set(decorations)
                 } else {
                     this.decorations = Decoration.none
                 }
@@ -535,6 +588,21 @@ function tokenInfo(): Extension {
                     case 'metaPredicate':
                         // These are the tokens we show hover information for
                         break
+                    case 'keyword': {
+                        // Find operator (AND and OR are supported)
+                        const operator = findOperatorNode(position, state.facet(parsedQuery))
+                        if (operator) {
+                            return Decoration.set([
+                                focusedFilterDeco.range(
+                                    (operator.groupRange ?? operator.range).start,
+                                    (operator.groupRange ?? operator.range).end
+                                ),
+                            ])
+                        }
+                        // Highlight operator keyword only
+                        break
+                    }
+
                     default:
                         tokenAtPosition = undefined
                         break
@@ -555,12 +623,12 @@ function tokenInfo(): Extension {
             mousemove(event, view) {
                 const position = view.posAtCoords(event)
                 if (position && position !== view.state.field(highlightedTokenPosition)) {
-                    view.dispatch({ effects: [setHighlighedTokenPosition.of(position)] })
+                    view.dispatch({ effects: setHighlighedTokenPosition.of(position) })
                 }
             },
             mouseleave(_event, view) {
                 if (view.state.field(highlightedTokenPosition) !== null) {
-                    view.dispatch({ effects: [setHighlighedTokenPosition.of(null)] })
+                    view.dispatch({ effects: setHighlighedTokenPosition.of(null) })
                 }
             },
         }),
@@ -635,6 +703,17 @@ function getTokensTooltipInformation(
                 values.push(toHover(token))
                 range = token.groupRange ? token.groupRange : token.range
                 break
+            case 'keyword':
+                switch (token.kind) {
+                    case KeywordKind.Or:
+                        values.push('Find results which match both the left and the right expression.')
+                        range = token.range
+                        break
+                    case KeywordKind.And:
+                        values.push('Find results which match the left or the right expression.')
+                        range = token.range
+                        break
+                }
         }
     }
 
@@ -658,8 +737,8 @@ const diagnosticDecos: { [key in MarkerSeverity]: Decoration } = {
 }
 const queryDiagnostic: Extension = [
     // Compute diagnostics when query changes
-    diagnostics.compute([parsedQuery], state => {
-        const query = state.facet(parsedQuery)
+    diagnostics.compute([queryTokens], state => {
+        const query = state.facet(queryTokens)
         return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType) : []
     }),
     // Generate diagnostic markers
@@ -702,6 +781,19 @@ const queryDiagnostic: Extension = [
         }
     ),
 ]
+
+function findOperatorNode(position: number, node: Node | null): Extract<Node, { type: 'operator' }> | null {
+    if (!node || node.type !== 'operator' || node.range.start >= position || node.range.end <= position) {
+        return null
+    }
+    for (const operand of node.operands) {
+        const result = findOperatorNode(position, operand)
+        if (result) {
+            return result
+        }
+    }
+    return node
+}
 
 function isTokenInRange(position: number, token: Pick<DecoratedToken, 'type' | 'range'>): boolean {
     return token.range.start <= position && getEndPosition(token) > position

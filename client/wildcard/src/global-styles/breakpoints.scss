@@ -1,6 +1,7 @@
 // To use breakpoints mixins in CSS modules import this file via:
 // @import 'wildcard/src/global-styles/breakpoints';
 
+// These should match the viewpoint variables defined in viewports.ts
 $viewport-sm: 576px;
 $viewport-md: 768px;
 $viewport-lg: 992px;

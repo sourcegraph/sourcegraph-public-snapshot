@@ -55,7 +55,7 @@ import { getSuggestionQuery } from '@sourcegraph/shared/src/search/query/provide
 import { Filter, Token } from '@sourcegraph/shared/src/search/query/token'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 
-import { parsedQuery } from './parsedQuery'
+import { queryTokens } from './parsedQuery'
 
 import styles from '../CodeMirrorQueryInput.module.scss'
 
@@ -134,7 +134,7 @@ export function searchQueryAutocompletion(
 ): Extension {
     const override: CompletionSource[] = sources.map(source => context => {
         const position = context.pos
-        const query = context.state.facet(parsedQuery)
+        const query = context.state.facet(queryTokens)
         const token = query.tokens.find(token => isTokenInRange(token, position))
         return source(
             { position, onAbort: listener => context.addEventListener('abort', listener) },
@@ -173,7 +173,7 @@ export function searchQueryAutocompletion(
             // If a filter was completed, show the completion list again for
             // filter values.
             if (update.transactions.some(transaction => transaction.isUserEvent('input.complete'))) {
-                const query = update.state.facet(parsedQuery)
+                const query = update.state.facet(queryTokens)
                 const token = query.tokens.find(token => isTokenInRange(token, update.state.selection.main.anchor - 1))
                 if (token) {
                     startCompletion(update.view)
@@ -347,11 +347,14 @@ export function createDefaultSuggestionSources(options: {
                     })
                     .filter(isDefined)
 
+                const insidePredicate = token.value ? PREDICATE_REGEX.test(token.value.value) : false
+
                 return {
                     from: token.value?.range.start ?? token.range.end,
                     to: token.value?.range.end,
                     filter: false,
                     options: filteredResults,
+                    getMatch: insidePredicate || options.globbing ? undefined : createMatchFunction(token),
                 }
             })
         )
@@ -449,6 +452,35 @@ const FILTER_SUGGESTIONS: Completion[] = createFilterSuggestions(Object.keys(FIL
         boost: insertText.startsWith('-') ? 1 : 2, // demote negated filters
     })
 )
+
+/**
+ * This helper function creates a function suitable for CodeMirror's 'getMatch'
+ * option. This is used to allow CodeMirror to highlight the matching part of
+ * the label.
+ * See https://codemirror.net/docs/ref/#autocomplete.CompletionResult.getMatch
+ */
+function createMatchFunction(token: Filter): ((completion: Completion) => number[]) | undefined {
+    if (!token.value?.value) {
+        return undefined
+    }
+    try {
+        // Creating a regular expression fails if the value contains special
+        // regex characters in invalid positions. In that case we don't
+        // highlight.
+        const pattern = new RegExp(token.value.value, 'ig')
+        return completion => Array.from(completion.label.matchAll(pattern), matchToIndexTuple).flat()
+    } catch {
+        return undefined
+    }
+}
+
+/**
+ * Converts a regular expression match into an (possibly empty) number tuple
+ * representing the start index and the end index of the match.
+ */
+function matchToIndexTuple(match: RegExpMatchArray): number[] {
+    return match.index !== undefined ? [match.index, match.index + match[0].length] : []
+}
 
 // Looks like there might be a bug with how the end range for a field is
 // computed? Need to add 1 to make this work properly.

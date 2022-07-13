@@ -1,10 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiPlayCircleOutline, mdiDownload, mdiContentCopy } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import ContentCopyIcon from 'mdi-react/ContentCopyIcon'
-import DownloadIcon from 'mdi-react/DownloadIcon'
-import PlayCircleOutlineIcon from 'mdi-react/PlayCircleOutlineIcon'
 import { useLocation } from 'react-router'
 import { Redirect } from 'react-router-dom'
 import { Observable, ReplaySubject } from 'rxjs'
@@ -498,7 +496,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                         onClick={runAllBlocks}
                         disabled={blocks.length === 0 || runningAllBlocks === LOADING}
                     >
-                        <Icon aria-hidden={true} className="mr-1" as={PlayCircleOutlineIcon} />
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiPlayCircleOutline} />
                         <span>{runningAllBlocks === LOADING ? 'Running...' : 'Run all blocks'}</span>
                     </Button>
                     {!isEmbedded && (
@@ -509,7 +507,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             onClick={exportNotebook}
                             data-testid="export-notebook-markdown-button"
                         >
-                            <Icon aria-hidden={true} className="mr-1" as={DownloadIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
                             <span>Export as Markdown</span>
                         </Button>
                     )}
@@ -522,7 +520,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                             data-testid="copy-notebook-button"
                             disabled={copiedNotebookOrError === LOADING}
                         >
-                            <Icon aria-hidden={true} className="mr-1" as={ContentCopyIcon} />
+                            <Icon aria-hidden={true} className="mr-1" svgPath={mdiContentCopy} />
                             <span>{copiedNotebookOrError === LOADING ? 'Copying...' : 'Copy to My Notebooks'}</span>
                         </Button>
                     )}

@@ -36,9 +36,11 @@ exports[`FeedbackPrompt should render correctly 1`] = `
         type="button"
       >
         <svg
+          aria-label="Close"
           class="mdi-icon icon"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -52,6 +54,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
       >
         <h3
           class="h3 mb-3"
+          id="feedback-prompt-question"
         >
           What’s on your mind?
         </h3>
@@ -59,6 +62,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
           class="label label textarea"
         >
           <textarea
+            aria-labelledby="feedback-prompt-question"
             class="textarea form-control resizeNone textarea"
             placeholder="What’s going well? What could be better?"
             rows="3"
@@ -88,6 +92,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
                 class="emoji"
               >
                 <svg
+                  aria-hidden="true"
                   fill="none"
                   height="24"
                   viewBox="0 0 20 20"
@@ -127,6 +132,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
                 class="emoji"
               >
                 <svg
+                  aria-hidden="true"
                   fill="none"
                   height="24"
                   viewBox="0 0 20 20"
@@ -174,6 +180,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
                 class="emoji"
               >
                 <svg
+                  aria-hidden="true"
                   fill="none"
                   height="24"
                   viewBox="0 0 20 20"
@@ -221,6 +228,7 @@ exports[`FeedbackPrompt should render correctly 1`] = `
                 class="emoji"
               >
                 <svg
+                  aria-hidden="true"
                   fill="none"
                   height="24"
                   viewBox="0 0 20 20"
@@ -301,9 +309,11 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
         type="button"
       >
         <svg
+          aria-label="Close"
           class="mdi-icon icon"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -317,6 +327,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
       >
         <h3
           class="h3 mb-3"
+          id="feedback-prompt-question"
         >
           What’s on your mind?
         </h3>
@@ -324,6 +335,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
           class="label label textarea"
         >
           <textarea
+            aria-labelledby="feedback-prompt-question"
             class="textarea form-control resizeNone textarea"
             placeholder="What’s going well? What could be better?"
             rows="3"
@@ -355,6 +367,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
                 class="emoji emojiInactive"
               >
                 <svg
+                  aria-hidden="true"
                   fill="none"
                   height="24"
                   viewBox="0 0 20 20"
@@ -394,6 +407,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
                 class="emoji emojiInactive"
               >
                 <svg
+                  aria-hidden="true"
                   fill="none"
                   height="24"
                   viewBox="0 0 20 20"
@@ -441,6 +455,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
                 class="emoji emojiInactive"
               >
                 <svg
+                  aria-hidden="true"
                   fill="none"
                   height="24"
                   viewBox="0 0 20 20"
@@ -488,6 +503,7 @@ exports[`FeedbackPrompt should render submit error correctly 1`] = `
                 class="emoji emojiActive"
               >
                 <svg
+                  aria-hidden="true"
                   fill="none"
                   height="24"
                   viewBox="0 0 20 20"
@@ -581,9 +597,11 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
         type="button"
       >
         <svg
+          aria-label="Close"
           class="mdi-icon icon"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >
@@ -596,9 +614,11 @@ exports[`FeedbackPrompt should render submit success correctly 1`] = `
         class="success"
       >
         <svg
+          aria-label="Success"
           class="mdi-icon successTick"
           fill="currentColor"
           height="24"
+          role="img"
           viewBox="0 0 24 24"
           width="24"
         >

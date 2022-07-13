@@ -7,7 +7,7 @@ import { useHistory } from 'react-router'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Card, CardBody, Panel, H3, H1, Icon, Text, Code } from '@sourcegraph/wildcard'
+import { Card, CardBody, H3, H1, Icon, Text, Code } from '@sourcegraph/wildcard'
 
 import { BatchSpecExecutionFields } from '../../../../../graphql-operations'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
@@ -15,11 +15,9 @@ import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecConte
 import { queryBatchSpecWorkspaceStepFileDiffs as _queryBatchSpecWorkspaceStepFileDiffs } from '../backend'
 
 import { WorkspaceDetails } from './WorkspaceDetails'
-import { Workspaces } from './Workspaces'
+import { WorkspacesPanel } from './WorkspacesPanel'
 
 import styles from './ExecutionWorkspaces.module.scss'
-
-const WORKSPACES_LIST_SIZE = 'batch-changes.ssbc-workspaces-list-size'
 
 interface ExecutionWorkspacesProps extends ThemeProps {
     selectedWorkspaceID?: string
@@ -78,13 +76,11 @@ const MemoizedExecutionWorkspaces: React.FunctionComponent<
         <div className={styles.container}>
             {errors.execute && <ErrorAlert error={errors.execute} className={styles.errors} />}
             <div className={styles.inner}>
-                <Panel defaultSize={500} minSize={405} maxSize={1400} position="left" storageKey={WORKSPACES_LIST_SIZE}>
-                    <Workspaces
-                        batchSpecID={batchSpec.id}
-                        selectedNode={selectedWorkspaceID}
-                        executionURL={batchSpec.executionURL}
-                    />
-                </Panel>
+                <WorkspacesPanel
+                    batchSpecID={batchSpec.id}
+                    selectedNode={selectedWorkspaceID}
+                    executionURL={batchSpec.executionURL}
+                />
                 <Card className="w-100 overflow-auto flex-grow-1">
                     {/* This is necessary to prevent the margin collapse on `Card` */}
                     <div className="w-100">
