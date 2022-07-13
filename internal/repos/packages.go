@@ -132,7 +132,12 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 }
 
 func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.Repo, error) {
-	pkg, err := getPackage(ctx, s.src, repoName)
+	parsedPkg, err := s.src.ParsePackageFromRepoName(repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	pkg, err := getPackage(ctx, s.src, parsedPkg.PackageSyntax())
 	if err != nil {
 		return nil, err
 	}
