@@ -31,6 +31,21 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.41.1
+
+### Fixed
+
+- Fix issue with Bitbucket Projects repository permissions sync when wrong repo IDs were used [#38637](https://github.com/sourcegraph/sourcegraph/pull/38637)
+- Fix perforce permissions interpretation for rules where there is a wildcard in the depot name [#37648](https://github.com/sourcegraph/sourcegraph/pull/37648)
+
+### Added
+
+- Allow directory read access for sub repo permissions [#38487](https://github.com/sourcegraph/sourcegraph/pull/38487)
+
+### Changed
+
+- p4-fusion version is upgraded to 1.10 [#38272](https://github.com/sourcegraph/sourcegraph/pull/38272)
+
 ## 3.41.0
 
 ### Added
