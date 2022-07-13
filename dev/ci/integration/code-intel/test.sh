@@ -29,8 +29,8 @@ echo '--- downloading test data from GCS'
 ./scripts/download.sh
 echo '--- integration test ./dev/codeintel-qa/cmd/upload'
 go build ./cmd/upload
-./upload --timeout=5m
+./upload --timeout=5m -verbose
 echo '--- integration test ./dev/codeintel-qa/cmd/query'
 go build ./cmd/query
-./query
+./query -verbose
 popd || exit 1

@@ -86,16 +86,16 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/users',
         },
         {
+            label: 'Batch changes',
+            to: '/site-admin/analytics/batch-changes',
+        },
+        {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
         },
         {
             label: 'Code insights (soon)',
             to: '/site-admin/analytics/code-insights',
-        },
-        {
-            label: 'Batch changes (soon)',
-            to: '/site-admin/analytics/batch-changes',
         },
         {
             label: 'Extensions (soon)',
@@ -112,17 +112,17 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
 export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/analytics/search',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsSearchPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsSearchPage'), 'AnalyticsSearchPage'),
         exact: true,
     },
     {
         path: '/analytics/code-intel',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsCodeIntelPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsCodeIntelPage'), 'AnalyticsCodeIntelPage'),
         exact: true,
     },
     {
         path: '/analytics/users',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsUsersPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsUsersPage'), 'AnalyticsUsersPage'),
         exact: true,
     },
     {
@@ -132,12 +132,12 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/batch-changes',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsBatchChangesPage'), 'AnalyticsBatchChangesPage'),
         exact: true,
     },
     {
         path: '/analytics/notebooks',
-        render: lazyComponent(() => import('./analytics'), 'AnalyticsNotebooksPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsNotebooksPage'), 'AnalyticsNotebooksPage'),
         exact: true,
     },
     {

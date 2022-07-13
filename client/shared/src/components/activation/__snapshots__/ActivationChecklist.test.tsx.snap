@@ -32,7 +32,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
               >
                 <svg
                   aria-hidden="true"
-                  class="iconInline icon iconDown"
+                  class="mdi-icon iconInline icon iconDown"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -45,7 +45,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
                 </svg>
                 <svg
                   aria-hidden="true"
-                  class="iconInline icon iconRight"
+                  class="mdi-icon iconInline icon iconRight"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -64,7 +64,7 @@ exports[`ActivationChecklist render 0/1 complete 1`] = `
             <div>
               <svg
                 aria-label="Not completed"
-                class="iconInline text-muted"
+                class="mdi-icon iconInline text-muted"
                 fill="currentColor"
                 height="24"
                 role="img"
@@ -131,7 +131,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
               >
                 <svg
                   aria-hidden="true"
-                  class="iconInline icon iconDown"
+                  class="mdi-icon iconInline icon iconDown"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -144,7 +144,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
                 </svg>
                 <svg
                   aria-hidden="true"
-                  class="iconInline icon iconRight"
+                  class="mdi-icon iconInline icon iconRight"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -163,7 +163,7 @@ exports[`ActivationChecklist render 0/1 complete 2`] = `
             <div>
               <svg
                 aria-label="Not completed"
-                class="iconInline text-muted"
+                class="mdi-icon iconInline text-muted"
                 fill="currentColor"
                 height="24"
                 role="img"
@@ -300,7 +300,7 @@ exports[`ActivationChecklist render loading 1`] = `
   <div
     aria-label="Loading"
     aria-live="polite"
-    class="iconInline loadingSpinner my-2"
+    class="mdi-icon iconInline loadingSpinner my-2"
     role="img"
   />
 </DocumentFragment>

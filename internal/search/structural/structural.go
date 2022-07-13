@@ -165,8 +165,8 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
-	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.NewResolver(clients.DB)
+	return nil, repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
 			clients.Logger,

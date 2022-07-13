@@ -5838,6 +5838,19 @@
           "Comment": "A 40-char revhash. Note that this commit may not be resolvable in the future."
         },
         {
+          "Name": "fidelity",
+          "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "'flat'::text",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ..."
+        },
+        {
           "Name": "id",
           "Index": 1,
           "TypeName": "integer",
@@ -14915,7 +14928,7 @@
         },
         {
           "Name": "updated_at",
-          "Index": 4,
+          "Index": 3,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "",
@@ -14928,7 +14941,7 @@
         },
         {
           "Name": "user_ids_ints",
-          "Index": 5,
+          "Index": 4,
           "TypeName": "bigint[]",
           "IsNullable": false,
           "Default": "'{}'::integer[]",
@@ -16811,7 +16824,7 @@
         },
         {
           "Name": "object_ids_ints",
-          "Index": 9,
+          "Index": 8,
           "TypeName": "integer[]",
           "IsNullable": false,
           "Default": "'{}'::integer[]",
@@ -16850,19 +16863,6 @@
         },
         {
           "Name": "service_id",
-          "Index": 8,
-          "TypeName": "text",
-          "IsNullable": false,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "service_type",
           "Index": 7,
           "TypeName": "text",
           "IsNullable": false,
@@ -16875,8 +16875,21 @@
           "Comment": ""
         },
         {
-          "Name": "updated_at",
+          "Name": "service_type",
           "Index": 6,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 5,
           "TypeName": "timestamp with time zone",
           "IsNullable": false,
           "Default": "",

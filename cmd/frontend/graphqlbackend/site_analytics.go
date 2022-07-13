@@ -14,7 +14,7 @@ type siteAnalyticsResolver struct {
 	db database.DB
 }
 
-var cache = true
+var cache = false
 
 /* Analytics root resolver */
 func (r *siteResolver) Analytics(ctx context.Context) (*siteAnalyticsResolver, error) {
@@ -66,4 +66,12 @@ func (r *siteAnalyticsResolver) Repos(ctx context.Context) (*adminanalytics.Repo
 	repos := adminanalytics.Repos{DB: r.db, Cache: cache}
 
 	return repos.Summary(ctx)
+}
+
+/* Batch changes */
+
+func (r *siteAnalyticsResolver) BatchChanges(ctx context.Context, args *struct {
+	DateRange *string
+}) *adminanalytics.BatchChanges {
+	return &adminanalytics.BatchChanges{DateRange: *args.DateRange, DB: r.db, Cache: cache}
 }

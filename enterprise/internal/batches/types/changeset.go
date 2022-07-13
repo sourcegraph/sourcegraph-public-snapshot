@@ -35,6 +35,7 @@ const (
 	ChangesetStateClosed      ChangesetState = "CLOSED"
 	ChangesetStateMerged      ChangesetState = "MERGED"
 	ChangesetStateDeleted     ChangesetState = "DELETED"
+	ChangesetStateReadOnly    ChangesetState = "READONLY"
 	ChangesetStateRetrying    ChangesetState = "RETRYING"
 	ChangesetStateFailed      ChangesetState = "FAILED"
 )
@@ -50,6 +51,7 @@ func (s ChangesetState) Valid() bool {
 		ChangesetStateClosed,
 		ChangesetStateMerged,
 		ChangesetStateDeleted,
+		ChangesetStateReadOnly,
 		ChangesetStateRetrying,
 		ChangesetStateFailed:
 		return true
@@ -154,11 +156,12 @@ type ChangesetExternalState string
 
 // ChangesetExternalState constants.
 const (
-	ChangesetExternalStateDraft   ChangesetExternalState = "DRAFT"
-	ChangesetExternalStateOpen    ChangesetExternalState = "OPEN"
-	ChangesetExternalStateClosed  ChangesetExternalState = "CLOSED"
-	ChangesetExternalStateMerged  ChangesetExternalState = "MERGED"
-	ChangesetExternalStateDeleted ChangesetExternalState = "DELETED"
+	ChangesetExternalStateDraft    ChangesetExternalState = "DRAFT"
+	ChangesetExternalStateOpen     ChangesetExternalState = "OPEN"
+	ChangesetExternalStateClosed   ChangesetExternalState = "CLOSED"
+	ChangesetExternalStateMerged   ChangesetExternalState = "MERGED"
+	ChangesetExternalStateDeleted  ChangesetExternalState = "DELETED"
+	ChangesetExternalStateReadOnly ChangesetExternalState = "READONLY"
 )
 
 // Valid returns true if the given ChangesetExternalState is valid.
@@ -168,7 +171,8 @@ func (s ChangesetExternalState) Valid() bool {
 		ChangesetExternalStateDraft,
 		ChangesetExternalStateClosed,
 		ChangesetExternalStateMerged,
-		ChangesetExternalStateDeleted:
+		ChangesetExternalStateDeleted,
+		ChangesetExternalStateReadOnly:
 		return true
 	default:
 		return false
@@ -304,7 +308,8 @@ func (c *Changeset) Clone() *Changeset {
 // Closeable returns whether the Changeset is already closed or merged.
 func (c *Changeset) Closeable() bool {
 	return c.ExternalState != ChangesetExternalStateClosed &&
-		c.ExternalState != ChangesetExternalStateMerged
+		c.ExternalState != ChangesetExternalStateMerged &&
+		c.ExternalState != ChangesetExternalStateReadOnly
 }
 
 // Complete returns whether the Changeset has been published and its

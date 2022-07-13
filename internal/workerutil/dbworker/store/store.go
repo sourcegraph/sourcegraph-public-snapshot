@@ -78,8 +78,9 @@ type Store interface {
 	// handle of the other ShareableStore.
 	With(other basestore.ShareableStore) Store
 
-	// QueuedCount returns the number of queued records matching the given conditions.
-	QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (int, error)
+	// QueuedCount returns the number of queued and errored records. If includeProcessing
+	// is true it returns the number of queued _and_ processing records.
+	QueuedCount(ctx context.Context, includeProcessing bool) (int, error)
 
 	// MaxDurationInQueue returns the maximum age of queued records in this store. Returns 0 if there are no queued records.
 	MaxDurationInQueue(ctx context.Context) (time.Duration, error)
@@ -361,22 +362,20 @@ var columnNames = []string{
 }
 
 // QueuedCount returns the number of queued records matching the given conditions.
-func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditions []*sqlf.Query) (_ int, err error) {
+func (s *store) QueuedCount(ctx context.Context, includeProcessing bool) (_ int, err error) {
 	ctx, _, endObservation := s.operations.queuedCount.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	stateQueries := make([]*sqlf.Query, 0, 2)
-	stateQueries = append(stateQueries, sqlf.Sprintf("%s", "queued"))
+	stateQueries := make([]*sqlf.Query, 0, 3)
+	stateQueries = append(stateQueries, sqlf.Sprintf("%s", "queued"), sqlf.Sprintf("%s", "errored"))
 	if includeProcessing {
 		stateQueries = append(stateQueries, sqlf.Sprintf("%s", "processing"))
 	}
 
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		queuedCountQuery,
-		quote(s.options.ViewName),
+		quote(s.options.TableName),
 		sqlf.Join(stateQueries, ","),
-		s.options.MaxNumRetries,
-		makeConditionSuffix(conditions),
 	)))
 
 	return count, err
@@ -384,10 +383,11 @@ func (s *store) QueuedCount(ctx context.Context, includeProcessing bool, conditi
 
 const queuedCountQuery = `
 -- source: internal/workerutil/store.go:QueuedCount
-SELECT COUNT(*) FROM %s WHERE (
-	{state} IN (%s) OR
-	({state} = 'errored' AND {num_failures} < %s)
-) %s
+SELECT
+	COUNT(*)
+FROM %s
+WHERE
+	{state} IN (%s)
 `
 
 // MaxDurationInQueue returns the longest duration for which a job associated with this store instance has
@@ -408,16 +408,15 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 
 	ageInSeconds, ok, err := basestore.ScanFirstInt(s.Query(ctx, s.formatQuery(
 		maxDurationInQueueQuery,
-		// candidates
-		quote(s.options.ViewName),
 		// oldest_queued
+		quote(s.options.TableName),
 		now,
 		// oldest_retryable
 		retryAfter,
+		quote(s.options.TableName),
 		retryAfter,
 		now,
 		retryAfter,
-		s.options.MaxNumRetries,
 	)))
 	if err != nil {
 		return 0, err
@@ -432,14 +431,11 @@ func (s *store) MaxDurationInQueue(ctx context.Context) (_ time.Duration, err er
 const maxDurationInQueueQuery = `
 -- source: internal/workerutil/store.go:MaxDurationInQueue
 WITH
-candidates AS (
-	SELECT * FROM %s
-),
 oldest_queued AS (
 	SELECT
 		-- Select when the record was most recently dequeueable
 		GREATEST({queued_at}, {process_after}) AS last_queued_at
-	FROM candidates
+	FROM %s
 	WHERE
 		{state} = 'queued' AND
 		({process_after} IS NULL OR {process_after} <= %s)
@@ -448,12 +444,11 @@ oldest_retryable AS (
 	SELECT
 		-- Select when the record was most recently dequeueable
 		{finished_at} + (%s * '1 second'::interval) AS last_queued_at
-	FROM candidates
+	FROM %s
 	WHERE
 		%s > 0 AND
 		{state} = 'errored' AND
-		%s - {finished_at} > (%s * '1 second'::interval) AND
-		{num_failures} < %s
+		%s - {finished_at} > (%s * '1 second'::interval)
 ),
 oldest_record AS (
 	(
@@ -525,7 +520,6 @@ func (s *store) Dequeue(ctx context.Context, workerHostname string, conditions [
 		retryAfter,
 		now,
 		retryAfter,
-		s.options.MaxNumRetries,
 		makeConditionSuffix(conditions),
 		s.options.OrderByExpression,
 		quote(s.options.TableName),
@@ -561,8 +555,7 @@ WITH potential_candidates AS (
 			) OR (
 				%s > 0 AND
 				{state} = 'errored' AND
-				%s - {finished_at} > (%s * '1 second'::interval) AND
-				{num_failures} < %s
+				%s - {finished_at} > (%s * '1 second'::interval)
 			)
 		)
 		%s
@@ -765,7 +758,7 @@ func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerut
 				"err", debugErr,
 			)
 		}
-		log15.Error("updateExecutionLogEntry failed and didn't match rows",
+		log15.Error("addExecutionLogEntry failed and didn't match rows",
 			"recordID", id,
 			"debug", debug,
 			"options.workerHostname", options.WorkerHostname,

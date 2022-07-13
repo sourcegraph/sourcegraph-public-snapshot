@@ -1,8 +1,7 @@
 import React from 'react'
 
+import { mdiCheck, mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
 
 import { Icon } from '@sourcegraph/wildcard'
 
@@ -14,9 +13,9 @@ export const StatusCode: React.FunctionComponent<React.PropsWithChildren<Props>>
     <span>
         <span className={classNames('mr-1')}>
             {code < 400 ? (
-                <Icon className="text-success" as={CheckIcon} aria-hidden={true} />
+                <Icon className="text-success" aria-hidden={true} svgPath={mdiCheck} />
             ) : (
-                <Icon className="text-danger" as={AlertCircleIcon} aria-hidden={true} />
+                <Icon className="text-danger" aria-hidden={true} svgPath={mdiAlertCircle} />
             )}
         </span>
         {code}
