@@ -84,6 +84,11 @@
   interfaces:
     - DBStore
     - LSIFStore
+- filename: enterprise/internal/batches/reconciler/mocks_test.go
+  sources:
+    - path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler
+      interfaces:
+        - enqueueChangesetSyncsForRepo
 - filename: enterprise/internal/batches/sources/mocks_test.go
   sources:
     - path: github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources

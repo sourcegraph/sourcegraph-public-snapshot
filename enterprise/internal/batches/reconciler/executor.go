@@ -13,7 +13,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -29,13 +28,18 @@ import (
 )
 
 // executePlan executes the given reconciler plan.
-func executePlan(ctx context.Context, logger log.Logger, gitserverClient GitserverClient, sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store, plan *Plan) (err error) {
+func executePlan(
+	ctx context.Context, logger log.Logger, gitserverClient GitserverClient,
+	sourcer sources.Sourcer, noSleepBeforeSync bool, tx *store.Store,
+	svc enqueueChangesetSyncsForRepo, plan *Plan,
+) (err error) {
 	e := &executor{
 		gitserverClient:   gitserverClient,
 		logger:            logger.Scoped("executor", "An executor for a single Batch Changes reconciler plan"),
 		sourcer:           sourcer,
 		noSleepBeforeSync: noSleepBeforeSync,
 		tx:                tx,
+		svc:               svc,
 		ch:                plan.Changeset,
 		spec:              plan.ChangesetSpec,
 	}
@@ -49,6 +53,7 @@ type executor struct {
 	sourcer           sources.Sourcer
 	noSleepBeforeSync bool
 	tx                *store.Store
+	svc               enqueueChangesetSyncsForRepo
 	ch                *btypes.Changeset
 	spec              *btypes.ChangesetSpec
 
@@ -577,16 +582,20 @@ func (e *executor) handleArchivedRepo(ctx context.Context) error {
 	return handleArchivedRepo(
 		ctx,
 		repos.NewStore(e.logger, e.tx.DatabaseDB()),
-		service.New(e.tx),
+		e.svc,
 		repo,
 		e.ch,
 	)
 }
 
+type enqueueChangesetSyncsForRepo interface {
+	EnqueueChangesetSyncsForRepo(context.Context, api.RepoID) error
+}
+
 func handleArchivedRepo(
 	ctx context.Context,
 	rstore repos.Store,
-	svc *service.Service,
+	svc enqueueChangesetSyncsForRepo,
 	repo *types.Repo,
 	ch *btypes.Changeset,
 ) error {

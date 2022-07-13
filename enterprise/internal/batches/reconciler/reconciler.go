@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -93,6 +94,7 @@ func (r *Reconciler) process(ctx context.Context, logger log.Logger, tx *store.S
 		r.sourcer,
 		r.noSleepBeforeSync,
 		tx,
+		service.New(tx),
 		plan,
 	)
 }
