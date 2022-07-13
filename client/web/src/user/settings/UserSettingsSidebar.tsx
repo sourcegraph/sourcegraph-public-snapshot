@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -45,9 +45,7 @@ export const UserSettingsSidebar: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsSidebarProps>
 > = props => {
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
-    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useTemporarySetting(
-        'coreWorkflowImprovements.enabled'
-    )
+    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     if (!props.authenticatedUser) {
         return null
