@@ -19,6 +19,7 @@ import (
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -604,6 +605,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				// Don't actually sleep for the sake of testing.
 				true,
 				cstore,
+				NewMockEnqueueChangesetSyncsForRepo(),
 				tc.plan,
 			)
 			if err != nil {
@@ -719,7 +721,16 @@ func TestExecutor_ExecutePlan_PublishedChangesetDuplicateBranch(t *testing.T) {
 	})
 	plan.Changeset = ct.BuildChangeset(ct.TestChangesetOpts{Repo: repo.ID})
 
-	err := executePlan(ctx, logtest.Scoped(t), nil, stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}), true, cstore, plan)
+	err := executePlan(
+		ctx,
+		logtest.Scoped(t),
+		nil,
+		stesting.NewFakeSourcer(nil, &stesting.FakeChangesetSource{}),
+		true,
+		cstore,
+		NewMockEnqueueChangesetSyncsForRepo(),
+		plan,
+	)
 	if err == nil {
 		t.Fatal("reconciler did not return error")
 	}
@@ -754,7 +765,16 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationClose)
 
-		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, cstore, plan)
+		err := executePlan(
+			ctx,
+			logtest.Scoped(t),
+			nil,
+			sourcer,
+			true,
+			cstore,
+			NewMockEnqueueChangesetSyncsForRepo(),
+			plan,
+		)
 		if err != ourError {
 			t.Fatalf("executePlan did not return expected error: %s", err)
 		}
@@ -767,7 +787,15 @@ func TestExecutor_ExecutePlan_AvoidLoadingChangesetSource(t *testing.T) {
 
 		plan.AddOp(btypes.ReconcilerOperationDetach)
 
-		err := executePlan(ctx, logtest.Scoped(t), nil, sourcer, true, cstore, plan)
+		err := executePlan(
+			ctx,
+			logtest.Scoped(t),
+			nil,
+			sourcer,
+			true,
+			cstore,
+			NewMockEnqueueChangesetSyncsForRepo(),
+			plan)
 		if err != nil {
 			t.Fatalf("executePlan returned unexpected error: %s", err)
 		}
@@ -1120,6 +1148,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				sourcer,
 				true,
 				cstore,
+				NewMockEnqueueChangesetSyncsForRepo(),
 				plan,
 			)
 
@@ -1198,11 +1227,39 @@ func TestHandleArchivedRepo(t *testing.T) {
 		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
 		repo := &types.Repo{Archived: false}
 
+		svc := NewMockEnqueueChangesetSyncsForRepo()
+		svc.EnqueueChangesetSyncsForRepoFunc.SetDefaultHook(func(_ context.Context, repoID api.RepoID) error {
+			assert.EqualValues(t, repoID, repo.ID)
+			return nil
+		})
+
 		store := repos.NewMockStore()
 		store.UpdateRepoFunc.SetDefaultReturn(repo, nil)
 
-		err := handleArchivedRepo(ctx, store, repo, ch)
+		err := handleArchivedRepo(ctx, store, svc, repo, ch)
 		assert.NoError(t, err)
+		assert.True(t, repo.Archived)
+		assert.Equal(t, btypes.ChangesetExternalStateReadOnly, ch.ExternalState)
+		assert.NotEmpty(t, store.UpdateRepoFunc.History())
+	})
+
+	t.Run("enqueue error", func(t *testing.T) {
+		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
+		repo := &types.Repo{Archived: false}
+
+		svc := NewMockEnqueueChangesetSyncsForRepo()
+		want := errors.New("expected")
+		svc.EnqueueChangesetSyncsForRepoFunc.SetDefaultHook(func(_ context.Context, repoID api.RepoID) error {
+			assert.EqualValues(t, repoID, repo.ID)
+			return want
+		})
+
+		store := repos.NewMockStore()
+		store.UpdateRepoFunc.SetDefaultReturn(repo, nil)
+
+		have := handleArchivedRepo(ctx, store, svc, repo, ch)
+		assert.Error(t, have)
+		assert.ErrorIs(t, have, want)
 		assert.True(t, repo.Archived)
 		assert.Equal(t, btypes.ChangesetExternalStateReadOnly, ch.ExternalState)
 		assert.NotEmpty(t, store.UpdateRepoFunc.History())
@@ -1212,11 +1269,13 @@ func TestHandleArchivedRepo(t *testing.T) {
 		ch := &btypes.Changeset{ExternalState: btypes.ChangesetExternalStateDraft}
 		repo := &types.Repo{Archived: false}
 
+		svc := NewMockEnqueueChangesetSyncsForRepo()
+
 		store := repos.NewMockStore()
 		want := errors.New("")
 		store.UpdateRepoFunc.SetDefaultReturn(nil, want)
 
-		have := handleArchivedRepo(ctx, store, repo, ch)
+		have := handleArchivedRepo(ctx, store, svc, repo, ch)
 		assert.Error(t, have)
 		assert.ErrorIs(t, have, want)
 		assert.True(t, repo.Archived)
