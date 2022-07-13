@@ -244,6 +244,11 @@ func TestDefaults(t *testing.T) {
 				Value:      string(query.No),
 				Negated:    false,
 				Annotation: query.Annotation{},
+			}, {
+				Field:      query.FieldPatternType,
+				Value:      "literal",
+				Negated:    false,
+				Annotation: query.Annotation{},
 			}},
 		},
 		{
@@ -257,6 +262,11 @@ func TestDefaults(t *testing.T) {
 			}, {
 				Field:      query.FieldArchived,
 				Value:      string(query.Yes),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}, {
+				Field:      query.FieldPatternType,
+				Value:      "literal",
 				Negated:    false,
 				Annotation: query.Annotation{},
 			}},
