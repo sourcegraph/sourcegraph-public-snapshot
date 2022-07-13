@@ -418,10 +418,6 @@ type Mutation {
         date: String
     ): GitCommit
     """
-    Logs a user event.
-    """
-    logUserEvent(event: UserEvent!, userCookieID: String!): EmptyResponse @deprecated(reason: "use logEvent instead")
-    """
     Logs an event.
     """
     logEvent(
