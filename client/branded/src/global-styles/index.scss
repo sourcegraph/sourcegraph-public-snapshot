@@ -6,7 +6,6 @@
 $border-radius: var(--border-radius);
 $border-radius-sm: var(--border-radius);
 $border-radius-lg: var(--border-radius);
-$popover-border-radius: var(--popover-border-radius);
 
 $box-shadow: var(--box-shadow);
 
@@ -97,17 +96,6 @@ $enable-transitions: false;
 
 * {
     box-sizing: border-box;
-}
-
-// Our simple popovers only need these styles. We don't want the caret or special font sizes from
-// Bootstrap's popover CSS.
-.popover-inner {
-    background-color: var(--color-bg-1);
-    border: solid 1px var(--border-color);
-    box-shadow: var(--dropdown-shadow);
-    border-radius: var(--popover-border-radius);
-    // Ensure content is clipped by border
-    overflow: hidden;
 }
 
 // Show a focus ring when performing keyboard navigation. Uses the polyfill at
