@@ -165,7 +165,10 @@ export const RepositoriesPanel: React.FunctionComponent<React.PropsWithChildren<
                               </tr>
                           ))
                         : repoFilterValues?.map((repoFilterValue, index) => (
-                              <tr key="index" className={classNames('text-monospace d-block', styles.resultsTableRow)}>
+                              <tr
+                                  key="index"
+                                  className={classNames('text-monospace text-break', styles.resultsTableRow)}
+                              >
                                   <td>
                                       <small>
                                           <Link
