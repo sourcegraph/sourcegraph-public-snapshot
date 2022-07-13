@@ -435,6 +435,13 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
  * Replaces the query of the provided `librarySpec`. If `librarySpec` or its query
  * is not properly parsable, just returns the original `librarySpec`.
  *
+ * Before inserting the updated query into the `librarySpec`, we check if appending
+ * the query to `- repositoriesMatchingQuery` results in a valid YAML, we do this
+ * because sometimes a search query might include an extra colon in it's text, and
+ * this confuses the YAML parser.
+ * If such extra colon exists, we want to append the query as a multi-line statement
+ * then.
+ *
  * @param librarySpec the raw batch spec YAML example code from a library spec
  * @param query the updated query to be inserted
  */
