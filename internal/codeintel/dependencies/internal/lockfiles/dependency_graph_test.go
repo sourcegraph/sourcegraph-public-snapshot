@@ -120,7 +120,7 @@ type testPkg struct {
 	version string
 }
 
-func (t *testPkg) VersionedPackageSyntax() string        { return string(t.name) + ":" + t.version }
+func (t *testPkg) VersionedPackageSyntax() string        { return string(t.name) }
 func (t *testPkg) PackageSyntax() reposource.PackageName { return t.name }
 func (t *testPkg) RepoName() api.RepoName                { return api.RepoName("test/" + t.name) }
 func (t *testPkg) PackageVersion() string                { return t.version }
