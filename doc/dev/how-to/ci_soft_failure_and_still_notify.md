@@ -36,6 +36,8 @@ func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 
 The `bk.SoftFail` function will make that step soft fail if and only if the exit code for that step is equal to `1` or `2`.
 
+## Editing your step so is also sends a notification on failures
+
 Now we want to add a custom notification as well:
 
 ```diff
