@@ -8,13 +8,14 @@ import { AuthenticatedUser } from '../../../../../auth'
 import { HeroPage } from '../../../../../components/HeroPage'
 import { PageTitle } from '../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../components/code-insights-page/CodeInsightsPage'
+import { CodeInsightsPage } from '../../../components'
 import {
     CodeInsightsBackendContext,
     isCaptureGroupInsight,
     isLangStatsInsight,
     isSearchBasedInsight,
 } from '../../../core'
+import { useUiFeatures } from '../../../hooks'
 
 import { EditCaptureGroupInsight } from './components/EditCaptureGroupInsight'
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
@@ -36,9 +37,14 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
     const { insightID, authenticatedUser } = props
 
     const { getInsightById } = useContext(CodeInsightsBackendContext)
+    const { licensed, insight: insightFeatures } = useUiFeatures()
 
     const insight = useObservable(useMemo(() => getInsightById(insightID), [getInsightById, insightID]))
     const { handleSubmit, handleCancel } = useEditPageHandlers({ id: insight?.id })
+
+    const editPermission = useObservable(
+        useMemo(() => insightFeatures.getEditPermissions(insight), [insightFeatures, insight])
+    )
 
     if (insight === undefined) {
         return <LoadingSpinner inline={false} />
@@ -88,7 +94,13 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
             )}
 
             {isLangStatsInsight(insight) && (
-                <EditLangStatsInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
+                <EditLangStatsInsight
+                    licensed={licensed}
+                    isEditAvailable={editPermission?.available}
+                    insight={insight}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                />
             )}
         </CodeInsightsPage>
     )
