@@ -20,7 +20,7 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
         >
           <svg
             aria-hidden="true"
-            class="iconInline icon"
+            class="mdi-icon iconInline icon"
             fill="none"
             height="64"
             role="img"
@@ -197,7 +197,7 @@ exports[`SignInPage renders sign in page (server) 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="iconInline icon"
+          class="mdi-icon iconInline icon"
           fill="none"
           height="64"
           role="img"

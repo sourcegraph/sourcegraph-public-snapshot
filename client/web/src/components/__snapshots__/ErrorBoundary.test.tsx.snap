@@ -10,7 +10,7 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
     >
       <alertcircleicon
         aria-hidden="true"
-        class="iconInline icon"
+        class="mdi-icon iconInline icon"
         role="img"
       />
     </div>
@@ -64,7 +64,7 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
     >
       <reloadicon
         aria-hidden="true"
-        class="iconInline icon"
+        class="mdi-icon iconInline icon"
         role="img"
       />
     </div>

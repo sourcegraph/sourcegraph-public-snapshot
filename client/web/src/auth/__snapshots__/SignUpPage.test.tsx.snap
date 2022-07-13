@@ -145,7 +145,7 @@ exports[`SignUpPage renders sign up page (server) 1`] = `
       >
         <svg
           aria-hidden="true"
-          class="iconInline icon"
+          class="mdi-icon iconInline icon"
           fill="none"
           height="64"
           role="img"
