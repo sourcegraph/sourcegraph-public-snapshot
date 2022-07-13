@@ -1,9 +1,9 @@
 import { FunctionComponent } from 'react'
 
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { Link, H3 } from '@sourcegraph/wildcard'
+import { Link, H3, Icon } from '@sourcegraph/wildcard'
 
 import { LsifIndexFields } from '../../../../graphql-operations'
 import { CodeIntelState } from '../../shared/components/CodeIntelState'
@@ -58,7 +58,7 @@ export const CodeIntelIndexNode: FunctionComponent<React.PropsWithChildren<CodeI
         </span>
         <span>
             <Link to={`./indexes/${node.id}`}>
-                <ChevronRightIcon />
+                <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
             </Link>
         </span>
     </>

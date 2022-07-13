@@ -1,11 +1,11 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiMapSearch } from '@mdi/js'
 import classNames from 'classnames'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, H5 } from '@sourcegraph/wildcard'
+import { Container, PageHeader, H5, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
@@ -126,7 +126,7 @@ const Header: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
 
 const EmptyList: React.FunctionComponent<React.PropsWithChildren<{}>> = () => (
     <div className="text-muted text-center mb-3 w-100">
-        <MapSearchIcon className="icon" />
+        <Icon className="icon" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <div className="pt-2">No batch specs have been created so far.</div>
     </div>
 )
