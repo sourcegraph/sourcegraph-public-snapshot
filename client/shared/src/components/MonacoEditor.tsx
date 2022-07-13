@@ -197,6 +197,9 @@ interface Props extends ThemeProps {
      * Issue to improve this: https://github.com/sourcegraph/sourcegraph/issues/29438
      */
     placeholder?: string
+
+    /** Whether to autofocus the Monaco editor when it mounts. Default: false. */
+    autoFocus?: boolean
 }
 
 interface State {
@@ -256,6 +259,10 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
     }
 
     public componentDidMount(): void {
+        if (this.props.autoFocus) {
+            this.focusInput()
+        }
+
         this.subscriptions.add(
             this.componentUpdates
                 .pipe(

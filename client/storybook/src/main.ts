@@ -80,6 +80,19 @@ const config: Config = {
         'storybook-dark-mode',
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
+        '@storybook/addon-docs',
+        {
+            name: '@storybook/addon-storysource',
+            options: {
+                rule: {
+                    test: /\.story\.tsx?$/,
+                },
+                sourceLoaderOptions: {
+                    injectStoryParameters: false,
+                    prettierConfig: { printWidth: 80, singleQuote: false },
+                },
+            },
+        },
     ],
 
     core: {

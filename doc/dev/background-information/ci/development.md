@@ -71,7 +71,7 @@ func addGoBuild(pipeline *bk.Pipeline) {
 
 #### Creating annotations
 
-Annotations get rendered in the Buildkite UI to present the viewer notices about the build.
+Annotations are used to present the viewer notices about the build and they get rendered in the Buildkite UI as well as when one executes `sg ci status`.
 The pipeline generator provides an API for this that, at a high level, works like this:
 
 1. In your script, leave a file in `./annotations`:
@@ -93,6 +93,8 @@ The pipeline generator provides an API for this that, at a high level, works lik
 
 3. That's it!
 
+Part of the annotation that gets generated also includes a link to view the job output and, if the build is on the main branch, a link to view the job logs on Grafana.
+
 For more details about best practices and additional features and capabilities, please refer to [the `bk.AnnotatedCmd` docstring](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/dev/ci/internal/buildkite+AnnotatedCmd+type:symbol&patternType=literal).
 
 #### Caching build artefacts
@@ -112,7 +114,7 @@ We do not publish data for successful builds or branch builds (for those, you ca
 
 For a brief overview, check out the [CI dashboard](https://sourcegraph.grafana.net/d/iBBWbxFnk/ci?orgId=1), which is a set of graphs based on the contents of uploaded logs.
 
-For more about querying logs, refer to the handbook page: [Grafana Cloud - CI logs](https://handbook.sourcegraph.com/departments/engineering/dev/tools/observability/cloud/#ci-logs).
+Some annotations also have a link "View Grafana logs" which will take one to Grafana cloud with a pre-populated query to view the log output of a failure (if any). For more about querying logs, refer to the handbook page: [Grafana Cloud - CI logs](https://handbook.sourcegraph.com/departments/engineering/dev/tools/observability/cloud/#ci-logs).
 
 #### Pipeline command tracing
 
@@ -173,7 +175,7 @@ For more details about best practices and additional features and capabilities, 
 Our continuous integration system is composed of two parts, a central server controled by Buildkite and agents that are operated by Sourcegraph within our own infrastructure.
 In order to provide strong isolation across builds, to prevent a previous build to create any effect on the next one, our agents are stateless jobs.
 
-When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.  
+When a build is dispatched by Buildkite, each individual job will be assigned to an agent in a pristine state. Each agent will execute its assigned job, automatically report back to Buildkite and finally shuts itself down. A fresh agent will then be created and will stand in line for the next job.
 
 This means that our agents are totally **stateless**, exactly like the runners used in GitHub actions.
 
@@ -207,4 +209,4 @@ You can schedule builds with build schedules, which automatically create builds 
 
 ![cron interval](https://user-images.githubusercontent.com/68532117/165358933-a27e4293-a363-4a77-84d7-a3ce67f743d2.png)
 
-> NOTE: You can also inject custom environment variables, for example, to trigger a custom [Run Type](#run-types). 
+> NOTE: You can also inject custom environment variables, for example, to trigger a custom [Run Type](#run-types).

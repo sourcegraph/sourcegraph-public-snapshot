@@ -353,55 +353,133 @@ func TestScanFullRepoPermissionsWithWildcardMatchingDepot(t *testing.T) {
 	}
 }
 
-// Confirm the rules as defined in
-// https://www.perforce.com/manuals/p4sag/Content/P4SAG/protections-implementation.html
-//
-// Modified slightly by removing the //depot prefix and only including rules
-// applicable to the actual user since that's what we'll get back from protect -u
 func TestFullScanMatchRules(t *testing.T) {
 	for _, tc := range []struct {
-		name       string
-		protects   string
-		canRead    string
-		cannotRead string
+		name          string
+		depot         string
+		protects      string
+		protectsFile  string
+		canReadAll    []string
+		cannotReadAny []string
+		noRules       bool
 	}{
+		// Confirm the rules as defined in
+		// https://www.perforce.com/manuals/p4sag/Content/P4SAG/protections-implementation.html
+		//
+		// Modified slightly by removing the //depot prefix and only including rules
+		// applicable to the actual user since that's what we'll get back from protect -u
 		{
-			name: "Without an exclusionary mapping, the most permissive line rules",
+			name:  "Without an exclusionary mapping, the most permissive line rules",
+			depot: "//depot/",
 			protects: `
 write       group       Dev2    *    //depot/dev/...
 read        group       Dev1    *    //depot/dev/productA/...
 write       group       Dev1    *    //depot/elm_proj/...
 `,
-			canRead: "dev/productA/readme.txt",
+			canReadAll: []string{"dev/productA/readme.txt"},
 		},
 		{
-			name: "Exclusion overrides prior inclusion",
+			name:  "Exclusion overrides prior inclusion",
+			depot: "//depot/",
 			protects: `
 write   group   Dev1   *   //depot/dev/...            ## Maria is a member of Dev1
 list    group   Dev1   *   -//depot/dev/productA/...  ## exclusionary mapping overrides the line above
 `,
-			cannotRead: "dev/productA/readme.txt",
+			cannotReadAny: []string{"dev/productA/readme.txt"},
 		},
 		{
-			name: "Exclusionary mapping and =, - before file path",
+			name:  "Exclusionary mapping and =, - before file path",
+			depot: "//depot/",
 			protects: `
 list   group   Rome    *   -//depot/dev/prodA/...   ## exclusion of list implies no read, no write, etc.
 read   group   Rome    *   //depot/dev/prodA/...   ## Rome can only read this one path
 `,
-			cannotRead: "dev/prodB/things.txt",
+			cannotReadAny: []string{"dev/prodB/things.txt"},
 			// The include appears after the exclude so it should take preference
-			canRead: "dev/prodA/things.txt",
+			canReadAll: []string{"dev/prodA/things.txt"},
 		},
 		{
-			name: "Exclusionary mapping and =, - before the file path and = before the access level",
+			name:  "Exclusionary mapping and =, - before the file path and = before the access level",
+			depot: "//depot/",
 			protects: `
 read  group     Rome    *  //depot/dev/...
 =read  group    Rome    *  -//depot/dev/prodA/...   ## Rome cannot read this one path
 `,
-			cannotRead: "dev/prodA/things.txt",
+			cannotReadAny: []string{"dev/prodA/things.txt"},
+		},
+		// Extra test cases not from the above perforce page. These are obfuscated tests
+		// generated from production use cases
+		{
+			name:         "File visibility on a group allowing repository level access",
+			depot:        "//depot/foo/bar/",
+			protectsFile: "testdata/sample-protects-ed.txt",
+			canReadAll:   []string{"depot/foo/bar", "depot/foo/bar/activities", "depot/foo/bar/activity-platform-api/BUILD", "depot/foo/bar/aa/build/README"},
+		},
+		{
+			name:  "Restricted access tests with edm",
+			depot: "//depot/foo/bar/",
+			// NOTE that this file has many =write exclude rules which are ignored since
+			// revoking write access with = does not remove read access.
+			protectsFile: "testdata/sample-protects-edm.txt",
+			// This file only includes exclude rules so our logic strips them out so that we
+			// end up with zero rules.
+			noRules: true,
+		},
+		{
+			name:         "Restricted access tests",
+			depot:        "//depot/foo/bar/",
+			protectsFile: "testdata/sample-protects-e.txt",
+			// This file only includes exclude rules so our logic strips them out so that we
+			// end up with zero rules.
+			noRules: true,
+		},
+		{
+			name:         "Allow read access to a path using a rule containing a wildcard",
+			depot:        "//depot/foo/bar/",
+			protectsFile: "testdata/sample-protects-edb.txt",
+			canReadAll:   []string{"db/plpgsql/seed.psql"},
+		},
+		{
+			name:         "Singular group allowing read access to a particular path",
+			depot:        "//depot/foo/bar/",
+			protectsFile: "testdata/sample-protects-readonly.txt",
+			canReadAll:   []string{"pom.xml"},
+		},
+		{
+			name:         "Allow high, allow low",
+			depot:        "//depot/foo/bar/",
+			protectsFile: "testdata/sample-protects-dcro.txt",
+			canReadAll:   []string{"depot/foo/bar"},
+		},
+		{
+			name:          "Allow high, deny low",
+			depot:         "//depot/foo/bar/",
+			protectsFile:  "testdata/sample-protects-everyone-revoke-read.txt",
+			cannotReadAny: []string{"depot/foo/bar"},
+		},
+		{
+			name:          "Deny high, deny low",
+			depot:         "//depot/foo/bar/",
+			protectsFile:  "testdata/sample-protects-everyone-revoke-read.txt",
+			cannotReadAny: []string{"depot/foo/bar"},
+		},
+		{
+			name:         "Allow path, allow path",
+			depot:        "//depot/foo/bar/",
+			protectsFile: "testdata/sample-protects-ro-aw.txt",
+			canReadAll:   []string{"depot/foo/bar"},
+		},
+		{
+			name:         "Allow read access to a path using a rule containing a wildcard",
+			depot:        "//depot/236/freeze/cc/",
+			protectsFile: "testdata/sample-protects-edb.txt",
+			canReadAll:   []string{"db/plpgsql/seed.psql"},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
+			if !strings.HasPrefix(tc.depot, "/") {
+				t.Fatal("depot must end in '/'")
+			}
 			conf.Mock(&conf.Unified{
 				SiteConfiguration: schema.SiteConfiguration{
 					ExperimentalFeatures: &schema.ExperimentalFeatures{
@@ -416,14 +494,28 @@ read  group     Rome    *  //depot/dev/...
 			ctx := context.Background()
 			ctx = actor.WithActor(ctx, &actor.Actor{UID: 1})
 
-			depot := "//depot/"
-			rc := io.NopCloser(strings.NewReader(tc.protects))
+			var rc io.ReadCloser
+			var err error
+			if len(tc.protects) > 0 {
+				rc = io.NopCloser(strings.NewReader(tc.protects))
+			}
+			if len(tc.protectsFile) > 0 {
+				rc, err = os.Open(tc.protectsFile)
+				if err != nil {
+					t.Fatal(err)
+				}
+			}
+			t.Cleanup(func() {
+				if err := rc.Close(); err != nil {
+					t.Fatal(err)
+				}
+			})
 			execer := p4ExecFunc(func(ctx context.Context, host, user, password string, args ...string) (io.ReadCloser, http.Header, error) {
 				return rc, nil, nil
 			})
 			p := NewTestProvider("", "ssl:111.222.333.444:1666", "admin", "password", execer)
 			p.depots = []extsvc.RepoID{
-				extsvc.RepoID(depot),
+				extsvc.RepoID(tc.depot),
 			}
 			perms := &authz.ExternalUserPermissions{
 				SubRepoPermissions: make(map[extsvc.RepoID]*authz.SubRepoPermissions),
@@ -431,16 +523,21 @@ read  group     Rome    *  //depot/dev/...
 			if err := scanProtects(rc, fullRepoPermsScanner(perms, p.depots)); err != nil {
 				t.Fatal(err)
 			}
-			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(depot)]
-			if !ok {
-				t.Fatal("no rules found")
+			rules, ok := perms.SubRepoPermissions[extsvc.RepoID(tc.depot)]
+			if !ok && tc.noRules {
+				return
 			}
-			checker, err := authz.NewSimpleChecker(api.RepoName(depot), rules.PathIncludes, rules.PathExcludes)
+			if !ok && !tc.noRules {
+				t.Fatal("no rules found")
+			} else if ok && tc.noRules {
+				t.Fatal("expected no rules")
+			}
+			checker, err := authz.NewSimpleChecker(api.RepoName(tc.depot), rules.PathIncludes, rules.PathExcludes)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if tc.canRead != "" {
-				ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(depot), []string{tc.canRead})
+			if len(tc.canReadAll) > 0 {
+				ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(tc.depot), tc.canReadAll)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -448,13 +545,15 @@ read  group     Rome    *  //depot/dev/...
 					t.Fatal("should be able to read path")
 				}
 			}
-			if tc.cannotRead != "" {
-				ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(depot), []string{tc.cannotRead})
-				if err != nil {
-					t.Fatal(err)
-				}
-				if ok {
-					t.Fatal("should not be able to read path")
+			if len(tc.cannotReadAny) > 0 {
+				for _, path := range tc.cannotReadAny {
+					ok, err = authz.CanReadAllPaths(ctx, checker, api.RepoName(tc.depot), []string{path})
+					if err != nil {
+						t.Fatal(err)
+					}
+					if ok {
+						t.Errorf("should not be able to read %q, but can", path)
+					}
 				}
 			}
 		})

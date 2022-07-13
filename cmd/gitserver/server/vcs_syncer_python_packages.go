@@ -68,8 +68,12 @@ func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposourc
 }
 
 func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
-	packageURL := dep.(*reposource.PythonVersionedPackage).PackageURL
-
+	pythonDep := dep.(*reposource.PythonVersionedPackage)
+	pypiFile, err := s.client.Version(ctx, pythonDep.Name, pythonDep.Version)
+	if err != nil {
+		return err
+	}
+	packageURL := pypiFile.URL
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {
 		return errors.Wrap(err, "download")

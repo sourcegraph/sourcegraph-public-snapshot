@@ -75,7 +75,7 @@ func TestRevisionValidation(t *testing.T) {
 					},
 				},
 			}},
-			wantMissingRepoRevisions: nil,
+			wantMissingRepoRevisions: []*search.RepositoryRevisions{},
 		},
 		{
 			repoFilters: []string{"repoFoo@*revBar:*!revBas"},
@@ -94,7 +94,7 @@ func TestRevisionValidation(t *testing.T) {
 					},
 				},
 			}},
-			wantMissingRepoRevisions: nil,
+			wantMissingRepoRevisions: []*search.RepositoryRevisions{},
 		},
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
@@ -151,7 +151,7 @@ func TestRevisionValidation(t *testing.T) {
 					},
 				},
 			}},
-			wantMissingRepoRevisions: nil,
+			wantMissingRepoRevisions: []*search.RepositoryRevisions{},
 			wantErr:                  nil,
 		},
 	}
@@ -343,14 +343,16 @@ func TestResolverPaginate(t *testing.T) {
 			},
 			pages: []Resolved{
 				{
-					RepoRevs: all.RepoRevs[:3],
+					RepoRevs:        all.RepoRevs[:3],
+					MissingRepoRevs: []*search.RepositoryRevisions{},
 					Next: types.MultiCursor{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
 						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
 					},
 				},
 				{
-					RepoRevs: all.RepoRevs[3:],
+					RepoRevs:        all.RepoRevs[3:],
+					MissingRepoRevs: []*search.RepositoryRevisions{},
 				},
 			},
 		},
@@ -365,7 +367,8 @@ func TestResolverPaginate(t *testing.T) {
 			},
 			pages: []Resolved{
 				{
-					RepoRevs: all.RepoRevs[3:],
+					RepoRevs:        all.RepoRevs[3:],
+					MissingRepoRevs: []*search.RepositoryRevisions{},
 				},
 			},
 		},
