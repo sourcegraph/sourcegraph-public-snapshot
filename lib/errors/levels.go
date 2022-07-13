@@ -23,6 +23,16 @@ type ClassifiedError struct {
 	level Level
 }
 
+// Ensure that classifiedError always implements the error interface.
+var _ error = (*ClassifiedError)(nil)
+
+func NewClassifiedError(err error, l Level) error {
+	return &ClassifiedError{
+		error: err,
+		level: l,
+	}
+}
+
 func (ce *ClassifiedError) Error() string {
 	return ce.error.Error()
 }
@@ -33,14 +43,4 @@ func (ce *ClassifiedError) IsWarn() bool {
 
 func (ce *ClassifiedError) IsError() bool {
 	return ce.level == LevelError
-}
-
-// Ensure that classifiedError always implements the error interface.
-var _ error = (*ClassifiedError)(nil)
-
-func NewClassifiedError(err error, l Level) error {
-	return &ClassifiedError{
-		error: err,
-		level: l,
-	}
 }
