@@ -14,7 +14,7 @@ forkname=sourcegraph/zoekt
 response="$(mktemp)"
 trap 'rm -f "$response"' EXIT
 
-curl --silent "https://api.github.com/repos/${forkname}/commits?per_page=1&sha=${version}" > "${response}"
+curl --silent --fail "https://api.github.com/repos/${forkname}/commits?per_page=1&sha=${version}" > "${response}"
 newsha="$(jq -r '.[0].sha[:12]' < "${response}")"
 newts="$( jq -r '.[0].commit.committer.date | fromdate | strftime("%Y%m%d%H%M%S")' < "${response}")"
 module="$(echo "${fork}@v0.0.0-${newts}-${newsha}")"
@@ -23,7 +23,7 @@ oldsha="$(go mod edit -print | grep "$fork" | grep -o '[a-f0-9]*$')"
 
 echo "https://github.com/sourcegraph/zoekt/compare/$oldsha...$newsha"
 
-curl --silent "https://api.github.com/repos/sourcegraph/zoekt/compare/$oldsha...$newsha" > "${response}"
+curl --silent --fail "https://api.github.com/repos/sourcegraph/zoekt/compare/$oldsha...$newsha" > "${response}"
 
 echo
 jq -r '.commits[] | "- https://github.com/sourcegraph/zoekt/commit/" + .sha[:10] + " " + (.commit.message | split("\n")[0])' < "${response}" |
