@@ -27,11 +27,11 @@ func (ce *ClassifiedError) Error() string {
 	return ce.error.Error()
 }
 
-func (ce *ClassifiedError) IsLevelWarn() bool {
+func (ce *ClassifiedError) IsWarn() bool {
 	return ce.level == LevelWarn
 }
 
-func (ce *ClassifiedError) IsLevelError() bool {
+func (ce *ClassifiedError) IsError() bool {
 	return ce.level == LevelError
 }
 
