@@ -57,6 +57,12 @@ func CodeInsightsQueryDefaults(allReposInsight bool) searchquery.Parameters {
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		},
+		{
+			Field:      searchquery.FieldPatternType,
+			Value:      "literal",
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
 	}
 }
 
