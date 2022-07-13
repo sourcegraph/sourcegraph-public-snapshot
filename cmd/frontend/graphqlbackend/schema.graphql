@@ -6089,6 +6089,20 @@ type AnalyticsReposSummartResult {
 }
 
 """
+Batch changes analytics.
+"""
+type AnalyticsBatchChangesResult {
+    """
+    Changesets created
+    """
+    changesetsCreated: AnalyticsStatItem!
+    """
+    Changesets merged
+    """
+    changesetsMerged: AnalyticsStatItem!
+}
+
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -6112,6 +6126,10 @@ type Analytics {
     Repositories summary statistics.
     """
     repos: AnalyticsReposSummartResult!
+    """
+    Batch changes statistics
+    """
+    batchChanges(dateRange: AnalyticsDateRange): AnalyticsBatchChangesResult!
 }
 
 """
