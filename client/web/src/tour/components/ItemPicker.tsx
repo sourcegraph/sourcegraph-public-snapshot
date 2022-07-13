@@ -1,9 +1,9 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Text } from '@sourcegraph/wildcard'
+import { Button, Text, Icon } from '@sourcegraph/wildcard'
 
 import styles from './ItemPicker.module.scss'
 
@@ -28,7 +28,9 @@ export const ItemPicker = <TItem extends string>({
     <div className={className}>
         <div className="d-flex justify-content-between">
             <Text className="mt-0 mb-1">{title}</Text>
-            <CloseIcon onClick={onClose} size="1rem" />
+            <Button variant="icon" onClick={onClose}>
+                <Icon svgPath={mdiClose} inline={false} aria-label="Close" height="1rem" width="1rem" />
+            </Button>
         </div>
         <div className="d-flex flex-wrap">
             {items.map(language => (
