@@ -19,7 +19,6 @@ import {
     Input,
     Modal,
     Icon,
-    useMatchMedia,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -52,7 +51,6 @@ export const NotebooksListPageHeader: React.FunctionComponent<
 > = ({ authenticatedUser, telemetryService, setImportState, importNotebook }) => {
     const fileInputReference = useRef<HTMLInputElement>(null)
     // Taken from global-styles/breakpoints.css , $viewport-md
-    const isWideScreen = useMatchMedia('(min-width: 768px)')
 
     const onImportMenuItemSelect = useCallback(() => {
         telemetryService.log('SearchNotebookImportMarkdownNotebookButtonClick')
@@ -99,7 +97,7 @@ export const NotebooksListPageHeader: React.FunctionComponent<
 
     return (
         <>
-            {isWideScreen && <ToggleNotepadButton telemetryService={telemetryService} className="mr-2" />}
+            <ToggleNotepadButton telemetryService={telemetryService} className="mr-2 d-none d-md-inline" />
             {/* The file upload input has to always be present in the DOM, otherwise the upload process
             does not complete when the menu below closes.  */}
             <Input
