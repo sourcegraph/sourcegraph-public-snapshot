@@ -34,18 +34,16 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
 }) => (
     <Menu>
         {({ isExpanded }) => (
-            <>
-                <li className={classNames('mr-2', navStyles.navItem)}>
-                    <MenuButton
-                        className={classNames('d-flex align-items-center text-decoration-none')}
-                        aria-label={`${isExpanded ? 'Close' : 'Open'} search actions menu`}
-                        variant="secondary"
-                        outline={true}
-                        size="sm"
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiDotsHorizontal} />
-                    </MenuButton>
-                </li>
+            <li className={classNames('mr-2', navStyles.navItem)}>
+                <MenuButton
+                    className={classNames('d-flex align-items-center text-decoration-none')}
+                    aria-label={`${isExpanded ? 'Close' : 'Open'} search actions menu`}
+                    variant="secondary"
+                    outline={true}
+                    size="sm"
+                >
+                    <Icon aria-hidden={true} svgPath={mdiDotsHorizontal} />
+                </MenuButton>
                 <MenuList tabIndex={0} position={Position.bottomEnd} aria-label="Search Actions. Open menu">
                     {resultsFound && (
                         <>
@@ -82,11 +80,6 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                                     ? 'Code monitors only support type:diff or type:commit searches.'
                                     : undefined
                             }
-                            aria-label={
-                                authenticatedUser && !canCreateMonitor
-                                    ? 'Code monitors only support type:diff or type:commit searches.'
-                                    : undefined
-                            }
                             to={createCodeMonitorAction.url}
                         >
                             <Icon
@@ -99,12 +92,12 @@ export const SearchActionsMenu: React.FunctionComponent<SearchActionsMenuProps> 
                             Create Monitor
                         </MenuLink>
                     )}
-                    <MenuItem onSelect={onSaveQueryClick}>
+                    <MenuItem onSelect={onSaveQueryClick} disabled={!authenticatedUser}>
                         <Icon aria-hidden={true} className="mr-1" svgPath={mdiBookmarkOutline} />
                         Save search
                     </MenuItem>
                 </MenuList>
-            </>
+            </li>
         )}
     </Menu>
 )
