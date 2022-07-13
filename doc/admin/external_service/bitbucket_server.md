@@ -4,7 +4,7 @@ Site admins can sync Git repositories hosted on [Bitbucket Server / Bitbucket Da
 
 To connect Bitbucket Server / Bitbucket Data Center to Sourcegraph:
 
-1. Go to **Site admin > Manage repositories > Add repositories**
+1. Go to **Site admin > Manage code hosts > Add repositories**
 1. Select **Bitbucket Server / Bitbucket Data Center**.
 1. Configure the connection to Bitbucket Server / Bitbucket Data Center using the action buttons above the text field, and additional fields can be added using <kbd>Cmd/Ctrl+Space</kbd> for auto-completion. See the [configuration documentation below](#configuration).
 1. Press **Add repositories**.
@@ -40,7 +40,7 @@ To set up webhooks:
 
 1. Connect Bitbucket Server / Bitbucket Data Center to Sourcegraph (_see instructions above_).
 1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server / Bitbucket Data Center instance.
-1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the Bitbucket Server / Bitbucket Data Center configuration.
+1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the Bitbucket Server / Bitbucket Data Center configuration.
 1. Add the `"webhooks"` property to `"plugin"` (you can generate a secret with `openssl rand -hex 32`):<br /> `"plugin": {"webhooks": {"secret": "verylongrandomsecret"}}`
 1. Click **Update repositories**.
 1. Note the webhook URL displayed below the **Update repositories** button.
@@ -66,7 +66,7 @@ With the [Sourcegraph Bitbucket Server](../../integration/bitbucket_server.md#so
 1. Connect Bitbucket Server / Bitbucket Data Center to Sourcegraph (_see instructions above_).
 1. Follow the [instructions to set up repository permissions](../repo/permissions.md#bitbucket_server) with Bitbucket Server / Bitbucket Data Center.
 1. Install the [Sourcegraph Bitbucket Server plugin](../../integration/bitbucket_server.md#sourcegraph-bitbucket-server-plugin) on your Bitbucket Server / Bitbucket Data Center instance.
-1. In Sourcegraph, go to **Site admin > Manage repositories** and edit the Bitbucket Server / Bitbucket Data Center configuration.
+1. In Sourcegraph, go to **Site admin > Manage code hosts** and edit the Bitbucket Server / Bitbucket Data Center configuration.
 1. Add the `"plugin.permissions"` property:
 
 ```json
@@ -103,6 +103,6 @@ If enabled, the default rate is set at 28,800 per hour (8 per second) which can 
 
 ## Configuration
 
-Bitbucket Server / Bitbucket Data Center connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage repositories" area.
+Bitbucket Server / Bitbucket Data Center connections support the following configuration options, which are specified in the JSON editor in the site admin "Manage code hosts" area.
 
 <div markdown-func=jsonschemadoc jsonschemadoc:path="admin/external_service/bitbucket_server.schema.json">[View page on docs.sourcegraph.com](https://docs.sourcegraph.com/admin/external_service/bitbucket_server) to see rendered content.</div>
