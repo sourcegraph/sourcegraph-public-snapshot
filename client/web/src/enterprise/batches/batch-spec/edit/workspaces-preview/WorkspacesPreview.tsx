@@ -182,7 +182,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         <H4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</H4>
     ) : (
         <>
-            <H4 className={classNames(styles.instruction, 'd-flex align-items-center')}>
+            <H4 className={classNames(styles.instruction, styles.exampleOnStatement)}>
                 {hasPreviewed ? 'Modify your' : 'Add an'}
                 <span className="text-monospace mx-1">on:</span> statement to preview repositories.
                 {!hasPreviewed && (
@@ -228,7 +228,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
     }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection])
 
     return (
-        <div className="d-flex flex-column align-items-center w-100 h-100">
+        <div className={styles.container}>
             <WorkspacesListHeader>
                 <span>Workspaces {isReadOnly ? '' : 'preview '}</span>
                 {(isServerStale || resolutionState === 'CANCELED' || !hasPreviewed) &&

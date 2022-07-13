@@ -1,23 +1,41 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .form {
-    display: flex;
     flex: 1;
+    display: flex;
+    flex-wrap: wrap;
     margin-top: 1.5rem;
-    // Default of min-height: auto when this element is display: flex allows children to
-    // set its height. We want to keep this fixed and have children overflow: auto
-    // instead.
-    min-height: 0;
+
+    // The primary 3-column layout is adopted above the lg breakpoint
+    @media (--lg-breakpoint-up) {
+        flex-wrap: nowrap;
+        // Default of min-height: auto when this element is display: flex allows children
+        // to set its height. In the 3-column layout, we want to keep the height fixed and
+        // have children overflow: auto instead.
+        min-height: 0;
+    }
 }
 
 .editor-container {
-    display: flex;
-    flex-direction: column;
     flex: 1;
-    min-width: 20%;
-    height: 100%;
+    max-width: 100%;
+
+    // The library pane is visible above the md breakpoint
+    @media (--md-breakpoint-up) {
+        min-width: 20%;
+    }
+
+    // The primary 3-column layout is adopted above the lg breakpoint
+    @media (--lg-breakpoint-up) {
+        display: flex;
+        flex-direction: column;
+        height: 100%;
+    }
 }
 
 .editor {
     flex: 1;
+    min-height: 0;
     max-height: 100%;
 }
 
@@ -37,5 +55,4 @@
 .download-link {
     padding: 0;
     font-weight: normal;
-    margin-bottom: 1rem;
 }
