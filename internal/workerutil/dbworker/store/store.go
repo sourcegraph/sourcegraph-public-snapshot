@@ -145,8 +145,7 @@ type Store interface {
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
 
 	// CanceledJobs returns all the jobs that are to be canceled. To cancel a running job, the `cancel` field is set
-	// to true. These jobs will be found eventually and then canceled. They will end up in canceled state, if they
-	// don't finish before the next cycle scan for canceled jobs.
+	// to true. These jobs will be found eventually and then canceled. They will end up in canceled state.
 	CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error)
 }
 
