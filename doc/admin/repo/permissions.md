@@ -237,7 +237,7 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 <img src="https://imgur.com/1qxEAye.png" width="800">
 
-Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
+Go to your Sourcegraph's *Manage code hosts* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
 
 ```json
 {
