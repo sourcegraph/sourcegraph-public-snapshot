@@ -1,4 +1,9 @@
-import { excludeRepo, haveMatchingWorkspaces, insertFieldIntoLibraryItem, insertQueryIntoLibraryItem } from './yaml-util'
+import {
+    excludeRepo,
+    haveMatchingWorkspaces,
+    insertFieldIntoLibraryItem,
+    insertQueryIntoLibraryItem,
+} from './yaml-util'
 
 const SPEC_WITH_ONE_REPOSITORY = `name: hello-world
 on:
@@ -350,11 +355,17 @@ describe('Batch spec yaml utils', () => {
         })
 
         it('should append query as multiline statement if query isnt valid YAML string', () => {
-            const query = 'context:global repo:github.com/foo/bar file:package.json fork:yes "@types:node": "..." patternType:structural'
+            const query =
+                'context:global repo:github.com/foo/bar file:package.json fork:yes "@types:node": "..." patternType:structural'
             const newSpec = insertQueryIntoLibraryItem(SPEC_WITH_QUERY, query)
-            expect(newSpec).toEqual(SPEC_WITH_QUERY.replace('file:README.md', `|
+            expect(newSpec).toEqual(
+                SPEC_WITH_QUERY.replace(
+                    'file:README.md',
+                    `|
         ${query}
-`))
+`
+                )
+            )
         })
     })
 })
