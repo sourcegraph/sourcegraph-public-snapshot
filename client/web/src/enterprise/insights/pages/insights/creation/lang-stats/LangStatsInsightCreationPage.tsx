@@ -126,7 +126,6 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
                 touched={false}
                 className="pb-5"
                 onSubmit={handleSubmit}
-                // onCancel={handleCancel}
                 onChange={event => setInitialFormValues(event.values)}
             >
                 {form => (

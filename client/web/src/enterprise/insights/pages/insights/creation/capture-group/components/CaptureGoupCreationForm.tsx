@@ -1,11 +1,9 @@
-import React, { useMemo } from 'react'
+import React, { FC, ReactNode } from 'react'
 
 import classNames from 'classnames'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, Card, Checkbox, Input, Label, Link, useObservable } from '@sourcegraph/wildcard'
+import { Card, Checkbox, Input, Label, Link } from '@sourcegraph/wildcard'
 
-import { LoaderButton } from '../../../../../../../components/LoaderButton'
 import {
     CodeInsightTimeStepPicker,
     CodeInsightDashboardsVisibility,
@@ -13,11 +11,10 @@ import {
     getDefaultInputProps,
     useFieldAPI,
     Form,
-    FORM_ERROR,
     RepositoriesField,
     LimitedAccessLabel,
+    SubmissionErrors,
 } from '../../../../../components'
-import { Insight } from '../../../../../core'
 import { useUiFeatures } from '../../../../../hooks'
 import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
@@ -27,7 +24,6 @@ import { CaptureGroupQueryInput } from './query-input/CaptureGroupQueryInput'
 import { SearchQueryChecks } from './search-query-checks/SearchQueryChecks'
 
 interface CaptureGroupCreationFormProps {
-    mode: 'creation' | 'edit'
     form: Form<CaptureGroupFormFields>
     title: useFieldAPI<CaptureGroupFormFields['title']>
     repositories: useFieldAPI<CaptureGroupFormFields['repositories']>
@@ -37,17 +33,20 @@ interface CaptureGroupCreationFormProps {
     query: useFieldAPI<CaptureGroupFormFields['groupSearchQuery']>
 
     dashboardReferenceCount?: number
-    isFormClearActive?: boolean
+    isFormClearActive: boolean
     className?: string
-    insight?: Insight
+    children: (inputs: RenderPropertyInputs) => ReactNode
 
-    onCancel: () => void
     onFormReset: () => void
 }
 
-export const CaptureGroupCreationForm: React.FunctionComponent<
-    React.PropsWithChildren<CaptureGroupCreationFormProps>
-> = props => {
+export interface RenderPropertyInputs {
+    submitting: boolean
+    submitErrors: SubmissionErrors
+    isFormClearActive: boolean
+}
+
+export const CaptureGroupCreationForm: FC<CaptureGroupCreationFormProps> = props => {
     const {
         form,
         title,
@@ -56,37 +55,22 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
         query,
         step,
         stepValue,
-        mode,
         dashboardReferenceCount,
         className,
         isFormClearActive,
+        children,
         onFormReset,
-        onCancel,
-        insight,
     } = props
 
     const {
-        ref,
         handleSubmit,
         formAPI: { submitErrors, submitting },
     } = form
-
-    const { licensed, insight: insightFeatures } = useUiFeatures()
-    const isEditMode = mode === 'edit'
-
-    const creationPermission = useObservable(
-        useMemo(
-            () =>
-                isEditMode && insight
-                    ? insightFeatures.getEditPermissions(insight)
-                    : insightFeatures.getCreationPermissions(),
-            [insightFeatures, isEditMode, insight]
-        )
-    )
+    const { licensed } = useUiFeatures()
 
     return (
         // eslint-disable-next-line react/forbid-elements
-        <form noValidate={true} ref={ref} className={className} onSubmit={handleSubmit} onReset={onFormReset}>
+        <form noValidate={true} className={className} onSubmit={handleSubmit} onReset={onFormReset}>
             <FormGroup
                 name="insight repositories"
                 title="Targeted repositories"
@@ -220,41 +204,7 @@ export const CaptureGroupCreationForm: React.FunctionComponent<
 
             <hr className="my-4 w-100" />
 
-            {!licensed && !isEditMode && (
-                <LimitedAccessLabel
-                    message="Unlock Code Insights to create unlimited insights"
-                    className="my-3 mt-n2"
-                />
-            )}
-
-            <footer className="d-flex flex-wrap align-items-center">
-                {submitErrors?.[FORM_ERROR] && <ErrorAlert className="w-100" error={submitErrors[FORM_ERROR]} />}
-
-                <LoaderButton
-                    type="submit"
-                    alwaysShowLabel={true}
-                    loading={submitting}
-                    label={submitting ? 'Submitting' : isEditMode ? 'Save changes' : 'Create code insight'}
-                    disabled={submitting || !creationPermission?.available}
-                    data-testid="insight-save-button"
-                    className="mr-2 mb-2"
-                    variant="primary"
-                />
-
-                <Button type="button" variant="secondary" outline={true} className="mb-2 mr-auto" onClick={onCancel}>
-                    Cancel
-                </Button>
-
-                <Button
-                    type="reset"
-                    disabled={!isFormClearActive}
-                    variant="secondary"
-                    outline={true}
-                    className="border-0"
-                >
-                    Clear all fields
-                </Button>
-            </footer>
+            {children({ submitting, submitErrors, isFormClearActive })}
         </form>
     )
 }
