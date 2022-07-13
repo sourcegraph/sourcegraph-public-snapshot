@@ -31,7 +31,7 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 			switch cur.Type() {
 
 			case "module":
-				found := findNodeInScopePython(swapNode(node, cur), ident)
+				found := squirrel.findNodeInScopePython(swapNode(node, cur), ident)
 				if found != nil {
 					return found, nil
 				}
@@ -147,7 +147,7 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 					squirrel.breadcrumb(swapNode(node, cur), "getDefPython: expected function_definition to have a block body")
 					continue
 				}
-				found := findNodeInScopePython(swapNode(node, body), ident)
+				found := squirrel.findNodeInScopePython(swapNode(node, body), ident)
 				if found != nil {
 					return found, nil
 				}
@@ -169,7 +169,9 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 	}
 }
 
-func findNodeInScopePython(block Node, ident string) *Node {
+func (squirrel *SquirrelService) findNodeInScopePython(block Node, ident string) (ret *Node) {
+	defer squirrel.onCall(block, &Tuple{String(block.Type()), String(ident)}, lazyNodeStringer(&ret))()
+
 	for i := 0; i < int(block.NamedChildCount()); i++ {
 		child := block.NamedChild(i)
 
@@ -204,7 +206,7 @@ func findNodeInScopePython(block Node, ident string) *Node {
 			if next == nil {
 				return nil
 			}
-			found = findNodeInScopePython(swapNode(block, next), ident)
+			found = squirrel.findNodeInScopePython(swapNode(block, next), ident)
 			if found != nil {
 				return found
 			}
@@ -216,7 +218,7 @@ func findNodeInScopePython(block Node, ident string) *Node {
 			if next == nil {
 				return nil
 			}
-			found = findNodeInScopePython(swapNode(block, next), ident)
+			found = squirrel.findNodeInScopePython(swapNode(block, next), ident)
 			if found != nil {
 				return found
 			}
@@ -228,7 +230,7 @@ func findNodeInScopePython(block Node, ident string) *Node {
 			if next == nil {
 				return nil
 			}
-			found := findNodeInScopePython(swapNode(block, next), ident)
+			found := squirrel.findNodeInScopePython(swapNode(block, next), ident)
 			if found != nil {
 				return found
 			}
@@ -238,7 +240,7 @@ func findNodeInScopePython(block Node, ident string) *Node {
 			if next == nil {
 				return nil
 			}
-			found := findNodeInScopePython(swapNode(block, next), ident)
+			found := squirrel.findNodeInScopePython(swapNode(block, next), ident)
 			if found != nil {
 				return found
 			}
@@ -252,7 +254,7 @@ func findNodeInScopePython(block Node, ident string) *Node {
 							if next == nil {
 								return nil
 							}
-							found := findNodeInScopePython(swapNode(block, next), ident)
+							found := squirrel.findNodeInScopePython(swapNode(block, next), ident)
 							if found != nil {
 								return found
 							}
@@ -287,7 +289,7 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeP
 
 	switch ty2 := ty.(type) {
 	case ModuleTypePython:
-		return findNodeInScopePython(ty2.module, field), nil
+		return squirrel.findNodeInScopePython(ty2.module, field), nil
 	case ClassTypePython:
 		body := ty2.def.ChildByFieldName("body")
 		if body == nil {
@@ -423,14 +425,14 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program Node, ident string) (ret *Node, err error) {
 	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
-	dottedNameDef := func(dottedName *sitter.Node) *Node {
-		if dottedName == nil || dottedName.Type() != "dotted_name" {
+	findModule := func(module *sitter.Node) *Node {
+		if module == nil || module.Type() != "dotted_name" {
 			return nil
 		}
 		path := program.RepoCommitPath.Path
 		path = strings.TrimSuffix(path, filepath.Base(program.RepoCommitPath.Path))
 		path = strings.TrimSuffix(path, "/")
-		for _, component := range children(dottedName) {
+		for _, component := range children(module) {
 			if component.Type() != "identifier" {
 				return nil
 			}
@@ -445,12 +447,31 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 		return result
 	}
 
-	for _, child := range children(program.Node) {
-		if child.Type() == "import_statement" {
-			for _, importChild := range children(child) {
+	findModuleIdent := func(module *sitter.Node, ident2 string) *Node {
+		foundModule := findModule(module)
+		if foundModule != nil {
+			return squirrel.findNodeInScopePython(*foundModule, ident2)
+		}
+		return nil
+	}
+
+	for _, stmt := range children(program.Node) {
+		switch stmt.Type() {
+		case "import_statement":
+			for _, importChild := range children(stmt) {
 				switch importChild.Type() {
 				case "dotted_name":
-					return dottedNameDef(importChild), nil
+					if importChild.NamedChildCount() == 0 {
+						continue
+					}
+					lastChild := importChild.NamedChild(int(importChild.NamedChildCount()) - 1)
+					if lastChild == nil || lastChild.Type() != "identifier" {
+						continue
+					}
+					if lastChild.Content(program.Contents) != ident {
+						continue
+					}
+					return findModule(importChild), nil
 				case "aliased_import":
 					alias := importChild.ChildByFieldName("alias")
 					if alias == nil || alias.Type() != "identifier" {
@@ -460,7 +481,84 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 						continue
 					}
 					name := importChild.ChildByFieldName("name")
-					return dottedNameDef(name), nil
+					return findModule(name), nil
+				}
+			}
+		case "import_from_statement":
+			moduleName := stmt.ChildByFieldName("module_name")
+			if moduleName == nil {
+				continue
+			}
+			switch moduleName.Type() {
+			case "relative_import":
+				// TODO
+			case "dotted_name":
+				// Advance a cursor to just past the "import" keyword
+				i := 0
+				for ; i < int(stmt.ChildCount()); i++ {
+					if stmt.Child(i).Type() == "import" {
+						i++
+						break
+					}
+				}
+				if i == 0 || i >= int(stmt.ChildCount()) {
+					continue
+				}
+
+				// Check if it's a wildcard import
+				if stmt.Child(i).Type() == "wildcard_import" {
+					found := findModuleIdent(moduleName, ident)
+					if found != nil {
+						return found, nil
+					}
+				}
+
+				// Loop through the imports
+				for ; i < int(stmt.ChildCount()); i++ {
+					child := stmt.Child(i)
+					if !child.IsNamed() {
+						continue
+					}
+					switch child.Type() {
+					case "dotted_name":
+						if child.NamedChildCount() == 0 {
+							continue
+						}
+						childIdent := child.NamedChild(0)
+						if childIdent.Type() != "identifier" {
+							continue
+						}
+						if childIdent.Content(program.Contents) != ident {
+							continue
+						}
+						found := findModuleIdent(moduleName, ident)
+						if found != nil {
+							return found, nil
+						}
+					case "aliased_import":
+						alias := child.ChildByFieldName("alias")
+						if alias == nil || alias.Type() != "identifier" {
+							continue
+						}
+						if alias.Content(program.Contents) != ident {
+							continue
+						}
+						name := child.ChildByFieldName("name")
+						if name == nil || name.Type() != "dotted_name" {
+							continue
+						}
+						if name.NamedChildCount() == 0 {
+							continue
+						}
+						nameIdent := name.NamedChild(0)
+						if nameIdent == nil || nameIdent.Type() != "identifier" {
+							continue
+						}
+						found := findModuleIdent(moduleName, nameIdent.Content(program.Contents))
+						if found != nil {
+							return found, nil
+						}
+					}
 				}
 			}
 		}
