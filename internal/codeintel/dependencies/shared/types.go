@@ -26,6 +26,15 @@ const (
 	IndexFidelityGraph IndexFidelity = "graph"
 )
 
+type LockfileIndex struct {
+	ID                   int
+	RepositoryID         int
+	Commit               string
+	LockfileReferenceIDs []int
+	Lockfile             string
+	Fidelity             IndexFidelity
+}
+
 type Repo struct {
 	ID      int
 	Scheme  string
