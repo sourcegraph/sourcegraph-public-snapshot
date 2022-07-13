@@ -8,9 +8,9 @@ import (
 )
 
 // HasCommit returns true if and only if the given commit is successfully found in locally
-// tracked remote branches.
+// tracked remote branches from 'origin'.
 func HasCommit(ctx context.Context, commit string) bool {
-	remoteBranches, err := run.Cmd(ctx, "git branch -r --contains", commit).Run().Lines()
+	remoteBranches, err := run.Cmd(ctx, "git branch --remotes --contains", commit).Run().Lines()
 	if err != nil {
 		return false
 	}
