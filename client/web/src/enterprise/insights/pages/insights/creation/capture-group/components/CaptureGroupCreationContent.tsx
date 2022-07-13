@@ -1,4 +1,4 @@
-import { FC, useCallback } from 'react'
+import { FC, ReactNode, useCallback } from 'react'
 
 import { noop } from 'lodash'
 
@@ -16,12 +16,11 @@ import {
     insightRepositoriesAsyncValidator,
     insightTitleValidator,
 } from '../../../../../components'
-import { Insight } from '../../../../../core'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
 import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
 
-import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
+import { CaptureGroupCreationForm, RenderPropertyInputs } from './CaptureGoupCreationForm'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {
     repositories: '',
@@ -36,18 +35,17 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
 const queryRequiredValidator = createRequiredValidator('Query is a required field.')
 
 interface CaptureGroupCreationContentProps {
-    mode: 'creation' | 'edit'
+    touched: boolean
     initialValues?: Partial<CaptureGroupFormFields>
     className?: string
-    insight?: Insight
-
+    children: (inputs: RenderPropertyInputs) => ReactNode
     onSubmit: (values: CaptureGroupFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onChange?: (event: FormChangeEvent<CaptureGroupFormFields>) => void
     onCancel: () => void
 }
 
 export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> = props => {
-    const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel, insight } = props
+    const { touched, className, initialValues = {}, children, onSubmit, onChange = noop } = props
 
     // Search query validators
     const validateChecks = useCallback((value: string | undefined) => {
@@ -67,7 +65,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
 
     const form = useForm<CaptureGroupFormFields>({
         initialValues: { ...INITIAL_VALUES, ...initialValues },
-        touched: mode === 'edit',
+        touched,
         onSubmit,
         onChange,
     })
@@ -146,7 +144,6 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
         <CreationUiLayout className={className}>
             <CreationUIForm
                 as={CaptureGroupCreationForm}
-                mode={mode}
                 form={form}
                 title={title}
                 repositories={repositories}
@@ -156,10 +153,10 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
                 isFormClearActive={hasFilledValue}
                 allReposMode={allReposMode}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
-                insight={insight}
-                onCancel={onCancel}
                 onFormReset={handleFormReset}
-            />
+            >
+                {children}
+            </CreationUIForm>
 
             <CreationUIPreview
                 as={LineChartLivePreview}
