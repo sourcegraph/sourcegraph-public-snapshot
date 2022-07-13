@@ -17,9 +17,13 @@ import {
     RepositoriesField,
     SubmissionErrors,
     useField,
+    EditableDataSeries,
     useForm,
 } from '../../../../../components'
+import { useEditableSeries } from '../../../../../components/creation-ui/form-series/use-editable-series'
 import { useUiFeatures } from '../../../../../hooks'
+import { ComputeLivePreview } from '../../ComputeLivePreview'
+import { getSanitizedSeries } from '../../search-insight/utils/insight-sanitizer'
 import { ComputeInsightMap, CreateComputeInsightFormFields } from '../types'
 
 import { ComputeInsightMapPicker } from './ComputeInsightMapPicker'
@@ -35,6 +39,7 @@ const INITIAL_INSIGHT_VALUES: CreateComputeInsightFormFields = {
 type NativeContainerProps = Omit<HTMLAttributes<HTMLDivElement>, 'onSubmit' | 'onChange'>
 
 interface ComputeInsightCreationContentProps extends NativeContainerProps {
+    /** This component might be used in edit or creation insight case. */
     mode?: 'creation' | 'edit'
     initialValue?: Partial<CreateComputeInsightFormFields>
 
@@ -45,6 +50,7 @@ interface ComputeInsightCreationContentProps extends NativeContainerProps {
 
 export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProps> = props => {
     const { mode = 'creation', initialValue, onChange, onSubmit, onCancel, ...attributes } = props
+
     const { licensed } = useUiFeatures()
 
     const { formAPI, handleSubmit } = useForm<CreateComputeInsightFormFields>({
@@ -79,6 +85,14 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
         name: 'groupBy',
         formApi: formAPI,
     })
+
+    const { series: editSeries } = useEditableSeries(series)
+
+    // If some fields that needed to run live preview  are invalid
+    // we should disable live chart preview
+    const allFieldsForPreviewAreValid =
+        repositories.meta.validState === 'VALID' &&
+        (series.meta.validState === 'VALID' || editSeries.some(series => series.valid))
 
     return (
         <CreationUiLayout {...attributes}>
@@ -157,7 +171,29 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 </FormGroup>
             </CreationUIForm>
 
-            <CreationUIPreview>This is live preview</CreationUIPreview>
+            <CreationUIPreview
+                as={ComputeLivePreview}
+                disabled={!allFieldsForPreviewAreValid}
+                repositories={repositories.meta.value}
+                series={seriesToPreview(editSeries)}
+            />
         </CreationUiLayout>
     )
+}
+
+function seriesToPreview(
+    currentSeries: EditableDataSeries[]
+): {
+    query: string
+    label: string
+    generatedFromCaptureGroup: boolean
+    stroke: string
+}[] {
+    const validSeries = currentSeries.filter(series => series.valid)
+    return getSanitizedSeries(validSeries).map(series => ({
+        query: series.query,
+        stroke: series.stroke ? series.stroke : '',
+        label: series.name,
+        generatedFromCaptureGroup: false,
+    }))
 }

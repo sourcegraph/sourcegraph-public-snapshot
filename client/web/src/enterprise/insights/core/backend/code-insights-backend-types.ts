@@ -1,6 +1,7 @@
 import { Duration } from 'date-fns'
 
 import { Series } from '../../../../charts'
+import { GroupByField } from '../../../../graphql-operations'
 import {
     RuntimeInsight,
     InsightDashboard,
@@ -18,6 +19,7 @@ export interface CategoricalChartContent<Datum> {
     getDatumName: (datum: Datum) => string
     getDatumColor: (datum: Datum) => string | undefined
     getDatumLink?: (datum: Datum) => string | undefined
+    getCategory?: (datum: Datum) => string | undefined
 }
 
 export interface SeriesChartContent<Datum> {
@@ -107,9 +109,10 @@ export interface InsightPreviewSettings {
 
 export interface SeriesPreviewSettings {
     query: string
-    generatedFromCaptureGroup: boolean
+    generatedFromCaptureGroup?: boolean
     label: string
     stroke: string
+    groupBy?: GroupByField
 }
 
 export interface AccessibleInsightInfo {

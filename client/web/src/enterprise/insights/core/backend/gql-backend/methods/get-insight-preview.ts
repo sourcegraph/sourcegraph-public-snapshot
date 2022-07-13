@@ -47,9 +47,10 @@ export const getInsightsPreview = (
                     repositoryScope: { repositories: input.repositories },
                     timeScope: { stepInterval: { unit, value: +value } },
                     series: input.series.map(previewSeries => ({
-                        generatedFromCaptureGroups: previewSeries.generatedFromCaptureGroup,
+                        generatedFromCaptureGroups: !!previewSeries.generatedFromCaptureGroup,
                         query: previewSeries.query,
                         label: previewSeries.label,
+                        groupBy: previewSeries.groupBy,
                     })),
                 },
             },
