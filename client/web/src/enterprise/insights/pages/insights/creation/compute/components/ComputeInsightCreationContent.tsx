@@ -23,7 +23,6 @@ import {
 import { useEditableSeries } from '../../../../../components/creation-ui/form-series/use-editable-series'
 import { useUiFeatures } from '../../../../../hooks'
 import { ComputeLivePreview } from '../../ComputeLivePreview'
-import { useInsightCreationForm } from '../../search-insight/components/search-insight-creation-content/hooks/use-insight-creation-form'
 import { getSanitizedSeries } from '../../search-insight/utils/insight-sanitizer'
 import { ComputeInsightMap, CreateComputeInsightFormFields } from '../types'
 
@@ -51,13 +50,6 @@ interface ComputeInsightCreationContentProps extends NativeContainerProps {
 
 export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProps> = props => {
     const { mode = 'creation', initialValue, onChange, onSubmit, onCancel, ...attributes } = props
-
-    const { repositories, stepValue, allReposMode } = useInsightCreationForm({
-        mode,
-        initialValue,
-        onChange,
-        onSubmit,
-    })
 
     const { licensed } = useUiFeatures()
 
@@ -100,10 +92,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
     // we should disable live chart preview
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
-        (series.meta.validState === 'VALID' || editSeries.some(series => series.valid)) &&
-        stepValue.meta.validState === 'VALID' &&
-        // For the "all repositories" mode we are not able to show the live preview chart
-        !allReposMode.input.value
+        (series.meta.validState === 'VALID' || editSeries.some(series => series.valid))
 
     return (
         <CreationUiLayout {...attributes}>
