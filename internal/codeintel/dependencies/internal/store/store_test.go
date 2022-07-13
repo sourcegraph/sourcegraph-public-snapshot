@@ -1071,3 +1071,118 @@ func TestLockfileDependents(t *testing.T) {
 		t.Errorf("unexpected lockfile dependents (-want +got):\n%s", diff)
 	}
 }
+
+func TestListLockfileIndexes(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('bar')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	packageA := shared.TestPackageDependencyLiteral(api.RepoName("A"), "1", "2", "pkg-A", "4")
+	packageB := shared.TestPackageDependencyLiteral(api.RepoName("B"), "2", "3", "pkg-B", "5")
+
+	// Insert data
+	for _, tt := range []struct {
+		repoName string
+		deps     []shared.PackageDependency
+		graph    shared.DependencyGraph
+		commit   string
+		lockfile string
+	}{
+		{
+			repoName: "foo",
+			deps:     []shared.PackageDependency{packageA, packageB},
+			graph:    shared.TestDependencyGraphLiteral([]shared.PackageDependency{packageA}, false, [][]shared.PackageDependency{{packageA, packageB}}),
+			commit:   "cafebabe",
+			lockfile: "lock.file",
+		},
+		{
+			repoName: "foo",
+			deps:     []shared.PackageDependency{packageA, packageB},
+			graph:    shared.TestDependencyGraphLiteral([]shared.PackageDependency{packageA}, false, [][]shared.PackageDependency{{packageA, packageB}}),
+			commit:   "d34db33f",
+			lockfile: "lock.file",
+		},
+		{
+			repoName: "bar",
+			deps:     []shared.PackageDependency{packageA},
+			graph:    nil,
+			commit:   "d34db33f",
+			lockfile: "lock2.file",
+		},
+	} {
+		if err := store.UpsertLockfileGraph(ctx, tt.repoName, tt.commit, tt.lockfile, tt.deps, tt.graph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+	}
+
+	// Query
+	lockfileIndexes := []shared.LockfileIndex{
+		{ID: 1, RepositoryID: 1, Commit: "cafebabe", LockfileReferenceIDs: []int{1}, Lockfile: "lock.file", Fidelity: "graph"},
+		{ID: 2, RepositoryID: 1, Commit: "d34db33f", LockfileReferenceIDs: []int{3}, Lockfile: "lock.file", Fidelity: "graph"},
+		{ID: 3, RepositoryID: 2, Commit: "d34db33f", LockfileReferenceIDs: []int{5}, Lockfile: "lock2.file", Fidelity: "flat"},
+	}
+
+	for _, tt := range []struct {
+		opts     ListLockfileIndexesOpts
+		expected []shared.LockfileIndex
+	}{
+		{
+			opts:     ListLockfileIndexesOpts{},
+			expected: []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1], lockfileIndexes[2]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{Limit: 2},
+			expected: []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{After: 1, Limit: 2},
+			expected: []shared.LockfileIndex{lockfileIndexes[1], lockfileIndexes[2]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{After: 2, Limit: 2},
+			expected: []shared.LockfileIndex{lockfileIndexes[2]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{RepoName: "foo"},
+			expected: []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{RepoName: "bar"},
+			expected: []shared.LockfileIndex{lockfileIndexes[2]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{Commit: "cafebabe"},
+			expected: []shared.LockfileIndex{lockfileIndexes[0]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{Commit: "d34db33f", RepoName: "bar"},
+			expected: []shared.LockfileIndex{lockfileIndexes[2]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{Lockfile: "lock.file"},
+			expected: []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+		},
+		{
+			opts:     ListLockfileIndexesOpts{Lockfile: "lock2.file"},
+			expected: []shared.LockfileIndex{lockfileIndexes[2]},
+		},
+	} {
+		lockfiles, err := store.ListLockfileIndexes(ctx, tt.opts)
+		if err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		if diff := cmp.Diff(tt.expected, lockfiles); diff != "" {
+			t.Errorf("unexpected lockfiles (-want +got):\n%s", diff)
+		}
+	}
+}

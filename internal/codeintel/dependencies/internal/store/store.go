@@ -31,6 +31,7 @@ type Store interface {
 	ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error)
 	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
+	ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -658,6 +659,73 @@ func makeLimit(limit int) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf("LIMIT %s", limit)
+}
+
+// ListLockfileIndexesOpts are options for listing lockfile indexes.
+type ListLockfileIndexesOpts struct {
+	RepoName string
+	Commit   string
+	Lockfile string
+
+	After int
+	Limit int
+}
+
+// ListLockfileIndexes returns lockfile indexes.
+func (s *store) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, err error) {
+	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", opts.RepoName),
+		log.String("commit", opts.Commit),
+		log.String("lockfile", opts.Commit),
+		log.Int("after", opts.After),
+		log.Int("limit", opts.Limit),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numIndexes", len(indexes)),
+		}})
+	}()
+
+	return scanLockfileIndexes(s.db.Query(ctx, sqlf.Sprintf(
+		listLockfileIndexesQuery,
+		sqlf.Join(makeListLockfileIndexesConds(opts), "AND"),
+		makeLimit(opts.Limit),
+	)))
+}
+
+const listLockfileIndexesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:ListLockfileIndexes
+SELECT id, repository_id, commit_bytea, codeintel_lockfile_reference_ids, lockfile, fidelity
+FROM codeintel_lockfiles
+WHERE %s
+ORDER BY id ASC
+%s
+`
+
+func makeListLockfileIndexesConds(opts ListLockfileIndexesOpts) []*sqlf.Query {
+	conds := make([]*sqlf.Query, 0, 2)
+
+	if opts.RepoName != "" {
+		conds = append(conds, sqlf.Sprintf("repository_id IN (SELECT id FROM repo WHERE name = %s)", opts.RepoName))
+	}
+
+	if opts.Commit != "" {
+		conds = append(conds, sqlf.Sprintf("commit_bytea = %s", dbutil.CommitBytea(opts.Commit)))
+	}
+
+	if opts.Lockfile != "" {
+		conds = append(conds, sqlf.Sprintf("lockfile = %s", opts.Lockfile))
+	}
+
+	if opts.After != 0 {
+		conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	return conds
 }
 
 // UpsertDependencyRepos creates the given dependency repos if they don't yet exist. The values
