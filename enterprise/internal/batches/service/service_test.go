@@ -2254,10 +2254,11 @@ changesetTemplate:
 
 		t.Run("failed changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ReconcilerState:  btypes.ReconcilerStateFailed,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				ReconcilerState:    btypes.ReconcilerStateFailed,
+				OwnedByBatchChange: batchChange.ID,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
@@ -2279,9 +2280,10 @@ changesetTemplate:
 
 		t.Run("archived changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
 
 				// archived changeset
 				IsArchived: true,
@@ -2306,9 +2308,10 @@ changesetTemplate:
 
 		t.Run("unpublished changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStateUnpublished,
-				BatchChange:      batchChange.ID,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStateUnpublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
@@ -2330,10 +2333,11 @@ changesetTemplate:
 
 		t.Run("draft changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateDraft,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				ExternalState:      btypes.ChangesetExternalStateDraft,
+				OwnedByBatchChange: batchChange.ID,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
@@ -2355,10 +2359,11 @@ changesetTemplate:
 
 		t.Run("open changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateOpen,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ExternalState:      btypes.ChangesetExternalStateOpen,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
@@ -2380,10 +2385,11 @@ changesetTemplate:
 
 		t.Run("closed changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateClosed,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ExternalState:      btypes.ChangesetExternalStateClosed,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
@@ -2405,10 +2411,11 @@ changesetTemplate:
 
 		t.Run("merged changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateMerged,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ExternalState:      btypes.ChangesetExternalStateMerged,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
@@ -2430,10 +2437,11 @@ changesetTemplate:
 
 		t.Run("read-only changesets", func(t *testing.T) {
 			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				ExternalState:    btypes.ChangesetExternalStateReadOnly,
-				BatchChange:      batchChange.ID,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateReadOnly,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
@@ -2447,28 +2455,53 @@ changesetTemplate:
 			assert.Empty(t, bulkOperations)
 		})
 
+		t.Run("imported changesets", func(t *testing.T) {
+			changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				ExternalState:      btypes.ChangesetExternalStateOpen,
+				OwnedByBatchChange: 0,
+			})
+
+			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
+				Changesets: []int64{
+					changeset.ID,
+				},
+				BatchChange: batchChange.ID,
+			})
+
+			assert.NoError(t, err)
+			expectedBulkOperations := []string{"COMMENT", "CLOSE", "MERGE"}
+			if !assert.ElementsMatch(t, expectedBulkOperations, bulkOperations) {
+				t.Errorf("wrong bulk operation type returned. want=%q, have=%q", expectedBulkOperations, bulkOperations)
+			}
+		})
+
 		t.Run("draft, archived and failed changesets with no common bulk operation", func(t *testing.T) {
 			failedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ReconcilerState:  btypes.ReconcilerStateFailed,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ReconcilerState:    btypes.ReconcilerStateFailed,
 			})
 
 			archivedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
 
 				// archived changeset
 				IsArchived: true,
 			})
 
 			draftChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateDraft,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ExternalState:      btypes.ChangesetExternalStateDraft,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
@@ -2492,24 +2525,27 @@ changesetTemplate:
 
 		t.Run("draft, closed and merged changesets with a common bulk operation", func(t *testing.T) {
 			draftChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateDraft,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ExternalState:      btypes.ChangesetExternalStateDraft,
 			})
 
 			closedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateClosed,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ExternalState:      btypes.ChangesetExternalStateClosed,
 			})
 
 			mergedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-				Repo:             rs[0].ID,
-				PublicationState: btypes.ChangesetPublicationStatePublished,
-				BatchChange:      batchChange.ID,
-				ExternalState:    btypes.ChangesetExternalStateMerged,
+				Repo:               rs[0].ID,
+				PublicationState:   btypes.ChangesetPublicationStatePublished,
+				BatchChange:        batchChange.ID,
+				OwnedByBatchChange: batchChange.ID,
+				ExternalState:      btypes.ChangesetExternalStateMerged,
 			})
 
 			bulkOperations, err := svc.GetAvailableBulkOperations(ctx, GetAvailableBulkOperationsOpts{
