@@ -39,7 +39,6 @@ export interface LangStatsInsightCreationContentProps {
     className?: string
 
     onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    // onCancel?: () => void
 
     /** Change handlers is called every time when user changed any field within the form. */
     onChange?: (event: FormChangeEvent<LangStatsCreationFormFields>) => void
