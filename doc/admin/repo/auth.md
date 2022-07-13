@@ -2,7 +2,7 @@
 
 If authentication (HTTP(S) or SSH) is required to `git clone` a repository then you must provide credentials to the container.
 
-First, ensure your **Site admin > Manage repositories** code host configuration is configured to use SSH. For example, by setting the `gitURLType` field to "ssh". Alternatively, you may use the "Generic Git host" code host type, which allows you to directly specify Git repository URLs for cloning.
+First, ensure your **Site admin > Manage code hosts** code host configuration is configured to use SSH. For example, by setting the `gitURLType` field to "ssh". Alternatively, you may use the "Generic Git host" code host type, which allows you to directly specify Git repository URLs for cloning.
 
 Then, follow the directions below depending on your deployment type:
 

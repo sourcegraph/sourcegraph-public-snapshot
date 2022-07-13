@@ -86,16 +86,16 @@ export const analyticsGroup: SiteAdminSideBarGroup = {
             to: '/site-admin/analytics/users',
         },
         {
+            label: 'Batch changes',
+            to: '/site-admin/analytics/batch-changes',
+        },
+        {
             label: 'Notebooks',
             to: '/site-admin/analytics/notebooks',
         },
         {
             label: 'Code insights (soon)',
             to: '/site-admin/analytics/code-insights',
-        },
-        {
-            label: 'Batch changes (soon)',
-            to: '/site-admin/analytics/batch-changes',
         },
         {
             label: 'Extensions (soon)',
@@ -132,7 +132,7 @@ export const analyticsRoutes: readonly SiteAdminAreaRoute[] = [
     },
     {
         path: '/analytics/batch-changes',
-        render: lazyComponent(() => import('./analytics/AnalyticsComingSoonPage'), 'AnalyticsComingSoonPage'),
+        render: lazyComponent(() => import('./analytics/AnalyticsBatchChangesPage'), 'AnalyticsBatchChangesPage'),
         exact: true,
     },
     {

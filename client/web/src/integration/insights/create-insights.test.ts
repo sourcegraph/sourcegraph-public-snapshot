@@ -8,7 +8,7 @@ import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing
 
 import { TimeIntervalStepUnit } from '../../graphql-operations'
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from '../context'
-import { percySnapshotWithVariants } from '../utils'
+import { createEditorAPI, percySnapshotWithVariants } from '../utils'
 
 import {
     SEARCH_INSIGHT_LIVE_PREVIEW_FIXTURE,
@@ -265,13 +265,10 @@ describe('Code insight create insight page', () => {
         )
 
         // Add first series query
-        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
-        await driver.replaceText({
-            selector: '[data-testid="series-form"]:nth-child(1) #monaco-query-input',
-            newText: 'test series #1 query',
-            enterTextMethod: 'type',
-            selectMethod: 'keyboard',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="series-form"]:nth-child(1) .test-query-input')
+            await editor.replace('test series #1 query')
+        }
 
         // Pick first series color
         await driver.page.click('[data-testid="series-form"]:nth-child(1) label[title="Cyan"]')
@@ -286,13 +283,10 @@ describe('Code insight create insight page', () => {
         )
 
         // Add second series query
-        await driver.page.waitForSelector('[data-testid="series-form"]:nth-child(1) #monaco-query-input')
-        await driver.replaceText({
-            selector: '[data-testid="series-form"]:nth-child(2) #monaco-query-input',
-            newText: 'test series #2 query',
-            enterTextMethod: 'type',
-            selectMethod: 'keyboard',
-        })
+        {
+            const editor = await createEditorAPI(driver, '[data-testid="series-form"]:nth-child(2) .test-query-input')
+            await editor.replace('test series #2 query')
+        }
 
         // With two filled data series our mock for live preview should work - render line chart with two lines
         await driver.page.waitForSelector('[data-testid="code-search-insight-live-preview"] circle')

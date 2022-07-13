@@ -80,6 +80,7 @@ export const SearchBox: React.FunctionComponent<React.PropsWithChildren<SearchBo
                 props.containerClassName,
                 props.hideHelpButton ? styles.searchBoxShadow : null
             )}
+            data-testid="searchbox"
         >
             <div
                 className={classNames(

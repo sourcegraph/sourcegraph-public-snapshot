@@ -173,3 +173,70 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
         </div>
     )
 }
+
+interface TimeSavedCalculator {
+    color: string
+    label: string
+    value: number
+    minPerItem: number
+    description: string
+    percentage?: number
+}
+
+export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculator> = ({
+    color,
+    label,
+    value,
+    minPerItem,
+    description,
+    percentage,
+}) => {
+    const [minPerItemSaved, setMinPerItemSaved] = useState(minPerItem)
+    const hoursSaved = useMemo(() => (minPerItemSaved * value * (percentage ?? 100)) / (60 * 100), [
+        value,
+        minPerItemSaved,
+        percentage,
+    ])
+
+    useEffect(() => {
+        setMinPerItemSaved(minPerItem)
+    }, [minPerItem])
+
+    return (
+        <Card className="mb-3 p-4 d-flex flex-row">
+            <div className="flex-1 d-flex flex-row justify-content-between align-items-start">
+                <div className="d-flex flex-column align-items-center mr-5">
+                    <Text as="span" style={{ color }} alignment="center" className={styles.count}>
+                        {formatNumber(value)}
+                    </Text>
+                    <Text as="span" alignment="center" dangerouslySetInnerHTML={{ __html: label }} />
+                </div>
+                <div className="d-flex flex-column align-items-center justify-content-center">
+                    <Input
+                        type="number"
+                        value={minPerItemSaved}
+                        className={classNames(styles.calculatorInput, 'mb-1')}
+                        onChange={event => setMinPerItemSaved(Number(event.target.value))}
+                    />
+                    <Text as="span" className="text-nowrap">
+                        Minutes per
+                    </Text>
+                </div>
+                <div className="d-flex flex-column align-items-center mr-5">
+                    <Text as="span" weight="bold" className={styles.count}>
+                        {formatNumber(hoursSaved)}
+                    </Text>
+                    <Text as="span" alignment="center">
+                        Hours saved
+                    </Text>
+                </div>
+            </div>
+            <div className="flex-1 d-flex flex-column m-0">
+                <Text as="span" weight="bold">
+                    About this statistics
+                </Text>
+                <Text as="span" dangerouslySetInnerHTML={{ __html: description }} />
+            </div>
+        </Card>
+    )
+}

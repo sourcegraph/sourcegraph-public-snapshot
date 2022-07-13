@@ -38,6 +38,8 @@
 - [Test a Phabricator and Gitolite instance](test_phabricator.md)
 - [How to test changes in dogfood](testing_in_dogfood.md)
 - [How to use client app PR previews](client_pr_previews.md)
+- [How to receive a Slack notification if a specific CI step failed](receive_slack_notification_on_a_failed_ci_step.md)
+- [How to allow a CI step to fail without breaking the build and still receive a notification](ci_soft_failure_and_still_notify.md)
 
 ## Profiling
 
