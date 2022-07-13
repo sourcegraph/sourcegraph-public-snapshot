@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -830,7 +831,8 @@ func TestListDependencyRepos(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	lastName := ""
+	var lastName reposource.PackageName
+	lastName = ""
 	for _, test := range [][]shared.Repo{
 		{{Scheme: "npm", Name: "banana"}, {Scheme: "npm", Name: "bar"}, {Scheme: "npm", Name: "foo"}},
 		{{Scheme: "npm", Name: "turtle"}},

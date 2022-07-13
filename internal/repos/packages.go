@@ -81,7 +81,8 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 	}()
 
 	const batchLimit = 100
-	lastName := ""
+	var lastName reposource.PackageName
+	lastName = ""
 	for {
 		depRepos, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
 			Scheme:          s.scheme,
