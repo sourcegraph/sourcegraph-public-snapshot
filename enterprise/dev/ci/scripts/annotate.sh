@@ -17,13 +17,13 @@ generate_grafana_link() {
     # -sR in the jq command below is "slurp" and "raw" tells jq to escape the json as a raw string since it will be
     # embedded as a value in other json (aka the query we send to grafana)
     expression="$(cat <<EOF | jq -sR .
-{app="buildkite", build="$BUILDKITE_BUILD_NUMBER", branch="main", state="failed", job="$BUILDKITE_JOB_ID"} # to search the whole build remove the job id here!
+{app="buildkite", build="$BUILDKITE_BUILD_NUMBER", branch="main", state="failed"}
 |~ "(?i)failed|panic|(FAIL:)" # this is a case insensitive regular expression, feel free to unleash your regex-fu!
 EOF
     )"
     # On Darwin use gdate
     begin=$(date -d '1 hour ago' "+%s")000
-    end=$(date "+%s")000
+    end=$(date -d 'now + 5 mins' "+%s")000
     payload=$(printf '{"datasource":"grafanacloud-sourcegraph-logs","queries":[{"refId":"A","expr":%s}],"range":{"from":"%s","to":"%s"}}' "$expression" "$begin" "$end")
 
     echo "https://sourcegraph.grafana.net/explore?orgId=1&left=$(echo "$payload" | jq -s -R -r @uri)"

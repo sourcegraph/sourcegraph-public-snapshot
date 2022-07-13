@@ -47,7 +47,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(dep.Name)
 			require.Nil(t, err)
 			depStrs = append(depStrs,
-				(&reposource.NpmPackageVersion{NpmPackageName: pkg, Version: dep.Version}).PackageVersionSyntax(),
+				(&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: dep.Version}).VersionedPackageSyntax(),
 			)
 		}
 		sort.Strings(depStrs)
@@ -69,7 +69,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 			require.Equal(t, len(deps), 1)
 			pkg, err := reposource.ParseNpmPackageFromPackageSyntax(deps[0].Name)
 			require.Nil(t, err)
-			depStrs = append(depStrs, (&reposource.NpmPackageVersion{NpmPackageName: pkg, Version: deps[0].Version}).PackageVersionSyntax())
+			depStrs = append(depStrs, (&reposource.NpmVersionedPackage{NpmPackageName: pkg, Version: deps[0].Version}).VersionedPackageSyntax())
 			lastID = deps[0].ID
 		}
 		sort.Strings(depStrs)
@@ -103,7 +103,7 @@ var testDependencies = []string{
 var testDependencyRepos = func() []dependencies.Repo {
 	dependencyRepos := []dependencies.Repo{}
 	for i, depStr := range testDependencies {
-		dep, err := reposource.ParseNpmPackageVersion(depStr)
+		dep, err := reposource.ParseNpmVersionedPackage(depStr)
 		if err != nil {
 			panic(err.Error())
 		}
@@ -125,37 +125,34 @@ func TestNPMPackagesSource_ListRepos(t *testing.T) {
 		{
 			ID:      1,
 			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "react",
-			Version: "18.1.0", // test deduplication with version from config
+			Name:    "@sourcegraph/sourcegraph.proposed",
+			Version: "12.0.0", // test deduplication with version from config
 		},
 		{
 			ID:      2,
 			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "react",
-			Version: "18.0.0", // test deduplication with version from config
+			Name:    "@sourcegraph/sourcegraph.proposed",
+			Version: "12.0.1", // test deduplication with version from config
 		},
 		{
 			ID:      3,
 			Scheme:  dependencies.NpmPackagesScheme,
-			Name:    "async",
-			Version: "3.2.3",
+			Name:    "@sourcegraph/web-ext",
+			Version: "3.0.0-fork.1",
 		},
 		{
 			ID:      4,
 			Scheme:  dependencies.NpmPackagesScheme,
 			Name:    "fastq",
-			Version: "0.9.9", // Test missing modules are skipped.
+			Version: "0.9.9", // test missing modules still create a repo.
 		},
 	})
 
 	svc := types.ExternalService{
 		Kind: extsvc.KindNpmPackages,
 		Config: marshalJSON(t, &schema.NpmPackagesConnection{
-			Registry: "https://registry.npmjs.org",
-			Dependencies: []string{
-				"urql@2.2.0",
-				"lodash@4.17.15",
-			},
+			Registry:     "https://registry.npmjs.org",
+			Dependencies: []string{"@sourcegraph/prettierrc@2.2.0"},
 		}),
 	}
 

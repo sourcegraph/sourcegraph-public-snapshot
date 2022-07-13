@@ -2,16 +2,19 @@
 
 Dependencies search is a code search feature that lets you search through the dependencies of your repositories.
 
-
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code_search/dependencies-search-usage.png" style="margin-left:0;margin-right:0;"/>
 
 ### Setup
 
-1. Configure a package host connection for each kind of dependency you want to search over.
+1. Configure a package host connection for each kind of dependency you want to search over:
+  - [JVM](../../integration/jvm.md)
+  - [npm and Yarn](../../integration/npm.md)
+  - [Go](../../integration/go.md)
+  - [Python dependencies](../../integration/python.md)
 1. Add `"codeIntelLockfileIndexing.enabled": true` to your [site configuration](../../admin/config/site_config.md) to enable the lockfile-indexing feature.
-1. Add `"codeIntelAutoIndexing.allowGlobalPolicies": true` to your [site configuration](../../admin/config/site_config.md) to allow a lockfile-indexing policy to match multiple repositories.
-1. Go to **Site admin > Code intelligence > Configuration** and click on **Create new policy** to create a policy with **Lockfile-indexing** enabled to index the repositories matching this policy. Example: lock-file index all repositories matching the name `go-*` and `go/`.
-1. Wait until lockfile indexing has finished and then run a dependency search.
+1. Add `"codeIntelAutoIndexing.allowGlobalPolicies": true` to your [site configuration](../../admin/config/site_config.md) to allow a lockfile-indexing policy to match multiple repositories. This is **optional** if you want to lockfile-index only single repositories.
+1. Go to **Site admin > Code intelligence > Configuration** and click on **Create new policy** to create a policy with **Lockfile-indexing** enabled to index the repositories matching this policy. Example: lockfile-index all repositories matching the name `go-*` and `go/`.
+1. Wait until the indexing of lockfiles has finished and then run a dependency search.
 
 ### Use cases
 

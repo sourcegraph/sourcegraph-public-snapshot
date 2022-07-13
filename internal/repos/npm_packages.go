@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -38,13 +39,26 @@ func NewNpmPackagesSource(svc *types.ExternalService, cf *httpcli.Factory) (*Pac
 }
 
 var _ packagesSource = &npmPackagesSource{}
+var _ packagesDownloadSource = &npmPackagesSource{}
 
 type npmPackagesSource struct {
 	client npm.Client
 }
 
-func (npmPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseNpmPackageVersion(dep)
+func (s npmPackagesSource) GetPackage(ctx context.Context, name string) (reposource.Package, error) {
+	// By using the empty string "" for the version, the request URL becomes "NPM_REGISTRY_URL/PACKAGE_NAME/",
+	// which returns metadata about the package instead a specific version. For example, compare:
+	// - https://registry.npmjs.org/react/
+	// - https://registry.npmjs.org/react/0.0.1
+	return s.Get(ctx, name, "")
+}
+
+func (npmPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseNpmVersionedPackage(dep)
+}
+
+func (s *npmPackagesSource) ParsePackageFromName(name string) (reposource.Package, error) {
+	return s.ParsePackageFromRepoName("npm/" + strings.TrimPrefix(name, "@"))
 }
 
 func (npmPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
@@ -52,16 +66,16 @@ func (npmPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.P
 	if err != nil {
 		return nil, err
 	}
-	return &reposource.NpmPackageVersion{NpmPackageName: pkg}, nil
+	return &reposource.NpmVersionedPackage{NpmPackageName: pkg}, nil
 }
 
-func (s *npmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
+func (s *npmPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
 	parsedDbPackage, err := reposource.ParseNpmPackageFromPackageSyntax(name)
 	if err != nil {
 		return nil, err
 	}
 
-	dep := &reposource.NpmPackageVersion{NpmPackageName: parsedDbPackage, Version: version}
+	dep := &reposource.NpmVersionedPackage{NpmPackageName: parsedDbPackage, Version: version}
 
 	info, err := s.client.GetDependencyInfo(ctx, dep)
 	if err != nil {
