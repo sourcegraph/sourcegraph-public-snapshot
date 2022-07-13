@@ -150,10 +150,10 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     }
 
     const repos = data?.site.analytics.repos
-    const orgMembersCount = data?.currentUser?.organizationMemberships?.totalCount || 0
+    const totalUsers = data?.users?.totalCount || 0
     const browserExtensionInstalls =
         data?.site.analytics.codeIntel.browserExtensionInstalls.summary.totalRegisteredUsers || 0
-    const browserExtensionInstallPercentage = orgMembersCount ? (browserExtensionInstalls * 100) / orgMembersCount : 0
+    const browserExtensionInstallPercentage = totalUsers ? (browserExtensionInstalls * 100) / totalUsers : 0
 
     return (
         <>
@@ -205,32 +205,34 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 )}
                 <H3 className="my-3">Time saved</H3>
                 {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
-                <H4 className="my-3">Suggestions</H4>
-                <div className={classNames(styles.border, 'mb-3')} />
-                <ul className="mb-3 pl-3">
-                    <Text as="li">
-                        <b>{browserExtensionInstallPercentage}%</b> of users have installed the browser extension.{' '}
-                        <AnchorLink to="/help/integration/browser_extension" target="_blank">
-                            Promote installation of the browser extesion to increase value.
-                        </AnchorLink>
-                    </Text>
-                    {repos && (
+                <div className={styles.suggestionBox}>
+                    <H4 className="my-3">Suggestions</H4>
+                    <div className={classNames(styles.border, 'mb-3')} />
+                    <ul className="mb-3 pl-3">
                         <Text as="li">
-                            <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have precise
-                            code intel.{' '}
-                            <AnchorLink
-                                to="/help/code_intelligence/explanations/precise_code_intelligence"
-                                target="_blank"
-                            >
-                                Learn how to improve precise code intel coverage.
+                            <b>{browserExtensionInstallPercentage}%</b> of users have installed the browser extension.{' '}
+                            <AnchorLink to="/help/integration/browser_extension" target="_blank">
+                                Promote installation of the browser extesion to increase value.
                             </AnchorLink>
                         </Text>
-                    )}
-                </ul>
-                <Text className="font-italic text-center">
-                    * All events are actually entries from this instance's event_logs table.{' '}
-                </Text>
+                        {repos && (
+                            <Text as="li">
+                                <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have
+                                precise code intel.{' '}
+                                <AnchorLink
+                                    to="/help/code_intelligence/explanations/precise_code_intelligence"
+                                    target="_blank"
+                                >
+                                    Learn how to improve precise code intel coverage.
+                                </AnchorLink>
+                            </Text>
+                        )}
+                    </ul>
+                </div>
             </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table.
+            </Text>
         </>
     )
 }

@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, H3 } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, H3, Text } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
 import {
@@ -131,6 +131,9 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                 <H3 className="my-3">Time saved</H3>
                 {calculatorProps && <TimeSavedCalculator {...calculatorProps} />}
             </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table.
+            </Text>
         </>
     )
 }
