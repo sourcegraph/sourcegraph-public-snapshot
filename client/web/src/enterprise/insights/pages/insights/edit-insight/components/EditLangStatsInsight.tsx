@@ -48,7 +48,7 @@ export const EditLangStatsInsight: FC<EditLangStatsInsightProps> = props => {
         >
             {form => (
                 <CodeInsightsCreationActions
-                    mode={CodeInsightCreationMode.Creation}
+                    mode={CodeInsightCreationMode.Edit}
                     licensed={licensed}
                     available={isEditAvailable}
                     submitting={form.submitting}

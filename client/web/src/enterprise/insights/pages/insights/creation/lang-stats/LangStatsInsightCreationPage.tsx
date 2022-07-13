@@ -55,7 +55,6 @@ export const LangStatsInsightCreationPage: FC<LangStatsInsightCreationPageProps>
     const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
     const { licensed, insight } = useUiFeatures()
-
     const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
 
     // We do not use temporal user settings since form values are not so important to
