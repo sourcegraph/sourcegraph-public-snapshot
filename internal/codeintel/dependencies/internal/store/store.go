@@ -652,13 +652,24 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 	if opts.Name != "" {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
-	if opts.After != 0 && opts.After != "" {
+
+	switch after := opts.After.(type) {
+	case nil:
+		break
+	case int:
 		switch {
-		case opts.NewestFirst && !opts.ExcludeVersions:
-			conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
-		case !opts.NewestFirst && !opts.ExcludeVersions:
-			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
 		case opts.ExcludeVersions:
+			panic("cannot set ExcludeVersions and pass ID-based offset")
+		case opts.NewestFirst && after > 0:
+			conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
+		case !opts.NewestFirst && after > 0:
+			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+		}
+	case string:
+		switch {
+		case opts.NewestFirst:
+			panic("cannot set NewestFirst and pass name-based offset")
+		case opts.ExcludeVersions && after != "":
 			conds = append(conds, sqlf.Sprintf("name > %s", opts.After))
 		}
 	}
