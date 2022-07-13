@@ -3,7 +3,6 @@ import * as React from 'react'
 import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router-dom'
 
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ProductStatusBadge, Button, Link, Icon, ProductStatusType } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
@@ -45,7 +44,6 @@ export const UserSettingsSidebar: React.FunctionComponent<
     React.PropsWithChildren<UserSettingsSidebarProps>
 > = props => {
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
-    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     if (!props.authenticatedUser) {
         return null
@@ -107,12 +105,6 @@ export const UserSettingsSidebar: React.FunctionComponent<
                 <SidebarGroupHeader label="Other actions" />
                 {!siteAdminViewingOtherUser && <SidebarNavItem to="/api/console">API console</SidebarNavItem>}
                 {props.authenticatedUser.siteAdmin && <SidebarNavItem to="/site-admin">Site admin</SidebarNavItem>}
-                <Button
-                    className="text-left sidebar__link--inactive d-flex w-100"
-                    onClick={() => setCoreWorkflowImprovementsEnabled(!coreWorkflowImprovementsEnabled)}
-                >
-                    {coreWorkflowImprovementsEnabled ? 'Disable' : 'Enable'} workflow improvements
-                </Button>
             </SidebarGroup>
             <div>Version: {window.context.version}</div>
         </div>
