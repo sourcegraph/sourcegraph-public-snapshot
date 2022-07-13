@@ -1533,19 +1533,19 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 5,
-                "scopes": "identifier"
+                "scopes": "metaPredicateNameAccess"
               },
               {
                 "startIndex": 8,
-                "scopes": "metaRegexpCharacterSet"
+                "scopes": "metaPredicateDot"
               },
               {
                 "startIndex": 9,
-                "scopes": "identifier"
+                "scopes": "metaPredicateNameAccess"
               },
               {
                 "startIndex": 20,
-                "scopes": "metaRegexpDelimited"
+                "scopes": "metaPredicateParenthesis"
               },
               {
                 "startIndex": 21,
@@ -1557,7 +1557,7 @@ describe('getMonacoTokens()', () => {
               },
               {
                 "startIndex": 23,
-                "scopes": "metaRegexpDelimited"
+                "scopes": "metaPredicateParenthesis"
               }
             ]
         `)
