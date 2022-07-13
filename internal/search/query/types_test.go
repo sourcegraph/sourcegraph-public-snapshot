@@ -25,5 +25,5 @@ func TestDescription(t *testing.T) {
 		"(?:test).*?(?:input)",
 	}
 
-	require.Equal(t, want, ps.Description())
+	require.Equal(t, want, ps.RepoHasDescription())
 }
