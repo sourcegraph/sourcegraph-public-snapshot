@@ -314,7 +314,9 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					var style = output.CombineStyles(output.StyleBold, output.StyleFailure)
 					block := r.Output.Block(output.Linef(output.EmojiFailure, style, check.Name))
 					block.Writef("%s\n", check.cachedCheckErr)
-					block.Writef("%s\n", check.cachedCheckOutput)
+					if check.cachedCheckOutput != "" {
+						block.Writef("%s\n", check.cachedCheckOutput)
+					}
 					if suggestion != "" {
 						block.WriteLine(output.Styled(output.StyleSuggestion, suggestion))
 					}
