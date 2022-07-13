@@ -68,6 +68,9 @@ export function renderReactApp(): void {
     const node = document.querySelector('#main') as HTMLDivElement
     render(
         <App
+            // Make sure we recreate the React app when the instance URL or access token changes to
+            // avoid showing stale data.
+            key={`${instanceURL}-${accessToken}`}
             isDarkTheme={isDarkTheme}
             instanceURL={instanceURL}
             isGlobbingEnabled={isGlobbingEnabled}
