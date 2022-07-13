@@ -17,7 +17,7 @@ trap 'rm -f "$response"' EXIT
 curl --silent --fail "https://api.github.com/repos/${forkname}/commits?per_page=1&sha=${version}" > "${response}"
 newsha="$(jq -r '.[0].sha[:12]' < "${response}")"
 newts="$( jq -r '.[0].commit.committer.date | fromdate | strftime("%Y%m%d%H%M%S")' < "${response}")"
-module="$(echo "${fork}@v0.0.0-${newts}-${newsha}")"
+module="${fork}@v0.0.0-${newts}-${newsha}"
 
 oldsha="$(go mod edit -print | grep "$fork" | grep -o '[a-f0-9]*$')"
 
