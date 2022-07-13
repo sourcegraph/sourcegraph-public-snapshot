@@ -159,12 +159,12 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantMatchCount: 5,
 			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/foobar", Commit: "2", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/foobar", Rev: "HEAD", Commit: "2", Path: "baz.go"},
 			},
 			wantMatchInputRevs: []string{
-				"",
-				"",
+				"HEAD",
+				"HEAD",
 			},
 			wantErr: false,
 		},
@@ -360,9 +360,9 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 
 func TestZoektIndexedRepos(t *testing.T) {
 	repos := makeRepositoryRevisions(
-		"foo/indexed-one@",
-		"foo/indexed-two@",
-		"foo/indexed-three@",
+		"foo/indexed-one@HEAD",
+		"foo/indexed-two@HEAD",
+		"foo/indexed-three@HEAD",
 		"foo/partially-indexed@HEAD:bad-rev",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
@@ -516,7 +516,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}{
 		{
 			rev:           "",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
 			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
