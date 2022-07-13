@@ -2390,7 +2390,6 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 
 	err = syncer.Fetch(ctx, remoteURL, dir)
 	if err != nil {
-		s.Logger.Error("Failed to fetch", log.String("repo", string(repo)), log.Error(err))
 		return errors.Wrap(err, "failed to fetch")
 	}
 
