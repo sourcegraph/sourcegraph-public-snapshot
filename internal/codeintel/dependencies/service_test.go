@@ -316,7 +316,7 @@ func TestIndexLockfiles(t *testing.T) {
 		for _, dependencyRepo := range dependencyRepos {
 			// repo is even + commit is odd, or
 			// repo is odd + commit is even
-			if endsWithEvenDigit(dependencyRepo.Name) != endsWithEvenDigit(dependencyRepo.Version) {
+			if endsWithEvenDigit(string(dependencyRepo.Name)) != endsWithEvenDigit(dependencyRepo.Version) {
 				continue
 			}
 
