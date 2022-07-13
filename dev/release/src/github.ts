@@ -1,4 +1,4 @@
-import { mkdtemp as original_mkdtemp, readFileSync } from 'fs'
+import { mkdtemp as original_mkdtemp, readFileSync, existsSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
@@ -15,7 +15,7 @@ let githubPAT: string
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
     const cacheFile = `${cacheFolder}/github.txt`
-    if (cacheFile && (await validateToken()) === true) {
+    if (existsSync(cacheFile) && (await validateToken()) === true) {
         githubPAT = readFileSync(`${cacheFolder}/github.txt`, 'utf-8')
     } else {
         githubPAT = await readLine(
