@@ -1,7 +1,3 @@
-DROP INDEX IF EXISTS changesets_detached_at;
-
-ALTER TABLE changesets DROP COLUMN IF EXISTS detached_at;
-
 DROP VIEW IF EXISTS reconciler_changesets;
 
 CREATE VIEW reconciler_changesets AS
@@ -53,3 +49,7 @@ WHERE r.deleted_at IS NULL AND EXISTS (
              LEFT JOIN orgs namespace_org ON batch_changes.namespace_org_id = namespace_org.id
     WHERE c.batch_change_ids ? batch_changes.id::text AND namespace_user.deleted_at IS NULL AND namespace_org.deleted_at IS NULL
     );
+
+DROP INDEX IF EXISTS changesets_detached_at;
+
+ALTER TABLE changesets DROP COLUMN IF EXISTS detached_at;
