@@ -13,7 +13,7 @@ import (
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
-	if options.PrivilegedMode >= InvalidPrivilegedMode {
+	if !options.PrivilegedMode.Valid() {
 		return errors.Newf("invalid privileged mode")
 	}
 

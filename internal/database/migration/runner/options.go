@@ -30,6 +30,10 @@ type Options struct {
 
 type PrivilegedMode uint
 
+func (m PrivilegedMode) Valid() bool {
+	return m < InvalidPrivilegedMode
+}
+
 const (
 	// ApplyPrivilegedMigrations, the default privileged mode, indicates to the runner that any
 	// privileged migrations should be applied along with unprivileged migrations.
