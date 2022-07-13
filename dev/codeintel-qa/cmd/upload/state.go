@@ -89,10 +89,14 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						return errors.Newf("unexpected state '%s' for %s@%s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], errors.Wrap(err, "error getting audit logs"))
 					}
 
+					fmt.Printf("RAW PAYLOAD DUMP:\n%+v\n", payload)
+					fmt.Println("SEARCHING FOR ID", uploadState.upload.id)
+
 					var logs auditLogs
 					for _, upload := range payload.Data.LsifUploads.Nodes {
 						if upload.ID == uploadState.upload.id {
 							logs = upload.AuditLogs
+							break
 						}
 					}
 
