@@ -133,22 +133,32 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         }
     }, [isWorkspacesPreviewInProgress, start, stop])
 
-    const ctaButton = isWorkspacesPreviewInProgress ? (
-        <Button className="mt-2 mb-2" variant="secondary" onClick={cancel}>
-            Cancel
-        </Button>
-    ) : (
-        <Tooltip content={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}>
-            <Button
-                className="mt-2 mb-2"
-                variant="success"
-                disabled={!!isPreviewDisabled}
-                onClick={() => preview(debouncedCode)}
+    // We use the same `<Button />` and just swap props so that we keep the same element
+    // hierarchy when the preview is in progress as when it is not. We do this in order to
+    // maintain focus on the button between state changes.
+    const ctaButton = useMemo(
+        () => (
+            <Tooltip
+                content={
+                    !isWorkspacesPreviewInProgress && typeof isPreviewDisabled === 'string'
+                        ? isPreviewDisabled
+                        : undefined
+                }
             >
-                <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
-                {error ? 'Retry preview' : 'Preview workspaces'}
-            </Button>
-        </Tooltip>
+                <Button
+                    variant={isWorkspacesPreviewInProgress ? 'secondary' : 'success'}
+                    onClick={isWorkspacesPreviewInProgress ? cancel : () => preview(debouncedCode)}
+                    // The "Cancel" button is always enabled while the preview is in progress
+                    disabled={!isWorkspacesPreviewInProgress && !!isPreviewDisabled}
+                >
+                    {!isWorkspacesPreviewInProgress && (
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
+                    )}
+                    {isWorkspacesPreviewInProgress ? 'Cancel' : error ? 'Retry preview' : 'Preview workspaces'}
+                </Button>
+            </Tooltip>
+        ),
+        [isWorkspacesPreviewInProgress, isPreviewDisabled, cancel, preview, debouncedCode, error]
     )
 
     const [exampleReference, exampleOpen, setExampleOpen, exampleStyle] = useAccordion()
@@ -172,22 +182,26 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         <H4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</H4>
     ) : (
         <>
-            <H4 className={styles.instruction}>
-                {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
-                preview repositories.
+            <H4 className={classNames(styles.instruction, 'd-flex align-items-center')}>
+                {hasPreviewed ? 'Modify your' : 'Add an'}
+                <span className="text-monospace mx-1">on:</span> statement to preview repositories.
                 {!hasPreviewed && (
-                    <Button
-                        className={styles.toggleExampleButton}
-                        display="inline"
-                        onClick={() => setExampleOpen(!exampleOpen)}
-                    >
-                        {exampleOpen ? 'Close example' : 'See example'}
-                    </Button>
+                    <div className={styles.toggleExampleButtonContainer}>
+                        <Button className={styles.toggleExampleButton} onClick={() => setExampleOpen(!exampleOpen)}>
+                            {exampleOpen ? 'Close example' : 'See example'}
+                        </Button>
+                    </div>
                 )}
             </H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
                 <div ref={exampleReference} className="pt-2 pb-3">
-                    <CodeSnippet className="w-100 m-0" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
+                    {/* Hide the copy button while the example is closed so that it's not focusable. */}
+                    <CodeSnippet
+                        className="w-100 m-0"
+                        code={ON_STATEMENT}
+                        language="yaml"
+                        withCopyButton={exampleOpen}
+                    />
                 </div>
             </animated.div>
         </>
