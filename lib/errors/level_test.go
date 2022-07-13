@@ -8,16 +8,14 @@ func TestClassifiedError(t *testing.T) {
 	err := New("foo")
 
 	tests := []struct {
-		name     string
-		err      error
-		level    Level
-		expected string
+		name  string
+		err   error
+		level Level
 	}{
 		{
-			name:     "warn",
-			err:      New("warn error"),
-			level:    LevelWarn,
-			expected: "warn error",
+			name:  "warn",
+			err:   New("warn error"),
+			level: LevelWarn,
 		},
 		{
 			name:  "error",
