@@ -27,52 +27,6 @@ export const BookmarkRadialGradientIcon = React.memo(() => (
     </svg>
 ))
 
-export const ExtensionRadialGradientIcon = React.memo(() => (
-    <svg width="60" height="60" viewBox="0 0 60 60" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <g clipPath="url(#clip0_26_5030)">
-            <path
-                d="M56.25 0H4.25C2.04086 0 0.25 1.79086 0.25 4V56C0.25 58.2091 2.04086 60 4.25 60H56.25C58.4591 60 60.25 58.2091 60.25 56V4C60.25 1.79086 58.4591 0 56.25 0Z"
-                fill="url(#paint0_radial_26_5030)"
-            />
-            <path
-                d="M56.25 0H4.25C2.04086 0 0.25 1.79086 0.25 4V56C0.25 58.2091 2.04086 60 4.25 60H56.25C58.4591 60 60.25 58.2091 60.25 56V4C60.25 1.79086 58.4591 0 56.25 0Z"
-                fill="url(#paint1_radial_26_5030)"
-            />
-            <path
-                d="M45 26V20C45 17.794 43.206 16 41 16H35C35 12.692 32.308 10 29 10C25.692 10 23 12.692 23 16H17C14.794 16 13 17.794 13 20V27.762L14.318 28.24C15.922 28.82 17 30.332 17 32C17 33.668 15.922 35.18 14.318 35.76L13 36.238V44C13 46.206 14.794 48 17 48H24.762L25.24 46.682C25.82 45.078 27.332 44 29 44C30.668 44 32.18 45.078 32.76 46.682L33.238 48H41C43.206 48 45 46.206 45 44V38C48.308 38 51 35.308 51 32C51 28.692 48.308 26 45 26ZM45 34H41L40.994 44H35.904C34.482 41.56 31.86 40 29 40C26.14 40 23.518 41.56 22.096 44H17V38.904C19.44 37.482 21 34.86 21 32C21 29.14 19.44 26.518 17 25.096V20H27V16C27 15.4696 27.2107 14.9609 27.5858 14.5858C27.9609 14.2107 28.4696 14 29 14C29.5304 14 30.0391 14.2107 30.4142 14.5858C30.7893 14.9609 31 15.4696 31 16V20H41V30H45C45.5304 30 46.0391 30.2107 46.4142 30.5858C46.7893 30.9609 47 31.4696 47 32C47 32.5304 46.7893 33.0391 46.4142 33.4142C46.0391 33.7893 45.5304 34 45 34Z"
-                fill="white"
-            />
-        </g>
-        <defs>
-            <radialGradient
-                id="paint0_radial_26_5030"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(23.25 28.75) rotate(5.52754) scale(23.3586)"
-            >
-                <stop stopColor="#3EE8FF" />
-                <stop offset="0.539574" stopColor="#35D2F4" />
-            </radialGradient>
-            <radialGradient
-                id="paint1_radial_26_5030"
-                cx="0"
-                cy="0"
-                r="1"
-                gradientUnits="userSpaceOnUse"
-                gradientTransform="translate(30 30) rotate(-6.34019) scale(36.2215)"
-            >
-                <stop offset="0.361054" stopColor="#06B4FF" />
-                <stop offset="1" stopColor="#00F0FF" stopOpacity="0" />
-            </radialGradient>
-            <clipPath id="clip0_26_5030">
-                <rect width="60" height="60" fill="white" />
-            </clipPath>
-        </defs>
-    </svg>
-))
-
 export const SearchBetaIcon = React.memo(() => (
     <svg width="77" height="60" fill="none" xmlns="http://www.w3.org/2000/svg">
         <rect x="4.25" width="60" height="60" rx="4" fill="url(#paint0_linear)" />
