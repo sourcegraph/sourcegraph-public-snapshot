@@ -10,8 +10,8 @@
  */
 {
     // Captain information
-    "captainSlackUsername": "ryanslade",
-    "captainGitHubUsername": "ryanslade",
+    "captainSlackUsername": "Alex Ostrikov",
+    "captainGitHubUsername": "sashaostrikov",
     // Release versions
     "previousRelease": "3.41.0",
     "upcomingRelease": "3.41.1",

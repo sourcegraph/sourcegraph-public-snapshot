@@ -955,6 +955,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             break
         case 'contains.file':
         case 'contains.content':
+        case 'has.description':
             return mapRegexpMetaSucceed({
                 type: 'pattern',
                 range: { start: offset, end: body.length },

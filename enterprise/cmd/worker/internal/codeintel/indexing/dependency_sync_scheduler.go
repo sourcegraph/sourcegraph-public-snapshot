@@ -23,9 +23,10 @@ import (
 )
 
 var schemeToExternalService = map[string]string{
-	dependencies.JVMPackagesScheme:  extsvc.KindJVMPackages,
-	dependencies.NpmPackagesScheme:  extsvc.KindNpmPackages,
-	dependencies.RustPackagesScheme: extsvc.KindRustPackages,
+	dependencies.JVMPackagesScheme:    extsvc.KindJVMPackages,
+	dependencies.NpmPackagesScheme:    extsvc.KindNpmPackages,
+	dependencies.RustPackagesScheme:   extsvc.KindRustPackages,
+	dependencies.PythonPackagesScheme: extsvc.KindPythonPackages,
 }
 
 // NewDependencySyncScheduler returns a new worker instance that processes
@@ -190,6 +191,10 @@ func newPackage(pkg shared.Package) precise.Package {
 	case dependencies.JVMPackagesScheme:
 		p.Name = strings.TrimPrefix(p.Name, "maven/")
 		p.Name = strings.ReplaceAll(p.Name, "/", ":")
+	case "scip-python":
+		// Override scip-python scheme so that we are able to autoindex
+		// index.scip created by scip-python
+		p.Scheme = dependencies.PythonPackagesScheme
 	}
 
 	return p
@@ -225,6 +230,7 @@ func (h *dependencySyncSchedulerHandler) shouldIndexDependencies(ctx context.Con
 		upload.Indexer == "lsif-tsc" ||
 		upload.Indexer == "scip-typescript" ||
 		upload.Indexer == "lsif-typescript" ||
+		upload.Indexer == "scip-python" ||
 		upload.Indexer == "rust-analyzer", nil
 }
 

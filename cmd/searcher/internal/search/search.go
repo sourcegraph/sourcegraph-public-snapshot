@@ -19,6 +19,7 @@ import (
 	"net"
 	"net/http"
 	"strconv"
+	"sync"
 	"time"
 
 	"github.com/opentracing/opentracing-go/ext"
@@ -103,13 +104,16 @@ func (s *Service) streamSearch(ctx context.Context, w http.ResponseWriter, p pro
 		return
 	}
 
+	var bufMux sync.Mutex
 	matchesBuf := streamhttp.NewJSONArrayBuf(32*1024, func(data []byte) error {
 		return eventWriter.EventBytes("matches", data)
 	})
 	onMatches := func(match protocol.FileMatch) {
+		bufMux.Lock()
 		if err := matchesBuf.Append(match); err != nil && !isNetOpError(err) {
 			s.Log.Warn("failed appending match to buffer", log.Error(err))
 		}
+		bufMux.Unlock()
 	}
 
 	ctx, cancel, stream := newLimitedStream(ctx, p.Limit, onMatches)

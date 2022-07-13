@@ -4,6 +4,8 @@ import (
 	"context"
 	"sync"
 
+	"go.uber.org/atomic"
+
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 )
 
@@ -16,10 +18,9 @@ type matchSender interface {
 
 type limitedStream struct {
 	cb        func(protocol.FileMatch)
-	mux       sync.Mutex
-	sentCount int
-	remaining int
-	limitHit  bool
+	limit     int
+	remaining *atomic.Int64
+	limitHit  *atomic.Bool
 	cancel    context.CancelFunc
 }
 
@@ -32,74 +33,72 @@ func newLimitedStream(ctx context.Context, limit int, cb func(protocol.FileMatch
 	s := &limitedStream{
 		cb:        cb,
 		cancel:    cancel,
-		remaining: limit,
+		limit:     limit,
+		remaining: atomic.NewInt64(int64(limit)),
+		limitHit:  atomic.NewBool(false),
 	}
 	return ctx, cancel, s
 }
 
 func (m *limitedStream) Send(match protocol.FileMatch) {
-	m.mux.Lock()
-	matchCount := match.MatchCount()
-	if matchCount <= m.remaining {
-		m.remaining -= matchCount
-		m.sentCount += matchCount
+	count := int64(match.MatchCount())
+
+	after := m.remaining.Sub(count)
+	before := after + count
+
+	if after > 0 {
+		// Remaining was large enough to send the full match
 		m.cb(match)
-		m.mux.Unlock()
+	} else if before <= 0 {
+		// We had already hit the limit, so just ignore this event
 		return
+	} else if after == 0 {
+		// We hit the limit exactly.
+		m.cancel()
+		m.limitHit.Store(true)
+		m.cb(match)
+	} else {
+		// We crossed the limit threshold, so we need to truncate the
+		// event before sending.
+		m.cancel()
+		m.limitHit.Store(true)
+		match.Limit(int(before))
+		m.cb(match)
 	}
-
-	m.limitHit = true
-	m.cancel()
-
-	// Can't truncate a path match
-	if len(match.ChunkMatches) == 0 {
-		m.mux.Unlock()
-		return
-	}
-
-	for i, cm := range match.ChunkMatches {
-		if l := len(cm.Ranges); l >= m.remaining {
-			match.ChunkMatches[i].Ranges = cm.Ranges[:m.remaining]
-			match.ChunkMatches = match.ChunkMatches[:i+1]
-			break
-		} else {
-			m.remaining -= l
-		}
-	}
-	match.LimitHit = true
-	m.sentCount += m.remaining
-	m.remaining = 0
-	m.cb(match)
-	m.mux.Unlock()
 }
 
 func (m *limitedStream) SentCount() int {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return m.sentCount
+	remaining := int(m.remaining.Load())
+	if remaining < 0 {
+		remaining = 0
+	}
+	return m.limit - remaining
 }
 
 func (m *limitedStream) Remaining() int {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return m.remaining
+	remaining := int(m.remaining.Load())
+	if remaining < 0 {
+		remaining = 0
+	}
+	return remaining
 }
 
 func (m *limitedStream) LimitHit() bool {
-	m.mux.Lock()
-	defer m.mux.Unlock()
-	return m.limitHit
+	return m.limitHit.Load()
 }
 
 type limitedStreamCollector struct {
 	collected []protocol.FileMatch
+	mux       sync.Mutex
 	*limitedStream
 }
 
 func newLimitedStreamCollector(ctx context.Context, limit int) (context.Context, context.CancelFunc, *limitedStreamCollector) {
 	s := &limitedStreamCollector{}
 	ctx, cancel, ls := newLimitedStream(ctx, limit, func(fm protocol.FileMatch) {
+		s.mux.Lock()
 		s.collected = append(s.collected, fm)
+		s.mux.Unlock()
 	})
 	s.limitedStream = ls
 	return ctx, cancel, s

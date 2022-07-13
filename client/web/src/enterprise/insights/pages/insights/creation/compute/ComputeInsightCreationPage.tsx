@@ -9,7 +9,7 @@ import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsPage, FormChangeEvent } from '../../../../components'
 
 import { ComputeInsightCreationContent } from './components/ComputeInsightCreationContent'
-import { CreateComputeInsightFormFields } from './components/types'
+import { CreateComputeInsightFormFields } from './types'
 
 export interface InsightCreateEvent {
     // TODO: It will be improved in https://github.com/sourcegraph/sourcegraph/issues/37965
@@ -23,6 +23,10 @@ interface ComputeInsightCreationPageProps extends TelemetryProps {
 }
 
 export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreationPageProps> = props => {
+    // We do not use temporal user settings since form values are not so important to
+    // waste users time for waiting response of yet another network request to just
+    // render creation UI form.
+    // eslint-disable-next-line no-restricted-syntax
     const [initialFormValues, setInitialFormValues] = useLocalStorage<CreateComputeInsightFormFields | undefined>(
         'insights.compute-creation-ui',
         undefined

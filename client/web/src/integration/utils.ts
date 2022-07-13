@@ -46,8 +46,9 @@ type ColorScheme = 'dark' | 'light'
 export const convertImgSourceHttpToBase64 = async (page: Page): Promise<void> => {
     await page.evaluate(() => {
         // Skip images with data-skip-percy
+        // Skip images with .cm-widgetBuffer, which CodeMirror uses when using a widget decoration
         // See https://github.com/sourcegraph/sourcegraph/issues/28949
-        const imgs = document.querySelectorAll<HTMLImageElement>('img:not([data-skip-percy])')
+        const imgs = document.querySelectorAll<HTMLImageElement>('img:not([data-skip-percy]):not(.cm-widgetBuffer)')
 
         for (const img of imgs) {
             if (img.src.startsWith('data:image')) {
@@ -151,7 +152,7 @@ export interface EditorAPI {
     /**
      * Replaces the editor's content with the provided input.
      */
-    replace: (input: string) => Promise<void>
+    replace: (input: string, method?: 'type' | 'paste') => Promise<void>
     /**
      * Triggers application of the specified suggestion.
      */
@@ -159,16 +160,17 @@ export interface EditorAPI {
 }
 
 const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAPI> = {
-    // Using id selector rather than `test-` classes as Monaco doesn't allow customizing classes
     monaco: (driver: Driver, rootSelector: string) => {
         const inputSelector = `${rootSelector} textarea`
+        // Selector to use to wait for the editor to be complete loaded
+        const readySelector = `${rootSelector} .view-lines`
         const completionSelector = `${rootSelector} .suggest-widget.visible`
         const completionLabelSelector = `${completionSelector} span`
 
         const api: EditorAPI = {
             name: 'monaco',
             async waitForIt(options) {
-                await driver.page.waitForSelector(rootSelector, options)
+                await driver.page.waitForSelector(readySelector, options)
             },
             async focus() {
                 await api.waitForIt()
@@ -180,11 +182,12 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     inputSelector
                 )
             },
-            replace(newText: string) {
+            replace(newText: string, method = 'type') {
                 return driver.replaceText({
                     selector: rootSelector,
                     newText,
-                    enterTextMethod: 'type',
+                    enterTextMethod: method,
+                    selectMethod: 'keyboard',
                 })
             },
             async waitForSuggestion(suggestion?: string) {
@@ -209,13 +212,15 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
     },
     codemirror6: (driver: Driver, rootSelector: string) => {
         const inputSelector = `${rootSelector} .cm-content`
+        // Selector to use to wait for the editor to be complete loaded
+        const readySelector = `${rootSelector} .cm-line`
         const completionSelector = `${rootSelector} .cm-tooltip-autocomplete`
         const completionLabelSelector = `${completionSelector} .cm-completionLabel`
 
         const api: EditorAPI = {
             name: 'codemirror6',
             async waitForIt(options) {
-                await driver.page.waitForSelector(rootSelector, options)
+                await driver.page.waitForSelector(readySelector, options)
             },
             async focus() {
                 await api.waitForIt()
@@ -227,11 +232,12 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     inputSelector
                 )
             },
-            replace(newText: string) {
+            replace(newText: string, method = 'type') {
                 return driver.replaceText({
                     selector: rootSelector,
                     newText,
-                    enterTextMethod: 'type',
+                    enterTextMethod: method,
+                    selectMethod: 'selectall',
                 })
             },
             async waitForSuggestion(suggestion?: string) {
@@ -274,24 +280,36 @@ export function enableEditor(editor: Editor): Partial<Settings> {
 
 /**
  * Returns an object for accessing editor related information at `rootSelector`.
+ * It also waits for the editor to be ready
  */
-export const createEditorAPI = (driver: Driver, editor: Editor, rootSelector: string): EditorAPI =>
-    editors[editor](driver, rootSelector)
+export const createEditorAPI = async (driver: Driver, rootSelector: string): Promise<EditorAPI> => {
+    await driver.page.waitForSelector(rootSelector)
+    const editor = await driver.page.evaluate<(selector: string) => string | undefined>(
+        selector => (document.querySelector(selector) as HTMLElement).dataset.editor,
+        rootSelector
+    )
+    switch (editor) {
+        case 'monaco':
+        case 'codemirror6':
+            break
+        default:
+            throw new Error(`${editor} is not a supported editor`)
+    }
+    const api = editors[editor](driver, rootSelector)
+    await api.waitForIt()
+    return api
+}
 
 /**
  * Helper function for abstracting away testing different search query input
- * implementations. The callback function gets passed the editor name and the
- * main search query input selector, which can be used with {@link enableEditor}
- * and {@link createEditorAPI}.
+ * implementations. The callback function gets passed the editor name which can
+ * be used with {@link enableEditor} and {@link createEditorAPI}.
  */
-export const withSearchQueryInput = (callback: (editorName: Editor, rootSelector: string) => void): void => {
-    const editorNames: [Editor, string][] = [
-        ['monaco', '#monaco-query-input'],
-        ['codemirror6', '[data-test-id="codemirror-query-input"]'],
-    ]
-    for (const [editor, selector] of editorNames) {
+export const withSearchQueryInput = (callback: (editorName: Editor) => void): void => {
+    const editorNames: Editor[] = ['monaco', 'codemirror6']
+    for (const editor of editorNames) {
         // This callback is supposed to be called multiple times
         // eslint-disable-next-line callback-return
-        callback(editor, selector)
+        callback(editor)
     }
 }

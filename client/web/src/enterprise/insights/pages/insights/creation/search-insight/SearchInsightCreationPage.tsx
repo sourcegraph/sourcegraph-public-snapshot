@@ -13,7 +13,7 @@ import { CodeInsightTrackType } from '../../../../pings'
 import {
     SearchInsightCreationContent,
     SearchInsightCreationContentProps,
-} from './components/search-insight-creation-content/SearchInsightCreationContent'
+} from './components/SearchInsightCreationContent'
 import { CreateInsightFormFields } from './types'
 import { getSanitizedSearchInsight } from './utils/insight-sanitizer'
 import { useSearchInsightInitialValues } from './utils/use-initial-values'

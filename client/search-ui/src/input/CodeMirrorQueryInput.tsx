@@ -271,10 +271,14 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
                     history(),
                     themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
                     parseInputAsQuery({ patternType, interpretComments }),
-                    querySyntaxHighlighting,
                     queryDiagnostic,
                     tokenInfo(),
                     highlightFocusedFilter,
+                    // It baffels me but the syntax highlighting extension has
+                    // to come after the highlight current filter extension,
+                    // otherwise CodeMirror keeps steeling the focus.
+                    // See https://github.com/sourcegraph/sourcegraph/issues/38677
+                    querySyntaxHighlighting,
                     externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
@@ -315,8 +319,8 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
         return (
             <div
                 ref={setContainer}
-                className={classNames(styles.root, className)}
-                data-test-id="codemirror-query-input"
+                className={classNames(styles.root, className, 'test-query-input', 'test-editor')}
+                data-editor="codemirror6"
             />
         )
     }
@@ -498,14 +502,17 @@ const highlightFocusedFilter = ViewPlugin.define(
                     const position = update.state.selection.main.head
                     const focusedFilter = query.tokens.find(
                         (token): token is Filter =>
-                            // Inclusive end so that the filter is highlighed when
+                            // Inclusive end so that the filter is highlighted when
                             // the cursor is positioned directly after the value
                             token.type === 'filter' && token.range.start <= position && token.range.end >= position
                     )
                     const decorations: Range<Decoration>[] = []
+
                     if (focusedFilter) {
+                        // Adds decoration for background highlighting
                         decorations.push(focusedFilterDeco.range(focusedFilter.range.start, focusedFilter.range.end))
 
+                        // Adds widget decoration for filter placeholder
                         if (!focusedFilter.value?.value) {
                             const resolvedFilter = resolveFilter(focusedFilter.field.value)
                             if (resolvedFilter?.definition.placeholder) {
@@ -518,6 +525,7 @@ const highlightFocusedFilter = ViewPlugin.define(
                             }
                         }
                     }
+
                     this.decorations = Decoration.set(decorations)
                 } else {
                     this.decorations = Decoration.none
