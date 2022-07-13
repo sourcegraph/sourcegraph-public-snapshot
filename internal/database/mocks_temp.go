@@ -8166,7 +8166,7 @@ func NewMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		CountUniqueUsersAllFunc: &EventLogStoreCountUniqueUsersAllFunc{
-			defaultHook: func(context.Context, time.Time, time.Time) (r0 int, r1 error) {
+			defaultHook: func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (r0 int, r1 error) {
 				return
 			},
 		},
@@ -8358,7 +8358,7 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		CountUniqueUsersAllFunc: &EventLogStoreCountUniqueUsersAllFunc{
-			defaultHook: func(context.Context, time.Time, time.Time) (int, error) {
+			defaultHook: func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 				panic("unexpected invocation of MockEventLogStore.CountUniqueUsersAll")
 			},
 		},
@@ -10461,24 +10461,24 @@ func (c EventLogStoreCountByUserIDAndEventNamesFuncCall) Results() []interface{}
 // CountUniqueUsersAll method of the parent MockEventLogStore instance is
 // invoked.
 type EventLogStoreCountUniqueUsersAllFunc struct {
-	defaultHook func(context.Context, time.Time, time.Time) (int, error)
-	hooks       []func(context.Context, time.Time, time.Time) (int, error)
+	defaultHook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)
+	hooks       []func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)
 	history     []EventLogStoreCountUniqueUsersAllFuncCall
 	mutex       sync.Mutex
 }
 
 // CountUniqueUsersAll delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) CountUniqueUsersAll(v0 context.Context, v1 time.Time, v2 time.Time) (int, error) {
-	r0, r1 := m.CountUniqueUsersAllFunc.nextHook()(v0, v1, v2)
-	m.CountUniqueUsersAllFunc.appendCall(EventLogStoreCountUniqueUsersAllFuncCall{v0, v1, v2, r0, r1})
+func (m *MockEventLogStore) CountUniqueUsersAll(v0 context.Context, v1 time.Time, v2 time.Time, v3 *CountUniqueUsersOptions) (int, error) {
+	r0, r1 := m.CountUniqueUsersAllFunc.nextHook()(v0, v1, v2, v3)
+	m.CountUniqueUsersAllFunc.appendCall(EventLogStoreCountUniqueUsersAllFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the CountUniqueUsersAll
 // method of the parent MockEventLogStore instance is invoked and the hook
 // queue is empty.
-func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.Context, time.Time, time.Time) (int, error)) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)) {
 	f.defaultHook = hook
 }
 
@@ -10487,7 +10487,7 @@ func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Context, time.Time, time.Time) (int, error)) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -10496,19 +10496,19 @@ func (f *EventLogStoreCountUniqueUsersAllFunc) PushHook(hook func(context.Contex
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *EventLogStoreCountUniqueUsersAllFunc) SetDefaultReturn(r0 int, r1 error) {
-	f.SetDefaultHook(func(context.Context, time.Time, time.Time) (int, error) {
+	f.SetDefaultHook(func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *EventLogStoreCountUniqueUsersAllFunc) PushReturn(r0 int, r1 error) {
-	f.PushHook(func(context.Context, time.Time, time.Time) (int, error) {
+	f.PushHook(func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreCountUniqueUsersAllFunc) nextHook() func(context.Context, time.Time, time.Time) (int, error) {
+func (f *EventLogStoreCountUniqueUsersAllFunc) nextHook() func(context.Context, time.Time, time.Time, *CountUniqueUsersOptions) (int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -10551,6 +10551,9 @@ type EventLogStoreCountUniqueUsersAllFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 time.Time
+	// Arg3 is the value of the 4rd argument passed to this method
+	// invocation.
+	Arg3 *CountUniqueUsersOptions
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 int
@@ -10562,7 +10565,7 @@ type EventLogStoreCountUniqueUsersAllFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c EventLogStoreCountUniqueUsersAllFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this

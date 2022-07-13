@@ -7,7 +7,7 @@ import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetrySer
 
 import { storage } from '../../browser-extension/web-extension-api/storage'
 import { UserEvent } from '../../graphql-operations'
-import { logUserEvent, logEvent } from '../backend/userEvents'
+import { logEvent } from '../backend/userEvents'
 import { isInPage } from '../context'
 import { getExtensionVersion, getPlatformName } from '../util/context'
 
@@ -133,13 +133,9 @@ export class EventLogger implements TelemetryService {
     private async logEvent(
         event: string,
         eventProperties?: any,
-        publicArgument?: any,
-        userEvent?: UserEvent
+        publicArgument?: any
     ): Promise<void> {
         const anonUserId = await this.getAnonUserID()
-        if (userEvent) {
-            logUserEvent(userEvent, anonUserId, this.sourcegraphURL, this.requestGraphQL)
-        }
         logEvent(
             {
                 name: event,
@@ -160,19 +156,7 @@ export class EventLogger implements TelemetryService {
      * @param eventName The ID of the action executed.
      */
     public async log(eventName: string, eventProperties?: any, publicArgument?: any): Promise<void> {
-        switch (eventName) {
-            case 'findReferences':
-                await this.logEvent(eventName, eventProperties, publicArgument, UserEvent.CODEINTELINTEGRATIONREFS)
-                break
-            case 'goToDefinition':
-            case 'goToDefinition.preloaded':
-            case 'hover':
-                await this.logEvent(eventName, eventProperties, publicArgument, UserEvent.CODEINTELINTEGRATION)
-                break
-            default:
-                await this.logEvent(eventName, eventProperties, publicArgument)
-                break
-        }
+        await this.logEvent(eventName, eventProperties, publicArgument)
     }
 
     /**
