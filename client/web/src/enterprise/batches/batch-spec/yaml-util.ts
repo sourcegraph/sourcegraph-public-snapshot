@@ -438,8 +438,12 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
  * @param librarySpec the raw batch spec YAML example code from a library spec
  * @param query the updated query to be inserted
  */
-export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string =>
-    insertFieldIntoLibraryItem(librarySpec, `- repositoriesMatchingQuery: ${query}\n\n`, 'on', false)
+export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string => {
+    const updatedQuery = `- repositoriesMatchingQuery: |
+        ${query}\n\n`
+
+    return insertFieldIntoLibraryItem(librarySpec, updatedQuery, 'on', false)
+}
 
 /**
  * Parses and performs a comparison between the values for the "on", "importChangesets",
