@@ -439,8 +439,13 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
  * @param query the updated query to be inserted
  */
 export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string => {
-    const updatedQuery = `- repositoriesMatchingQuery: |
+    let updatedQuery = `- repositoriesMatchingQuery: ${query}\n\n`
+    const ast = load(updatedQuery)
+
+    if (ast.errors.length > 0) {
+        updatedQuery = `- repositoriesMatchingQuery: |
         ${query}\n\n`
+    }
 
     return insertFieldIntoLibraryItem(librarySpec, updatedQuery, 'on', false)
 }
