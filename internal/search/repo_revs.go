@@ -137,16 +137,3 @@ func (r *RepositoryRevisions) String() string {
 
 	return string(r.Repo.Name) + "@" + strings.Join(r.Revs, ":")
 }
-
-// OnlyExplicit returns true if all revspecs in Revs are explicit.
-func (r *RepositoryRevisions) OnlyExplicit() bool {
-	// TODO, get rid of this entirely
-	return true
-}
-
-// RevSpecs returns a list of all explicitly listed Git revspecs. It does not expand ref globs to
-// their matching revspecs.
-func (r *RepositoryRevisions) RevSpecs() []string {
-	// TODO get rid of this entirely
-	return r.Revs
-}

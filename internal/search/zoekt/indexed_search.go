@@ -51,15 +51,6 @@ func (rb *IndexedRepoRevs) add(reporev search.RepositoryRevisions, repo *zoekt.M
 		return reporev.Revs
 	}
 
-	if !reporev.OnlyExplicit() {
-		// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
-		// search on it.
-		//
-		// TODO we could only process the explicit revs and return the non
-		// explicit ones as unindexed.
-		return reporev.Revs
-	}
-
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
 	var unindexed []string
