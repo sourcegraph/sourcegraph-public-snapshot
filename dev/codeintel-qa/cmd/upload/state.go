@@ -71,7 +71,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					}
 
 					if oldState != "COMPLETED" {
-						fmt.Printf("[%5s] %s Finished processing index for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7])
+						fmt.Printf("[%5s] %s Finished processing index for %s@%s - ID %s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7], uploadState.upload.id)
 					}
 				} else if uploadState.state != "QUEUED" && uploadState.state != "PROCESSING" {
 					var payload struct {
@@ -86,7 +86,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					}
 
 					if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, uploadsQueryFragment, nil, &payload); err != nil {
-						return errors.Newf("unexpected state '%s' for %s@%s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], errors.Wrap(err, "error getting audit logs"))
+						return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], &uploadState.upload.id, errors.Wrap(err, "error getting audit logs"))
 					}
 
 					fmt.Printf("RAW PAYLOAD DUMP:\n%+v\n", payload)
@@ -100,7 +100,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						}
 					}
 
-					return errors.Newf("unexpected state '%s' for %s@%s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], logs)
+					return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], uploadState.upload.id, logs)
 				}
 			}
 
