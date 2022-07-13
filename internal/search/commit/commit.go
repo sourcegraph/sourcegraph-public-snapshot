@@ -53,7 +53,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return nil, err
 	}
 
-	searchRepoRev := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
+	searchRepoRev := func(ctx context.Context, repoRev search.RepositoryRevisions) error {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			return nil
@@ -235,13 +235,11 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
 }
 
-func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
+func searchRevsToGitserverRevs(in []string) []gitprotocol.RevisionSpecifier {
 	out := make([]gitprotocol.RevisionSpecifier, 0, len(in))
 	for _, rev := range in {
 		out = append(out, gitprotocol.RevisionSpecifier{
-			RevSpec:        rev.RevSpec,
-			RefGlob:        rev.RefGlob,
-			ExcludeRefGlob: rev.ExcludeRefGlob,
+			RevSpec: rev,
 		})
 	}
 	return out

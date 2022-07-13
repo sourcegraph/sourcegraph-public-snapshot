@@ -15,11 +15,11 @@ import (
 func Test_setRepos(t *testing.T) {
 	// Static test data
 	indexed := &zoekt.IndexedRepoRevs{
-		RepoRevs: map[api.RepoID]*search.RepositoryRevisions{
+		RepoRevs: map[api.RepoID]search.RepositoryRevisions{
 			1: {Repo: types.MinimalRepo{Name: "indexed"}},
 		},
 	}
-	unindexed := []*search.RepositoryRevisions{
+	unindexed := []search.RepositoryRevisions{
 		{Repo: types.MinimalRepo{Name: "unindexed1"}},
 		{Repo: types.MinimalRepo{Name: "unindexed2"}},
 	}

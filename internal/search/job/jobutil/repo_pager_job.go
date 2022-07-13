@@ -26,7 +26,7 @@ type repoPagerJob struct {
 // child jobs for the repoPagerJob.
 type resolvedRepos struct {
 	indexed   *zoekt.IndexedRepoRevs
-	unindexed []*search.RepositoryRevisions
+	unindexed []search.RepositoryRevisions
 }
 
 // reposPartialJob is a partial job that needs a set of resolved repos
@@ -54,7 +54,7 @@ func (j *reposPartialJob) MapChildren(fn job.MapFunc) job.PartialJob[resolvedRep
 
 // setRepos populates the repos field for all jobs that need repos. Jobs are
 // copied, ensuring this function is side-effect free.
-func setRepos(j job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []*search.RepositoryRevisions) job.Job {
+func setRepos(j job.Job, indexed *zoekt.IndexedRepoRevs, unindexed []search.RepositoryRevisions) job.Job {
 	return job.Map(j, func(j job.Job) job.Job {
 		switch v := j.(type) {
 		case *zoekt.RepoSubsetTextSearchJob:

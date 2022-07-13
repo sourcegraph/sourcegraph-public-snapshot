@@ -35,9 +35,9 @@ import (
 )
 
 type Resolved struct {
-	RepoRevs []*search.RepositoryRevisions
+	RepoRevs []search.RepositoryRevisions
 
-	MissingRepoRevs []*search.RepositoryRevisions
+	MissingRepoRevs []RepoRevSpecs
 
 	// Next points to the next page of resolved repository revisions. It will
 	// be nil if there are no more pages left.
@@ -200,29 +200,40 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		repos = repos[:len(repos)-1]
 	}
 
-	var searchContextRepositoryRevisions map[api.RepoID]*search.RepositoryRevisions
+	var searchContextRepositoryRevisions map[api.RepoID]RepoRevSpecs
 	if !searchcontexts.IsAutoDefinedSearchContext(searchContext) && searchContext.Query == "" {
 		scRepoRevs, err := searchcontexts.GetRepositoryRevisions(ctx, r.db, searchContext.ID)
 		if err != nil {
 			return Resolved{}, err
 		}
 
-		searchContextRepositoryRevisions = make(map[api.RepoID]*search.RepositoryRevisions, len(scRepoRevs))
+		searchContextRepositoryRevisions = make(map[api.RepoID]RepoRevSpecs, len(scRepoRevs))
 		for _, repoRev := range scRepoRevs {
-			searchContextRepositoryRevisions[repoRev.Repo.ID] = repoRev
+			revSpecs := make([]search.RevisionSpecifier, 0, len(repoRev.Revs))
+			for _, rev := range repoRev.Revs {
+				revSpecs = append(revSpecs, search.RevisionSpecifier{RevSpec: rev})
+			}
+			searchContextRepositoryRevisions[repoRev.Repo.ID] = RepoRevSpecs{
+				Repo: repoRev.Repo,
+				Revs: revSpecs,
+			}
 		}
 	}
 
 	tr.LazyPrintf("starting rev association")
-
 	associatedRepoRevs, missingRepoRevs := r.associateReposWithRevs(repos, dependencyRevs, searchContextRepositoryRevisions, includePatternRevs)
-
 	tr.LazyPrintf("completed rev association")
+
+	tr.LazyPrintf("starting glob expansion")
+	expanded, err := r.expandGlobs(ctx, associatedRepoRevs)
+	if err != nil {
+		return Resolved{}, err
+	}
+	tr.LazyPrintf("finished glob expansion")
+
 	tr.LazyPrintf("starting rev filtering")
-
-	filteredRepoRevs, filteredMissingRepoRevs, errs, criticalErr := r.filterRepoRevs(ctx, associatedRepoRevs, op)
+	filteredRepoRevs, filteredMissingRepoRevs, errs, criticalErr := r.filterRepoRevs(ctx, expanded, op)
 	missingRepoRevs = append(missingRepoRevs, filteredMissingRepoRevs...)
-
 	tr.LazyPrintf("completed rev filtering")
 
 	if criticalErr != nil {
@@ -250,15 +261,15 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 func (r *Resolver) associateReposWithRevs(
 	repos []types.MinimalRepo,
 	dependencyRevs map[api.RepoName][]search.RevisionSpecifier,
-	searchContextRepoRevs map[api.RepoID]*search.RepositoryRevisions,
+	searchContextRepoRevs map[api.RepoID]RepoRevSpecs,
 	includePatternRevs []patternRevspec,
 ) (
-	repoRevs []*search.RepositoryRevisions,
-	missingRepoRevs []*search.RepositoryRevisions,
+	associated []RepoRevSpecs,
+	missing []RepoRevSpecs,
 ) {
 	g := group.New().WithMaxConcurrency(8)
 
-	associatedRevs := make([]*search.RepositoryRevisions, len(repos))
+	associatedRevs := make([]RepoRevSpecs, len(repos))
 	revsAreMissing := make([]bool, len(repos))
 
 	for i, repo := range repos {
@@ -274,7 +285,7 @@ func (r *Resolver) associateReposWithRevs(
 			}
 
 			if len(searchContextRepoRevs) > 0 && len(revs) == 0 {
-				if scRepoRev := searchContextRepoRevs[repo.ID]; scRepoRev != nil {
+				if scRepoRev, ok := searchContextRepoRevs[repo.ID]; ok {
 					revs = scRepoRev.Revs
 				}
 			}
@@ -290,7 +301,7 @@ func (r *Resolver) associateReposWithRevs(
 				}
 			}
 
-			associatedRevs[i] = &search.RepositoryRevisions{Repo: repo, Revs: revs}
+			associatedRevs[i] = RepoRevSpecs{Repo: repo, Revs: revs}
 			revsAreMissing[i] = isMissing
 		})
 	}
@@ -312,26 +323,97 @@ func (r *Resolver) associateReposWithRevs(
 	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
 }
 
+func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs) ([]search.RepositoryRevisions, error) {
+	results := make([]search.RepositoryRevisions, len(repoRevSpecs))
+
+	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
+	for i, repoRev := range repoRevSpecs {
+		i, repoRev := i, repoRev
+		revs := make([]string, 0, len(repoRev.Revs))
+		var globs []gitdomain.RefGlob
+		for _, rev := range repoRev.Revs {
+			switch {
+			case rev.RefGlob != "":
+				globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
+			case rev.ExcludeRefGlob != "":
+				globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
+			case rev.RevSpec != "":
+				revs = append(revs, rev.RevSpec)
+			default:
+				revs = append(revs, "HEAD")
+			}
+		}
+
+		// Happy path with no goroutines
+		if len(globs) == 0 {
+			results[i] = search.RepositoryRevisions{
+				Repo: repoRev.Repo,
+				Revs: revs,
+			}
+			continue
+		}
+
+		g.Go(func(ctx context.Context) error {
+			rg, err := gitdomain.CompileRefGlobs(globs)
+			if err != nil {
+				return err
+			}
+
+			allRefs, err := r.gitserver.ListRefs(ctx, repoRev.Repo.Name)
+			if err != nil {
+				return err
+			}
+
+			for _, ref := range allRefs {
+				if rg.Match(ref.Name) {
+					revs = append(revs, strings.TrimPrefix(ref.Name, "refs/heads/"))
+				}
+			}
+
+			results[i] = search.RepositoryRevisions{
+				Repo: repoRev.Repo,
+				Revs: revs,
+			}
+			return nil
+		})
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, err
+	}
+
+	// Filter out any results whose revSpecs expanded to nothing
+	filteredResults := results[:0]
+	for _, result := range results {
+		if len(result.Revs) > 0 {
+			filteredResults = append(filteredResults, result)
+		}
+	}
+
+	return filteredResults, nil
+}
+
 // filterRepoRevs filters the revisions on each of a set of RepositoryRevisionsto ensure that:
 // 1) the revision exists and is resolvable on the given repository
 // 2) any repo-level filters (e.g. `repo:contains.commit.after()`) apply to this repo/rev combo.
 func (r *Resolver) filterRepoRevs(
 	ctx context.Context,
-	repoRevs []*search.RepositoryRevisions,
+	repoRevs []search.RepositoryRevisions,
 	op search.RepoOptions,
 ) (
-	filtered, missing []*search.RepositoryRevisions,
+	filtered []search.RepositoryRevisions,
+	missing []RepoRevSpecs,
 	nonCriticalErr, criticalErr error,
 ) {
 	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
 
 	var (
 		mu              sync.Mutex
-		missingRepoRevs []*search.RepositoryRevisions
+		missingRepoRevs []RepoRevSpecs
 	)
 
-	for _, repoRev := range repoRevs {
-		repoRev := repoRev
+	for i, repoRev := range repoRevs {
+		i, repoRev := i, repoRev
 		g.Go(func(ctx context.Context) error {
 			// We do in place filtering to reduce allocations. Common path is no
 			// filtering of revs.
@@ -339,14 +421,7 @@ func (r *Resolver) filterRepoRevs(
 
 			// Check if the repository actually has the revisions that the user specified.
 			for _, rev := range repoRev.Revs {
-				if rev.RefGlob != "" || rev.ExcludeRefGlob != "" {
-					// Do not validate ref patterns. A ref pattern matching 0 refs is not necessarily
-					// invalid, so it's not clear what validation would even mean.
-					filteredRevs = append(filteredRevs, rev)
-					continue
-				}
-
-				if rev.RevSpec == "" && op.CommitAfter == "" { // skip default branch resolution to save time
+				if rev == "HEAD" && op.CommitAfter == "" { // skip default branch resolution to save time
 					filteredRevs = append(filteredRevs, rev)
 					continue
 				}
@@ -361,12 +436,8 @@ func (r *Resolver) filterRepoRevs(
 				// searches like "repo:@foobar" (where foobar is an invalid revspec on most repos)
 				// taking a long time because they all ask gitserver to try to fetch from the remote
 				// repo.
-				if rev.RevSpec == "" {
-					rev.RevSpec = "HEAD"
-				}
-
-				trimmedRefSpec := strings.TrimPrefix(rev.RevSpec, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
-				commitID, err := r.gitserver.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRefSpec, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+				trimmedRev := strings.TrimPrefix(rev, "^") // handle negated revisions, such as ^<branch>, ^<tag>, or ^<commit>
+				commitID, err := r.gitserver.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 				if err != nil {
 					if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
 						return err
@@ -374,14 +445,10 @@ func (r *Resolver) filterRepoRevs(
 
 					if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 						// The revspec does not exist, so don't include it, and report that it's missing.
-						if rev.RevSpec == "" {
-							// Report as HEAD not "" (empty string) to avoid user confusion.
-							rev.RevSpec = "HEAD"
-						}
 						mu.Lock()
-						missingRepoRevs = append(missingRepoRevs, &search.RepositoryRevisions{
+						missingRepoRevs = append(missingRepoRevs, RepoRevSpecs{
 							Repo: repoRev.Repo,
-							Revs: []search.RevisionSpecifier{{RevSpec: rev.RevSpec}},
+							Revs: []search.RevisionSpecifier{{RevSpec: rev}},
 						})
 						mu.Unlock()
 					}
@@ -406,7 +473,7 @@ func (r *Resolver) filterRepoRevs(
 				filteredRevs = append(filteredRevs, rev)
 			}
 
-			repoRev.Revs = filteredRevs
+			repoRevs[i].Revs = filteredRevs
 			return nil
 		})
 	}
@@ -853,7 +920,7 @@ func (e *badRequestError) Cause() error {
 var ErrNoResolvedRepos = errors.New("no resolved repositories")
 
 type MissingRepoRevsError struct {
-	Missing []*search.RepositoryRevisions
+	Missing []RepoRevSpecs
 }
 
 func (MissingRepoRevsError) Error() string { return "missing repo revs" }
@@ -921,4 +988,22 @@ func PrivateReposForActor(ctx context.Context, logger log.Logger, db database.DB
 		tr.LazyPrintf("error resolving user private repos: %v", err)
 	}
 	return userPrivateRepos
+}
+
+type RepoRevSpecs struct {
+	Repo types.MinimalRepo
+	Revs []search.RevisionSpecifier
+}
+
+func (r *RepoRevSpecs) RevSpecs() []string {
+	res := make([]string, 0, len(r.Revs))
+	for _, rev := range r.Revs {
+		switch {
+		case rev.RefGlob != "":
+		case rev.ExcludeRefGlob != "":
+		default:
+			res = append(res, rev.RevSpec)
+		}
+	}
+	return res
 }

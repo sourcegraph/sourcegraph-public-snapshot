@@ -22,14 +22,14 @@ import (
 
 // repoData represents an object of repository revisions to search.
 type repoData interface {
-	AsList() []*search.RepositoryRevisions
+	AsList() []search.RepositoryRevisions
 	IsIndexed() bool
 }
 
-type IndexedMap map[api.RepoID]*search.RepositoryRevisions
+type IndexedMap map[api.RepoID]search.RepositoryRevisions
 
-func (m IndexedMap) AsList() []*search.RepositoryRevisions {
-	reposList := make([]*search.RepositoryRevisions, 0, len(m))
+func (m IndexedMap) AsList() []search.RepositoryRevisions {
+	reposList := make([]search.RepositoryRevisions, 0, len(m))
 	for _, repo := range m {
 		reposList = append(reposList, repo)
 	}
@@ -40,9 +40,9 @@ func (IndexedMap) IsIndexed() bool {
 	return true
 }
 
-type UnindexedList []*search.RepositoryRevisions
+type UnindexedList []search.RepositoryRevisions
 
-func (ul UnindexedList) AsList() []*search.RepositoryRevisions {
+func (ul UnindexedList) AsList() []search.RepositoryRevisions {
 	return ul
 }
 

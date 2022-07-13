@@ -269,10 +269,7 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		Pattern:        "foo",
 	}
 
-	repos := makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")
-	repos[0].ListRefs = func(context.Context, api.RepoName) ([]gitdomain.Ref, error) {
-		return []gitdomain.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
-	}
+	repos := makeRepositoryRevisions("foo@master:mybranch:refs/heads/branch3:refs/heads/branch4")
 
 	matches, _, err := RunRepoSubsetTextSearch(
 		context.Background(),
@@ -306,15 +303,19 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 }
 
-func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
-	r := make([]*search.RepositoryRevisions, len(repos))
+func makeRepositoryRevisions(repos ...string) []search.RepositoryRevisions {
+	r := make([]search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoName, revs := search.ParseRepositoryRevisions(repospec)
-		if len(revs) == 0 {
-			// treat empty list as preferring master
-			revs = []search.RevisionSpecifier{{RevSpec: ""}}
+		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
+		revs := make([]string, 0, len(revSpecs))
+		for _, revSpec := range revSpecs {
+			revs = append(revs, revSpec.RevSpec)
 		}
-		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+		if len(revs) == 0 {
+			// treat empty list as HEAD
+			revs = []string{"HEAD"}
+		}
+		r[i] = search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
 	}
 	return r
 }
@@ -340,7 +341,7 @@ func RunRepoSubsetTextSearch(
 	ctx context.Context,
 	logger log.Logger,
 	patternInfo *search.TextPatternInfo,
-	repos []*search.RepositoryRevisions,
+	repos []search.RepositoryRevisions,
 	q query.Q,
 	zoekt *searchbackend.FakeSearcher,
 	searcherURLs *endpoint.Map,
