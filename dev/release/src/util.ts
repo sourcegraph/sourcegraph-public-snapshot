@@ -4,6 +4,7 @@ import { URL } from 'url'
 
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
+import fetch from 'node-fetch'
 
 /* eslint-disable @typescript-eslint/consistent-type-assertions */
 export function formatDate(date: Date): string {
@@ -132,6 +133,31 @@ export function ensureReleaseBranchUpToDate(branch: string): void {
     const remoteBranch = 'origin/' + branch
     if (!ensureBranchUpToDate(branch, remoteBranch)) {
         process.exit(1)
+    }
+}
+
+export async function ensureSrcCliUpToDate(): Promise<void> {
+    const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json.tag_name)
+
+    let installedTag = execa.sync('src', ['version']).stdout.split('\n')
+    installedTag = installedTag[0].split(':')
+    const trimmedInstalledTag = installedTag[1].trim()
+
+    if (trimmedInstalledTag !== latestTag) {
+        try {
+            console.log('Uprading src-cli to the latest version.')
+            execa.sync('brew', ['upgrade', 'src-cli'])
+        } catch (error) {
+            console.log('Trouble upgrading src-cli:', error)
+            process.exit(1)
+        }
     }
 }
 
