@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Target = check.Category[*repo.State]
@@ -26,22 +25,6 @@ var Targets = []Target{
 		Description: "Check for broken urls in the codebase",
 		Checks: []*linter{
 			runScript("Broken urls", "dev/check/broken-urls.bash"),
-		},
-	},
-	{
-		Name:        "test",
-		Description: "Check for broken urls in the codebase",
-		Checks: []*linter{
-			{
-				Name: "test",
-				Check: func(ctx context.Context, out *std.Output, args *repo.State) error {
-					return errors.New("ah")
-				},
-				Fix: func(ctx context.Context, cio check.IO, args *repo.State) error {
-					cio.WriteSuccessf("Yay!")
-					return nil
-				},
-			},
 		},
 	},
 	{
