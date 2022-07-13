@@ -15,7 +15,7 @@ import { CodeInsightTrackType } from '../../../../pings'
 import {
     LangStatsInsightCreationContent,
     LangStatsInsightCreationContentProps,
-} from './components/lang-stats-insight-creation-content/LangStatsInsightCreationContent'
+} from './components/LangStatsInsightCreationContent'
 import { LangStatsCreationFormFields } from './types'
 import { getSanitizedLangStatsInsight } from './utils/insight-sanitizer'
 
@@ -50,6 +50,10 @@ export const LangStatsInsightCreationPage: React.FunctionComponent<
 > = props => {
     const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
 
+    // We do not use temporal user settings since form values are not so important to
+    // waste users time for waiting response of yet another network request to just
+    // render creation UI form.
+    // eslint-disable-next-line no-restricted-syntax
     const [initialFormValues, setInitialFormValues] = useLocalStorage<LangStatsCreationFormFields | undefined>(
         'insights.code-stats-creation-ui',
         undefined

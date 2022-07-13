@@ -1,24 +1,32 @@
 import {
-    useAsyncInsightTitleValidator,
     useField,
     useFieldAPI,
     Form,
     FormChangeEvent,
     SubmissionErrors,
     useForm,
-    createRequiredValidator,
     EditableDataSeries,
-} from '../../../../../../../components'
-import { CreateInsightFormFields, InsightStep } from '../../../types'
-import { INITIAL_INSIGHT_VALUES } from '../initial-insight-values'
-import {
-    repositoriesExistValidator,
-    repositoriesFieldValidator,
-    requiredStepValueField,
-    seriesRequired,
-} from '../validators'
+    insightTitleValidator,
+    insightRepositoriesValidator,
+    insightRepositoriesAsyncValidator,
+    insightStepValueValidator,
+    insightSeriesValidator,
+    createDefaultEditSeries,
+} from '../../../../../components'
+import { CreateInsightFormFields, InsightStep } from '../types'
 
-const titleRequiredValidator = createRequiredValidator('Title is a required field.')
+export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
+    // If user opens the creation form to create insight
+    // we want to show the series form as soon as possible
+    // and do not force the user to click the 'add another series' button
+    series: [createDefaultEditSeries({ edit: true })],
+    step: 'months',
+    stepValue: '2',
+    title: '',
+    repositories: '',
+    allRepos: false,
+    dashboardReferenceCount: 0,
+}
 
 export interface UseInsightCreationFormProps {
     mode: 'creation' | 'edit'
@@ -69,24 +77,20 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
     })
 
     const isAllReposMode = allReposMode.input.value
-    const asyncTitleValidator = useAsyncInsightTitleValidator({
-        mode,
-        initialTitle: form.formAPI.initialValues.title,
-    })
 
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
-        validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
+        validators: { sync: insightTitleValidator },
     })
 
     const repositories = useField({
         name: 'repositories',
         formApi: form.formAPI,
         validators: {
-            // Turn off any validations for the repositories field in we are in all repos mode
-            sync: !isAllReposMode ? repositoriesFieldValidator : undefined,
-            async: !isAllReposMode ? repositoriesExistValidator : undefined,
+            // Turn off any validations for the repositories' field in we are in all repos mode
+            sync: !isAllReposMode ? insightRepositoriesValidator : undefined,
+            async: !isAllReposMode ? insightRepositoriesAsyncValidator : undefined,
         },
         disabled: isAllReposMode,
     })
@@ -94,7 +98,7 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
     const series = useField({
         name: 'series',
         formApi: form.formAPI,
-        validators: { sync: seriesRequired },
+        validators: { sync: insightSeriesValidator },
     })
 
     const step = useField({
@@ -106,7 +110,7 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
         formApi: form.formAPI,
         validators: {
             // Turn off any validations if we are in all repos mode
-            sync: !isAllReposMode ? requiredStepValueField : undefined,
+            sync: !isAllReposMode ? insightStepValueValidator : undefined,
         },
     })
 

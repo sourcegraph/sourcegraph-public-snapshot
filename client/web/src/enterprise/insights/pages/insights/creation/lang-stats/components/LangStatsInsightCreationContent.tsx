@@ -6,19 +6,22 @@ import {
     CreationUiLayout,
     CreationUIForm,
     CreationUIPreview,
-    useAsyncInsightTitleValidator,
     useField,
     FormChangeEvent,
     SubmissionErrors,
     useForm,
+    insightTitleValidator,
     createRequiredValidator,
-} from '../../../../../../components'
-import { Insight } from '../../../../../../core'
-import { LangStatsCreationFormFields } from '../../types'
-import { LangStatsInsightCreationForm } from '../lang-stats-insight-creation-form/LangStatsInsightCreationForm'
-import { LangStatsInsightLivePreview } from '../live-preview-chart/LangStatsInsightLivePreview'
+    insightRepositoriesValidator,
+    insightRepositoriesAsyncValidator,
+} from '../../../../../components'
+import { Insight } from '../../../../../core'
+import { LangStatsCreationFormFields } from '../types'
 
-import { repositoriesFieldValidator, repositoryFieldAsyncValidator, thresholdFieldValidator } from './validators'
+import { LangStatsInsightCreationForm } from './lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+import { LangStatsInsightLivePreview } from './live-preview-chart/LangStatsInsightLivePreview'
+
+export const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
 
 const INITIAL_VALUES: LangStatsCreationFormFields = {
     repository: '',
@@ -26,8 +29,6 @@ const INITIAL_VALUES: LangStatsCreationFormFields = {
     threshold: 3,
     dashboardReferenceCount: 0,
 }
-
-const titleRequiredValidator = createRequiredValidator('Title is a required field.')
 
 export interface LangStatsInsightCreationContentProps {
     /**
@@ -69,23 +70,19 @@ export const LangStatsInsightCreationContent: FC<LangStatsInsightCreationContent
         touched: mode === 'edit',
     })
 
-    const asyncTitleValidator = useAsyncInsightTitleValidator({
-        mode,
-        initialTitle: formAPI.initialValues.title,
-    })
-
     const repository = useField({
         name: 'repository',
         formApi: formAPI,
         validators: {
-            sync: repositoriesFieldValidator,
-            async: repositoryFieldAsyncValidator,
+            sync: insightRepositoriesValidator,
+            async: insightRepositoriesAsyncValidator,
         },
     })
+
     const title = useField({
         name: 'title',
         formApi: formAPI,
-        validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
+        validators: { sync: insightTitleValidator },
     })
 
     const threshold = useField({
