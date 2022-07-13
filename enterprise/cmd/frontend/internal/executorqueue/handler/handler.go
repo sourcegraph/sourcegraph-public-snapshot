@@ -171,10 +171,11 @@ func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []
 
 // canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
 // to be canceled.
-func (h *handler) canceled(ctx context.Context, executorName string) (knownIDs []int, err error) {
-	return h.Store.CanceledJobs(ctx, store.CanceledJobsOptions{
+func (h *handler) canceled(ctx context.Context, executorName string, knownIDs []int) (canceledIDs []int, err error) {
+	canceledIDs, err = h.Store.CanceledJobs(ctx, knownIDs, store.CanceledJobsOptions{
 		// We pass the WorkerHostname, so the store enforces the record to be owned by this executor.
 		// Otherwise we would be getting record IDs for all the workers, which is unnecessary.
 		WorkerHostname: executorName,
 	})
+	return knownIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
 }

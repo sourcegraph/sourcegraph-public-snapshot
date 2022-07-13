@@ -142,7 +142,7 @@ func (h *handler) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
 	var payload apiclient.CanceledJobsRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName)
+		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
 		return http.StatusOK, canceledIDs, err
 	})
 }

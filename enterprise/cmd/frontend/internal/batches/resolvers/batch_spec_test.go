@@ -567,7 +567,7 @@ func setJobCanceling(t *testing.T, ctx context.Context, s *store.Store, job *bty
 
 func setJobCanceled(t *testing.T, ctx context.Context, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
 	t.Helper()
-	job.State = btypes.BatchSpecWorkspaceExecutionJobStateFailed
+	job.State = btypes.BatchSpecWorkspaceExecutionJobStateCanceled
 	if job.StartedAt.IsZero() {
 		job.StartedAt = time.Now().Add(-5 * time.Minute)
 	}
