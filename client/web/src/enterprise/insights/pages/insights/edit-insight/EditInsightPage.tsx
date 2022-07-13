@@ -86,11 +86,21 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
             />
 
             {isSearchBasedInsight(insight) && (
-                <EditSearchBasedInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
+                <EditSearchBasedInsight
+                    licensed={licensed}
+                    isEditAvailable={editPermission?.available}
+                    insight={insight}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel} />
             )}
 
             {isCaptureGroupInsight(insight) && (
-                <EditCaptureGroupInsight insight={insight} onSubmit={handleSubmit} onCancel={handleCancel} />
+                <EditCaptureGroupInsight
+                    licensed={licensed}
+                    isEditAvailable={editPermission?.available}
+                    insight={insight}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel} />
             )}
 
             {isLangStatsInsight(insight) && (
