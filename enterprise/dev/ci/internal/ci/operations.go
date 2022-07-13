@@ -558,7 +558,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
 			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
-				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@U018WMLUL3F>",
+				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
 				ChannelName: "code-intel",
 				Conditions: bk.SlackStepNotifyPayloadConditions{
 					Failed: true,
