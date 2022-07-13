@@ -1,4 +1,4 @@
-package service
+package tests
 
 import (
 	"context"
@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/reconciler"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/service"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -42,13 +43,13 @@ func TestServiceApplyBatchChange(t *testing.T) {
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
 	store := store.NewWithClock(db, &observation.TestContext, nil, clock)
-	svc := New(store)
+	svc := service.New(store)
 
 	t.Run("BatchSpec without changesetSpecs", func(t *testing.T) {
 		t.Run("new batch change", func(t *testing.T) {
 			ct.TruncateTables(t, db, "changeset_events", "changesets", "batch_changes", "batch_specs", "changeset_specs")
 			batchSpec := ct.CreateBatchSpec(t, ctx, store, "batchchange1", admin.ID)
-			batchChange, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+			batchChange, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 				BatchSpecRandID: batchSpec.RandID,
 			})
 			if err != nil {
@@ -85,7 +86,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			batchChange := ct.CreateBatchChange(t, ctx, store, "batchchange2", admin.ID, batchSpec.ID)
 
 			t.Run("apply same BatchSpec", func(t *testing.T) {
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				batchChange2, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 					BatchSpecRandID: batchSpec.RandID,
 				})
 				if err != nil {
@@ -98,18 +99,18 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			t.Run("apply same BatchSpec with FailIfExists", func(t *testing.T) {
-				_, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{
+				_, err := svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{
 					BatchSpecRandID:         batchSpec.RandID,
 					FailIfBatchChangeExists: true,
 				})
-				if err != ErrMatchingBatchChangeExists {
-					t.Fatalf("unexpected error. want=%s, got=%s", ErrMatchingBatchChangeExists, err)
+				if err != service.ErrMatchingBatchChangeExists {
+					t.Fatalf("unexpected error. want=%s, got=%s", service.ErrMatchingBatchChangeExists, err)
 				}
 			})
 
 			t.Run("apply batch spec with same name", func(t *testing.T) {
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID)
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				batchChange2, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 					BatchSpecRandID: batchSpec2.RandID,
 				})
 				if err != nil {
@@ -134,7 +135,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				}
 
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "created-by-user", user.ID)
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				batchChange2, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 					BatchSpecRandID: batchSpec2.RandID,
 				})
 				if err != nil {
@@ -158,7 +159,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				user2 := ct.CreateTestUser(t, db, false)
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange2", user2.ID)
 
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				batchChange2, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 					BatchSpecRandID: batchSpec2.RandID,
 				})
 				if err != nil {
@@ -177,7 +178,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			t.Run("batch spec with same name and same ensureBatchChangeID", func(t *testing.T) {
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID)
 
-				batchChange2, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				batchChange2, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 					BatchSpecRandID:     batchSpec2.RandID,
 					EnsureBatchChangeID: batchChange.ID,
 				})
@@ -192,11 +193,11 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			t.Run("batch spec with same name but different ensureBatchChangeID", func(t *testing.T) {
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "batchchange2", admin.ID)
 
-				_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+				_, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 					BatchSpecRandID:     batchSpec2.RandID,
 					EnsureBatchChangeID: batchChange.ID + 999,
 				})
-				if err != ErrEnsureBatchChangeFailed {
+				if err != service.ErrEnsureBatchChangeFailed {
 					t.Fatalf("wrong error: %s", err)
 				}
 			})
@@ -225,7 +226,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				HeadRef:   "refs/heads/my-branch",
 			})
 
-			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec.RandID, 2)
+			batchChange, cs := applyAndListChangesets(adminCtx, t, store, svc, batchSpec.RandID, 2)
 
 			if have, want := batchChange.Name, "batchchange3"; have != want {
 				t.Fatalf("wrong batch change name. want=%s, have=%s", want, have)
@@ -288,7 +289,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			// Apply and expect 4 changesets
-			oldBatchChange, oldChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 4)
+			oldBatchChange, oldChangesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 4)
 
 			// Now we create another batch spec with the same batch change name
 			// and namespace.
@@ -344,7 +345,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			ct.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.Spec.HeadRef)
 
 			// Apply and expect 6 changesets
-			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 6)
+			batchChange, cs := applyAndListChangesets(adminCtx, t, store, svc, batchSpec2.RandID, 6)
 
 			if oldBatchChange.ID != batchChange.ID {
 				t.Fatal("expected to update batch change, but got a new one")
@@ -440,7 +441,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				HeadRef:   "refs/heads/repo-0-branch-0",
 			})
 
-			ownerBatchChange, ownerChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+			ownerBatchChange, ownerChangesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 1)
 
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
@@ -456,7 +457,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				ExternalID: c.ExternalID,
 			})
 
-			trackingBatchChange, trackedChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+			trackingBatchChange, trackedChangesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec2.RandID, 1)
 			// This should still point to the owner batch change
 			c2 := trackedChangesets[0]
 			trackedChangesetAssertions := ct.ChangesetAssertions{
@@ -485,7 +486,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			// Apply again. This should have flagged the association as detach
 			// and it should not be closed, since the batch change is not the
 			// owner.
-			trackingBatchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 2)
+			trackingBatchChange, cs := applyAndListChangesets(adminCtx, t, store, svc, batchSpec3.RandID, 2)
 
 			trackedChangesetAssertions.Closing = false
 			trackedChangesetAssertions.ReconcilerState = btypes.ReconcilerStateQueued
@@ -517,7 +518,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			})
 
 			// We apply the spec and expect 1 changeset
-			applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+			applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 1)
 
 			// But the changeset was not published yet.
 			// And now we apply a new spec without any changesets.
@@ -525,7 +526,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			// That should close no changesets, but set the unpublished changesets to be detached when
 			// the reconciler picks them up.
-			applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+			applyAndListChangesets(adminCtx, t, store, svc, batchSpec2.RandID, 1)
 		})
 
 		t.Run("batch change with changeset that wasn't processed before reapply", func(t *testing.T) {
@@ -543,7 +544,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// We apply the spec and expect 1 changeset
-			batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+			batchChange, changesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 1)
 
 			// And publish it.
 			ct.SetChangesetPublished(t, ctx, store, changesets[0], "123-queued", "refs/heads/queued")
@@ -569,7 +570,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// That should still want to publish the changeset
-			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+			_, changesets = applyAndListChangesets(adminCtx, t, store, svc, batchSpec2.RandID, 1)
 
 			ct.ReloadAndAssertChangeset(t, ctx, store, changesets[0], ct.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateQueued,
@@ -609,7 +610,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			specOpts.BatchSpec = batchSpec3.ID
 			spec3 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
-			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+			_, changesets = applyAndListChangesets(adminCtx, t, store, svc, batchSpec3.RandID, 1)
 
 			ct.ReloadAndAssertChangeset(t, ctx, store, changesets[0], ct.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateQueued,
@@ -651,7 +652,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			specOpts.BatchSpec = batchSpec4.ID
 			spec4 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
-			_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec4.RandID, 1)
+			_, changesets = applyAndListChangesets(adminCtx, t, store, svc, batchSpec4.RandID, 1)
 
 			ct.ReloadAndAssertChangeset(t, ctx, store, changesets[0], ct.ChangesetAssertions{
 				ReconcilerState:  btypes.ReconcilerStateQueued,
@@ -706,7 +707,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				HeadRef:   "refs/heads/my-branch",
 			})
 
-			_, err := svc.ApplyBatchChange(userCtx, ApplyBatchChangeOpts{
+			_, err := svc.ApplyBatchChange(userCtx, service.ApplyBatchChangeOpts{
 				BatchSpecRandID: batchSpec.RandID,
 			})
 			if err == nil {
@@ -743,7 +744,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			}
 			ct.CreateChangesetSpec(t, ctx, store, spec2Opts)
 
-			_, oldChangesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 2)
+			_, oldChangesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 2)
 
 			// Set the changesets to look like they failed in the reconciler
 			for _, c := range oldChangesets {
@@ -758,7 +759,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			spec2Opts.BatchSpec = batchSpec2.ID
 			newSpec2 := ct.CreateChangesetSpec(t, ctx, store, spec2Opts)
 
-			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 2)
+			batchChange, cs := applyAndListChangesets(adminCtx, t, store, svc, batchSpec2.RandID, 2)
 
 			c1 := cs.Find(btypes.WithExternalID(newSpec1.Spec.ExternalID))
 			ct.ReloadAndAssertChangeset(t, ctx, store, c1, ct.ChangesetAssertions{
@@ -818,7 +819,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 			// STEP 1: We apply the spec and expect 1 changeset.
-			batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+			batchChange, changesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 1)
 
 			// Now we update the changeset so it looks like it's been published
 			// on the code host.
@@ -842,7 +843,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			// STEP 2: Now we apply a new spec without any changesets, but expect the changeset-to-be-archived to
 			// be left in the batch change (the reconciler would detach it, if the executor picked up the changeset).
 			batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID)
-			applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+			applyAndListChangesets(adminCtx, t, store, svc, batchSpec2.RandID, 1)
 
 			// Our previously published changeset should be marked as "to be
 			// archived" and "to be closed"
@@ -867,7 +868,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			batchSpec3 := ct.CreateBatchSpec(t, ctx, store, "archived-closed-changeset", admin.ID)
 
 			// 1 changeset that's archived
-			applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+			applyAndListChangesets(adminCtx, t, store, svc, batchSpec3.RandID, 1)
 
 			// Assert that the changeset record is still archived and closed.
 			ct.ReloadAndAssertChangeset(t, ctx, store, c, assertions)
@@ -887,7 +888,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
-				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+				batchChange, changesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 1)
 
 				// Now we update the changeset so it looks like it's been published
 				// on the code host.
@@ -910,7 +911,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 				// STEP 2: Now we apply a new spec without any changesets.
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset", admin.ID)
-				applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+				applyAndListChangesets(adminCtx, t, store, svc, batchSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to
 				// be archived" and "to be closed"
@@ -938,7 +939,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				specOpts.BatchSpec = batchSpec3.ID
 				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
-				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+				_, changesets = applyAndListChangesets(adminCtx, t, store, svc, batchSpec3.RandID, 1)
 
 				attachedChangeset := changesets[0]
 				if have, want := attachedChangeset.ID, c.ID; have != want {
@@ -969,7 +970,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
-				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+				batchChange, changesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 1)
 
 				// Now we update the changeset so it looks like it's been published
 				// on the code host.
@@ -992,7 +993,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 				// STEP 2: Now we apply a new spec without any changesets.
 				batchSpec2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-failed-changeset", admin.ID)
-				applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 1)
+				applyAndListChangesets(adminCtx, t, store, svc, batchSpec2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to
 				// be archived" and "to be closed"
@@ -1027,7 +1028,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				specOpts.BatchSpec = batchSpec3.ID
 				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
-				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+				_, changesets = applyAndListChangesets(adminCtx, t, store, svc, batchSpec3.RandID, 1)
 
 				attachedChangeset := changesets[0]
 				if have, want := attachedChangeset.ID, c.ID; have != want {
@@ -1064,7 +1065,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				spec1 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
 				// STEP 1: We apply the spec and expect 1 changeset.
-				batchChange, changesets := applyAndListChangesets(adminCtx, t, svc, batchSpec1.RandID, 1)
+				batchChange, changesets := applyAndListChangesets(adminCtx, t, store, svc, batchSpec1.RandID, 1)
 
 				c := changesets[0]
 				ct.SetChangesetPublished(t, ctx, store, c, "449955", specOpts.HeadRef)
@@ -1085,7 +1086,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 				// STEP 2: Now we apply a new spec without any changesets.
 				batchChange2 := ct.CreateBatchSpec(t, ctx, store, "detach-reattach-changeset-2", admin.ID)
-				applyAndListChangesets(adminCtx, t, svc, batchChange2.RandID, 1)
+				applyAndListChangesets(adminCtx, t, store, svc, batchChange2.RandID, 1)
 
 				// Our previously published changeset should be marked as "to
 				// be archived" and "to be closed"
@@ -1105,7 +1106,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				specOpts.BatchSpec = batchSpec3.ID
 				spec2 := ct.CreateChangesetSpec(t, ctx, store, specOpts)
 
-				_, changesets = applyAndListChangesets(adminCtx, t, svc, batchSpec3.RandID, 1)
+				_, changesets = applyAndListChangesets(adminCtx, t, store, svc, batchSpec3.RandID, 1)
 
 				attachedChangeset := changesets[0]
 				if have, want := attachedChangeset.ID, c.ID; have != want {
@@ -1143,7 +1144,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				HeadRef:   "refs/heads/my-branch",
 			})
 
-			_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+			_, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 				BatchSpecRandID: batchSpec.RandID,
 			})
 			if err == nil {
@@ -1166,19 +1167,19 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			t.Fatalf("failed to update batch change: %s", err)
 		}
 
-		_, err := svc.ApplyBatchChange(adminCtx, ApplyBatchChangeOpts{
+		_, err := svc.ApplyBatchChange(adminCtx, service.ApplyBatchChangeOpts{
 			BatchSpecRandID: batchSpec.RandID,
 		})
-		if err != ErrApplyClosedBatchChange {
+		if err != service.ErrApplyClosedBatchChange {
 			t.Fatalf("ApplyBatchChange returned unexpected error: %s", err)
 		}
 	})
 }
 
-func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, batchSpecRandID string, wantChangesets int) (*btypes.BatchChange, btypes.Changesets) {
+func applyAndListChangesets(ctx context.Context, t *testing.T, bstore *store.Store, svc *service.Service, batchSpecRandID string, wantChangesets int) (*btypes.BatchChange, btypes.Changesets) {
 	t.Helper()
 
-	batchChange, err := svc.ApplyBatchChange(ctx, ApplyBatchChangeOpts{
+	batchChange, err := svc.ApplyBatchChange(ctx, service.ApplyBatchChangeOpts{
 		BatchSpecRandID: batchSpecRandID,
 	})
 	if err != nil {
@@ -1189,7 +1190,7 @@ func applyAndListChangesets(ctx context.Context, t *testing.T, svc *Service, bat
 		t.Fatalf("batch change ID is zero")
 	}
 
-	changesets, _, err := svc.store.ListChangesets(ctx, store.ListChangesetsOpts{
+	changesets, _, err := bstore.ListChangesets(ctx, store.ListChangesetsOpts{
 		BatchChangeID:   batchChange.ID,
 		IncludeArchived: true,
 	})
