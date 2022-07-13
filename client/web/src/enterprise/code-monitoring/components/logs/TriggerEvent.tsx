@@ -61,9 +61,9 @@ export const TriggerEvent: React.FunctionComponent<
             <div className="d-flex align-items-center">
                 <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
                     {expanded ? (
-                        <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Collapse event trigger." />
+                        <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Collapse run." />
                     ) : (
-                        <Icon svgPath={mdiChevronRight} className="mr-2" aria-label="Expand event trigger." />
+                        <Icon svgPath={mdiChevronRight} className="mr-2" aria-label="Expand run." />
                     )}
 
                     {hasError ? (
