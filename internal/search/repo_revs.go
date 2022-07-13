@@ -57,10 +57,10 @@ type RepositoryRevisions struct {
 	Revs []string
 }
 
-func (r *RepositoryRevisions) Copy() RepositoryRevisions {
+func (r *RepositoryRevisions) Copy() *RepositoryRevisions {
 	revs := make([]string, len(r.Revs))
 	copy(revs, r.Revs)
-	return RepositoryRevisions{
+	return &RepositoryRevisions{
 		Repo: r.Repo,
 		Revs: revs,
 	}

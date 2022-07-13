@@ -303,8 +303,8 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 	}
 }
 
-func makeRepositoryRevisions(repos ...string) []search.RepositoryRevisions {
-	r := make([]search.RepositoryRevisions, len(repos))
+func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
+	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
 		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
 		revs := make([]string, 0, len(revSpecs))
@@ -315,7 +315,7 @@ func makeRepositoryRevisions(repos ...string) []search.RepositoryRevisions {
 			// treat empty list as HEAD
 			revs = []string{"HEAD"}
 		}
-		r[i] = search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
 	}
 	return r
 }
@@ -341,7 +341,7 @@ func RunRepoSubsetTextSearch(
 	ctx context.Context,
 	logger log.Logger,
 	patternInfo *search.TextPatternInfo,
-	repos []search.RepositoryRevisions,
+	repos []*search.RepositoryRevisions,
 	q query.Q,
 	zoekt *searchbackend.FakeSearcher,
 	searcherURLs *endpoint.Map,

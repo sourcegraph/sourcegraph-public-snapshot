@@ -28,7 +28,7 @@ var textSearchLimiter = mutablelimiter.New(32)
 
 type TextSearchJob struct {
 	PatternInfo *search.TextPatternInfo
-	Repos       []search.RepositoryRevisions // the set of repositories to search with searcher.
+	Repos       []*search.RepositoryRevisions // the set of repositories to search with searcher.
 
 	// Indexed represents whether the set of repositories are indexed (used
 	// to communicate whether searcher should call Zoekt search on these

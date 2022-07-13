@@ -53,7 +53,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return nil, err
 	}
 
-	searchRepoRev := func(ctx context.Context, repoRev search.RepositoryRevisions) error {
+	searchRepoRev := func(ctx context.Context, repoRev *search.RepositoryRevisions) error {
 		// Skip the repo if no revisions were resolved for it
 		if len(repoRev.Revs) == 0 {
 			return nil

@@ -60,13 +60,13 @@ func TestRevisionValidation(t *testing.T) {
 
 	tests := []struct {
 		repoFilters              []string
-		wantRepoRevs             []search.RepositoryRevisions
+		wantRepoRevs             []*search.RepositoryRevisions
 		wantMissingRepoRevisions []RepoRevSpecs
 		wantErr                  error
 	}{
 		{
 			repoFilters: []string{"repoFoo@revBar:^revBas"},
-			wantRepoRevs: []search.RepositoryRevisions{{
+			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar", "^revBas"},
 			}},
@@ -74,7 +74,7 @@ func TestRevisionValidation(t *testing.T) {
 		},
 		{
 			repoFilters: []string{"repoFoo@*refs/heads/*:*!refs/heads/revBas"},
-			wantRepoRevs: []search.RepositoryRevisions{{
+			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar"},
 			}},
@@ -82,7 +82,7 @@ func TestRevisionValidation(t *testing.T) {
 		},
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
-			wantRepoRevs: []search.RepositoryRevisions{{
+			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"revBar"},
 			}},
@@ -114,7 +114,7 @@ func TestRevisionValidation(t *testing.T) {
 		},
 		{
 			repoFilters: []string{"repoFoo"},
-			wantRepoRevs: []search.RepositoryRevisions{{
+			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
 				Revs: []string{"HEAD"},
 			}},
@@ -493,7 +493,7 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	wantRepositoryRevisions := []search.RepositoryRevisions{
+	wantRepositoryRevisions := []*search.RepositoryRevisions{
 		{Repo: repoA, Revs: searchContextRepositoryRevisions[0].Revisions},
 		{Repo: repoB, Revs: searchContextRepositoryRevisions[1].Revisions},
 	}

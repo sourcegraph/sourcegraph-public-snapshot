@@ -37,7 +37,7 @@ func TestIndexedSearch(t *testing.T) {
 		query           string
 		fileMatchLimit  int32
 		selectPath      filter.SelectPath
-		repos           []search.RepositoryRevisions
+		repos           []*search.RepositoryRevisions
 		useFullDeadline bool
 		results         []zoekt.FileMatch
 		since           func(time.Time) time.Duration
@@ -67,7 +67,7 @@ func TestIndexedSearch(t *testing.T) {
 		wantMatchCount     int
 		wantMatchKeys      []result.Key
 		wantMatchInputRevs []string
-		wantUnindexed      []search.RepositoryRevisions
+		wantUnindexed      []*search.RepositoryRevisions
 		wantCommon         streaming.Stats
 		wantErr            bool
 	}{
@@ -391,17 +391,17 @@ func TestZoektIndexedRepos(t *testing.T) {
 
 	cases := []struct {
 		name      string
-		repos     []search.RepositoryRevisions
-		indexed   []search.RepositoryRevisions
-		unindexed []search.RepositoryRevisions
+		repos     []*search.RepositoryRevisions
+		indexed   []*search.RepositoryRevisions
+		unindexed []*search.RepositoryRevisions
 	}{{
 		name:  "all",
 		repos: repos,
-		indexed: []search.RepositoryRevisions{
+		indexed: []*search.RepositoryRevisions{
 			repos[0], repos[1], repos[2],
 			{Repo: repos[3].Repo, Revs: repos[3].Revs[:1]},
 		},
-		unindexed: []search.RepositoryRevisions{
+		unindexed: []*search.RepositoryRevisions{
 			{Repo: repos[3].Repo, Revs: repos[3].Revs[1:]},
 			repos[4], repos[5],
 		},
@@ -489,8 +489,8 @@ func TestZoektResultCountFactor(t *testing.T) {
 }
 
 func TestZoektIndexedRepos_single(t *testing.T) {
-	repoRev := func(revSpec string) search.RepositoryRevisions {
-		return search.RepositoryRevisions{
+	repoRev := func(revSpec string) *search.RepositoryRevisions {
+		return &search.RepositoryRevisions{
 			Repo: types.MinimalRepo{ID: api.RepoID(1), Name: "test/repo"},
 			Revs: []string{revSpec},
 		}
@@ -511,53 +511,53 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}
 	cases := []struct {
 		rev           string
-		wantIndexed   []search.RepositoryRevisions
-		wantUnindexed []search.RepositoryRevisions
+		wantIndexed   []*search.RepositoryRevisions
+		wantUnindexed []*search.RepositoryRevisions
 	}{
 		{
 			rev:           "",
-			wantIndexed:   []search.RepositoryRevisions{repoRev("")},
-			wantUnindexed: []search.RepositoryRevisions{},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
+			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
 			rev:           "HEAD",
-			wantIndexed:   []search.RepositoryRevisions{repoRev("HEAD")},
-			wantUnindexed: []search.RepositoryRevisions{},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
+			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
 			rev:           "df3f4e499698e48152b39cd655d8901eaf583fa5",
-			wantIndexed:   []search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
-			wantUnindexed: []search.RepositoryRevisions{},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
+			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
 			rev:           "df3f4e",
-			wantIndexed:   []search.RepositoryRevisions{repoRev("df3f4e")},
-			wantUnindexed: []search.RepositoryRevisions{},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e")},
+			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
 			rev:           "d",
-			wantIndexed:   []search.RepositoryRevisions{},
-			wantUnindexed: []search.RepositoryRevisions{repoRev("d")},
+			wantIndexed:   []*search.RepositoryRevisions{},
+			wantUnindexed: []*search.RepositoryRevisions{repoRev("d")},
 		},
 		{
 			rev:           "HEAD^1",
-			wantIndexed:   []search.RepositoryRevisions{},
-			wantUnindexed: []search.RepositoryRevisions{repoRev("HEAD^1")},
+			wantIndexed:   []*search.RepositoryRevisions{},
+			wantUnindexed: []*search.RepositoryRevisions{repoRev("HEAD^1")},
 		},
 		{
 			rev:           "8ec975423738fe7851676083ebf660a062ed1578",
-			wantUnindexed: []search.RepositoryRevisions{},
-			wantIndexed:   []search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
+			wantUnindexed: []*search.RepositoryRevisions{},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
 		},
 	}
 
 	type ret struct {
-		Indexed   map[api.RepoID]search.RepositoryRevisions
-		Unindexed []search.RepositoryRevisions
+		Indexed   map[api.RepoID]*search.RepositoryRevisions
+		Unindexed []*search.RepositoryRevisions
 	}
 
 	for _, tt := range cases {
-		indexed, unindexed := zoektIndexedRepos(zoektRepos, []search.RepositoryRevisions{repoRev(tt.rev)}, nil)
+		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
 			Indexed:   indexed.RepoRevs,
 			Unindexed: unindexed,
@@ -657,8 +657,8 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	}
 }
 
-func repoRevsSliceToMap(rs []search.RepositoryRevisions) map[api.RepoID]search.RepositoryRevisions {
-	m := map[api.RepoID]search.RepositoryRevisions{}
+func repoRevsSliceToMap(rs []*search.RepositoryRevisions) map[api.RepoID]*search.RepositoryRevisions {
+	m := map[api.RepoID]*search.RepositoryRevisions{}
 	for _, r := range rs {
 		m[r.Repo.ID] = r
 	}
@@ -777,8 +777,8 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 	}
 }
 
-func makeRepositoryRevisions(repos ...string) []search.RepositoryRevisions {
-	r := make([]search.RepositoryRevisions, len(repos))
+func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
+	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
 		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
 		revs := make([]string, 0, len(revSpecs))
@@ -789,7 +789,7 @@ func makeRepositoryRevisions(repos ...string) []search.RepositoryRevisions {
 			// treat empty list as HEAD
 			revs = []string{"HEAD"}
 		}
-		r[i] = search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
+		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
 	}
 	return r
 }

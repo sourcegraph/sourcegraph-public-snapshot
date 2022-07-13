@@ -33,7 +33,7 @@ import (
 type IndexedRepoRevs struct {
 	// RepoRevs is the Sourcegraph representation of a the list of repoRevs
 	// repository and revisions to search.
-	RepoRevs map[api.RepoID]search.RepositoryRevisions
+	RepoRevs map[api.RepoID]*search.RepositoryRevisions
 
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
@@ -43,7 +43,7 @@ type IndexedRepoRevs struct {
 // add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
-func (rb *IndexedRepoRevs) add(reporev search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []string {
+func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []string {
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
@@ -163,12 +163,12 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 func PartitionRepos(
 	ctx context.Context,
 	logger log.Logger,
-	repos []search.RepositoryRevisions,
+	repos []*search.RepositoryRevisions,
 	zoektStreamer zoekt.Streamer,
 	typ search.IndexedRequestType,
 	useIndex query.YesNoOnly,
 	containsRefGlobs bool,
-) (indexed *IndexedRepoRevs, unindexed []search.RepositoryRevisions, err error) {
+) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions, err error) {
 	// Fallback to Unindexed if the query contains valid ref-globs.
 	if containsRefGlobs {
 		return nil, repos, nil
@@ -555,14 +555,14 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs []search.RepositoryRevisions, filter func(repo *zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []search.RepositoryRevisions) {
+func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs []*search.RepositoryRevisions, filter func(repo *zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
-		RepoRevs:    make(map[api.RepoID]search.RepositoryRevisions, len(revs)),
+		RepoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
 		branchRepos: make(map[string]*zoektquery.BranchRepos, 1),
 	}
-	unindexed = make([]search.RepositoryRevisions, 0)
+	unindexed = make([]*search.RepositoryRevisions, 0)
 
 	for _, reporev := range revs {
 		repo, ok := indexedSet[uint32(reporev.Repo.ID)]

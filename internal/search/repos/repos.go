@@ -35,7 +35,7 @@ import (
 )
 
 type Resolved struct {
-	RepoRevs []search.RepositoryRevisions
+	RepoRevs []*search.RepositoryRevisions
 
 	MissingRepoRevs []RepoRevSpecs
 
@@ -323,8 +323,8 @@ func (r *Resolver) associateReposWithRevs(
 	return associatedRevs[:notMissingCount], associatedRevs[notMissingCount:]
 }
 
-func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs) ([]search.RepositoryRevisions, error) {
-	results := make([]search.RepositoryRevisions, len(repoRevSpecs))
+func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs) ([]*search.RepositoryRevisions, error) {
+	results := make([]*search.RepositoryRevisions, len(repoRevSpecs))
 
 	g := group.New().WithContext(ctx).WithMaxConcurrency(128)
 	for i, repoRev := range repoRevSpecs {
@@ -346,7 +346,7 @@ func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs)
 
 		// Happy path with no goroutines
 		if len(globs) == 0 {
-			results[i] = search.RepositoryRevisions{
+			results[i] = &search.RepositoryRevisions{
 				Repo: repoRev.Repo,
 				Revs: revs,
 			}
@@ -370,7 +370,7 @@ func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs)
 				}
 			}
 
-			results[i] = search.RepositoryRevisions{
+			results[i] = &search.RepositoryRevisions{
 				Repo: repoRev.Repo,
 				Revs: revs,
 			}
@@ -398,10 +398,10 @@ func (r *Resolver) expandGlobs(ctx context.Context, repoRevSpecs []RepoRevSpecs)
 // 2) any repo-level filters (e.g. `repo:contains.commit.after()`) apply to this repo/rev combo.
 func (r *Resolver) filterRepoRevs(
 	ctx context.Context,
-	repoRevs []search.RepositoryRevisions,
+	repoRevs []*search.RepositoryRevisions,
 	op search.RepoOptions,
 ) (
-	filtered []search.RepositoryRevisions,
+	filtered []*search.RepositoryRevisions,
 	missing []RepoRevSpecs,
 	nonCriticalErr, criticalErr error,
 ) {

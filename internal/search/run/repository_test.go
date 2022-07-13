@@ -21,7 +21,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	zoekt := &searchbackend.FakeSearcher{}
 
 	t.Run("repo should be included in results, query has repoHasFile filter", func(t *testing.T) {
-		repo := search.RepositoryRevisions{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []string{"HEAD"}}
+		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []string{"HEAD"}}
 		MockReposContainingPath = func() ([]*result.FileMatch, error) {
 			rev := "1a2b3c"
 			return []*result.FileMatch{{
@@ -42,7 +42,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo shouldn't be included in results, query has repoHasFile filter ", func(t *testing.T) {
-		repo := search.RepositoryRevisions{Repo: types.MinimalRepo{Name: "foo/no-match"}, Revs: []string{"HEAD"}}
+		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{Name: "foo/no-match"}, Revs: []string{"HEAD"}}
 		MockReposContainingPath = func() ([]*result.FileMatch, error) {
 			return nil, nil
 		}
@@ -56,7 +56,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo shouldn't be included in results, query has -repoHasFile filter", func(t *testing.T) {
-		repo := search.RepositoryRevisions{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []string{"HEAD"}}
+		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{ID: 123, Name: "foo/one"}, Revs: []string{"HEAD"}}
 		MockReposContainingPath = func() ([]*result.FileMatch, error) {
 			rev := "1a2b3c"
 			return []*result.FileMatch{{
@@ -77,7 +77,7 @@ func TestRepoShouldBeAdded(t *testing.T) {
 	})
 
 	t.Run("repo should be included in results, query has -repoHasFile filter", func(t *testing.T) {
-		repo := search.RepositoryRevisions{Repo: types.MinimalRepo{Name: "foo/no-match"}, Revs: []string{"HEAD"}}
+		repo := &search.RepositoryRevisions{Repo: types.MinimalRepo{Name: "foo/no-match"}, Revs: []string{"HEAD"}}
 		MockReposContainingPath = func() ([]*result.FileMatch, error) {
 			return nil, nil
 		}
@@ -93,8 +93,8 @@ func TestRepoShouldBeAdded(t *testing.T) {
 
 // repoShouldBeAdded determines whether a repository should be included in the result set based on whether the repository fits in the subset
 // of repostiories specified in the query's `repohasfile` and `-repohasfile` fields if they exist.
-func repoShouldBeAdded(ctx context.Context, clients job.RuntimeClients, repo search.RepositoryRevisions, filePatternsInclude, filePatternsExclude []string) (bool, error) {
-	repos := []search.RepositoryRevisions{repo}
+func repoShouldBeAdded(ctx context.Context, clients job.RuntimeClients, repo *search.RepositoryRevisions, filePatternsInclude, filePatternsExclude []string) (bool, error) {
+	repos := []*search.RepositoryRevisions{repo}
 	s := RepoSearchJob{
 		FilePatternsReposMustInclude: filePatternsInclude,
 		FilePatternsReposMustExclude: filePatternsExclude,
