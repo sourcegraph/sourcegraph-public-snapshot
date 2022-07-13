@@ -44,6 +44,8 @@ type OAuthProviderOp struct {
 	TokenType gitlab.TokenType
 
 	db database.DB
+
+	ExternalService *types.ExternalService
 }
 
 func newOAuthProvider(op OAuthProviderOp, cli httpcli.Doer, tokenRefresher oauthutil.TokenRefresher) *OAuthProvider {

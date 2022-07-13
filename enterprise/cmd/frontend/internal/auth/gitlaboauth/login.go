@@ -1,4 +1,4 @@
-enterprise/internal/authz/gitlab/oauth.gopackage gitlaboauth
+package gitlaboauth
 
 import (
 	"net/http"

@@ -319,7 +319,7 @@ func (c *Client) doWithBaseURLWithOAuthContext(ctx context.Context, req *http.Re
 	var body []byte
 	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
 	if ok {
-		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher)
+		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, oauthutil.Context{}) // do we need the ctx here
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 			return nil, 0, errors.Wrap(err, "do request")

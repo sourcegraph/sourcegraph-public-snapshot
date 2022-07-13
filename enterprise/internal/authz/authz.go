@@ -67,7 +67,7 @@ func ProvidersFromConfig(
 
 	var (
 		gitHubConns          []*github.ExternalConnection
-		gitLabConns          []*types.GitLabConnection
+		gitLabConns          []*gitlab.ExternalConnection
 		bitbucketServerConns []*types.BitbucketServerConnection
 		perforceConns        []*types.PerforceConnection
 	)
@@ -104,11 +104,18 @@ func ProvidersFromConfig(
 						},
 					},
 				)
+
 			case *schema.GitLabConnection:
-				gitLabConns = append(gitLabConns, &types.GitLabConnection{
-					URN:              svc.URN(),
-					GitLabConnection: c,
-				})
+				gitLabConns = append(gitLabConns,
+					&gitlab.ExternalConnection{
+						ExternalService: svc,
+						GitLabConnection: &types.GitLabConnection{
+							URN:              svc.URN(),
+							GitLabConnection: c,
+						},
+					},
+				)
+
 			case *schema.BitbucketServerConnection:
 				bitbucketServerConns = append(bitbucketServerConns, &types.BitbucketServerConnection{
 					URN:                       svc.URN(),
@@ -237,10 +244,13 @@ func ProviderFromExternalService(
 	case *schema.GitLabConnection:
 		providers, problems, _ = gitlab.NewAuthzProviders(
 			siteConfig,
-			[]*types.GitLabConnection{
+			[]*gitlab.ExternalConnection{
 				{
-					URN:              svc.URN(),
-					GitLabConnection: c,
+					ExternalService: svc,
+					GitLabConnection: &types.GitLabConnection{
+						URN:              svc.URN(),
+						GitLabConnection: c,
+					},
 				},
 			},
 		)
