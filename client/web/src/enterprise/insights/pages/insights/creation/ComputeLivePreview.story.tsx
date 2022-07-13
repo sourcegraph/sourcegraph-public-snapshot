@@ -15,56 +15,58 @@ export default defaultStory
 
 const link = 'https://sourcegraph.com'
 
+const mockSeriesData = [
+    {
+        id: 'Foo',
+        color: 'yellow',
+        value: 241,
+    },
+    {
+        id: 'Boo',
+        color: 'grape',
+        value: 148,
+    },
+    {
+        id: 'Baz',
+        color: 'cyan',
+        value: 87,
+    },
+    {
+        id: 'Qux',
+        color: 'yellow',
+        value: 168,
+    },
+    {
+        id: 'Quux',
+        color: 'grape',
+        value: 130,
+    },
+    {
+        id: 'Corge',
+        color: 'cyan',
+        value: 118,
+    },
+].map(series => ({
+    id: series.id,
+    name: series.id,
+    color: `var(--oc-${series.color}-9)`,
+    data: [
+        {
+            value: series.value,
+            dateTime: new Date('2020-01-01'),
+            link,
+        },
+    ],
+    getLinkURL: (datum: any) => datum.link,
+    getYValue: (datum: any) => datum.value,
+    getXValue: (datum: any) => datum.dateTime,
+    getCategory: (datum: any) => datum.category,
+}))
+
 const codeInsightsBackend = {
     getInsightPreviewContent: (): Promise<SeriesChartContent<BackendInsightDatum>> =>
         Promise.resolve({
-            series: [
-                {
-                    id: 'foo',
-                    name: 'Foo',
-                    color: 'var(--red)',
-                    data: [
-                        {
-                            value: 100,
-                            dateTime: new Date('2020-01-01'),
-                            link,
-                        },
-                    ],
-                    getLinkURL: datum => datum.link,
-                    getYValue: datum => datum.value,
-                    getXValue: datum => datum.dateTime,
-                },
-                {
-                    id: 'bar',
-                    name: 'Bar',
-                    color: 'var(--blue)',
-                    data: [
-                        {
-                            value: 200,
-                            dateTime: new Date('2020-02-01'),
-                            link,
-                        },
-                    ],
-                    getLinkURL: datum => datum.link,
-                    getYValue: datum => datum.value,
-                    getXValue: datum => datum.dateTime,
-                },
-                {
-                    id: 'baz',
-                    name: 'Baz',
-                    color: 'var(--green)',
-                    data: [
-                        {
-                            value: 150,
-                            dateTime: new Date('2020-02-01'),
-                            link,
-                        },
-                    ],
-                    getLinkURL: datum => datum.link,
-                    getYValue: datum => datum.value,
-                    getXValue: datum => datum.dateTime,
-                },
-            ],
+            series: mockSeriesData,
         }),
 }
 

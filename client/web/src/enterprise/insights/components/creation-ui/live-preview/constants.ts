@@ -57,7 +57,7 @@ export const COMPUTE_MOCK_CHART: CategoricalChartContent<LanguageUsageDatum> = {
     getDatumValue: datum => datum.value,
     getDatumName: datum => datum.name,
     getDatumColor: datum => datum.fill,
-    getDatumGroup: datum => datum.group,
+    getCategory: datum => datum.group,
     data: [
         {
             group: 'Group 1',
