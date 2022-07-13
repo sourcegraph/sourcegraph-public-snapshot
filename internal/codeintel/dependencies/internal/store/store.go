@@ -319,6 +319,7 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockf
 			dbutil.CommitBytea(commit),
 			idsArray,
 			lockfile,
+			shared.IndexFidelityFlat,
 			repoName,
 			idsArray,
 		))
@@ -364,25 +365,34 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockf
 	}
 
 	//
-	// Step 3: Insert codeintel_lockfile entry, pointing to the roots of the
+	// Step 3: Insert codeintel_lockfile entry, pointing to the rootIDs of the
 	//         graph (i.e. direct dependencies)
 	//
-	var roots []int
-	for _, r := range graph.Roots() {
+	var (
+		roots, rootsUndeterminable = graph.Roots()
+		rootIDs                    = make([]int, len(roots))
+	)
+	for i, r := range roots {
 		name := r.PackageSyntax()
 		id, ok := nameIDs[name]
 		if !ok {
 			return errors.Newf("id for root %s not found", name)
 		}
-		roots = append(roots, id)
+		rootIDs[i] = id
 	}
 
-	idsArray := pq.Array(roots)
+	fidelity := shared.IndexFidelityGraph
+	if rootsUndeterminable {
+		fidelity = shared.IndexFidelityCircular
+	}
+
+	idsArray := pq.Array(rootIDs)
 	return tx.db.Exec(ctx, sqlf.Sprintf(
 		insertLockfilesQuery,
 		dbutil.CommitBytea(commit),
 		idsArray,
 		lockfile,
+		fidelity,
 		repoName,
 		idsArray,
 	))
@@ -437,9 +447,10 @@ INSERT INTO codeintel_lockfiles (
 	repository_id,
 	commit_bytea,
 	codeintel_lockfile_reference_ids,
-	lockfile
+	lockfile,
+	fidelity
 )
-SELECT id, %s, %s, %s
+SELECT id, %s, %s, %s, %s
 FROM repo
 WHERE name = %s
 -- Last write wins

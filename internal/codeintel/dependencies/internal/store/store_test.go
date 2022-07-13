@@ -199,6 +199,71 @@ func TestUpsertLockfileGraph(t *testing.T) {
 		//    -> d -> F
 		graph := shared.TestDependencyGraphLiteral(
 			[]shared.PackageDependency{packageA},
+			false,
+			[][]shared.PackageDependency{
+				// A
+				{packageA, packageB},
+				{packageA, packageC},
+				{packageA, packageD},
+				// B
+				{packageB, packageE},
+				// D
+				{packageD, packageF},
+			},
+		)
+		commit := "cafebabe"
+
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, graph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		// Now check whether the direct dependency was inserted
+		names, err := queryDirectDeps(t, ctx, store, "foo", commit, "lock.file")
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+
+		wantNames := []string{packageA.PackageSyntax()}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+
+		// Check that all packages have been inserted
+		names, err = queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		wantNames = []string{}
+		for _, pkg := range deps {
+			wantNames = append(wantNames, pkg.PackageSyntax())
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+
+		// Upsert again to check idempotency
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, graph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+		names, err = basestore.ScanStrings(store.db.Query(ctx, sqlf.Sprintf(`SELECT package_name FROM codeintel_lockfile_references ORDER BY package_name`)))
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if diff := cmp.Diff(wantNames, names); diff != "" {
+			t.Errorf("unexpected lockfile packages (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("with graph and undeterminable roots", func(t *testing.T) {
+		deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
+		//    -> b -> E
+		//   /
+		// a --> c
+		//   \
+		//    -> d -> F
+		graph := shared.TestDependencyGraphLiteral(
+			[]shared.PackageDependency{packageA},
+			true,
 			[][]shared.PackageDependency{
 				// A
 				{packageA, packageB},
@@ -301,6 +366,7 @@ func TestUpsertLockfileGraph(t *testing.T) {
 				deps:     []shared.PackageDependency{packageA, packageB, packageC},
 				graph: shared.TestDependencyGraphLiteral(
 					[]shared.PackageDependency{packageA},
+					false,
 					// a -> b -> c
 					[][]shared.PackageDependency{{packageA, packageB}, {packageB, packageC}},
 				),
@@ -310,6 +376,7 @@ func TestUpsertLockfileGraph(t *testing.T) {
 				deps:     []shared.PackageDependency{packageD, packageE, packageF},
 				graph: shared.TestDependencyGraphLiteral(
 					[]shared.PackageDependency{packageD},
+					false,
 					// d -> e -> f
 					[][]shared.PackageDependency{{packageD, packageE}, {packageE, packageF}},
 				),
@@ -352,7 +419,8 @@ func TestUpsertLockfileGraph(t *testing.T) {
 			}
 
 			wantNames := []string{}
-			for _, r := range res.graph.Roots() {
+			roots, _ := res.graph.Roots()
+			for _, r := range roots {
 				wantNames = append(wantNames, r.PackageSyntax())
 			}
 			if diff := cmp.Diff(wantNames, names); diff != "" {
