@@ -28,9 +28,7 @@ export const PREDICATES: Access[] = [
             },
             {
                 name: 'has',
-                fields: [
-                    { name: 'description' },
-                ],
+                fields: [{ name: 'description' }],
             },
             {
                 name: 'dependencies',
