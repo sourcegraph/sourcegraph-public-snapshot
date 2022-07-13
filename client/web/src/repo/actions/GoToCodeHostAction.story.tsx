@@ -11,8 +11,6 @@ import { Button, Popover, PopoverTrigger, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
 
-import { InstallBrowserExtensionPopover } from './InstallBrowserExtensionPopover'
-
 const onClose = action('onClose')
 const onReject = action('onReject')
 const onInstall = action('onInstall')
@@ -42,13 +40,6 @@ export const GitHub: Story = () => (
                     <PopoverTrigger as={Button} id={targetID} aria-label="Github">
                         <Icon aria-hidden="true" svgPath={mdiGithub} />
                     </PopoverTrigger>
-                    <InstallBrowserExtensionPopover
-                        url=""
-                        serviceKind={serviceKind}
-                        onClose={onClose}
-                        onReject={onReject}
-                        onInstall={onInstall}
-                    />
                 </Popover>
             )
         }}
@@ -72,13 +63,6 @@ export const GitLab: Story = () => (
                     <PopoverTrigger as={Button} id={targetID} aria-label="Gitlab">
                         <Icon aria-hidden={true} svgPath={mdiGitlab} />
                     </PopoverTrigger>
-                    <InstallBrowserExtensionPopover
-                        url=""
-                        serviceKind={serviceKind}
-                        onClose={onClose}
-                        onReject={onReject}
-                        onInstall={onInstall}
-                    />
                 </Popover>
             )
         }}
@@ -106,13 +90,6 @@ export const Phabricator: Story = () => (
                     <PopoverTrigger as={Button} id={targetID} aria-label="Phabricator">
                         <Icon as={PhabricatorIcon} aria-hidden={true} />
                     </PopoverTrigger>
-                    <InstallBrowserExtensionPopover
-                        url=""
-                        serviceKind={serviceKind}
-                        onClose={onClose}
-                        onReject={onReject}
-                        onInstall={onInstall}
-                    />
                 </Popover>
             )
         }}
@@ -139,13 +116,6 @@ export const BitbucketServer: Story = () => (
                     <PopoverTrigger as={Button} id={targetID} aria-label="Bitbucket">
                         <Icon aria-hidden={true} svgPath={mdiBitbucket} />
                     </PopoverTrigger>
-                    <InstallBrowserExtensionPopover
-                        url=""
-                        serviceKind={serviceKind}
-                        onClose={onClose}
-                        onReject={onReject}
-                        onInstall={onInstall}
-                    />
                 </Popover>
             )
         }}
