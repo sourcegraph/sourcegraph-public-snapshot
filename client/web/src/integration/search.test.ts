@@ -136,9 +136,11 @@ describe('Search', () => {
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
                 const editor = await createEditorAPI(driver, queryInputSelector)
-                await editor.replace('-repo')
-                await editor.selectSuggestion('-repo')
-                expect(await editor.getValue()).toStrictEqual('-repo:')
+                await editor.replace('-file')
+                await editor.selectSuggestion('-file')
+                // Using a regular expression here because currently the
+                // value for CodeMirror includes placeholders
+                expect(await editor.getValue()).toMatch(/^-file:/)
                 await percySnapshotWithVariants(driver.page, `Search home page (${editorName})`)
                 await accessibilityAudit(driver.page)
             })
