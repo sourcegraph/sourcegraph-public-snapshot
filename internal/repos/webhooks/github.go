@@ -152,3 +152,25 @@ func DeleteSyncWebhook(repoName string, hookID int, token string) (bool, error) 
 
 	return true, nil
 }
+
+func TestPushSyncWebhook(repoName string, hookID int, token string) (bool, error) {
+	url := fmt.Sprintf("https://api.github.com/repos/%s/hooks/%d/tests", repoName, hookID)
+
+	req, err := http.NewRequest("POST", url, bytes.NewBuffer([]byte("")))
+	if err != nil {
+		return false, err
+	}
+	req.Header.Add("Accept", "application/vnd.github.v3+json")
+	req.Header.Add("Authorization", fmt.Sprintf("token %s", token))
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return false, err
+	}
+
+	if resp.StatusCode != 204 {
+		return false, errors.Newf("non-204 status code: %d", resp.StatusCode)
+	}
+
+	return true, nil
+}

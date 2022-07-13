@@ -2,20 +2,31 @@ package repos_test
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/logtest"
 
+	ru "github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	githubwebhook "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -79,9 +90,9 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 		data := json.RawMessage(`{}`)
 		authData := json.RawMessage(fmt.Sprintf(`
 			{
-				"access_token":"9cc46dcda66306277915a6919a90ac7972853317d9df385a828b17d9200b7d4c",
+				"access_token":"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",
 				"token_type":"Bearer",
-				"refresh_token":"5fa56e21251f4c2295494ee29b6b66f7011dad92251ab988a376a23ef12ad041",
+				"refresh_token":"",
 				"expiry":"%s"
 			}`,
 			time.Now().Add(time.Hour).Format(time.RFC3339)))
@@ -100,22 +111,15 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 			},
 		}
 
-		// extAccounts := database.NewMockUserExternalAccountsStore()
-		// extAccounts.ListFunc.SetDefaultReturn([]*extsvc.Account{&extAccount}, nil)
-
-		// userAccountsDB := database.NewMockDB()
-		// userAccountsDB.UserExternalAccountsFunc.SetDefaultReturn(extAccounts)
-
-		user, err := s.UserExternalAccountsStore().CreateUserAndSave(ctx, database.NewUser{
-			Email:                 "a@a.com",
-			Username:              "u",
-			Password:              "p",
-			EmailVerificationCode: "c",
+		_, err = s.UserExternalAccountsStore().CreateUserAndSave(ctx, database.NewUser{
+			Email:                 "secret@usc.edu",
+			Username:              "susantoscott",
+			Password:              "saltedPassword",
+			EmailVerificationCode: "123456",
 		}, extAccount.AccountSpec, extAccount.AccountData)
 		if err != nil {
 			t.Fatal(err)
 		}
-		fmt.Printf("User:%+v\n", user)
 
 		jobChan := make(chan string)
 		whBuildHandler := &fakeWhBuildHandler{
@@ -131,20 +135,83 @@ func testSyncWebhookWorker(s repos.Store) func(*testing.T) {
 		go whBuildWorker.Start()
 		defer whBuildWorker.Stop()
 
-		var job string
+	loop:
 		select {
-		case job = <-jobChan:
-			fmt.Println("job received:", job)
-			return
+		case <-jobChan:
+			fmt.Println("finished build job")
+			break loop
 		case <-time.After(5 * time.Second):
 			t.Fatal("Timeout")
 		}
 
-		// create a server
-		// use the server's URL
-		// send a push event to the repo
-		// assert that we enqueue a repo update
+		type event struct {
+			PayloadType string
+			Data        json.RawMessage
+		}
 
+		db := database.NewDB(dbtest.NewDB(t))
+		logger := log.Scoped("service", "repo-updater service")
+
+		fmt.Println("Creating server...")
+		server := &ru.Server{
+			Logger:                logger,
+			Store:                 s,
+			Scheduler:             repos.NewUpdateScheduler(logger, db),
+			GitserverClient:       gitserver.NewClient(db),
+			SourcegraphDotComMode: false,
+			RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, esStore, repos.RateLimitSyncerOpts{}),
+		}
+
+		var handler http.Handler
+		{
+			m := ru.NewHandlerMetrics()
+			m.MustRegister(prometheus.DefaultRegisterer)
+
+			handler = ru.ObservedHandler(
+				logger,
+				m,
+				opentracing.GlobalTracer(),
+			)(server.Handler())
+		}
+
+		httpServer := httpserver.NewFromAddr("localhost:8080", &http.Server{
+			ReadTimeout:  75 * time.Second,
+			WriteTimeout: 10 * time.Minute,
+			Handler:      handler,
+		})
+
+		go func() {
+			httpServer.Start()
+			defer httpServer.Stop()
+		}()
+		fmt.Println("Server is live...")
+
+		repoName := "susantoscott/Task-Tracker"
+		secret := "secret"
+		token := "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"
+		id, err := githubwebhook.CreateSyncWebhook(repoName, secret, token)
+		// I still have to add it to the store
+		if err != nil {
+			t.Fatal("create:", err)
+		}
+
+		success, err := githubwebhook.TestPushSyncWebhook(repoName, id, token)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !success {
+			t.Fatal("failed")
+		}
+
+		deleted, err := githubwebhook.DeleteSyncWebhook(repoName, id, token)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !deleted {
+			t.Fatal("not deleted")
+		}
+
+		time.Sleep(5 * time.Second)
 	}
 }
 
@@ -165,21 +232,19 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 
 	switch wbj.ExtsvcKind {
 	case "GITHUB":
-		fmt.Println("getting accounts...")
 		accts, err := h.store.UserExternalAccountsStore().List(ctx, database.ExternalAccountsListOptions{})
 		if err != nil {
 			return errors.Newf("Error getting user accounts,", err)
 		}
-		fmt.Println("Accts:", len(accts))
 
 		_, token, err := github.GetExternalAccountData(&accts[0].AccountData)
 		if err != nil {
 			fmt.Println("token error:", err)
 		}
-		fmt.Println("token:", token.AccessToken)
 
 		foundSyncWebhook := githubwebhook.FindSyncWebhook(wbj.RepoName, token.AccessToken)
 		if !foundSyncWebhook {
+			fmt.Println("not found")
 			githubwebhook.CreateSyncWebhook(wbj.RepoName, "secret", token.AccessToken)
 		}
 		h.jobChan <- "done!"
@@ -188,51 +253,6 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 	// how will we know if a repo has been deleted?
 	return nil
 }
-
-// func (h *fakeWhBuildHandler) Handle2(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-// 	fmt.Println("in fake handler")
-// 	wbj, ok := record.(*repos.WhBuildJob)
-// 	if !ok {
-// 		h.jobChan <- "wrong type"
-// 		return errors.Errorf("expected repos.WhBuildJob, got %T", record)
-// 	}
-// 	fmt.Printf("Job:%+v\n", wbj)
-
-// 	switch wbj.ExtsvcKind {
-// 	case "GITHUB":
-// 		fmt.Println("getting accounts...")
-// 		accts, err := h.userAccountsDB.UserExternalAccounts().List(ctx, database.ExternalAccountsListOptions{
-// 			UserID:         777,
-// 			ExcludeExpired: true,
-// 		})
-// 		if err != nil {
-// 			return errors.Newf("Error getting user accounts,", err)
-// 		}
-// 		fmt.Println("Accts:", len(accts))
-
-// 		_, token, err := github.GetExternalAccountData(&accts[0].AccountData)
-// 		if err != nil {
-// 			fmt.Println("token error:", err)
-// 		}
-
-// 		fmt.Println("token:", token.AccessToken)
-// 		webhookName := githubwebhook.FindSyncWebhook(wbj.RepoName, "secret", token.AccessToken)
-// 		if webhookName != "web" {
-// 			err := githubwebhook.CreateSyncWebhook(string(wbj.RepoName), "secret", token.AccessToken)
-// 			if err != nil {
-// 				return errors.Errorf("failed to create webhook for %s", wbj.RepoName)
-// 			}
-// 			h.jobChan <- "created new webhook"
-// 			return nil
-// 		} else {
-// 			h.jobChan <- "webhook: " + webhookName
-// 			return nil
-// 		}
-// 	}
-
-// 	// how will we know if a repo has been deleted?
-// 	return nil
-// }
 
 func PrintRows(s repos.Store, ctx context.Context) {
 	fmt.Println("Printing rows...")
@@ -270,4 +290,17 @@ func PrintRows(s repos.Store, ctx context.Context) {
 	for _, j := range jobs {
 		fmt.Printf("Job:%+v\n", j)
 	}
+}
+
+func sign(t *testing.T, message, secret []byte) string {
+	t.Helper()
+
+	mac := hmac.New(sha256.New, secret)
+
+	_, err := mac.Write(message)
+	if err != nil {
+		t.Fatalf("writing hmac message failed: %s", err)
+	}
+
+	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
 }

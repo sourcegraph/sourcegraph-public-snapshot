@@ -36,10 +36,10 @@ func TestIntegration(t *testing.T) {
 		{"ListExternalServiceUserIDsByRepoID", testStoreListExternalServiceUserIDsByRepoID},
 		{"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
 		{"Syncer/SyncWorker", testSyncWorkerPlumbing},
-		{"Syncer/Sync", testSyncerSync},
-		{"Syncer/SyncRepo", testSyncRepo},
+		{"Syncer/Sync", testSyncerSync},   // PROBLEM WITH foreign key
+		{"Syncer/SyncRepo", testSyncRepo}, // PROBLEM WITHOUT foreign key
 		{"Syncer/Run", testSyncRun},
-		{"Syncer/MultipleServices", testSyncerMultipleServices},
+		{"Syncer/MultipleServices", testSyncerMultipleServices}, // PROBLEM with syncer.go
 		{"Syncer/OrphanedRepos", testOrphanedRepo},
 		{"Syncer/CloudDefaultExternalServicesDontSync", testCloudDefaultExternalServicesDontSync},
 		{"Syncer/DeleteExternalService", testDeleteExternalService},

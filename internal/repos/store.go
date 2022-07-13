@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"time"
 
@@ -788,7 +789,11 @@ WHERE NOT EXISTS (
 	)
 )
 `, repoID, repoName, timeutil.Now(), kind, repoID)
-	return s.Exec(ctx, q)
+	err = s.Exec(ctx, q)
+	if err != nil {
+		fmt.Println("singleWh:", err)
+	}
+	return err
 }
 
 func scanWhBuildJobs(rows *sql.Rows) ([]WhBuildJob, error) {

@@ -175,7 +175,7 @@ func (w *Worker) Start() {
 
 loop:
 	for {
-		fmt.Println("jobsDequeued:", w.numDequeues, "totalJobs:", w.options.NumTotalJobs)
+		// fmt.Println("jobsDequeued:", w.numDequeues, "totalJobs:", w.options.NumTotalJobs)
 		if w.options.NumTotalJobs != 0 && w.numDequeues >= w.options.NumTotalJobs {
 			reason = "NumTotalJobs dequeued"
 			break loop
@@ -208,7 +208,6 @@ loop:
 			// sloppily counting the active time instead of the number of jobs
 			// (with data) that were seen.
 			w.numDequeues++
-			fmt.Println("ok, successful dequeues++")
 		}
 
 		select {
@@ -249,7 +248,7 @@ func (w *Worker) Cancel(id int) {
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
 func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
-	fmt.Println("dequeueAndHandle")
+	// fmt.Println("dequeueAndHandle")
 	select {
 	// If we block here we are waiting for a handler to exit so that we do not
 	// exceed our configured concurrency limit.
@@ -285,6 +284,7 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		// Nothing to process
 		return false, nil
 	}
+	fmt.Printf("Dequeued Record:%+v\n", record)
 
 	// Create context and span based on the root context
 	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.rootCtx, true), w.options.Name)
@@ -347,7 +347,6 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 // handle processes the given record. This method returns an error only if there is an issue updating
 // the record to a terminal state - no handler errors will bubble up.
 func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err error) {
-	fmt.Println("worker.handle()")
 	ctx, handleLog, endOperation := w.options.Metrics.operations.handle.With(ctx, &err, observation.Args{})
 	defer endOperation(1, observation.Args{})
 
@@ -386,7 +385,6 @@ func (w *Worker) handle(ctx, workerContext context.Context, record Record) (err 
 	}
 
 	handleLog.Debug("Handled record")
-	fmt.Println("done with worker.handle()")
 	return nil
 }
 

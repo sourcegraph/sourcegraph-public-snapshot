@@ -638,22 +638,10 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 
-		svc.SyncUsingWebhooks = true
-		if svc.SyncUsingWebhooks {
-			err := s.Store.EnqueueSingleWhBuildJob(ctx,
-				int64(sourced.ID),
-				string(sourced.Name),
-				svc.Kind) // is this instant? can it be done here?
-			if err != nil && s.Logger != nil {
-				s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
-			}
-		}
-
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
 			logger.Error("failed to sync, skipping", log.String("repo", string(sourced.Name)), log.Error(err))
 			errs = errors.Append(errs, err)
-
 			// Stop syncing this external service as soon as we know repository limits for user or
 			// site level has been exceeded. We want to avoid generating spurious errors here
 			// because all subsequent syncs will continue failing unless the limits are increased.
@@ -662,6 +650,15 @@ func (s *Syncer) SyncExternalService(
 			}
 
 			continue
+		}
+
+		svc.SyncUsingWebhooks = true
+		if svc.SyncUsingWebhooks {
+			err = s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name), svc.Kind)
+			if err != nil && s.Logger != nil {
+				fmt.Println("failed to enqueue")
+				s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
+			}
 		}
 
 		for _, r := range diff.Repos() {

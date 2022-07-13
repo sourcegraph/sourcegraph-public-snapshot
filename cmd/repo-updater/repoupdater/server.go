@@ -140,6 +140,7 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ENQUEUE REPO UPDATE ENDPOINT")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.respond(w, http.StatusBadRequest, err)
@@ -155,6 +156,7 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
+	fmt.Println("The next enqueueRepoUpdate")
 	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
 	defer func() {
 		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
@@ -174,6 +176,7 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
 
+	fmt.Println("len:", len(rs))
 	if len(rs) != 1 {
 		return nil, http.StatusNotFound, errors.Errorf("repo %q not found in store", req.Repo)
 	}

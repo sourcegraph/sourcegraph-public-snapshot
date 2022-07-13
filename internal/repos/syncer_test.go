@@ -984,9 +984,12 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 		if jobCount != len(services) {
 			t.Fatalf("expected %d sync jobs, got %d", len(services), jobCount)
 		}
+		fmt.Println("aft jobCount")
 
+		fmt.Println("Len:", len(services)*10)
 		for i := 0; i < len(services)*10; i++ {
 			diff := <-syncer.Synced
+			fmt.Printf("diff:%+v\n", diff)
 
 			if len(diff.Added) != 1 {
 				t.Fatalf("Expected 1 Added repos. got %d", len(diff.Added))
@@ -1001,9 +1004,11 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 				t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
 			}
 		}
+		fmt.Println("bef jobsCompleted")
 
 		var jobsCompleted int
 		for i := 0; i < 10; i++ {
+			fmt.Println("i:", i)
 			q := sqlf.Sprintf("SELECT COUNT(*) FROM external_service_sync_jobs where state = 'completed'")
 			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&jobsCompleted); err != nil {
 				t.Fatal(err)
@@ -1014,6 +1019,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 			// We need to give the worker package time to create the jobs
 			time.Sleep(10 * time.Millisecond)
 		}
+		fmt.Println("aft jobsCompleted")
 
 		// Cancel context and the run loop should stop
 		cancel()
