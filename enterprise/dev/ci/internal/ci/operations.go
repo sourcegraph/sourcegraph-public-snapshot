@@ -564,8 +564,19 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			bk.Env("SOURCEGRAPH_SUDO_USER", "admin"),
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
-			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
-			bk.ArtifactPaths("./*.log"))
+			bk.Cmd("wfpwfpwf"),
+			// bk.Cmd("dev/ci/integration/code-intel/run.sh"),
+			bk.ArtifactPaths("./*.log"),
+			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+				Message:     "CodeIntelQA :brain:,  plugin fail cc <@jh>",
+				ChannelName: "jh-bot-testing",
+				Conditions: bk.SlackStepNotifyPayloadConditions{
+					Failed:   true,
+					Branches: []string{"devx/soft-fail-notif-code-intel-qa"},
+				},
+			}),
+			bk.SoftFail(1, 127),
+		)
 	}
 }
 
