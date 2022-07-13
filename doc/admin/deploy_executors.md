@@ -88,7 +88,7 @@ The following dependencies need to be available on the machine on which you want
 * [Ignite](https://ignite.readthedocs.io/en/stable/installation/) v0.10.0
 * [CNI Plugins](https://github.com/containernetworking/plugins) v0.9.1
 
-You can also take a look at [what goes into our executor machine images, used by our Terraform modules,](https://github.com/sourcegraph/sourcegraph/blob/main/enterprise/cmd/executor/vm-image/install.sh) to see how we configure our executor VMs.
+You can also take a look at [what goes into our executor machine images, used by our Terraform modules,](https://sourcegraph.com/github.com/sourcegraph/sourcegraph@1ce741167ae0b1db2a44bb8f76ab5a482f24adf5/-/blob/enterprise/cmd/executor/docker-image/Dockerfile) to see how we configure our executor containers.
 
 Once dependencies are met, you can download and run executor binaries:
 
