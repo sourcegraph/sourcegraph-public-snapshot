@@ -1,6 +1,11 @@
-import React, { useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
-import { SubmissionErrors } from '../../../../components'
+import {
+    CodeInsightCreationMode,
+    CodeInsightsCreationActions,
+    FORM_ERROR,
+    SubmissionErrors,
+} from '../../../../components'
 import { MinimalLangStatsInsightData, LangStatsInsight } from '../../../../core'
 import { LangStatsCreationFormFields } from '../../creation/lang-stats'
 import { LangStatsInsightCreationContent } from '../../creation/lang-stats/components/LangStatsInsightCreationContent'
@@ -8,14 +13,14 @@ import { getSanitizedLangStatsInsight } from '../../creation/lang-stats/utils/in
 
 export interface EditLangStatsInsightProps {
     insight: LangStatsInsight
+    licensed: boolean
+    isEditAvailable: boolean | undefined
     onSubmit: (insight: MinimalLangStatsInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
-export const EditLangStatsInsight: React.FunctionComponent<
-    React.PropsWithChildren<EditLangStatsInsightProps>
-> = props => {
-    const { insight, onSubmit, onCancel } = props
+export const EditLangStatsInsight: FC<EditLangStatsInsightProps> = props => {
+    const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<LangStatsCreationFormFields>(
         () => ({
@@ -36,12 +41,22 @@ export const EditLangStatsInsight: React.FunctionComponent<
 
     return (
         <LangStatsInsightCreationContent
-            mode="edit"
-            className="pb-5"
             initialValues={insightFormValues}
-            insight={insight}
+            touched={true}
+            className="pb-5"
             onSubmit={handleSubmit}
-            onCancel={onCancel}
-        />
+        >
+            {form => (
+                <CodeInsightsCreationActions
+                    mode={CodeInsightCreationMode.Edit}
+                    licensed={licensed}
+                    available={isEditAvailable}
+                    submitting={form.submitting}
+                    errors={form.submitErrors?.[FORM_ERROR]}
+                    clear={form.isFormClearActive}
+                    onCancel={onCancel}
+                />
+            )}
+        </LangStatsInsightCreationContent>
     )
 }

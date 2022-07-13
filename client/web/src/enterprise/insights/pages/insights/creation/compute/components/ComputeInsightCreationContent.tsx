@@ -47,7 +47,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
     const { mode = 'creation', initialValue, onChange, onSubmit, onCancel, ...attributes } = props
     const { licensed } = useUiFeatures()
 
-    const { formAPI, ref, handleSubmit } = useForm<CreateComputeInsightFormFields>({
+    const { formAPI, handleSubmit } = useForm<CreateComputeInsightFormFields>({
         initialValues: { ...INITIAL_INSIGHT_VALUES, ...initialValue },
         onSubmit,
         onChange,
@@ -82,7 +82,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
 
     return (
         <CreationUiLayout {...attributes}>
-            <CreationUIForm as="form" ref={ref} onSubmit={handleSubmit}>
+            <CreationUIForm onSubmit={handleSubmit}>
                 <FormGroup
                     name="insight repositories"
                     title="Targeted repositories"
