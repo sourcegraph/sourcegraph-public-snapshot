@@ -214,11 +214,6 @@ export const StreamingSearchResults: React.FunctionComponent<
     )
     const [showSidebar, setShowSidebar] = useState(false)
 
-    const onSignUpClick = useCallback((): void => {
-        const args = { page: 'search' }
-        telemetryService.log('SignUpPLGSearchCTA_1_Search', args, args)
-    }, [telemetryService])
-
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
     return (
