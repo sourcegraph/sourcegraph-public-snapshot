@@ -287,7 +287,7 @@ func (r *batchSpecWorkspaceResolver) FailureMessage() *string {
 	if r.execution == nil {
 		return nil
 	}
-	if r.execution.Cancel {
+	if r.execution.State == btypes.BatchSpecWorkspaceExecutionJobStateCanceled {
 		return nil
 	}
 	return r.execution.FailureMessage
