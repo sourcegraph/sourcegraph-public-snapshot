@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"strings"
 
+	sitter "github.com/smacker/go-tree-sitter"
+
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
@@ -421,42 +423,44 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program Node, ident string) (ret *Node, err error) {
 	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
+	dottedNameDef := func(dottedName *sitter.Node) *Node {
+		if dottedName == nil || dottedName.Type() != "dotted_name" {
+			return nil
+		}
+		path := program.RepoCommitPath.Path
+		path = strings.TrimSuffix(path, filepath.Base(program.RepoCommitPath.Path))
+		path = strings.TrimSuffix(path, "/")
+		for _, component := range children(dottedName) {
+			if component.Type() != "identifier" {
+				return nil
+			}
+			path = filepath.Join(path, component.Content(program.Contents))
+		}
+		path += ".py"
+		result, _ := squirrel.parse(ctx, types.RepoCommitPath{
+			Repo:   program.RepoCommitPath.Repo,
+			Commit: program.RepoCommitPath.Commit,
+			Path:   path,
+		})
+		return result
+	}
+
 	for _, child := range children(program.Node) {
 		if child.Type() == "import_statement" {
-		nextImport:
 			for _, importChild := range children(child) {
 				switch importChild.Type() {
 				case "dotted_name":
+					return dottedNameDef(importChild), nil
 				case "aliased_import":
 					alias := importChild.ChildByFieldName("alias")
 					if alias == nil || alias.Type() != "identifier" {
 						continue
 					}
-					if alias.Content(program.Contents) == ident {
-						name := importChild.ChildByFieldName("name")
-						if name == nil || name.Type() != "dotted_name" {
-							continue
-						}
-						path := program.RepoCommitPath.Path
-						path = strings.TrimSuffix(path, filepath.Base(program.RepoCommitPath.Path))
-						path = strings.TrimSuffix(path, "/")
-						for _, component := range children(name) {
-							if component.Type() != "identifier" {
-								continue nextImport
-							}
-							path = filepath.Join(path, component.Content(program.Contents))
-						}
-						path += ".py"
-						result, err := squirrel.parse(ctx, types.RepoCommitPath{
-							Repo:   program.RepoCommitPath.Repo,
-							Commit: program.RepoCommitPath.Commit,
-							Path:   path,
-						})
-						if err != nil {
-							return swapNodePtr(program, alias), nil
-						}
-						return result, nil
+					if alias.Content(program.Contents) != ident {
+						continue
 					}
+					name := importChild.ChildByFieldName("name")
+					return dottedNameDef(name), nil
 				}
 			}
 		}
