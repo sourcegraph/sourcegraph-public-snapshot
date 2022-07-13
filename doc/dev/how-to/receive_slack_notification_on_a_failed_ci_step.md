@@ -20,6 +20,8 @@ That particular code has been abstracted in a [Buildkite plugin](https://github.
 
 In the [CI pipeline generator](../background-information/ci/development.md), when defining a step you can use the `buildkite.SlackStepNotify(config)` function to define what needs to be cached and under which key to store it.
 
+> NOTE: You don't need to provide `buildkite.SlackStepNotifyConfigPayload.SlackTokenEnvVarName`, a default value will be injected. 
+
 ```diff
 --- a/enterprise/dev/ci/internal/ci/operations.go
 +++ b/enterprise/dev/ci/internal/ci/operations.go

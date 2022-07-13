@@ -40,6 +40,8 @@ The `bk.SoftFail` function will make that step soft fail if and only if the exit
 
 Now we want to add a custom notification as well:
 
+> NOTE: You don't need to provide `buildkite.SlackStepNotifyConfigPayload.SlackTokenEnvVarName`, a default value will be injected. 
+
 ```diff
 --- a/enterprise/dev/ci/internal/ci/operations.go
 +++ b/enterprise/dev/ci/internal/ci/operations.go
@@ -66,7 +68,6 @@ func addJetBrainsUnitTests(pipeline *bk.Pipeline) {
 And that's it! 
 
 > NOTE: If you want to test your changes before merging your code, so you can see how the notification will look like, you can modify the step as following: 
-
 
 ```diff
 --- a/enterprise/dev/ci/internal/ci/operations.go
