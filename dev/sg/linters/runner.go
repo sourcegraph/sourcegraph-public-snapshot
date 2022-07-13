@@ -14,7 +14,7 @@ func NewRunner(out *std.Output, annotations bool, targets ...Target) Runner {
 	runner := check.NewRunner(nil, out, targets)
 	runner.GenerateAnnotations = annotations
 	runner.AnalyticsCategory = "lint"
-	runner.SuggestFix = func(category string, c *check.Check[*repo.State], err error) string {
+	runner.SuggestOnCheckFailure = func(category string, c *check.Check[*repo.State], err error) string {
 		if c.Fix == nil {
 			return ""
 		}

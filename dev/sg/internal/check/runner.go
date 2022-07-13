@@ -16,7 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-type SuggestFixFunc[Args any] func(category string, c *Check[Args], err error) string
+type SuggestFunc[Args any] func(category string, c *Check[Args], err error) string
 
 type Runner[Args any] struct {
 	Input      io.Reader
@@ -36,9 +36,9 @@ type Runner[Args any] struct {
 	// Concurrency controls the maximum number of checks across categories to evaluate at
 	// the same time - defaults to 10.
 	Concurrency int
-	// SuggestFix can be implemented to prompt the user to try certain things if a check
-	// fails. The suggestion string can be in Markdown.
-	SuggestFix SuggestFixFunc[Args]
+	// SuggestOnCheckFailure can be implemented to prompt the user to try certain things
+	// if a check fails. The suggestion string can be in Markdown.
+	SuggestOnCheckFailure SuggestFunc[Args]
 }
 
 // NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
@@ -306,8 +306,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				if check.cachedCheckErr != nil {
 					// Slightly different formatting for each destination
 					var suggestion string
-					if r.SuggestFix != nil {
-						suggestion = r.SuggestFix(category.Name, check, check.cachedCheckErr)
+					if r.SuggestOnCheckFailure != nil {
+						suggestion = r.SuggestOnCheckFailure(category.Name, check, check.cachedCheckErr)
 					}
 
 					// Write the terminal summary to an indented block
