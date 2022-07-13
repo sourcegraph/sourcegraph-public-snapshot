@@ -162,13 +162,15 @@ export interface EditorAPI {
 const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAPI> = {
     monaco: (driver: Driver, rootSelector: string) => {
         const inputSelector = `${rootSelector} textarea`
+        // Selector to use to wait for the editor to be complete loaded
+        const readySelector = `${rootSelector} .view-lines`
         const completionSelector = `${rootSelector} .suggest-widget.visible`
         const completionLabelSelector = `${completionSelector} span`
 
         const api: EditorAPI = {
             name: 'monaco',
             async waitForIt(options) {
-                await driver.page.waitForSelector(rootSelector, options)
+                await driver.page.waitForSelector(readySelector, options)
             },
             async focus() {
                 await api.waitForIt()
@@ -210,13 +212,15 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
     },
     codemirror6: (driver: Driver, rootSelector: string) => {
         const inputSelector = `${rootSelector} .cm-content`
+        // Selector to use to wait for the editor to be complete loaded
+        const readySelector = `${rootSelector} .cm-line`
         const completionSelector = `${rootSelector} .cm-tooltip-autocomplete`
         const completionLabelSelector = `${completionSelector} .cm-completionLabel`
 
         const api: EditorAPI = {
             name: 'codemirror6',
             async waitForIt(options) {
-                await driver.page.waitForSelector(rootSelector, options)
+                await driver.page.waitForSelector(readySelector, options)
             },
             async focus() {
                 await api.waitForIt()
@@ -276,6 +280,7 @@ export function enableEditor(editor: Editor): Partial<Settings> {
 
 /**
  * Returns an object for accessing editor related information at `rootSelector`.
+ * It also waits for the editor to be ready
  */
 export const createEditorAPI = async (driver: Driver, rootSelector: string): Promise<EditorAPI> => {
     await driver.page.waitForSelector(rootSelector)
@@ -290,7 +295,9 @@ export const createEditorAPI = async (driver: Driver, rootSelector: string): Pro
         default:
             throw new Error(`${editor} is not a supported editor`)
     }
-    return editors[editor](driver, rootSelector)
+    const api = editors[editor](driver, rootSelector)
+    await api.waitForIt()
+    return api
 }
 
 /**
