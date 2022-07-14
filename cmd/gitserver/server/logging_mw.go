@@ -32,7 +32,6 @@ func FromRepoContext(ctx context.Context) *RepoContext {
 
 func LogRequest(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		println("before")
 		ctx := r.Context()
 		userIP := userip.FromContext(ctx)
 		act := actor.FromContext(ctx)
@@ -49,7 +48,6 @@ func LogRequest(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 		// Prepare the context to hold our values
 		r = r.WithContext(WithRepoContext(ctx, &RepoContext{}))
 		next(w, r)
-		println("after")
 
 		// Now we've gone through the handler, we can get our stuff
 		repoCtx := FromRepoContext(r.Context())
