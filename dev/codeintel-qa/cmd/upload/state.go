@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -98,6 +99,13 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 							logs = upload.AuditLogs
 							break
 						}
+					}
+
+					out, err := exec.Command("pg_dump", "-a", "--column-inserts", "--table='lsif_uploads*'").CombinedOutput()
+					if err != nil {
+						fmt.Printf("Failed to dump: %s", err.Error())
+					} else {
+						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
 					}
 
 					return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], uploadState.upload.id, logs)
