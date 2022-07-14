@@ -346,7 +346,7 @@ func TestIndexLockfiles(t *testing.T) {
 		t.Fatalf("unexpected error querying dependencies: %s", err)
 	}
 
-	// Assert `store.UpsertLockfileDependencies` was called
+	// Assert `store.UpsertLockfileGraph` was called
 	mockassert.CalledN(t, mockStore.UpsertLockfileGraphFunc, 7)
 	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", "pom.xml", mockassert.Skip))
 	// deadbeef2 has 2 results

@@ -254,7 +254,7 @@ func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCo
 			serializableGraph,
 		)
 		if err != nil {
-			return nil, errors.Wrap(err, "store.UpsertLockfileDependencies")
+			return nil, errors.Wrap(err, "store.UpsertLockfileGraph")
 		}
 
 		for _, d := range serializableRepoDeps {
