@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { mdiChartLineVariant, mdiInformationOutline } from '@mdi/js'
+import { mdiChartLineVariant } from '@mdi/js'
 
 import { Badge, H1, Icon } from '@sourcegraph/wildcard'
 
