@@ -22,6 +22,7 @@
         align-items: center;
         background-color: var(--code-bg);
         height: 100%;
+        max-width: 100%;
 
         @media (--xs-breakpoint-down) {
             height: auto;
@@ -37,6 +38,7 @@
     &__focus-container {
         // stylelint-disable-next-line declaration-property-unit-allowed-list
         height: 1.5rem;
+        min-width: 0;
         display: flex;
         align-items: center;
         flex: 1 1 auto;

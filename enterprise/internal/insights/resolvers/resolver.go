@@ -57,6 +57,7 @@ type Resolver struct {
 	insightMetadataStore store.InsightMetadataStore
 	dataSeriesStore      store.DataSeriesStore
 	backfiller           *background.ScopedBackfiller
+	insightEnqueuer      *background.InsightEnqueuer
 
 	baseInsightResolver
 }
@@ -77,6 +78,7 @@ func newWithClock(db edb.InsightsDB, postgres database.DB, clock func() time.Tim
 		insightMetadataStore: base.insightStore,
 		dataSeriesStore:      base.insightStore,
 		backfiller:           background.NewScopedBackfiller(base.workerBaseStore, base.timeSeriesStore),
+		insightEnqueuer:      background.NewInsightEnqueuer(clock, base.workerBaseStore),
 	}
 }
 

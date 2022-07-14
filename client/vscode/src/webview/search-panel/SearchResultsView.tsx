@@ -19,7 +19,6 @@ import {
 } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
@@ -30,14 +29,11 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { VSCE_LINK_AUTH } from '../../common/links'
-import { DISMISS_SEARCH_CTA_KEY } from '../../settings/LocalStorageService'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
 import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { setFocusSearchBox } from './api'
-import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
@@ -64,27 +60,10 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         'repository' | 'branches' | 'description'
     > | null>(null)
 
-    // Check VS Code local storage to see if user has clicked dismiss button before
-    const [dismissSearchCta, setDismissSearchCta] = useState(false)
-    // Return empty string if not in vs code local storage or 'search' if it exists
-    const showCtaAlert = useMemo(() => extensionCoreAPI.getLocalStorageItem(DISMISS_SEARCH_CTA_KEY), [extensionCoreAPI])
-    const onDismissCtaAlert = useCallback(async () => {
-        setDismissSearchCta(true)
-        await extensionCoreAPI.setLocalStorageItem(DISMISS_SEARCH_CTA_KEY, 'true')
-    }, [extensionCoreAPI])
-
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
         return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
     }, [instanceURL])
-
-    useEffect(() => {
-        showCtaAlert
-            .then(result => {
-                setDismissSearchCta(result.length > 0)
-            })
-            .catch(() => setDismissSearchCta(false))
-    }, [showCtaAlert])
 
     // Editor focus.
     const editorReference = useRef<IEditor>()
@@ -321,18 +300,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [context]
     )
 
-    const onSignUpClick = useCallback(
-        (event?: React.FormEvent): void => {
-            event?.preventDefault()
-            platformContext.telemetryService.log(
-                'VSCECreateAccountBannerClick',
-                { campaign: 'Sign up link' },
-                { campaign: 'Sign up link' }
-            )
-        },
-        [platformContext.telemetryService]
-    )
-
     const matchHandlers = useMatchHandlers({
         platformContext,
         extensionCoreAPI,
@@ -389,21 +356,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
 
             {!repoToShow ? (
                 <div className={styles.resultsViewScrollContainer}>
-                    {isSourcegraphDotCom && !authenticatedUser && !dismissSearchCta && (
-                        <CtaAlert
-                            title="Sign up to add your public and private repositories and unlock search flow"
-                            description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
-                searches and more."
-                            cta={{
-                                label: 'Get started',
-                                href: VSCE_LINK_AUTH('sign-up'),
-                                onClick: onSignUpClick,
-                            }}
-                            icon={<SearchBetaIcon />}
-                            className={classNames('percy-display-none', styles.ctaContainer)}
-                            onClose={onDismissCtaAlert}
-                        />
-                    )}
                     <SearchResultsInfoBar
                         onShareResultsClick={onShareResultsClick}
                         showSavedSearchForm={showSavedSearchForm}

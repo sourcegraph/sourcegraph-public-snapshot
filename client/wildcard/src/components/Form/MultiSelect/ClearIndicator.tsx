@@ -1,7 +1,9 @@
 import { ReactElement } from 'react'
 
-import CloseIcon from 'mdi-react/CloseIcon'
+import { mdiClose } from '@mdi/js'
 import { components, ClearIndicatorProps } from 'react-select'
+
+import { Icon } from '@sourcegraph/wildcard'
 
 import { MultiSelectOption } from './types'
 
@@ -12,6 +14,6 @@ export const ClearIndicator = <OptionValue extends unknown = unknown>(
     props: ClearIndicatorProps<MultiSelectOption<OptionValue>, true>
 ): ReactElement => (
     <components.ClearIndicator {...props}>
-        <CloseIcon className={styles.clearIcon} />
+        <Icon className={styles.clearIcon} svgPath={mdiClose} inline={false} aria-hidden={true} />
     </components.ClearIndicator>
 )

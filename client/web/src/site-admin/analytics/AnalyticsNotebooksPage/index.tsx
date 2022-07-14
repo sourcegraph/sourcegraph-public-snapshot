@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react'
 
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, H3 } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, H3, Text, H4, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
 import {
@@ -21,6 +22,8 @@ import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegend
 import { StandardDatum, buildStandardDatum } from '../utils'
 
 import { NOTEBOOKS_STATISTICS } from './queries'
+
+import styles from './index.module.scss'
 
 export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
@@ -160,7 +163,27 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 )}
                 <H3 className="my-3">Time saved</H3>
                 {calculatorProps && <TimeSavedCalculator {...calculatorProps} />}
+                <div className={styles.suggestionBox}>
+                    <H4 className="my-3">Suggestions</H4>
+                    <div className={classNames(styles.border, 'mb-3')} />
+                    <ul className="mb-3 pl-3">
+                        <Text as="li">
+                            Promote the{' '}
+                            <AnchorLink to="/help/integration/editor" target="_blank">
+                                IDE extension
+                            </AnchorLink>{' '}
+                            and{' '}
+                            <AnchorLink to="/help/cli" target="_blank">
+                                SRC CLI
+                            </AnchorLink>{' '}
+                            to your users to allow them to search where they work.
+                        </Text>
+                    </ul>
+                </div>
             </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table.
+            </Text>
         </>
     )
 }

@@ -80,20 +80,6 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 getXValue: ({ date }) => date,
                 getYValue: ({ value }) => value,
             },
-            {
-                id: 'fileOpens',
-                name: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
-                color: 'var(--body-color)',
-                data: buildStandardDatum(
-                    fileOpens.nodes.map(node => ({
-                        date: new Date(node.date),
-                        value: node[eventAggregation],
-                    })),
-                    dateRange
-                ),
-                getXValue: ({ date }) => date,
-                getYValue: ({ value }) => value,
-            },
         ]
 
         const legends: ValueLegendListProps['items'] = [
@@ -103,19 +89,20 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 color: 'var(--cyan)',
             },
             {
-                value: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
-                color: 'var(--orange)',
-            },
-            {
                 value: resultClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
                 color: 'var(--purple)',
             },
             {
+                value: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
+                color: 'var(--orange)',
+            },
+            {
                 value: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
                 color: 'var(--body-color)',
+                position: 'right',
             },
         ]
         return [stats, legends]
@@ -132,7 +119,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
             label: 'Searches &<br/>file views',
             color: 'var(--blue)',
             description:
-                'The value of code search greatly varies by use case. We’ve calculated this total value with defaults from primary use cases below.',
+                'The value of code search greatly varies by use case. We’ve calculated this total value with defaults from the primary use cases below.',
             value: totalCount,
             items: [
                 {
@@ -221,22 +208,27 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 )}
                 <H3 className="my-3">Time saved</H3>
                 {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
-                <H4 className="my-3">Suggestions</H4>
-                <div className={classNames(styles.border, 'mb-3')} />
-                <ul className="mb-3 pl-3">
-                    <Text as="li">
-                        Promote the{' '}
-                        <AnchorLink to="/help/integration/editor" target="_blank">
-                            IDE extension
-                        </AnchorLink>{' '}
-                        and{' '}
-                        <AnchorLink to="/help/cli" target="_blank">
-                            SRC CLI
-                        </AnchorLink>{' '}
-                        to your users to allow them to search where they work.
-                    </Text>
-                </ul>
+                <div className={styles.suggestionBox}>
+                    <H4 className="my-3">Suggestions</H4>
+                    <div className={classNames(styles.border, 'mb-3')} />
+                    <ul className="mb-3 pl-3">
+                        <Text as="li">
+                            Promote the{' '}
+                            <AnchorLink to="/help/integration/editor" target="_blank">
+                                IDE extension
+                            </AnchorLink>{' '}
+                            and{' '}
+                            <AnchorLink to="/help/cli" target="_blank">
+                                SRC CLI
+                            </AnchorLink>{' '}
+                            to your users to allow them to search where they work.
+                        </Text>
+                    </ul>
+                </div>
             </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table.
+            </Text>
         </>
     )
 }

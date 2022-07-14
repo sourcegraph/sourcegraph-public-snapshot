@@ -115,7 +115,7 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                 </div>
                 <div className="flex-1 d-flex flex-column m-0">
                     <Text as="span" weight="bold">
-                        About this statistics
+                        About this statistic
                     </Text>
                     <Text as="span" dangerouslySetInnerHTML={{ __html: description }} />
                 </div>
@@ -233,7 +233,7 @@ export const TimeSavedCalculator: React.FunctionComponent<TimeSavedCalculator> =
             </div>
             <div className="flex-1 d-flex flex-column m-0">
                 <Text as="span" weight="bold">
-                    About this statistics
+                    About this statistic
                 </Text>
                 <Text as="span" dangerouslySetInnerHTML={{ __html: description }} />
             </div>

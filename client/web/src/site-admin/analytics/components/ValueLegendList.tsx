@@ -16,7 +16,7 @@ interface ValueLegendItemProps {
 }
 
 const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description }) => (
-    <div className="d-flex flex-column align-items-center mr-3 justify-content-center">
+    <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
         <span style={{ color }} className={styles.count}>
             {formatNumber(value)}
         </span>

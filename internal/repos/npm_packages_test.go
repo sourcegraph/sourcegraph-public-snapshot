@@ -39,7 +39,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 	for _, testCase := range testCases {
 		deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
 			Scheme: dependencies.NpmPackagesScheme,
-			Name:   testCase.pkgName,
+			Name:   reposource.PackageName(testCase.pkgName),
 		})
 		require.Nil(t, err)
 		depStrs := []string{}
@@ -61,7 +61,7 @@ func TestGetNpmDependencyRepos(t *testing.T) {
 		for i := 0; i < len(testCase.matches); i++ {
 			deps, err := depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
 				Scheme: dependencies.NpmPackagesScheme,
-				Name:   testCase.pkgName,
+				Name:   reposource.PackageName(testCase.pkgName),
 				After:  lastID,
 				Limit:  1,
 			})
