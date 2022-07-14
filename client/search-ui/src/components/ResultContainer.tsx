@@ -157,12 +157,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     }
     return (
         <Component
-            className={classNames(
-                'test-search-result',
-                styles.resultContainer,
-                coreWorkflowImprovementsEnabled && styles.coreWorkflowImprovements,
-                className
-            )}
+            className={classNames('test-search-result', styles.resultContainer, className)}
             data-testid="result-container"
             data-result-type={resultType}
             data-expanded={allExpanded}
