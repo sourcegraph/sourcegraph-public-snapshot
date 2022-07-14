@@ -16,6 +16,7 @@ import { Button, Link, Badge, useEventObservable, Alert, LoadingSpinner, H2, Tex
 import { BatchChangesProps } from '../../batches'
 import { CodeIntelligenceProps } from '../../codeintel'
 import { FilteredConnection } from '../../components/FilteredConnection'
+import { CodeIntelligenceBadgeContent } from '../../enterprise/codeintel/badge/components/CodeIntelligenceBadgeContent'
 import {
     GetRepoBatchChangesSummaryResult,
     GetRepoBatchChangesSummaryVariables,
@@ -57,7 +58,7 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
     revision,
     filePath,
     codeIntelligenceEnabled,
-    codeIntelligenceBadgeContent: CodeIntelligenceBadge,
+    codeIntelligenceBadgeContentEnabled,
     batchChangesEnabled,
     ...props
 }) => {
@@ -287,8 +288,8 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                         {/* CODE-INTEL */}
                         <div className="mb-3">
                             <H2>Code intel</H2>
-                            {CodeIntelligenceBadge && (
-                                <CodeIntelligenceBadge
+                            {codeIntelligenceBadgeContentEnabled && (
+                                <CodeIntelligenceBadgeContent
                                     repoName={repo.name}
                                     revision={revision}
                                     filePath={filePath}

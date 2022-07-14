@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from 'react'
+import React, { useCallback, useState, useEffect, Suspense } from 'react'
 
 import { Shortcut } from '@slimsag/react-shortcuts'
 import * as H from 'history'
@@ -14,6 +14,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
+import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
@@ -140,13 +141,15 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 }}
             />
             {props.isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
-                <FuzzyFinder
-                    setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
-                    isVisible={isFuzzyFinderVisible}
-                    telemetryService={props.telemetryService}
-                    location={props.location}
-                    setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
-                />
+                <Suspense fallback={<LoadingSpinner />}>
+                    <FuzzyFinder
+                        setIsVisible={bool => setIsFuzzyFinderVisible(bool)}
+                        isVisible={isFuzzyFinderVisible}
+                        telemetryService={props.telemetryService}
+                        location={props.location}
+                        setCacheRetention={bool => setRetainFuzzyFinderCache(bool)}
+                    />
+                </Suspense>
             )}
         </Form>
     )

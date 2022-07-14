@@ -227,7 +227,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 settingsCascade={props.settingsCascade}
                 isSourcegraphDotCom={props.isSourcegraphDotCom}
             />
-            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
+            {!isSiteInit && (
+                <Suspense fallback={<LoadingSpinner />}>
+                    <SurveyToast authenticatedUser={props.authenticatedUser} />
+                </Suspense>
+            )}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
@@ -281,14 +285,20 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            <GlobalPanel {...props} />
-            <GlobalContributions
-                key={3}
-                extensionsController={props.extensionsController}
-                platformContext={props.platformContext}
-                history={props.history}
-            />
-            <GlobalDebug {...props} />
+            <Suspense fallback={<LoadingSpinner />}>
+                <GlobalPanel {...props} />
+            </Suspense>
+            <Suspense fallback={<LoadingSpinner />}>
+                <GlobalContributions
+                    key={3}
+                    extensionsController={props.extensionsController}
+                    platformContext={props.platformContext}
+                    history={props.history}
+                />
+            </Suspense>
+            <Suspense fallback={<LoadingSpinner />}>
+                <GlobalDebug {...props} />
+            </Suspense>
         </div>
     )
 }

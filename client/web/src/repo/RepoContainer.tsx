@@ -48,6 +48,7 @@ import { CodeIntelligenceProps } from '../codeintel'
 import { BreadcrumbSetters, BreadcrumbsProps } from '../components/Breadcrumbs'
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { HeroPage } from '../components/HeroPage'
+import { CodeIntelligenceBadgeMenu } from '../enterprise/codeintel/badge/components/CodeIntelligenceBadgeMenu'
 import { ActionItemsBarProps, useWebActionItems } from '../extensions/components/ActionItemsBar'
 import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
@@ -451,8 +452,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     {...repoHeaderContributionsLifecycleProps}
                 >
                     {({ actionType }) =>
-                        props.codeIntelligenceBadgeMenu && actionType === 'nav' ? (
-                            <props.codeIntelligenceBadgeMenu
+                        props.codeIntelligenceBadgeMenuEnabled && actionType === 'nav' ? (
+                            <CodeIntelligenceBadgeMenu
                                 key="code-intelligence-status"
                                 repoName={repoName}
                                 revision={rawRevision || 'HEAD'}

@@ -2,7 +2,6 @@ import React from 'react'
 
 import '../SourcegraphWebApp.scss'
 import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
@@ -24,15 +23,6 @@ import { enterpriseUserAreaHeaderNavItems } from './user/navitems'
 import { enterpriseUserAreaRoutes } from './user/routes'
 import { enterpriseUserSettingsAreaRoutes } from './user/settings/routes'
 import { enterpriseUserSettingsSideBarItems } from './user/settings/sidebaritems'
-
-const CodeIntelligenceBadgeMenu = lazyComponent(
-    () => import('./codeintel/badge/components/CodeIntelligenceBadgeMenu'),
-    'CodeIntelligenceBadgeMenu'
-)
-const CodeIntelligenceBadgeContent = lazyComponent(
-    () => import('./codeintel/badge/components/CodeIntelligenceBadgeContent'),
-    'CodeIntelligenceBadgeContent'
-)
 
 export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <SourcegraphWebApp
@@ -57,8 +47,8 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         routes={enterpriseRoutes}
         keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
-        codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
-        codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}
+        codeIntelligenceBadgeMenuEnabled={true}
+        codeIntelligenceBadgeContentEnabled={true}
         codeInsightsEnabled={true}
         batchChangesEnabled={window.context.batchChangesEnabled}
         searchContextsEnabled={true}
