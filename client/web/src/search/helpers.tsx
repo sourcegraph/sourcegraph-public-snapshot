@@ -7,12 +7,6 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
 import { eventLogger } from '../tracking/eventLogger'
 
-const SUBMITTED_SEARCHES_COUNT_KEY = 'submitted-searches-count'
-
-export function getSubmittedSearchesCount(): number {
-    return parseInt(localStorage.getItem(SUBMITTED_SEARCHES_COUNT_KEY) || '0', 10)
-}
-
 /**
  * @param activation If set, records the DidSearch activation event for the new user activation
  * flow.
@@ -54,7 +48,6 @@ export function submitSearch({
         },
         { source }
     )
-    localStorage.setItem(SUBMITTED_SEARCHES_COUNT_KEY, JSON.stringify(getSubmittedSearchesCount() + 1))
     history.push(path, { ...history.location.state, query })
     if (activation) {
         activation.update({ DidSearch: true })

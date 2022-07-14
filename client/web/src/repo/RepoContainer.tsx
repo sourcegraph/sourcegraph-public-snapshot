@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 
 import { mdiSourceRepository, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
@@ -34,7 +34,6 @@ import {
     Icon,
     Button,
     ButtonGroup,
-    useLocalStorage,
     useObservable,
     Link,
     Popover,
@@ -54,12 +53,10 @@ import { ExternalLinkFields, RepositoryFields } from '../graphql-operations'
 import { CodeInsightsProps } from '../insights/types'
 import { searchQueryForRepoRevision, SearchStreamingProps } from '../search'
 import { useNavbarQueryState } from '../stores'
-import { useIsBrowserExtensionActiveUser } from '../tracking/BrowserExtensionTracker'
 import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import type { ExtensionAlertProps } from './actions/InstallIntegrationsAlert'
 import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -92,8 +89,7 @@ export interface RepoContainerContext
         Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'>,
         CodeIntelligenceProps,
         BatchChangesProps,
-        CodeInsightsProps,
-        ExtensionAlertProps {
+        CodeInsightsProps {
     repo: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
@@ -126,7 +122,6 @@ interface RepoContainerProps
         ExtensionsControllerProps,
         ActivationProps,
         ThemeProps,
-        ExtensionAlertProps,
         Pick<SearchContextProps, 'selectedSearchContextSpec' | 'searchContextsEnabled'>,
         BreadcrumbSetters,
         BreadcrumbsProps,
@@ -146,10 +141,6 @@ interface RepoContainerProps
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
 }
-
-export const HOVER_COUNT_KEY = 'hover-count'
-
-export const HOVER_THRESHOLD = 5
 
 export interface HoverThresholdProps {
     /**
@@ -332,39 +323,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
 
     const { useActionItemsBar, useActionItemsToggle } = useWebActionItems()
 
-    const codeHostIntegrationMessaging =
-        (!isErrorLike(props.settingsCascade.final) &&
-            props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-        'browser-extension'
-    const isBrowserExtensionActiveUser = useIsBrowserExtensionActiveUser()
-    // Browser extension discoverability features (alert, popover for `GoToCodeHostAction)
-    const [hasDismissedPopover, setHasDismissedPopover] = useState(false)
-    const [hoverCount, setHoverCount] = useLocalStorage(HOVER_COUNT_KEY, 0)
-    const canShowPopover =
-        !hasDismissedPopover &&
-        isBrowserExtensionActiveUser === false &&
-        codeHostIntegrationMessaging === 'browser-extension' &&
-        hoverCount >= HOVER_THRESHOLD
-
-    // Increment hovers that the user has seen. Enable browser extension discoverability
-    // features after hover count threshold is reached (e.g. alerts, popovers)
-    // Store hover count in ref to avoid circular dependency
-    // hoverCount -> onHoverShown -> WebHoverOverlay (onHoverShown in useEffect deps) -> onHoverShown()
-    const hoverCountReference = useRef<number>(hoverCount)
-    hoverCountReference.current = hoverCount
-    const onHoverShown = useCallback(() => {
-        const count = hoverCountReference.current + 1
-        if (count > HOVER_THRESHOLD) {
-            // No need to keep updating localStorage
-            return
-        }
-        setHoverCount(count)
-    }, [setHoverCount])
-
-    const onPopoverDismissed = useCallback(() => {
-        setHasDismissedPopover(true)
-    }, [])
-
     if (!repoOrError) {
         // Render nothing while loading
         return null
@@ -401,7 +359,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         ...props,
         ...repoHeaderContributionsLifecycleProps,
         ...childBreadcrumbSetters,
-        onHoverShown,
         repo: repoOrError,
         routePrefix: repoMatchURL,
         onDidUpdateExternalLinks: setExternalLinks,
@@ -443,8 +400,6 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                         range={range}
                         externalLinks={externalLinks}
                         fetchFileExternalLinks={fetchFileExternalLinks}
-                        canShowPopover={canShowPopover}
-                        onPopoverDismissed={onPopoverDismissed}
                         actionType={actionType}
                         repoName={repoName}
                     />
