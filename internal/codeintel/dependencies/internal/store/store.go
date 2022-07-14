@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
@@ -596,7 +597,7 @@ ORDER BY r.name, lf.commit_bytea
 // ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
 	Scheme          string
-	Name            string
+	Name            reposource.PackageName
 	After           any
 	Limit           int
 	NewestFirst     bool
@@ -666,7 +667,7 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 		case !opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
 		}
-	case string:
+	case string, reposource.PackageName:
 		switch {
 		case opts.NewestFirst:
 			panic("cannot set NewestFirst and pass name-based offset")
