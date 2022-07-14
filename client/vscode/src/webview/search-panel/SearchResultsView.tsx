@@ -19,7 +19,6 @@ import {
 } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
-import { CtaAlert } from '@sourcegraph/shared/src/components/CtaAlert'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
@@ -30,14 +29,12 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { VSCE_LINK_AUTH } from '../../common/links'
 import { DISMISS_SEARCH_CTA_KEY } from '../../settings/LocalStorageService'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
 import { fetchSearchContexts } from './alias/fetchSearchContext'
 import { setFocusSearchBox } from './api'
-import { SearchBetaIcon } from './components/icons'
 import { SavedSearchCreateForm } from './components/SavedSearchForm'
 import { SearchResultsInfoBar } from './components/SearchResultsInfoBar'
 import { MatchHandlersContext, useMatchHandlers } from './MatchHandlersContext'
@@ -389,21 +386,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
 
             {!repoToShow ? (
                 <div className={styles.resultsViewScrollContainer}>
-                    {isSourcegraphDotCom && !authenticatedUser && !dismissSearchCta && (
-                        <CtaAlert
-                            title="Sign up to add your public and private repositories and unlock search flow"
-                            description="Do all the things editors can’t: search multiple repos & commit history, monitor, save
-                searches and more."
-                            cta={{
-                                label: 'Get started',
-                                href: VSCE_LINK_AUTH('sign-up'),
-                                onClick: onSignUpClick,
-                            }}
-                            icon={<SearchBetaIcon />}
-                            className={classNames('percy-display-none', styles.ctaContainer)}
-                            onClose={onDismissCtaAlert}
-                        />
-                    )}
                     <SearchResultsInfoBar
                         onShareResultsClick={onShareResultsClick}
                         showSavedSearchForm={showSavedSearchForm}
