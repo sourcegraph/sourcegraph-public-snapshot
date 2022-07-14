@@ -46,14 +46,19 @@ def f(x):
 class C1:
     x = 5  # < "x" py.C1.x def
 
+    def __init__(self, y):
+        #    v py.C1.y def
+        self.y = y
+
     def f(self):
         #    v py.C1.x ref
         #             v py.C1.g ref
         self.x = self.g()
 
     #   v py.C1.g def
-    def g():
-        return 3
+    def g(self):
+        #           v py.C1.y ref
+        return self.y
 
 
 class C2(C1):

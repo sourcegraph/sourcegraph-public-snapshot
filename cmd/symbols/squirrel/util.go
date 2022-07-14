@@ -117,9 +117,7 @@ func bracket(text string) string {
 	return strings.Join(lines, "\n")
 }
 
-// forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
-// each capture.
-func forEachCapture(query string, node *Node, f func(captureName string, node Node)) error {
+func withQuery(query string, node Node, f func(query *sitter.Query, cursor *sitter.QueryCursor)) error {
 	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
 	if err != nil {
 		return errors.Newf("failed to parse query: %s\n%s", err, query)
@@ -129,46 +127,51 @@ func forEachCapture(query string, node *Node, f func(captureName string, node No
 	defer cursor.Close()
 	cursor.Exec(sitterQuery, node.Node)
 
-	match, _, hasCapture := cursor.NextCapture()
-	for hasCapture {
-		for _, capture := range match.Captures {
-			captureName := sitterQuery.CaptureNameForId(capture.Index)
-			f(captureName, Node{
-				RepoCommitPath: node.RepoCommitPath,
-				Node:           capture.Node,
-				Contents:       node.Contents,
-				LangSpec:       node.LangSpec,
-			})
+	f(sitterQuery, cursor)
+
+	return nil
+}
+
+// forEachCapture runs the given tree-sitter query on the given node and calls f(captureName, node) for
+// each capture.
+func forEachCapture(query string, node Node, f func(map[string]Node)) error {
+	withQuery(query, node, func(sitterQuery *sitter.Query, cursor *sitter.QueryCursor) {
+		match, _, hasCapture := cursor.NextCapture()
+		for hasCapture {
+			nameToNode := map[string]Node{}
+			for _, capture := range match.Captures {
+				captureName := sitterQuery.CaptureNameForId(capture.Index)
+				nameToNode[captureName] = Node{
+					RepoCommitPath: node.RepoCommitPath,
+					Node:           capture.Node,
+					Contents:       node.Contents,
+					LangSpec:       node.LangSpec,
+				}
+			}
+			f(nameToNode)
+			match, _, hasCapture = cursor.NextCapture()
 		}
-		match, _, hasCapture = cursor.NextCapture()
-	}
+	})
 
 	return nil
 }
 
 func allCaptures(query string, node Node) ([]Node, error) {
-	sitterQuery, err := sitter.NewQuery([]byte(query), node.LangSpec.language)
-	if err != nil {
-		return nil, errors.Newf("failed to parse query: %s\n%s", err, query)
-	}
-	defer sitterQuery.Close()
-	cursor := sitter.NewQueryCursor()
-	defer cursor.Close()
-	cursor.Exec(sitterQuery, node.Node)
-
 	var captures []Node
-	match, _, hasCapture := cursor.NextCapture()
-	for hasCapture {
-		for _, capture := range match.Captures {
-			captures = append(captures, Node{
-				RepoCommitPath: node.RepoCommitPath,
-				Node:           capture.Node,
-				Contents:       node.Contents,
-				LangSpec:       node.LangSpec,
-			})
+	withQuery(query, node, func(sitterQuery *sitter.Query, cursor *sitter.QueryCursor) {
+		match, _, hasCapture := cursor.NextCapture()
+		for hasCapture {
+			for _, capture := range match.Captures {
+				captures = append(captures, Node{
+					RepoCommitPath: node.RepoCommitPath,
+					Node:           capture.Node,
+					Contents:       node.Contents,
+					LangSpec:       node.LangSpec,
+				})
+			}
+			match, _, hasCapture = cursor.NextCapture()
 		}
-		match, _, hasCapture = cursor.NextCapture()
-	}
+	})
 
 	return captures, nil
 }

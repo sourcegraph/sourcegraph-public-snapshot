@@ -317,6 +317,33 @@ func (squirrel *SquirrelService) lookupFieldPython(ctx context.Context, ty TypeP
 				if name.Content(ty2.def.Contents) == field {
 					return swapNodePtr(ty2.def, name), nil
 				}
+				if name.Content(ty2.def.Contents) == "__init__" {
+					query := `
+						(expression_statement
+							(assignment
+								left: (attribute
+									object: (identifier) @object
+									attribute: (identifier) @attribute
+								)
+							)
+						)
+					`
+					var found *Node
+					forEachCapture(query, swapNode(ty2.def, child), func(nameToNode map[string]Node) {
+						object, ok := nameToNode["object"]
+						if !ok || object.Content(ty2.def.Contents) != "self" {
+							return
+						}
+						attribute, ok := nameToNode["attribute"]
+						if !ok || attribute.Content(ty2.def.Contents) != field {
+							return
+						}
+						found = &attribute
+					})
+					if found != nil {
+						return found, nil
+					}
+				}
 			case "class_definition":
 				name := child.ChildByFieldName("name")
 				if name == nil {
