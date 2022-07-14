@@ -1,5 +1,7 @@
 import React, { useContext, useMemo } from 'react'
 
+import { groupBy } from 'lodash'
+
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
@@ -19,13 +21,17 @@ import {
     COMPUTE_MOCK_CHART,
     EditableDataSeries,
 } from '../../../components'
-import { BackendInsightDatum, CategoricalChartContent, CodeInsightsBackendContext } from '../../../core'
+import {
+    BackendInsightDatum,
+    CategoricalChartContent,
+    CodeInsightsBackendContext,
+    SeriesPreviewSettings,
+} from '../../../core'
 
 interface LanguageUsageDatum {
     name: string
     value: number
     fill: string
-    linkURL: string
     group?: string
 }
 
@@ -47,10 +53,11 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
         // For the purposes of building out this component before the backend is ready
         // we are using the standard "line series" type data.
         // TODO after backend is merged, remove update the series value to use that structure
-        series: series.map(srs => ({
+        series: series.map<SeriesPreviewSettings>(srs => ({
             query: srs.query,
             label: srs.name,
             stroke: srs.stroke ?? 'blue',
+            generatedFromCaptureGroup: true,
             groupBy,
         })),
         // TODO: Revisit this hardcoded value. Compute does not use it, but it's still required
@@ -124,13 +131,25 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
     )
 }
 
-const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] =>
-    series.map(series => ({
-        name: getComputeSeriesName(series),
-        fill: getComputeSeriesColor(series),
-        value: series.data[0].value ?? 0,
-        linkURL: series.data[0].link ?? '',
-    }))
+const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] => {
+    const seriesGroups = groupBy(series, series => series.name)
+
+    // Group series result by seres name and sum up series value with the same name
+    return Object.keys(seriesGroups).map(key =>
+        seriesGroups[key].reduce(
+            (memo, series) => {
+                memo.value += series.data.reduce((sum, datum) => sum + (series.getYValue(datum) ?? 0), 0)
+
+                return memo
+            },
+            {
+                name: getComputeSeriesName(seriesGroups[key][0]),
+                fill: getComputeSeriesColor(seriesGroups[key][0]),
+                value: 0,
+            }
+        )
+    )
+}
 
 const getComputeSeriesName = (series: Series<any>): string => (series.name ? series.name : 'Other')
 const getComputeSeriesColor = (series: Series<any>): string =>
