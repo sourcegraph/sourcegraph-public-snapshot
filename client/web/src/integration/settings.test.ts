@@ -102,12 +102,13 @@ describe('Settings', () => {
                 'Expected save button to be disabled'
             )
 
+            const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
+
             await percySnapshotWithVariants(driver.page, 'Settings page')
             await accessibilityAudit(driver.page)
 
             // Replace with new settings
             const newSettings = '{ /* These are new settings */}'
-            const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
             await editor.replace(newSettings, 'paste')
             await retry(async () => {
                 const currentSettings = await editor.getValue()
