@@ -2463,10 +2463,10 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`), // ID=3
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('denise')`),
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),  // ID=1
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),    // ID=2
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`),  // ID=3
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('denise')`), // ID=4
 
 			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
 			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil, nil),          // ID=2
