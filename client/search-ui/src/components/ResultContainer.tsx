@@ -162,7 +162,6 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             data-result-type={resultType}
             data-expanded={allExpanded}
             data-collapsible={collapsible}
-            data-core-workflow-improvements={coreWorkflowImprovementsEnabled}
             onClick={trackReferencePanelClick}
         >
             <article aria-labelledby={`result-container-${index}`}>

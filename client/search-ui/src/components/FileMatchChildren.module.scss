@@ -5,7 +5,7 @@
     padding: 0.25rem 0;
     position: relative;
 
-    [data-core-workflow-improvements='true'][data-collapsible='true'] & {
+    :global(.core-workflow-improvements-enabled) [data-collapsible='true'] & {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
     }
@@ -39,7 +39,7 @@
         &:not(:first-child) {
             border-top: 1px solid var(--border-color-2);
 
-            [data-core-workflow-improvements='true'] & {
+            :global(.core-workflow-improvements-enabled) & {
                 border-top-color: var(--border-color);
             }
         }

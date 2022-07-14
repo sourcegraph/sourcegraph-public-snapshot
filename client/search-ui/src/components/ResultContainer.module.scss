@@ -9,7 +9,7 @@
         margin-bottom: 0.5rem;
     }
 
-    &[data-core-workflow-improvements='true']:not(:last-of-type) {
+    :global(.core-workflow-improvements-enabled) &:not(:last-of-type) {
         margin-bottom: 1rem;
     }
 }
