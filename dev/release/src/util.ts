@@ -136,6 +136,7 @@ export function ensureReleaseBranchUpToDate(branch: string): void {
     }
 }
 
+// eslint-disable-next-line unicorn/prevent-abbreviations
 export async function ensureSrcCliUpToDate(): Promise<void> {
     const latestTag = await fetch('https://api.github.com/repos/sourcegraph/src-cli/releases/latest', {
         method: 'GET',
