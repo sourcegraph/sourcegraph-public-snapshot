@@ -33,9 +33,7 @@ class FilteredProductSubscriptionConnection extends FilteredConnection<
 /**
  * Displays the product subscriptions associated with this account.
  */
-export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
-    React.PropsWithChildren<Props>
-> = props => {
+const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
     useEffect(() => {
         eventLogger.logViewEvent('UserSubscriptionsProductSubscriptions')
     }, [])
@@ -113,3 +111,5 @@ export const UserSubscriptionsProductSubscriptionsPage: React.FunctionComponent<
         </div>
     )
 }
+
+export default UserSubscriptionsProductSubscriptionsPage

@@ -13,13 +13,15 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { parseSearchURLQuery } from '..'
 import { AuthenticatedUser } from '../../auth'
-import { FuzzyFinder } from '../../components/fuzzyFinder/FuzzyFinder'
 import { useExperimentalFeatures, useNavbarQueryState, setSearchCaseSensitivity } from '../../stores'
 import { NavbarQueryState, setSearchPatternType } from '../../stores/navbarSearchQueryState'
 import { getExperimentalFeatures } from '../../util/get-experimental-features'
+
+const FuzzyFinder = lazyComponent(() => import('../../components/fuzzyFinder/FuzzyFinder'), 'FuzzyFinder')
 
 interface Props
     extends ActivationProps,

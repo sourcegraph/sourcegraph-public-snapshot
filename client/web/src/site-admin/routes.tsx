@@ -2,9 +2,9 @@ import { Redirect, RouteComponentProps } from 'react-router'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { Scalars } from '../graphql-operations'
+import type { Scalars } from '../graphql-operations'
 
-import { SiteAdminAreaRoute, SiteAdminAreaRouteContext } from './SiteAdminArea'
+import type { SiteAdminAreaRoute, SiteAdminAreaRouteContext } from './SiteAdminArea'
 
 const ExternalServicesPage = lazyComponent(
     () => import('../components/externalServices/ExternalServicesPage'),

@@ -1,27 +1,30 @@
+import React from 'react'
+
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
 import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
-import { authExp } from '../../site-admin/SiteAdminAuthenticationProvidersPage'
+import { authExp } from '../../site-admin/utils'
 
-import { UserEventLogsPageProps } from './UserEventLogsPage'
+const UserSettingsPermissionsPage = lazyComponent(
+    () => import('./auth/UserSettingsPermissionsPage'),
+    'UserSettingsPermissionsPage'
+)
+const UserEventLogsPage = React.lazy(() => import('./UserEventLogsPage'))
 
 export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     ...userSettingsAreaRoutes,
     {
         path: '/permissions',
         exact: true,
-        render: lazyComponent(() => import('./auth/UserSettingsPermissionsPage'), 'UserSettingsPermissionsPage'),
+        render: props => <UserSettingsPermissionsPage {...props} />,
         condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
     {
         path: '/event-log',
         exact: true,
-        render: lazyComponent<UserEventLogsPageProps, 'UserEventLogsPage'>(
-            () => import('./UserEventLogsPage'),
-            'UserEventLogsPage'
-        ),
+        render: props => <UserEventLogsPage {...props} />,
     },
     {
         path: '/external-accounts',
@@ -69,10 +72,7 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
     {
         path: '/subscriptions',
         exact: true,
-        render: lazyComponent(
-            () => import('../productSubscriptions/UserSubscriptionsProductSubscriptionsPage'),
-            'UserSubscriptionsProductSubscriptionsPage'
-        ),
+        render: React.lazy(() => import('../productSubscriptions/UserSubscriptionsProductSubscriptionsPage')),
         condition: () => SHOW_BUSINESS_FEATURES,
     },
 ]

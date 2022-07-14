@@ -1,9 +1,8 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
-import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
+import type { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
-import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
 
 export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     ...siteAdminAreaRoutes,
@@ -157,10 +156,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     // Executor routes
     {
         path: '/executors',
-        render: lazyComponent<ExecutorsListPageProps, 'ExecutorsListPage'>(
-            () => import('../executors/ExecutorsListPage'),
-            'ExecutorsListPage'
-        ),
+        render: lazyComponent(() => import('../executors/ExecutorsListPage'), 'ExecutorsListPage'),
         exact: true,
         condition: () => Boolean(window.context?.executorsEnabled),
     },

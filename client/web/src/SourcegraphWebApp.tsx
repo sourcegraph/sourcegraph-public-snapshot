@@ -49,6 +49,7 @@ import { EMPTY_SETTINGS_CASCADE, SettingsCascadeProps } from '@sourcegraph/share
 import { TemporarySettingsProvider } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsProvider'
 import { TemporarySettingsStorage } from '@sourcegraph/shared/src/settings/temporary/TemporarySettingsStorage'
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import {
     // This is the root Tooltip usage
     DeprecatedTooltip,
@@ -87,7 +88,6 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
-import { NotepadContainer } from './search/Notepad'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -111,6 +111,8 @@ import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './SourcegraphWebApp.module.scss'
+
+const NotepadContainer = lazyComponent(() => import('./search/Notepad'), 'NotepadContainer')
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,

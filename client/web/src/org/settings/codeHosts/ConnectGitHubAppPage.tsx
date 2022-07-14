@@ -4,7 +4,6 @@ import { mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
 import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Card, CardBody, Link, PageHeader, LoadingSpinner, H3, Text } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
@@ -32,7 +31,7 @@ export const GitHubOrgListItem: React.FunctionComponent<React.PropsWithChildren<
     </li>
 )
 
-export const ConnectGitHubAppPage: React.FunctionComponent<React.PropsWithChildren<TelemetryProps>> = () => {
+export const ConnectGitHubAppPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => {
     const [data, setData] = useState<GitHubAppInstallation[]>([])
     const [error, setError] = useState<boolean>(false)
     const [loading, setLoading] = useState<boolean>(true)

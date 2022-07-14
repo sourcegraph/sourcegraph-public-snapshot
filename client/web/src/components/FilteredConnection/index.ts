@@ -1,3 +1,7 @@
-export * from './FilteredConnection'
-export * from './FilterControl'
-export * from './ConnectionType'
+export {
+    FilteredConnection,
+    FilteredConnectionQueryArguments,
+    resetFilteredConnectionURLQuery,
+} from './FilteredConnection'
+export { FilterControl, FilteredConnectionFilter, FilteredConnectionFilterValue } from './FilterControl'
+export { Connection, ConnectionQueryArguments } from './ConnectionType'

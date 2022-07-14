@@ -14,13 +14,12 @@ import { FilteredConnection } from '../../components/FilteredConnection'
 import { PageTitle } from '../../components/PageTitle'
 import { eventLogger } from '../../tracking/eventLogger'
 
+import { authExp } from './utils'
+
 interface AuthProviderNodeProps {
     /** The auth provider to display in this item. */
     node: GQL.IAuthProvider
 }
-
-/** Whether to show experimental auth features. */
-export const authExp = localStorage.getItem('authExp') !== null
 
 class AuthProviderNode extends React.PureComponent<AuthProviderNodeProps> {
     public render(): JSX.Element | null {
