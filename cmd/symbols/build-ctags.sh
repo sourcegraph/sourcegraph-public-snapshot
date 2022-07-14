@@ -14,7 +14,7 @@ fi
 
 # Build ctags docker image for universal-ctags-dev
 echo "Building ctags docker image"
-docker build --squash  -f cmd/symbols/Dockerfile -t ctags . \
+docker build -f cmd/symbols/Dockerfile -t ctags . \
   --target=ctags \
   --progress=plain \
   --quiet >/dev/null

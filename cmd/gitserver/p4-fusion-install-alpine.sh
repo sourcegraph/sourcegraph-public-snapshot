@@ -33,7 +33,7 @@ set -x
 # If the version has changed please add it to the sha256sum in the prebuilt
 # binary check. You can run
 #
-#   docker build --squash  -t p4-fusion --target=p4-fusion .
+#   docker build -t p4-fusion --target=p4-fusion .
 #
 # Then extract the binary from /usr/local/bin/p4-fusion. Please rename it
 # follow the format and upload to the bucket here

@@ -5,8 +5,8 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eu
 
-echo "--- docker build --squash  symbols"
-docker build --squash  -f cmd/symbols/Dockerfile -t "$IMAGE" "$(pwd)" \
+echo "--- docker build symbols"
+docker build -f cmd/symbols/Dockerfile -t "$IMAGE" "$(pwd)" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

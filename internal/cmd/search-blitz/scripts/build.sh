@@ -11,7 +11,7 @@ fi
 
 set -x
 
-docker build --squash  \
+docker build \
   -f ./internal/cmd/search-blitz/Dockerfile \
   --platform linux/amd64 \
   --build-arg COMMIT_SHA="$(git rev-parse HEAD)" \

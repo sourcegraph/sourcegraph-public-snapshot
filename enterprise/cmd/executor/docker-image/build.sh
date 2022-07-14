@@ -23,7 +23,7 @@ pkg="github.com/sourcegraph/sourcegraph/enterprise/cmd/executor"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 popd 1>/dev/null
 
-docker build --squash  -f enterprise/cmd/executor/docker-image/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build -f enterprise/cmd/executor/docker-image/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" \
   --build-arg COMMIT_SHA \

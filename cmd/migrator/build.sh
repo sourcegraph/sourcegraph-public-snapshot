@@ -21,8 +21,8 @@ echo "--- go build"
 pkg="github.com/sourcegraph/sourcegraph/cmd/migrator"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
-echo "--- docker build --squash "
-docker build --squash  -f cmd/migrator/Dockerfile -t "$IMAGE" "$OUTPUT" \
+echo "--- docker build"
+docker build -f cmd/migrator/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
