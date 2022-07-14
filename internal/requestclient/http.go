@@ -1,4 +1,4 @@
-package userip
+package requestclient
 
 import (
 	"net/http"
@@ -6,16 +6,16 @@ import (
 )
 
 const (
-	// Sourcegraph-specific user IP header key
-	headerKeyUserIP = "X-Sourcegraph-User-IP"
+	// Sourcegraph-specific client IP header key
+	headerKeyClientIP = "X-Sourcegraph-Client-IP"
 	// De-facto standard for identifying original IP address of a client:
 	// https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/X-Forwarded-For
 	headerKeyForwardedFor = "X-Forwarded-For"
 )
 
-// HTTPTransport is a roundtripper that sets user IP information within request context as
+// HTTPTransport is a roundtripper that sets client IP information within request context as
 // headers on outgoing requests. The attached headers can be picked up and attached to
-// incoming request contexts with userip.HTTPMiddleware.
+// incoming request contexts with client.HTTPMiddleware.
 type HTTPTransport struct {
 	RoundTripper http.RoundTripper
 }
@@ -27,26 +27,23 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		t.RoundTripper = http.DefaultTransport
 	}
 
-	userIP := FromContext(req.Context())
-	if userIP != nil {
-		req.Header.Set(headerKeyUserIP, userIP.IP)
-		req.Header.Set(headerKeyForwardedFor, userIP.XForwardedFor)
+	client := FromContext(req.Context())
+	if client != nil {
+		req.Header.Set(headerKeyClientIP, client.IP)
+		req.Header.Set(headerKeyForwardedFor, client.ForwardedFor)
 	}
 
 	return t.RoundTripper.RoundTrip(req)
 }
 
-// HTTPMiddleware wraps the given handle func and attaches user IP data indicated in
+// HTTPMiddleware wraps the given handle func and attaches client IP data indicated in
 // incoming requests to the request header.
 func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		var userIP UserIP
-		userIP.IP = strings.Split(req.RemoteAddr, ":")[0]
-		userIP.XForwardedFor = req.Header.Get(headerKeyForwardedFor)
-
-		ctx := req.Context()
-		ctxWithIP := WithUserIP(ctx, &userIP)
-
-		next.ServeHTTP(rw, req.WithContext(ctxWithIP))
+		ctxWithClient := WithClient(req.Context(), &Client{
+			IP:           strings.Split(req.RemoteAddr, ":")[0],
+			ForwardedFor: req.Header.Get(headerKeyForwardedFor),
+		})
+		next.ServeHTTP(rw, req.WithContext(ctxWithClient))
 	})
 }

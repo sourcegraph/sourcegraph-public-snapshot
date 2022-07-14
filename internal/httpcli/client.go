@@ -28,8 +28,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
-	"github.com/sourcegraph/sourcegraph/internal/userip"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -157,7 +157,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		),
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
-		UserIPTransportOpt,
+		ClientTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -635,14 +635,16 @@ func ActorTransportOpt(cli *http.Client) error {
 	return nil
 }
 
-// UserIPTransportOp wraps an existing http.Transport of an http.Client to pull the user IP
-// from the context and add it to each request's HTTP headers.
-func UserIPTransportOpt(cli *http.Client) error {
+// ClientTransportOpt wraps an existing http.Transport of an http.Client to pull the
+// original client's IP from the context and add it to each request's HTTP headers.
+//
+// Servers can use client.HTTPMiddleware to populate client context from incoming requests.
+func ClientTransportOpt(cli *http.Client) error {
 	if cli.Transport == nil {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &userip.HTTPTransport{RoundTripper: cli.Transport}
+	cli.Transport = &requestclient.HTTPTransport{RoundTripper: cli.Transport}
 
 	return nil
 }

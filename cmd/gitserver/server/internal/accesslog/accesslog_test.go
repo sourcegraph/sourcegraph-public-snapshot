@@ -7,8 +7,9 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
-	"github.com/sourcegraph/sourcegraph/internal/userip"
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 )
 
 func TestRecord(t *testing.T) {
@@ -49,7 +50,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest("GET", "/", nil)
 		ctx := req.Context()
-		ctx = userip.WithUserIP(ctx, &userip.UserIP{IP: "192.168.1.1"})
+		ctx = requestclient.WithClient(ctx, &requestclient.Client{IP: "192.168.1.1"})
 		req = req.WithContext(ctx)
 
 		h.ServeHTTP(rec, req)

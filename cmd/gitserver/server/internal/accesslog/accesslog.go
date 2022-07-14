@@ -7,8 +7,9 @@ import (
 	"net/http"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/userip"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 )
 
 type contextKey struct{}
@@ -53,16 +54,19 @@ func fromContext(ctx context.Context) *paramsContext {
 // been stored in the context, in order to log a trace of the access.
 func HTTPMiddleware(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		l := logger
-		ctx := r.Context()
-		userIP := userip.FromContext(ctx)
-		act := actor.FromContext(ctx)
+		var (
+			ctx    = r.Context()
+			cli    = requestclient.FromContext(ctx)
+			act    = actor.FromContext(ctx)
+			fields []log.Field
+		)
 
-		if userIP != nil {
-			l = l.With(log.Object(
+		// Log the actor and client
+		if cli != nil {
+			fields = append(fields, log.Object(
 				"actor",
-				log.String("ip", userIP.IP),
-				log.String("X-Forwarded-For", userIP.XForwardedFor),
+				log.String("ip", cli.IP),
+				log.String("X-Forwarded-For", cli.ForwardedFor),
 				log.Int32("actor", act.UID),
 			))
 		}
@@ -82,17 +86,17 @@ func HTTPMiddleware(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if paramsCtx != nil {
-			l = l.With(log.Object(
+			fields = append(fields, log.Object(
 				"params",
 				log.String("repo", paramsCtx.repo),
 				log.String("cmd", paramsCtx.cmd),
 				log.Strings("args", paramsCtx.args),
 			))
 		} else {
-			l = l.With(log.String("params", "nil"))
+			fields = append(fields, log.String("params", "nil"))
 		}
 
-		l.Info("acces request")
+		logger.Info("request", fields...)
 		return
 	}
 }
