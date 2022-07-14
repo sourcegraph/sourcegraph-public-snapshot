@@ -340,7 +340,7 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 	for i, repoRev := range repoRevSpecs {
 		i, repoRev := i, repoRev
 		g.Go(func(ctx context.Context) error {
-			expanded, err := r.expandRevSpecs(ctx, repoRev.Repo, repoRev.Revs, addMissing)
+			expanded, err := r.normalizeRepoRefs(ctx, repoRev.Repo, repoRev.Revs, addMissing)
 			if err != nil {
 				return err
 			}
@@ -367,7 +367,7 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 	return filteredResults, missing, nil
 }
 
-func (r *Resolver) expandRevSpecs(
+func (r *Resolver) normalizeRepoRefs(
 	ctx context.Context,
 	repo types.MinimalRepo,
 	revSpecs []search.RevisionSpecifier,
