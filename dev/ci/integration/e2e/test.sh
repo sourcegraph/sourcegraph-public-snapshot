@@ -8,6 +8,11 @@ URL="${1:-"http://localhost:7080"}"
 echo "--- yarn run test-e2e"
 env SOURCEGRAPH_BASE_URL="$URL" yarn run cover-e2e
 
+# backend integration tests e2e
+# panics in server
+
+# frontend tests THIS IS THE FRONTEND
+
 echo "--- coverage"
 yarn nyc report -r json
 # Upload the coverage under the "e2e" flag (toggleable in the CodeCov UI)

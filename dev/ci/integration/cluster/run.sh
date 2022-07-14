@@ -16,6 +16,7 @@ git clone --depth 1 \
   "$test_dir/deploy-sourcegraph"
 
 echo "--- test.sh"
+# most often fails to deploy
 if ! "${root_dir}"/dev/ci/integration/cluster/test.sh; then
         errors=$(grep -E -i "eror|error|panic" "frontend_logs.log")
         annotation=$(
