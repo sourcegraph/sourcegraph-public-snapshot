@@ -2,7 +2,7 @@ import React from 'react'
 
 import { mdiChartLineVariant, mdiInformationOutline } from '@mdi/js'
 
-import { Badge, H1, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, H1, Icon } from '@sourcegraph/wildcard'
 
 export const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
     <div className="d-flex flex-column justify-content-between align-items-start">
