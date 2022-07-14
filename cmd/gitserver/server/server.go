@@ -1359,11 +1359,12 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 	}
 	// TODO clean
 	ctx := r.Context()
-
 	rc := FromRepoContext(ctx)
 	rc.Repo = string(req.Repo)
 	rc.Cmd = req.Args[0]
-	rc.Args = req.Args[1:] // TODO check slice size
+	if len(req.Args) > 1 {
+		rc.Args = req.Args[1:]
+	}
 
 	s.exec(w, r, &req)
 }
