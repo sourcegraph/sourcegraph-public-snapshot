@@ -348,7 +348,7 @@ commands:
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: "installDocsite"
+    install_func: installDocsite
     env:
       DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
 
@@ -749,7 +749,7 @@ commandsets:
     env:
       # EXTSVC_CONFIG_FILE being set prevents the e2e test suite to add
       # additional connections.
-      EXTSVC_CONFIG_FILE: ""
+      EXTSVC_CONFIG_FILE: ''
 
   dotcom:
     <<: *enterprise_set
@@ -950,7 +950,6 @@ tests:
 
   web-integration:
     cmd: yarn test-integration
-    install: ENTERPRISE=1 yarn build-web
 
   bext:
     cmd: yarn workspace @sourcegraph/browser test
@@ -997,9 +996,9 @@ tests:
       BROWSER: chrome
     external_secrets:
       GH_TOKEN:
-        provider: "gcloud"
-        project: "sourcegraph-ci"
-        name: "BUILDKITE_GITHUBDOTCOM_TOKEN"
+        provider: 'gcloud'
+        project: 'sourcegraph-ci'
+        name: 'BUILDKITE_GITHUBDOTCOM_TOKEN'
 
   docsite:
     cmd: .bin/docsite_${DOCSITE_VERSION} check ./doc
