@@ -126,6 +126,7 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--jb-border-color', intelliJTheme['Component.borderColor'])
     root.style.setProperty('--jb-focus-border-color', intelliJTheme['Component.focusedBorderColor'])
     root.style.setProperty('--jb-icon-color', intelliJTheme['Component.iconColor'] || '#7f8b91')
+    root.style.setProperty('--jb-info-text-color', intelliJTheme['Component.infoForeground'])
 
     // There is no color for this in the serialized theme, so I have picked this option from the
     // Dracula theme

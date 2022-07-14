@@ -40,8 +40,7 @@
 }
 
 .info-column {
-    // @TODO: Make configurable, this is copied from the Figma file
-    color: #8c8c8c;
+    color: var(--jb-info-text-color);
     text-align: right;
     font-variant-numeric: tabular-nums;
     display: flex;
