@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -699,7 +700,7 @@ type ListLockfileIndexesOpts struct {
 
 // ListLockfileIndexes returns lockfile indexes.
 func (s *store) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, err error) {
-	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.listLockfileIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", opts.RepoName),
 		log.String("commit", opts.Commit),
 		log.String("lockfile", opts.Commit),
