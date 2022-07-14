@@ -111,7 +111,16 @@ const ExecutionStatePill: React.FunctionComponent<
                     }.`}
                 >
                     <Badge variant="warning" className={styles.executionPill}>
-                        <Icon className={styles.executionIcon} svgPath={mdiHistory} inline={false} aria-hidden={true} />
+                        <Icon
+                            className={styles.executionIcon}
+                            svgPath={mdiHistory}
+                            inline={false}
+                            aria-label={`This batch change has a new spec ${
+                                latestExecutionState === BatchSpecState.QUEUED
+                                    ? 'queued for execution'
+                                    : 'in the process of executing'
+                            }.`}
+                        />
                     </Badge>
                 </Tooltip>
             )
