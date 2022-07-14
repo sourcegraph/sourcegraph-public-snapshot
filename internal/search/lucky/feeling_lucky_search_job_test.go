@@ -337,3 +337,41 @@ func Test_regexpPatterns(t *testing.T) {
 		autogold.Equal(t, autogold.Raw(test(`my.yaml.conf`, rules)))
 	})
 }
+
+func TestNewFeelingLuckySearchJob_ResultCount(t *testing.T) {
+	// This test ensures the invariant that generated queries do not run if
+	// at least RESULT_THRESHOLD results are emitted by the initial job. If
+	// less than RESULT_THRESHOLD results are seen, the logic will run a
+	// generated query, which always panics.
+	mockJob := mockjob.NewMockJob()
+	mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+		for i := 0; i < RESULT_THRESHOLD; i++ {
+			s.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{Path: strconv.Itoa(i)},
+				}},
+			})
+		}
+		return nil, nil
+	})
+
+	mockAutoQuery := &autoQuery{description: "mock", query: query.Basic{}}
+
+	j := FeelingLuckySearchJob{
+		initialJob: mockJob,
+		generators: []next{func() (*autoQuery, next) { return mockAutoQuery, nil }},
+		newGeneratedJob: func(*autoQuery) job.Job {
+			return mockjob.NewStrictMockJob() // always panic, and should never get run.
+		},
+	}
+
+	var sent []result.Match
+	stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+		sent = append(sent, e.Results...)
+	})
+
+	t.Run("do not run generated queries over RESULT_THRESHOLD", func(t *testing.T) {
+		j.Run(context.Background(), job.RuntimeClients{}, stream)
+		require.Equal(t, RESULT_THRESHOLD, len(sent))
+	})
+}

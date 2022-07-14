@@ -53,7 +53,7 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
                 path={[{ icon: BarChartIcon }, { text: 'Create code insight' }]}
                 description={
                     <Text>
-                        Type: <b>Map results</b> | <Link to="/insights/create">Change type</Link>
+                        Type: <b>Group results</b> | <Link to="/insights/create">Change type</Link>
                     </Text>
                 }
             />

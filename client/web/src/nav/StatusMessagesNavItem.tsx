@@ -1,13 +1,9 @@
 import React from 'react'
 
-import { mdiCloudOffOutline } from '@mdi/js'
+import { mdiCloudOffOutline, mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
-import AlertIcon from 'mdi-react/AlertIcon'
-import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
-import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
@@ -99,15 +95,60 @@ interface StatusMessageEntryProps {
 function entryIcon(entryType: EntryType): JSX.Element {
     switch (entryType) {
         case 'error':
-            return <InformationCircleIcon size={14} className={classNames('text-danger', styles.icon)} />
+            return (
+                <Icon
+                    className={classNames('text-danger', styles.icon)}
+                    svgPath={mdiInformation}
+                    inline={false}
+                    aria-label="Error"
+                    height={14}
+                    width={14}
+                />
+            )
         case 'warning':
-            return <AlertIcon size={14} className={classNames('text-warning', styles.icon)} />
+            return (
+                <Icon
+                    className={classNames('text-warning', styles.icon)}
+                    svgPath={mdiAlert}
+                    inline={false}
+                    aria-label="Warning"
+                    height={14}
+                    width={14}
+                />
+            )
         case 'success':
-            return <CheckboxCircleIcon size={14} className={classNames('text-success', styles.icon)} />
+            return (
+                <Icon
+                    className={classNames('text-success', styles.icon)}
+                    svgPath={mdiCheckboxMarkedCircle}
+                    inline={false}
+                    aria-label="Success"
+                    height={14}
+                    width={14}
+                />
+            )
         case 'progress':
-            return <SyncIcon size={14} className={classNames('text-primary', styles.icon)} />
+            return (
+                <Icon
+                    className={classNames('text-primary', styles.icon)}
+                    svgPath={mdiSync}
+                    inline={false}
+                    aria-label="In progress"
+                    height={14}
+                    width={14}
+                />
+            )
         case 'not-active':
-            return <CircleDashedIcon size={16} className={classNames(styles.icon, styles.iconOff)} />
+            return (
+                <Icon
+                    className={classNames(styles.icon, styles.iconOff)}
+                    as={CircleDashedIcon}
+                    inline={false}
+                    aria-label="Not active"
+                    height={16}
+                    width={16}
+                />
+            )
     }
 }
 

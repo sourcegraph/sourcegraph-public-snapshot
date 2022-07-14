@@ -22,7 +22,12 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 	}
 	unprivilegedOnlyFlag := &cli.BoolFlag{
 		Name:  "unprivileged-only",
-		Usage: "Do not apply privileged migrations.",
+		Usage: "Refuse to apply privileged migrations.",
+		Value: false,
+	}
+	noopPrivilegedFlag := &cli.BoolFlag{
+		Name:  "noop-privileged",
+		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
 		Value: false,
 	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
@@ -37,7 +42,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		Value: development,
 	}
 
-	makeOptions := func(cmd *cli.Context, schemaNames []string) runner.Options {
+	makeOptions := func(cmd *cli.Context, out *output.Output, schemaNames []string) (runner.Options, error) {
 		operations := make([]runner.MigrationOperation, 0, len(schemaNames))
 		for _, schemaName := range schemaNames {
 			operations = append(operations, runner.MigrationOperation{
@@ -46,11 +51,16 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			})
 		}
 
+		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+		if err != nil {
+			return runner.Options{}, err
+		}
+
 		return runner.Options{
 			Operations:           operations,
-			UnprivilegedOnly:     unprivilegedOnlyFlag.Get(cmd),
+			PrivilegedMode:       privilegedMode,
 			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
-		}
+		}, nil
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
@@ -61,7 +71,13 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		if len(schemaNames) == 0 {
 			return flagHelp(out, "supply a schema via -db")
 		}
+
 		r, err := setupRunner(ctx, factory, schemaNames...)
+		if err != nil {
+			return err
+		}
+
+		options, err := makeOptions(cmd, out, schemaNames)
 		if err != nil {
 			return err
 		}
@@ -72,11 +88,12 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			}
 		}
 
-		if err := r.Run(ctx, makeOptions(cmd, schemaNames)); err != nil {
+		if err := r.Run(ctx, options); err != nil {
 			return err
 		}
 
-		out.WriteLine(output.Emoji(output.EmojiSuccess, "migrations okay!"))
+		// Note: we print this here because there is no output on an already-updated database
+		out.WriteLine(output.Emoji(output.EmojiSuccess, "Schema(s) are up-to-date!"))
 		return nil
 	})
 
@@ -89,6 +106,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		Flags: []cli.Flag{
 			schemaNamesFlag,
 			unprivilegedOnlyFlag,
+			noopPrivilegedFlag,
 			ignoreSingleDirtyLogFlag,
 			skipUpgradeValidationFlag,
 		},

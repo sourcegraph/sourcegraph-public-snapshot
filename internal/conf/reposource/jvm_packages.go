@@ -30,8 +30,8 @@ func (m *MavenModule) CoursierSyntax() string {
 	return fmt.Sprintf("%s:%s", m.GroupID, m.ArtifactID)
 }
 
-func (m *MavenModule) PackageSyntax() string {
-	return m.CoursierSyntax()
+func (m *MavenModule) PackageSyntax() PackageName {
+	return PackageName(m.CoursierSyntax())
 }
 
 func (m *MavenModule) SortText() string {
@@ -132,18 +132,18 @@ func ParseMavenVersionedPackage(dependency string) (*MavenVersionedPackage, erro
 	return dep, nil
 }
 
-func ParseMavenPackageFromRepoName(name string) (*MavenVersionedPackage, error) {
-	return ParseMavenPackageFromName(strings.ReplaceAll(strings.TrimPrefix(name, "maven/"), "/", ":"))
+func ParseMavenPackageFromRepoName(name api.RepoName) (*MavenVersionedPackage, error) {
+	return ParseMavenPackageFromName(PackageName(strings.ReplaceAll(strings.TrimPrefix(string(name), "maven/"), "/", ":")))
 }
 
 // ParseMavenPackageFromRepoName is a convenience function to parse a repo name in a
 // 'maven/<name>' format into a MavenVersionedPackage.
-func ParseMavenPackageFromName(name string) (*MavenVersionedPackage, error) {
+func ParseMavenPackageFromName(name PackageName) (*MavenVersionedPackage, error) {
 	if name == "jdk" {
 		return &MavenVersionedPackage{MavenModule: jdkModule()}, nil
 	}
 
-	return ParseMavenVersionedPackage(name)
+	return ParseMavenVersionedPackage(string(name))
 }
 
 // jdkModule returns the module for the Java standard library (JDK). This module

@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, ReactNode } from 'react'
 
 import { noop } from 'rxjs'
 
@@ -11,44 +11,29 @@ import {
     createDefaultEditSeries,
     EditableDataSeries,
 } from '../../../../../components'
-import { Insight } from '../../../../../core'
 import { LineChartLivePreview, LivePreviewSeries } from '../../LineChartLivePreview'
 import { CreateInsightFormFields } from '../types'
 import { getSanitizedSeries } from '../utils/insight-sanitizer'
 
-import { SearchInsightCreationForm } from './SearchInsightCreationForm'
+import { RenderPropertyInputs, SearchInsightCreationForm } from './SearchInsightCreationForm'
 import { useInsightCreationForm } from './use-insight-creation-form'
 
 export interface SearchInsightCreationContentProps {
-    /** This component might be used in edit or creation insight case. */
-    mode?: 'creation' | 'edit'
-
+    touched: boolean
+    children: (input: RenderPropertyInputs) => ReactNode
     initialValue?: Partial<CreateInsightFormFields>
-    className?: string
     dataTestId?: string
-    insight?: Insight
-
+    className?: string
     onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onCancel?: () => void
-
     /** Change handlers is called every time when user changed any field within the form. */
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
 }
 
 export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps> = props => {
-    const {
-        mode = 'creation',
-        initialValue,
-        className,
-        dataTestId,
-        insight,
-        onSubmit,
-        onCancel = noop,
-        onChange = noop,
-    } = props
+    const { touched, children, initialValue, className, dataTestId, onSubmit, onChange = noop } = props
 
     const {
-        form: { values, formAPI, ref, handleSubmit },
+        form: { values, formAPI, handleSubmit },
         title,
         repositories,
         series,
@@ -56,7 +41,7 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
         stepValue,
         allReposMode,
     } = useInsightCreationForm({
-        mode,
+        touched,
         initialValue,
         onChange,
         onSubmit,
@@ -91,8 +76,6 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
         <CreationUiLayout data-testid={dataTestId} className={className}>
             <CreationUIForm
                 as={SearchInsightCreationForm}
-                mode={mode}
-                innerRef={ref}
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}
                 submitting={formAPI.submitting}
@@ -105,10 +88,10 @@ export const SearchInsightCreationContent: FC<SearchInsightCreationContentProps>
                 stepValue={stepValue}
                 isFormClearActive={hasFilledValue}
                 dashboardReferenceCount={initialValue?.dashboardReferenceCount}
-                insight={insight}
-                onCancel={onCancel}
                 onFormReset={handleFormReset}
-            />
+            >
+                {children}
+            </CreationUIForm>
 
             <CreationUIPreview
                 as={LineChartLivePreview}
