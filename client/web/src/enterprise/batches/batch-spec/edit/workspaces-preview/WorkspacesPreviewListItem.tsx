@@ -2,7 +2,7 @@ import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiClose } from '@mdi/js'
 
-import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     PreviewHiddenBatchSpecWorkspaceFields,
@@ -33,6 +33,7 @@ export const WorkspacesPreviewListItem: React.FunctionComponent<
         }
         setToBeExcluded(true)
         exclude(workspace.repository.name, workspace.branch.displayName)
+        screenReaderAnnounce('Batch spec has been updated to exclude this workspace.')
     }, [exclude, workspace])
 
     const statusIndicator = useMemo(() => {
