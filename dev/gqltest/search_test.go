@@ -1214,11 +1214,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `file:go-diff.go select:repo`,
 				counts: counts{Repo: 1},
 			},
-			{
-				name:   `select file`,
-				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
-				counts: counts{File: 1},
-			},
+			// Temporarily disabled as it can be flaky
+			//{
+			//	name:   `select file`,
+			//	query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
+			//	counts: counts{File: 1},
+			//},
 			{
 				name:   `or statement merges file`,
 				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
@@ -1400,7 +1401,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				}),
 			},
 			{
-				Kind:        extsvc.KindGoModules,
+				Kind:        extsvc.KindGoPackages,
 				DisplayName: "gqltest-go-search",
 				Config: mustMarshalJSONString(&schema.GoModulesConnection{
 					Urls: []string{"https://proxy.golang.org"},

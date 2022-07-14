@@ -1,6 +1,6 @@
 import React from 'react'
 
-import { Link, Code, H2, H3, H4, Text } from '@sourcegraph/wildcard'
+import { Link, Code, H2, H3, H4, Text, Heading } from '@sourcegraph/wildcard'
 
 import { SEMANTIC_COLORS } from './constants'
 import { TextVariants } from './TextVariants'
@@ -10,17 +10,17 @@ export const TextStory: React.FunctionComponent<React.PropsWithChildren<unknown>
         <H2>Headings</H2>
         <table className="table">
             <tbody>
-                {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(Heading => (
-                    <tr key={Heading}>
+                {(['h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const).map(headingElement => (
+                    <tr key={headingElement}>
                         <td>
                             <Code>
                                 {'<'}
-                                {Heading}
+                                {headingElement}
                                 {'>'}
                             </Code>
                         </td>
                         <td>
-                            <Heading>This is an {Heading.toUpperCase()}</Heading>
+                            <Heading as={headingElement}>This is an {headingElement.toUpperCase()}</Heading>
                         </td>
                     </tr>
                 ))}

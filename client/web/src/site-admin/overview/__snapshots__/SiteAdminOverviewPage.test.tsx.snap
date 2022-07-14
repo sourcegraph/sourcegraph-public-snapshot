@@ -12,19 +12,19 @@ exports[`SiteAdminOverviewPage < 2 users 1`] = `
       class="list-group"
     >
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         100 repositories
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed
@@ -46,37 +46,37 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
       class="list-group"
     >
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         100 repositories
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/users"
       >
         10 users
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/organizations"
       >
         5 organizations
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/surveys"
       >
         100 user survey responses
@@ -88,7 +88,7 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           class="d-flex justify-content-between align-items-center position-relative"
         >
           <span
-            class="h5 mb-0 font-weight-normal p-2"
+            class="mb-0 font-weight-normal p-2 adminOverviewMenuText"
           >
             10 active users last week
           </span>
@@ -306,7 +306,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
             class="d-flex flex-column"
           >
             <span
-              class="h5 mb-0 font-weight-bold"
+              class="mb-0 font-weight-bold adminOverviewMenuText"
             >
               <div
                 class="p-2"
@@ -315,7 +315,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
               </div>
             </span>
             <div
-              class="h5 mb-0 font-weight-normal"
+              class="mb-0 font-weight-normal adminOverviewMenuText"
             >
               Complete the steps below to finish onboarding to Sourcegraph
             </div>
@@ -360,7 +360,7 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
                 id="button--1--0"
               >
                 <div
-                  class="d-flex justify-content-between activationChecklistItem h5 mb-0 font-weight-normal"
+                  class="d-flex justify-content-between activationChecklistItem mb-0 font-weight-normal adminOverviewMenuText"
                 >
                   <div
                     class="d-flex align-items-center"
@@ -440,19 +440,19 @@ exports[`SiteAdminOverviewPage activation in progress 1`] = `
       class="list-group"
     >
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         0 repositories
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         1,825,299,556 bytes stored
       </a>
       <a
-        class="anchorLink list-group-item list-group-item-action h5 mb-0 font-weight-normal py-2 px-3"
+        class="anchorLink list-group-item list-group-item-action mb-0 font-weight-normal py-2 px-3 adminOverviewMenuText"
         href="/site-admin/repositories"
       >
         2,616,264 lines of code indexed

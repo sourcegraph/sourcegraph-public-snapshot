@@ -21,6 +21,10 @@ All notable changes to Sourcegraph are documented in this file.
 - New site configuration option `"permissions.syncUsersMaxConcurrency"` to control the maximum number of user-centric permissions syncing jobs could be spawned concurrently. [#37918](https://github.com/sourcegraph/sourcegraph/issues/37918)
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
 - Code Insights over some repos now get 12 historic data points in addition to a current daily value and future points that align with the defined interval. [#37756](https://github.com/sourcegraph/sourcegraph/pull/37756)
+- A Kustomize overlay and Helm override file to apply envoy filter for networking error caused by service mesh. [#4150](https://github.com/sourcegraph/deploy-sourcegraph/pull/4150) & [#148](https://github.com/sourcegraph/deploy-sourcegraph-helm/pull/148)
+- Resource Estimator: Ability to export the estimated results as override file for Helm and Docker Compose. [#18](https://github.com/sourcegraph/resource-estimator/pull/18)
+- A toggle to enable/disable a beta simplified UI has been added to the user menu. This new UI is still actively in development and any changes visible with the toggle enabled may not be stable are subject to change. [#38763](https://github.com/sourcegraph/sourcegraph/pull/38763)
+- Search query inputs are now backed by the CodeMirror library instead of Monaco. Monaco can be re-enabled by setting `experimentalFeatures.editor` to `"monaco"`. [38584](https://github.com/sourcegraph/sourcegraph/pull/38584)
 
 ### Changed
 
@@ -30,6 +34,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Selecting a line multiple times in the file view will only add a single browser history entry [#38204](https://github.com/sourcegraph/sourcegraph/pull/38204)
 - The panels on the homepage (recent searches, etc) are now turned off by default. They can be re-enabled by setting `experimentalFeatures.showEnterpriseHomePanels` to true. [#38431](https://github.com/sourcegraph/sourcegraph/pull/38431)
 - Log sampling is now enabled by default for Sourcegraph components that use the [new internal logging library](https://github.com/sourcegraph/log) - the first 100 identical log entries per second will always be output, but thereafter only every 100th identical message will be output. It can be configured for each service using the environment variables `SRC_LOG_SAMPLING_INITIAL` and `SRC_LOG_SAMPLING_THEREAFTER`, and if `SRC_LOG_SAMPLING_INITIAL` is set to `0` or `-1` the sampling will be disabled entirely. [#38451](https://github.com/sourcegraph/sourcegraph/pull/38451)
+- Deprecated `experimentalFeatures.enableGitServerCommandExecFilter`. Setting this value has no effect on the code any longer and the code to guard against unknown commands is always enabled.
+- Zoekt now runs with GOGC=25 by default, helping to reduce the memory consumption of Sourcegraph. Previously it ran with GOGC=50, but we noticed a regression when we switched to go 1.18 which contained significant changes to the go garbage collector. [#38708](https://github.com/sourcegraph/sourcegraph/issues/38708)
 
 ### Fixed
 
@@ -41,11 +47,29 @@ All notable changes to Sourcegraph are documented in this file.
 - The file view does not jump to the first selected line anymore when selecting multiple lines and the first selected line was out of view. [#38175](https://github.com/sourcegraph/sourcegraph/pull/38175)
 - Fixed an issue where multiple activations of the back button are required to navigate back to a previously selected line in a file [#38193](https://github.com/sourcegraph/sourcegraph/pull/38193)
 - Support timestamps with numeric timezone format from Gitlab's Webhook payload [#38250](https://github.com/sourcegraph/sourcegraph/pull/38250)
+- Fix regression in 3.41 where search-based Code Insights could have their queries wrongly parsed into regex patterns when containing quotes or parentheses. [#38400](https://github.com/sourcegraph/sourcegraph/pull/38400)
+- Fixed regression of mismatched `From` address when render emails. [#38589](https://github.com/sourcegraph/sourcegraph/pull/38589)
 
 ### Removed
 
 - The direct DataDog trace export integration has been removed. ([#37654](https://github.com/sourcegraph/sourcegraph/pull/37654))
 - Removed the deprecated git exec forwarder. [#38092](https://github.com/sourcegraph/sourcegraph/pull/38092)
+- Browser and IDE extensions banners. [#38715](https://github.com/sourcegraph/sourcegraph/pull/38715)
+
+## 3.41.1
+
+### Fixed
+
+- Fix issue with Bitbucket Projects repository permissions sync when wrong repo IDs were used [#38637](https://github.com/sourcegraph/sourcegraph/pull/38637)
+- Fix perforce permissions interpretation for rules where there is a wildcard in the depot name [#37648](https://github.com/sourcegraph/sourcegraph/pull/37648)
+
+### Added
+
+- Allow directory read access for sub repo permissions [#38487](https://github.com/sourcegraph/sourcegraph/pull/38487)
+
+### Changed
+
+- p4-fusion version is upgraded to 1.10 [#38272](https://github.com/sourcegraph/sourcegraph/pull/38272)
 
 ## 3.41.0
 

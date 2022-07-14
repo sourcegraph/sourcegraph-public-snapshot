@@ -955,6 +955,7 @@ const decoratePredicateBody = (path: string[], body: string, offset: number): De
             break
         case 'contains.file':
         case 'contains.content':
+        case 'has.description':
             return mapRegexpMetaSucceed({
                 type: 'pattern',
                 range: { start: offset, end: body.length },
@@ -1044,7 +1045,7 @@ export const decorate = (token: Token): DecoratedToken[] => {
         case 'filter': {
             decorated.push({
                 type: 'field',
-                range: { start: token.field.range.start, end: token.field.range.end - 1 },
+                range: { start: token.field.range.start, end: token.field.range.end },
                 value: token.field.value,
             })
             decorated.push({

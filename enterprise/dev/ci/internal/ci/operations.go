@@ -313,6 +313,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		withYarnCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("INTEGRATION_TESTS", "true"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
@@ -557,6 +558,13 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
+			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
+				ChannelName: "code-intel-buildkite",
+				Conditions: bk.SlackStepNotifyPayloadConditions{
+					Failed: true,
+				},
+			}),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -565,7 +573,8 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
-			bk.ArtifactPaths("./*.log"))
+			bk.ArtifactPaths("./*.log"),
+			bk.SoftFail(1))
 	}
 }
 

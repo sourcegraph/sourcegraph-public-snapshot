@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -71,7 +72,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					}
 
 					if oldState != "COMPLETED" {
-						fmt.Printf("[%5s] %s Finished processing index for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7])
+						fmt.Printf("[%5s] %s Finished processing index for %s@%s - ID %s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7], uploadState.upload.id)
 					}
 				} else if uploadState.state != "QUEUED" && uploadState.state != "PROCESSING" {
 					var payload struct {
@@ -86,17 +87,28 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					}
 
 					if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, uploadsQueryFragment, nil, &payload); err != nil {
-						return errors.Newf("unexpected state '%s' for %s@%s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], errors.Wrap(err, "error getting audit logs"))
+						return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], &uploadState.upload.id, errors.Wrap(err, "error getting audit logs"))
 					}
+
+					fmt.Printf("RAW PAYLOAD DUMP:\n%+v\n", payload)
+					fmt.Println("SEARCHING FOR ID", uploadState.upload.id)
 
 					var logs auditLogs
 					for _, upload := range payload.Data.LsifUploads.Nodes {
 						if upload.ID == uploadState.upload.id {
 							logs = upload.AuditLogs
+							break
 						}
 					}
 
-					return errors.Newf("unexpected state '%s' for %s@%s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], logs)
+					out, err := exec.Command("pg_dump", "-a", "--column-inserts", "--table='lsif_uploads*'").CombinedOutput()
+					if err != nil {
+						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
+					} else {
+						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
+					}
+
+					return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], uploadState.upload.id, logs)
 				}
 			}
 

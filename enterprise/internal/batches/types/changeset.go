@@ -328,6 +328,9 @@ func (c *Changeset) Unpublished() bool { return c.PublicationState.Unpublished()
 // IsImporting returns whether the Changeset is being imported but it's not finished yet.
 func (c *Changeset) IsImporting() bool { return c.Unpublished() && c.CurrentSpecID == 0 }
 
+// IsImported returns whether the Changeset is imported
+func (c *Changeset) IsImported() bool { return c.OwnedByBatchChangeID == 0 }
+
 // SetCurrentSpec sets the CurrentSpecID field and copies the diff stat over from the spec.
 func (c *Changeset) SetCurrentSpec(spec *ChangesetSpec) {
 	c.CurrentSpecID = spec.ID

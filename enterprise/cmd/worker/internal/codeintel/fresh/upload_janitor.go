@@ -71,6 +71,6 @@ func (j *uploadJanitorJob) Routines(ctx context.Context, logger log.Logger) ([]g
 	uploadSvc := uploads.GetService(database.NewDB(logger, db), database.NewDBWith(logger, lsifStore), gitserverClient)
 
 	return []goroutine.BackgroundRoutine{
-		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, uploadSvc, indexSvc, metrics),
+		cleanup.NewJanitor(cleanup.DBStoreShim{Store: dbStore}, uploadSvc, indexSvc, observationContext.Logger, metrics),
 	}, nil
 }

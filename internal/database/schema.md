@@ -730,6 +730,7 @@ Tracks a lockfile dependency that might be resolvable to a specific repository-c
  commit_bytea                     | bytea     |           | not null | 
  codeintel_lockfile_reference_ids | integer[] |           | not null | 
  lockfile                         | text      |           |          | 
+ fidelity                         | text      |           | not null | 'flat'::text
 Indexes:
     "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
     "codeintel_lockfiles_repository_id_commit_bytea_lockfile" UNIQUE, btree (repository_id, commit_bytea, lockfile)
@@ -742,6 +743,8 @@ Associates a repository-commit pair with the set of repository-level dependencie
 **codeintel_lockfile_reference_ids**: A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**fidelity**: Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...
 
 **lockfile**: Relative path of a lockfile in the given repository and the given commit.
 

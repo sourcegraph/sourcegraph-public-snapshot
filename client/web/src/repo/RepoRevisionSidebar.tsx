@@ -20,6 +20,7 @@ import {
     Tabs,
     Icon,
     Panel,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
@@ -75,15 +76,19 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
 
     if (!isVisible) {
         return (
-            <Button
-                variant="icon"
-                className={classNames('position-absolute border-top border-bottom border-right mt-4', styles.toggle)}
-                onClick={() => handleSidebarToggle(true)}
-                data-tooltip="Show sidebar"
-                aria-label="Show sidebar"
-            >
-                <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
-            </Button>
+            <Tooltip content="Show sidebar">
+                <Button
+                    aria-label="Show sidebar"
+                    variant="icon"
+                    className={classNames(
+                        'position-absolute border-top border-bottom border-right mt-4',
+                        styles.toggle
+                    )}
+                    onClick={() => handleSidebarToggle(true)}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
+                </Button>
+            </Tooltip>
         )
     }
 
@@ -104,16 +109,19 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                 >
                     <TabList
                         actions={
-                            <Button
-                                onClick={() => handleSidebarToggle(false)}
-                                className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                title="Hide sidebar"
-                                data-tooltip="Hide sidebar"
-                                data-placement="right"
-                                aria-label="Hide sidebar"
-                            >
-                                <Icon className={styles.closeIcon} aria-hidden={true} svgPath={mdiChevronDoubleLeft} />
-                            </Button>
+                            <Tooltip content="Hide sidebar" placement="right">
+                                <Button
+                                    aria-label="Hide sidebar"
+                                    onClick={() => handleSidebarToggle(false)}
+                                    className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                >
+                                    <Icon
+                                        className={styles.closeIcon}
+                                        aria-hidden={true}
+                                        svgPath={mdiChevronDoubleLeft}
+                                    />
+                                </Button>
+                            </Tooltip>
                         }
                     >
                         <Tab data-tab-content="files">

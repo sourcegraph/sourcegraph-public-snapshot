@@ -361,7 +361,7 @@ func needsPackageHostConfiguration(ctx context.Context, db database.DB) (bool, e
 	count, err := db.ExternalServices().Count(ctx, database.ExternalServicesListOptions{
 		Kinds: []string{
 			extsvc.KindNpmPackages,
-			extsvc.KindGoModules,
+			extsvc.KindGoPackages,
 		},
 	})
 	if err != nil {

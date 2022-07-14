@@ -197,7 +197,7 @@ var ExternalServiceKinds = map[string]ExternalServiceKind{
 	extsvc.KindGitHub:          {CodeHost: true, JSONSchema: schema.GitHubSchemaJSON},
 	extsvc.KindGitLab:          {CodeHost: true, JSONSchema: schema.GitLabSchemaJSON},
 	extsvc.KindGitolite:        {CodeHost: true, JSONSchema: schema.GitoliteSchemaJSON},
-	extsvc.KindGoModules:       {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
+	extsvc.KindGoPackages:      {CodeHost: true, JSONSchema: schema.GoModulesSchemaJSON},
 	extsvc.KindJVMPackages:     {CodeHost: true, JSONSchema: schema.JVMPackagesSchemaJSON},
 	extsvc.KindNpmPackages:     {CodeHost: true, JSONSchema: schema.NpmPackagesSchemaJSON},
 	extsvc.KindOther:           {CodeHost: true, JSONSchema: schema.OtherExternalServiceSchemaJSON},

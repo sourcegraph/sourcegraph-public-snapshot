@@ -43,11 +43,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
 		"insights_enqueuer",
 		func(ctx context.Context) error {
-			queryRunnerEnqueueJob := func(ctx context.Context, job *queryrunner.Job) error {
-				_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
-				return err
-			}
-			ie := NewInsightEnqueuer(time.Now, queryRunnerEnqueueJob)
+			ie := NewInsightEnqueuer(time.Now, workerBaseStore)
 
 			return ie.discoverAndEnqueueInsights(ctx, insightStore, featureFlagStore)
 		},
@@ -59,10 +55,13 @@ type InsightEnqueuer struct {
 	enqueueQueryRunnerJob func(context.Context, *queryrunner.Job) error
 }
 
-func NewInsightEnqueuer(now func() time.Time, enqueueQueryRunnerJob func(context.Context, *queryrunner.Job) error) *InsightEnqueuer {
+func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store) *InsightEnqueuer {
 	return &InsightEnqueuer{
-		now:                   now,
-		enqueueQueryRunnerJob: enqueueQueryRunnerJob,
+		now: now,
+		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
+			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
+			return err
+		},
 	}
 }
 

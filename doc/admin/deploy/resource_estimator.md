@@ -40,35 +40,42 @@
 </style>
 
 <script src="https://storage.googleapis.com/sourcegraph-resource-estimator/go_1_18_wasm_exec.js"></script>
-<script src="https://storage.googleapis.com/sourcegraph-resource-estimator/launch_script.js?v2" version="a446673"></script>
+<script src="https://storage.googleapis.com/sourcegraph-resource-estimator/launch_script.js?v2" version="d0537bf"></script>
 
 # Sourcegraph resource estimator
 
 Updating the form below will recalculate an estimate for the resources you can use to configure your Sourcegraph deployment.
 
-The output is estimated based on existing data we collected from current running deployments.
+The output is estimated based on existing data we collected from current running deployments. Use the default values for services not listed below .
 
 <form id="root"></form>
 
+---
+
 ## Additional information
 
-#### How to apply these changes to your deployment?
+#### How to update a resource in your deployment?
 
 - For docker-compose deployments, edit your [docker-compose.yml file](https://github.com/sourcegraph/deploy-sourcegraph-docker/blob/master/docker-compose/docker-compose.yaml) and set cpus and mem_limit to the limits shown above.
 - For Helm deployments, create an [override file](https://github.com/sourcegraph/deploy-sourcegraph-helm/blob/main/charts/sourcegraph/examples/common-modifications/override.yaml) (or update your existing override file) with the new values shown above.
-- For non-Helm Kubernetes deployments, we recommend using Kustomize to generate manifests with the values shown above. Please refer to our [Kustomize docs](https://docs.sourcegraph.com/admin/deploy/kubernetes/kustomize#kustomize) on how to use Kustomize.
+- For non-Helm Kubernetes deployments, we recommend using Kustomize to generate manifests with the values shown above. Please refer to our [Kustomize overlay for resources update](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays/resources-update) for detail.
 
-#### What is the default deployment size?
+#### Default setup
 
-- Our default deployment should support ~1000 users and ~1000 repositories with one monorepo that is less than 5GB.
+- Please use the default setup of your deployment choice if you have less than 2,000 users and repositories combined. 
+
+#### Limitations
+- The estimator only provides an estimated total for instances with less than:
+    - 10,000 users
+    - 50,000 repositories
+    - 5TB size of all repositories
+    - 10 monorepos
+
+Please refer to our reference architecture docs (coming soon) or contact our team for large deployments.
 
 #### What is engagement rate?
 
 - Engagement rate refers to the percentage of users who use Sourcegraph regularly. It is generally used for existing deployments to estimate resources.
-
-#### What is the recommended deployment type?
-
-- We recommend Kubernetes for any deployments requiring > 1 service replica, but docker-compose does support service replicas and can scale up with multiple replicas as long as you can provision a sufficiently large single machine.
 
 #### If you plan to enforce repository permissions on Sourcegraph
 
