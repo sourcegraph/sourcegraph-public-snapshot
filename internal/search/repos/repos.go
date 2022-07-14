@@ -237,12 +237,12 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	tr.LazyPrintf("completed rev filtering")
 
 	if len(missingRepoRevs) > 0 {
-		errs = errors.Append(errs, &MissingRepoRevsError{Missing: missingRepoRevs})
+		err = errors.Append(err, &MissingRepoRevsError{Missing: missingRepoRevs})
 	}
 
 	if len(dependencyNotFoundRevs) > 0 {
 		for repo, revs := range dependencyNotFoundRevs {
-			errs = errors.Append(errs, &MissingLockfileIndexing{repo: repo, revs: revs})
+			err = errors.Append(err, &MissingLockfileIndexing{repo: repo, revs: revs})
 		}
 	}
 
@@ -250,7 +250,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 		RepoRevs:        filteredRepoRevs,
 		MissingRepoRevs: missingRepoRevs,
 		Next:            next,
-	}, errs
+	}, err
 }
 
 // associateReposWithRevs re-associates revisions with the repositories fetched from the db
@@ -352,22 +352,24 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 					// NOTE: HEAD is the only case here that we don't resolve to a
 					// commit ID. We should consider building []gitdomain.Ref here
 					// instead of just []string because we have the exact commit hashes,
-					// so we coudl avoid resolving later.
+					// so we could avoid resolving later.
 					revs = append(revs, "HEAD")
 				case rev.RevSpec != "":
-					trimmedRev := strings.TrimPrefix(rev.RevSpec, "refs/heads/")
+					trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
 					_, err := r.gitserver.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
 					if err != nil {
 						if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
 							return err
 						}
 						addMissing(RepoRevSpecs{Repo: repoRev.Repo, Revs: []search.RevisionSpecifier{rev}})
+						continue
 					}
+					revs = append(revs, rev.RevSpec)
 				}
 			}
 
-			// Happy path with no globs
 			if len(globs) == 0 {
+				// Happy path with no globs
 				results[i] = &search.RepositoryRevisions{
 					Repo: repoRev.Repo,
 					Revs: revs,
