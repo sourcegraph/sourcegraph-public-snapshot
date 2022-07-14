@@ -15,4 +15,3 @@ RUN for pkg in curl libcurl; do if apk info --installed $pkg; then apk add --no-
 USER $BASE_USER
 RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/precise-code-intel-worker"]
