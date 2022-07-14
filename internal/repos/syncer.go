@@ -211,14 +211,14 @@ type Diff struct {
 	Modified   types.Repos
 	Unmodified types.Repos
 
-	// Archived contains repositories that have been archived or unarchived on
-	// the code host between the previous sync and the current one. This is
-	// required for Batch Changes to migrate changesets on those repositories in
-	// and out of the read-only state.
+	// ArchivedChanged contains repositories that have been archived or
+	// unarchived on the code host between the previous sync and the current one.
+	// This is required for Batch Changes to migrate changesets on those
+	// repositories in and out of the read-only state.
 	//
 	// This field is always a strict subset of Modified, and is therefore not
 	// counted in Len() or iterated over in Repos().
-	Archived types.Repos
+	ArchivedChanged types.Repos
 }
 
 // Sort sorts all Diff elements by Repo.IDs.
@@ -228,7 +228,7 @@ func (d *Diff) Sort() {
 		d.Deleted,
 		d.Modified,
 		d.Unmodified,
-		d.Archived,
+		d.ArchivedChanged,
 	} {
 		sort.Sort(ds)
 	}
@@ -746,7 +746,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		if (wasArchived == true && stored[0].Archived == false) ||
 			(wasArchived == false && stored[0].Archived == true) {
-			d.Archived = append(d.Archived, stored[0])
+			d.ArchivedChanged = append(d.ArchivedChanged, stored[0])
 		}
 	case 0: // New repo, create.
 		if !svc.IsSiteOwned() { // enforce user and org repo limits

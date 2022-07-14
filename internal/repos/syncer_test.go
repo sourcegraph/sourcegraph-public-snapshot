@@ -601,7 +601,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				var want, have types.Repos
-				want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified, tc.diff.Archived)
+				want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified, tc.diff.ArchivedChanged)
 				have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
 
 				want = want.With(typestest.Opt.RepoID(0))
@@ -715,8 +715,8 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned:   repo,
 			after:      types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
 			diff: repos.Diff{
-				Modified: types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
-				Archived: types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
+				Modified:        types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
+				ArchivedChanged: types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
 			},
 		}, {
 			name:       "unarchived",
@@ -727,8 +727,8 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned:   repo.With(typestest.Opt.RepoArchived(true)),
 			after:      types.Repos{repo},
 			diff: repos.Diff{
-				Modified: types.Repos{repo},
-				Archived: types.Repos{repo},
+				Modified:        types.Repos{repo},
+				ArchivedChanged: types.Repos{repo},
 			},
 		}, {
 			name:       "delete conflicting name",
@@ -1054,7 +1054,7 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 			if len(diff.Unmodified) != 0 {
 				t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
 			}
-			if len(diff.Archived) != 0 {
+			if len(diff.ArchivedChanged) != 0 {
 				t.Fatalf("Expected 0 Archived repos. got %d", len(diff.Added))
 			}
 		}

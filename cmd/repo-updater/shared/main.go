@@ -495,8 +495,8 @@ func watchSyncer(
 			}
 
 			// Similarly, changesetSyncer is only available in enterprise mode.
-			if changesetSyncer != nil && len(diff.Archived) > 0 {
-				if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, diff.Archived.IDs()); err != nil {
+			if changesetSyncer != nil && len(diff.ArchivedChanged) > 0 {
+				if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, diff.ArchivedChanged.IDs()); err != nil {
 					logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
 				}
 			}
