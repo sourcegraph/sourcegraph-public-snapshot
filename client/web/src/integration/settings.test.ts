@@ -102,6 +102,8 @@ describe('Settings', () => {
                 'Expected save button to be disabled'
             )
 
+            // The editor API needs to be created before taking the screenshot
+            // (waits for the editor to be ready)
             const editor = await createEditorAPI(driver, '.test-settings-file .test-editor')
 
             await percySnapshotWithVariants(driver.page, 'Settings page')
