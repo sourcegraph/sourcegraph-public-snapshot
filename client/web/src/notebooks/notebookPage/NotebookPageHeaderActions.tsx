@@ -1,11 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiStar, mdiStarOutline } from '@mdi/js'
+import { mdiStar, mdiStarOutline, mdiLock, mdiDotsHorizontal, mdiWeb, mdiDomain } from '@mdi/js'
 import classNames from 'classnames'
-import DomainIcon from 'mdi-react/DomainIcon'
-import DotsHorizontalIcon from 'mdi-react/DotsHorizontalIcon'
-import LockIcon from 'mdi-react/LockIcon'
-import WebIcon from 'mdi-react/WebIcon'
 import { Observable } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
 
@@ -88,11 +84,24 @@ export const NotebookPageHeaderActions: React.FunctionComponent<
             return <></>
         }
         if (selectedShareOption.namespaceType === 'User') {
-            const PublicIcon = isSourcegraphDotCom ? WebIcon : DomainIcon
             return selectedShareOption.isPublic ? (
-                <PublicIcon className="mr-1" size="1.15rem" />
+                <Icon
+                    className="mr-1"
+                    svgPath={isSourcegraphDotCom ? mdiWeb : mdiDomain}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1.15rem"
+                    width="1.15rem"
+                />
             ) : (
-                <LockIcon className="mr-1" size="1.15rem" />
+                <Icon
+                    className="mr-1"
+                    svgPath={mdiLock}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1.15rem"
+                    width="1.15rem"
+                />
             )
         }
         return (
@@ -161,7 +170,7 @@ const NotebookSettingsDropdown: React.FunctionComponent<React.PropsWithChildren<
         <>
             <Menu>
                 <MenuButton outline={true} aria-label="Notebook action">
-                    <DotsHorizontalIcon />
+                    <Icon svgPath={mdiDotsHorizontal} inline={false} aria-hidden={true} />
                 </MenuButton>
                 <MenuList position={Position.bottomEnd}>
                     <MenuHeader>Settings</MenuHeader>
