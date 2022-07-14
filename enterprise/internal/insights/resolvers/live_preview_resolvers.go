@@ -56,16 +56,18 @@ func (r *Resolver) SearchInsightPreview(ctx context.Context, args graphqlbackend
 		var err error
 
 		if seriesArgs.GeneratedFromCaptureGroups {
-			executor := query.NewCaptureGroupExecutor(r.postgresDB, clock)
-			series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
-			if err != nil {
-				return nil, err
-			}
-		} else if seriesArgs.GroupBy != nil {
-			executor := query.NewComputeExecutor(r.postgresDB, clock)
-			series, err = executor.Execute(ctx, seriesArgs.Query, *seriesArgs.GroupBy, repos)
-			if err != nil {
-				return nil, err
+			if seriesArgs.GroupBy != nil {
+				executor := query.NewComputeExecutor(r.postgresDB, clock)
+				series, err = executor.Execute(ctx, seriesArgs.Query, *seriesArgs.GroupBy, repos)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				executor := query.NewCaptureGroupExecutor(r.postgresDB, clock)
+				series, err = executor.Execute(ctx, seriesArgs.Query, repos, interval)
+				if err != nil {
+					return nil, err
+				}
 			}
 		} else {
 			executor := query.NewStreamingExecutor(r.postgresDB, clock)

@@ -126,7 +126,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     minPerItem: 1,
                     value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
-                        'Precise code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant time savings.',
+                        'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant time savings.',
                 },
                 {
                     label: 'Cross repository <br/> code intel events',
@@ -231,7 +231,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 </div>
             </Card>
             <Text className="font-italic text-center mt-2">
-                All events are generated from entries in the event logs table.
+                All events are generated from entries in the event logs table and are updated every 24 hours.
             </Text>
         </>
     )
