@@ -32,6 +32,16 @@ export const CODEINTEL_STATISTICS = gql`
                     definitionClicks {
                         ...AnalyticsStatItemFragment
                     }
+                    inAppEvents {
+                        summary {
+                            totalCount
+                        }
+                    }
+                    codeHostEvents {
+                        summary {
+                            totalCount
+                        }
+                    }
                     browserExtensionInstalls {
                         summary {
                             totalRegisteredUsers
