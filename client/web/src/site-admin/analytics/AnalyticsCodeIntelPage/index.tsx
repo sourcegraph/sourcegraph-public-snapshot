@@ -46,6 +46,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         const {
             referenceClicks,
             definitionClicks,
+            inAppEvents,
+            codeHostEvents,
             searchBasedEvents,
             preciseEvents,
             crossRepoEvents,
@@ -115,18 +117,18 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             value: totalEvents,
             items: [
                 {
-                    label: 'Search based',
+                    label: 'In app code navigation',
                     minPerItem: 0.5,
-                    value: Math.floor((searchBasedEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
+                    value: inAppEvents.summary.totalCount,
                     description:
-                        'Searched based code intel reconizes symbols and is supported across all languages. Search intel events are not exact, thus their time savings is not as high as precise events. ',
+                        'In app code navigation supports developers finding the impact of a change by listing references and finding definitions to reference.',
                 },
                 {
-                    label: 'Precise events',
-                    minPerItem: 1,
-                    value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
+                    label: 'Code intel on code hosts <br/> via the browser extension',
+                    minPerItem: 1.5,
+                    value: codeHostEvents.summary.totalCount,
                     description:
-                        'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant time savings.',
+                        'Intel events on the code host typically occur during PR reviews, where the ability to quickly understand code is key to efficient reviews.',
                 },
                 {
                     label: 'Cross repository <br/> code intel events',
@@ -134,6 +136,16 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
+                },
+                {
+                    label: 'Precise code intel',
+                    minPerItem: 1,
+                    value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
+                    eventsLabel: `Events (${Math.floor(
+                        (preciseEvents.summary.totalCount * 100) / totalHoverEvents || 0
+                    )}%)*`,
+                    description:
+                        'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
                 },
             ],
         }
@@ -150,10 +162,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     }
 
     const repos = data?.site.analytics.repos
-    const totalUsers = data?.users?.totalCount || 0
     const browserExtensionInstalls =
         data?.site.analytics.codeIntel.browserExtensionInstalls.summary.totalRegisteredUsers || 0
-    const browserExtensionInstallPercentage = totalUsers ? (browserExtensionInstalls * 100) / totalUsers : 0
 
     return (
         <>
@@ -210,7 +220,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     <div className={classNames(styles.border, 'mb-3')} />
                     <ul className="mb-3 pl-3">
                         <Text as="li">
-                            <b>{browserExtensionInstallPercentage}%</b> of users have installed the browser extension.{' '}
+                            <b>{browserExtensionInstalls}</b> {browserExtensionInstalls === 1 ? 'user' : 'users'} have
+                            installed the browser extension.{' '}
                             <AnchorLink to="/help/integration/browser_extension" target="_blank">
                                 Promote installation of the browser extesion to increase value.
                             </AnchorLink>
@@ -232,6 +243,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             </Card>
             <Text className="font-italic text-center mt-2">
                 All events are generated from entries in the event logs table and are updated every 24 hours.
+                <br />* Calculated from precise code intel events
             </Text>
         </>
     )
