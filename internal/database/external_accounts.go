@@ -127,7 +127,7 @@ func (s *userExternalAccountsStore) getEncryptionKey() encryption.Key {
 }
 
 func (s *userExternalAccountsStore) Get(ctx context.Context, id int32) (*extsvc.Account, error) {
-	return s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d AND deleted_at IS NULL LIMIT 1", id))
+	return s.getBySQL(ctx, sqlf.Sprintf("WHERE id=%d AND deleted_at IS NULL AND expired_at IS NULL LIMIT 1", id))
 }
 
 func (s *userExternalAccountsStore) LookupUserAndSave(ctx context.Context, spec extsvc.AccountSpec, data extsvc.AccountData) (userID int32, err error) {
@@ -196,6 +196,7 @@ AND service_id = %s
 AND client_id = %s
 AND account_id = %s
 AND deleted_at IS NULL
+AND expired_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID)).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
 		return err
