@@ -1,9 +1,7 @@
 @import 'wildcard/src/global-styles/breakpoints';
 
 .search-sidebar {
-    padding: 0 1rem;
-    width: 17.5rem;
-    flex-shrink: 0;
+    width: 15.5rem;
 
     @media (--md-breakpoint-down) {
         width: 100%;
