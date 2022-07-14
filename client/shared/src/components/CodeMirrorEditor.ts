@@ -5,6 +5,13 @@ import { EditorState, EditorStateConfig, Extension, StateEffect } from '@codemir
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
+if (process.env.INTEGRATION_TESTS) {
+    // Expose findFromDOM on the global object to be able to get the real input
+    // value in integration tests
+    // @ts-ignore
+    window.CodeMirrorFindFromDOM = EditorView.findFromDOM
+}
+
 /**
  * Hook for rendering and updating a CodeMirror instance.
  */

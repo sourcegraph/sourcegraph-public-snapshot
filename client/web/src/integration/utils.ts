@@ -7,6 +7,7 @@ import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
 import { WebGraphQlOperations } from '../graphql-operations'
+import { EditorView } from '@codemirror/view'
 
 const CODE_HIGHLIGHTING_QUERIES: Partial<
     keyof (WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations)
@@ -211,7 +212,6 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
         return api
     },
     codemirror6: (driver: Driver, rootSelector: string) => {
-        const inputSelector = `${rootSelector} .cm-content`
         // Selector to use to wait for the editor to be complete loaded
         const readySelector = `${rootSelector} .cm-line`
         const completionSelector = `${rootSelector} .cm-tooltip-autocomplete`
@@ -226,11 +226,21 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                 await api.waitForIt()
                 await driver.page.click(rootSelector)
             },
-            getValue() {
-                return driver.page.evaluate(
-                    (inputSelector: string) => document.querySelector<HTMLDivElement>(inputSelector)?.textContent,
-                    inputSelector
-                )
+            async getValue() {
+                return await driver.page.evaluate((selector: string) => {
+                    //@ts-ignore
+                    const fromDOM = window.CodeMirrorFindFromDOM as typeof EditorView['findFromDOM'] | undefined
+                    if (!fromDOM) {
+                        throw new Error('CodeMirror DOM API not exposed')
+                    }
+                    const editorElement = document.querySelector<HTMLElement>(selector)
+                    if (!editorElement) {
+                        throw new Error(`Unable to find element with selector: ${selector}`)
+                    }
+                    // Returns an EditorView
+                    // See https://codemirror.net/docs/ref/#view.EditorView^findFromDOM
+                    return fromDOM(editorElement)?.state.sliceDoc()
+                }, rootSelector)
             },
             replace(newText: string, method = 'type') {
                 return driver.replaceText({

@@ -138,9 +138,7 @@ describe('Search', () => {
                 const editor = await createEditorAPI(driver, queryInputSelector)
                 await editor.replace('-file')
                 await editor.selectSuggestion('-file')
-                // Using a regular expression here because currently the
-                // value for CodeMirror includes placeholders
-                expect(await editor.getValue()).toMatch(/^-file:/)
+                expect(await editor.getValue()).toStrictEqual('-file:')
                 await percySnapshotWithVariants(driver.page, `Search home page (${editorName})`)
                 await accessibilityAudit(driver.page)
             })
