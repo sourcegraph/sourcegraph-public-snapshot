@@ -57,7 +57,7 @@ type DiffOptions struct {
 // Diff returns an iterator that can be used to access the diff between two
 // commits on a per-file basis. The iterator must be closed with Close when no
 // longer required.
-func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFileIterator, error) {
+func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions, checker authz.SubRepoPermissionChecker) (*DiffFileIterator, error) {
 	// Rare case: the base is the empty tree, in which case we must use ..
 	// instead of ... as the latter only works for commits.
 	if opts.Base == DevNullSHA {
@@ -91,14 +91,31 @@ func (c *ClientImplementor) Diff(ctx context.Context, opts DiffOptions) (*DiffFi
 	}
 
 	return &DiffFileIterator{
-		rdr:  rdr,
-		mfdr: diff.NewMultiFileDiffReader(rdr),
+		rdr:            rdr,
+		mfdr:           diff.NewMultiFileDiffReader(rdr),
+		fileFilterFunc: getFilterFunc(ctx, checker, opts.Repo),
 	}, nil
 }
 
 type DiffFileIterator struct {
-	rdr  io.ReadCloser
-	mfdr *diff.MultiFileDiffReader
+	rdr            io.ReadCloser
+	mfdr           *diff.MultiFileDiffReader
+	fileFilterFunc diffFileIteratorFilter
+}
+
+type diffFileIteratorFilter func(fileName string) (bool, error)
+
+func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName) diffFileIteratorFilter {
+	if !authz.SubRepoEnabled(checker) {
+		return nil
+	}
+	return func(fileName string) (bool, error) {
+		shouldFilter, err := authz.FilterActorPath(ctx, checker, actor.FromContext(ctx), repo, fileName)
+		if err != nil {
+			return false, err
+		}
+		return shouldFilter, nil
+	}
 }
 
 func (i *DiffFileIterator) Close() error {
@@ -108,7 +125,19 @@ func (i *DiffFileIterator) Close() error {
 // Next returns the next file diff. If no more diffs are available, the diff
 // will be nil and the error will be io.EOF.
 func (i *DiffFileIterator) Next() (*diff.FileDiff, error) {
-	return i.mfdr.ReadFile()
+	fd, err := i.mfdr.ReadFile()
+	if err != nil {
+		return fd, err
+	}
+	if i.fileFilterFunc != nil {
+		if canRead, err := i.fileFilterFunc(fd.NewName); err != nil {
+			return nil, err
+		} else if !canRead {
+			// go to next
+			return i.Next()
+		}
+	}
+	return fd, err
 }
 
 // ShortLogOptions contains options for (Repository).ShortLog.
@@ -1591,11 +1620,12 @@ func hasAccessToCommit(ctx context.Context, commit *wrappedCommit, repoName api.
 	for _, fileName := range commit.files {
 		if hasAccess, err := authz.FilterActorPath(ctx, checker, a, repoName, fileName); err != nil {
 			return false, err
-		} else if !hasAccess {
-			return false, nil
+		} else if hasAccess {
+			// if the user has access to one file modified in the commit, they have access to view the commit
+			return true, nil
 		}
 	}
-	return true, nil
+	return false, nil
 }
 
 // CommitsUniqueToBranch returns a map from commits that exist on a particular
