@@ -28,6 +28,8 @@ func UpdateCompose(path string, creds credentials.Credentials, pinTag string) er
 			return nil
 		}
 
+		std.Out.WriteNoticef("Checking %q", path)
+
 		composeFile, err := os.ReadFile(path)
 		if err != nil {
 			return errors.Wrapf(err, "couldn't read %s", path)
@@ -65,17 +67,30 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 	if err := yaml.Unmarshal(composeFile, &compose); err != nil {
 		return nil, err
 	}
+	services, ok := compose["services"].(map[string]any)
+	if !ok {
+		return nil, errors.New("invalid services")
+	}
 
 	type replace struct {
 		original string
 		new      string
 	}
 	checks := group.NewWithResults[*replace]().WithConcurrencyLimiter(group.NewBasicLimiter(10))
-	for name, entry := range compose["services"].(map[string]any) {
-		service := entry.(map[string]any)
+	for name, entry := range services {
 		name := name
+		service, ok := entry.(map[string]any)
+		if !ok {
+			std.Out.WriteWarningf("%s: invalid service", name)
+			continue
+		}
+
 		checks.Go(func() *replace {
-			originalImage := service["image"].(string)
+			originalImage, ok := service["image"].(string)
+			if !ok {
+				std.Out.WriteWarningf("%s: invalid image", name)
+			}
+
 			newImage, err := getUpdatedSourcegraphImage(originalImage, creds, pinTag)
 			if err != nil {
 				std.Out.WriteWarningf("%s: %s", name, err)
