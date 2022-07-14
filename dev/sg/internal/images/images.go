@@ -204,7 +204,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 	var lookupImage = func(node *yaml.RNode) error {
 		image := node.Field("image")
 		if image == nil {
-			return errors.Newf("couldn't find image for container %s within %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
+			return errors.Newf("couldn't find image for container %s: %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
 		}
 		originalImage, err := image.Value.String()
 		if err != nil {
@@ -212,7 +212,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 		}
 		updatedImage, err := getUpdatedSourcegraphImage(originalImage, credential, pinTag)
 		if err != nil {
-			std.Out.WriteWarningf("%s: could not get updated image: %s", node.GetName(), err)
+			std.Out.WriteWarningf("could not get updated image for %s: %s", originalImage, err)
 			return nil
 		}
 
