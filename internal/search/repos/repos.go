@@ -340,62 +340,13 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 	for i, repoRev := range repoRevSpecs {
 		i, repoRev := i, repoRev
 		g.Go(func(ctx context.Context) error {
-			revs := make([]string, 0, len(repoRev.Revs))
-			var globs []gitdomain.RefGlob
-			for _, rev := range repoRev.Revs {
-				switch {
-				case rev.RefGlob != "":
-					globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
-				case rev.ExcludeRefGlob != "":
-					globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
-				case rev.RevSpec == "" || rev.RevSpec == "HEAD":
-					// NOTE: HEAD is the only case here that we don't resolve to a
-					// commit ID. We should consider building []gitdomain.Ref here
-					// instead of just []string because we have the exact commit hashes,
-					// so we could avoid resolving later.
-					revs = append(revs, "HEAD")
-				case rev.RevSpec != "":
-					trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
-					_, err := r.gitserver.ResolveRevision(ctx, repoRev.Repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
-					if err != nil {
-						if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
-							return err
-						}
-						addMissing(RepoRevSpecs{Repo: repoRev.Repo, Revs: []search.RevisionSpecifier{rev}})
-						continue
-					}
-					revs = append(revs, rev.RevSpec)
-				}
-			}
-
-			if len(globs) == 0 {
-				// Happy path with no globs
-				results[i] = &search.RepositoryRevisions{
-					Repo: repoRev.Repo,
-					Revs: revs,
-				}
-				return nil
-			}
-
-			rg, err := gitdomain.CompileRefGlobs(globs)
+			expanded, err := r.expandRevSpecs(ctx, repoRev.Repo, repoRev.Revs, addMissing)
 			if err != nil {
 				return err
 			}
-
-			allRefs, err := r.gitserver.ListRefs(ctx, repoRev.Repo.Name)
-			if err != nil {
-				return err
-			}
-
-			for _, ref := range allRefs {
-				if rg.Match(ref.Name) {
-					revs = append(revs, strings.TrimPrefix(ref.Name, "refs/heads/"))
-				}
-			}
-
 			results[i] = &search.RepositoryRevisions{
 				Repo: repoRev.Repo,
-				Revs: revs,
+				Revs: expanded,
 			}
 			return nil
 		})
@@ -414,6 +365,65 @@ func (r *Resolver) normalizeRefs(ctx context.Context, repoRevSpecs []RepoRevSpec
 	}
 
 	return filteredResults, missing, nil
+}
+
+func (r *Resolver) expandRevSpecs(
+	ctx context.Context,
+	repo types.MinimalRepo,
+	revSpecs []search.RevisionSpecifier,
+	reportMissing func(RepoRevSpecs),
+) ([]string, error) {
+	revs := make([]string, 0, len(revSpecs))
+	var globs []gitdomain.RefGlob
+	for _, rev := range revSpecs {
+		switch {
+		case rev.RefGlob != "":
+			globs = append(globs, gitdomain.RefGlob{Include: rev.RefGlob})
+		case rev.ExcludeRefGlob != "":
+			globs = append(globs, gitdomain.RefGlob{Exclude: rev.ExcludeRefGlob})
+		case rev.RevSpec == "" || rev.RevSpec == "HEAD":
+			// NOTE: HEAD is the only case here that we don't resolve to a
+			// commit ID. We should consider building []gitdomain.Ref here
+			// instead of just []string because we have the exact commit hashes,
+			// so we could avoid resolving later.
+			revs = append(revs, "HEAD")
+		case rev.RevSpec != "":
+			trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
+			_, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+			if err != nil {
+				if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
+					return nil, err
+				}
+				reportMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{rev}})
+				continue
+			}
+			revs = append(revs, rev.RevSpec)
+		}
+	}
+
+	if len(globs) == 0 {
+		// Happy path with no globs to expand
+		return revs, nil
+	}
+
+	rg, err := gitdomain.CompileRefGlobs(globs)
+	if err != nil {
+		return nil, err
+	}
+
+	allRefs, err := r.gitserver.ListRefs(ctx, repo.Name)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, ref := range allRefs {
+		if rg.Match(ref.Name) {
+			revs = append(revs, strings.TrimPrefix(ref.Name, "refs/heads/"))
+		}
+	}
+
+	return revs, nil
+
 }
 
 // filterHasCommitAfter filters the revisions on each of a set of RepositoryRevisions to ensure that
