@@ -31,6 +31,7 @@ import {
     ensureDocker,
     changelogURL,
     ensureReleaseBranchUpToDate,
+    ensureSrcCliUpToDate,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -57,6 +58,7 @@ export type StepID =
     | '_test:batchchange-create-from-changes'
     | '_test:config'
     | '_test:dockerensure'
+    | '_test:srccliensure'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -362,6 +364,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log('Docker required for batch changes')
                 process.exit(1)
             }
+            // ensure src-cli is up to date
+            await ensureSrcCliUpToDate()
             // set up batch change config
             const batchChange = batchChanges.releaseTrackingBatchChange(
                 release.version,
@@ -809,6 +813,13 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 console.log('Docker required for batch changes')
                 process.exit(1)
             }
+        },
+    },
+    {
+        id: '_test:srccliensure',
+        description: 'test srccli version',
+        run: () => {
+            ensureSrcCliUpToDate()
         },
     },
 ]
