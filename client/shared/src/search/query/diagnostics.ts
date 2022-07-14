@@ -1,9 +1,6 @@
-import * as Monaco from 'monaco-editor'
-
 import { SearchPatternType } from '../../graphql-operations'
 
 import { validateFilter } from './filters'
-import { toMonacoSingleLineRange } from './monaco'
 import {
     PatternOf,
     each,
@@ -16,23 +13,44 @@ import {
     DataMapper,
     MatchContext,
 } from './patternMatcher'
-import { Filter, Token } from './token'
+import { CharacterRange, Filter, Token } from './token'
 
-type FilterCheck = (f: Filter) => Monaco.editor.IMarkerData[]
+export interface ChangeSpec {
+    from: number
+    to?: number
+    insert?: string
+}
 
-function createMarker(
+export interface Action {
+    label: string
+    change?: ChangeSpec
+    selection?: { head?: number; anchor: number }
+}
+
+export interface Diagnostic {
+    range: CharacterRange
+    message: string
+    severity: 'info' | 'warning' | 'error'
+    actions?: Action[]
+}
+
+type FilterCheck = (f: Filter) => Diagnostic[]
+
+function createDiagnostic(
     message: string,
-    filter: Filter,
-    severity = Monaco.MarkerSeverity.Error
-): Monaco.editor.IMarkerData {
+    token: Token,
+    severity: Diagnostic['severity'] = 'error',
+    actions?: Action[]
+): Diagnostic {
     return {
         severity,
         message,
-        ...toMonacoSingleLineRange(filter.field.range),
+        range: token.range,
+        actions,
     }
 }
 
-export function validFilterValue(filter: Filter): Monaco.editor.IMarkerData[] {
+export function validFilterValue(filter: Filter): Diagnostic[] {
     if (!filter.value) {
         return []
     }
@@ -41,18 +59,18 @@ export function validFilterValue(filter: Filter): Monaco.editor.IMarkerData[] {
     if (validationResult.valid) {
         return []
     }
-    return [createMarker(`Error: ${validationResult.reason}`, filter)]
+    return [createDiagnostic(validationResult.reason, filter)]
 }
 
-export function emptyFilterValue(filter: Filter): Monaco.editor.IMarkerData[] {
+export function emptyFilterValue(filter: Filter): Diagnostic[] {
     if (filter.value?.value !== '') {
         return []
     }
     return [
-        createMarker(
-            `Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g., ${filter.field.value}:" a term".`,
+        createDiagnostic(
+            `This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`${filter.field.value}:" a term"\`.`,
             filter,
-            Monaco.MarkerSeverity.Warning
+            'warning'
         ),
     ]
 }
@@ -60,7 +78,7 @@ export function emptyFilterValue(filter: Filter): Monaco.editor.IMarkerData[] {
 // Returns the first nonempty diagnostic for a filter, or nothing otherwise. We return
 // the only the first so that we don't overwhelm the the user with multiple diagnostics
 // for a single filter.
-export function checkFilter(filter: Filter): Monaco.editor.IMarkerData[] {
+export function checkFilter(filter: Filter): Diagnostic[] {
     const checks: FilterCheck[] = [validFilterValue, emptyFilterValue]
     return checks.map(check => check(filter)).find(value => value.length !== 0) || []
 }
@@ -70,14 +88,23 @@ interface PatternData {
     // Used to make the search pattern type available to patterns
     searchPatternType: SearchPatternType
     // Used by patterns to "export" markers
-    marker: Monaco.editor.IMarkerData[]
+    diagnostics: Diagnostic[]
     // Used by the rev+repo patterns to keep track of the rev filter
     revFilter?: Filter
 }
 
-function addFilterDiagnostic(message: string, severity = Monaco.MarkerSeverity.Error): DataMapper<Token, PatternData> {
-    return (token, context) => {
-        context.data.marker.push(createMarker(message, token as Filter, severity))
+function filterDiagnosticCreator(
+    message: string,
+    severity: Diagnostic['severity'] = 'error'
+): (token: Token) => Diagnostic[] {
+    return token => [createDiagnostic(message, token as Filter, severity)]
+}
+
+function addDiagnostic<T>(
+    provider: (value: T, context: MatchContext<PatternData>) => Diagnostic[]
+): DataMapper<T, PatternData> {
+    return (value, context) => {
+        context.data.diagnostics.push(...provider(value, context))
     }
 }
 
@@ -90,7 +117,7 @@ const rules: PatternOf<Token[], PatternData>[] = [
     each({
         type: 'filter',
         $data: (token: Token, context: MatchContext<PatternData>) => {
-            context.data.marker.push(...checkFilter(token as Filter))
+            context.data.diagnostics.push(...checkFilter(token as Filter))
         },
     }),
 
@@ -100,7 +127,18 @@ const rules: PatternOf<Token[], PatternData>[] = [
         not(some({ field: { value: 'type' }, value: { value: oneOf('diff', 'commit') } })),
         each({
             field: { value: oneOf('author', 'before', 'until', 'after', 'since', 'message', 'msg', 'm') },
-            $data: addFilterDiagnostic('Error: this filter requires `type:commit` or `type:diff` in the query'),
+            $data: addDiagnostic(token => [
+                createDiagnostic('This filter requires `type:commit` or `type:diff` in the query', token, 'error', [
+                    {
+                        label: 'Add "type:commit"',
+                        change: { from: token.range.start, insert: 'type:commit ' },
+                    },
+                    {
+                        label: 'Add "type:diff"',
+                        change: { from: token.range.start, insert: 'type:diff ' },
+                    },
+                ]),
+            ]),
         })
     ),
 
@@ -115,14 +153,24 @@ const rules: PatternOf<Token[], PatternData>[] = [
             // No repo: filter
             {
                 $pattern: not(some(repoFilterPattern)),
-                $data: (_tokens, context) => {
-                    context.data.marker.push(
-                        createMarker(
-                            'Error: query contains `rev:` without `repo:`. Add a `repo:` filter.',
-                            context.data.revFilter!
-                        )
-                    )
-                },
+                $data: addDiagnostic((_tokens, context) => {
+                    const revisionFilter = context.data.revFilter!
+
+                    return [
+                        createDiagnostic(
+                            'Query contains `rev:` without `repo:`. Add a `repo:` filter.',
+                            revisionFilter,
+                            'error',
+                            [
+                                {
+                                    label: 'Add "repo:"',
+                                    change: { from: revisionFilter.range.end, insert: ' repo:' },
+                                    selection: { anchor: revisionFilter.range.end + 6 },
+                                },
+                            ]
+                        ),
+                    ]
+                }),
             },
             // Only empty repo: filter
             allOf(
@@ -130,28 +178,52 @@ const rules: PatternOf<Token[], PatternData>[] = [
                 some({
                     ...repoFilterPattern,
                     value: oneOf(undefined, { value: '' }),
-                    $data: (token: Token, context: MatchContext<PatternData>) => {
+                    $data: addDiagnostic((token, context) => {
                         const errorMessage =
-                            'Error: query contains `rev:` with an empty `repo:` filter. Add a non-empty `repo:` filter.'
-                        context.data.marker.push(
-                            createMarker(errorMessage, token as Filter),
-                            createMarker(errorMessage, context.data.revFilter!)
-                        )
-                    },
+                            'Query contains `rev:` with an empty `repo:` filter. Add a non-empty `repo:` filter.'
+                        const actions: Action[] = [
+                            {
+                                label: 'Add "repo:" value',
+                                selection: { anchor: token.range.end },
+                            },
+                        ]
+                        return [
+                            createDiagnostic(errorMessage, token as Filter, 'error', actions),
+                            createDiagnostic(errorMessage, context.data.revFilter!, 'error', actions),
+                        ]
+                    }),
                 })
             ),
             // Repo filter that contains a revision "tag"
             some({
                 ...repoFilterPattern,
                 value: { value: value => value.includes('@') },
-                $data: (token: Token, context: MatchContext<PatternData>) => {
+                $data: addDiagnostic((token, context) => {
+                    const repoFilter = token as Filter
                     const errorMessage =
-                        'Error: You have specified both `@` and `rev:` for a repo filter and I don`t know how to interpret this. Remove either `@` or `rev:`'
-                    context.data.marker.push(
-                        createMarker(errorMessage, token as Filter),
-                        createMarker(errorMessage, context.data.revFilter!)
-                    )
-                },
+                        "You have specified both `@<rev>` and `rev:` for a repo filter and I don't know how to interpret this. Remove either `@<rev>` or `rev:`"
+                    const start = repoFilter.value!.range.start
+                    const actions: Action[] = [
+                        {
+                            label: 'Remove @<rev>',
+                            change: {
+                                from: start + repoFilter.value!.value.indexOf('@'),
+                                to: start + repoFilter.value!.value.length,
+                            },
+                        },
+                        {
+                            label: 'Remove "rev:" filter',
+                            change: {
+                                from: context.data.revFilter!.range.start,
+                                to: context.data.revFilter!.range.end,
+                            },
+                        },
+                    ]
+                    return [
+                        createDiagnostic(errorMessage, token as Filter, 'error', actions),
+                        createDiagnostic(errorMessage, context.data.revFilter!, 'error', actions),
+                    ]
+                }),
             })
         )
     ),
@@ -167,20 +239,22 @@ const rules: PatternOf<Token[], PatternData>[] = [
         ),
         some({
             field: { value: 'type' },
-            $data: addFilterDiagnostic(
-                'Error: Structural search syntax only applies to searching file contents and is not compatible with `type:`. Remove this filter or switch to a different search type.'
+            $data: addDiagnostic(
+                filterDiagnosticCreator(
+                    'Structural search syntax only applies to searching file contents and is not compatible with `type:`. Remove this filter or switch to a different search type.'
+                )
             ),
         })
     ),
 ]
 
 /**
- * Returns the diagnostics for a scanned search query to be displayed in the Monaco query input.
+ * Returns the diagnostics for a scanned search query to be displayed in the query input.
  */
-export function getDiagnostics(tokens: Token[], searchPatternType: SearchPatternType): Monaco.editor.IMarkerData[] {
-    const result = matchesValue<Token[], PatternData>(tokens, eachOf(...rules), { searchPatternType, marker: [] })
+export function getDiagnostics(tokens: Token[], searchPatternType: SearchPatternType): Diagnostic[] {
+    const result = matchesValue<Token[], PatternData>(tokens, eachOf(...rules), { searchPatternType, diagnostics: [] })
     if (result.success) {
-        return result.data.marker
+        return result.data.diagnostics
     }
     return []
 }

@@ -2,10 +2,10 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { closeCompletion, startCompletion } from '@codemirror/autocomplete'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { Diagnostic as CMDiagnostic, linter } from '@codemirror/lint'
 import {
     EditorSelection,
     Extension,
-    Facet,
     StateEffect,
     StateField,
     Prec,
@@ -27,14 +27,13 @@ import {
 } from '@codemirror/view'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
-import { editor as Monaco, MarkerSeverity } from 'monaco-editor'
 
 import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
-import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
+import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
 import { toHover } from '@sourcegraph/shared/src/search/query/hover'
 import { Node } from '@sourcegraph/shared/src/search/query/parser'
@@ -272,13 +271,18 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
                     themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
                     parseInputAsQuery({ patternType, interpretComments }),
                     queryDiagnostic,
-                    tokenInfo(),
-                    highlightFocusedFilter,
-                    // It baffels me but the syntax highlighting extension has
-                    // to come after the highlight current filter extension,
-                    // otherwise CodeMirror keeps steeling the focus.
-                    // See https://github.com/sourcegraph/sourcegraph/issues/38677
-                    querySyntaxHighlighting,
+                    // The precedence of these extensions needs to be decreased
+                    // explicitly, otherwise the diagnostic indicators will be
+                    // hidden behind the highlight background color
+                    Prec.low([
+                        tokenInfo(),
+                        highlightFocusedFilter,
+                        // It baffels me but the syntax highlighting extension has
+                        // to come after the highlight current filter extension,
+                        // otherwise CodeMirror keeps steeling the focus.
+                        // See https://github.com/sourcegraph/sourcegraph/issues/38677
+                        querySyntaxHighlighting,
+                    ]),
                     externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
@@ -449,7 +453,6 @@ const [callbacksField, setCallbacks] = createUpdateableField<
 
 // Defines decorators for syntax highlighting
 const tokenDecorators: { [key: string]: Decoration } = {}
-const emptyDecorator = Decoration.mark({})
 const focusedFilterDeco = Decoration.mark({ class: styles.focusedFilter })
 
 // Chooses the correct decorator for the decorated token
@@ -726,61 +729,62 @@ function getTokensTooltipInformation(
 // Hooks query diagnostics into the editor.
 // The facet stores the diagnostics data which is used by the text decoration
 // and the tooltip extensions.
-const diagnostics = Facet.define<Monaco.IMarkerData[], Monaco.IMarkerData[]>({
-    combine: markerData => markerData.flat(),
-})
-const diagnosticDecos: { [key in MarkerSeverity]: Decoration } = {
-    [MarkerSeverity.Hint]: emptyDecorator,
-    [MarkerSeverity.Info]: emptyDecorator,
-    [MarkerSeverity.Warning]: Decoration.mark({ class: styles.diagnosticWarning }),
-    [MarkerSeverity.Error]: Decoration.mark({ class: styles.diagnosticError }),
-}
 const queryDiagnostic: Extension = [
-    // Compute diagnostics when query changes
-    diagnostics.compute([queryTokens], state => {
-        const query = state.facet(queryTokens)
-        return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType) : []
-    }),
-    // Generate diagnostic markers
-    EditorView.decorations.compute([diagnostics], state =>
-        Decoration.set(
-            state
-                .facet(diagnostics)
-                .map(marker => diagnosticDecos[marker.severity].range(marker.startColumn - 1, marker.endColumn - 1)),
-            true
-        )
-    ),
-    // Show diagnostic message on hover
-    hoverTooltip(
-        (view, position) => {
-            const markersAtCursor = view.state
-                .facet(diagnostics)
-                .filter(({ startColumn, endColumn }) => startColumn - 1 <= position && endColumn > position)
-            if (markersAtCursor?.length === 0) {
-                return null
-            }
-
-            return {
-                // TODO: Properly compute range for multiple markers
-                pos: markersAtCursor[0].startColumn - 1,
-                end: markersAtCursor[0].endColumn - 1,
-                create(): TooltipView {
-                    const dom = document.createElement('div')
-                    dom.innerHTML = renderMarkdown(markersAtCursor.map(marker => marker.message).join('\n\n'))
-                    return { dom }
-                },
-            }
+    linter(
+        view => {
+            const query = view.state.facet(queryTokens)
+            return query.tokens.length > 0 ? getDiagnostics(query.tokens, query.patternType).map(toCMDiagnostic) : []
         },
         {
-            hoverTime: 100,
-            // Making changes elsewhere in the query might invalidate a specific
-            // diagnostic (e.g. adding type:commit to a query that contains
-            // author:...), so generally hiding them on any change seems
-            // reasonable.
-            hideOnChange: true,
+            delay: 200,
         }
     ),
+    EditorView.theme({
+        '.cm-diagnosticText': {
+            display: 'block',
+        },
+        '.cm-diagnosticAction': {
+            color: 'var(--body-color)',
+            borderColor: 'var(--secondary)',
+            backgroundColor: 'var(--secondary)',
+            borderRadius: 'var(--border-radius)',
+            padding: 'var(--btn-padding-y-sm) .5rem',
+            fontSize: 'calc(min(0.75rem, 0.9166666667em))',
+            lineHeight: '1rem',
+            margin: '0.5rem 0 0 0',
+        },
+        '.cm-diagnosticAction + .cm-diagnosticAction': {
+            marginLeft: '1rem',
+        },
+    }),
 ]
+
+function renderMarkdownNode(message: string): Element {
+    const div = document.createElement('div')
+    div.innerHTML = renderMarkdown(message)
+    return div.firstElementChild || div
+}
+
+function toCMDiagnostic(diagnostic: Diagnostic): CMDiagnostic {
+    return {
+        from: diagnostic.range.start,
+        to: diagnostic.range.end,
+        message: diagnostic.message,
+        renderMessage() {
+            return renderMarkdownNode(diagnostic.message)
+        },
+        severity: diagnostic.severity,
+        actions: diagnostic.actions?.map(action => ({
+            name: action.label,
+            apply(view) {
+                view.dispatch({ changes: action.change, selection: action.selection })
+                if (action.selection && !view.hasFocus) {
+                    view.focus()
+                }
+            },
+        })),
+    }
+}
 
 function findOperatorNode(position: number, node: Node | null): Extract<Node, { type: 'operator' }> | null {
     if (!node || node.type !== 'operator' || node.range.start >= position || node.range.end <= position) {
