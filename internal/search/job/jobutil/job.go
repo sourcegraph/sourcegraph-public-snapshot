@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
@@ -35,7 +36,7 @@ import (
 func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	children := make([]job.Job, 0, len(plan))
 	for _, q := range plan {
-		child, err := NewBasicJob(inputs, q)
+		child, err := NewBasicJob(inputs, q, inputs.DB)
 		if err != nil {
 			return nil, err
 		}
@@ -46,7 +47,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 
 	if inputs.PatternType == query.SearchTypeLucky {
 		newJob := func(b query.Basic) (job.Job, error) {
-			return NewBasicJob(inputs, b)
+			return NewBasicJob(inputs, b, inputs.DB)
 		}
 		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
 	}
@@ -55,7 +56,7 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 }
 
 // NewBasicJob converts a query.Basic into its job tree representation.
-func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
+func NewBasicJob(inputs *run.SearchInputs, b query.Basic, db database.DB) (job.Job, error) {
 	var children []job.Job
 	addJob := func(j job.Job) {
 		children = append(children, j)
@@ -165,7 +166,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	fileOwnersMustInclude, fileOwnersMustExclude := b.FileOwnership()
 	{ // Code ownership post filter
 		if len(fileOwnersMustInclude) > 0 || len(fileOwnersMustExclude) > 0 {
-			basicJob = codeownership.NewFilterJob(basicJob, fileOwnersMustInclude, fileOwnersMustExclude)
+			basicJob = codeownership.NewFilterJob(basicJob, nil, fileOwnersMustInclude, fileOwnersMustExclude)
 		}
 	}
 

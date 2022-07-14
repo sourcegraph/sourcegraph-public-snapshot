@@ -26,6 +26,7 @@ type SearchInputs struct {
 	OnSourcegraphDotCom bool
 	Features            *featureflag.FlagSet
 	Protocol            search.Protocol
+	DB                  database.DB
 }
 
 // MaxResults computes the limit for the query.
@@ -97,6 +98,7 @@ func NewSearchInputs(
 		Features:            featureflag.FromContext(ctx),
 		PatternType:         searchType,
 		Protocol:            protocol,
+		DB:                  db,
 	}
 
 	tr.LazyPrintf("Parsed query: %s", inputs.Query)

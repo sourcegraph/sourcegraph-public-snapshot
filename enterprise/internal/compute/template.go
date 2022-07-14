@@ -8,7 +8,6 @@ import (
 
 	"github.com/go-enry/go-enry/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -260,7 +259,7 @@ func NewMetaEnvironment(r result.Match, content string) *MetaEnvironment {
 			Commit:  string(m.CommitID),
 			Content: content,
 			Lang:    lang,
-			Owners:  codeownership.ForResult(*m),
+			Owners:  []string{}, //codeownership.ForResult(*m),
 		}
 	case *result.CommitMatch:
 		return &MetaEnvironment{

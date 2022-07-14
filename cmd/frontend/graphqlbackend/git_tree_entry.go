@@ -3,6 +3,7 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -125,25 +126,15 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 }
 
 func (r *GitTreeEntryResolver) CodeOwners(ctx context.Context) ([]string, error) {
-	var content []byte
-	var contentErr error
+	codeownersFile := codeownership.ResolveCodeownerFile(r.db, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()))
 
-	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
-	defer cancel()
+	fmt.Printf("%+v\n", codeownersFile)
 
-	content, contentErr = gitserver.NewClient(r.db).ReadFile(
-		ctx,
-		r.commit.repoResolver.RepoName(),
-		api.CommitID(r.commit.OID()),
-		"CODEOWNERS",
-		authz.DefaultSubRepoPermsChecker,
-	)
-
-	if contentErr != nil {
-		return []string{}, contentErr
+	if codeownersFile == "" {
+		return []string{}, nil
 	}
 
-	return codeownership.ForFilePath(string(content), r.Path()), nil
+	return codeownership.ForFilePath(codeownersFile, r.Path()), nil
 }
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
