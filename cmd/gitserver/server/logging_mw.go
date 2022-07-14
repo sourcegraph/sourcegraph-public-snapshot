@@ -62,7 +62,7 @@ func LogRequest(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 				log.Strings("args", repoCtx.Args),
 			))
 		} else {
-			fields = append(fields, log.String("repo", "nil"))
+			fields = append(fields, log.String("params", "nil"))
 		}
 
 		logger.Warn("log request", fields...)
