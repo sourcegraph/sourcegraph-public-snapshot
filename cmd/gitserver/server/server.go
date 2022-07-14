@@ -14,6 +14,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
 	"math"
 	"net/http"
 	"os"
@@ -31,11 +32,13 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"go.uber.org/zap/zapcore"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -359,28 +362,29 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", trace.WithRouteName("archive", s.handleArchive))
-	mux.HandleFunc("/exec", trace.WithRouteName("exec", s.handleExec))
-	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
-	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
-	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", s.handleP4Exec))
-	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
-	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
-	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
-	mux.HandleFunc("/is-repo-cloned", trace.WithRouteName("is-repo-cloned", s.handleIsRepoCloned))
-	mux.HandleFunc("/repos", trace.WithRouteName("repos", s.handleRepoInfo))
-	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
-	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
-	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
-	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
-	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
-	mux.HandleFunc("/ping", trace.WithRouteName("ping", func(w http.ResponseWriter, _ *http.Request) {
-		w.WriteHeader(http.StatusOK)
-	}))
 
-	mux.HandleFunc("/git/", trace.WithRouteName("git", func(rw http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("/archive", trace.WithRouteName("archive", logRequest(s.Logger, s.handleArchive)))
+	mux.HandleFunc("/exec", trace.WithRouteName("exec", logRequest(s.Logger, s.handleExec)))
+	mux.HandleFunc("/search", trace.WithRouteName("search", logRequest(s.Logger, s.handleSearch)))
+	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", logRequest(s.Logger, s.handleBatchLog)))
+	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", logRequest(s.Logger, s.handleP4Exec)))
+	mux.HandleFunc("/list", trace.WithRouteName("list", logRequest(s.Logger, s.handleList)))
+	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", logRequest(s.Logger, s.handleListGitolite)))
+	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", logRequest(s.Logger, s.handleIsRepoCloneable)))
+	mux.HandleFunc("/is-repo-cloned", trace.WithRouteName("is-repo-cloned", logRequest(s.Logger, s.handleIsRepoCloned)))
+	mux.HandleFunc("/repos", trace.WithRouteName("repos", logRequest(s.Logger, s.handleRepoInfo)))
+	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", logRequest(s.Logger, s.handleReposStats)))
+	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", logRequest(s.Logger, s.handleRepoCloneProgress)))
+	mux.HandleFunc("/delete", trace.WithRouteName("delete", logRequest(s.Logger, s.handleRepoDelete)))
+	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", logRequest(s.Logger, s.handleRepoUpdate)))
+	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", logRequest(s.Logger, s.handleCreateCommitFromPatch)))
+	mux.HandleFunc("/ping", trace.WithRouteName("ping", logRequest(s.Logger, func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})))
+
+	mux.HandleFunc("/git/", trace.WithRouteName("git", logRequest(s.Logger, func(rw http.ResponseWriter, r *http.Request) {
 		http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
-	}))
+	})))
 
 	// Migration to hexagonal architecture starting here:
 
@@ -2780,4 +2784,47 @@ func isAbsoluteRevision(s string) bool {
 		}
 	}
 	return true
+}
+
+func logRequest(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := r.Context()
+
+		fields := []zapcore.Field{}
+
+		act := actor.FromContext(ctx)
+		fields = append(fields, log.Int("actor", int(act.UID)))
+
+		fields = append(fields, log.String("path", r.URL.Path))
+
+		queryValues := map[string]any{}
+		for k, v := range r.URL.Query() {
+			queryValues[k] = v
+		}
+		params := log.Object("params", mapToLoggerField(queryValues)...)
+		fields = append(fields, params)
+
+		if r.URL.Path == "/exec" {
+			body, _ := ioutil.ReadAll(r.Body)
+			r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+			// need to use GetBody to not modify request
+			var req protocol.ExecRequest
+			err := json.NewDecoder(bytes.NewBuffer(body)).Decode(&req)
+			// ignore errors (hackyh)
+			if err == nil {
+				fields = append(fields, log.String("repo", string(req.Repo)))
+				// ignore
+				cmd := ""
+				if len(req.Args) > 0 {
+					cmd = req.Args[0]
+				}
+				fields = append(fields, log.String("cmd", cmd))
+
+				fields = append(fields, log.Strings("args", req.Args))
+			}
+		}
+
+		logger.Info("request", fields...)
+		next.ServeHTTP(w, r)
+	}
 }
