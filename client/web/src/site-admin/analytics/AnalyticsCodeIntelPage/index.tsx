@@ -162,7 +162,6 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     }
 
     const repos = data?.site.analytics.repos
-    const totalUsers = data?.users?.totalCount || 0
     const browserExtensionInstalls =
         data?.site.analytics.codeIntel.browserExtensionInstalls.summary.totalRegisteredUsers || 0
 

@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
 import { Card, LoadingSpinner, useMatchMedia, Text } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
@@ -138,7 +139,8 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                     alert={{
                         message:
                             'Note these charts are experimental. For billing information, use [usage stats](/site-admin/usage-statistics).',
-                        type: 'INFO',
+                        type: AlertType.INFO,
+                        isDismissibleWithKey: '',
                     }}
                     className="my-3"
                 />
