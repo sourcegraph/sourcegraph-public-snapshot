@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -418,7 +419,7 @@ func (e *executor) archiveChangeset() {
 	}
 }
 
-// reattachChangeset resets detatched_at to zero.
+// reattachChangeset resets detached_at to zero.
 func (e *executor) reattachChangeset() {
 	if !e.ch.DetachedAt.IsZero() {
 		e.ch.DetachedAt = time.Time{}
