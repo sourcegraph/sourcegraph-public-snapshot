@@ -271,18 +271,19 @@ export const StreamingSearchResults: React.FunctionComponent<
                 }
             />
 
-            <DidYouMean
-                telemetryService={props.telemetryService}
-                query={query}
-                patternType={patternType}
-                caseSensitive={caseSensitive}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
-            />
-
-            {results?.alert?.kind && <LuckySearch alert={results?.alert} />}
-
             <div className={styles.contents}>
-                <GettingStartedTour.Info className="mt-2 mr-3 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
+                <DidYouMean
+                    telemetryService={props.telemetryService}
+                    query={query}
+                    patternType={patternType}
+                    caseSensitive={caseSensitive}
+                    selectedSearchContextSpec={props.selectedSearchContextSpec}
+                />
+
+                {results?.alert?.kind && <LuckySearch alert={results?.alert} />}
+
+                <GettingStartedTour.Info className="mt-2 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
+
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}
