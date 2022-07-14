@@ -18,10 +18,8 @@ type Options struct {
 	// when trying to install Postgres extensions concurrently (which do not seem txn-safe).
 	Parallel bool
 
-	// UnprivilegedOnly controls whether privileged migrations can run with the current user
-	// credentials, or if an error should be printed so the site admin can apply manulaly the
-	// privileged migration file with a superuser.
-	UnprivilegedOnly bool
+	// PrivilegedMode controls how privileged migrations are applied.
+	PrivilegedMode PrivilegedMode
 
 	// IgnoreSingleDirtyLog controls whether or not to ignore a dirty database in the specific
 	// case when the _next_ migration application is the only failure. This is meant to enable
@@ -29,6 +27,32 @@ type Options struct {
 	// create a dummy migration log to proceed.
 	IgnoreSingleDirtyLog bool
 }
+
+type PrivilegedMode uint
+
+func (m PrivilegedMode) Valid() bool {
+	return m < InvalidPrivilegedMode
+}
+
+const (
+	// ApplyPrivilegedMigrations, the default privileged mode, indicates to the runner that any
+	// privileged migrations should be applied along with unprivileged migrations.
+	ApplyPrivilegedMigrations PrivilegedMode = iota
+
+	// NoopPrivilegedMigrations, enabled via the -noop-privileged flag, indicates to the runner
+	// that any privileged migrations should be skipped, but an entry in the migration logs table
+	// should be added. This mode assumes that the user has already applied these migrations by hand.
+	NoopPrivilegedMigrations
+
+	// RefusePrivilegedMigrations, enabled via the -unprivileged-only flag, indicates to the runner
+	// that any privileged migrations should result in an error. This indicates to the user that
+	// these migrations need to be run by hand with elevated permissions before the migration can
+	// succeed.
+	RefusePrivilegedMigrations
+
+	// InvalidPrivilegedMode indicates an unsupported privileged mode state.
+	InvalidPrivilegedMode
+)
 
 type MigrationOperation struct {
 	SchemaName     string

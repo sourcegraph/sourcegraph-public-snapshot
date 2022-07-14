@@ -1,7 +1,6 @@
 import * as React from 'react'
 
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import { FileDecoration } from 'sourcegraph'
 
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
@@ -60,7 +59,7 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChil
                             onClick={props.noopRowClick}
                             tabIndex={-1}
                         >
-                            <Icon as={props.isExpanded ? ChevronDownIcon : ChevronRightIcon} aria-hidden={true} />
+                            <Icon svgPath={props.isExpanded ? mdiChevronDown : mdiChevronRight} aria-hidden={true} />
                         </TreeRowIconLink>
                         <TreeRowLabelLink
                             to={props.entryInfo.url}

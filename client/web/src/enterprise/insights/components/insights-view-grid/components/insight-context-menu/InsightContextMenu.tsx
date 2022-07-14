@@ -1,8 +1,8 @@
 import React, { useState } from 'react'
 
+import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import { noop } from 'lodash'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
 import {
     Link,
@@ -15,6 +15,7 @@ import {
     Position,
     Checkbox,
     Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../../../../../stores'
@@ -74,9 +75,13 @@ export const InsightContextMenu: React.FunctionComponent<React.PropsWithChildren
                             aria-label="Insight options"
                             outline={true}
                         >
-                            <DotsVerticalIcon
+                            <Icon
                                 className={classNames(styles.buttonIcon, { [styles.buttonIconActive]: isOpen })}
-                                size={16}
+                                svgPath={mdiDotsVertical}
+                                inline={false}
+                                aria-hidden={true}
+                                height={16}
+                                width={16}
                             />
                         </MenuButton>
                         <MenuList position={Position.bottomEnd} data-testid={`context-menu.${insightID}`}>

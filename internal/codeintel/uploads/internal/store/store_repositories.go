@@ -58,6 +58,7 @@ SELECT ldr.repository_id, ldr.dirty_token
     INNER JOIN repo ON repo.id = ldr.repository_id
   WHERE ldr.dirty_token > ldr.update_token
     AND repo.deleted_at IS NULL
+	AND repo.blocked IS NULL
 `
 
 // GetRepositoriesMaxStaleAge returns the longest duration that a repository has been (currently) stale for. This method considers

@@ -81,7 +81,8 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	}
 	clock := func() time.Time { return now }
 
-	ie := NewInsightEnqueuer(clock, enqueueQueryRunnerJob)
+	ie := NewInsightEnqueuer(clock, nil)
+	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob
 
 	dataSeriesStore := store.NewMockDataSeriesStore()
 	featureStore := database.NewMockFeatureFlagStore()

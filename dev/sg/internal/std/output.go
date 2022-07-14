@@ -19,20 +19,23 @@ type Output struct {
 // Out is the standard output which is instantiated when sg gets run.
 var Out *Output
 
+// DisableOutputDetection, if enabled, replaces all calls to NewOutput with NewFixedOutput.
+var DisableOutputDetection bool
+
 // NewOutput instantiates a new output instance for local use with inferred configuration.
 func NewOutput(dst io.Writer, verbose bool) *Output {
 	inBuildkite := os.Getenv("BUILDKITE") == "true"
+	if DisableOutputDetection {
+		o := NewFixedOutput(dst, verbose)
+		o.buildkite = inBuildkite
+		return o
+	}
 
 	return &Output{
 		Output: output.NewOutput(dst, output.OutputOpts{
 			ForceColor: true,
 			ForceTTY:   true,
 			Verbose:    verbose,
-
-			// Buildkite output is always against a dark background, so we disable the
-			// detection. Note that for some reason the dark background detection hangs
-			// indefinitely in Buildkite, so ForceDarkBackground being set is a required.
-			ForceDarkBackground: inBuildkite,
 		}),
 		buildkite: inBuildkite,
 	}

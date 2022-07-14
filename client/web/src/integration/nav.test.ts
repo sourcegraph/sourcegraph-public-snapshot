@@ -3,7 +3,7 @@ import expect from 'expect'
 import { test } from 'mocha'
 
 import { encodeURIPathComponent } from '@sourcegraph/common'
-import { SearchGraphQlOperations } from '@sourcegraph/search'
+import { mixedSearchStreamEvents, SearchGraphQlOperations } from '@sourcegraph/search'
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
 import { Driver, createDriverForTest } from '@sourcegraph/shared/src/testing/driver'
 import { afterEachSaveScreenshotIfFailed } from '@sourcegraph/shared/src/testing/screenshotReporter'
@@ -79,6 +79,7 @@ describe('GlobalNavbar', () => {
             })
 
             testContext.overrideGraphQL(commonSearchGraphQLResults)
+            testContext.overrideSearchStreamEvents(mixedSearchStreamEvents)
         })
 
         afterEachSaveScreenshotIfFailed(() => driver.page)

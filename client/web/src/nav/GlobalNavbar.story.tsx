@@ -45,7 +45,6 @@ const defaultProps = (
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
-    isExtensionAlertAnimating: false,
     searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
@@ -54,8 +53,6 @@ const defaultProps = (
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 })
 

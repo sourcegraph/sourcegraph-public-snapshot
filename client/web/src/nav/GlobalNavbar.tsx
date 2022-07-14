@@ -35,7 +35,6 @@ import {
     ButtonLink,
     PopoverTrigger,
     useWindowSize,
-    Badge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -59,7 +58,7 @@ import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { UserNavItem } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
@@ -73,7 +72,6 @@ interface Props
         TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
-        ExtensionAlertAnimationProps,
         ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
@@ -143,9 +141,6 @@ const AnalyticsNavItem: React.FunctionComponent = () => {
         <NavAction className="d-none d-sm-flex">
             <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
                 Analytics
-                <Badge className="mx-1" variant="merged">
-                    Experimental
-                </Badge>
             </Link>
         </NavAction>
     )

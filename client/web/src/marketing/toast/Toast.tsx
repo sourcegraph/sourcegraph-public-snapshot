@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { Button, CardTitle, CardBody, Card, Icon, H3 } from '@sourcegraph/wildcard'
 
@@ -23,7 +23,7 @@ export const Toast: React.FunctionComponent<React.PropsWithChildren<ToastProps>>
         <CardBody className={classNames(styles.toastBody, props.toastBodyClassName)}>
             <div className={classNames('d-flex justify-content-end', styles.closeButtonWrap)}>
                 <Button onClick={props.onDismiss} variant="icon" className="test-close-toast" aria-label="Close">
-                    <Icon as={CloseIcon} className={styles.closeButtonIcon} aria-hidden={true} />
+                    <Icon className={styles.closeButtonIcon} aria-hidden={true} svgPath={mdiClose} />
                 </Button>
             </div>
             {props.title && (

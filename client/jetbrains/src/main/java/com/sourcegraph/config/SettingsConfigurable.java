@@ -33,7 +33,7 @@ public class SettingsConfigurable implements Configurable {
     @Nullable
     @Override
     public JComponent createComponent() {
-        mySettingsComponent = new SettingsComponent();
+        mySettingsComponent = new SettingsComponent(project);
         return mySettingsComponent.getPanel();
     }
 

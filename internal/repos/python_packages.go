@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/pypi"
@@ -39,18 +40,22 @@ type pythonPackagesSource struct {
 
 var _ packagesSource = &pythonPackagesSource{}
 
-func (s *pythonPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
+func (s *pythonPackagesSource) Get(ctx context.Context, name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
 	_, err := s.client.Version(ctx, name, version)
 	if err != nil {
 		return nil, err
 	}
-	return reposource.NewPythonPackageVersion(name, version), nil
+	return reposource.NewPythonVersionedPackage(name, version), nil
 }
 
-func (pythonPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParsePackageVersion(dep)
+func (pythonPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseVersionedPackage(dep)
 }
 
-func (pythonPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (pythonPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return reposource.ParsePythonPackageFromName(name)
+}
+
+func (pythonPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParsePythonPackageFromRepoName(repoName)
 }

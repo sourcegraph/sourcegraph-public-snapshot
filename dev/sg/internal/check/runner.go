@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io"
 	"strings"
-	"sync"
 	"time"
 
 	"go.uber.org/atomic"
@@ -13,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/lib/group"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -31,6 +31,9 @@ type Runner[Args any] struct {
 	RunPostFixChecks bool
 	// AnalyticsCategory is the category to track analytics with.
 	AnalyticsCategory string
+	// Concurrency controls the maximum number of checks across categories to evaluate at
+	// the same time - defaults to 10.
+	Concurrency int
 }
 
 // NewRunner creates a Runner for executing checks and applying fixes in a variety of ways.
@@ -38,9 +41,10 @@ type Runner[Args any] struct {
 // to a Runner - fields can also be set directly on the struct.
 func NewRunner[Args any](in io.Reader, out *std.Output, categories []Category[Args]) *Runner[Args] {
 	return &Runner[Args]{
-		Input:      in,
-		Output:     out,
-		Categories: categories,
+		Input:       in,
+		Output:      out,
+		Categories:  categories,
+		Concurrency: 10,
 	}
 }
 
@@ -149,6 +153,8 @@ type runAllCategoryChecksResult struct {
 	categories map[string]bool
 }
 
+var errSkipped = errors.New("skipped")
+
 // runAllCategoryChecks is the main entrypoint for running the checks in this runner.
 func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *runAllCategoryChecksResult {
 	if r.RenderDescription != nil {
@@ -156,24 +162,29 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	}
 
 	statuses := []*output.StatusBar{}
-	var checks float64
+	var checks int
 	for i, category := range r.Categories {
 		statuses = append(statuses, output.NewStatusBarWithLabel(fmt.Sprintf("%d. %s", i+1, category.Name)))
-		checks += float64(len(category.Checks))
+		checks += len(category.Checks)
 	}
 	progress := r.Output.ProgressWithStatusBars([]output.ProgressBar{{
 		Label: "Running checks",
-		Max:   checks,
+		Max:   float64(checks),
 	}}, statuses, nil)
 
 	var (
-		start = time.Now()
+		start           = time.Now()
+		categoriesGroup = group.NewWithStreaming[error]()
 
-		categoriesWg        sync.WaitGroup
-		categoriesSkipped   = map[int]error{}
-		categoriesDurations sync.Map
+		// checksLimiter is shared to limit all concurrent checks across categories.
+		checksLimiter = group.NewBasicLimiter(r.Concurrency)
 
-		// used for progress bar
+		// aggregated results
+		categoriesSkipped   = map[int]bool{}
+		categoriesDurations = map[int]time.Duration{}
+
+		// used for progress bar - needs to be thread-safe since it can be updated from
+		// multiple categories at once.
 		checksDone           atomic.Float64
 		updateChecksProgress = func() {
 			progress.SetValue(0, checksDone.Load()+1)
@@ -183,40 +194,31 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 	for i, category := range r.Categories {
 		progress.StatusBarUpdatef(i, "Running checks...")
 
-		if err := category.CheckEnabled(ctx, args); err != nil {
-			// Safe because we do this NOT in a goroutine
-			categoriesSkipped[i] = err
-			// Mark as done
-			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
-			continue
-		}
+		// Copy
+		i, category := i, category
 
 		// Run categories concurrently
-		categoriesWg.Add(1)
-		go func(i int, category Category[Args]) {
-			defer func() {
-				// record duration
-				categoriesDurations.Store(category.Name, time.Since(start))
-				categoriesWg.Done()
-			}()
+		categoriesGroup.Go(func() error {
+			if err := category.CheckEnabled(ctx, args); err != nil {
+				// Mark as done
+				progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
+				return errSkipped
+			}
 
 			// Run all checks for this category concurrently
-			var checksWg sync.WaitGroup
-			var didErr atomic.Bool
+			checksGroup := group.NewWithStreaming[string]().WithErrors().
+				WithConcurrencyLimiter(checksLimiter)
+			// Collect errors in the synchronous callbacks
+			var errs error
 			for _, check := range category.Checks {
-				checksWg.Add(1)
-				go func(check *Check[Args]) {
-					var event string
-					defer func() {
-						updateChecksProgress()
-						r.logEvent(ctx, []string{"check", category.Name, check.Name}, start, event)
-						checksWg.Done()
-					}()
+				// copy
+				check := check
 
+				// run checks concurrently
+				checksGroup.Go(func() (event string, err error) {
 					if err := check.IsEnabled(ctx, args); err != nil {
 						progress.StatusBarUpdatef(i, "Check %s skipped: %s", check.Name, err.Error())
-						event = "skipped"
-						return
+						return "skipped", nil
 					}
 
 					// progress.Verbose never writes to output, so we just send check
@@ -230,23 +232,39 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 						}
 						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, errParts[0])
 						check.cachedCheckOutput = updateOutput.String()
-						didErr.Store(true)
-						event = "error"
-					} else {
-						event = "success"
+						return "error", err
 					}
 
-				}(check)
+					return "success", nil
+				}, func(event string, err error) {
+					updateChecksProgress()
+					r.logEvent(ctx, []string{"check", category.Name, check.Name}, start, event)
+
+					if err != nil {
+						errs = errors.Append(errs, err)
+					}
+				})
 			}
-			checksWg.Wait()
+			checksGroup.Wait()
+
+			return errs
+		}, func(err error) {
+			// record duration
+			categoriesDurations[i] = time.Since(start)
+
+			// record if skipped
+			if errors.Is(err, errSkipped) {
+				categoriesSkipped[i] = true
+			}
 
 			// If error'd, status bar has already been set to failed with an error message
-			if !didErr.Load() {
+			// so we only update if there is no error
+			if err == nil {
 				progress.StatusBarCompletef(i, "Done!")
 			}
-		}(i, category)
+		})
 	}
-	categoriesWg.Wait()
+	categoriesGroup.Wait()
 
 	// Destroy progress and render a complete summary.
 	progress.Destroy()
@@ -258,11 +276,9 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		idx := i + 1
 
 		summaryStr := fmt.Sprintf("%d. %s", idx, category.Name)
-		v, ok := categoriesDurations.Load(category.Name)
+		dur, ok := categoriesDurations[i]
 		if ok {
-			if dur, ok := v.(time.Duration); ok {
-				summaryStr = fmt.Sprintf("%s (%ds)", summaryStr, dur/time.Second)
-			}
+			summaryStr = fmt.Sprintf("%s (%ds)", summaryStr, dur/time.Second)
 		}
 
 		if _, ok := categoriesSkipped[i]; ok {

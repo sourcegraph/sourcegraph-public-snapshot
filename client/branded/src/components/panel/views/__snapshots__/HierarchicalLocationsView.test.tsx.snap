@@ -29,9 +29,11 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >
@@ -56,7 +58,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -72,7 +74,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0 mr-1"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -296,9 +298,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >
@@ -323,7 +327,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -339,7 +343,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0 mr-1"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -517,9 +521,11 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >
@@ -544,7 +550,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -560,7 +566,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0 mr-1"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -688,7 +694,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
   <div
     aria-label="Loading"
     aria-live="polite"
-    class="iconInline loadingSpinner m-1 test-loading-spinner"
+    class="mdi-icon iconInline loadingSpinner m-1 test-loading-spinner"
     role="img"
   />
 </DocumentFragment>
@@ -699,7 +705,7 @@ exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty 
   <div
     aria-label="Loading"
     aria-live="polite"
-    class="iconInline loadingSpinner m-1 test-loading-spinner"
+    class="mdi-icon iconInline loadingSpinner m-1 test-loading-spinner"
     role="img"
   />
 </DocumentFragment>

@@ -47,12 +47,10 @@ const defaultProps: SearchBoxProps = {
     onSubmit: () => {},
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
     authenticatedUser: null,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     platformContext: NOOP_PLATFORM_CONTEXT,
-    editorComponent: 'monaco',
+    editorComponent: 'codemirror6',
 }
 
 export const SearchBoxStory: Story = () => (
