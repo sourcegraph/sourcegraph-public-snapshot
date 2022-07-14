@@ -136,6 +136,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                     <Link to={workspace.repository.url} target="_blank" rel="noopener noreferrer">
+                        <VisuallyHidden>Go to repository</VisuallyHidden>
                         <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                     </Link>
                 )}
