@@ -1,11 +1,10 @@
 import React from 'react'
 
+import { mdiCheck, mdiAlert } from '@mdi/js'
 import classNames from 'classnames'
-import AlertIcon from 'mdi-react/AlertIcon'
-import CheckIcon from 'mdi-react/CheckIcon'
 
 import { isDefined } from '@sourcegraph/common'
-import { Badge, Text } from '@sourcegraph/wildcard'
+import { Badge, Text, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import {
@@ -102,12 +101,27 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                         <>
                             {failedUploads.length === 0 && failedIndexes.length === 0 && (
                                 <Text className="mb-1 text-muted">
-                                    <CheckIcon size={16} className="text-success" /> Looks good!
+                                    <Icon
+                                        className="text-success"
+                                        svgPath={mdiCheck}
+                                        inline={false}
+                                        aria-hidden={true}
+                                        height={16}
+                                        width={16}
+                                    />{' '}
+                                    Looks good!
                                 </Text>
                             )}
                             {failedUploads.length > 0 && (
                                 <Text className="mb-1 text-muted">
-                                    <AlertIcon size={16} className="text-danger" />{' '}
+                                    <Icon
+                                        className="text-danger"
+                                        svgPath={mdiAlert}
+                                        inline={false}
+                                        aria-hidden={true}
+                                        height={16}
+                                        width={16}
+                                    />{' '}
                                     <TelemetricLink
                                         to={`/${repoName}/-/code-intelligence/uploads?filters=errored`}
                                         label="Latest upload processing"
@@ -120,7 +134,14 @@ export const IndexerSummary: React.FunctionComponent<React.PropsWithChildren<Ind
                             )}
                             {failedIndexes.length > 0 && (
                                 <Text className="mb-1 text-muted">
-                                    <AlertIcon size={16} className="text-danger" />{' '}
+                                    <Icon
+                                        className="text-danger"
+                                        svgPath={mdiAlert}
+                                        inline={false}
+                                        aria-hidden={true}
+                                        height={16}
+                                        width={16}
+                                    />{' '}
                                     <TelemetricLink
                                         to={`/${repoName}/-/code-intelligence/indexes?filters=errored`}
                                         label="Latest indexing"
