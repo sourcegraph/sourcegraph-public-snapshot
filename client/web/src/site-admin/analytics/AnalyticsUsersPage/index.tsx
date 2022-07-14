@@ -4,10 +4,12 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
+import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
 import { Card, LoadingSpinner, useMatchMedia, Text } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
 import { BarChart } from '../../../charts/components/bar-chart/BarChart'
+import { GlobalAlert } from '../../../global/GlobalAlert'
 import { AnalyticsDateRange, UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
@@ -133,6 +135,15 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                         ]}
                     />
                 </div>
+                <GlobalAlert
+                    alert={{
+                        message:
+                            'Note these charts are experimental. For billing information, use [usage stats](/site-admin/usage-statistics).',
+                        type: AlertType.INFO,
+                        isDismissibleWithKey: '',
+                    }}
+                    className="my-3"
+                />
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {activities && (
                     <div>

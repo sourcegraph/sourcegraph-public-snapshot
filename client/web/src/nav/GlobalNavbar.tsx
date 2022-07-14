@@ -131,9 +131,9 @@ function useCalculatedNavLinkVariant(
 }
 
 const AnalyticsNavItem: React.FunctionComponent = () => {
-    const [isAdminAnalyticsEnabled] = useFeatureFlag('admin-analytics-enabled', false)
+    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
-    if (!isAdminAnalyticsEnabled) {
+    if (isAdminAnalyticsDisabled) {
         return null
     }
 

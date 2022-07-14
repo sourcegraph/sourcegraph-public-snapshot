@@ -163,14 +163,14 @@ const AuthenticatedSiteAdminArea: React.FunctionComponent<React.PropsWithChildre
         }
     }, [pathname])
 
-    const [isAdminAnalyticsEnabled] = useFeatureFlag('admin-analytics-enabled', false)
+    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
     const adminSideBarGroups = useMemo(
-        () => (isAdminAnalyticsEnabled ? [analyticsGroup, ...props.sideBarGroups] : props.sideBarGroups),
-        [isAdminAnalyticsEnabled, props.sideBarGroups]
+        () => (!isAdminAnalyticsDisabled ? [analyticsGroup, ...props.sideBarGroups] : props.sideBarGroups),
+        [isAdminAnalyticsDisabled, props.sideBarGroups]
     )
-    const routes = useMemo(() => (isAdminAnalyticsEnabled ? [...analyticsRoutes, ...props.routes] : props.routes), [
-        isAdminAnalyticsEnabled,
+    const routes = useMemo(() => (!isAdminAnalyticsDisabled ? [...analyticsRoutes, ...props.routes] : props.routes), [
+        isAdminAnalyticsDisabled,
         props.routes,
     ])
 
