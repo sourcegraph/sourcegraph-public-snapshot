@@ -6,7 +6,6 @@ import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { storage } from '../../browser-extension/web-extension-api/storage'
-import { UserEvent } from '../../graphql-operations'
 import { logEvent } from '../backend/userEvents'
 import { isInPage } from '../context'
 import { getExtensionVersion, getPlatformName } from '../util/context'

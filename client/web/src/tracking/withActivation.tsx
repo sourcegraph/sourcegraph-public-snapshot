@@ -11,7 +11,6 @@ import {
     ActivationProps,
     ActivationStep,
 } from '@sourcegraph/shared/src/components/activation/Activation'
-import { UserEvent } from '@sourcegraph/shared/src/graphql-operations'
 import { Link } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
