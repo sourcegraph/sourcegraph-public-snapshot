@@ -30,7 +30,7 @@ export interface FormSeriesProps {
     /**
      * This prop hides color picker from the series form. This field is needed for
      * compute powered insight creation UI, see https://github.com/sourcegraph/sourcegraph/issues/38832
-     * for more details whe compute doesn't have series colors
+     * for more details compute doesn't have series colors
      */
     showColorPicker?: boolean
 }
