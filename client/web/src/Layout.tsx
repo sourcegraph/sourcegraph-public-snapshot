@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
+import React, { Suspense, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
@@ -42,7 +42,6 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { RepoContainerRoute } from './repo/RepoContainer'
@@ -172,13 +171,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     const breadcrumbProps = useBreadcrumbs()
 
-    // Control browser extension discoverability animation here.
-    // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
-    const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
-    const onExtensionAlertDismissed = useCallback(() => {
-        startExtensionAlertAnimation()
-    }, [startExtensionAlertAnimation])
-
     useScrollToLocationHash(props.location)
 
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
@@ -207,7 +199,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...props,
         ...themeProps,
         ...breadcrumbProps,
-        onExtensionAlertDismissed,
         isMacPlatform: isMacPlatform(),
     }
 
@@ -249,7 +240,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     }
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
-                    isExtensionAlertAnimating={isExtensionAlertAnimating}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                 />
             )}

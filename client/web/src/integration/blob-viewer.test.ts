@@ -1,6 +1,5 @@
 import assert from 'assert'
 
-import { Page } from 'puppeteer'
 import type * as sourcegraph from 'sourcegraph'
 
 import { SharedGraphQlOperations } from '@sourcegraph/shared/src/graphql-operations'
@@ -1080,96 +1079,6 @@ describe('Blob viewer', () => {
             } catch {
                 throw new Error('Expected to navigate to file after clicking on link in references panel')
             }
-        })
-
-        describe('browser extension discoverability', () => {
-            const HOVER_THRESHOLD = 5
-            const HOVER_COUNT_KEY = 'hover-count'
-
-            it.skip(`shows a popover about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers and clicks "View on [code host]" button`, async () => {
-                testContext.server.get('https://github.com/*').intercept((request, response) => {
-                    response.sendStatus(200)
-                })
-
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-                await driver.page.evaluate(() => localStorage.removeItem('hover-count'))
-                await driver.page.reload()
-
-                await driver.page.waitForSelector('.test-go-to-code-host', { visible: true })
-                // Close new tab after clicking link
-                const newPage = new Promise<Page>(resolve =>
-                    driver.browser.once('targetcreated', target => resolve(target.page()))
-                )
-                await driver.page.click('.test-go-to-code-host', { button: 'middle' })
-                await (await newPage).close()
-
-                assert(
-                    !(await driver.page.$('.test-install-browser-extension-popover')),
-                    'Expected popover to not be displayed before user reaches hover threshold'
-                )
-
-                // Hover over 'console' and 'log' 5 times combined
-                await driver.page.waitForSelector('.test-log-token', { visible: true })
-                for (let index = 0; index < HOVER_THRESHOLD; index++) {
-                    await driver.page.hover(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
-                    await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
-                }
-
-                await driver.page.click('.test-go-to-code-host', { button: 'middle' })
-                await driver.page.waitForSelector('.test-install-browser-extension-popover', { visible: true })
-                assert(
-                    !!(await driver.page.$('.test-install-browser-extension-popover')),
-                    'Expected popover to be displayed after user reaches hover threshold'
-                )
-
-                const popoverHeader = await driver.page.evaluate(
-                    () => document.querySelector('.test-install-browser-extension-popover-header')?.textContent
-                )
-                assert.strictEqual(
-                    popoverHeader,
-                    "Take Sourcegraph's code intelligence to GitHub!",
-                    'Expected popover header text to reflect code host'
-                )
-            })
-
-            it.skip(`shows an alert about the browser extension when the user has seen ${HOVER_THRESHOLD} hovers`, async () => {
-                await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
-                await driver.page.evaluate(HOVER_COUNT_KEY => localStorage.removeItem(HOVER_COUNT_KEY), HOVER_COUNT_KEY)
-                await driver.page.reload()
-
-                // Alert should not be visible before the user reaches the hover threshold
-                assert(
-                    !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
-                    'Expected "Install browser extension" alert to not be displayed before user reaches hover threshold'
-                )
-
-                // Hover over 'console' and 'log' $HOVER_THRESHOLD times combined
-                await driver.page.waitForSelector('.test-log-token', { visible: true })
-                for (let index = 0; index < HOVER_THRESHOLD; index++) {
-                    await driver.page.hover(index % 2 === 0 ? '.test-log-token' : '.test-console-token')
-                    await driver.page.waitForSelector('[data-testid="hover-overlay"]', { visible: true })
-                }
-                await driver.page.reload()
-
-                // Alert should be visible now that the user has seen $HOVER_THRESHOLD hovers
-                await driver.page.waitForSelector('[data-testid="install-browser-extension-alert"]', { timeout: 5000 })
-
-                // Dismiss alert
-                await driver.page.click('.test-close-alert')
-                await driver.page.reload()
-
-                // Alert should not show up now that the user has dismissed it once
-                await driver.page.waitForSelector('[data-testid="repo-header"]')
-                // `useIsBrowserExtensionActiveUser` emits false after 1000ms, so
-                // wait 500ms after [data-testid="repo-header"] is visible, at which point we know
-                // that `RepoContainer` has subscribed to `useIsBrowserExtensionActiveUser`.
-                // After this point, we know whether or not the alert will be displayed for this page load.
-                await driver.page.waitFor(1000)
-                assert(
-                    !(await driver.page.$('[data-testid="install-browser-extension-alert"]')),
-                    'Expected "Install browser extension" alert to not be displayed before user dismisses it once'
-                )
-            })
         })
     })
 })

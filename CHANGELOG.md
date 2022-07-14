@@ -53,6 +53,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 - The direct DataDog trace export integration has been removed. ([#37654](https://github.com/sourcegraph/sourcegraph/pull/37654))
 - Removed the deprecated git exec forwarder. [#38092](https://github.com/sourcegraph/sourcegraph/pull/38092)
+- Browser and IDE extensions banners. [#38715](https://github.com/sourcegraph/sourcegraph/pull/38715)
 
 ## 3.41.1
 
