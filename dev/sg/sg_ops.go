@@ -34,7 +34,7 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "kind",
-				Usage:       "the `kind` of deployment (one of 'k8s', 'helm')",
+				Usage:       "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
 				Value:       string(images.DeploymentTypeK8S),
 				Destination: &opsUpdateImagesDeploymentKindFlag,
 			},
@@ -91,5 +91,5 @@ func opsUpdateImage(ctx *cli.Context) error {
 		std.Out.WriteWarningf("Falling back to the latest deveopment build available.")
 	}
 
-	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
+	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
 }
