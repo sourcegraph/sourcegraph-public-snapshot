@@ -36,6 +36,13 @@ type RangeData struct {
 	MonikerIDs             []ID // possibly empty
 }
 
+const (
+	Local          = "local"
+	Import         = "import"
+	Export         = "export"
+	Implementation = "implementation"
+)
+
 // MonikerData represent a unique name (eventually) attached to a range.
 type MonikerData struct {
 	Kind                 string // local, import, export, implementation

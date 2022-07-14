@@ -22,6 +22,7 @@ func TestImplementations(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	// Empty result set (prevents nil pointer as scanner is always non-nil)
 	mockDBStore.ReferenceIDsFunc.PushReturn(dbstore.PackageReferenceScannerFromSlice(), 0, nil)
@@ -56,6 +57,7 @@ func TestImplementations(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		mockSymbolsResolver,
 	)
 	adjustedLocations, _, err := resolver.Implementations(context.Background(), 10, 20, 50, "")
 	if err != nil {
@@ -79,6 +81,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	// Empty result set (prevents nil pointer as scanner is always non-nil)
 	mockDBStore.ReferenceIDsFunc.PushReturn(dbstore.PackageReferenceScannerFromSlice(), 0, nil)
@@ -128,6 +131,7 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 		newOperations(&observation.TestContext),
 		checker,
 		50,
+		mockSymbolsResolver,
 	)
 
 	ctx := context.Background()
@@ -150,6 +154,7 @@ func TestImplementationsRemote(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	definitionUploads := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
@@ -243,6 +248,7 @@ func TestImplementationsRemote(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		mockSymbolsResolver,
 	)
 	adjustedLocations, _, err := resolver.Implementations(context.Background(), 10, 20, 50, "")
 	if err != nil {
@@ -308,6 +314,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	definitionUploads := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
@@ -416,6 +423,7 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 		newOperations(&observation.TestContext),
 		checker,
 		50,
+		mockSymbolsResolver,
 	)
 
 	ctx := context.Background()

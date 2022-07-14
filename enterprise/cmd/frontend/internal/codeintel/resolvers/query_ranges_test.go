@@ -18,6 +18,7 @@ func TestRanges(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	testLocation1 := lsifstore.Location{DumpID: 50, Path: "a.go", Range: testRange1}
 	testLocation2 := lsifstore.Location{DumpID: 51, Path: "b.go", Range: testRange2}
@@ -59,6 +60,7 @@ func TestRanges(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		mockSymbolsResolver,
 	)
 	adjustedRanges, err := resolver.Ranges(context.Background(), 10, 20)
 	if err != nil {

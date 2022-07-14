@@ -15,13 +15,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
-	autoindexinggraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/transport/graphql"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/policies"
-	policiesgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/transport/graphql"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
-	uploadsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -52,7 +48,7 @@ type Resolver struct {
 }
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
-func NewResolver(db database.DB, codeIntelDB database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
+func NewResolver(db database.DB, codeIntelDB database.DB, gitserver GitserverClient, resolver resolvers.Resolver, symbolsSvc *symbols.Service, uploadsSvc *uploads.Service, observationContext *observation.Context) gql.CodeIntelResolver {
 	baseResolver := &Resolver{
 		db:                 db,
 		gitserver:          gitserver,
@@ -61,11 +57,21 @@ func NewResolver(db database.DB, codeIntelDB database.DB, gitserver GitserverCli
 		observationContext: newOperations(observationContext),
 	}
 
+	// oc := func(name string) *observation.Context {
+	// 	return &observation.Context{
+	// 		Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
+	// 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+	// 		Registerer: prometheus.DefaultRegisterer,
+	// 	}
+	// }
+
+	// TODO TODO TODO: Thread the upload service, autoindexing service, symbols service, and policies service through the resolver.
 	return &frankenResolver{
-		Resolver:                    baseResolver,
-		AutoindexingServiceResolver: autoindexinggraphql.GetResolver(autoindexing.GetService(db, nil, nil, nil)), // Note: Currently unused
-		UploadsServiceResolver:      uploadsgraphql.GetResolver(uploads.GetService(db, codeIntelDB, gitserver)),
-		PoliciesServiceResolver:     policiesgraphql.GetResolver(policies.GetService(db)),
+		Resolver: baseResolver,
+		// AutoindexingServiceResolver: autoindexinggraphql.GetResolver(autoindexing.GetService(db, nil, nil, nil)), // Note: Currently unused
+		// UploadsServiceResolver:      uploadsgraphql.GetResolver(uploadsSvc),
+		// PoliciesServiceResolver: policiesgraphql.GetResolver(policies.GetService(db)),
+		// symbolsResolver:         symbolsgraphql.New(symbolsSvc, oc("symbols")),
 	}
 }
 
@@ -324,6 +330,7 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 		return nil, err
 	}
 
+	// This is created once per request, right?
 	return NewQueryResolver(r.gitserver, resolver, r.resolver, r.locationResolver, errTracer), nil
 }
 

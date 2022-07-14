@@ -8,7 +8,10 @@ import (
 )
 
 type operations struct {
+	// Not used yet.
 	list *observation.Operation
+
+	getReferenceIDs *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +31,9 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
+		// Not used yet.
 		list: op("List"),
+
+		getReferenceIDs: op("GetReferenceIDs"),
 	}
 }

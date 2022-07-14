@@ -30,9 +30,9 @@ type adjustedUpload struct {
 // from the current target commit. If an upload cannot be adjusted, it will be omitted from the
 // returned slice.
 func (r *queryResolver) adjustUploads(ctx context.Context, line, character int) ([]adjustedUpload, error) {
-	adjustedUploads := make([]adjustedUpload, 0, len(r.uploads))
-	for i := range r.uploads {
-		adjustedUpload, ok, err := r.adjustUpload(ctx, line, character, r.uploads[i])
+	adjustedUploads := make([]adjustedUpload, 0, len(r.inMemoryUploads))
+	for i := range r.inMemoryUploads {
+		adjustedUpload, ok, err := r.adjustUpload(ctx, line, character, r.inMemoryUploads[i])
 		if err != nil {
 			return nil, err
 		}
@@ -164,7 +164,7 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifsto
 		a = actor.FromContext(ctx)
 	}
 	for _, location := range locations {
-		upload, ok := r.uploadFromCache(location.DumpID)
+		upload, ok := r.getUploadFromCache(location.DumpID)
 		if !ok {
 			continue
 		}
@@ -224,7 +224,7 @@ func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commi
 	return commit, rn, false, nil
 }
 
-func (r *queryResolver) uploadFromCache(id int) (store.Dump, bool) {
+func (r *queryResolver) getUploadFromCache(id int) (store.Dump, bool) {
 	r.uploadCacheMutex.RLock()
 	defer r.uploadCacheMutex.RUnlock()
 

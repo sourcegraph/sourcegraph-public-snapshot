@@ -6,6 +6,7 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	symbolsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/transport/graphql"
 )
 
 type frankenResolver struct {
@@ -13,6 +14,7 @@ type frankenResolver struct {
 	gql.AutoindexingServiceResolver
 	gql.UploadsServiceResolver
 	gql.PoliciesServiceResolver
+	symbolsResolver symbolsgraphql.Resolver
 }
 
 func (r *frankenResolver) getAutoindexingServiceResolver() gql.AutoindexingServiceResolver {

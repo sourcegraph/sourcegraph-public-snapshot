@@ -4,11 +4,16 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/opentracing/opentracing-go"
+	"github.com/prometheus/client_golang/prometheus"
+	logger "github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/enterprise"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	codeintelresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	codeintelgqlresolvers "github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers/graphql"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	symbolsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/honey"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -39,17 +44,22 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 }
 
 func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
-	policyMatcher := policies.NewMatcher(
-		services.gitserverClient,
-		policies.NoopExtractor,
-		false,
-		false,
-	)
+	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
 
 	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
 	if err != nil {
 		return nil, errors.Errorf("failed to initialize hunk cache: %s", err)
 	}
+
+	oc := func(name string) *observation.Context {
+		return &observation.Context{
+			Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
+			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+			Registerer: prometheus.DefaultRegisterer,
+		}
+	}
+
+	symbolsResolver := symbolsgraphql.New(services.SymbolsSvc, config.HunkCacheSize, oc("symbols"))
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,
@@ -62,11 +72,13 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		config.MaximumIndexesPerMonikerSearch,
 		observationContext,
 		db,
+		symbolsResolver,
 	)
 
 	lsifStore := database.NewDBWith(observationContext.Logger, services.lsifStore)
 
-	return codeintelgqlresolvers.NewResolver(db, lsifStore, services.gitserverClient, innerResolver, &observation.Context{
+	// remove the symbolsService and pass the symbolsResolver in instead
+	return codeintelgqlresolvers.NewResolver(db, lsifStore, services.gitserverClient, innerResolver, services.SymbolsSvc, services.UploadsSvc, &observation.Context{
 		Logger:       nil,
 		Tracer:       &trace.Tracer{},
 		Registerer:   nil,

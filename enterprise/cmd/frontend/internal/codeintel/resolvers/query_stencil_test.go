@@ -18,6 +18,7 @@ func TestStencil(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	expectedRanges := []lsifstore.Range{
 		{Start: lsifstore.Position{Line: 10, Character: 20}, End: lsifstore.Position{Line: 10, Character: 30}},
@@ -53,6 +54,7 @@ func TestStencil(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		mockSymbolsResolver,
 	)
 	ranges, err := resolver.Stencil(context.Background())
 	if err != nil {

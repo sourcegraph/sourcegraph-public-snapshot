@@ -20,6 +20,7 @@ func TestDiagnostics(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	diagnostics := []lsifstore.Diagnostic{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
@@ -52,6 +53,7 @@ func TestDiagnostics(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		mockSymbolsResolver,
 	)
 	adjustedDiagnostics, totalCount, err := resolver.Diagnostics(context.Background(), 5)
 	if err != nil {
@@ -87,6 +89,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	diagnostics := []lsifstore.Diagnostic{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
@@ -134,6 +137,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 		newOperations(&observation.TestContext),
 		checker,
 		50,
+		mockSymbolsResolver,
 	)
 
 	ctx := context.Background()

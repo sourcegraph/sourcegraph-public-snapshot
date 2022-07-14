@@ -20,6 +20,7 @@ func TestHover(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	expectedRange := lsifstore.Range{
 		Start: lsifstore.Position{Line: 10, Character: 10},
@@ -47,6 +48,7 @@ func TestHover(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		mockSymbolsResolver,
 	)
 	text, rn, exists, err := resolver.Hover(context.Background(), 10, 20)
 	if err != nil {
@@ -69,6 +71,7 @@ func TestHoverRemote(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
 	expectedRange := lsifstore.Range{
 		Start: lsifstore.Position{Line: 10, Character: 10},
@@ -139,6 +142,7 @@ func TestHoverRemote(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		mockSymbolsResolver,
 	)
 	text, rn, exists, err := resolver.Hover(context.Background(), 10, 20)
 	if err != nil {

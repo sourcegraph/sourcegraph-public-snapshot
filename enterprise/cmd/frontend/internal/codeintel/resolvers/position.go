@@ -20,18 +20,21 @@ type PositionAdjuster interface {
 	// AdjustPath translates the given path from the source commit into the given target
 	// commit. If revese is true, then the source and target commits are swapped.
 	AdjustPath(ctx context.Context, commit, path string, reverse bool) (string, bool, error)
+	// GetTargetCommitPath
 
 	// AdjustPosition translates the given position from the source commit into the given
 	// target commit. The adjusted path and position are returned, along with a boolean flag
 	// indicating that the translation was successful. If revese is true, then the source and
 	// target commits are swapped.
 	AdjustPosition(ctx context.Context, commit, path string, px lsifstore.Position, reverse bool) (string, lsifstore.Position, bool, error)
+	// GetTargetCommitPosition
 
 	// AdjustRange translates the given range from the source commit into the given target
 	// commit. The adjusted path and range are returned, along with a boolean flag indicating
 	// that the translation was successful. If revese is true, then the source and target commits
 	// are swapped.
 	AdjustRange(ctx context.Context, commit, path string, rx lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error)
+	// GetTargetCommitRange
 }
 
 type positionAdjuster struct {
@@ -86,7 +89,7 @@ func (p *positionAdjuster) AdjustRange(ctx context.Context, commit, path string,
 }
 
 // readHunksCached returns a position-ordered slice of changes (additions or deletions) of
-// the given path between the given source and target commits. If revese is true, then the
+// the given path between the given source and target commits. If reverse is true, then the
 // source and target commits are swapped. If the position adjuster has a hunk cache, it
 // will read from it before attempting to contact a remote server, and populate the cache
 // with new results

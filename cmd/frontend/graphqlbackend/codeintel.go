@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	symbols "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/transport/graphql"
 	executor "github.com/sourcegraph/sourcegraph/internal/services/executors/transport/graphql"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
@@ -26,6 +27,7 @@ type CodeIntelResolver interface {
 	ExecutorResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
+	// SymbolsResolver
 }
 
 type AutoindexingServiceResolver interface {
@@ -40,6 +42,10 @@ type AutoindexingServiceResolver interface {
 
 type ExecutorResolver interface {
 	ExecutorResolver() executor.Resolver
+}
+
+type SymbolsResolver interface {
+	SymbolsResolver() symbols.Resolver
 }
 
 type UploadsServiceResolver interface {

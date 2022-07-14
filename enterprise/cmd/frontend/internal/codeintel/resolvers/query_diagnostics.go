@@ -24,8 +24,8 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
 			log.String("path", r.path),
-			log.Int("numUploads", len(r.uploads)),
-			log.String("uploads", uploadIDsToString(r.uploads)),
+			log.Int("numUploads", len(r.inMemoryUploads)),
+			log.String("uploads", uploadIDsToString(r.inMemoryUploads)),
 			log.Int("limit", limit),
 		},
 	})
@@ -93,9 +93,9 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 // adjustUploadPaths adjusts the current target path for each upload visible from the current target
 // commit. If an upload cannot be adjusted, it will be omitted from the returned slice.
 func (r *queryResolver) adjustUploadPaths(ctx context.Context) ([]adjustedUpload, error) {
-	adjustedUploads := make([]adjustedUpload, 0, len(r.uploads))
-	for i := range r.uploads {
-		adjustedPath, ok, err := r.positionAdjuster.AdjustPath(ctx, r.uploads[i].Commit, r.path, false)
+	adjustedUploads := make([]adjustedUpload, 0, len(r.inMemoryUploads))
+	for i := range r.inMemoryUploads {
+		adjustedPath, ok, err := r.positionAdjuster.AdjustPath(ctx, r.inMemoryUploads[i].Commit, r.path, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "positionAdjuster.AdjustPath")
 		}
@@ -104,9 +104,9 @@ func (r *queryResolver) adjustUploadPaths(ctx context.Context) ([]adjustedUpload
 		}
 
 		adjustedUploads = append(adjustedUploads, adjustedUpload{
-			Upload:               r.uploads[i],
+			Upload:               r.inMemoryUploads[i],
 			AdjustedPath:         adjustedPath,
-			AdjustedPathInBundle: strings.TrimPrefix(adjustedPath, r.uploads[i].Root),
+			AdjustedPathInBundle: strings.TrimPrefix(adjustedPath, r.inMemoryUploads[i].Root),
 		})
 	}
 

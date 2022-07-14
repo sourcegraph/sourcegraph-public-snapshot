@@ -1,6 +1,8 @@
 package resolvers
 
-import "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+import (
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+)
 
 // localCursor is an upload offset and a location offset within that upload.
 type localCursor struct {
@@ -23,3 +25,19 @@ type cursorAdjustedUpload struct {
 	AdjustedPosition     lsifstore.Position `json:"adjustedPosition"`
 	AdjustedPathInBundle string             `json:"adjustedPathInBundle"`
 }
+
+// adjustedUpload pairs an upload visible from the current target commit with the
+// current target path and position adjusted so that it matches the data within the
+// underlying index.
+// type adjustedUpload struct {
+// 	Upload               store.Dump
+// 	AdjustedPath         string -> input path that is going t
+// 	AdjustedPosition     lsifstore.Position
+// 	AdjustedPathInBundle string
+// }
+/*
+user supplied commit and path of the files
+
+
+
+*/

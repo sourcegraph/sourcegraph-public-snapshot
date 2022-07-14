@@ -63,7 +63,7 @@ type queryResolver struct {
 	repositoryID        int
 	commit              string
 	path                string
-	uploads             []store.Dump
+	inMemoryUploads     []store.Dump
 	uploadCache         map[int]store.Dump
 	uploadCacheMutex    sync.RWMutex
 	operations          *operations
@@ -76,6 +76,7 @@ type queryResolver struct {
 	// based on the number of elements we can pass to an IN () clause in the codeintel-db, as well
 	// as the size required to encode them in a user-facing pagination cursor.
 	maximumIndexesPerMonikerSearch int
+	symbolsResolver                SymbolsResolver
 }
 
 // NewQueryResolver create a new query resolver with the given services. The methods of this
@@ -94,9 +95,10 @@ func NewQueryResolver(
 	operations *operations,
 	checker authz.SubRepoPermissionChecker,
 	maximumIndexesPerMonikerSearch int,
+	symbolsResolver SymbolsResolver,
 ) QueryResolver {
 	return newQueryResolver(db, dbStore, lsifStore, cachedCommitChecker, positionAdjuster,
-		repositoryID, commit, path, uploads, operations, checker, maximumIndexesPerMonikerSearch)
+		repositoryID, commit, path, uploads, operations, checker, maximumIndexesPerMonikerSearch, symbolsResolver)
 }
 
 func newQueryResolver(
@@ -112,6 +114,7 @@ func newQueryResolver(
 	operations *operations,
 	checker authz.SubRepoPermissionChecker,
 	maximumIndexesPerMonikerSearch int,
+	symbolsResolver SymbolsResolver,
 ) *queryResolver {
 	// Maintain a map from identifers to hydrated upload records from the database. We use
 	// this map as a quick lookup when constructing the resulting location set. Any additional
@@ -121,6 +124,8 @@ func newQueryResolver(
 	for i := range uploads {
 		uploadCache[uploads[i].ID] = uploads[i]
 	}
+
+	// symbolsResolverWithCache := symbolsResolver.SetUploadsCache(uploads)
 
 	return &queryResolver{
 		db:                             db,
@@ -132,9 +137,10 @@ func newQueryResolver(
 		repositoryID:                   repositoryID,
 		commit:                         commit,
 		path:                           path,
-		uploads:                        uploads,
+		inMemoryUploads:                uploads,
 		uploadCache:                    uploadCache,
 		checker:                        checker,
 		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
+		symbolsResolver:                symbolsResolver,
 	}
 }

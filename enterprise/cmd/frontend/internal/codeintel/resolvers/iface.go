@@ -11,8 +11,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	symbolsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	gs "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -84,6 +87,25 @@ type LSIFStore interface {
 type IndexEnqueuer interface {
 	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) ([]dbstore.Index, error)
 	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, []config.IndexJobHint, error)
+}
+
+type GitserverResolverClient interface {
+	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
+}
+
+type SymbolsResolver interface {
+	SetUploadsDataLoader(uploads []dbstore.Dump)
+	SetLocalGitTreeTranslator(client internalGitserver.Client, repo *types.Repo, commit, path string) error
+	SetLocalCommitCache(gitserverClient symbolsShared.GitserverClient)
+	SetMaximumIndexesPerMonikerSearch(maxNumber int)
+
+	References(ctx context.Context, args symbolsShared.RequestArgs, uploads []symbolsShared.Dump) (_ []symbolsShared.UploadLocation, _ string, err error)
+}
+
+type GitTreeTranslator interface {
+	GetTargetCommitPath(ctx context.Context, commit, path string, reverse bool) (string, bool, error)
+	GetTargetCommitPosition(ctx context.Context, commit, path string, px lsifstore.Position, reverse bool) (string, lsifstore.Position, bool, error)
+	GetTargetCommitRange(ctx context.Context, commit, path string, rx lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error)
 }
 
 type (

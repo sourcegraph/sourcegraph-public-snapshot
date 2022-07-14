@@ -1,14 +1,29 @@
 package symbols
 
 import (
+	"context"
 	"fmt"
+	"time"
+
+	"github.com/sourcegraph/log"
+	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type operations struct {
+	// Not used yet.
 	symbol *observation.Operation
+
+	getReferences                        *observation.Operation
+	getImplementations                   *observation.Operation
+	getMonikersByPosition                *observation.Operation
+	getBulkMonikerLocations              *observation.Operation
+	getPackageInformation                *observation.Operation
+	getUploadsWithDefinitionsForMonikers *observation.Operation
+	getUploadIDsWithReferences           *observation.Operation
+	getDumpsByIDs                        *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +43,40 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
+		// Not used yet.
 		symbol: op("Symbol"),
+
+		getReferences:                        op("getReferences"),
+		getImplementations:                   op("getImplementations"),
+		getMonikersByPosition:                op("GetMonikersByPosition"),
+		getBulkMonikerLocations:              op("GetBulkMonikerLocations"),
+		getPackageInformation:                op("GetPackageInformation"),
+		getUploadsWithDefinitionsForMonikers: op("GetUploadsWithDefinitionsForMonikers"),
+		getUploadIDsWithReferences:           op("GetUploadIDsWithReferences"),
+		getDumpsByIDs:                        op("GetDumpsByIDs"),
 	}
+}
+
+func observeResolver(ctx context.Context, err *error, operation *observation.Operation, threshold time.Duration, observationArgs observation.Args) (context.Context, observation.TraceLogger, func()) {
+	start := time.Now()
+	ctx, trace, endObservation := operation.With(ctx, err, observationArgs)
+
+	return ctx, trace, func() {
+		duration := time.Since(start)
+		endObservation(1, observation.Args{})
+
+		if duration >= threshold {
+			// use trace logger which includes all relevant fields
+			lowSlowRequest(trace, duration, err)
+		}
+	}
+}
+
+func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
+	fields := []log.Field{zap.Duration("duration", duration)}
+	if err != nil && *err != nil {
+		fields = append(fields, log.Error(*err))
+	}
+
+	logger.Warn("Slow codeintel request", fields...)
 }

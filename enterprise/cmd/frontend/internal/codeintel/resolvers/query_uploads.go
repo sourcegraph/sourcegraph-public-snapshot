@@ -13,8 +13,8 @@ func (r *queryResolver) LSIFUploads(ctx context.Context) (uploads []dbstore.Uplo
 }
 
 func (r *queryResolver) closestDumpIDs() []int {
-	ids := make([]int, 0, len(r.uploads))
-	for _, dump := range r.uploads {
+	ids := make([]int, 0, len(r.inMemoryUploads))
+	for _, dump := range r.inMemoryUploads {
 		ids = append(ids, dump.ID)
 	}
 	return ids

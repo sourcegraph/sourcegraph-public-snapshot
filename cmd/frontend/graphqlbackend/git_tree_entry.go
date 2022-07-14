@@ -243,6 +243,8 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		return nil, err
 	}
 
+	// rng := EnterpriseResolvers.codeIntelResolver.SymbolsResolver().Range(ctx, &struct{ StartLine int64; EndLine int64 }{
+
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
 		Repo:      repo,
 		Commit:    api.CommitID(r.Commit().OID()),
@@ -362,18 +364,21 @@ func (r *symbolLocationResolver) Line() int32 {
 	}
 	return int32(r.location.Range.Row)
 }
+
 func (r *symbolLocationResolver) Character() int32 {
 	if r.location.Range == nil {
 		return 0
 	}
 	return int32(r.location.Range.Column)
 }
+
 func (r *symbolLocationResolver) Length() int32 {
 	if r.location.Range == nil {
 		return 0
 	}
 	return int32(r.location.Range.Length)
 }
+
 func (r *symbolLocationResolver) Range() (*lineRangeResolver, error) {
 	if r.location.Range == nil {
 		return nil, nil

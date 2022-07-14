@@ -24,8 +24,8 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
 			log.String("path", r.path),
-			log.Int("numUploads", len(r.uploads)),
-			log.String("uploads", uploadIDsToString(r.uploads)),
+			log.Int("numUploads", len(r.inMemoryUploads)),
+			log.String("uploads", uploadIDsToString(r.inMemoryUploads)),
 			log.Int("line", line),
 			log.Int("character", character),
 		},
@@ -165,7 +165,7 @@ func (r *queryResolver) adjustedUploadsFromCursor(ctx context.Context, line, cha
 	if *cursorAdjustedUploads != nil {
 		adjustedUploads := make([]adjustedUpload, 0, len(*cursorAdjustedUploads))
 		for _, u := range *cursorAdjustedUploads {
-			upload, ok := r.uploadFromCache(u.DumpID)
+			upload, ok := r.getUploadFromCache(u.DumpID)
 			if !ok {
 				return nil, ErrConcurrentModification
 			}
@@ -451,7 +451,7 @@ func (r *queryResolver) uploadsByIDs(ctx context.Context, ids []int) ([]store.Du
 	existingUploads := make([]store.Dump, 0, len(ids))
 
 	for _, id := range ids {
-		if upload, ok := r.uploadFromCache(id); ok {
+		if upload, ok := r.getUploadFromCache(id); ok {
 			existingUploads = append(existingUploads, upload)
 		} else {
 			missingIDs = append(missingIDs, id)

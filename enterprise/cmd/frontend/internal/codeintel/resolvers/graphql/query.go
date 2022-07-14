@@ -38,6 +38,7 @@ type QueryResolver struct {
 	gitserver        GitserverClient
 	locationResolver *CachedLocationResolver
 	errTracer        *observation.ErrCollector
+	symbolSvc        SymbolService
 }
 
 // NewQueryResolver creates a new QueryResolver with the given resolver that defines all code intel-specific
@@ -78,6 +79,8 @@ func (r *QueryResolver) Ranges(ctx context.Context, args *gql.LSIFRangesArgs) (_
 	if args.StartLine < 0 || args.EndLine < args.StartLine {
 		return nil, ErrIllegalBounds
 	}
+
+	// _ = r.resolver.
 
 	ranges, err := r.queryResolver.Ranges(ctx, int(args.StartLine), int(args.EndLine))
 	if err != nil {

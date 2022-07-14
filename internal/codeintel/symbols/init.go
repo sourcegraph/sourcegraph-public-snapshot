@@ -8,6 +8,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/internal/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -21,22 +22,19 @@ var (
 
 // GetService creates or returns an already-initialized symbols service. If the service is
 // new, it will use the given database handle.
-func GetService(db database.DB) *Service {
+func GetService(db, codeIntelDB database.DB, uploadSvc UploadService) *Service {
 	svcOnce.Do(func() {
-		storeObservationCtx := &observation.Context{
-			Logger:     log.Scoped("symbols.store", "codeintels symbols store"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
-		store := store.New(db, storeObservationCtx)
-
-		observationCtx := &observation.Context{
-			Logger:     log.Scoped("symbols.service", "codeintel symbols service"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
+		oc := func(name string) *observation.Context {
+			return &observation.Context{
+				Logger:     log.Scoped("symbols."+name, "codeintel symbols "+name),
+				Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+				Registerer: prometheus.DefaultRegisterer,
+			}
 		}
 
-		svc = newService(store, observationCtx)
+		store := store.New(db, oc("store"))
+		lsifstore := lsifstore.New(codeIntelDB, oc("lsifstore"))
+		svc = newService(store, lsifstore, uploadSvc, oc("service"))
 	})
 
 	return svc

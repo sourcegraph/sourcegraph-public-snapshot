@@ -20,8 +20,8 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 			log.Int("repositoryID", r.repositoryID),
 			log.String("commit", r.commit),
 			log.String("path", r.path),
-			log.Int("numUploads", len(r.uploads)),
-			log.String("uploads", uploadIDsToString(r.uploads)),
+			log.Int("numUploads", len(r.inMemoryUploads)),
+			log.String("uploads", uploadIDsToString(r.inMemoryUploads)),
 			log.Int("line", line),
 			log.Int("character", character),
 		},
@@ -61,7 +61,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 		}
 
 		// Adjust the highlighted range back to the appropriate range in the target commit
-		_, adjustedRange, _, err := r.adjustRange(ctx, r.uploads[i].RepositoryID, r.uploads[i].Commit, r.path, rn)
+		_, adjustedRange, _, err := r.adjustRange(ctx, r.inMemoryUploads[i].RepositoryID, r.inMemoryUploads[i].Commit, r.path, rn)
 		if err != nil {
 			return "", lsifstore.Range{}, false, err
 		}

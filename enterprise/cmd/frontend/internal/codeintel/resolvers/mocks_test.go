@@ -17,10 +17,12 @@ import (
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	gitserver1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
+	types "github.com/sourcegraph/sourcegraph/internal/types"
 	config "github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 	precise "github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
@@ -6644,6 +6646,460 @@ func (c EnqueuerGitserverClientResolveRevisionFuncCall) Results() []interface{} 
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// MockGitTreeTranslator is a mock implementation of the GitTreeTranslator
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockGitTreeTranslator struct {
+	// GetTargetCommitPathFunc is an instance of a mock function object
+	// controlling the behavior of the method GetTargetCommitPath.
+	GetTargetCommitPathFunc *GitTreeTranslatorGetTargetCommitPathFunc
+	// GetTargetCommitPositionFunc is an instance of a mock function object
+	// controlling the behavior of the method GetTargetCommitPosition.
+	GetTargetCommitPositionFunc *GitTreeTranslatorGetTargetCommitPositionFunc
+	// GetTargetCommitRangeFunc is an instance of a mock function object
+	// controlling the behavior of the method GetTargetCommitRange.
+	GetTargetCommitRangeFunc *GitTreeTranslatorGetTargetCommitRangeFunc
+}
+
+// NewMockGitTreeTranslator creates a new mock of the GitTreeTranslator
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockGitTreeTranslator() *MockGitTreeTranslator {
+	return &MockGitTreeTranslator{
+		GetTargetCommitPathFunc: &GitTreeTranslatorGetTargetCommitPathFunc{
+			defaultHook: func(context.Context, string, string, bool) (r0 string, r1 bool, r2 error) {
+				return
+			},
+		},
+		GetTargetCommitPositionFunc: &GitTreeTranslatorGetTargetCommitPositionFunc{
+			defaultHook: func(context.Context, string, string, lsifstore.Position, bool) (r0 string, r1 lsifstore.Position, r2 bool, r3 error) {
+				return
+			},
+		},
+		GetTargetCommitRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFunc{
+			defaultHook: func(context.Context, string, string, lsifstore.Range, bool) (r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitTreeTranslator creates a new mock of the
+// GitTreeTranslator interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockGitTreeTranslator() *MockGitTreeTranslator {
+	return &MockGitTreeTranslator{
+		GetTargetCommitPathFunc: &GitTreeTranslatorGetTargetCommitPathFunc{
+			defaultHook: func(context.Context, string, string, bool) (string, bool, error) {
+				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitPath")
+			},
+		},
+		GetTargetCommitPositionFunc: &GitTreeTranslatorGetTargetCommitPositionFunc{
+			defaultHook: func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
+				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitPosition")
+			},
+		},
+		GetTargetCommitRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFunc{
+			defaultHook: func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
+				panic("unexpected invocation of MockGitTreeTranslator.GetTargetCommitRange")
+			},
+		},
+	}
+}
+
+// NewMockGitTreeTranslatorFrom creates a new mock of the
+// MockGitTreeTranslator interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockGitTreeTranslatorFrom(i GitTreeTranslator) *MockGitTreeTranslator {
+	return &MockGitTreeTranslator{
+		GetTargetCommitPathFunc: &GitTreeTranslatorGetTargetCommitPathFunc{
+			defaultHook: i.GetTargetCommitPath,
+		},
+		GetTargetCommitPositionFunc: &GitTreeTranslatorGetTargetCommitPositionFunc{
+			defaultHook: i.GetTargetCommitPosition,
+		},
+		GetTargetCommitRangeFunc: &GitTreeTranslatorGetTargetCommitRangeFunc{
+			defaultHook: i.GetTargetCommitRange,
+		},
+	}
+}
+
+// GitTreeTranslatorGetTargetCommitPathFunc describes the behavior when the
+// GetTargetCommitPath method of the parent MockGitTreeTranslator instance
+// is invoked.
+type GitTreeTranslatorGetTargetCommitPathFunc struct {
+	defaultHook func(context.Context, string, string, bool) (string, bool, error)
+	hooks       []func(context.Context, string, string, bool) (string, bool, error)
+	history     []GitTreeTranslatorGetTargetCommitPathFuncCall
+	mutex       sync.Mutex
+}
+
+// GetTargetCommitPath delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitTreeTranslator) GetTargetCommitPath(v0 context.Context, v1 string, v2 string, v3 bool) (string, bool, error) {
+	r0, r1, r2 := m.GetTargetCommitPathFunc.nextHook()(v0, v1, v2, v3)
+	m.GetTargetCommitPathFunc.appendCall(GitTreeTranslatorGetTargetCommitPathFuncCall{v0, v1, v2, v3, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetTargetCommitPath
+// method of the parent MockGitTreeTranslator instance is invoked and the
+// hook queue is empty.
+func (f *GitTreeTranslatorGetTargetCommitPathFunc) SetDefaultHook(hook func(context.Context, string, string, bool) (string, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetTargetCommitPath method of the parent MockGitTreeTranslator instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitTreeTranslatorGetTargetCommitPathFunc) PushHook(hook func(context.Context, string, string, bool) (string, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitTreeTranslatorGetTargetCommitPathFunc) SetDefaultReturn(r0 string, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context, string, string, bool) (string, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitTreeTranslatorGetTargetCommitPathFunc) PushReturn(r0 string, r1 bool, r2 error) {
+	f.PushHook(func(context.Context, string, string, bool) (string, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *GitTreeTranslatorGetTargetCommitPathFunc) nextHook() func(context.Context, string, string, bool) (string, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitTreeTranslatorGetTargetCommitPathFunc) appendCall(r0 GitTreeTranslatorGetTargetCommitPathFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitTreeTranslatorGetTargetCommitPathFuncCall objects describing the
+// invocations of this function.
+func (f *GitTreeTranslatorGetTargetCommitPathFunc) History() []GitTreeTranslatorGetTargetCommitPathFuncCall {
+	f.mutex.Lock()
+	history := make([]GitTreeTranslatorGetTargetCommitPathFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitTreeTranslatorGetTargetCommitPathFuncCall is an object that describes
+// an invocation of method GetTargetCommitPath on an instance of
+// MockGitTreeTranslator.
+type GitTreeTranslatorGetTargetCommitPathFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitTreeTranslatorGetTargetCommitPathFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitTreeTranslatorGetTargetCommitPathFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// GitTreeTranslatorGetTargetCommitPositionFunc describes the behavior when
+// the GetTargetCommitPosition method of the parent MockGitTreeTranslator
+// instance is invoked.
+type GitTreeTranslatorGetTargetCommitPositionFunc struct {
+	defaultHook func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)
+	hooks       []func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)
+	history     []GitTreeTranslatorGetTargetCommitPositionFuncCall
+	mutex       sync.Mutex
+}
+
+// GetTargetCommitPosition delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockGitTreeTranslator) GetTargetCommitPosition(v0 context.Context, v1 string, v2 string, v3 lsifstore.Position, v4 bool) (string, lsifstore.Position, bool, error) {
+	r0, r1, r2, r3 := m.GetTargetCommitPositionFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.GetTargetCommitPositionFunc.appendCall(GitTreeTranslatorGetTargetCommitPositionFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
+	return r0, r1, r2, r3
+}
+
+// SetDefaultHook sets function that is called when the
+// GetTargetCommitPosition method of the parent MockGitTreeTranslator
+// instance is invoked and the hook queue is empty.
+func (f *GitTreeTranslatorGetTargetCommitPositionFunc) SetDefaultHook(hook func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetTargetCommitPosition method of the parent MockGitTreeTranslator
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *GitTreeTranslatorGetTargetCommitPositionFunc) PushHook(hook func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitTreeTranslatorGetTargetCommitPositionFunc) SetDefaultReturn(r0 string, r1 lsifstore.Position, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitTreeTranslatorGetTargetCommitPositionFunc) PushReturn(r0 string, r1 lsifstore.Position, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+func (f *GitTreeTranslatorGetTargetCommitPositionFunc) nextHook() func(context.Context, string, string, lsifstore.Position, bool) (string, lsifstore.Position, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitTreeTranslatorGetTargetCommitPositionFunc) appendCall(r0 GitTreeTranslatorGetTargetCommitPositionFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitTreeTranslatorGetTargetCommitPositionFuncCall objects describing the
+// invocations of this function.
+func (f *GitTreeTranslatorGetTargetCommitPositionFunc) History() []GitTreeTranslatorGetTargetCommitPositionFuncCall {
+	f.mutex.Lock()
+	history := make([]GitTreeTranslatorGetTargetCommitPositionFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitTreeTranslatorGetTargetCommitPositionFuncCall is an object that
+// describes an invocation of method GetTargetCommitPosition on an instance
+// of MockGitTreeTranslator.
+type GitTreeTranslatorGetTargetCommitPositionFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 lsifstore.Position
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 lsifstore.Position
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 bool
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitTreeTranslatorGetTargetCommitPositionFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitTreeTranslatorGetTargetCommitPositionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
+// GitTreeTranslatorGetTargetCommitRangeFunc describes the behavior when the
+// GetTargetCommitRange method of the parent MockGitTreeTranslator instance
+// is invoked.
+type GitTreeTranslatorGetTargetCommitRangeFunc struct {
+	defaultHook func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)
+	hooks       []func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)
+	history     []GitTreeTranslatorGetTargetCommitRangeFuncCall
+	mutex       sync.Mutex
+}
+
+// GetTargetCommitRange delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockGitTreeTranslator) GetTargetCommitRange(v0 context.Context, v1 string, v2 string, v3 lsifstore.Range, v4 bool) (string, lsifstore.Range, bool, error) {
+	r0, r1, r2, r3 := m.GetTargetCommitRangeFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.GetTargetCommitRangeFunc.appendCall(GitTreeTranslatorGetTargetCommitRangeFuncCall{v0, v1, v2, v3, v4, r0, r1, r2, r3})
+	return r0, r1, r2, r3
+}
+
+// SetDefaultHook sets function that is called when the GetTargetCommitRange
+// method of the parent MockGitTreeTranslator instance is invoked and the
+// hook queue is empty.
+func (f *GitTreeTranslatorGetTargetCommitRangeFunc) SetDefaultHook(hook func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetTargetCommitRange method of the parent MockGitTreeTranslator instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitTreeTranslatorGetTargetCommitRangeFunc) PushHook(hook func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitTreeTranslatorGetTargetCommitRangeFunc) SetDefaultReturn(r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
+	f.SetDefaultHook(func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitTreeTranslatorGetTargetCommitRangeFunc) PushReturn(r0 string, r1 lsifstore.Range, r2 bool, r3 error) {
+	f.PushHook(func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
+		return r0, r1, r2, r3
+	})
+}
+
+func (f *GitTreeTranslatorGetTargetCommitRangeFunc) nextHook() func(context.Context, string, string, lsifstore.Range, bool) (string, lsifstore.Range, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitTreeTranslatorGetTargetCommitRangeFunc) appendCall(r0 GitTreeTranslatorGetTargetCommitRangeFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// GitTreeTranslatorGetTargetCommitRangeFuncCall objects describing the
+// invocations of this function.
+func (f *GitTreeTranslatorGetTargetCommitRangeFunc) History() []GitTreeTranslatorGetTargetCommitRangeFuncCall {
+	f.mutex.Lock()
+	history := make([]GitTreeTranslatorGetTargetCommitRangeFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitTreeTranslatorGetTargetCommitRangeFuncCall is an object that describes
+// an invocation of method GetTargetCommitRange on an instance of
+// MockGitTreeTranslator.
+type GitTreeTranslatorGetTargetCommitRangeFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 lsifstore.Range
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 lsifstore.Range
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 bool
+	// Result3 is the value of the 4th result returned from this method
+	// invocation.
+	Result3 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitTreeTranslatorGetTargetCommitRangeFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitTreeTranslatorGetTargetCommitRangeFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2, c.Result3}
+}
+
 // MockGitserverClient is a mock implementation of the GitserverClient
 // interface (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
@@ -7588,6 +8044,164 @@ func (c GitserverClientResolveRevisionFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c GitserverClientResolveRevisionFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockGitserverResolverClient is a mock implementation of the
+// GitserverResolverClient interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockGitserverResolverClient struct {
+	// CommitsExistFunc is an instance of a mock function object controlling
+	// the behavior of the method CommitsExist.
+	CommitsExistFunc *GitserverResolverClientCommitsExistFunc
+}
+
+// NewMockGitserverResolverClient creates a new mock of the
+// GitserverResolverClient interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockGitserverResolverClient() *MockGitserverResolverClient {
+	return &MockGitserverResolverClient{
+		CommitsExistFunc: &GitserverResolverClientCommitsExistFunc{
+			defaultHook: func(context.Context, []gitserver1.RepositoryCommit) (r0 []bool, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockGitserverResolverClient creates a new mock of the
+// GitserverResolverClient interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockGitserverResolverClient() *MockGitserverResolverClient {
+	return &MockGitserverResolverClient{
+		CommitsExistFunc: &GitserverResolverClientCommitsExistFunc{
+			defaultHook: func(context.Context, []gitserver1.RepositoryCommit) ([]bool, error) {
+				panic("unexpected invocation of MockGitserverResolverClient.CommitsExist")
+			},
+		},
+	}
+}
+
+// NewMockGitserverResolverClientFrom creates a new mock of the
+// MockGitserverResolverClient interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockGitserverResolverClientFrom(i GitserverResolverClient) *MockGitserverResolverClient {
+	return &MockGitserverResolverClient{
+		CommitsExistFunc: &GitserverResolverClientCommitsExistFunc{
+			defaultHook: i.CommitsExist,
+		},
+	}
+}
+
+// GitserverResolverClientCommitsExistFunc describes the behavior when the
+// CommitsExist method of the parent MockGitserverResolverClient instance is
+// invoked.
+type GitserverResolverClientCommitsExistFunc struct {
+	defaultHook func(context.Context, []gitserver1.RepositoryCommit) ([]bool, error)
+	hooks       []func(context.Context, []gitserver1.RepositoryCommit) ([]bool, error)
+	history     []GitserverResolverClientCommitsExistFuncCall
+	mutex       sync.Mutex
+}
+
+// CommitsExist delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockGitserverResolverClient) CommitsExist(v0 context.Context, v1 []gitserver1.RepositoryCommit) ([]bool, error) {
+	r0, r1 := m.CommitsExistFunc.nextHook()(v0, v1)
+	m.CommitsExistFunc.appendCall(GitserverResolverClientCommitsExistFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CommitsExist method
+// of the parent MockGitserverResolverClient instance is invoked and the
+// hook queue is empty.
+func (f *GitserverResolverClientCommitsExistFunc) SetDefaultHook(hook func(context.Context, []gitserver1.RepositoryCommit) ([]bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CommitsExist method of the parent MockGitserverResolverClient instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *GitserverResolverClientCommitsExistFunc) PushHook(hook func(context.Context, []gitserver1.RepositoryCommit) ([]bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *GitserverResolverClientCommitsExistFunc) SetDefaultReturn(r0 []bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, []gitserver1.RepositoryCommit) ([]bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *GitserverResolverClientCommitsExistFunc) PushReturn(r0 []bool, r1 error) {
+	f.PushHook(func(context.Context, []gitserver1.RepositoryCommit) ([]bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *GitserverResolverClientCommitsExistFunc) nextHook() func(context.Context, []gitserver1.RepositoryCommit) ([]bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *GitserverResolverClientCommitsExistFunc) appendCall(r0 GitserverResolverClientCommitsExistFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of GitserverResolverClientCommitsExistFuncCall
+// objects describing the invocations of this function.
+func (f *GitserverResolverClientCommitsExistFunc) History() []GitserverResolverClientCommitsExistFuncCall {
+	f.mutex.Lock()
+	history := make([]GitserverResolverClientCommitsExistFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// GitserverResolverClientCommitsExistFuncCall is an object that describes
+// an invocation of method CommitsExist on an instance of
+// MockGitserverResolverClient.
+type GitserverResolverClientCommitsExistFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []gitserver1.RepositoryCommit
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c GitserverResolverClientCommitsExistFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c GitserverResolverClientCommitsExistFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -10136,4 +10750,652 @@ func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Args() []interface{} {
 // invocation.
 func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// MockSymbolsResolver is a mock implementation of the SymbolsResolver
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
+// used for unit testing.
+type MockSymbolsResolver struct {
+	// ReferencesFunc is an instance of a mock function object controlling
+	// the behavior of the method References.
+	ReferencesFunc *SymbolsResolverReferencesFunc
+	// SetLocalCommitCacheFunc is an instance of a mock function object
+	// controlling the behavior of the method SetLocalCommitCache.
+	SetLocalCommitCacheFunc *SymbolsResolverSetLocalCommitCacheFunc
+	// SetLocalGitTreeTranslatorFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// SetLocalGitTreeTranslator.
+	SetLocalGitTreeTranslatorFunc *SymbolsResolverSetLocalGitTreeTranslatorFunc
+	// SetMaximumIndexesPerMonikerSearchFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// SetMaximumIndexesPerMonikerSearch.
+	SetMaximumIndexesPerMonikerSearchFunc *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc
+	// SetUploadsDataLoaderFunc is an instance of a mock function object
+	// controlling the behavior of the method SetUploadsDataLoader.
+	SetUploadsDataLoaderFunc *SymbolsResolverSetUploadsDataLoaderFunc
+}
+
+// NewMockSymbolsResolver creates a new mock of the SymbolsResolver
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockSymbolsResolver() *MockSymbolsResolver {
+	return &MockSymbolsResolver{
+		ReferencesFunc: &SymbolsResolverReferencesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, []shared.Dump) (r0 []shared.UploadLocation, r1 string, r2 error) {
+				return
+			},
+		},
+		SetLocalCommitCacheFunc: &SymbolsResolverSetLocalCommitCacheFunc{
+			defaultHook: func(shared.GitserverClient) {
+				return
+			},
+		},
+		SetLocalGitTreeTranslatorFunc: &SymbolsResolverSetLocalGitTreeTranslatorFunc{
+			defaultHook: func(gitserver.Client, *types.Repo, string, string) (r0 error) {
+				return
+			},
+		},
+		SetMaximumIndexesPerMonikerSearchFunc: &SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc{
+			defaultHook: func(int) {
+				return
+			},
+		},
+		SetUploadsDataLoaderFunc: &SymbolsResolverSetUploadsDataLoaderFunc{
+			defaultHook: func([]dbstore.Dump) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockSymbolsResolver creates a new mock of the SymbolsResolver
+// interface. All methods panic on invocation, unless overwritten.
+func NewStrictMockSymbolsResolver() *MockSymbolsResolver {
+	return &MockSymbolsResolver{
+		ReferencesFunc: &SymbolsResolverReferencesFunc{
+			defaultHook: func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error) {
+				panic("unexpected invocation of MockSymbolsResolver.References")
+			},
+		},
+		SetLocalCommitCacheFunc: &SymbolsResolverSetLocalCommitCacheFunc{
+			defaultHook: func(shared.GitserverClient) {
+				panic("unexpected invocation of MockSymbolsResolver.SetLocalCommitCache")
+			},
+		},
+		SetLocalGitTreeTranslatorFunc: &SymbolsResolverSetLocalGitTreeTranslatorFunc{
+			defaultHook: func(gitserver.Client, *types.Repo, string, string) error {
+				panic("unexpected invocation of MockSymbolsResolver.SetLocalGitTreeTranslator")
+			},
+		},
+		SetMaximumIndexesPerMonikerSearchFunc: &SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc{
+			defaultHook: func(int) {
+				panic("unexpected invocation of MockSymbolsResolver.SetMaximumIndexesPerMonikerSearch")
+			},
+		},
+		SetUploadsDataLoaderFunc: &SymbolsResolverSetUploadsDataLoaderFunc{
+			defaultHook: func([]dbstore.Dump) {
+				panic("unexpected invocation of MockSymbolsResolver.SetUploadsDataLoader")
+			},
+		},
+	}
+}
+
+// NewMockSymbolsResolverFrom creates a new mock of the MockSymbolsResolver
+// interface. All methods delegate to the given implementation, unless
+// overwritten.
+func NewMockSymbolsResolverFrom(i SymbolsResolver) *MockSymbolsResolver {
+	return &MockSymbolsResolver{
+		ReferencesFunc: &SymbolsResolverReferencesFunc{
+			defaultHook: i.References,
+		},
+		SetLocalCommitCacheFunc: &SymbolsResolverSetLocalCommitCacheFunc{
+			defaultHook: i.SetLocalCommitCache,
+		},
+		SetLocalGitTreeTranslatorFunc: &SymbolsResolverSetLocalGitTreeTranslatorFunc{
+			defaultHook: i.SetLocalGitTreeTranslator,
+		},
+		SetMaximumIndexesPerMonikerSearchFunc: &SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc{
+			defaultHook: i.SetMaximumIndexesPerMonikerSearch,
+		},
+		SetUploadsDataLoaderFunc: &SymbolsResolverSetUploadsDataLoaderFunc{
+			defaultHook: i.SetUploadsDataLoader,
+		},
+	}
+}
+
+// SymbolsResolverReferencesFunc describes the behavior when the References
+// method of the parent MockSymbolsResolver instance is invoked.
+type SymbolsResolverReferencesFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error)
+	hooks       []func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error)
+	history     []SymbolsResolverReferencesFuncCall
+	mutex       sync.Mutex
+}
+
+// References delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockSymbolsResolver) References(v0 context.Context, v1 shared.RequestArgs, v2 []shared.Dump) ([]shared.UploadLocation, string, error) {
+	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2)
+	m.ReferencesFunc.appendCall(SymbolsResolverReferencesFuncCall{v0, v1, v2, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the References method of
+// the parent MockSymbolsResolver instance is invoked and the hook queue is
+// empty.
+func (f *SymbolsResolverReferencesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// References method of the parent MockSymbolsResolver instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *SymbolsResolverReferencesFunc) PushHook(hook func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverReferencesFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverReferencesFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *SymbolsResolverReferencesFunc) nextHook() func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverReferencesFunc) appendCall(r0 SymbolsResolverReferencesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SymbolsResolverReferencesFuncCall objects
+// describing the invocations of this function.
+func (f *SymbolsResolverReferencesFunc) History() []SymbolsResolverReferencesFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverReferencesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverReferencesFuncCall is an object that describes an
+// invocation of method References on an instance of MockSymbolsResolver.
+type SymbolsResolverReferencesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []shared.Dump
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverReferencesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverReferencesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// SymbolsResolverSetLocalCommitCacheFunc describes the behavior when the
+// SetLocalCommitCache method of the parent MockSymbolsResolver instance is
+// invoked.
+type SymbolsResolverSetLocalCommitCacheFunc struct {
+	defaultHook func(shared.GitserverClient)
+	hooks       []func(shared.GitserverClient)
+	history     []SymbolsResolverSetLocalCommitCacheFuncCall
+	mutex       sync.Mutex
+}
+
+// SetLocalCommitCache delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSymbolsResolver) SetLocalCommitCache(v0 shared.GitserverClient) {
+	m.SetLocalCommitCacheFunc.nextHook()(v0)
+	m.SetLocalCommitCacheFunc.appendCall(SymbolsResolverSetLocalCommitCacheFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetLocalCommitCache
+// method of the parent MockSymbolsResolver instance is invoked and the hook
+// queue is empty.
+func (f *SymbolsResolverSetLocalCommitCacheFunc) SetDefaultHook(hook func(shared.GitserverClient)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetLocalCommitCache method of the parent MockSymbolsResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SymbolsResolverSetLocalCommitCacheFunc) PushHook(hook func(shared.GitserverClient)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverSetLocalCommitCacheFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(shared.GitserverClient) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverSetLocalCommitCacheFunc) PushReturn() {
+	f.PushHook(func(shared.GitserverClient) {
+		return
+	})
+}
+
+func (f *SymbolsResolverSetLocalCommitCacheFunc) nextHook() func(shared.GitserverClient) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverSetLocalCommitCacheFunc) appendCall(r0 SymbolsResolverSetLocalCommitCacheFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SymbolsResolverSetLocalCommitCacheFuncCall
+// objects describing the invocations of this function.
+func (f *SymbolsResolverSetLocalCommitCacheFunc) History() []SymbolsResolverSetLocalCommitCacheFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverSetLocalCommitCacheFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverSetLocalCommitCacheFuncCall is an object that describes an
+// invocation of method SetLocalCommitCache on an instance of
+// MockSymbolsResolver.
+type SymbolsResolverSetLocalCommitCacheFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 shared.GitserverClient
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverSetLocalCommitCacheFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverSetLocalCommitCacheFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// SymbolsResolverSetLocalGitTreeTranslatorFunc describes the behavior when
+// the SetLocalGitTreeTranslator method of the parent MockSymbolsResolver
+// instance is invoked.
+type SymbolsResolverSetLocalGitTreeTranslatorFunc struct {
+	defaultHook func(gitserver.Client, *types.Repo, string, string) error
+	hooks       []func(gitserver.Client, *types.Repo, string, string) error
+	history     []SymbolsResolverSetLocalGitTreeTranslatorFuncCall
+	mutex       sync.Mutex
+}
+
+// SetLocalGitTreeTranslator delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockSymbolsResolver) SetLocalGitTreeTranslator(v0 gitserver.Client, v1 *types.Repo, v2 string, v3 string) error {
+	r0 := m.SetLocalGitTreeTranslatorFunc.nextHook()(v0, v1, v2, v3)
+	m.SetLocalGitTreeTranslatorFunc.appendCall(SymbolsResolverSetLocalGitTreeTranslatorFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// SetLocalGitTreeTranslator method of the parent MockSymbolsResolver
+// instance is invoked and the hook queue is empty.
+func (f *SymbolsResolverSetLocalGitTreeTranslatorFunc) SetDefaultHook(hook func(gitserver.Client, *types.Repo, string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetLocalGitTreeTranslator method of the parent MockSymbolsResolver
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *SymbolsResolverSetLocalGitTreeTranslatorFunc) PushHook(hook func(gitserver.Client, *types.Repo, string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverSetLocalGitTreeTranslatorFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(gitserver.Client, *types.Repo, string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverSetLocalGitTreeTranslatorFunc) PushReturn(r0 error) {
+	f.PushHook(func(gitserver.Client, *types.Repo, string, string) error {
+		return r0
+	})
+}
+
+func (f *SymbolsResolverSetLocalGitTreeTranslatorFunc) nextHook() func(gitserver.Client, *types.Repo, string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverSetLocalGitTreeTranslatorFunc) appendCall(r0 SymbolsResolverSetLocalGitTreeTranslatorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SymbolsResolverSetLocalGitTreeTranslatorFuncCall objects describing the
+// invocations of this function.
+func (f *SymbolsResolverSetLocalGitTreeTranslatorFunc) History() []SymbolsResolverSetLocalGitTreeTranslatorFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverSetLocalGitTreeTranslatorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverSetLocalGitTreeTranslatorFuncCall is an object that
+// describes an invocation of method SetLocalGitTreeTranslator on an
+// instance of MockSymbolsResolver.
+type SymbolsResolverSetLocalGitTreeTranslatorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 gitserver.Client
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Repo
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverSetLocalGitTreeTranslatorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverSetLocalGitTreeTranslatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc describes the
+// behavior when the SetMaximumIndexesPerMonikerSearch method of the parent
+// MockSymbolsResolver instance is invoked.
+type SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc struct {
+	defaultHook func(int)
+	hooks       []func(int)
+	history     []SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall
+	mutex       sync.Mutex
+}
+
+// SetMaximumIndexesPerMonikerSearch delegates to the next hook function in
+// the queue and stores the parameter and result values of this invocation.
+func (m *MockSymbolsResolver) SetMaximumIndexesPerMonikerSearch(v0 int) {
+	m.SetMaximumIndexesPerMonikerSearchFunc.nextHook()(v0)
+	m.SetMaximumIndexesPerMonikerSearchFunc.appendCall(SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the
+// SetMaximumIndexesPerMonikerSearch method of the parent
+// MockSymbolsResolver instance is invoked and the hook queue is empty.
+func (f *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc) SetDefaultHook(hook func(int)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetMaximumIndexesPerMonikerSearch method of the parent
+// MockSymbolsResolver instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc) PushHook(hook func(int)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(int) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc) PushReturn() {
+	f.PushHook(func(int) {
+		return
+	})
+}
+
+func (f *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc) nextHook() func(int) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc) appendCall(r0 SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall objects
+// describing the invocations of this function.
+func (f *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc) History() []SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall is an object
+// that describes an invocation of method SetMaximumIndexesPerMonikerSearch
+// on an instance of MockSymbolsResolver.
+type SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 int
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// SymbolsResolverSetUploadsDataLoaderFunc describes the behavior when the
+// SetUploadsDataLoader method of the parent MockSymbolsResolver instance is
+// invoked.
+type SymbolsResolverSetUploadsDataLoaderFunc struct {
+	defaultHook func([]dbstore.Dump)
+	hooks       []func([]dbstore.Dump)
+	history     []SymbolsResolverSetUploadsDataLoaderFuncCall
+	mutex       sync.Mutex
+}
+
+// SetUploadsDataLoader delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSymbolsResolver) SetUploadsDataLoader(v0 []dbstore.Dump) {
+	m.SetUploadsDataLoaderFunc.nextHook()(v0)
+	m.SetUploadsDataLoaderFunc.appendCall(SymbolsResolverSetUploadsDataLoaderFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetUploadsDataLoader
+// method of the parent MockSymbolsResolver instance is invoked and the hook
+// queue is empty.
+func (f *SymbolsResolverSetUploadsDataLoaderFunc) SetDefaultHook(hook func([]dbstore.Dump)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetUploadsDataLoader method of the parent MockSymbolsResolver instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *SymbolsResolverSetUploadsDataLoaderFunc) PushHook(hook func([]dbstore.Dump)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverSetUploadsDataLoaderFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func([]dbstore.Dump) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverSetUploadsDataLoaderFunc) PushReturn() {
+	f.PushHook(func([]dbstore.Dump) {
+		return
+	})
+}
+
+func (f *SymbolsResolverSetUploadsDataLoaderFunc) nextHook() func([]dbstore.Dump) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverSetUploadsDataLoaderFunc) appendCall(r0 SymbolsResolverSetUploadsDataLoaderFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SymbolsResolverSetUploadsDataLoaderFuncCall
+// objects describing the invocations of this function.
+func (f *SymbolsResolverSetUploadsDataLoaderFunc) History() []SymbolsResolverSetUploadsDataLoaderFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverSetUploadsDataLoaderFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverSetUploadsDataLoaderFuncCall is an object that describes
+// an invocation of method SetUploadsDataLoader on an instance of
+// MockSymbolsResolver.
+type SymbolsResolverSetUploadsDataLoaderFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 []dbstore.Dump
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverSetUploadsDataLoaderFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverSetUploadsDataLoaderFuncCall) Results() []interface{} {
+	return []interface{}{}
 }

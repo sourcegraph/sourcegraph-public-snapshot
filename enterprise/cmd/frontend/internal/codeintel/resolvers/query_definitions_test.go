@@ -51,6 +51,7 @@ func TestDefinitions(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		nil,
 	)
 	adjustedLocations, err := resolver.Definitions(context.Background(), 10, 20)
 	if err != nil {
@@ -119,6 +120,7 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 		newOperations(&observation.TestContext),
 		checker,
 		50,
+		nil,
 	)
 
 	ctx := context.Background()
@@ -203,6 +205,7 @@ func TestDefinitionsRemote(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
+		nil,
 	)
 	adjustedLocations, err := resolver.Definitions(context.Background(), 10, 20)
 	if err != nil {
@@ -331,6 +334,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 		newOperations(&observation.TestContext),
 		checker,
 		50,
+		nil,
 	)
 
 	ctx := context.Background()
