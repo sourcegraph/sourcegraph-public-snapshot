@@ -300,18 +300,6 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [context]
     )
 
-    const onSignUpClick = useCallback(
-        (event?: React.FormEvent): void => {
-            event?.preventDefault()
-            platformContext.telemetryService.log(
-                'VSCECreateAccountBannerClick',
-                { campaign: 'Sign up link' },
-                { campaign: 'Sign up link' }
-            )
-        },
-        [platformContext.telemetryService]
-    )
-
     const matchHandlers = useMatchHandlers({
         platformContext,
         extensionCoreAPI,
