@@ -2,7 +2,7 @@ import React from 'react'
 
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
-import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
+import { ActionItemsBarProps } from '../extensions/components/ActionItemsBar'
 
 import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
@@ -32,6 +32,10 @@ const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCo
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
 const RepositoryBranchesTab = lazyComponent(() => import('./tree/BranchesTab'), 'RepositoryBranchesTab')
 const RepositoryTagTab = lazyComponent(() => import('./tree/TagTab'), 'RepositoryTagTab')
+const ActionItemsBar = lazyComponent<ActionItemsBarProps, 'ActionItemsBar'>(
+    () => import('../extensions/components/ActionItemsBar'),
+    'ActionItemsBar'
+)
 
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {

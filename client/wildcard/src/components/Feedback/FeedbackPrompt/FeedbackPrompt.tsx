@@ -180,7 +180,7 @@ interface FeedbackPromptTriggerProps {
     onClick?: React.MouseEventHandler<HTMLElement>
 }
 
-interface FeedbackPromptProps extends FeedbackPromptContentProps {
+export interface FeedbackPromptProps extends FeedbackPromptContentProps {
     /**
      * Determines if the prompt is opened by default
      *

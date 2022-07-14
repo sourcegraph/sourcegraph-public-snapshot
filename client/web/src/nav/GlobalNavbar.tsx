@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react'
+import React, { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -12,6 +12,7 @@ import { startWith } from 'rxjs/operators'
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
+import { CommandListPopoverButtonProps } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
@@ -26,16 +27,18 @@ import { omitFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { buildGetStartedURL } from '@sourcegraph/shared/src/util/url'
 import {
     useObservable,
     Button,
     Link,
-    FeedbackPrompt,
     ButtonLink,
     PopoverTrigger,
     useWindowSize,
+    LoadingSpinner,
 } from '@sourcegraph/wildcard'
+import { FeedbackPromptProps } from '@sourcegraph/wildcard/src/components/Feedback'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -43,26 +46,35 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
-import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
 import { LayoutRouteProps } from '../routes'
 import { EnterprisePageRoutes, PageRoutes } from '../routes.constants'
-import { SearchNavbarItem } from '../search/input/SearchNavbarItem'
 import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
-import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { ExtensionAlertAnimationProps } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
+
+const SearchNavbarItem = lazyComponent(() => import('../search/input/SearchNavbarItem'), 'SearchNavbarItem')
+const StatusMessagesNavItem = lazyComponent(() => import('./StatusMessagesNavItem'), 'StatusMessagesNavItem')
+const UserNavItem = lazyComponent(() => import('./UserNavItem'), 'UserNavItem')
+const WebCommandListPopoverButton = lazyComponent<CommandListPopoverButtonProps, 'WebCommandListPopoverButton'>(
+    () => import('../components/shared'),
+    'WebCommandListPopoverButton'
+)
+const FeedbackPrompt = lazyComponent<FeedbackPromptProps, 'FeedbackPrompt'>(
+    () => import('@sourcegraph/wildcard'),
+    'FeedbackPrompt'
+)
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -240,15 +252,17 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
     const searchNavBar = (
-        <SearchNavbarItem
-            {...props}
-            location={location}
-            history={history}
-            isLightTheme={isLightTheme}
-            isSourcegraphDotCom={isSourcegraphDotCom}
-            searchContextsEnabled={searchContextsEnabled}
-            isRepositoryRelatedPage={isRepositoryRelatedPage}
-        />
+        <Suspense fallback={<LoadingSpinner />}>
+            <SearchNavbarItem
+                {...props}
+                location={location}
+                history={history}
+                isLightTheme={isLightTheme}
+                isSourcegraphDotCom={isSourcegraphDotCom}
+                searchContextsEnabled={searchContextsEnabled}
+                isRepositoryRelatedPage={isRepositoryRelatedPage}
+            />
+        </Suspense>
     )
 
     const searchNavBarItems = useMemo(() => {
@@ -348,42 +362,48 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                     {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                <PopoverTrigger
-                                    as={Button}
-                                    aria-label="Feedback"
-                                    variant="secondary"
-                                    outline={true}
-                                    size="sm"
-                                    className={styles.feedbackTrigger}
-                                >
-                                    <span>Feedback</span>
-                                </PopoverTrigger>
-                            </FeedbackPrompt>
+                            <Suspense fallback={<LoadingSpinner />}>
+                                <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
+                                    <PopoverTrigger
+                                        as={Button}
+                                        aria-label="Feedback"
+                                        variant="secondary"
+                                        outline={true}
+                                        size="sm"
+                                        className={styles.feedbackTrigger}
+                                    >
+                                        <span>Feedback</span>
+                                    </PopoverTrigger>
+                                </FeedbackPrompt>
+                            </Suspense>
                         </NavAction>
                     )}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <WebCommandListPopoverButton
-                                {...props}
-                                location={location}
-                                menu={ContributableMenu.CommandPalette}
-                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                            />
+                            <Suspense fallback={<LoadingSpinner />}>
+                                <WebCommandListPopoverButton
+                                    {...props}
+                                    location={location}
+                                    menu={ContributableMenu.CommandPalette}
+                                    keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                                />
+                            </Suspense>
                         </NavAction>
                     )}
                     {props.authenticatedUser &&
                         (props.authenticatedUser.siteAdmin ||
                             userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                             <NavAction>
-                                <StatusMessagesNavItem
-                                    user={{
-                                        id: props.authenticatedUser.id,
-                                        username: props.authenticatedUser.username,
-                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                    }}
-                                    history={history}
-                                />
+                                <Suspense fallback={<LoadingSpinner />}>
+                                    <StatusMessagesNavItem
+                                        user={{
+                                            id: props.authenticatedUser.id,
+                                            username: props.authenticatedUser.username,
+                                            isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
+                                        }}
+                                        history={history}
+                                    />
+                                </Suspense>
                             </NavAction>
                         )}
                     {!props.authenticatedUser ? (
@@ -408,19 +428,21 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         </>
                     ) : (
                         <NavAction>
-                            <UserNavItem
-                                {...props}
-                                isLightTheme={isLightTheme}
-                                authenticatedUser={props.authenticatedUser}
-                                showDotComMarketing={showDotComMarketing}
-                                showRepositorySection={showRepositorySection}
-                                codeHostIntegrationMessaging={
-                                    (!isErrorLike(props.settingsCascade.final) &&
-                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-                                    'browser-extension'
-                                }
-                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
-                            />
+                            <Suspense fallback={<LoadingSpinner />}>
+                                <UserNavItem
+                                    {...props}
+                                    isLightTheme={isLightTheme}
+                                    authenticatedUser={props.authenticatedUser}
+                                    showDotComMarketing={showDotComMarketing}
+                                    showRepositorySection={showRepositorySection}
+                                    codeHostIntegrationMessaging={
+                                        (!isErrorLike(props.settingsCascade.final) &&
+                                            props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                                        'browser-extension'
+                                    }
+                                    keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
+                                />
+                            </Suspense>
                         </NavAction>
                     )}
                 </NavActions>
