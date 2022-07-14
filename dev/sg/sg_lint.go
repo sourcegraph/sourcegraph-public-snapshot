@@ -14,7 +14,7 @@ import (
 
 var generateAnnotations = &cli.BoolFlag{
 	Name:  "annotations",
-	Usage: "Write helpful output to annotations directory",
+	Usage: "Write helpful output to ./annotations directory",
 }
 
 var lintCommand = &cli.Command{
