@@ -818,8 +818,8 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
     {
         id: '_test:srccliensure',
         description: 'test srccli version',
-        run: () => {
-            ensureSrcCliUpToDate()
+        run: async () => {
+            await ensureSrcCliUpToDate()
         },
     },
 ]
