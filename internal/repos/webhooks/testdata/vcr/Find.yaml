@@ -1,0 +1,57 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
+    method: GET
+  response:
+    body: '[{"type":"Repository","id":10,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","token":"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","url":"https://firstwebhook.com/enqueue-repo-update"},"updated_at":"2022-07-14T06:34:10Z","created_at":"2022-07-14T06:34:10Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/10","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/10/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/10/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/10/deliveries","last_response":{"code":500,"status":"hookshot_error","message":"no
+      such host"}}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Thu, 14 Jul 2022 06:39:59 GMT
+      Etag:
+      - W/"a1f2d06ed7067dbc90c339158356dbfc890e236f0fc37a7b7ca063d88c947de1"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Enterprise-Version:
+      - 3.3.0
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - a8de4176-6232-4b0f-9c12-35c1e863ba70
+      X-Runtime-Rack:
+      - "0.072940"
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
