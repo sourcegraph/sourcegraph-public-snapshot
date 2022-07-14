@@ -27,5 +27,11 @@ export const BatchChangeHeader: React.FC<BatchChangeHeaderProps> = ({ className,
             description || 'Run custom code over hundreds of repositories and manage the resulting changesets.'
         }
         annotation={<FeedbackBadge status="beta" feedback={{ mailto: 'support@sourcegraph.com' }} />}
-    />
+    >
+        <PageHeader.Heading as="h2" styleAs="h1">
+            <PageHeader.Breadcrumb icon={BatchChangesIcon} />
+            {namespace && <PageHeader.Breadcrumb to={namespace.to}>{namespace.text}</PageHeader.Breadcrumb>}
+            <PageHeader.Breadcrumb to={title.to}>{title.text}</PageHeader.Breadcrumb>
+        </PageHeader.Heading>
+    </PageHeader>
 )
