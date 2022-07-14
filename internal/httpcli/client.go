@@ -29,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
+	"github.com/sourcegraph/sourcegraph/internal/userip"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -156,6 +157,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		),
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
+		UserIPTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -629,6 +631,18 @@ func ActorTransportOpt(cli *http.Client) error {
 	}
 
 	cli.Transport = &actor.HTTPTransport{RoundTripper: cli.Transport}
+
+	return nil
+}
+
+// UserIPTransportOp wraps an existing http.Transport of an http.Client to pull the user IP
+// from the context and add it to each request's HTTP headers.
+func UserIPTransportOpt(cli *http.Client) error {
+	if cli.Transport == nil {
+		cli.Transport = http.DefaultTransport
+	}
+
+	cli.Transport = &userip.HTTPTransport{RoundTripper: cli.Transport}
 
 	return nil
 }
