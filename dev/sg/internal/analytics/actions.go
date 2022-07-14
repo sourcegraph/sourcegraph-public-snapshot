@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/honeycombio/libhoney-go"
+
 	"github.com/sourcegraph/sourcegraph/dev/okay"
 )
 
@@ -33,6 +35,8 @@ func Submit(okayToken string, gitHubLogin string) error {
 		}
 
 		// push to okayhq
+		hcev := libhoney.NewEvent()
+		hcev.Add(ev.Properties)
 		if err := client.Push(ev); err != nil {
 			return err
 		}

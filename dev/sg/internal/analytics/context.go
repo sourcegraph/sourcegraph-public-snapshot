@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 
 	"github.com/sourcegraph/sourcegraph/dev/okay"
 )
@@ -29,12 +32,16 @@ func getStore(ctx context.Context) *eventStore {
 	return store
 }
 
+func tracer() trace.Tracer {
+	return otel.Tracer("sg")
+}
+
 // LogEvent tracks an event in the per-run analytics store, if analytics are enabled,
 // in the context of a command.
 //
 // In general, usage should be as follows:
 //
-// - category denotes the category of the event, such as "lint_runner:.
+// - category denotes the category of the event, such as "lint_runner".
 // - labels denote subcategories this event belongs to, such as the specific lint runner.
 // - events denote what happened as part of this logged event, such as "failed" or
 //   "succeeded". These are treated as metrics with a count of 1.
@@ -53,13 +60,12 @@ func LogEvent(ctx context.Context, category string, labels []string, startedAt t
 		panic("LogEvent.startedAt must be a valid time")
 	}
 
-	// Set events as metrics
-	metrics := map[string]okay.Metric{
-		"duration": okay.Duration(time.Since(startedAt)),
-	}
-	for _, event := range events {
-		metrics[event] = okay.Count(1)
-	}
+	tracer().Start(ctx, category,
+		trace.WithTimestamp(startedAt),
+		trace.WithAttributes(
+			attribute.StringSlice("labels", labels),
+			attribute.StringSlice("events", events),
+		))
 
 	// Create the event
 	event := &okay.Event{

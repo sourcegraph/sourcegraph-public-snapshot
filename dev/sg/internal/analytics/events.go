@@ -14,14 +14,19 @@ import (
 
 const (
 	// Make sure to change `eventVersion` for major, breaking changes in the event schema.
-	eventVersion            = "v0"
+	eventVersion            = "v1"
 	eventVersionPropertyKey = "event_version"
 )
+
+type event struct {
+	Version    string
+	Properties map[string]interface{}
+}
 
 // eventStore tracks events for a single sg command run.
 type eventStore struct {
 	sgVersion string
-	events    []*okay.Event
+	events    []event
 }
 
 // Persist is called once per sg run. All in this run events are correlated with a single
@@ -31,18 +36,10 @@ func (s *eventStore) Persist(command string, flagsUsed []string) error {
 
 	// Finalize events
 	for _, ev := range s.events {
-		// Create additional identifying keys
-		ev.UniqueKey = append(ev.UniqueKey,
-			"context",
-			"event_name",
-			eventVersionPropertyKey,
-			"run_id")
-
 		// Identifying keys
 		ev.Properties["context"] = "sg"
-		ev.Properties["event_name"] = ev.Name
-		ev.Properties[eventVersionPropertyKey] = eventVersion
-		ev.Properties["run_id"] = runID
+		ev.Properties[eventVersionPropertyKey] = ev.Version
+		ev.Properties["trace_id"] = runID
 
 		// Context
 		ev.Properties["command"] = command
