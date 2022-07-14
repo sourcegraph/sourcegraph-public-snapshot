@@ -667,7 +667,7 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 		case !opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
 		}
-	case string:
+	case string, reposource.PackageName:
 		switch {
 		case opts.NewestFirst:
 			panic("cannot set NewestFirst and pass name-based offset")
