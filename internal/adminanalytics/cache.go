@@ -3,7 +3,6 @@ package adminanalytics
 import (
 	"context"
 	"encoding/json"
-	"math/rand"
 	"time"
 
 	"github.com/gomodule/redigo/redis"
@@ -115,28 +114,14 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 	return nil
 }
 
-var started bool
-
-func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
+func RefreshAnalyticsCache(ctx context.Context, db database.DB) {
 	logger := log.Scoped("adminanalytics:cache-refresh", "admin analytics cache refresh")
 
-	if started {
-		panic("already started")
-	}
-
-	started = true
 	ctx = featureflag.WithFlags(ctx, db.FeatureFlags())
 
-	const delay = 24 * time.Hour
-	for {
-		if featureflag.FromContext(ctx).GetBoolOr("admin-analytics-enabled", false) {
-			if err := refreshAnalyticsCache(ctx, db); err != nil {
-				logger.Error("Error refreshing admin analytics cache", log.Error(err))
-			}
+	if featureflag.FromContext(ctx).GetBoolOr("admin-analytics-enabled", false) {
+		if err := refreshAnalyticsCache(ctx, db); err != nil {
+			logger.Error("Error refreshing admin analytics cache", log.Error(err))
 		}
-
-		// Randomize sleep to prevent thundering herds.
-		randomDelay := time.Duration(rand.Intn(600)) * time.Second
-		time.Sleep(delay + randomDelay)
 	}
 }

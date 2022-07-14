@@ -1,4 +1,4 @@
-package bg
+package janitor
 
 import (
 	"context"

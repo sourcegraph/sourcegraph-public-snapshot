@@ -1,4 +1,4 @@
-package bg
+package janitor
 
 import (
 	"github.com/gomodule/redigo/redis"
