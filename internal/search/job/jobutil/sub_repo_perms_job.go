@@ -104,7 +104,7 @@ func applySubRepoFiltering(ctx context.Context, logger log.Logger, checker authz
 				filtered = append(filtered, m)
 			}
 		case *result.CommitMatch:
-			allowed, err := authz.CanReadAllPaths(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
+			allowed, err := authz.CanReadAnyPath(ctx, checker, mm.Repo.Name, mm.ModifiedFiles)
 			if err != nil {
 				errs = errors.Append(errs, err)
 				continue

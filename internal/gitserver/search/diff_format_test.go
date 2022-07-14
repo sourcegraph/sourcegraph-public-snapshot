@@ -35,7 +35,7 @@ index dbace57d5f..53357b4971 100644
 			}},
 		}
 
-		formatted, ranges := FormatDiff(parsedDiff, highlights)
+		formatted, ranges := FormatDiff(parsedDiff, highlights, nil)
 		expectedFormatted := `.mailmap .mailmap
 @@ -60,1 +60,2 @@ Unknown <u@gogs.io> 无闻 <u@gogs.io>
  Matt King <kingy895@gmail.com> Matthew King <kingy895@gmail.com>

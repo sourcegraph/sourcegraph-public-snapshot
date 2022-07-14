@@ -1161,6 +1161,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 
 		searcher := &search.CommitSearcher{
 			Logger:               s.Logger,
+			RepoName:             args.Repo,
 			RepoDir:              dir.Path(),
 			Revisions:            args.Revisions,
 			Query:                mt,

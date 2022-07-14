@@ -16,6 +16,8 @@ import (
 	"github.com/sourcegraph/go-diff/diff"
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -385,7 +387,7 @@ index 0000000000..7e54670557
 	require.NoError(t, err)
 	require.True(t, mergedResult.Satisfies())
 
-	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff)
+	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff, nil)
 	expectedFormatted := `/dev/null internal/compute/match.go
 @@ -0,0 +6,6 @@ 
 +
@@ -429,6 +431,41 @@ index 0000000000..7e54670557
 
 	require.Equal(t, expectedRanges, ranges)
 
+	// check formatting w/ sub-repo perms filtering
+	formattedWithFiltering, ranges := FormatDiff(parsedDiff, highlights.Diff, setupSubRepoFilterFunc())
+	expectedFormatted = `/dev/null internal/compute/match.go
+@@ -0,0 +6,6 @@ 
++
++       "github.com/sourcegraph/sourcegraph/internal/search/result"
++)
++
++func ofFileMatches(fm *result.FileMatch, r *regexp.Regexp) *Result {
++       matches := make([]Match, 0, len(fm.LineMatches))
+`
+
+	require.Equal(t, expectedFormatted, formattedWithFiltering)
+
+	expectedRanges = expectedRanges[:3]
+	require.Equal(t, expectedRanges, ranges)
+}
+
+func setupSubRepoFilterFunc() func(string) (bool, error) {
+	checker := authz.NewMockSubRepoPermissionChecker()
+	ctx := context.Background()
+	a := &actor.Actor{
+		UID: 1,
+	}
+	ctx = actor.WithActor(ctx, a)
+	checker.EnabledFunc.SetDefaultHook(func() bool {
+		return true
+	})
+	checker.PermissionsFunc.SetDefaultHook(func(ctx context.Context, i int32, content authz.RepoContent) (authz.Perms, error) {
+		if strings.Contains(content.Path, "_test.go") {
+			return authz.None, nil
+		}
+		return authz.Read, nil
+	})
+	return getSubRepoFilterFunc(ctx, checker, "my_repo")
 }
 
 func TestFuzzQueryCNF(t *testing.T) {

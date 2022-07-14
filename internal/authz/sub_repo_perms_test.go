@@ -209,6 +209,13 @@ func TestCanReadAllPaths(t *testing.T) {
 	if !ok {
 		t.Fatal("Should be allowed to read all paths")
 	}
+	ok, err = CanReadAnyPath(ctx, checker, repo, testPaths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("CanReadyAnyPath should've returned true since the user can read all paths")
+	}
 
 	// Add path we can't read
 	testPaths = append(testPaths, "file4")
@@ -219,6 +226,13 @@ func TestCanReadAllPaths(t *testing.T) {
 	}
 	if ok {
 		t.Fatal("Should fail, not allowed to read file4")
+	}
+	ok, err = CanReadAnyPath(ctx, checker, repo, testPaths)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !ok {
+		t.Fatal("user can read some of the testPaths, so CanReadAnyPath should return true")
 	}
 }
 
