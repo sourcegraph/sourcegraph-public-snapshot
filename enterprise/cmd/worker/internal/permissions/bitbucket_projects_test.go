@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -40,18 +39,6 @@ func TestStore(t *testing.T) {
 	count, err := store.QueuedCount(ctx, true)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
-}
-
-func intPtr(v int) *int              { return &v }
-func stringPtr(v string) *string     { return &v }
-func timePtr(v time.Time) *time.Time { return &v }
-
-func mustParseTime(v string) time.Time {
-	t, err := time.Parse("2006-01-02", v)
-	if err != nil {
-		panic(err)
-	}
-	return t
 }
 
 func TestGetBitbucketClient(t *testing.T) {
@@ -342,14 +329,14 @@ func TestHandleRestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, external_service_id, name, fork)
+	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork)
 	VALUES
-		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go', false),
-		(2, 1, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
-		(3, 1, 'bitbucket.sgdev.org/SGDEMO/mux', false),
-		(4, 1, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
-		(5, 1, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
-		(6, 1, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
+		(1, 10060, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/go', false),
+		(2, 10056, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
+		(3, 10061, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/mux', false),
+		(4, 10058, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
+		(5, 10059, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
+		(6, 10072, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
 
 	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 	VALUES
@@ -451,14 +438,14 @@ func TestHandleUnrestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, external_service_id, name, fork)
+	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork)
 	VALUES
-		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go', false),
-		(2, 1, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
-		(3, 1, 'bitbucket.sgdev.org/SGDEMO/mux', false),
-		(4, 1, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
-		(5, 1, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
-		(6, 1, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
+		(1, 10060, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/go', false),
+		(2, 10056, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
+		(3, 10061, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/mux', false),
+		(4, 10058, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
+		(5, 10059, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
+		(6, 10072, 'bitbucketServer', 1, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
 
 	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
 	VALUES
