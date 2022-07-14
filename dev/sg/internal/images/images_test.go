@@ -3,7 +3,18 @@ package images
 import (
 	"reflect"
 	"testing"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images"
 )
+
+func mustTime() time.Time {
+	t, err := time.Parse("2006-01-02", "2006-01-02")
+	if err != nil {
+		panic(err)
+	}
+	return t
+}
 
 func TestParseTag(t *testing.T) {
 	tests := []struct {
@@ -27,6 +38,16 @@ func TestParseTag(t *testing.T) {
 			"3.25.5",
 			nil,
 			true,
+		},
+		{
+			"from constructor",
+			images.MainBranchImageTag(mustTime(), "abcde", 1234),
+			&MainTag{
+				buildNum:  1234,
+				date:      "2006-01-02",
+				shortSHA1: "abcde",
+			},
+			false,
 		},
 	}
 	for _, tt := range tests {

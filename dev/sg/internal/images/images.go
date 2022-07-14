@@ -449,6 +449,7 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	return repo, nil
 }
 
+// MainTag is a structured representation of a parsed tag of MainBranchTagPublishFormat
 type MainTag struct {
 	buildNum  int
 	date      string
