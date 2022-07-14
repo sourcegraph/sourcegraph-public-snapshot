@@ -17,10 +17,10 @@ import { HomePanelsFetchMore, RECENT_FILES_TO_LOAD } from './HomePanels'
 import { LoadingPanelView } from './LoadingPanelView'
 import { PanelContainer } from './PanelContainer'
 import { ShowMoreButton } from './ShowMoreButton'
-import { useComputeResults } from './useComputeResults'
 import { useFocusOnLoadedMore } from './useFocusOnLoadedMore'
 
 import styles from './RecentSearchesPanel.module.scss'
+
 interface Props extends TelemetryProps {
     className?: string
     authenticatedUser: AuthenticatedUser | null
@@ -43,12 +43,12 @@ export const recentFilesFragment = gql`
         }
     }
 `
+
 export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     className,
     recentFilesFragment,
     telemetryService,
     fetchMore,
-    authenticatedUser,
 }) => {
     const [recentFiles, setRecentFiles] = useState<null | RecentFilesFragment['recentFilesLogs']>(
         recentFilesFragment?.recentFilesLogs ?? null
@@ -59,8 +59,10 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
 
     const [itemsToLoad, setItemsToLoad] = useState(RECENT_FILES_TO_LOAD)
     const [isLoadingMore, setIsLoadingMore] = useState(false)
+
     const [processedResults, setProcessedResults] = useState<RecentFile[] | null>(null)
     const getItemRef = useFocusOnLoadedMore(processedResults?.length ?? 0)
+
     // Only update processed results when results are valid to prevent
     // flashing loading screen when "Show more" button is clicked
     useEffect(() => {
@@ -112,10 +114,6 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
         setRecentFiles(node.recentFilesLogs)
     }
 
-    const { isLoading: computeLoading, results: computeResults } = useComputeResults(authenticatedUser, '$repo › $path')
-
-    const renderComputeResults = computeResults.size > 0
-
     const contentDisplay = (
         <>
             <table className={classNames('mt-2', styles.resultsTable)}>
@@ -127,64 +125,38 @@ export const RecentFilesPanel: React.FunctionComponent<React.PropsWithChildren<P
                     </tr>
                 </thead>
                 <tbody>
-                    {renderComputeResults
-                        ? [...computeResults].map((file, index) => (
-                              <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
-                                  <td>
-                                      <small>
-                                          <Link
-                                              to={`/${file.split(' › ')[0]}/-/blob/${file.split(' › ')[1].trim()}`}
-                                              onClick={logFileClicked}
-                                              data-testid="recent-files-item"
-                                          >
-                                              {file}
-                                          </Link>
-                                      </small>
-                                  </td>
-                              </tr>
-                          ))
-                        : processedResults?.map((recentFile, index) => (
-                              <tr key={index} className={styles.resultsTableRow}>
-                                  <td>
-                                      <small>
-                                          <Link
-                                              to={recentFile.url}
-                                              ref={getItemRef(index)}
-                                              onClick={logFileClicked}
-                                              data-testid="recent-files-item"
-                                          >
-                                              {recentFile.repoName} › {recentFile.filePath}
-                                          </Link>
-                                      </small>
-                                  </td>
-                              </tr>
-                          ))}
+                    {processedResults?.map((recentFile, index) => (
+                        <tr key={index} className={classNames('text-monospace d-block', styles.resultsTableRow)}>
+                            <td>
+                                <small>
+                                    <Link
+                                        to={recentFile.url}
+                                        ref={getItemRef(index)}
+                                        onClick={logFileClicked}
+                                        data-testid="recent-files-item"
+                                    >
+                                        {recentFile.repoName} › {recentFile.filePath}
+                                    </Link>
+                                </small>
+                            </td>
+                        </tr>
+                    ))}
                 </tbody>
             </table>
-
-            {!renderComputeResults && (
-                <>
-                    {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent files</VisuallyHidden>}
-                    {recentFiles?.pageInfo.hasNextPage && (
-                        <div>
-                            <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
-                        </div>
-                    )}
-                </>
+            {isLoadingMore && <VisuallyHidden aria-live="polite">Loading more recent files</VisuallyHidden>}
+            {recentFiles?.pageInfo.hasNextPage && (
+                <div>
+                    <ShowMoreButton onClick={loadMoreItems} dataTestid="recent-files-panel-show-more" />
+                </div>
             )}
         </>
     )
-
-    // Wait for both the search event logs and the git history to be loaded
-    const isLoading = computeLoading || !processedResults
-    // If neither search event logs or git history have items, then display the empty display
-    const isEmpty = processedResults?.length === 0 && computeResults.size === 0
 
     return (
         <PanelContainer
             className={classNames(className, 'recent-files-panel')}
             title="Recent files"
-            state={isLoading ? 'loading' : isEmpty ? 'empty' : 'populated'}
+            state={processedResults ? (processedResults.length > 0 ? 'populated' : 'empty') : 'loading'}
             loadingContent={loadingDisplay}
             populatedContent={contentDisplay}
             emptyContent={emptyDisplay}
