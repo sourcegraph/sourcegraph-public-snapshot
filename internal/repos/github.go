@@ -843,6 +843,8 @@ func (s *repositoryQuery) Refine() bool {
 	createdFrom := s.Created.From
 	s.RefinedFrom = &createdFrom
 
+	// There was an expansion in the past for this query, that means it is our new goalpost
+	// because we know if we got past it, we will get too few results
 	if s.ExpandedFrom != nil {
 		s.Created.From = s.Created.From.Add(s.ExpandedFrom.Sub(s.Created.From) / 2)
 		return true
@@ -865,6 +867,8 @@ func (s *repositoryQuery) Expand() bool {
 	createdFrom := s.Created.From
 	s.ExpandedFrom = &createdFrom
 
+	// There was a refining in the past for this query, that means it is our new goalpost
+	// because we know if we got past it, we will get too many results
 	if s.RefinedFrom != nil {
 		s.Created.From = s.Created.From.Add(-(s.Created.From.Sub(*s.RefinedFrom) / 2))
 		return true
