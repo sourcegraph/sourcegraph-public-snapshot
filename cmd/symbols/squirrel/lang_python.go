@@ -483,10 +483,18 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 		return nil
 	}
 
-	for _, stmt := range children(program.Node) {
+	query := `[
+		(import_statement) @import
+		(import_from_statement) @import
+	]`
+	captures, err := allCaptures(query, program)
+	if err != nil {
+		return nil, err
+	}
+	for _, stmt := range captures {
 		switch stmt.Type() {
 		case "import_statement":
-			for _, importChild := range children(stmt) {
+			for _, importChild := range children(stmt.Node) {
 				switch importChild.Type() {
 				case "dotted_name":
 					if importChild.NamedChildCount() == 0 {
