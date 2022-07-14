@@ -204,7 +204,7 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 	}
 	hostname := parsedURL.Hostname()
 
-	names := make([]api.RepoName, 0, count)
+	names := make([]string, 0, count)
 	for _, repo := range repos {
 		// this is how repo names are composed before creating repos in `repo` table
 		// we are reconstructing this name for successful pattern matching
@@ -215,18 +215,21 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 			repo.Slug,
 		)
 
-		names = append(names, name)
+		names = append(names, string(name))
 	}
 
 	// searching for repos by names
-	gitserverRepos, err := h.db.GitserverRepos().GetByNames(ctx, names...)
+	foundRepos, err := h.db.Repos().List(ctx, database.ReposListOptions{
+		Names:              names,
+		ExternalServiceIDs: []int64{svc.ID},
+	})
 	if err != nil {
 		return nil, err
 	}
 
 	// mapping repos to repo IDs
-	for _, gitserverRepo := range gitserverRepos {
-		IDs = append(IDs, gitserverRepo.RepoID)
+	for _, foundRepo := range foundRepos {
+		IDs = append(IDs, foundRepo.ID)
 	}
 
 	return IDs, nil

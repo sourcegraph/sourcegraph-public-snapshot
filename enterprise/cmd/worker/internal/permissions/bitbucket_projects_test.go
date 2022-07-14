@@ -342,14 +342,23 @@ func TestHandleRestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, name, fork)
+	INSERT INTO repo (id, external_service_id, name, fork)
 	VALUES
-		(1, 'bitbucket.sgdev.org/SGDEMO/go', false),
-		(2, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
-		(3, 'bitbucket.sgdev.org/SGDEMO/mux', false),
-		(4, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
-		(5, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
-		(6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false)
+		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go', false),
+		(2, 1, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
+		(3, 1, 'bitbucket.sgdev.org/SGDEMO/mux', false),
+		(4, 1, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
+		(5, 1, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
+		(6, 1, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
+
+	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+	VALUES
+		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go'),
+		(1, 2, 'bitbucket.sgdev.org/SGDEMO/jenkins'),
+		(1, 3, 'bitbucket.sgdev.org/SGDEMO/mux'),
+		(1, 4, 'bitbucket.sgdev.org/SGDEMO/sentry'),
+		(1, 5, 'bitbucket.sgdev.org/SGDEMO/sinatra'),
+		(1, 6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph');
 `)
 	require.NoError(t, err)
 
@@ -442,14 +451,23 @@ func TestHandleUnrestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, name, fork)
+	INSERT INTO repo (id, external_service_id, name, fork)
 	VALUES
-		(1, 'bitbucket.sgdev.org/SGDEMO/go', false),
-		(2, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
-		(3, 'bitbucket.sgdev.org/SGDEMO/mux', false),
-		(4, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
-		(5, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
-		(6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
+		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go', false),
+		(2, 1, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
+		(3, 1, 'bitbucket.sgdev.org/SGDEMO/mux', false),
+		(4, 1, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
+		(5, 1, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
+		(6, 1, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
+
+	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+	VALUES
+		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go'),
+		(1, 2, 'bitbucket.sgdev.org/SGDEMO/jenkins'),
+		(1, 3, 'bitbucket.sgdev.org/SGDEMO/mux'),
+		(1, 4, 'bitbucket.sgdev.org/SGDEMO/sentry'),
+		(1, 5, 'bitbucket.sgdev.org/SGDEMO/sinatra'),
+		(1, 6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph');
 
 	INSERT INTO repo_permissions (repo_id, permission, updated_at)
 	VALUES
