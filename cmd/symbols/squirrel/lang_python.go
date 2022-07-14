@@ -425,19 +425,47 @@ func (squirrel *SquirrelService) getTypeDefPython(ctx context.Context, node Node
 func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program Node, ident string) (ret *Node, err error) {
 	defer squirrel.onCall(program, &Tuple{String(program.Type()), String(ident)}, lazyNodeStringer(&ret))()
 
-	findModule := func(module *sitter.Node) *Node {
-		if module == nil || module.Type() != "dotted_name" {
+	findModuleOrPkg := func(moduleOrPkg *sitter.Node) *Node {
+		if moduleOrPkg == nil {
 			return nil
 		}
+
 		path := program.RepoCommitPath.Path
-		path = strings.TrimSuffix(path, filepath.Base(program.RepoCommitPath.Path))
+		path = strings.TrimSuffix(path, filepath.Base(path))
 		path = strings.TrimSuffix(path, "/")
-		for _, component := range children(module) {
+
+		var dottedName *sitter.Node
+		if moduleOrPkg.Type() == "relative_import" {
+			if moduleOrPkg.NamedChildCount() < 1 {
+				return nil
+			}
+			importPrefix := moduleOrPkg.NamedChild(0)
+			if importPrefix == nil || importPrefix.Type() != "import_prefix" {
+				return nil
+			}
+			dots := int(importPrefix.ChildCount())
+			for i := 0; i < dots-1; i++ {
+				path = strings.TrimSuffix(path, filepath.Base(path))
+				path = strings.TrimSuffix(path, "/")
+			}
+			if moduleOrPkg.NamedChildCount() > 1 {
+				dottedName = moduleOrPkg.NamedChild(1)
+			}
+		} else {
+			dottedName = moduleOrPkg
+		}
+
+		if dottedName == nil || dottedName.Type() != "dotted_name" {
+			return nil
+		}
+
+		for _, component := range children(dottedName) {
 			if component.Type() != "identifier" {
 				return nil
 			}
 			path = filepath.Join(path, component.Content(program.Contents))
 		}
+		// TODO support package imports
 		path += ".py"
 		result, _ := squirrel.parse(ctx, types.RepoCommitPath{
 			Repo:   program.RepoCommitPath.Repo,
@@ -448,7 +476,7 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 	}
 
 	findModuleIdent := func(module *sitter.Node, ident2 string) *Node {
-		foundModule := findModule(module)
+		foundModule := findModuleOrPkg(module)
 		if foundModule != nil {
 			return squirrel.findNodeInScopePython(*foundModule, ident2)
 		}
@@ -471,7 +499,7 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 					if lastChild.Content(program.Contents) != ident {
 						continue
 					}
-					return findModule(importChild), nil
+					return findModuleOrPkg(importChild), nil
 				case "aliased_import":
 					alias := importChild.ChildByFieldName("alias")
 					if alias == nil || alias.Type() != "identifier" {
@@ -481,7 +509,7 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 						continue
 					}
 					name := importChild.ChildByFieldName("name")
-					return findModule(name), nil
+					return findModuleOrPkg(name), nil
 				}
 			}
 		case "import_from_statement":
@@ -489,75 +517,71 @@ func (squirrel *SquirrelService) getDefInImports(ctx context.Context, program No
 			if moduleName == nil {
 				continue
 			}
-			switch moduleName.Type() {
-			case "relative_import":
-				// TODO
-			case "dotted_name":
-				// Advance a cursor to just past the "import" keyword
-				i := 0
-				for ; i < int(stmt.ChildCount()); i++ {
-					if stmt.Child(i).Type() == "import" {
-						i++
-						break
-					}
+
+			// Advance a cursor to just past the "import" keyword
+			i := 0
+			for ; i < int(stmt.ChildCount()); i++ {
+				if stmt.Child(i).Type() == "import" {
+					i++
+					break
 				}
-				if i == 0 || i >= int(stmt.ChildCount()) {
+			}
+			if i == 0 || i >= int(stmt.ChildCount()) {
+				continue
+			}
+
+			// Check if it's a wildcard import
+			if stmt.Child(i).Type() == "wildcard_import" {
+				found := findModuleIdent(moduleName, ident)
+				if found != nil {
+					return found, nil
+				}
+			}
+
+			// Loop through the imports
+			for ; i < int(stmt.ChildCount()); i++ {
+				child := stmt.Child(i)
+				if !child.IsNamed() {
 					continue
 				}
-
-				// Check if it's a wildcard import
-				if stmt.Child(i).Type() == "wildcard_import" {
+				switch child.Type() {
+				case "dotted_name":
+					if child.NamedChildCount() == 0 {
+						continue
+					}
+					childIdent := child.NamedChild(0)
+					if childIdent.Type() != "identifier" {
+						continue
+					}
+					if childIdent.Content(program.Contents) != ident {
+						continue
+					}
 					found := findModuleIdent(moduleName, ident)
 					if found != nil {
 						return found, nil
 					}
-				}
-
-				// Loop through the imports
-				for ; i < int(stmt.ChildCount()); i++ {
-					child := stmt.Child(i)
-					if !child.IsNamed() {
+				case "aliased_import":
+					alias := child.ChildByFieldName("alias")
+					if alias == nil || alias.Type() != "identifier" {
 						continue
 					}
-					switch child.Type() {
-					case "dotted_name":
-						if child.NamedChildCount() == 0 {
-							continue
-						}
-						childIdent := child.NamedChild(0)
-						if childIdent.Type() != "identifier" {
-							continue
-						}
-						if childIdent.Content(program.Contents) != ident {
-							continue
-						}
-						found := findModuleIdent(moduleName, ident)
-						if found != nil {
-							return found, nil
-						}
-					case "aliased_import":
-						alias := child.ChildByFieldName("alias")
-						if alias == nil || alias.Type() != "identifier" {
-							continue
-						}
-						if alias.Content(program.Contents) != ident {
-							continue
-						}
-						name := child.ChildByFieldName("name")
-						if name == nil || name.Type() != "dotted_name" {
-							continue
-						}
-						if name.NamedChildCount() == 0 {
-							continue
-						}
-						nameIdent := name.NamedChild(0)
-						if nameIdent == nil || nameIdent.Type() != "identifier" {
-							continue
-						}
-						found := findModuleIdent(moduleName, nameIdent.Content(program.Contents))
-						if found != nil {
-							return found, nil
-						}
+					if alias.Content(program.Contents) != ident {
+						continue
+					}
+					name := child.ChildByFieldName("name")
+					if name == nil || name.Type() != "dotted_name" {
+						continue
+					}
+					if name.NamedChildCount() == 0 {
+						continue
+					}
+					nameIdent := name.NamedChild(0)
+					if nameIdent == nil || nameIdent.Type() != "identifier" {
+						continue
+					}
+					found := findModuleIdent(moduleName, nameIdent.Content(program.Contents))
+					if found != nil {
+						return found, nil
 					}
 				}
 			}
