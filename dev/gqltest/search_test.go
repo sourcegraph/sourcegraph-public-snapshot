@@ -147,6 +147,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 	}
 
 	t.Run("visibility", func(t *testing.T) {
+		t.Errorf("fake failure")
 		tests := []struct {
 			query       string
 			wantMissing []string
