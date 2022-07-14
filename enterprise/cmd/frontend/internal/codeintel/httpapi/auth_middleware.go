@@ -7,8 +7,8 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -68,7 +68,7 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 		}()
 		if err != nil {
 			if statusCode >= 500 {
-				log15.Error("codeintel.httpapi: failed to authorize request", "error", err)
+				operation.Logger.Error("codeintel.httpapi: failed to authorize request", sglog.Error(err))
 			}
 
 			http.Error(w, fmt.Sprintf("failed to authorize request: %s", err.Error()), statusCode)
@@ -81,12 +81,13 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 
 func isSiteAdmin(ctx context.Context, db database.DB) bool {
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
+	logger := sglog.Scoped("isSiteAdmin", "")
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return false
 		}
 
-		log15.Error("codeintel.httpapi: failed to get up current user", "error", err)
+		logger.Error("codeintel.httpapi: failed to get up current user", sglog.Error(err))
 		return false
 	}
 

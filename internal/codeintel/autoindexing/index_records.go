@@ -3,7 +3,7 @@ package autoindexing
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -47,12 +47,14 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 			return nil, false, nil
 		}
 
+		logger := log.Scoped("makeExplicitConfigurationFactory", "")
+
 		indexConfiguration, err := config.UnmarshalJSON([]byte(configuration))
 		if err != nil {
 			// We failed here, but do not try to fall back on another method as having
 			// an explicit config supplied via parameter should always take precedence,
 			// even if it's broken.
-			log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+			logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 			return nil, true, nil
 		}
 
@@ -71,12 +73,14 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInDatabase(ctx context.C
 		return nil, false, nil
 	}
 
+	logger := log.Scoped("getIndexRecordsFromConfigurationInDatabase", "")
+
 	indexConfiguration, err := config.UnmarshalJSON(indexConfigurationRecord.Data)
 	if err != nil {
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the database should always take precedence, even
 		// if it's broken.
-		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+		logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 		return nil, true, nil
 	}
 
@@ -100,12 +104,13 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInRepository(ctx context
 		return nil, false, errors.Wrap(err, "gitserver.RawContents")
 	}
 
+	logger := log.Scoped("getIndexRecordsFromConfigurationInRepository", "")
 	indexConfiguration, err := config.UnmarshalYAML(content)
 	if err != nil {
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the repository should always take precedence over
 		// an auto-inferred configuration, even if it's broken.
-		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+		logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 		return nil, true, nil
 	}
 

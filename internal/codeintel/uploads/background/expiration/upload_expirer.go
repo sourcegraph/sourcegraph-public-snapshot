@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -152,6 +152,8 @@ func (e *expirer) handleUploads(
 		expiredUploadIDs   = make([]int, 0, len(uploads))
 	)
 
+	logger := log.Scoped("handleUploads", "")
+
 	for _, upload := range uploads {
 		protected, checkErr := e.isUploadProtectedByPolicy(ctx, commitMap, upload, now)
 		if checkErr != nil {
@@ -187,7 +189,7 @@ func (e *expirer) handleUploads(
 	}
 
 	if count := len(expiredUploadIDs); count > 0 {
-		log15.Info("Expiring codeintel uploads", "count", count)
+		logger.Info("Expiring codeintel uploads", log.Int("count", count))
 		e.metrics.numUploadsExpired.Add(float64(count))
 	}
 

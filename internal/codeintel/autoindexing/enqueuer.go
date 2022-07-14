@@ -4,9 +4,8 @@ import (
 	"context"
 	"os"
 
-	"github.com/inconshreveable/log15"
-
 	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -175,6 +174,8 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 	// 	return nil, err
 	// }
 
+	logger := log.Scoped("inferIndexJobsFromRepositoryStructure", "")
+
 	repoName, err := s.dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
 		return nil, err
@@ -186,7 +187,7 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 	}
 
 	if len(indexes) > maximumIndexJobsPerInferredConfiguration {
-		log15.Info("Too many inferred roots. Scheduling no index jobs for repository.", "repository_id", repositoryID)
+		logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
 		return nil, nil
 	}
 

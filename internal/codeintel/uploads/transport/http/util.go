@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 )
 
 // func hasQuery(r *http.Request, name string) bool {
@@ -23,8 +23,9 @@ import (
 const logPrefix = "codeintel.uploads.transport.http"
 
 func handleErr(w http.ResponseWriter, err error, logMessage string, statusCode int) {
+	logger := log.Scoped("handleErr", "")
 	if statusCode >= 500 {
-		log15.Error(fmt.Sprintf("%s: %s", logPrefix, logMessage), "error", err)
+		logger.Error(fmt.Sprintf("%s: %s", logPrefix, logMessage), log.Error(err))
 	}
 
 	if w != nil {
