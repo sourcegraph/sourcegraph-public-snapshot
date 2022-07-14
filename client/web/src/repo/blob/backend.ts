@@ -24,16 +24,17 @@ export const fetchBlob = memoizeObservable(
                 query Blob($repoName: String!, $commitID: String!, $filePath: String!, $disableTimeout: Boolean!) {
                     repository(name: $repoName) {
                         commit(rev: $commitID) {
-                            file(path: $filePath) {
+                            blob(path: $filePath) {
                                 ...BlobFileFields
                             }
                         }
                     }
                 }
 
-                fragment BlobFileFields on File2 {
+                fragment BlobFileFields on GitBlob {
                     content
                     richHTML
+                    codeOwners
                     highlight(disableTimeout: $disableTimeout) {
                         aborted
                         html
@@ -48,7 +49,7 @@ export const fetchBlob = memoizeObservable(
                 if (!data.repository?.commit) {
                     throw new Error('Commit not found')
                 }
-                return data.repository.commit.file
+                return data.repository.commit.blob
             })
         ),
     fetchBlobCacheKey

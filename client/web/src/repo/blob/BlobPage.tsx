@@ -136,7 +136,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     // is bundled in one object whose creation is blocked by `fetchBlob` emission.
     const [nextFetchWithDisabledTimeout, blobInfoOrError] = useEventObservable<
         void,
-        (BlobInfo & { richHTML: string; aborted: boolean }) | null | ErrorLike
+        (BlobInfo & { richHTML: string; aborted: boolean; codeOwners: string[] }) | null | ErrorLike
     >(
         useCallback(
             (clicks: Observable<void>) =>
@@ -161,7 +161,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
                         }
 
-                        const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
+                        const blobInfo: BlobInfo & { richHTML: string; aborted: boolean; codeOwners: string[] } = {
                             content: blob.content,
                             html: blob.highlight.html,
                             repoName,
@@ -172,6 +172,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
                             aborted: blob.highlight.aborted,
+                            codeOwners: blob.codeOwners,
                         }
                         return blobInfo
                     }),
@@ -270,6 +271,18 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         revision={props.revision}
                         filePath={filePath}
                     />
+                )}
+            </RepoHeaderContributionPortal>
+            <RepoHeaderContributionPortal
+                position="right"
+                priority={1}
+                id="code-owners"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {() => (
+                    <span>
+                        {blobInfoOrError && !isErrorLike(blobInfoOrError) && blobInfoOrError.codeOwners.join(', ')}
+                    </span>
                 )}
             </RepoHeaderContributionPortal>
         </>

@@ -4423,6 +4423,10 @@ type GitBlob implements TreeEntry & File2 {
     """
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     """
+    The code owners of the blob.
+    """
+    codeOwners: [String!]!
+    """
     Highlight the blob contents.
     """
     highlight(

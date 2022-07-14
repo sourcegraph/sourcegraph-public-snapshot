@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/highlight"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -121,6 +122,28 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 		RepoName: r.commit.repoResolver.Name(),
 		Revision: string(r.commit.oid),
 	})
+}
+
+func (r *GitTreeEntryResolver) CodeOwners(ctx context.Context) ([]string, error) {
+	var content []byte
+	var contentErr error
+
+	ctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
+
+	content, contentErr = gitserver.NewClient(r.db).ReadFile(
+		ctx,
+		r.commit.repoResolver.RepoName(),
+		api.CommitID(r.commit.OID()),
+		"CODEOWNERS",
+		authz.DefaultSubRepoPermsChecker,
+	)
+
+	if contentErr != nil {
+		return []string{}, contentErr
+	}
+
+	return codeownership.ForFilePath(string(content), r.Path()), nil
 }
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
