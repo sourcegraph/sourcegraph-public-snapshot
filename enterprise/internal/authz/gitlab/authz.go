@@ -4,9 +4,9 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -32,6 +32,7 @@ func NewAuthzProviders(
 	conns []*ExternalConnection,
 ) (ps []authz.Provider, problems []string, warnings []string) {
 	// Authorization (i.e., permissions) providers
+
 	for _, c := range conns {
 		//p, err := newAuthzProvider(c.URN, c.Authorization, c.Url, c.Token, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
 		p, err := newAuthzProvider(c, gitlab.TokenType(c.TokenType), cfg.AuthProviders)
@@ -126,7 +127,8 @@ func newAuthzProvider(c *ExternalConnection, tokenType gitlab.TokenType, ps []sc
 
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
-	helper := &oauthutil.RefreshTokenHelperForExternalService{
+
+	helper := &oauth.RefreshTokenHelperForExternalService{
 		DB:                op.db,
 		ExternalServiceID: op.ExternalService.ID,
 	}
@@ -134,7 +136,7 @@ var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
 	return newOAuthProvider(op, nil, helper.RefreshToken)
 }
 
-// NewSudoProvider is a mockable constructor for new SudoProvider instances.
+// NewSudoProvider Ïis a mockable constructor for new SudoProvider instances.
 var NewSudoProvider = func(op SudoProviderOp) authz.Provider {
 	return newSudoProvider(op, nil)
 }

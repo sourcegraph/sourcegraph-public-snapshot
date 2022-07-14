@@ -13,10 +13,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/oauth2"
 
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -24,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -103,13 +101,7 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 		return nil, err
 	}
 
-	//provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli,
-	//	func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.Context) (string, error) {
-	//		return maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc) // todo get rid of maybeRefreshGitLabOAuthTokenFromCodeHost
-	//	},
-	//)
-
-	helper := &oauthutil.RefreshTokenHelperForExternalService{
+	helper := &RefreshTokenConfig{
 		DB:                db,
 		ExternalServiceID: svc.ID,
 	}
@@ -118,11 +110,11 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {
 	case gitlab.TokenTypeOAuth:
-		refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc)
-		if err != nil {
-			return nil, errors.Wrap(err, "refreshing OAuth token")
-		}
-		c.Token = refreshed
+		//refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc)
+		//if err != nil {
+		//	return nil, errors.Wrap(err, "refreshing OAuth token")
+		//}
+		//c.Token = refreshed
 		client = provider.GetOAuthClient(c.Token)
 	default:
 		client = provider.GetPATClient(c.Token, "")
@@ -409,74 +401,43 @@ func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	return out, nil
 }
 
-func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.DB, svc *types.ExternalService) (accessToken string, err error) {
-	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
+type RefreshTokenConfig struct {
+	DB                database.DB
+	ExternalServiceID int64
+}
+
+// todo - add docstring and explain that we cannot import the current helper nor use the helper in other places
+// due to import cycle
+func (r *RefreshTokenConfig) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, oauthutil.AuthStyleInParams)
+
+	svc, err := r.DB.ExternalServices().GetByID(ctx, r.ExternalServiceID)
 	if err != nil {
-		return "", errors.Wrap(err, "parsing external service config")
+		return "", errors.Wrap(err, "getting external service")
 	}
 
-	config, ok := parsed.(*schema.GitLabConnection)
-	if !ok {
-		return "", errors.Errorf("want *schema.GitLabConnection, got %T", parsed)
-	}
-
-	// We may have old config without a refresh token
-	if config.TokenOauthRefresh == "" {
-		gitlab.TokenMissingRefreshCounter.Inc()
-		return config.Token, nil
-	}
-
-	var oauthConfig *oauth2.Config
-	for _, authProvider := range conf.SiteConfig().AuthProviders {
-		if authProvider.Gitlab == nil ||
-			strings.TrimSuffix(config.Url, "/") != strings.TrimSuffix(authProvider.Gitlab.Url, "/") {
-			continue
-		}
-		oauthConfig = oauth2ConfigFromGitLabProvider(authProvider.Gitlab)
-		break
-	}
-
-	if oauthConfig == nil {
-		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromCodeHost, external service has no auth.provider",
-			"externalServiceID", svc.ID,
-		)
-		return config.Token, nil
-	}
-
-	tok := &oauth2.Token{
-		AccessToken:  config.Token,
-		RefreshToken: config.TokenOauthRefresh,
-		Expiry:       time.Unix(int64(config.TokenOauthExpiry), 0),
-	}
-
-	refreshedToken, err := oauthConfig.TokenSource(ctx, tok).Token()
+	defer func() {
+		success := err == nil
+		gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
+	}()
+	svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
 	if err != nil {
-		return "", errors.Wrap(err, "refresh token")
+		return "", errors.Wrap(err, "updating OAuth token")
+	}
+	svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
+	if err != nil {
+		return "", errors.Wrap(err, "updating OAuth refresh token")
+	}
+	svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
+	if err != nil {
+		return "", errors.Wrap(err, "updating OAuth token expiry")
+	}
+	svc.UpdatedAt = time.Now()
+	if err := r.DB.ExternalServices().Upsert(ctx, svc); err != nil {
+		return "", errors.Wrap(err, "upserting external service")
 	}
 
-	if refreshedToken.AccessToken != tok.AccessToken {
-		defer func() {
-			success := err == nil
-			gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
-		}()
-		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
-		if err != nil {
-			return "", errors.Wrap(err, "updating OAuth token")
-		}
-		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.RefreshToken, "token.oauth.refresh")
-		if err != nil {
-			return "", errors.Wrap(err, "updating OAuth refresh token")
-		}
-		svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.Expiry.Unix(), "token.oauth.expiry")
-		if err != nil {
-			return "", errors.Wrap(err, "updating OAuth token expiry")
-		}
-		svc.UpdatedAt = time.Now()
-		if err := db.ExternalServices().Upsert(ctx, svc); err != nil {
-			return "", errors.Wrap(err, "upserting external service")
-		}
-	}
-	return refreshedToken.AccessToken, nil
+	return "", nil
 }
 
 func oauth2ConfigFromGitLabProvider(p *schema.GitLabAuthProvider) *oauth2.Config {
