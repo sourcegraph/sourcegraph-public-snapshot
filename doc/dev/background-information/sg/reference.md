@@ -347,7 +347,7 @@ $ sg lint --help
 
 Flags:
 
-* `--annotations`: Write helpful output to annotations directory
+* `--annotations`: Write helpful output to ./annotations directory
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
