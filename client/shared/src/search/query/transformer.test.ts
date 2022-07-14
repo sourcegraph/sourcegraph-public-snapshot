@@ -24,6 +24,10 @@ describe('appendContextFilter', () => {
         expect(appendContextFilter('foo', 'ctx')).toMatchInlineSnapshot('context:ctx foo')
     })
 
+    test('appending context to query with OR operator', () => {
+        expect(appendContextFilter('foo or bar', 'ctx')).toMatchInlineSnapshot(`context:ctx (foo or bar)`)
+    })
+
     test('appending when query already contains a context', () => {
         expect(appendContextFilter('context:bar foo', 'ctx')).toMatchInlineSnapshot('context:bar foo')
     })

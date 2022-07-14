@@ -7,9 +7,9 @@ import { Filter, Token } from './token'
 import { operatorExists, filterExists } from './validate'
 
 export function appendContextFilter(query: string, searchContextSpec: string | undefined): string {
-    return !filterExists(query, FilterType.context) && searchContextSpec
-        ? `context:${searchContextSpec} ${query}`
-        : query
+    return parenthesizeQueryWithGlobalContext(
+        !filterExists(query, FilterType.context) && searchContextSpec ? `context:${searchContextSpec} ${query}` : query
+    )
 }
 
 export function omitFilter(query: string, filter: Filter): string {
@@ -116,5 +116,5 @@ export function parenthesizeQueryWithGlobalContext(query: string): string {
     }
     const searchContextSpec = globalContextFilter.value?.value || ''
     const queryWithOmittedContext = omitFilter(query, globalContextFilter)
-    return appendContextFilter(`(${queryWithOmittedContext})`, searchContextSpec)
+    return `context:${searchContextSpec} (${queryWithOmittedContext})`
 }
