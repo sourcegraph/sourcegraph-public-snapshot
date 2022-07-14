@@ -243,7 +243,7 @@ type VCSSyncerFetchFunc struct {
 
 // Fetch delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockVCSSyncer) Fetch(v0 context.Context, v1 *vcs.URL, v2 GitDir) error {
+func (m *MockVCSSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, _ string) error {
 	r0 := m.FetchFunc.nextHook()(v0, v1, v2)
 	m.FetchFunc.appendCall(VCSSyncerFetchFuncCall{v0, v1, v2, r0})
 	return r0
