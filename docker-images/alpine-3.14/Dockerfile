@@ -27,6 +27,7 @@ RUN apk update && apk add --no-cache \
     bind-tools \
     busybox \
     ca-certificates \
+    'curl>=7.79.1-r2' \
     mailcap \
     tini \
     wget
