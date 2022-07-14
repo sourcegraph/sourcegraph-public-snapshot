@@ -24,7 +24,6 @@ func TestRecord(t *testing.T) {
 	})
 	t.Run("OK not initialized context", func(t *testing.T) {
 		ctx := context.Background()
-		ctx = withContext(ctx, &paramsContext{})
 		Record(ctx, "github.com/foo/bar", []string{"git", "grep", "foo"})
 		pc := fromContext(ctx)
 		assert.Nil(t, pc)

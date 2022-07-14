@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/userip"
-	"go.uber.org/zap/zapcore"
 )
 
 type contextKey struct{}
@@ -59,7 +58,7 @@ func Middleware(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 		act := actor.FromContext(ctx)
 
 		// TODO DEVX We have a bug, we should able to use With, but it's mutating the parent logger which is very wrong
-		var fields []zapcore.Field
+		var fields []log.Field
 		if userIP != nil {
 			fields = append(fields, log.Object(
 				"actor",
