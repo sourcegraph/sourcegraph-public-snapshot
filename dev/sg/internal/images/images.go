@@ -281,6 +281,8 @@ func parseImgString(rawImg string) (*ImageReference, error) {
 
 // getUpdatedSourcegraphImage retrieves the pinned version of originalImage if it is a
 // DeploySourcegraphDockerImage, and errors if the image is unknown.
+//
+// Callers should not treat the returned error as fatal.
 func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credentials, pinTag string) (newImage string, err error) {
 	str := strings.Split(originalImage, "/")
 	imageName := str[len(str)-1]
