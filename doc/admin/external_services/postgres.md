@@ -4,7 +4,7 @@ You can use your own PostgreSQL v12+ server with Sourcegraph if you wish. For ex
 
 Please review [the PostgreSQL](../postgres.md) documentation for a complete list of requirements.
 
-> NOTE: Only the frontend (_pgsql_) and code intelligence (_codeintel-db_) databases are supported to run externally at this time.
+> NOTE: As of version 3.39.0, codeinsights-db no longer relies on the internal TimescaleDB and can be externalized.
 
 
 ## General recommendations
