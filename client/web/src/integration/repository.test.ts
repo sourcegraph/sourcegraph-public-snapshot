@@ -26,7 +26,7 @@ import {
     createFileNamesResult,
 } from './graphQlResponseHelpers'
 import { commonWebGraphQlResults } from './graphQlResults'
-import { percySnapshotWithVariants } from './utils'
+import { createEditorAPI, percySnapshotWithVariants } from './utils'
 
 export const getCommonRepositoryGraphQlResults = (
     repositoryName: string,
@@ -506,18 +506,13 @@ describe('Repository', () => {
                 "/Geoffrey's random queries.32r242442bf /% token.4288249258.sql",
             ])
 
-            await driver.page.waitForSelector('#monaco-query-input .view-lines')
-            // TODO: find a more reliable way to get the current search query,
-            // to account for the fact that it may _actually_ contain non-breaking spaces
-            // (and not just have spaces rendered as non-breaking in the DOM by Monaco)
-            // https://github.com/sourcegraph/sourcegraph/issues/14756
-            const searchQuery = (
-                await driver.page.evaluate(() => document.querySelector('#monaco-query-input .view-lines')?.textContent)
-            )?.replace(/\u00A0/g, ' ')
-            assert.strictEqual(
-                searchQuery,
-                "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
-            )
+            {
+                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
+                assert.strictEqual(
+                    await queryInput.getValue(),
+                    "repo:^github\\.com/ggilmore/q-test$ file:^Geoffrey's\\ random\\ queries\\.32r242442bf/%\\ token\\.4288249258\\.sql"
+                )
+            }
 
             await driver.page.waitForSelector('.test-go-to-code-host')
             assert.strictEqual(
@@ -547,15 +542,10 @@ describe('Repository', () => {
             await assertSelectorHasText('div.test-tree-page-title', shortRepositoryName)
             await assertSelectorHasText('.test-tree-entry-file', 'readme.md')
 
-            await driver.page.waitForSelector('#monaco-query-input .view-lines')
-            // TODO: find a more reliable way to get the current search query,
-            // to account for the fact that it may _actually_ contain non-breaking spaces
-            // (and not just have spaces rendered as non-breaking in the DOM by Monaco)
-            // https://github.com/sourcegraph/sourcegraph/issues/14756
-            const searchQuery = (
-                await driver.page.evaluate(() => document.querySelector('#monaco-query-input .view-lines')?.textContent)
-            )?.replace(/\u00A0/g, ' ')
-            assert.strictEqual(searchQuery, 'repo:^ubuntu/\\+source/quemu$ ') // + should be escaped in regular expression
+            {
+                const queryInput = await createEditorAPI(driver, '[data-testid="searchbox"] .test-query-input')
+                assert.strictEqual(await queryInput.getValue(), 'repo:^ubuntu/\\+source/quemu$ ') // + should be escaped in regular expression
+            }
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
