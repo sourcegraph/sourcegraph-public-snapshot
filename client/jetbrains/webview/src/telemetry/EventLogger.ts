@@ -5,11 +5,7 @@ import { gql } from '@sourcegraph/http-client'
 import { EventSource } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import {
-    Event,
-    LogEventsResult,
-    LogEventsVariables,
-} from '../graphql-operations'
+import { Event, LogEventsResult, LogEventsVariables } from '../graphql-operations'
 import { requestGraphQL } from '../search/lib/requestGraphQl'
 
 // Log events in batches.

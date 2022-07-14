@@ -130,11 +130,7 @@ export class EventLogger implements TelemetryService {
     /**
      * Log a user action on the associated Sourcegraph instance
      */
-    private async logEvent(
-        event: string,
-        eventProperties?: any,
-        publicArgument?: any
-    ): Promise<void> {
+    private async logEvent(event: string, eventProperties?: any, publicArgument?: any): Promise<void> {
         const anonUserId = await this.getAnonUserID()
         logEvent(
             {
