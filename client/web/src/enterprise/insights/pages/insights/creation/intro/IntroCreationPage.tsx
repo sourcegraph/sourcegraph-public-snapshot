@@ -12,6 +12,7 @@ import { CodeInsightsPage } from '../../../../components/code-insights-page/Code
 
 import {
     CaptureGroupInsightCard,
+    ComputeInsightCard,
     ExtensionInsightsCard,
     LangStatsInsightCard,
     SearchInsightCard,
@@ -36,6 +37,11 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
     const handleCaptureGroupInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCaptureGroupInsightClick')
         history.push(`/insights/create/capture-group${search}`)
+    }
+
+    const handleCreateComputeInsightClick = (): void => {
+        telemetryService.log('CodeInsightsCreateComputeInsightClick')
+        history.push(`/insights/create/group-results${search}`)
     }
 
     const handleCreateCodeStatsInsightClick = (): void => {
@@ -77,6 +83,11 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
                 <CaptureGroupInsightCard
                     data-testid="create-capture-group-insight"
                     handleCreate={handleCaptureGroupInsightClick}
+                />
+
+                <ComputeInsightCard
+                    data-testid="create-compute-insights"
+                    handleCreate={handleCreateComputeInsightClick}
                 />
 
                 <LangStatsInsightCard
