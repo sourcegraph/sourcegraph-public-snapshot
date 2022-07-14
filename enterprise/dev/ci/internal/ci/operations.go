@@ -313,6 +313,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		withYarnCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("INTEGRATION_TESTS", "true"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))

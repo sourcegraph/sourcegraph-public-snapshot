@@ -8,15 +8,24 @@ import { DEFAULT_SITE_CONFIG_PATH } from './constants'
 
 type WEB_BUILDER = 'esbuild' | 'webpack'
 
+const NODE_ENV = process.env.NODE_ENV || 'development'
+
+export const IS_DEVELOPMENT = NODE_ENV === 'development'
+export const IS_PRODUCTION = NODE_ENV === 'production'
+
 export const ENVIRONMENT_CONFIG = {
     /**
      * ----------------------------------------
      * Build configuration.
      * ----------------------------------------
      */
-    NODE_ENV: process.env.NODE_ENV || 'development',
+    NODE_ENV,
     // Determines if build is running on CI.
     CI: getEnvironmentBoolean('CI'),
+    // Determines if the build will be used for integration tests.
+    // Can be used to expose global variables to integration tests (e.g., CodeMirror API).
+    // Enabled in the dev environment to allow debugging integration tests with the dev server.
+    INTEGRATION_TESTS: getEnvironmentBoolean('INTEGRATION_TESTS') || IS_DEVELOPMENT,
     // Enables `embed` Webpack entry point.
     EMBED_DEVELOPMENT: getEnvironmentBoolean('EMBED_DEVELOPMENT'),
 
@@ -55,10 +64,7 @@ export const ENVIRONMENT_CONFIG = {
     SITE_CONFIG_PATH: process.env.SITE_CONFIG_PATH || DEFAULT_SITE_CONFIG_PATH,
 }
 
-const { NODE_ENV, SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
-
-export const IS_DEVELOPMENT = NODE_ENV === 'development'
-export const IS_PRODUCTION = NODE_ENV === 'production'
+const { SOURCEGRAPH_HTTPS_DOMAIN, SOURCEGRAPH_HTTPS_PORT, SOURCEGRAPH_HTTP_PORT } = ENVIRONMENT_CONFIG
 
 export const HTTPS_WEB_SERVER_URL = `https://${SOURCEGRAPH_HTTPS_DOMAIN}:${SOURCEGRAPH_HTTPS_PORT}`
 export const HTTP_WEB_SERVER_URL = `http://localhost:${SOURCEGRAPH_HTTP_PORT}`
