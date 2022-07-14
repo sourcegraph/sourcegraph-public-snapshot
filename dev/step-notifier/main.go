@@ -84,9 +84,13 @@ func (s *BuildStore) Add(event *BuildEvent) {
 		build = NewBuildFrom(event)
 		s.builds[event.BuildNumber()] = build
 	}
+	// if the build is finished replace the original build with the replaced one since it will be more up to date
+	if event.IsBuildFinished() {
+		build.Build = event.Build
+	}
 	build.Jobs = append(build.Jobs, event.Job)
 
-	log.Printf("job '%s' added for build %d total jobs %d", event.JobName(), event.BuildNumber(), len(build.Jobs))
+	log.Printf("Adding job. Build %d Total jobs %d", event.BuildNumber(), len(build.Jobs))
 }
 
 func (s *BuildStore) DelByBuildNumber(num int) {
@@ -230,11 +234,6 @@ func (s *BuildTrackingServer) Serve() error {
 }
 
 func main() {
-	var b Build
-	num := 160444
-	b.Number = &num
-	fmt.Println(grafanaURLFor(&b))
-	return
 	server := NewStepServer()
 	if err := server.Serve(); err != nil {
 		log.Fatal(err)

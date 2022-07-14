@@ -146,48 +146,67 @@ func createSlackJSON(build *Build) (string, error) {
     {
         "blocks": [
         {
-            "type": "section",
+            "type": "header",
             "text": {
-                "type": "mrkdwn",
+                "type": "plain_test",
                 "text": "Build {{.BuildNumber}} failure"
             }
+        },
+        {
+            "type": "divider"
         },
         {
             "type": "section",
             "text": {
                 "type": "mrkdwn",
-                "text": "The following steps failed:{{range .FailedSteps}}\n{{.}}{{end}}"
+                "text": "The following steps failed:"
             }
+        },
+        {
+            "type": "context",
+            "elements": [{
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": "{{range .FailedSteps}}{{.}}\n{{end}}"
+                }
+            }],
+        },
+        {
+            "type": "divider"
         },
         {
             "type": "actions",
             "elements": [
             {
                 "type": "button",
+                "style": "primary",
                 "text": {
                     "type": "plain_text",
                     "text": "View Build",
                     "emoji": true
                 },
-                "value": "{{.BuildURL}}"
+                "url": "{{.BuildURL}}"
             },
             {
                 "type": "button",
+                "style": "default",
                 "text": {
                     "type": "plain_text",
                     "text": "View Grafana Logs",
                     "emoji": true
                 },
-                "value": "{{.GrafanaURL}}"
+                "url": "{{.GrafanaURL}}"
             },
             {
                 "type": "button",
+                "style": "danger",
                 "text": {
                     "type": "plain_text",
                     "text": "Is this a flake?",
                     "emoji": true
                 },
-                "value": "{{.FlakeURL}}"
+                "url": "{{.FlakeURL}}"
             },
             ]
         }
