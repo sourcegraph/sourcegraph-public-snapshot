@@ -147,7 +147,9 @@ var (
 		GROUP BY
 			month
 	)
+
 	SELECT
+		'DAU' AS metric,
 		ROUND(sum_total_count / total_days)::int AS avg_total_count
 	FROM
 		(
@@ -157,8 +159,11 @@ var (
 			FROM
 				daus
 		) AS f
+
 	UNION ALL
+
 	SELECT
+		'WAU' AS metric,
 		CASE
 			WHEN total_weeks > 1 THEN ROUND(sum_total_count / total_weeks)::int
 			ELSE sum_total_count::int
@@ -171,8 +176,11 @@ var (
 			FROM
 				waus
 		) AS f
+
 	UNION ALL
+
 	SELECT
+		'MAU' AS metric,
 		CASE
 			WHEN total_months > 1 THEN ROUND(sum_total_count / total_months)::int
 			ELSE sum_total_count::int
@@ -216,15 +224,16 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 		rows.Next()
 
 		var totalCount float64
-		if err := rows.Scan(&totalCount); err != nil {
+		var metric string
+		if err := rows.Scan(&metric, &totalCount); err != nil {
 			return nil, err
 		}
 
-		if i == 0 {
+		if metric == "DAU" {
 			summaryData.AvgDAU = totalCount
-		} else if i == 1 {
+		} else if metric == "WAU" {
 			summaryData.AvgWAU = totalCount
-		} else {
+		} else if metric == "MAU" {
 			summaryData.AvgMAU = totalCount
 		}
 	}
