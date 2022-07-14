@@ -24,6 +24,22 @@ describe('Notepad', () => {
         userEvent.click(screen.getByRole('button', { name: /Open Notepad/ }))
     }
 
+    // Notepad is hidden by default on small screens. jest-dom has no concept of
+    // screen size, so this needs to be explicitly overriden to ensure that the
+    // component renders.
+    window.matchMedia = sinon.spy(
+        (media: string): MediaQueryList => ({
+            matches: true,
+            media,
+            addListener: () => {},
+            removeListener: () => {},
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => false,
+            onchange: null,
+        })
+    )
+
     afterEach(cleanup)
 
     const mockEntries: NotepadEntry[] = [
