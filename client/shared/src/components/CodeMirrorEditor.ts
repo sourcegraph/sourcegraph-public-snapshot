@@ -9,7 +9,8 @@ if (process.env.INTEGRATION_TESTS) {
     // Expose findFromDOM on the global object to be able to get the real input
     // value in integration tests
     // @ts-ignore
-    window.CodeMirrorFindFromDOM = EditorView.findFromDOM
+    window.CodeMirrorFindFromDOM = (element: HTMLElement): ReturnType<EditorView['findFromDOM']> =>
+        EditorView.findFromDOM(element)
 }
 
 /**

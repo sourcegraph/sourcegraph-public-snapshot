@@ -1,3 +1,4 @@
+import { EditorView } from '@codemirror/view'
 import { Page } from 'puppeteer'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
@@ -7,7 +8,6 @@ import { Driver, percySnapshot } from '@sourcegraph/shared/src/testing/driver'
 import { readEnvironmentBoolean } from '@sourcegraph/shared/src/testing/utils'
 
 import { WebGraphQlOperations } from '../graphql-operations'
-import { EditorView } from '@codemirror/view'
 
 const CODE_HIGHLIGHTING_QUERIES: Partial<
     keyof (WebGraphQlOperations & SharedGraphQlOperations & SearchGraphQlOperations)
@@ -226,9 +226,9 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                 await api.waitForIt()
                 await driver.page.click(rootSelector)
             },
-            async getValue() {
-                return await driver.page.evaluate((selector: string) => {
-                    //@ts-ignore
+            getValue() {
+                return driver.page.evaluate((selector: string) => {
+                    // @ts-ignore
                     const fromDOM = window.CodeMirrorFindFromDOM as typeof EditorView['findFromDOM'] | undefined
                     if (!fromDOM) {
                         throw new Error('CodeMirror DOM API not exposed')
