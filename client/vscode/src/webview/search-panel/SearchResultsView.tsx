@@ -29,7 +29,6 @@ import { LATEST_VERSION, RepositoryMatch, SearchMatch } from '@sourcegraph/share
 import { globbingEnabledFromSettings } from '@sourcegraph/shared/src/util/globbing'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { DISMISS_SEARCH_CTA_KEY } from '../../settings/LocalStorageService'
 import { SearchResultsState } from '../../state'
 import { WebviewPageProps } from '../platform/context'
 
@@ -61,27 +60,10 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         'repository' | 'branches' | 'description'
     > | null>(null)
 
-    // Check VS Code local storage to see if user has clicked dismiss button before
-    const [dismissSearchCta, setDismissSearchCta] = useState(false)
-    // Return empty string if not in vs code local storage or 'search' if it exists
-    const showCtaAlert = useMemo(() => extensionCoreAPI.getLocalStorageItem(DISMISS_SEARCH_CTA_KEY), [extensionCoreAPI])
-    const onDismissCtaAlert = useCallback(async () => {
-        setDismissSearchCta(true)
-        await extensionCoreAPI.setLocalStorageItem(DISMISS_SEARCH_CTA_KEY, 'true')
-    }, [extensionCoreAPI])
-
     const isSourcegraphDotCom = useMemo(() => {
         const hostname = new URL(instanceURL).hostname
         return hostname === 'sourcegraph.com' || hostname === 'www.sourcegraph.com'
     }, [instanceURL])
-
-    useEffect(() => {
-        showCtaAlert
-            .then(result => {
-                setDismissSearchCta(result.length > 0)
-            })
-            .catch(() => setDismissSearchCta(false))
-    }, [showCtaAlert])
 
     // Editor focus.
     const editorReference = useRef<IEditor>()
