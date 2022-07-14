@@ -114,6 +114,8 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--dropdown-link-active-bg', intelliJTheme['List.selectionBackground'])
     root.style.setProperty('--dropdown-link-hover-bg', intelliJTheme['ToolbarComboWidget.hoverBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
+    root.style.setProperty('--tooltip-bg', intelliJTheme['ToolTip.background'])
+    root.style.setProperty('--tooltip-color', intelliJTheme['ToolTip.foreground'])
 
     root.style.setProperty('--jb-list-bg', intelliJTheme['List.background'])
     root.style.setProperty('--jb-button-bg', intelliJTheme['Button.startBackground'])
