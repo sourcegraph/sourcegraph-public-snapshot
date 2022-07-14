@@ -44,8 +44,8 @@ export type StepID =
     | 'tracking:issues'
     // branch cut
     | 'changelog:cut'
-    // release
     | 'release:branch-cut'
+    // release
     | 'release:status'
     | 'release:create-candidate'
     | 'release:stage'
