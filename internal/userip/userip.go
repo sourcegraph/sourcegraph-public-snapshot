@@ -6,11 +6,8 @@ import (
 	"strings"
 )
 
-type contextKey int
-
 type userIPKey struct{}
 
-// TODO naming?
 type UserIP struct {
 	IP            string
 	XForwardedFor string

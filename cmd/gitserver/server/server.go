@@ -38,6 +38,7 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -360,7 +361,7 @@ func (s *Server) Handler() http.Handler {
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/archive", trace.WithRouteName("archive", s.handleArchive))
-	mux.HandleFunc("/exec", trace.WithRouteName("exec", LogRequest(s.Logger, s.handleExec)))
+	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.Middleware(s.Logger, s.handleExec)))
 	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
 	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
 	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", s.handleP4Exec))
@@ -1357,15 +1358,8 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
-	// TODO clean
-	ctx := r.Context()
-	rc := FromRepoContext(ctx)
-	rc.Repo = string(req.Repo)
-	rc.Cmd = req.Args[0]
-	if len(req.Args) > 1 {
-		rc.Args = req.Args[1:]
-	}
-
+	// Log which which actor is accessing the repo.
+	accesslog.Record(r.Context(), string(req.Repo), req.Args)
 	s.exec(w, r, &req)
 }
 
