@@ -1,16 +1,18 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { useHistory, useLocation } from 'react-router'
+import classNames from 'classnames'
+import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Container, PageHeader } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
 import { PageTitle } from '../../../components/PageTitle'
+import { Timestamp } from '../../../components/time/Timestamp'
 import {
     UserEventLogFields,
     UserEventLogsConnectionFields,
@@ -19,20 +21,52 @@ import {
 } from '../../../graphql-operations'
 import { UserSettingsAreaRouteContext } from '../../../user/settings/UserSettingsArea'
 
-import { UserEventNode } from './UserEventLogsNode'
+import styles from './UserEventLogsPage.module.scss'
 
-export interface UserEventLogsPageProps extends Pick<UserSettingsAreaRouteContext, 'user'>, TelemetryProps {}
+interface UserEventNodeProps {
+    /**
+     * The user to display in this list item.
+     */
+    node: UserEventLogFields
+}
+
+export const UserEventNode: React.FunctionComponent<React.PropsWithChildren<UserEventNodeProps>> = ({
+    node,
+}: UserEventNodeProps) => (
+    <li className={classNames('list-group-item', styles.eventLog)}>
+        <div className="d-flex align-items-center justify-content-between">
+            <Code>{node.name}</Code>
+            <div>
+                <Timestamp date={node.timestamp} />
+            </div>
+        </div>
+        <div className="text-break">
+            <small>
+                From: {node.source}{' '}
+                {node.url && (
+                    <span>
+                        (<Link to={node.url}>{node.url}</Link>)
+                    </span>
+                )}
+            </small>
+        </div>
+    </li>
+)
+
+export interface UserEventLogsPageProps
+    extends Pick<UserSettingsAreaRouteContext, 'user'>,
+        Pick<RouteComponentProps, 'history' | 'location'>,
+        TelemetryProps {}
 
 /**
  * A page displaying usage statistics for the site.
  */
-const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEventLogsPageProps>> = ({
+export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEventLogsPageProps>> = ({
     telemetryService,
+    history,
+    location,
     user,
 }) => {
-    const history = useHistory()
-    const location = useLocation()
-
     useMemo(() => {
         telemetryService.logViewEvent('UserEventLogPage')
     }, [telemetryService])
@@ -106,5 +140,3 @@ const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<UserEve
         </>
     )
 }
-
-export default UserEventLogsPage

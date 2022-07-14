@@ -1,5 +1,3 @@
-import React from 'react'
-
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { userSettingsAreaRoutes } from '../../../user/settings/routes'
@@ -7,24 +5,23 @@ import { UserSettingsAreaRoute } from '../../../user/settings/UserSettingsArea'
 import { SHOW_BUSINESS_FEATURES } from '../../dotcom/productSubscriptions/features'
 import { authExp } from '../../site-admin/utils'
 
-const UserSettingsPermissionsPage = lazyComponent(
-    () => import('./auth/UserSettingsPermissionsPage'),
-    'UserSettingsPermissionsPage'
-)
-const UserEventLogsPage = React.lazy(() => import('./UserEventLogsPage'))
+import { UserEventLogsPageProps } from './UserEventLogsPage'
 
 export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] = [
     ...userSettingsAreaRoutes,
     {
         path: '/permissions',
         exact: true,
-        render: props => <UserSettingsPermissionsPage {...props} />,
+        render: lazyComponent(() => import('./auth/UserSettingsPermissionsPage'), 'UserSettingsPermissionsPage'),
         condition: ({ authenticatedUser }) => authenticatedUser.siteAdmin,
     },
     {
         path: '/event-log',
         exact: true,
-        render: props => <UserEventLogsPage {...props} />,
+        render: lazyComponent<UserEventLogsPageProps, 'UserEventLogsPage'>(
+            () => import('./UserEventLogsPage'),
+            'UserEventLogsPage'
+        ),
     },
     {
         path: '/external-accounts',
@@ -72,7 +69,10 @@ export const enterpriseUserSettingsAreaRoutes: readonly UserSettingsAreaRoute[] 
     {
         path: '/subscriptions',
         exact: true,
-        render: React.lazy(() => import('../productSubscriptions/UserSubscriptionsProductSubscriptionsPage')),
+        render: lazyComponent(
+            () => import('../productSubscriptions/UserSubscriptionsProductSubscriptionsPage'),
+            'UserSubscriptionsProductSubscriptionsPage'
+        ),
         condition: () => SHOW_BUSINESS_FEATURES,
     },
 ]

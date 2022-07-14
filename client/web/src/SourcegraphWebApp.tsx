@@ -58,6 +58,7 @@ import {
     RouterLink,
     WildcardThemeContext,
     WildcardTheme,
+    LoadingSpinner,
 } from '@sourcegraph/wildcard'
 
 import { authenticatedUser, AuthenticatedUser } from './auth'
@@ -423,7 +424,11 @@ export class SourcegraphWebApp extends React.Component<SourcegraphWebAppProps, S
                                                                 </CodeHostScopeProvider>
                                                             )}
                                                         />
-                                                        <NotepadContainer onCreateNotebook={this.onCreateNotebook} />
+                                                        <React.Suspense fallback={<LoadingSpinner />}>
+                                                            <NotepadContainer
+                                                                onCreateNotebook={this.onCreateNotebook}
+                                                            />
+                                                        </React.Suspense>
                                                         <IdeExtensionTracker />
                                                         <BrowserExtensionTracker />
                                                     </CompatRouter>

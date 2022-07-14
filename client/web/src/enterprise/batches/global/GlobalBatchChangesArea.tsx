@@ -62,6 +62,15 @@ interface Props<RouteProps extends {} = {}>
     isSourcegraphDotCom: boolean
 }
 
+/**
+ * The global batch changes area.
+ */
+export const GlobalBatchChangesArea: React.FunctionComponent<React.PropsWithChildren<Props>> = props => (
+    <div className="w-100">
+        {props.isSourcegraphDotCom ? <DotcomGettingStartedPage /> : <AuthenticatedBatchChangesArea {...props} />}
+    </div>
+)
+
 const NotFoundPage: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <HeroPage icon={MapSearchIcon} title="404: Not Found" />
 )
