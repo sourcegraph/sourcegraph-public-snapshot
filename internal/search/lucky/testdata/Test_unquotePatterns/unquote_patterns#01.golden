@@ -1,0 +1,4 @@
+{
+  "Input": "repo:^github\\.com/sourcegraph/sourcegraph$ \"monitor\" \"*Monitor\"",
+  "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ monitor *Monitor"
+}
