@@ -361,7 +361,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
     return (
-        <MarketingBlock wrapperClassName={styles.notepadCta}>
+        <MarketingBlock wrapperClassName={classNames(styles.notepadCta, 'd-none d-md-block')}>
             <aside className={styles.notepadCtaContent}>
                 <Button
                     aria-label="Hide"
