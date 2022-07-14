@@ -1,6 +1,6 @@
 import { decode } from 'js-base64'
 
-import { SearchPatternType } from '@sourcegraph/shared/out/src/graphql-operations'
+import { SearchPatternType } from '@sourcegraph/search'
 
 import type { PreviewRequest, Request } from '../search/js-to-java-bridge'
 import type { Search, Theme } from '../search/types'
