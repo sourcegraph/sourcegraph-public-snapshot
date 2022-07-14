@@ -49,8 +49,12 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 func UserIPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		ip := UserIP(req.RemoteAddr)
-
+		var ip UserIP
+		if fIp := req.Header.Get("X-FORWARDED-FOR"); fIp != "" {
+			ip = UserIP(fIp)
+		} else {
+			ip = UserIP(req.RemoteAddr)
+		}
 		ctx := req.Context()
 		ctxWithIP := WithUserIP(ctx, ip)
 
