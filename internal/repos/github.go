@@ -637,6 +637,12 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		results <- &githubResult{err: errors.New(`unsupported configuration "public" for "repositoryQuery" for github.com`)}
 		return
 	}
+
+	if s.excludeArchived {
+		s.listPublicNonArchived(ctx, results)
+		return
+	}
+
 	var sinceRepoID int64
 	for {
 		if err := ctx.Err(); err != nil {
@@ -660,6 +666,13 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 			}
 		}
 	}
+}
+
+// listPublicNonArchived handles the `public` keyword of the `repositoryQuery` config option when achived repos are excluded.
+// It returns the public non-archived repositories listed on the /search/repositories endpoint.
+// TODO: Remove this method when https://github.com/orgs/github-community/discussions/12554 gets resolved and just use listPublic()
+func (s *GitHubSource) listPublicNonArchived(ctx context.Context, results chan *githubResult) {
+	(&repositoryQuery{Query: "archived:false is:public", Searcher: s.v4Client}).Do(ctx, results)
 }
 
 // listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
@@ -713,12 +726,14 @@ func (r dateRange) String() string {
 func (r dateRange) Size() time.Duration { return r.To.Sub(r.From) }
 
 type repositoryQuery struct {
-	Query    string
-	Created  *dateRange
-	Cursor   github.Cursor
-	First    int
-	Limit    int
-	Searcher *github.V4Client
+	Query        string
+	Created      *dateRange
+	Cursor       github.Cursor
+	First        int
+	Limit        int
+	Searcher     *github.V4Client
+	ExpandedFrom *time.Time
+	RefinedFrom  *time.Time
 }
 
 func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
@@ -745,7 +760,7 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 		switch {
 		case res.TotalCount > q.Limit:
 			log15.Info(
-				fmt.Sprintf("repositoryQuery matched more than %d results, refining it and retrying", q.Limit),
+				fmt.Sprintf("repositoryQuery matched more than %d results, refining it and retrying, results count: %d", q.Limit, res.TotalCount),
 				"query",
 				q.String(),
 			)
@@ -759,10 +774,19 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			return
 		case res.TotalCount < q.First:
 			log15.Info(
-				fmt.Sprintf("repositoryQuery matched less than %d results, expanding it and retrying", q.First),
+				fmt.Sprintf("repositoryQuery matched less than %d results, expanding it and retrying, results count: %d", q.First, res.TotalCount),
 				"query",
 				q.String(),
 			)
+
+			// The total # of results between minCreated and now is less than 100, we break, so we can return those results
+			// because we will never find more.
+			if q.Created == nil || (q.Created != nil && q.Created.From.Sub(minCreated) <= 0) {
+				for i := range res.Repos {
+					results <- &githubResult{repo: &res.Repos[i]}
+				}
+				return
+			}
 
 			if q.Expand() {
 				log15.Info("repositoryQuery expanded", "query", q)
@@ -814,6 +838,16 @@ func (s *repositoryQuery) Refine() bool {
 		return false
 	}
 
+	// when we refine we need to keep track of the goalpost for the sake of any
+	// expands happening afterwards
+	createdFrom := s.Created.From
+	s.RefinedFrom = &createdFrom
+
+	if s.ExpandedFrom != nil {
+		s.Created.From = s.Created.From.Add(s.ExpandedFrom.Sub(s.Created.From) / 2)
+		return true
+	}
+
 	s.Created.From = s.Created.From.Add(s.Created.Size() / 2)
 	return true
 }
@@ -826,7 +860,17 @@ func (s *repositoryQuery) Expand() bool {
 		return false
 	}
 
-	s.Created.From = s.Created.From.Add(-(s.Created.Size() / 2))
+	// when we expand we need to keep track of the goalpost for the sake of any
+	// refines happening afterwards
+	createdFrom := s.Created.From
+	s.ExpandedFrom = &createdFrom
+
+	if s.RefinedFrom != nil {
+		s.Created.From = s.Created.From.Add(-(s.Created.From.Sub(*s.RefinedFrom) / 2))
+		return true
+	}
+
+	s.Created.From = s.Created.From.Add(-(s.Created.From.Sub(minCreated) / 2))
 	return true
 }
 
