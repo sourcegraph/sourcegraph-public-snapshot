@@ -31,6 +31,16 @@ export const updateInsight = (
     const { nextInsightData, insightId } = input
 
     switch (nextInsightData.type) {
+        case InsightType.Compute: {
+            return from(
+                client.mutate<UpdateLineChartSearchInsightResult, UpdateLineChartSearchInsightVariables>({
+                    mutation: UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL,
+                    variables: { input: getSearchInsightUpdateInput(nextInsightData), id: insightId },
+                    update,
+                })
+            )
+        }
+
         case InsightType.SearchBased: {
             return from(
                 client.mutate<UpdateLineChartSearchInsightResult, UpdateLineChartSearchInsightVariables>({

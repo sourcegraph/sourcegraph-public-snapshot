@@ -83,7 +83,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     title: presentation.title,
                     repositories,
                     series,
-                    step,
                     filters: {
                         includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',

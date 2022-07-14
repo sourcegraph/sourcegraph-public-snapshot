@@ -1,21 +1,36 @@
 import {
     InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
+    LineChartSearchInsightInput,
     SeriesDisplayOptionsInput,
+    TimeIntervalStepUnit,
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
+import { InsightDashboard, isVirtualDashboard } from '../../../../types'
 import {
     MinimalCaptureGroupInsightData,
+    MinimalComputeInsightData,
     MinimalLangStatsInsightData,
     MinimalSearchBasedInsightData,
 } from '../../../code-insights-backend-types'
 import { getStepInterval } from '../../utils/get-step-interval'
 
-export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
+export function getSearchInsightUpdateInput(
+    insight: MinimalSearchBasedInsightData | MinimalComputeInsightData
+): UpdateLineChartSearchInsightInput {
     const repositories = insight.repositories
-    const [unit, value] = getStepInterval(insight.step)
+    let stepInterval = {
+        unit: TimeIntervalStepUnit.DAY,
+        value: 1,
+    }
+
+    if ('step' in insight) {
+        const [unit, value] = getStepInterval(insight.step)
+        stepInterval = { unit, value }
+    }
+
     const filters: InsightViewFiltersInput = {
         includeRepoRegex: insight.filters.includeRepoRegexp,
         excludeRepoRegex: insight.filters.excludeRepoRegexp,
@@ -34,7 +49,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
                 lineColor: series.stroke,
             },
             repositoryScope: { repositories },
-            timeScope: { stepInterval: { unit, value } },
+            timeScope: { stepInterval },
         })),
         presentationOptions: {
             title: insight.title,
@@ -85,4 +100,29 @@ export function getLangStatsInsightUpdateInput(insight: MinimalLangStatsInsightD
             otherThreshold: insight.otherThreshold,
         },
     }
+}
+
+export function getComputeInsightCreateInput(
+    insight: MinimalComputeInsightData,
+    dashboard: InsightDashboard | null
+): LineChartSearchInsightInput {
+    const input: LineChartSearchInsightInput = {
+        dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+            query: series.query,
+            options: {
+                label: series.name,
+                lineColor: series.stroke,
+            },
+            repositoryScope: { repositories: insight.repositories },
+            timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
+            groupBy: insight.groupBy,
+        })),
+        options: { title: insight.title },
+    }
+
+    if (dashboard && !isVirtualDashboard(dashboard)) {
+        input.dashboards = [dashboard.id]
+    }
+
+    return input
 }

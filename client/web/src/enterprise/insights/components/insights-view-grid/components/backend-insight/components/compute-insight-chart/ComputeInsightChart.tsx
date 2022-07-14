@@ -7,12 +7,12 @@ import useResizeObserver from 'use-resize-observer'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
+import { BarChart } from '../../../../../../../../charts/components/bar-chart/BarChart'
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData } from '../../../../../../core'
-import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
+import { ComputeInsightData } from '../../../../../../core'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
 
-import styles from './BackendInsightChart.module.scss'
+import styles from './ComputeInsightChart.module.scss'
 
 /**
  * If width of the chart is less than this var width value we should put the legend
@@ -39,28 +39,17 @@ export const MINIMAL_HORIZONTAL_LAYOUT_WIDTH = 460
  */
 export const MINIMAL_SERIES_FOR_ASIDE_LEGEND = 3
 
-interface BackendInsightChartProps<Datum> extends BackendInsightData {
-    locked: boolean
-    zeroYAxisMin: boolean
+interface ComputeInsightChartProps<Datum> extends ComputeInsightData {
     className?: string
-    onDatumClick: () => void
     seriesToggleState: UseSeriesToggleReturn
 }
 
-export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const {
-        locked,
-        isFetchingHistoricalData,
-        content,
-        zeroYAxisMin,
-        className,
-        onDatumClick,
-        seriesToggleState,
-    } = props
+export function ComputeInsightChart<Datum>(props: ComputeInsightChartProps<Datum>): React.ReactElement {
+    const { isFetchingHistoricalData, content, className, seriesToggleState } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
     const { setHoveredId, isSeriesSelected, isSeriesHovered } = seriesToggleState
 
-    const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+    const hasViewManySeries = content.data.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
 
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
@@ -77,21 +66,18 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         {parent => (
                             <>
                                 <BackendAlertOverlay
-                                    hasNoData={content.series.every(series => series.data.length === 0)}
+                                    hasNoData={content.data.length === 0}
                                     isFetchingHistoricalData={isFetchingHistoricalData}
                                     className={styles.alertOverlay}
                                 />
 
-                                <SeriesChart
-                                    type={SeriesBasedChartTypes.Line}
+                                <BarChart
                                     width={parent.width}
                                     height={parent.height}
-                                    locked={locked}
-                                    className={styles.chart}
-                                    onDatumClick={onDatumClick}
-                                    zeroYAxisMin={zeroYAxisMin}
-                                    seriesToggleState={seriesToggleState}
-                                    {...content}
+                                    getDatumColor={content.getDatumColor}
+                                    getDatumName={content.getDatumName}
+                                    getDatumValue={content.getDatumValue}
+                                    data={content.data}
                                 />
                             </>
                         )}
@@ -99,7 +85,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
 
                     <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
                         <LegendList className={styles.legendList}>
-                            {content.series.map(series => (
+                            {content.data.map(series => (
                                 <LegendItem
                                     key={series.id as string}
                                     color={getLineColor(series)}
@@ -107,11 +93,9 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                     selected={isSeriesSelected(`${series.id}`)}
                                     hovered={isSeriesHovered(`${series.id}`)}
                                     className={classNames(styles.legendListItem, {
-                                        [styles.clickable]: content.series.length > 1,
+                                        [styles.clickable]: content.data.length > 1,
                                     })}
-                                    onClick={() =>
-                                        seriesToggleState.toggle(`${series.id}`, mapSeriesIds(content.series))
-                                    }
+                                    onClick={() => seriesToggleState.toggle(`${series.id}`, mapSeriesIds(content.data))}
                                     onMouseEnter={() => setHoveredId(`${series.id}`)}
                                     // prevent accidental dragging events
                                     onMouseDown={event => event.stopPropagation()}

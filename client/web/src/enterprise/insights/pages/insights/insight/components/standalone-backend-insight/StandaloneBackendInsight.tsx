@@ -34,6 +34,7 @@ import {
     DrillDownFiltersFormValues,
     DrillDownInsightCreationFormValues,
 } from '../../../../../components/insights-view-grid/components/backend-insight/components'
+import { ComputeInsightChart } from '../../../../../components/insights-view-grid/components/backend-insight/components/compute-insight-chart/ComputeInsightChart'
 import {
     BackendInsightData,
     ALL_INSIGHTS_DASHBOARD,
@@ -41,6 +42,7 @@ import {
     CodeInsightsBackendContext,
     DEFAULT_SERIES_DISPLAY_OPTIONS,
     InsightFilters,
+    ComputeInsightData,
 } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
@@ -61,7 +63,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const { createInsight, updateInsight } = useContext(CodeInsightsBackendContext)
 
     const seriesToggleState = useSeriesToggle()
-    const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
+    const [insightData, setInsightData] = useState<BackendInsightData | ComputeInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
@@ -203,12 +205,17 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                     <InsightCardLoading>Loading code insight</InsightCardLoading>
                 ) : error ? (
                     <BackendInsightErrorAlert error={error} />
-                ) : (
+                ) : 'series' in insightData.content ? (
                     <BackendInsightChart
-                        {...insightData}
+                        {...(insightData as BackendInsightData)}
                         locked={insight.isFrozen}
                         zeroYAxisMin={zeroYAxisMin}
                         onDatumClick={trackDatumClicks}
+                        seriesToggleState={seriesToggleState}
+                    />
+                ) : (
+                    <ComputeInsightChart
+                        {...(insightData as ComputeInsightData)}
                         seriesToggleState={seriesToggleState}
                     />
                 )}

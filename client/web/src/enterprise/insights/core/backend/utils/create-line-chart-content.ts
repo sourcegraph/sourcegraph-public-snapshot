@@ -53,6 +53,7 @@ function getParsedDataSeriesMetadata(
     seriesData: InsightDataSeries[]
 ): SearchBasedInsightSeries[] {
     switch (insight.type) {
+        case InsightType.Compute:
         case InsightType.SearchBased:
             return insight.series
 

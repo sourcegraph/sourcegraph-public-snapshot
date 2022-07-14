@@ -6,6 +6,7 @@ export enum CodeInsightTrackType {
     CaptureGroupInsight = 'CaptureGroup',
     InProductLandingPageInsight = 'InProductLandingPageInsight',
     CloudLandingPageInsight = 'CloudLandingPageInsight',
+    ComputeInsight = 'ComputeInsight',
 }
 
 export const getTrackingTypeByInsightType = (insightType: InsightType): CodeInsightTrackType => {
@@ -16,5 +17,7 @@ export const getTrackingTypeByInsightType = (insightType: InsightType): CodeInsi
             return CodeInsightTrackType.SearchBasedInsight
         case InsightType.LangStats:
             return CodeInsightTrackType.LangStatsInsight
+        case InsightType.Compute:
+            return CodeInsightTrackType.ComputeInsight
     }
 }

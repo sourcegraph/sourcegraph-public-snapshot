@@ -1,25 +1,14 @@
-import { Duration } from 'date-fns'
+import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
 
-import { GroupByField, Maybe } from '../../../../../../graphql-operations'
 import { BaseInsight, InsightExecutionType, InsightFilters, InsightType } from '../common'
 
-// Based off of SearchBasedInsight
-// We do not extend SearchBasedInsight becuase this is going to be a temporary solution
+import { SearchBasedInsightSeries } from './search-insight'
+
 export interface ComputeInsight extends BaseInsight {
+    type: InsightType.Compute
     repositories: string[]
     filters: InsightFilters
-    series: ComputeBasedInsightSeries[]
-    step: Duration
-
+    series: SearchBasedInsightSeries[]
+    groupBy: GroupByField | null
     executionType: InsightExecutionType.Backend
-    type: InsightType.Compute
-
-    groupBy: Maybe<GroupByField>
-}
-
-export interface ComputeBasedInsightSeries {
-    id: string
-    name: string
-    query: string
-    stroke?: string
 }

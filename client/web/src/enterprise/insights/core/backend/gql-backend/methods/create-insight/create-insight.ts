@@ -15,6 +15,7 @@ import { InsightDashboard, InsightExecutionType, InsightType, isVirtualDashboard
 import {
     InsightCreateInput,
     MinimalCaptureGroupInsightData,
+    MinimalComputeInsightData,
     MinimalSearchBasedInsightData,
 } from '../../../code-insights-backend-types'
 import { createInsightView } from '../../deserialization/create-insight-view'
@@ -32,6 +33,7 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
 
     switch (insight.type) {
         case InsightType.CaptureGroup:
+        case InsightType.Compute:
         case InsightType.SearchBased: {
             return createSearchBasedInsight(apolloClient, insight, dashboard)
         }
@@ -55,7 +57,10 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
     }
 }
 
-type CreationSeriesInsightData = MinimalSearchBasedInsightData | MinimalCaptureGroupInsightData
+type CreationSeriesInsightData =
+    | MinimalSearchBasedInsightData
+    | MinimalCaptureGroupInsightData
+    | MinimalComputeInsightData
 
 function createSearchBasedInsight(
     apolloClient: ApolloClient<object>,

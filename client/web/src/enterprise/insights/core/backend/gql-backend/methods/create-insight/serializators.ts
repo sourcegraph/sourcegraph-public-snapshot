@@ -2,12 +2,14 @@ import {
     LineChartSearchInsightDataSeriesInput,
     LineChartSearchInsightInput,
     PieChartSearchInsightInput,
+    TimeIntervalStepUnit,
 } from '../../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { InsightDashboard, InsightType, isVirtualDashboard } from '../../../../types'
 import {
     CreationInsightInput,
     MinimalCaptureGroupInsightData,
+    MinimalComputeInsightData,
     MinimalLangStatsInsightData,
     MinimalSearchBasedInsightData,
 } from '../../../code-insights-backend-types'
@@ -27,6 +29,8 @@ export function getInsightCreateGqlInput(
             return getSearchInsightCreateInput(insight, dashboard)
         case InsightType.CaptureGroup:
             return getCaptureGroupInsightCreateInput(insight, dashboard)
+        case InsightType.Compute:
+            return getComputeInsightCreateInput(insight, dashboard)
         case InsightType.LangStats:
             return getLangStatsInsightCreateInput(insight, dashboard)
     }
@@ -107,6 +111,31 @@ export function getLangStatsInsightCreateInput(
             title: insight.title,
             otherThreshold: insight.otherThreshold,
         },
+    }
+
+    if (dashboard && !isVirtualDashboard(dashboard)) {
+        input.dashboards = [dashboard.id]
+    }
+
+    return input
+}
+
+export function getComputeInsightCreateInput(
+    insight: MinimalComputeInsightData,
+    dashboard: InsightDashboard | null
+): LineChartSearchInsightInput {
+    const input: LineChartSearchInsightInput = {
+        dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+            query: series.query,
+            options: {
+                label: series.name,
+                lineColor: series.stroke,
+            },
+            repositoryScope: { repositories: insight.repositories },
+            timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
+            groupBy: insight.groupBy,
+        })),
+        options: { title: insight.title },
     }
 
     if (dashboard && !isVirtualDashboard(dashboard)) {
