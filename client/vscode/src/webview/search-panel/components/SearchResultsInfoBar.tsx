@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
 
@@ -66,15 +66,14 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props =>
     props.patternType === SearchPatternType.literal && props.fullQuery && props.fullQuery.includes('"') ? (
-        <small
-            className={styles.notice}
-            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
-        >
-            <span>
-                <Icon aria-hidden={true} className="mr-1" svgPath={mdiFormatQuoteOpen} />
-                Searching literally <strong>(including quotes)</strong>
-            </span>
-        </small>
+        <Tooltip content="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search.">
+            <small className={styles.notice}>
+                <span>
+                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiFormatQuoteOpen} />
+                    Searching literally <strong>(including quotes)</strong>
+                </span>
+            </small>
+        </Tooltip>
     ) : null
 
 export const SearchResultsInfoBar: React.FunctionComponent<
@@ -135,32 +134,35 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         searchParameters.set('trigger-query', `${fullQuery} patternType:${patternType}`)
         return (
             <li className={classNames('mr-2', styles.navItem)}>
-                <ExperimentalActionButton
-                    extensionCoreAPI={extensionCoreAPI}
-                    showExperimentalVersion={showActionButtonExperimentalVersion}
-                    onNonExperimentalLinkClick={onCreateCodeMonitorButtonClick}
-                    className="test-save-search-link"
-                    data-tooltip={
+                <Tooltip
+                    content={
                         !canCreateMonitorFromQuery
                             ? 'Code monitors only support type:diff or type:commit searches.'
                             : undefined
                     }
-                    button={
-                        <>
-                            <Icon aria-hidden={true} className="mr-1" as={CodeMonitoringLogo} />
-                            Monitor
-                        </>
-                    }
-                    icon={<BookmarkRadialGradientIcon />}
-                    title="Monitor code for changes"
-                    copyText="Create a monitor and get notified when your code changes. Free for registered users."
-                    source="CodeMonitor"
-                    viewEventName="VSCECodeMonitorCTAShown"
-                    returnTo={`/code-monitoring/new?${searchParameters.toString()}`}
-                    telemetryService={platformContext.telemetryService}
-                    isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
-                    instanceURL={instanceURL}
-                />
+                >
+                    <ExperimentalActionButton
+                        extensionCoreAPI={extensionCoreAPI}
+                        showExperimentalVersion={showActionButtonExperimentalVersion}
+                        onNonExperimentalLinkClick={onCreateCodeMonitorButtonClick}
+                        className="test-save-search-link"
+                        button={
+                            <>
+                                <Icon aria-hidden={true} className="mr-1" as={CodeMonitoringLogo} />
+                                Monitor
+                            </>
+                        }
+                        icon={<BookmarkRadialGradientIcon />}
+                        title="Monitor code for changes"
+                        copyText="Create a monitor and get notified when your code changes. Free for registered users."
+                        source="CodeMonitor"
+                        viewEventName="VSCECodeMonitorCTAShown"
+                        returnTo={`/code-monitoring/new?${searchParameters.toString()}`}
+                        telemetryService={platformContext.telemetryService}
+                        isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
+                        instanceURL={instanceURL}
+                    />
+                </Tooltip>
             </li>
         )
     }, [
@@ -214,16 +216,18 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
     const ShareLinkButton = useMemo(
         () => (
-            <li className={classNames('mr-2', styles.navItem)} data-tooltip="Share results link">
-                <button
-                    type="button"
-                    className="btn btn-sm btn-outline-secondary text-decoration-none"
-                    onClick={onShareResultsClick}
-                >
-                    <Icon aria-hidden={true} className="mr-1" svgPath={mdiLink} />
-                    Share
-                </button>
-            </li>
+            <Tooltip content="Share results link">
+                <li className={classNames('mr-2', styles.navItem)}>
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary text-decoration-none"
+                        onClick={onShareResultsClick}
+                    >
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiLink} />
+                        Share
+                    </button>
+                </li>
+            </Tooltip>
         ),
         [onShareResultsClick]
     )

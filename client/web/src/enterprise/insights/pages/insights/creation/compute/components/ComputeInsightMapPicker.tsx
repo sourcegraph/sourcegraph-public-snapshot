@@ -86,7 +86,6 @@ export const ComputeInsightMapPicker: FC<ComputeInsightMapPickerProps> = props =
                     active={value === ComputeInsightMap.Date}
                     value={ComputeInsightMap.Date}
                     disabled={!hasTypeDiffOrCommit}
-                    data-tooltip={!hasTypeDiffOrCommit ? TOOLTIP_TEXT : undefined}
                     onClick={handleOptionClick}
                 >
                     date
