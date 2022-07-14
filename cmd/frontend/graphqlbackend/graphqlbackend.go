@@ -362,6 +362,7 @@ func NewSchema(
 	orgRepositoryResolver OrgRepositoryResolver,
 	notebooks NotebooksResolver,
 	compute ComputeResolver,
+	dependencies DependenciesResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -457,6 +458,12 @@ func NewSchema(
 		schemas = append(schemas, computeSchema)
 	}
 
+	if dependencies != nil {
+		EnterpriseResolvers.dependenciesResolver = dependencies
+		resolver.DependenciesResolver = dependencies
+		schemas = append(schemas, dependenciesSchema)
+	}
+
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -489,6 +496,7 @@ type schemaResolver struct {
 	SearchContextsResolver
 	OrgRepositoryResolver
 	NotebooksResolver
+	DependenciesResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -564,6 +572,7 @@ var EnterpriseResolvers = struct {
 	searchContextsResolver SearchContextsResolver
 	orgRepositoryResolver  OrgRepositoryResolver
 	notebooksResolver      NotebooksResolver
+	dependenciesResolver   DependenciesResolver
 }{}
 
 // DEPRECATED

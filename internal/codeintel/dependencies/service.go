@@ -488,3 +488,20 @@ func (s *Service) UpsertDependencyRepos(ctx context.Context, deps []Repo) ([]Rep
 func (s *Service) DeleteDependencyReposByID(ctx context.Context, ids ...int) error {
 	return s.dependenciesStore.DeleteDependencyReposByID(ctx, ids...)
 }
+
+type ListLockfileIndexesOpts struct {
+	RepoName string
+	Commit   string
+	Lockfile string
+
+	After int
+	Limit int
+}
+
+func (s *Service) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) ([]shared.LockfileIndex, error) {
+	return s.dependenciesStore.ListLockfileIndexes(ctx, store.ListLockfileIndexesOpts(opts))
+}
+
+func (s *Service) CountLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (int, error) {
+	return s.dependenciesStore.CountLockfileIndexes(ctx, store.ListLockfileIndexesOpts(opts))
+}
