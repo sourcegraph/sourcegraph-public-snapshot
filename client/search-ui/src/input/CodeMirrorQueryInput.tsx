@@ -271,16 +271,18 @@ export const CodeMirrorQueryInput: React.FunctionComponent<
                     themeExtension.of(EditorView.darkTheme.of(isLightTheme === false)),
                     parseInputAsQuery({ patternType, interpretComments }),
                     queryDiagnostic,
-                    // It baffels me but the syntax highlighting extension has
-                    // to come after the highlight current filter extension,
-                    // otherwise CodeMirror keeps steeling the focus.
-                    // See https://github.com/sourcegraph/sourcegraph/issues/38677
-                    querySyntaxHighlighting,
-                    // The precedence of the next two extensions needs to be
-                    // decreased explicitly, otherwise the diagnostic indicators
-                    // will be hidden behind the highlight background color
-                    Prec.low(tokenInfo()),
-                    Prec.low(highlightFocusedFilter),
+                    // The precedence of these extensions needs to be decreased
+                    // explicitly, otherwise the diagnostic indicators will be
+                    // hidden behind the highlight background color
+                    Prec.low([
+                        tokenInfo(),
+                        highlightFocusedFilter,
+                        // It baffels me but the syntax highlighting extension has
+                        // to come after the highlight current filter extension,
+                        // otherwise CodeMirror keeps steeling the focus.
+                        // See https://github.com/sourcegraph/sourcegraph/issues/38677
+                        querySyntaxHighlighting,
+                    ]),
                     externalExtensions.of(extensions),
                 ],
                 // patternType and interpretComments are updated via a
