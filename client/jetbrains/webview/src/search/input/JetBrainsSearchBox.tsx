@@ -5,7 +5,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
 import {
     IEditor,
     LazyMonacoQueryInput,
@@ -136,9 +136,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
-                        showCopyQueryButton={props.showCopyQueryButton}
                         structuralSearchDisabled={props.structuralSearchDisabled}
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                         clearSearch={clearSearch}
                     />
                 </div>

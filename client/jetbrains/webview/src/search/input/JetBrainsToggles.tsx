@@ -9,7 +9,7 @@ import FormatLetterCaseIcon from 'mdi-react/FormatLetterCaseIcon'
 import LightningBoltIcon from 'mdi-react/LightningBoltIcon'
 import RegexIcon from 'mdi-react/RegexIcon'
 
-import { isErrorLike, isMacPlatform } from '@sourcegraph/common'
+import { isErrorLike } from '@sourcegraph/common'
 import {
     CaseSensitivityProps,
     SearchContextProps,
@@ -17,9 +17,7 @@ import {
     SearchPatternTypeProps,
     SubmitSearchProps,
 } from '@sourcegraph/search'
-import { CopyQueryButton } from '@sourcegraph/search-ui/src/input/toggles/CopyQueryButton'
 import { QueryInputToggle } from '@sourcegraph/search-ui/src/input/toggles/QueryInputToggle'
-import { KEYBOARD_SHORTCUT_COPY_FULL_QUERY } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { appendContextFilter } from '@sourcegraph/shared/src/search/query/transformer'
@@ -75,9 +73,7 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
         setCaseSensitivity,
         settingsCascade,
         className,
-        selectedSearchContextSpec,
         submitSearch,
-        showCopyQueryButton = true,
         structuralSearchDisabled,
         clearSearch,
     } = props
@@ -138,17 +134,6 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
 
     const luckySearchEnabled = defaultPatternTypeValue === SearchPatternType.lucky
 
-    const fullQuery = getFullQuery(navbarSearchQuery, selectedSearchContextSpec || '', caseSensitive, patternType)
-
-    const copyQueryButton = showCopyQueryButton && (
-        <CopyQueryButton
-            fullQuery={fullQuery}
-            keyboardShortcutForFullCopy={KEYBOARD_SHORTCUT_COPY_FULL_QUERY}
-            isMacPlatform={isMacPlatform()}
-            className={classNames(styles.toggle, styles.copyQueryButton)}
-        />
-    )
-
     return (
         <div className={classNames(className, styles.toggleContainer)}>
             {navbarSearchQuery !== '' && (
@@ -169,7 +154,6 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                         activeClassName="test-expert-mode-toggle--active"
                         disableOn={[]}
                     />
-                    {copyQueryButton}
                 </>
             ) : (
                 <>
@@ -248,7 +232,6 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
                             disableOn={[]}
                         />
                     )}
-                    {copyQueryButton}
                 </>
             )}
         </div>
