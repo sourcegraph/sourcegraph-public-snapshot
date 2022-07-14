@@ -142,9 +142,7 @@ export async function ensureSrcCliUpToDate(): Promise<void> {
         headers: {
             Accept: 'application/json',
         },
-    })
-        .then(response => response.json())
-        .then(json => json.tag_name)
+    }).then(response => response.json()).then(json => json.tag_name)
 
     let installedTag = execa.sync('src', ['version']).stdout.split('\n')
     installedTag = installedTag[0].split(':')
