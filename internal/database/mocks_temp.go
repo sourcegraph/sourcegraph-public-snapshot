@@ -10321,7 +10321,7 @@ type EventLogStoreCountUniqueUsersAllFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 time.Time
-	// Arg3 is the value of the 4rd argument passed to this method
+	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
 	Arg3 *CountUniqueUsersOptions
 	// Result0 is the value of the 1st result returned from this method

@@ -5,11 +5,7 @@ class ServerAdminWrapper {
         // ServerAdminWrapper is never teared down
     }
 
-    public trackPageView(
-        eventAction: string,
-        eventProperties?: any,
-        publicArgument?: any
-    ): void {
+    public trackPageView(eventAction: string, eventProperties?: any, publicArgument?: any): void {
         logEvent(eventAction, eventProperties, publicArgument)
     }
 
