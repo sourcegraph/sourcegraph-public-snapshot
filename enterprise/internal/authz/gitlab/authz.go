@@ -4,9 +4,9 @@ import (
 	"net/url"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
-	"github.com/sourcegraph/sourcegraph/enterprise/internal/oauth"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -126,7 +126,7 @@ func newAuthzProvider(c *ExternalConnection, tokenType gitlab.TokenType, ps []sc
 
 // NewOAuthProvider is a mockable constructor for new OAuthProvider instances.
 var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
-	helper := &oauth.RefreshTokenHelperForExternalService{
+	helper := &oauthutil.RefreshTokenHelperForExternalService{
 		DB:                op.db,
 		ExternalServiceID: op.ExternalService.ID,
 	}

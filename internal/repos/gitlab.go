@@ -13,6 +13,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/oauth2"
 
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -22,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
-	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -102,11 +103,17 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 		return nil, err
 	}
 
-	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli,
-		func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.Context) (string, error) {
-			return maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc) // todo get rid of maybeRefreshGitLabOAuthTokenFromCodeHost
-		},
-	)
+	//provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli,
+	//	func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.Context) (string, error) {
+	//		return maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc) // todo get rid of maybeRefreshGitLabOAuthTokenFromCodeHost
+	//	},
+	//)
+
+	helper := &oauthutil.RefreshTokenHelperForExternalService{
+		DB:                db,
+		ExternalServiceID: svc.ID,
+	}
+	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli, helper.RefreshToken)
 
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {
