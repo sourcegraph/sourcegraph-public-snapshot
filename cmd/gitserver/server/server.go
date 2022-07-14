@@ -917,7 +917,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		var statusErr, updateErr error
 
 		if debounce(req.Repo, req.Since) {
-			updateErr = s.doRepoUpdate(ctx, req.Repo)
+			updateErr = s.doRepoUpdate(ctx, req.Repo, "")
 		}
 
 		// attempts to acquire these values are not contingent on the success of
@@ -2337,7 +2337,7 @@ func honeySampleRate(cmd string, internal bool) uint {
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) error {
 	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	defer span.Finish()
@@ -2375,7 +2375,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 			l.once = new(sync.Once) // Make new requests wait for next update.
 			s.repoUpdateLocksMu.Unlock()
 
-			err = s.doBackgroundRepoUpdate(repo)
+			err = s.doBackgroundRepoUpdate(repo, revspec)
 			if err != nil {
 				s.Logger.Error("performing background repo update", log.Error(err))
 			}
@@ -2396,7 +2396,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
-func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
+func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
 	}
@@ -2440,7 +2440,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	err = syncer.Fetch(ctx, remoteURL, dir)
+	err = syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch")
 	}
@@ -2722,7 +2722,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		return false
 	}
 	// Revision not found, update before returning.
-	err := s.doRepoUpdate(ctx, repo)
+	err := s.doRepoUpdate(ctx, repo, rev)
 	if err != nil {
 		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
 	}
