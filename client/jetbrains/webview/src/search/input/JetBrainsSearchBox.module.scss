@@ -289,6 +289,12 @@
             font-family: inherit;
         }
 
+        :global(.cm-line) {
+            ::selection {
+                background-color: var(--jb-selection-bg);
+            }
+        }
+
         :global(.cm-tooltip):global(.cm-tooltip-autocomplete) {
             color: var(--jb-text-color);
             background-color: var(--dropdown-bg);
