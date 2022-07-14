@@ -123,7 +123,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     @NotNull
     private ActionGroup createActionGroup() {
         DefaultActionGroup group = new DefaultActionGroup();
-        group.add(new DumbAwareAction("Open File in Editor", "Open file in editor", Icons.SourcegraphLogo) {
+        group.add(new DumbAwareAction("Open File in Editor", "Open file in editor", Icons.SourcegraphLogoMono) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent e) {
                 try {
@@ -152,7 +152,7 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
         Editor editor;
 
         SimpleEditorFileAction(String text, FileActionBase action, Editor editor) {
-            super(text, text, Icons.SourcegraphLogo);
+            super(text, text, Icons.SourcegraphLogoMono);
             this.action = action;
             this.editor = editor;
         }
