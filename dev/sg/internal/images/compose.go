@@ -76,7 +76,7 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 		original string
 		new      string
 	}
-	checks := group.NewWithResults[*replace]().WithConcurrencyLimiter(group.NewBasicLimiter(10))
+	checks := group.NewWithResults[*replace]().WithMaxConcurrency(10)
 	for name, entry := range services {
 		name := name
 		service, ok := entry.(map[string]any)
