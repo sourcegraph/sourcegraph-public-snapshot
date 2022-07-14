@@ -1,8 +1,8 @@
 import React from 'react'
 
-import { mdiChartLineVariant, mdiInformationOutline } from '@mdi/js'
+import { mdiChartLineVariant } from '@mdi/js'
 
-import { Badge, H1, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, H1, Icon } from '@sourcegraph/wildcard'
 
 export const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
     <div className="d-flex flex-column justify-content-between align-items-start">
@@ -17,15 +17,6 @@ export const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
                 aria-label="Analytics icon"
             />
             {children}
-            <Tooltip content="Data is updated every 24 hour.">
-                <Icon
-                    className="ml-1"
-                    svgPath={mdiInformationOutline}
-                    aria-label="Analytics info icon"
-                    size="sm"
-                    color="var(--link-color)"
-                />
-            </Tooltip>
         </H1>
     </div>
 )
