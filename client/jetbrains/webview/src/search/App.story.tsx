@@ -1,5 +1,4 @@
 import { DecoratorFn, Meta, Story } from '@storybook/react'
-import classNames from 'classnames'
 import { useDarkMode } from 'storybook-dark-mode'
 
 import { SearchPatternType } from '@sourcegraph/search'
@@ -7,10 +6,15 @@ import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/teleme
 import { usePrependStyles } from '@sourcegraph/storybook'
 
 import { callJava } from '../bridge-mock/call-java-mock'
+import { light } from '../bridge-mock/theme-snapshots/light'
+import { dark } from '../bridge-mock/theme-snapshots/dark'
+
+import { applyTheme } from '.'
 
 import { App } from './App'
 
 import globalStyles from '../index.scss'
+import { useEffect, useRef } from 'react'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -24,14 +28,24 @@ window.callJava = callJava
 export default config
 
 export const JetBrainsPluginApp: Story = () => {
+    const rootElementRef = useRef<HTMLDivElement>(null)
+    const isDarkTheme = useDarkMode()
+
     usePrependStyles('branded-story-styles', globalStyles)
 
+    useEffect(() => {
+        if (rootElementRef.current == null) {
+            return
+        }
+        applyTheme(isDarkTheme ? dark : light, rootElementRef.current)
+    }, [rootElementRef, isDarkTheme])
+
     return (
-        <div className={classNames('theme', useDarkMode() ? 'theme-dark' : 'theme-light')}>
+        <div ref={rootElementRef}>
             <div className="d-flex justify-content-center">
                 <div className="mx-6">
                     <App
-                        isDarkTheme={useDarkMode()}
+                        isDarkTheme={isDarkTheme}
                         instanceURL="https://sourcegraph.com/"
                         isGlobbingEnabled={false}
                         accessToken=""

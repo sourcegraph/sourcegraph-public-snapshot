@@ -95,11 +95,11 @@ export function applyConfig(config: PluginConfig): void {
     polyfillEventSource(accessToken ? { Authorization: `token ${accessToken}` } : {})
 }
 
-export function applyTheme(theme: Theme): void {
+export function applyTheme(theme: Theme, rootElement: Element = document.documentElement): void {
     // Dark/light theme
-    document.documentElement.classList.add('theme')
-    document.documentElement.classList.remove(theme.isDarkTheme ? 'theme-light' : 'theme-dark')
-    document.documentElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
+    rootElement.classList.add('theme')
+    rootElement.classList.remove(theme.isDarkTheme ? 'theme-light' : 'theme-dark')
+    rootElement.classList.add(theme.isDarkTheme ? 'theme-dark' : 'theme-light')
     isDarkTheme = theme.isDarkTheme
 
     // Find the name of properties here: https://plugins.jetbrains.com/docs/intellij/themes-metadata.html#key-naming-scheme
