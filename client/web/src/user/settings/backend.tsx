@@ -3,7 +3,7 @@ import { bufferTime, catchError, concatMap, map } from 'rxjs/operators'
 
 import { createAggregateError } from '@sourcegraph/common'
 import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
-import { UserEvent, EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
+import { EventSource, Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 import { requestGraphQL } from '../../backend/graphql'
 import {
@@ -104,7 +104,7 @@ function sendEvents(events: Event[]): Promise<void> {
     })
         .toPromise()
         .then(dataOrThrowErrors)
-        .then(() => {})
+        .then(() => { })
 }
 
 function sendEvent(event: Event): Promise<void> {

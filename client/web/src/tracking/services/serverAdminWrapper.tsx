@@ -1,10 +1,6 @@
 import { logEvent } from '../../user/settings/backend'
 
 class ServerAdminWrapper {
-    constructor() {
-        // ServerAdminWrapper is never teared down
-    }
-
     public trackPageView(eventAction: string, eventProperties?: any, publicArgument?: any): void {
         logEvent(eventAction, eventProperties, publicArgument)
     }
