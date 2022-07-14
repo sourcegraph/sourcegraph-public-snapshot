@@ -413,13 +413,11 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                             {node.description.title}
                         </Heading>
                         <Text className="mb-0">{node.description.body}</Text>
-                        <Text>
-                            {node.description.published && (
-                                <>
-                                    <strong>Published:</strong> {String(node.description.published)}
-                                </>
-                            )}
-                        </Text>
+                        {node.description.published && (
+                            <Text>
+                                <strong>Published:</strong> {String(node.description.published)}
+                            </Text>
+                        )}
                         <Collapse isOpen={areChangesExpanded} onOpenChange={setAreChangesExpanded} openByDefault={true}>
                             <CollapseHeader as={Button} className="w-100 p-0 m-0 border-0 d-flex align-items-center">
                                 <Icon
