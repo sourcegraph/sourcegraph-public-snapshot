@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
 	"os/exec"
 	"sort"
 	"strconv"
@@ -101,7 +102,10 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						}
 					}
 
-					out, err := exec.Command("pg_dump", "-a", "--column-inserts", "--table='lsif_uploads*'").CombinedOutput()
+					// Set in run-integration.sh
+					containerName := os.Getenv("CONTAINER")
+					fmt.Printf("Running pg_dump in container %s\n", containerName)
+					out, err := exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_uploads*'").CombinedOutput()
 					if err != nil {
 						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
 					} else {
