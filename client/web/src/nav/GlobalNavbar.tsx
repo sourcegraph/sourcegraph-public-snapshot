@@ -12,7 +12,6 @@ import { startWith } from 'rxjs/operators'
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
-import { CommandListPopoverButtonProps } from '@sourcegraph/shared/src/commandPalette/CommandList'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
@@ -36,9 +35,9 @@ import {
     ButtonLink,
     PopoverTrigger,
     useWindowSize,
+    FeedbackPrompt,
     LoadingSpinner,
 } from '@sourcegraph/wildcard'
-import { FeedbackPromptProps } from '@sourcegraph/wildcard/src/components/Feedback'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -46,6 +45,7 @@ import { BatchChangesNavItem } from '../batches/BatchChangesNavItem'
 import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
+import { WebCommandListPopoverButton } from '../components/shared'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
@@ -58,23 +58,14 @@ import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
-import { ExtensionAlertAnimationProps } from './UserNavItem'
+import { StatusMessagesNavItem } from './StatusMessagesNavItem'
+import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
 import styles from './GlobalNavbar.module.scss'
 
 const SearchNavbarItem = lazyComponent(() => import('../search/input/SearchNavbarItem'), 'SearchNavbarItem')
-const StatusMessagesNavItem = lazyComponent(() => import('./StatusMessagesNavItem'), 'StatusMessagesNavItem')
-const UserNavItem = lazyComponent(() => import('./UserNavItem'), 'UserNavItem')
-const WebCommandListPopoverButton = lazyComponent<CommandListPopoverButtonProps, 'WebCommandListPopoverButton'>(
-    () => import('../components/shared'),
-    'WebCommandListPopoverButton'
-)
-const FeedbackPrompt = lazyComponent<FeedbackPromptProps, 'FeedbackPrompt'>(
-    () => import('@sourcegraph/wildcard'),
-    'FeedbackPrompt'
-)
 
 interface Props
     extends SettingsCascadeProps<Settings>,
@@ -252,7 +243,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     const codeInsights = codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)
 
     const searchNavBar = (
-        <Suspense fallback={<LoadingSpinner />}>
+        <Suspense
+            fallback={
+                <div className="d-flex justify-content-center">
+                    <LoadingSpinner className="m-2" />
+                </div>
+            }
+        >
             <SearchNavbarItem
                 {...props}
                 location={location}
@@ -362,48 +359,42 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                     {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <Suspense fallback={<LoadingSpinner />}>
-                                <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
-                                    <PopoverTrigger
-                                        as={Button}
-                                        aria-label="Feedback"
-                                        variant="secondary"
-                                        outline={true}
-                                        size="sm"
-                                        className={styles.feedbackTrigger}
-                                    >
-                                        <span>Feedback</span>
-                                    </PopoverTrigger>
-                                </FeedbackPrompt>
-                            </Suspense>
+                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
+                                <PopoverTrigger
+                                    as={Button}
+                                    aria-label="Feedback"
+                                    variant="secondary"
+                                    outline={true}
+                                    size="sm"
+                                    className={styles.feedbackTrigger}
+                                >
+                                    <span>Feedback</span>
+                                </PopoverTrigger>
+                            </FeedbackPrompt>
                         </NavAction>
                     )}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <Suspense fallback={<LoadingSpinner />}>
-                                <WebCommandListPopoverButton
-                                    {...props}
-                                    location={location}
-                                    menu={ContributableMenu.CommandPalette}
-                                    keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
-                                />
-                            </Suspense>
+                            <WebCommandListPopoverButton
+                                {...props}
+                                location={location}
+                                menu={ContributableMenu.CommandPalette}
+                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
+                            />
                         </NavAction>
                     )}
                     {props.authenticatedUser &&
                         (props.authenticatedUser.siteAdmin ||
                             userExternalServicesEnabledFromTags(props.authenticatedUser.tags)) && (
                             <NavAction>
-                                <Suspense fallback={<LoadingSpinner />}>
-                                    <StatusMessagesNavItem
-                                        user={{
-                                            id: props.authenticatedUser.id,
-                                            username: props.authenticatedUser.username,
-                                            isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
-                                        }}
-                                        history={history}
-                                    />
-                                </Suspense>
+                                <StatusMessagesNavItem
+                                    user={{
+                                        id: props.authenticatedUser.id,
+                                        username: props.authenticatedUser.username,
+                                        isSiteAdmin: props.authenticatedUser?.siteAdmin || false,
+                                    }}
+                                    history={history}
+                                />
                             </NavAction>
                         )}
                     {!props.authenticatedUser ? (
@@ -428,21 +419,19 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                         </>
                     ) : (
                         <NavAction>
-                            <Suspense fallback={<LoadingSpinner />}>
-                                <UserNavItem
-                                    {...props}
-                                    isLightTheme={isLightTheme}
-                                    authenticatedUser={props.authenticatedUser}
-                                    showDotComMarketing={showDotComMarketing}
-                                    showRepositorySection={showRepositorySection}
-                                    codeHostIntegrationMessaging={
-                                        (!isErrorLike(props.settingsCascade.final) &&
-                                            props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
-                                        'browser-extension'
-                                    }
-                                    keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
-                                />
-                            </Suspense>
+                            <UserNavItem
+                                {...props}
+                                isLightTheme={isLightTheme}
+                                authenticatedUser={props.authenticatedUser}
+                                showDotComMarketing={showDotComMarketing}
+                                showRepositorySection={showRepositorySection}
+                                codeHostIntegrationMessaging={
+                                    (!isErrorLike(props.settingsCascade.final) &&
+                                        props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
+                                    'browser-extension'
+                                }
+                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
+                            />
                         </NavAction>
                     )}
                 </NavActions>

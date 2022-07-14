@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from 'react'
+import React, { Suspense, useEffect, useState } from 'react'
 
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../auth'
-
-import { SurveyToastContent } from './SurveyToastContent'
 
 interface SurveyToastTriggerProps {
     /**
@@ -13,6 +12,8 @@ interface SurveyToastTriggerProps {
     forceVisible?: boolean
     authenticatedUser: AuthenticatedUser | null
 }
+
+const SurveyToastContent = lazyComponent(() => import('./SurveyToastContent'), 'SurveyToastContent')
 
 export const SurveyToastTrigger: React.FunctionComponent<React.PropsWithChildren<SurveyToastTriggerProps>> = ({
     forceVisible,
@@ -64,11 +65,13 @@ export const SurveyToastTrigger: React.FunctionComponent<React.PropsWithChildren
     }
 
     return (
-        <SurveyToastContent
-            authenticatedUser={authenticatedUser}
-            shouldTemporarilyDismiss={() => setTemporarilyDismissed(true)}
-            shouldPermanentlyDismiss={() => setPermanentlyDismissed(true)}
-            hideToast={() => setShouldShow(false)}
-        />
+        <Suspense fallback={null}>
+            <SurveyToastContent
+                authenticatedUser={authenticatedUser}
+                shouldTemporarilyDismiss={() => setTemporarilyDismissed(true)}
+                shouldPermanentlyDismiss={() => setPermanentlyDismissed(true)}
+                hideToast={() => setShouldShow(false)}
+            />
+        </Suspense>
     )
 }

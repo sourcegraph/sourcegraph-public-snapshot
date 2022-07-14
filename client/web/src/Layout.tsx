@@ -20,7 +20,6 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser, authRequired as authRequiredObservable } from './auth'
@@ -31,12 +30,16 @@ import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
+import { GlobalContributions } from './contributions'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
+import { GlobalDebug } from './global/GlobalDebug'
+import { GlobalPanel } from './GlobalPanel'
+import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -59,11 +62,6 @@ import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 
 import styles from './Layout.module.scss'
-
-const GlobalPanel = lazyComponent(() => import('./GlobalPanel'), 'GlobalPanel')
-const GlobalDebug = lazyComponent(() => import('./global/GlobalDebug'), 'GlobalDebug')
-const GlobalContributions = lazyComponent(() => import('./contributions'), 'GlobalContributions')
-const SurveyToast = lazyComponent(() => import('./marketing/toast'), 'SurveyToast')
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,
@@ -227,11 +225,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 settingsCascade={props.settingsCascade}
                 isSourcegraphDotCom={props.isSourcegraphDotCom}
             />
-            {!isSiteInit && (
-                <Suspense fallback={<LoadingSpinner />}>
-                    <SurveyToast authenticatedUser={props.authenticatedUser} />
-                </Suspense>
-            )}
+            {!isSiteInit && <SurveyToast authenticatedUser={props.authenticatedUser} />}
             {!isSiteInit && !isSignInOrUp && (
                 <GlobalNavbar
                     {...props}
@@ -285,20 +279,14 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     </Switch>
                 </Suspense>
             </ErrorBoundary>
-            <Suspense fallback={<LoadingSpinner />}>
-                <GlobalPanel {...props} />
-            </Suspense>
-            <Suspense fallback={<LoadingSpinner />}>
-                <GlobalContributions
-                    key={3}
-                    extensionsController={props.extensionsController}
-                    platformContext={props.platformContext}
-                    history={props.history}
-                />
-            </Suspense>
-            <Suspense fallback={<LoadingSpinner />}>
-                <GlobalDebug {...props} />
-            </Suspense>
+            <GlobalPanel {...props} />
+            <GlobalContributions
+                key={3}
+                extensionsController={props.extensionsController}
+                platformContext={props.platformContext}
+                history={props.history}
+            />
+            <GlobalDebug {...props} />
         </div>
     )
 }
