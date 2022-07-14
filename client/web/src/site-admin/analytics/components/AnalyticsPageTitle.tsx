@@ -17,15 +17,6 @@ export const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
                 aria-label="Analytics icon"
             />
             {children}
-            <Tooltip content="Data is updated every 24 hour.">
-                <Icon
-                    className="ml-1"
-                    svgPath={mdiInformationOutline}
-                    aria-label="Analytics info icon"
-                    size="sm"
-                    color="var(--link-color)"
-                />
-            </Tooltip>
         </H1>
     </div>
 )
