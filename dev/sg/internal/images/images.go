@@ -212,7 +212,8 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 		}
 		updatedImage, err := getUpdatedSourcegraphImage(originalImage, credential, pinTag)
 		if err != nil {
-			return err
+			std.Out.WriteWarningf("%s: could not get updated image: %s", node.GetName(), err)
+			return nil
 		}
 
 		std.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", originalImage, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
