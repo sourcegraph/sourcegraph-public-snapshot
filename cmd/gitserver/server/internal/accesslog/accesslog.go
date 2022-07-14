@@ -49,9 +49,9 @@ func fromContext(ctx context.Context) *paramsContext {
 	return pc
 }
 
-// Middleware will extract actor information and params collected by Record that has
+// HTTPMiddleware will extract actor information and params collected by Record that has
 // been stored in the context, in order to log a trace of the access.
-func Middleware(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
+func HTTPMiddleware(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		l := logger
 		ctx := r.Context()

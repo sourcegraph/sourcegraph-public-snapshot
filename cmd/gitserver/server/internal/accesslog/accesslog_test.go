@@ -39,10 +39,10 @@ func TestRecord(t *testing.T) {
 	})
 }
 
-func TestMiddleware(t *testing.T) {
+func TestHTTPMiddleware(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
-		h := Middleware(logger, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := HTTPMiddleware(logger, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			Record(r.Context(), "github.com/foo/bar", []string{"git", "grep", "foo"})
 		}))
 
@@ -60,7 +60,7 @@ func TestMiddleware(t *testing.T) {
 	})
 	t.Run("OK, no recording", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
-		h := Middleware(logger, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		h := HTTPMiddleware(logger, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			logger.Info("called")
 		}))
 		rec := httptest.NewRecorder()

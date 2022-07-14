@@ -52,7 +52,7 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 	return t.RoundTripper.RoundTrip(req)
 }
 
-func UserIPMiddleware(next http.Handler) http.Handler {
+func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var userIP UserIP
 		userIP.IP = strings.Split(req.RemoteAddr, ":")[0]
