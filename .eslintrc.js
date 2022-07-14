@@ -195,8 +195,7 @@ See https://handbook.sourcegraph.com/community/faq#is-all-of-sourcegraph-open-so
           'When using an icon as a Tooltip trigger, it must have an aria-label attribute and should not be hidden.',
       },
       {
-        selector:
-          'JSXElement[openingElement.name.name="InputTooltip"]',
+        selector: 'JSXElement[openingElement.name.name="InputTooltip"]',
         message:
           'Prefer using the <Tooltip> component with an <Input> directly, when possible. Please only use <InputTooltip> when the legacy styling it provides is needed. We will be working to fix style issues with <Input> (especially for checkboxes) in the future.',
       },
