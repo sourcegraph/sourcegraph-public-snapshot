@@ -6,7 +6,7 @@ import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Button, useAccordion, useStopwatch, Icon, H3, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -179,10 +179,12 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             })}
         </div>
     ) : isServerStale ? (
-        <H4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</H4>
+        <H4 as={H3} className={styles.instruction}>
+            Finish editing your batch spec, then manually preview repositories.
+        </H4>
     ) : (
         <>
-            <H4 className={classNames(styles.instruction, styles.exampleOnStatement)}>
+            <H4 as={H3} className={classNames(styles.instruction, styles.exampleOnStatement)}>
                 {hasPreviewed ? 'Modify your' : 'Add an'}
                 <span className="text-monospace mx-1">on:</span> statement to preview repositories.
                 {!hasPreviewed && (
@@ -300,8 +302,10 @@ const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: 
     // that if text is forced to wrap, it isn't cut off.
     const style = useSpring({ height: active ? '3rem' : '0rem', opacity: active ? 1 : 0 })
     return (
-        <animated.h4 className={classNames(styles.instruction, styles.waitingText)} style={style}>
-            {children}
-        </animated.h4>
+        <animated.div style={style}>
+            <H4 as={H3} className={classNames(styles.instruction, styles.waitingText)}>
+                {children}
+            </H4>
+        </animated.div>
     )
 }
