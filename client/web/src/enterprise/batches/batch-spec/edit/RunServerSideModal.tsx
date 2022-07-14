@@ -43,7 +43,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                 <div className={classNames(styles.videoRow, 'row')}>
                     <div className="col-12 col-md-7">
                         <video
-                            className="w-100 h-auto  shadow percy-hide"
+                            className="w-100 h-auto shadow percy-hide"
                             width={1280}
                             height={720}
                             autoPlay={true}
@@ -54,11 +54,11 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                         >
                             <source
                                 type="video/webm"
-                                src="https://storage.googleapis.com/sourcegraph-assets/ssbc%20demo%20(1).webm"
+                                src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.webm"
                             />
                             <source
                                 type="video/mp4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/ssbc%20demo%20(1).mp4"
+                                src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.mp4"
                             />
                         </video>
                     </div>
