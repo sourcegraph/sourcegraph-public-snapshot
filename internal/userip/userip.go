@@ -3,6 +3,7 @@ package userip
 import (
 	"context"
 	"net/http"
+	"strings"
 
 	"github.com/sourcegraph/log"
 )
@@ -53,7 +54,7 @@ func UserIPMiddleware(next http.Handler) http.Handler {
 		if fIp := req.Header.Get("X-FORWARDED-FOR"); fIp != "" {
 			ip = UserIP(fIp)
 		} else {
-			ip = UserIP(req.RemoteAddr)
+			ip = UserIP(strings.Split(req.RemoteAddr, ":")[0])
 		}
 		ctx := req.Context()
 		ctxWithIP := WithUserIP(ctx, ip)
