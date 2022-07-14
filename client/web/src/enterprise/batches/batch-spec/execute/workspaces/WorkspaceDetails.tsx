@@ -408,7 +408,11 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
                         <H4>{node.description.title}</H4>
                         <Text className="mb-0">{node.description.body}</Text>
                         <Text>
-                            <strong>Published:</strong> <PublishedValue published={node.description.published} />
+                            {node.description.published && (
+                                <>
+                                    <strong>Published:</strong> {String(node.description.published)}
+                                </>
+                            )}
                         </Text>
                         <Collapse isOpen={areChangesExpanded} onOpenChange={setAreChangesExpanded} openByDefault={true}>
                             <CollapseHeader as={Button} className="w-100 p-0 m-0 border-0 d-flex align-items-center">
@@ -447,18 +451,6 @@ function publishBadgeLabel(state: Scalars['PublishedValue']): string {
         case true:
             return 'will publish'
     }
-}
-
-const PublishedValue: React.FunctionComponent<
-    React.PropsWithChildren<{ published: Scalars['PublishedValue'] | null }>
-> = ({ published }) => {
-    if (published === null) {
-        return <i>select from UI when applying</i>
-    }
-    if (published === 'draft') {
-        return <>draft</>
-    }
-    return <>{String(published)}</>
 }
 
 interface WorkspaceStepProps extends ThemeProps {
