@@ -107,7 +107,17 @@ const MemoizedActionsMenu: React.FunctionComponent<
             )}
             <Menu>
                 <div className="d-inline-block" ref={menuReference} aria-hidden={showPreviewButton}>
-                    <MenuButton variant="secondary" className={showPreviewButton ? styles.menuButtonHidden : undefined}>
+                    <MenuButton
+                        variant="secondary"
+                        className={showPreviewButton ? styles.menuButtonHidden : undefined}
+                        // If an element with aria-hidden={true} contains a focusable
+                        // element, assistive technologies won't read the focusable
+                        // element, but keyboard users will still be able to navigate to
+                        // it, which can cause confusion. We pair this with negative tab
+                        // index to take the menu button out of the tab order when it is
+                        // hidden. See: https://web.dev/aria-hidden-focus/
+                        tabIndex={showPreviewButton ? -1 : undefined}
+                    >
                         Actions
                         <Icon aria-hidden={true} className={styles.chevronIcon} svgPath={mdiChevronDown} />
                     </MenuButton>

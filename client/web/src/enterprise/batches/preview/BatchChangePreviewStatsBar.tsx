@@ -73,6 +73,7 @@ export const BatchChangePreviewStatsBar: React.FunctionComponent<
                     'flex-grow-1 d-flex justify-content-end'
                 )}
                 aria-label="Preview Stats"
+                role="note"
             >
                 <PreviewStatsAdded count={stats.added} />
                 <PreviewStatsRemoved count={stats.removed} />

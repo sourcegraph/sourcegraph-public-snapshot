@@ -9,6 +9,7 @@ exports[`DiffStat expandedCounts 1`] = `
       aria-label="1 addition, 2 changes, 3 deletions"
       class="diffStat"
       data-state="closed"
+      role="note"
     >
       <strong
         class="mr-1 a11y-ignore text-success"
@@ -39,6 +40,7 @@ exports[`DiffStat standard 1`] = `
       aria-label="1 addition, 2 changes, 3 deletions"
       class="diffStat"
       data-state="closed"
+      role="note"
     >
       <small>
         8
@@ -84,6 +86,7 @@ exports[`DiffStatStack 1`] = `
         aria-label="1 addition, 2 changes, 3 deletions"
         class="diffStat"
         data-state="closed"
+        role="note"
       >
         <strong
           class="mr-1 a11y-ignore text-success"
