@@ -121,7 +121,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     minPerItem: 0.5,
                     value: inAppEvents.summary.totalCount,
                     description:
-                        'In app code navigation supports developers find the impact of a change by listing references and finding definitions to reference.',
+                        'In app code navigation supports developers finding the impact of a change by listing references and finding definitions to reference.',
                 },
                 {
                     label: 'Code intel on code hosts <br/> via the browser extension',
