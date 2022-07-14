@@ -204,7 +204,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 	var lookupImage = func(node *yaml.RNode) error {
 		image := node.Field("image")
 		if image == nil {
-			return errors.Newf("couldn't find image for container %s within %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
+			return errors.Newf("couldn't find image for container %s: %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
 		}
 		originalImage, err := image.Value.String()
 		if err != nil {
@@ -212,7 +212,8 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 		}
 		updatedImage, err := getUpdatedSourcegraphImage(originalImage, credential, pinTag)
 		if err != nil {
-			return err
+			std.Out.WriteWarningf("could not get updated image for %s: %s", originalImage, err)
+			return nil
 		}
 
 		std.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", originalImage, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
@@ -280,6 +281,8 @@ func parseImgString(rawImg string) (*ImageReference, error) {
 
 // getUpdatedSourcegraphImage retrieves the pinned version of originalImage if it is a
 // DeploySourcegraphDockerImage, and errors if the image is unknown.
+//
+// Callers should not treat the returned error as fatal.
 func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credentials, pinTag string) (newImage string, err error) {
 	str := strings.Split(originalImage, "/")
 	imageName := str[len(str)-1]
