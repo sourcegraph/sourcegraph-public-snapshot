@@ -14,6 +14,10 @@ Sourcegraph can sync repositories from code hosts and other similar services.
 - [Other Git code hosts (using a Git URL)](other.md)
 - [Non-Git code hosts](non-git.md)
   - [Perforce](../repo/perforce.md)
+  - [JVM dependencies](jvm.md)
+  - [Go dependencies](go.md)
+  - [npm dependencies](npm.md)
+  - [Python dependencies](python.md)
 
 **Users** can configure the following public code hosts:
 

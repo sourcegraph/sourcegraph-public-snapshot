@@ -23,7 +23,7 @@ describe('Alert', () => {
         const { container } = render(
             <Alert variant={variant}>
                 <H4>Too many matching repositories</H4>
-                Use a 'repo:' or 'repogroup:' filter to narrow your search.
+                Use a 'repo:' filter to narrow your search.
             </Alert>
         )
         expect(container.firstChild).toMatchSnapshot()

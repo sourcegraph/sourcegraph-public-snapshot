@@ -1505,6 +1505,7 @@ WHERE service_type = %s
 AND service_id = %s
 AND account_id IN (%s)
 AND deleted_at IS NULL
+AND expired_at IS NULL
 `, accounts.ServiceType, accounts.ServiceID, sqlf.Join(items, ","))
 	rows, err := s.Query(ctx, q)
 	if err != nil {

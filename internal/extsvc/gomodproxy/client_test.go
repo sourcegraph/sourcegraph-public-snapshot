@@ -15,6 +15,7 @@ import (
 
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"golang.org/x/mod/module"
 
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -45,7 +46,7 @@ func TestClient_GetVersion(t *testing.T) {
 		} else {
 			mod = ps[0]
 		}
-		v, err := cli.GetVersion(ctx, mod, version)
+		v, err := cli.GetVersion(ctx, reposource.PackageName(mod), version)
 		results = append(results, result{v, fmt.Sprint(err)})
 	}
 
@@ -74,7 +75,7 @@ func TestClient_GetZip(t *testing.T) {
 			mod = ps[0]
 		}
 
-		zipBytes, err := cli.GetZip(ctx, mod, version)
+		zipBytes, err := cli.GetZip(ctx, reposource.PackageName(mod), version)
 
 		r := result{Error: fmt.Sprint(err)}
 

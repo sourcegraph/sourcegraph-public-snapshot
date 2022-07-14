@@ -154,7 +154,7 @@ Summary:  NumPy is the fundamental package for array computing with Python.
 						"--project-version",
 						"1.22.3",
 						"--exclude",
-						"src,nested/lib",
+						"nested/lib,src",
 					},
 					Outfile: "index.scip",
 				},

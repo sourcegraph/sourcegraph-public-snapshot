@@ -27,7 +27,7 @@ func parsePoetryLockFile(r io.Reader) ([]reposource.VersionedPackage, error) {
 
 	libs := make([]reposource.VersionedPackage, 0, len(lockfile.Packages))
 	for _, pkg := range lockfile.Packages {
-		libs = append(libs, reposource.NewPythonVersionedPackage(pkg.Name, pkg.Version))
+		libs = append(libs, reposource.NewPythonVersionedPackage(reposource.PackageName(pkg.Name), pkg.Version))
 	}
 
 	return libs, nil

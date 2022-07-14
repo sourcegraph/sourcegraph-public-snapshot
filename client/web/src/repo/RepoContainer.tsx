@@ -26,6 +26,7 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { escapeSpaces } from '@sourcegraph/shared/src/search/query/filters'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
@@ -165,6 +166,8 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         location.pathname + location.search + location.hash
     )
 
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
     // Fetch repository upon mounting the component.
     const repoOrError = useObservable(
         useMemo(
@@ -227,26 +230,31 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                 return
             }
 
+            const button = (
+                <Button
+                    to={
+                        resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
+                            ? resolvedRevisionOrError.rootTreeURL
+                            : repoOrError.url
+                    }
+                    className="text-nowrap test-repo-header-repo-link"
+                    variant="secondary"
+                    outline={true}
+                    size="sm"
+                    as={Link}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> {displayRepoName(repoOrError.name)}
+                </Button>
+            )
+
             return {
                 key: 'repository',
-                element: (
+                element: coreWorkflowImprovementsEnabled ? (
+                    button // Don't show the repo dropdown if core workflow improvements are enabled
+                ) : (
                     <Popover>
                         <ButtonGroup className="d-inline-flex">
-                            <Button
-                                to={
-                                    resolvedRevisionOrError && !isErrorLike(resolvedRevisionOrError)
-                                        ? resolvedRevisionOrError.rootTreeURL
-                                        : repoOrError.url
-                                }
-                                className="text-nowrap test-repo-header-repo-link"
-                                variant="secondary"
-                                outline={true}
-                                size="sm"
-                                as={Link}
-                            >
-                                <Icon aria-hidden={true} svgPath={mdiSourceRepository} />{' '}
-                                {displayRepoName(repoOrError.name)}
-                            </Button>
+                            {button}
                             <PopoverTrigger
                                 as={Button}
                                 className={styles.repoChange}
@@ -271,7 +279,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     </Popover>
                 ),
             }
-        }, [repoOrError, resolvedRevisionOrError, props.telemetryService])
+        }, [repoOrError, resolvedRevisionOrError, coreWorkflowImprovementsEnabled, props.telemetryService])
     )
 
     // Update the workspace roots service to reflect the current repo / resolved revision

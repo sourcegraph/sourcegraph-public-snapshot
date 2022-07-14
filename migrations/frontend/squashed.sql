@@ -1219,7 +1219,8 @@ CREATE TABLE codeintel_lockfiles (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
     codeintel_lockfile_reference_ids integer[] NOT NULL,
-    lockfile text
+    lockfile text,
+    fidelity text DEFAULT 'flat'::text NOT NULL
 );
 
 COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
@@ -1229,6 +1230,8 @@ COMMENT ON COLUMN codeintel_lockfiles.commit_bytea IS 'A 40-char revhash. Note t
 COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.';
 
 COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile in the given repository and the given commit.';
+
+COMMENT ON COLUMN codeintel_lockfiles.fidelity IS 'Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...';
 
 CREATE SEQUENCE codeintel_lockfiles_id_seq
     AS integer

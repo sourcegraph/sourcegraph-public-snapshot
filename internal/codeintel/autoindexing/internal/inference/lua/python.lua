@@ -148,7 +148,8 @@ return recognizers.path_recognizer {
     for _, lib in ipairs(libraries) do
       table.insert(to_exclude, lib.root)
     end
-
+    -- Sort to_exclude list so the tests are stable
+    table.sort(to_exclude)
     local exclude = table.concat(to_exclude, ",")
     if contents_by_path["PKG-INFO"] and exclude ~= "" then
       local name, version = get_name_and_version_from_content(contents_by_path["PKG-INFO"])

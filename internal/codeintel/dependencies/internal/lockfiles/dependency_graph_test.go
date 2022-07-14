@@ -42,6 +42,11 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(c, e)
 		dg.addDependency(e, f)
 
+		_, undeterminable := dg.Roots()
+		if undeterminable {
+			t.Errorf("graph with non-root cycle has undeterminable roots")
+		}
+
 		gold.AssertJson(t, "normal", dg.AsMap())
 	})
 
@@ -67,6 +72,11 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(c, e)
 		dg.addDependency(e, f)
 		dg.addDependency(f, c)
+
+		_, undeterminable := dg.Roots()
+		if undeterminable {
+			t.Errorf("graph with non-root cycle has undeterminable roots")
+		}
 
 		gold.AssertJson(t, "circular", dg.AsMap())
 	})
@@ -94,6 +104,11 @@ func TestDependencyGraph(t *testing.T) {
 		dg.addDependency(e, f)
 		dg.addDependency(f, a)
 
+		_, undeterminable := dg.Roots()
+		if !undeterminable {
+			t.Errorf("graph with root cycle is not undeterminable")
+		}
+
 		gold.AssertJson(t, "circular-root", dg.AsMap())
 	})
 }
@@ -101,17 +116,17 @@ func TestDependencyGraph(t *testing.T) {
 var _ reposource.VersionedPackage = &testPkg{}
 
 type testPkg struct {
-	name    string
+	name    reposource.PackageName
 	version string
 }
 
-func (t *testPkg) VersionedPackageSyntax() string { return t.name }
-func (t *testPkg) PackageSyntax() string          { return t.name }
-func (t *testPkg) RepoName() api.RepoName         { return api.RepoName("test/" + t.name) }
-func (t *testPkg) PackageVersion() string         { return t.version }
-func (t *testPkg) Scheme() string                 { return "test" }
-func (t *testPkg) Description() string            { return "" }
-func (t *testPkg) GitTagFromVersion() string      { return t.version }
+func (t *testPkg) VersionedPackageSyntax() string        { return string(t.name) }
+func (t *testPkg) PackageSyntax() reposource.PackageName { return t.name }
+func (t *testPkg) RepoName() api.RepoName                { return api.RepoName("test/" + t.name) }
+func (t *testPkg) PackageVersion() string                { return t.version }
+func (t *testPkg) Scheme() string                        { return "test" }
+func (t *testPkg) Description() string                   { return "" }
+func (t *testPkg) GitTagFromVersion() string             { return t.version }
 func (t *testPkg) Less(other reposource.VersionedPackage) bool {
-	return t.PackageSyntax() < other.VersionedPackageSyntax()
+	return t.VersionedPackageSyntax() < other.VersionedPackageSyntax()
 }

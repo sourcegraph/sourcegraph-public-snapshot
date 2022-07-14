@@ -22,7 +22,7 @@ import { WebGraphQlOperations } from '../graphql-operations'
 
 import { WebIntegrationTestContext, createWebIntegrationTestContext } from './context'
 import { commonWebGraphQlResults, createViewerSettingsGraphQLOverride } from './graphQlResults'
-import { createEditorAPI, EditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
+import { createEditorAPI, enableEditor, percySnapshotWithVariants, withSearchQueryInput } from './utils'
 
 const mockDefaultStreamEvents: SearchEvent[] = [
     {
@@ -82,6 +82,8 @@ const commonSearchGraphQLResultsWithUser: Partial<
     }),
 }
 
+const queryInputSelector = '[data-testid="searchbox"] .test-query-input'
+
 describe('Search', () => {
     let driver: Driver
     before(async () => {
@@ -125,21 +127,20 @@ describe('Search', () => {
     })
 
     describe('Filter completion', () => {
-        withSearchQueryInput((editorName, editorSelector) => {
-            // skipping because it's flaky, see: https://github.com/sourcegraph/sourcegraph/issues/38633
-            test.skip(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
-                const editor = createEditorAPI(driver, editorName, editorSelector)
-
+        withSearchQueryInput(editorName => {
+            test(`Completing a negated filter should insert the filter with - prefix (${editorName})`, async () => {
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
                     ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
                 })
 
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-                await editor.waitForIt()
+                const editor = await createEditorAPI(driver, queryInputSelector)
                 await editor.replace('-file')
                 await editor.selectSuggestion('-file')
-                expect(await editor.getValue()).toStrictEqual('-file:')
+                // Using a regular expression here because currently the
+                // value for CodeMirror includes placeholders
+                expect(await editor.getValue()).toMatch(/^-file:/)
                 await percySnapshotWithVariants(driver.page, `Search home page (${editorName})`)
                 await accessibilityAudit(driver.page)
             })
@@ -147,10 +148,8 @@ describe('Search', () => {
     })
 
     describe('Suggestions', () => {
-        withSearchQueryInput((editorName, editorSelector) => {
+        withSearchQueryInput(editorName => {
             test(`Typing in the search field shows relevant suggestions (${editorName})`, async () => {
-                const editor = createEditorAPI(driver, editorName, editorSelector)
-
                 testContext.overrideGraphQL({
                     ...commonSearchGraphQLResults,
                     ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
@@ -186,7 +185,7 @@ describe('Search', () => {
 
                 // Repo autocomplete from homepage
                 await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-                await editor.waitForIt()
+                const editor = await createEditorAPI(driver, queryInputSelector)
                 await editor.focus()
                 await editor.replace('repo:go-jwt-middlew')
                 await editor.selectSuggestion('github.com/auth0/go-jwt-middleware')
@@ -217,13 +216,9 @@ describe('Search', () => {
     })
 
     describe('Search field value', () => {
-        withSearchQueryInput((editorName, editorSelector) => {
+        withSearchQueryInput(editorName => {
             describe(editorName, () => {
-                let editor: EditorAPI
-
                 beforeEach(() => {
-                    editor = createEditorAPI(driver, editorName, editorSelector)
-
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
@@ -239,7 +234,7 @@ describe('Search', () => {
 
                 test('Is set from the URL query parameter when loading a search-related page', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
-                    await editor.waitForIt()
+                    const editor = await createEditorAPI(driver, queryInputSelector)
                     expect(await editor.getValue()).toStrictEqual('foo')
                     // Field value is cleared when navigating to a non search-related page
                     await driver.page.waitForSelector('a[href="/extensions"]')
@@ -253,6 +248,7 @@ describe('Search', () => {
 
                 test('Normalizes input with line breaks', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
+                    const editor = await createEditorAPI(driver, queryInputSelector)
                     await editor.focus()
                     await driver.paste('foo\n\n\n\n\nbar')
                     expect(await editor.getValue()).toBe('foo bar')
@@ -262,13 +258,9 @@ describe('Search', () => {
     })
 
     describe('Case sensitivity toggle', () => {
-        withSearchQueryInput((editorName, editorSelector) => {
+        withSearchQueryInput(editorName => {
             describe(editorName, () => {
-                let editor: EditorAPI
-
                 beforeEach(() => {
-                    editor = createEditorAPI(driver, editorName, editorSelector)
-
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
@@ -277,7 +269,7 @@ describe('Search', () => {
 
                 test('Clicking toggle turns on case sensitivity', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-                    await editor.waitForIt()
+                    const editor = await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
                     await editor.focus()
                     await driver.page.keyboard.type('test')
@@ -287,7 +279,7 @@ describe('Search', () => {
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
-                    await editor.waitForIt()
+                    await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
                     await driver.page.click('.test-case-sensitivity-toggle')
                     await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
@@ -297,13 +289,9 @@ describe('Search', () => {
     })
 
     describe('Structural search toggle', () => {
-        withSearchQueryInput((editorName, editorSelector) => {
+        withSearchQueryInput(editorName => {
             describe(editorName, () => {
-                let editor: EditorAPI
-
                 beforeEach(() => {
-                    editor = createEditorAPI(driver, editorName, editorSelector)
-
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
@@ -312,7 +300,7 @@ describe('Search', () => {
 
                 test('Clicking toggle turns on structural search', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search')
-                    await editor.waitForIt()
+                    const editor = await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await editor.focus()
                     await driver.page.keyboard.type('test')
@@ -322,6 +310,7 @@ describe('Search', () => {
 
                 test('Clicking toggle turns on structural search and removes existing patternType parameter', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=regexp')
+                    const editor = await createEditorAPI(driver, queryInputSelector)
                     await editor.focus()
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
@@ -330,7 +319,7 @@ describe('Search', () => {
 
                 test('Clicking toggle turns off structural search and reverts to default pattern type', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=structural')
-                    await editor.waitForIt()
+                    await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
                     await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
@@ -534,13 +523,9 @@ describe('Search', () => {
     })
 
     describe('Search sidebar', () => {
-        withSearchQueryInput((editorName, editorSelector) => {
+        withSearchQueryInput(editorName => {
             describe(editorName, () => {
-                let editor: EditorAPI
-
                 beforeEach(() => {
-                    editor = createEditorAPI(driver, editorName, editorSelector)
-
                     testContext.overrideGraphQL({
                         ...commonSearchGraphQLResults,
                         ...createViewerSettingsGraphQLOverride({ user: enableEditor(editorName) }),
@@ -551,6 +536,7 @@ describe('Search', () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test')
                     await driver.page.waitForSelector('[data-testid="search-type-suggest"]')
                     await driver.page.click('[data-testid="search-type-suggest"]')
+                    const editor = await createEditorAPI(driver, queryInputSelector)
                     await editor.waitForSuggestion()
                     expect(await editor.getValue()).toEqual('test repo:')
                 })

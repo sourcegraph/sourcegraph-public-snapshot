@@ -18,6 +18,7 @@ type operations struct {
 	updateResolvedRevisions      *observation.Operation
 	upsertDependencyRepos        *observation.Operation
 	upsertLockfileDependencies   *observation.Operation
+	listLockfileIndexes          *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -47,5 +48,6 @@ func newOperations(observationContext *observation.Context) *operations {
 		updateResolvedRevisions:      op("UpdateResolvedRevisions"),
 		upsertDependencyRepos:        op("UpsertDependencyRepos"),
 		upsertLockfileDependencies:   op("UpsertLockfileDependencies"),
+		listLockfileIndexes:          op("ListLockfileIndexes"),
 	}
 }

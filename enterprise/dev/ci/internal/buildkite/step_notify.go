@@ -29,6 +29,10 @@ type SlackStepNotifyPayloadConditions struct {
 // Useful when used in conjuction with SoftFail, to keep running a flaky step and alerting its owners without
 // disrupting the CI.
 func SlackStepNotify(config *SlackStepNotifyConfigPayload) StepOpt {
+	if config.SlackTokenEnvVarName == "" {
+		// If no slack token is given, use the default which has the right permissions.
+		config.SlackTokenEnvVarName = "CI_CUSTOM_SLACK_BUILDKITE_PLUGIN_TOKEN"
+	}
 	return flattenStepOpts(
 		Plugin(slackStepNotifyPluginName, config),
 	)

@@ -41,7 +41,7 @@ var (
 		GROUP BY 2, 1
 	),
 	t2 AS (
-		SELECT DISTINCT user_id AS user_id, COUNT(user_id) AS days_used
+		SELECT user_id AS user_id, COUNT(date) AS days_used
 		FROM t1
 		GROUP BY 1
 	),
@@ -119,13 +119,8 @@ var (
 	avgUsersByPeriodQuery = `
 	WITH daus AS (
 		SELECT
-			DATE_TRUNC('day', timestamp) AS day,
-			0 AS total_count,
-			COUNT(DISTINCT anonymous_user_id) AS unique_users,
-			COUNT(DISTINCT user_id) FILTER (
-				WHERE
-					user_id != 0
-			) AS registered_users
+		FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24) as day,
+		COUNT(DISTINCT anonymous_user_id) AS total_count
 		FROM
 			event_logs
 			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
@@ -134,13 +129,8 @@ var (
 	),
 	waus AS (
 		SELECT
-			DATE_TRUNC('week', timestamp) AS week,
-			0 AS total_count,
-			COUNT(DISTINCT anonymous_user_id) AS unique_users,
-			COUNT(DISTINCT user_id) FILTER (
-				WHERE
-					user_id != 0
-			) AS registered_users
+			FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24 / 7) as week,
+			COUNT(DISTINCT anonymous_user_id) AS total_count
 		FROM
 			event_logs
 			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
@@ -149,13 +139,8 @@ var (
 	),
 	maus AS (
 		SELECT
-			DATE_TRUNC('month', timestamp) AS month,
-			0 AS total_count,
-			COUNT(DISTINCT anonymous_user_id) AS unique_users,
-			COUNT(DISTINCT user_id) FILTER (
-				WHERE
-					user_id != 0
-			) AS registered_users
+			FLOOR(EXTRACT(EPOCH FROM('%[2]v'::timestamp - timestamp)) * 1.0 / 60 / 60 / 24 / 30) as month,
+			COUNT(DISTINCT anonymous_user_id) AS total_count
 		FROM
 			event_logs
 			WHERE timestamp BETWEEN '%[1]v' AND '%[2]v'
@@ -163,61 +148,40 @@ var (
 			month
 	)
 	SELECT
-		ROUND(sum_total_count / total_days)::int AS avg_total_count,
-		ROUND(sum_unique_users / total_days)::int AS avg_unique_users,
-		ROUND(sum_registered_users / total_days)::int AS avg_registered_users
+		ROUND(sum_total_count / total_days)::int AS avg_total_count
 	FROM
 		(
 			SELECT
-				EXTRACT(
-					EPOCH
-					FROM(
-						   '%[2]v' :: timestamp - '%[1]v' :: timestamp
-						)
-				) * 1.0 / 60 / 60 / 24 as total_days,
-				SUM(daus.total_count) AS sum_total_count,
-				SUM(daus.unique_users) AS sum_unique_users,
-				SUM(daus.registered_users) AS sum_registered_users
+				EXTRACT(EPOCH FROM('%[2]v'::timestamp - '%[1]v' :: timestamp)) * 1.0 / 60 / 60 / 24 as total_days,
+				SUM(daus.total_count) AS sum_total_count
 			FROM
 				daus
 		) AS f
 	UNION ALL
 	SELECT
-		ROUND(sum_total_count / total_weeks)::int AS avg_total_count,
-		ROUND(sum_unique_users / total_weeks)::int AS avg_unique_users,
-		ROUND(sum_registered_users / total_weeks)::int AS avg_registered_users
+		CASE
+			WHEN total_weeks > 1 THEN ROUND(sum_total_count / total_weeks)::int
+			ELSE sum_total_count::int
+		END AS avg_total_count
 	FROM
 		(
 			SELECT
-				EXTRACT(
-					EPOCH
-					FROM(
-							'%[2]v' :: timestamp - '%[1]v' :: timestamp
-						)
-				) * 1.0 / 60 / 60 / 24 / 7 as total_weeks,
-				SUM(waus.total_count) AS sum_total_count,
-				SUM(waus.unique_users) AS sum_unique_users,
-				SUM(waus.registered_users) AS sum_registered_users
+				EXTRACT(EPOCH FROM('%[2]v'::timestamp - '%[1]v' :: timestamp)) * 1.0 / 60 / 60 / 24 / 7 as total_weeks,
+				SUM(waus.total_count) AS sum_total_count
 			FROM
 				waus
 		) AS f
 	UNION ALL
 	SELECT
-		ROUND(sum_total_count / total_months)::int AS avg_total_count,
-		ROUND(sum_unique_users / total_months)::int AS avg_unique_users,
-		ROUND(sum_registered_users / total_months)::int AS avg_registered_users
+		CASE
+			WHEN total_months > 1 THEN ROUND(sum_total_count / total_months)::int
+			ELSE sum_total_count::int
+		END AS avg_total_count
 	FROM
 		(
 			SELECT
-				EXTRACT(
-					EPOCH
-					FROM(
-							'%[2]v' :: timestamp - '%[1]v' :: timestamp
-						)
-				) * 1.0 / 60 / 60 / 24 / 30 as total_months,
-				SUM(maus.total_count) AS sum_total_count,
-				SUM(maus.unique_users) AS sum_unique_users,
-				SUM(maus.registered_users) AS sum_registered_users
+				EXTRACT(EPOCH FROM('%[2]v'::timestamp - '%[1]v' :: timestamp)) * 1.0 / 60 / 60 / 24 / 30 as total_months,
+				SUM(maus.total_count) AS sum_total_count
 			FROM
 				maus
 		) AS f
@@ -250,16 +214,18 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 	var summaryData UsersSummaryData
 	for i := 0; i < 3; i++ {
 		rows.Next()
-		var data AnalyticsSummaryData
-		if err := rows.Scan(&data.TotalCount, &data.TotalUniqueUsers, &data.TotalRegisteredUsers); err != nil {
+
+		var totalCount float64
+		if err := rows.Scan(&totalCount); err != nil {
 			return nil, err
 		}
+
 		if i == 0 {
-			summaryData.AvgDAU = AnalyticsSummary{data}
+			summaryData.AvgDAU = totalCount
 		} else if i == 1 {
-			summaryData.AvgWAU = AnalyticsSummary{data}
+			summaryData.AvgWAU = totalCount
 		} else {
-			summaryData.AvgMAU = AnalyticsSummary{data}
+			summaryData.AvgMAU = totalCount
 		}
 	}
 
@@ -273,18 +239,18 @@ func (s *Users) Summary(ctx context.Context) (*UsersSummary, error) {
 }
 
 type UsersSummaryData struct {
-	AvgDAU AnalyticsSummary
-	AvgWAU AnalyticsSummary
-	AvgMAU AnalyticsSummary
+	AvgDAU float64
+	AvgWAU float64
+	AvgMAU float64
 }
 
 type UsersSummary struct {
 	Data UsersSummaryData
 }
 
-func (s *UsersSummary) AvgDAU() *AnalyticsSummary { return &s.Data.AvgDAU }
-func (s *UsersSummary) AvgWAU() *AnalyticsSummary { return &s.Data.AvgWAU }
-func (s *UsersSummary) AvgMAU() *AnalyticsSummary { return &s.Data.AvgMAU }
+func (s *UsersSummary) AvgDAU() float64 { return s.Data.AvgDAU }
+func (s *UsersSummary) AvgWAU() float64 { return s.Data.AvgWAU }
+func (s *UsersSummary) AvgMAU() float64 { return s.Data.AvgMAU }
 
 func (u *Users) CacheAll(ctx context.Context) error {
 	activityFetcher, err := u.Activity()

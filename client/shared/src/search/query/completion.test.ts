@@ -72,7 +72,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -135,7 +134,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -176,7 +174,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -216,7 +213,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -256,7 +252,6 @@ describe('getCompletionItems()', () => {
             'patterntype',
             'repo',
             '-repo',
-            'repogroup',
             'repohascommitafter',
             'repohasfile',
             '-repohasfile',
@@ -408,7 +403,7 @@ describe('getCompletionItems()', () => {
               "dependencies(\${1}) ",
               "revdeps(\${1}) ",
               "dependents(\${1}) ",
-              "description(\${1}) ",
+              "has.description(\${1}) ",
               "^repo/with\\\\ a\\\\ space$ "
             ]
         `)
@@ -434,7 +429,7 @@ describe('getCompletionItems()', () => {
               "dependencies(\${1}) ",
               "revdeps(\${1}) ",
               "dependents(\${1}) ",
-              "description(\${1}) "
+              "has.description(\${1}) "
             ]
         `)
     })
