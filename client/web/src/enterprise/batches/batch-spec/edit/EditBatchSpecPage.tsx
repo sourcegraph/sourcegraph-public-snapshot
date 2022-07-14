@@ -275,7 +275,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
                     <div className={styles.editorContainer}>
                         <H4 as={H3} className={styles.header}>
-                            Batch spec55
+                            Batch spec
                         </H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
