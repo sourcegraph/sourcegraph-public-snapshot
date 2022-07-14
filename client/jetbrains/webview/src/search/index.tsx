@@ -115,6 +115,7 @@ export function applyTheme(theme: Theme): void {
     root.style.setProperty('--dropdown-link-hover-bg', intelliJTheme['ToolbarComboWidget.hoverBackground'])
     root.style.setProperty('--light-text', intelliJTheme['List.selectionForeground'])
 
+    root.style.setProperty('--jb-list-bg', intelliJTheme['List.background'])
     root.style.setProperty('--jb-button-bg', intelliJTheme['Button.startBackground'])
     root.style.setProperty('--jb-text-color', intelliJTheme.text)
     root.style.setProperty('--jb-inactive-text-color', intelliJTheme.textInactiveText)
@@ -129,7 +130,7 @@ export function applyTheme(theme: Theme): void {
     // There is no color for this in the serialized theme, so I have picked this option from the
     // Dracula theme
     root.style.setProperty('--code-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
-    root.style.setProperty('--body-bg', theme.isDarkTheme ? '#2b2b2b' : '#ffffff')
+    root.style.setProperty('--body-bg', intelliJTheme['List.background'])
 }
 
 function applyLastSearch(lastSearch: Search | null): void {
