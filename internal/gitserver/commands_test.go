@@ -1736,7 +1736,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 		wantTotal     uint
 		noAccessPaths []string
 	}{
-		"if no read perms on at least on file in the commit should filter out commit": {
+		"if no read perms on at least one file in the commit should filter out commit": {
 			wantTotal: 2,
 			wantCommits: []*gitdomain.Commit{
 				{

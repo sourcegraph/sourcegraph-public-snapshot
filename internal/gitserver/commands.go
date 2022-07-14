@@ -110,11 +110,11 @@ func getFilterFunc(ctx context.Context, checker authz.SubRepoPermissionChecker, 
 		return nil
 	}
 	return func(fileName string) (bool, error) {
-		shouldFilterNew, err := authz.FilterActorPath(ctx, checker, actor.FromContext(ctx), repo, fileName)
+		shouldFilter, err := authz.FilterActorPath(ctx, checker, actor.FromContext(ctx), repo, fileName)
 		if err != nil {
 			return false, err
 		}
-		return shouldFilterNew, nil
+		return shouldFilter, nil
 	}
 }
 
