@@ -87,12 +87,10 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
 		if requestName == "unknown" || logAllRequests {
 			reason := ""
+			logFn := log15.Debug
 			if requestName == "unknown" {
 				reason = "for unnamed GraphQL request above "
-			}
-			logFn := log.Printf
-			if logAllRequests {
-				logFn = log15.Debug
+				logFn = log.Printf
 			}
 			logFn(`logging complete query %sname=%s userID=%d source=%s:
 QUERY
