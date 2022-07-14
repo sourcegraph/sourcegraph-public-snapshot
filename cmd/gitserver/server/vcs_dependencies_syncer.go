@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -41,17 +42,17 @@ type packagesSource interface {
 	// Download the given dependency's archive and unpack it into dir.
 	Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error
 
-	ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error)
+	ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error)
 	// ParseVersionedPackageFromConfiguration parses a package and version from the "dependencies"
 	// field from the site-admin interface.
 	ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error)
 	// ParsePackageFromRepoName parses a Sourcegraph repository name of the package.
-	ParsePackageFromRepoName(repoName string) (reposource.Package, error)
+	ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error)
 }
 
 type packagesDownloadSource interface {
 	// GetPackage sends a request to the package host to get metadata about this package, like the description.
-	GetPackage(ctx context.Context, name string) (reposource.Package, error)
+	GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error)
 }
 
 // dependenciesService captures the methods we use of the codeintel/dependencies.Service,
@@ -94,7 +95,7 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 
 func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) (err error) {
 	var dep reposource.Package
-	dep, err = s.source.ParsePackageFromRepoName(remoteURL.Path)
+	dep, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
 	if err != nil {
 		return err
 	}
@@ -256,7 +257,7 @@ func (s *vcsPackagesSyncer) gitPushDependencyTag(ctx context.Context, bareGitDir
 	return nil
 }
 
-func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName string) ([]string, error) {
+func (s *vcsPackagesSyncer) versions(ctx context.Context, packageName reposource.PackageName) ([]string, error) {
 	var versions []string
 	for _, d := range s.configDeps {
 		dep, err := s.source.ParseVersionedPackageFromConfiguration(d)

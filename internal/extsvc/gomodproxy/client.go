@@ -10,6 +10,7 @@ import (
 	"path"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"golang.org/x/mod/module"
 
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -36,7 +37,7 @@ func NewClient(urn string, urls []string, cli httpcli.Doer) *Client {
 }
 
 // GetVersion gets a single version of the given module if it exists.
-func (c *Client) GetVersion(ctx context.Context, mod, version string) (*module.Version, error) {
+func (c *Client) GetVersion(ctx context.Context, mod reposource.PackageName, version string) (*module.Version, error) {
 	var paths []string
 	if version != "" {
 		escapedVersion, err := module.EscapeVersion(version)
@@ -58,11 +59,11 @@ func (c *Client) GetVersion(ctx context.Context, mod, version string) (*module.V
 		return nil, err
 	}
 
-	return &module.Version{Path: mod, Version: v.Version}, nil
+	return &module.Version{Path: string(mod), Version: v.Version}, nil
 }
 
 // GetZip returns the zip archive bytes of the given module and version.
-func (c *Client) GetZip(ctx context.Context, mod, version string) ([]byte, error) {
+func (c *Client) GetZip(ctx context.Context, mod reposource.PackageName, version string) ([]byte, error) {
 	escapedVersion, err := module.EscapeVersion(version)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to escape version")
@@ -81,8 +82,8 @@ func (c *Client) GetZip(ctx context.Context, mod, version string) ([]byte, error
 // longer than expected.
 const rateLimitingWaitThreshold = 200 * time.Millisecond
 
-func (c *Client) get(ctx context.Context, mod string, paths ...string) (respBody []byte, err error) {
-	escapedMod, err := module.EscapePath(mod)
+func (c *Client) get(ctx context.Context, mod reposource.PackageName, paths ...string) (respBody []byte, err error) {
+	escapedMod, err := module.EscapePath(string(mod))
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to escape module path")
 	}

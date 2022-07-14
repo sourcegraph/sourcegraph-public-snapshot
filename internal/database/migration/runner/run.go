@@ -13,6 +13,10 @@ import (
 )
 
 func (r *Runner) Run(ctx context.Context, options Options) error {
+	if !options.PrivilegedMode.Valid() {
+		return errors.Newf("invalid privileged mode")
+	}
+
 	schemaNames := make([]string, 0, len(options.Operations))
 	for _, operation := range options.Operations {
 		schemaNames = append(schemaNames, operation.SchemaName)
@@ -44,7 +48,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 			ctx,
 			operationMap[schemaName],
 			schemaContext,
-			options.UnprivilegedOnly,
+			options.PrivilegedMode,
 			options.IgnoreSingleDirtyLog,
 		); err != nil {
 			return errors.Wrapf(err, "failed to run migration for schema %q", schemaName)
@@ -62,7 +66,7 @@ func (r *Runner) runSchema(
 	ctx context.Context,
 	operation MigrationOperation,
 	schemaContext schemaContext,
-	unprivilegedOnly bool,
+	privilegedMode PrivilegedMode,
 	ignoreSingleDirtyLog bool,
 ) error {
 	// First, rewrite operations into a smaller set of operations we'll handle below. This call converts
@@ -102,13 +106,11 @@ func (r *Runner) runSchema(
 	if len(byState.pending)+len(byState.failed) == 0 {
 		if operation.Type == MigrationOperationTypeTargetedUp && len(byState.applied) == len(definitions) {
 			logger.Info("Schema is in the expected state")
-
 			return nil
 		}
 
 		if operation.Type == MigrationOperationTypeTargetedDown && len(byState.applied) == 0 {
 			logger.Info("Schema is in the expected state")
-
 			return nil
 		}
 	}
@@ -133,7 +135,7 @@ func (r *Runner) runSchema(
 			operation,
 			schemaContext,
 			definitions,
-			unprivilegedOnly,
+			privilegedMode,
 			ignoreSingleDirtyLog,
 		); err != nil {
 			return err
@@ -143,7 +145,6 @@ func (r *Runner) runSchema(
 	}
 
 	logger.Info("Schema is in the expected state")
-
 	return nil
 }
 
@@ -156,7 +157,7 @@ func (r *Runner) applyMigrations(
 	operation MigrationOperation,
 	schemaContext schemaContext,
 	definitions []definition.Definition,
-	unprivilegedOnly bool,
+	privilegedMode PrivilegedMode,
 	ignoreSingleDirtyLog bool,
 ) (retry bool, _ error) {
 	var (
@@ -192,7 +193,7 @@ func (r *Runner) applyMigrations(
 				}
 			} else {
 				// Apply all other types of migrations uniformly
-				if err := r.applyMigration(ctx, schemaContext, operation, definition, unprivilegedOnly); err != nil {
+				if err := r.applyMigration(ctx, schemaContext, operation, definition, privilegedMode); err != nil {
 					return err
 				}
 			}
@@ -221,13 +222,30 @@ func (r *Runner) applyMigration(
 	schemaContext schemaContext,
 	operation MigrationOperation,
 	definition definition.Definition,
-	unprivilegedOnly bool,
+	privilegedMode PrivilegedMode,
 ) error {
-	if definition.Privileged && unprivilegedOnly {
-		return newPrivilegedMigrationError(operation.SchemaName, definition)
-	}
-
 	up := operation.Type == MigrationOperationTypeTargetedUp
+
+	if definition.Privileged {
+		if privilegedMode == RefusePrivilegedMigrations {
+			return newPrivilegedMigrationError(operation.SchemaName, definition)
+		}
+
+		if privilegedMode == NoopPrivilegedMigrations {
+			if err := schemaContext.store.WithMigrationLog(ctx, definition, up, func() error { return nil }); err != nil {
+				return errors.Wrapf(err, "failed to apply migration %d", definition.ID)
+			}
+
+			r.logger.Warn(
+				"Adding migrating log for privileged migration, but not applying its changes",
+				log.String("schema", schemaContext.schema.Name),
+				log.Int("migrationID", definition.ID),
+				log.Bool("up", up),
+			)
+
+			return nil
+		}
+	}
 
 	r.logger.Info(
 		"Applying migration",

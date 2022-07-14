@@ -61,7 +61,7 @@ func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 	if pkg.Scheme != dependencies.NpmPackagesScheme {
 		return "", "", false
 	}
-	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
+	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(pkg.Name))
 	if err != nil {
 		log15.Error("invalid npm package name in database", "error", err)
 		return "", "", false
@@ -88,12 +88,11 @@ func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string
 		return "", "", false
 	}
 
-	pythonPkg, err := reposource.ParsePythonPackageFromRepoName(pkg.Name)
+	pythonPkg, err := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
 	if err != nil {
 		log15.Error("invalid python package name in database", "error", err, "pkg", pkg.Name)
 		return "", "", false
 	}
 
 	return pythonPkg.RepoName(), pkg.Version, true
-
 }

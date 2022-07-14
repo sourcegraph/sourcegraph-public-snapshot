@@ -30,7 +30,7 @@ import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { appendContextFilter, updateFilter } from '@sourcegraph/shared/src/search/query/transformer'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { buildSearchURLQuery, toPrettyBlobURL } from '@sourcegraph/shared/src/util/url'
-import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl } from '@sourcegraph/wildcard'
+import { Button, Link, TextArea, Icon, H2, H3, Text, createLinkUrl, useMatchMedia } from '@sourcegraph/wildcard'
 
 import { BlockInput } from '../notebooks'
 import {
@@ -100,8 +100,10 @@ export const NotepadContainer: React.FunctionComponent<React.PropsWithChildren<N
     const entries = useNotepadState(state => state.entries)
     const canRestore = useNotepadState(state => state.canRestoreSession)
     const [enableNotepad] = useTemporarySetting('search.notepad.enabled')
+    // Taken from global-styles/breakpoints.css , $viewport-md
+    const isWideScreen = useMatchMedia('(min-width: 768px)')
 
-    if (enableNotepad) {
+    if (enableNotepad && isWideScreen) {
         return (
             <Notepad
                 className={styles.fixed}

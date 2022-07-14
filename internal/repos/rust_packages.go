@@ -1,9 +1,7 @@
 package repos
 
 import (
-	"context"
-	"fmt"
-
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
@@ -40,24 +38,13 @@ type rustPackagesSource struct {
 
 var _ packagesSource = &rustPackagesSource{}
 
-func (s *rustPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	dep := reposource.NewRustVersionedPackage(name, version)
-	// Check if crate exists or not. Crates returns a struct detailing the errors if it cannot be found.
-	metaURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s", dep.PackageSyntax(), dep.PackageVersion())
-	if _, err := s.client.Get(ctx, metaURL); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch crate metadata for %s with URL %s", dep.VersionedPackageSyntax(), metaURL)
-	}
-
-	return dep, nil
-}
-
 func (rustPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseRustVersionedPackage(dep)
 }
 
-func (rustPackagesSource) ParsePackageFromName(name string) (reposource.Package, error) {
+func (rustPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	return reposource.ParseRustPackageFromName(name)
 }
-func (rustPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (rustPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseRustPackageFromRepoName(repoName)
 }

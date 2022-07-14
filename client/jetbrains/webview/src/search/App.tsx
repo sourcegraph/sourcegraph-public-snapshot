@@ -171,12 +171,13 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
         [lastSearch, userQueryState.query, telemetryService, instanceURL]
     )
 
-    const [lastInitialSubmitUser, setLastInitialSubmitUser] = useState<AuthenticatedUser | null>(null)
+    const [didInitialSubmit, setDidInitialSubmit] = useState(false)
     useEffect(() => {
-        if (lastInitialSubmitUser === authenticatedUser) {
+        if (didInitialSubmit) {
             return
         }
-        setLastInitialSubmitUser(authenticatedUser)
+        setDidInitialSubmit(true)
+
         if (initialSearch !== null) {
             onSubmit({
                 caseSensitive: initialSearch.caseSensitive,
@@ -185,7 +186,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                 forceNewSearch: true,
             })
         }
-    }, [initialSearch, onSubmit, lastInitialSubmitUser, authenticatedUser])
+    }, [initialSearch, onSubmit, didInitialSubmit])
 
     const statusBar = useMemo(
         () => <StatusBar progress={progress} progressState={progressState} authState={authState} />,
@@ -221,8 +222,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                         }}
                     >
                         <JetBrainsSearchBox
-                            // Make sure we recreate the search box component when the instance URL changes
-                            key={instanceURL}
                             caseSensitive={lastSearch.caseSensitive}
                             setCaseSensitivity={caseSensitive => onSubmit({ caseSensitive })}
                             patternType={lastSearch.patternType}

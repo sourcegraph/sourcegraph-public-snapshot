@@ -7,6 +7,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
@@ -31,6 +32,7 @@ type Store interface {
 	ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error)
 	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
+	ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -594,11 +596,12 @@ ORDER BY r.name, lf.commit_bytea
 
 // ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
-	Scheme      string
-	Name        string
-	After       int
-	Limit       int
-	NewestFirst bool
+	Scheme          string
+	Name            reposource.PackageName
+	After           any
+	Limit           int
+	NewestFirst     bool
+	ExcludeVersions bool
 }
 
 // ListDependencyRepos returns dependency repositories to be synced by gitserver.
@@ -612,25 +615,35 @@ func (s *store) ListDependencyRepos(ctx context.Context, opts ListDependencyRepo
 		}})
 	}()
 
-	sortDirection := "ASC"
-	if opts.NewestFirst {
-		sortDirection = "DESC"
+	sortExpr := "id ASC"
+	switch {
+	case opts.NewestFirst && !opts.ExcludeVersions:
+		sortExpr = "id DESC"
+	case opts.ExcludeVersions:
+		sortExpr = "name ASC"
+	}
+
+	selectCols := sqlf.Sprintf("id, scheme, name, version")
+	if opts.ExcludeVersions {
+		// id is likely not stable here, so no one should actually use it. Should we set it to 0?
+		selectCols = sqlf.Sprintf("DISTINCT ON(name) id, scheme, name, '' AS version")
 	}
 
 	return scanDependencyRepos(s.db.Query(ctx, sqlf.Sprintf(
 		listDependencyReposQuery,
+		selectCols,
 		sqlf.Join(makeListDependencyReposConds(opts), "AND"),
-		sqlf.Sprintf(sortDirection),
+		sqlf.Sprintf(sortExpr),
 		makeLimit(opts.Limit),
 	)))
 }
 
 const listDependencyReposQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:ListDependencyRepos
-SELECT id, scheme, name, version
+SELECT %s
 FROM lsif_dependency_repos
 WHERE %s
-ORDER BY id %s
+ORDER BY %s
 %s
 `
 
@@ -641,11 +654,25 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 	if opts.Name != "" {
 		conds = append(conds, sqlf.Sprintf("name = %s", opts.Name))
 	}
-	if opts.After != 0 {
-		if opts.NewestFirst {
+
+	switch after := opts.After.(type) {
+	case nil:
+		break
+	case int:
+		switch {
+		case opts.ExcludeVersions:
+			panic("cannot set ExcludeVersions and pass ID-based offset")
+		case opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id < %s", opts.After))
-		} else {
+		case !opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+		}
+	case string, reposource.PackageName:
+		switch {
+		case opts.NewestFirst:
+			panic("cannot set NewestFirst and pass name-based offset")
+		case opts.ExcludeVersions && after != "":
+			conds = append(conds, sqlf.Sprintf("name > %s", opts.After))
 		}
 	}
 
@@ -658,6 +685,73 @@ func makeLimit(limit int) *sqlf.Query {
 	}
 
 	return sqlf.Sprintf("LIMIT %s", limit)
+}
+
+// ListLockfileIndexesOpts are options for listing lockfile indexes.
+type ListLockfileIndexesOpts struct {
+	RepoName string
+	Commit   string
+	Lockfile string
+
+	After int
+	Limit int
+}
+
+// ListLockfileIndexes returns lockfile indexes.
+func (s *store) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, err error) {
+	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("repoName", opts.RepoName),
+		log.String("commit", opts.Commit),
+		log.String("lockfile", opts.Commit),
+		log.Int("after", opts.After),
+		log.Int("limit", opts.Limit),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("numIndexes", len(indexes)),
+		}})
+	}()
+
+	return scanLockfileIndexes(s.db.Query(ctx, sqlf.Sprintf(
+		listLockfileIndexesQuery,
+		sqlf.Join(makeListLockfileIndexesConds(opts), "AND"),
+		makeLimit(opts.Limit),
+	)))
+}
+
+const listLockfileIndexesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:ListLockfileIndexes
+SELECT id, repository_id, commit_bytea, codeintel_lockfile_reference_ids, lockfile, fidelity
+FROM codeintel_lockfiles
+WHERE %s
+ORDER BY id ASC
+%s
+`
+
+func makeListLockfileIndexesConds(opts ListLockfileIndexesOpts) []*sqlf.Query {
+	conds := make([]*sqlf.Query, 0, 2)
+
+	if opts.RepoName != "" {
+		conds = append(conds, sqlf.Sprintf("repository_id IN (SELECT id FROM repo WHERE name = %s)", opts.RepoName))
+	}
+
+	if opts.Commit != "" {
+		conds = append(conds, sqlf.Sprintf("commit_bytea = %s", dbutil.CommitBytea(opts.Commit)))
+	}
+
+	if opts.Lockfile != "" {
+		conds = append(conds, sqlf.Sprintf("lockfile = %s", opts.Lockfile))
+	}
+
+	if opts.After != 0 {
+		conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
+	}
+
+	if len(conds) == 0 {
+		conds = append(conds, sqlf.Sprintf("TRUE"))
+	}
+
+	return conds
 }
 
 // UpsertDependencyRepos creates the given dependency repos if they don't yet exist. The values

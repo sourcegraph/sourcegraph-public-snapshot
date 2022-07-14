@@ -32,7 +32,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		download:      map[string]error{},
 		downloadCount: map[string]int{},
 	}
-	depsService := &fakeDepsService{deps: map[string][]dependencies.Repo{}}
+	depsService := &fakeDepsService{deps: map[reposource.PackageName][]dependencies.Repo{}}
 
 	s := vcsPackagesSyncer{
 		logger:      logtest.Scoped(t),
@@ -159,7 +159,7 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 }
 
 type fakeDepsService struct {
-	deps map[string][]dependencies.Repo
+	deps map[reposource.PackageName][]dependencies.Repo
 }
 
 func (s *fakeDepsService) ListDependencyRepos(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.Repo, error) {
@@ -222,41 +222,43 @@ func (s *fakeDepsSource) Download(ctx context.Context, dir string, dep reposourc
 	return os.WriteFile(filepath.Join(dir, "README.md"), []byte("README for "+dep.VersionedPackageSyntax()), 0666)
 }
 
-func (fakeDepsSource) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
-	return parseFakeDependency(name + "@" + version)
+func (fakeDepsSource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return parseFakeDependency(string(name) + "@" + version)
 }
 func (fakeDepsSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return parseFakeDependency(dep)
 }
 
-func (fakeDepsSource) ParsePackageFromName(name string) (reposource.Package, error) {
-	return parseFakeDependency(name)
+func (fakeDepsSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return parseFakeDependency(string(name))
 }
 
-func (s *fakeDepsSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
-	return s.ParsePackageFromName(strings.TrimPrefix(repoName, "fake/"))
+func (s *fakeDepsSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
+	return s.ParsePackageFromName(reposource.PackageName(strings.TrimPrefix(string(repoName), "fake/")))
 }
 
 type fakeVersionedPackage struct {
-	name    string
+	name    reposource.PackageName
 	version string
 }
 
 func parseFakeDependency(dep string) (reposource.VersionedPackage, error) {
 	i := strings.LastIndex(dep, "@")
 	if i == -1 {
-		return fakeVersionedPackage{name: dep}, nil
+		return fakeVersionedPackage{name: reposource.PackageName(dep)}, nil
 	}
-	return fakeVersionedPackage{name: dep[:i], version: dep[i+1:]}, nil
+	return fakeVersionedPackage{name: reposource.PackageName(dep[:i]), version: dep[i+1:]}, nil
 }
 
-func (f fakeVersionedPackage) Scheme() string                 { return "fake" }
-func (f fakeVersionedPackage) PackageSyntax() string          { return f.name }
-func (f fakeVersionedPackage) VersionedPackageSyntax() string { return f.name + "@" + f.version }
-func (f fakeVersionedPackage) PackageVersion() string         { return f.version }
-func (f fakeVersionedPackage) Description() string            { return f.name + "@" + f.version }
-func (f fakeVersionedPackage) RepoName() api.RepoName         { return api.RepoName("fake/" + f.name) }
-func (f fakeVersionedPackage) GitTagFromVersion() string      { return "v" + f.version }
+func (f fakeVersionedPackage) Scheme() string                        { return "fake" }
+func (f fakeVersionedPackage) PackageSyntax() reposource.PackageName { return f.name }
+func (f fakeVersionedPackage) VersionedPackageSyntax() string {
+	return string(f.name) + "@" + f.version
+}
+func (f fakeVersionedPackage) PackageVersion() string    { return f.version }
+func (f fakeVersionedPackage) Description() string       { return string(f.name) + "@" + f.version }
+func (f fakeVersionedPackage) RepoName() api.RepoName    { return api.RepoName("fake/" + f.name) }
+func (f fakeVersionedPackage) GitTagFromVersion() string { return "v" + f.version }
 func (f fakeVersionedPackage) Less(other reposource.VersionedPackage) bool {
 	return f.VersionedPackageSyntax() > other.VersionedPackageSyntax()
 }
