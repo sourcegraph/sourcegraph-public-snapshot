@@ -27,6 +27,7 @@ import {
     getMatchUrl,
 } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -90,6 +91,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     executedQuery,
     resultClassName,
 }) => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const resultsNumber = results?.results.length || 0
     const { itemsToShow, handleBottomHit } = useItemsToShow(executedQuery, resultsNumber)
     const location = useLocation()
@@ -115,7 +117,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             index={index}
                             location={location}
                             telemetryService={telemetryService}
-                            icon={getFileMatchIcon(result)}
+                            icon={!coreWorkflowImprovementsEnabled ? getFileMatchIcon(result) : undefined}
                             result={result}
                             onSelect={() => logSearchResultClicked(index, 'fileMatch')}
                             expanded={false}
@@ -158,7 +160,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         [
             location,
             telemetryService,
-            logSearchResultClicked,
+            coreWorkflowImprovementsEnabled,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
@@ -167,6 +169,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             hoverifier,
             openMatchesInNewTab,
             resultClassName,
+            logSearchResultClicked,
         ]
     )
 

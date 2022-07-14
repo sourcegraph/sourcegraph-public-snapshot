@@ -300,7 +300,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             ))}
 
             {/* Line matches */}
-            {grouped && (
+            {grouped.length > 0 && (
                 <div>
                     {grouped.map((group, index) => (
                         <div

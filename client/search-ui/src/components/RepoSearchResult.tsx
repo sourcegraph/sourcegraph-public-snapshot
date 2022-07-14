@@ -6,6 +6,7 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
@@ -28,6 +29,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     as,
     index,
 }) => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
             <span className={classNames('test-search-result-label', styles.titleInner)}>
@@ -107,7 +110,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     return (
         <ResultContainer
             index={index}
-            icon={SourceRepositoryIcon}
+            icon={!coreWorkflowImprovementsEnabled ? SourceRepositoryIcon : undefined}
             collapsible={false}
             defaultExpanded={true}
             title={renderTitle()}
