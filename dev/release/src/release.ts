@@ -3,6 +3,7 @@ import * as path from 'path'
 
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
+import execa from 'execa'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -44,6 +45,7 @@ export type StepID =
     // branch cut
     | 'changelog:cut'
     // release
+    | 'release:branch-cut'
     | 'release:status'
     | 'release:create-candidate'
     | 'release:stage'
@@ -291,6 +293,22 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 ],
                 dryRun: config.dryRun.changesets,
             })
+        },
+    },
+    {
+        id: 'release:branch-cut',
+        description: 'Create release branch',
+        run: async config => {
+            const { upcoming: release } = await releaseVersions(config)
+            const branch = `${release.major}.${release.minor}`
+
+            try {
+                await execa('git', ['branch', branch])
+                await execa('git', ['push', 'origin', branch])
+                await postMessage(`:mega: *${release.version} branch has been cut`, config.slackAnnounceChannel)
+            } catch (error) {
+                console.error('Failed to create release branch', error)
+            }
         },
     },
     {
