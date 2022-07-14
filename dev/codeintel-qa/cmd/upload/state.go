@@ -103,7 +103,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 
 					out, err := exec.Command("pg_dump", "-a", "--column-inserts", "--table='lsif_uploads*'").CombinedOutput()
 					if err != nil {
-						fmt.Printf("Failed to dump: %s", err.Error())
+						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
 					} else {
 						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
 					}
