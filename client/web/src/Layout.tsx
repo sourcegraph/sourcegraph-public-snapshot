@@ -31,15 +31,12 @@ import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
-import { GlobalContributions } from './contributions'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
 import { GlobalAlerts } from './global/GlobalAlerts'
-import { GlobalDebug } from './global/GlobalDebug'
-import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
 import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { OrgAreaRoute } from './org/area/OrgArea'
@@ -64,6 +61,9 @@ import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
 import styles from './Layout.module.scss'
 
 const GlobalPanel = lazyComponent(() => import('./GlobalPanel'), 'GlobalPanel')
+const GlobalDebug = lazyComponent(() => import('./global/GlobalDebug'), 'GlobalDebug')
+const GlobalContributions = lazyComponent(() => import('./contributions'), 'GlobalContributions')
+const SurveyToast = lazyComponent(() => import('./marketing/toast'), 'SurveyToast')
 
 export interface LayoutProps
     extends RouteComponentProps<{}>,

@@ -8,8 +8,6 @@ import { RepoRevisionWrapper } from './components/RepoRevision'
 import { RepoContainerRoute } from './RepoContainer'
 import { RepoRevisionContainerRoute } from './RepoRevisionContainer'
 import { RepositoryFileTreePageProps } from './RepositoryFileTreePage'
-import { RepositoryBranchesTab } from './tree/BranchesTab'
-import { RepositoryTagTab } from './tree/TagTab'
 
 const RepositoryCommitsPage = lazyComponent(() => import('./commits/RepositoryCommitsPage'), 'RepositoryCommitsPage')
 
@@ -32,6 +30,8 @@ const RepositoryReleasesArea = lazyComponent(
 const RepoSettingsArea = lazyComponent(() => import('./settings/RepoSettingsArea'), 'RepoSettingsArea')
 const RepositoryCompareArea = lazyComponent(() => import('./compare/RepositoryCompareArea'), 'RepositoryCompareArea')
 const RepositoryStatsArea = lazyComponent(() => import('./stats/RepositoryStatsArea'), 'RepositoryStatsArea')
+const RepositoryBranchesTab = lazyComponent(() => import('./tree/BranchesTab'), 'RepositoryBranchesTab')
+const RepositoryTagTab = lazyComponent(() => import('./tree/TagTab'), 'RepositoryTagTab')
 
 export const repoContainerRoutes: readonly RepoContainerRoute[] = [
     {
