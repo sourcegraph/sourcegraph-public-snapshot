@@ -1,9 +1,8 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation, useQuery } from '@apollo/client'
+import { mdiChevronDown, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDown from 'mdi-react/ChevronDownIcon'
-import CogIcon from 'mdi-react/CogIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -21,6 +20,7 @@ import {
     PageSelector,
     H3,
     Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -133,10 +133,14 @@ const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProp
                                 className={styles.memberMenu}
                                 disabled={loading}
                             >
-                                <CogIcon size={15} />
-                                <span aria-hidden={true}>
-                                    <ChevronDown size={15} />
-                                </span>
+                                <Icon svgPath={mdiCog} inline={false} aria-label="Options" height={15} width={15} />
+                                <Icon
+                                    svgPath={mdiChevronDown}
+                                    inline={false}
+                                    height={15}
+                                    width={15}
+                                    aria-hidden={true}
+                                />
                             </MenuButton>
 
                             <MenuList position={Position.bottomEnd}>

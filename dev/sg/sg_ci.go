@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/bk"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/loki"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/open"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -365,8 +366,7 @@ Learn more about pipeline run types in https://docs.sourcegraph.com/dev/backgrou
 			// 🚨 SECURITY: We do a simple check to see if commit is in origin, this is
 			// non blocking but we ask for confirmation to double check that the user
 			// is aware that potentially unknown code is going to get run on our infra.
-			remoteBranches, err := run.TrimResult(run.GitCmd("branch", "-r", "--contains", commit))
-			if err != nil || len(remoteBranches) == 0 || !allLinesPrefixed(strings.Split(remoteBranches, "\n"), "origin/") {
+			if !repo.HasCommit(ctx, commit) {
 				std.Out.WriteLine(output.Linef(output.EmojiWarning, output.StyleReset,
 					"Commit %q not found in in local 'origin/' branches - you might be triggering a build for a fork. Make sure all code has been reviewed before continuing.",
 					commit))
@@ -656,15 +656,6 @@ func getAllowedBuildTypeArgs() []string {
 		}
 	}
 	return results
-}
-
-func allLinesPrefixed(lines []string, match string) bool {
-	for _, l := range lines {
-		if !strings.HasPrefix(strings.TrimSpace(l), match) {
-			return false
-		}
-	}
-	return true
 }
 
 func printBuildOverview(build *buildkite.Build) {

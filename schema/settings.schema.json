@@ -303,7 +303,7 @@
         "editor": {
           "description": "Specifies which (code) editor to use for query and text input",
           "type": "string",
-          "default": "monaco",
+          "default": "codemirror6",
           "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true

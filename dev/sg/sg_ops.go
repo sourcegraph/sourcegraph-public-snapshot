@@ -34,9 +34,16 @@ var (
 		Flags: []cli.Flag{
 			&cli.StringFlag{
 				Name:        "kind",
-				Usage:       "the `kind` of deployment (one of 'k8s', 'helm')",
+				Aliases:     []string{"k"},
+				Usage:       "the `kind` of deployment (one of 'k8s', 'helm', 'compose')",
 				Value:       string(images.DeploymentTypeK8S),
 				Destination: &opsUpdateImagesDeploymentKindFlag,
+			},
+			&cli.StringFlag{
+				Name:        "pin-tag",
+				Aliases:     []string{"t"},
+				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)",
+				Destination: &opsUpdateImagesPinTagFlag,
 			},
 			&cli.StringFlag{
 				Name:        "cr-username",
@@ -47,11 +54,6 @@ var (
 				Name:        "cr-password",
 				Usage:       "`password` or access token for the container registry",
 				Destination: &opsUpdateImagesContainerRegistryPasswordFlag,
-			},
-			&cli.StringFlag{
-				Name:        "pin-tag",
-				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)",
-				Destination: &opsUpdateImagesPinTagFlag,
 			},
 		},
 		Action: opsUpdateImage,
@@ -91,5 +93,5 @@ func opsUpdateImage(ctx *cli.Context) error {
 		std.Out.WriteWarningf("Falling back to the latest deveopment build available.")
 	}
 
-	return images.Parse(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
+	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
 }

@@ -8,6 +8,8 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -262,7 +264,7 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency, lockfile,
 // `codeintel_lockfiles` entry and the full graph is represented in
 // `codeintel_lockfile_references` as edges in the `depends_on` column.
 func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockfile string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error) {
-	ctx, _, endObservation := s.operations.upsertLockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.upsertLockfileGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", repoName),
 		log.String("commit", commit),
 	}})
@@ -596,7 +598,7 @@ ORDER BY r.name, lf.commit_bytea
 // ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
 	Scheme          string
-	Name            string
+	Name            reposource.PackageName
 	After           any
 	Limit           int
 	NewestFirst     bool
@@ -666,7 +668,7 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 		case !opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
 		}
-	case string:
+	case string, reposource.PackageName:
 		switch {
 		case opts.NewestFirst:
 			panic("cannot set NewestFirst and pass name-based offset")
@@ -698,7 +700,7 @@ type ListLockfileIndexesOpts struct {
 
 // ListLockfileIndexes returns lockfile indexes.
 func (s *store) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, err error) {
-	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.listLockfileIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", opts.RepoName),
 		log.String("commit", opts.Commit),
 		log.String("lockfile", opts.Commit),

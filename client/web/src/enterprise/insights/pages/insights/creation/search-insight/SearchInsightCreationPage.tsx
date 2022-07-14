@@ -1,13 +1,20 @@
-import { FC, useCallback, useEffect } from 'react'
+import { FC, useCallback, useEffect, useMemo } from 'react'
 
 import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Link, PageHeader } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Link, PageHeader, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { FORM_ERROR, FormChangeEvent, CodeInsightsPage } from '../../../../components'
+import {
+    FORM_ERROR,
+    FormChangeEvent,
+    CodeInsightsPage,
+    CodeInsightsCreationActions,
+    CodeInsightCreationMode,
+} from '../../../../components'
 import { MinimalSearchBasedInsightData } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
 import { CodeInsightTrackType } from '../../../../pings'
 
 import {
@@ -46,6 +53,9 @@ export interface SearchInsightCreationPageProps extends TelemetryProps {
 
 export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = props => {
     const { telemetryService, onInsightCreateRequest, onCancel, onSuccessfulCreation } = props
+
+    const { licensed, insight } = useUiFeatures()
+    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
 
     const { initialValues, loading, setLocalStorageFormValues } = useSearchInsightInitialValues()
 
@@ -121,13 +131,25 @@ export const SearchInsightCreationPage: FC<SearchInsightCreationPageProps> = pro
                         />
 
                         <SearchInsightCreationContent
-                            className="pb-5"
-                            dataTestId="search-insight-create-page-content"
+                            touched={false}
                             initialValue={initialValues}
+                            dataTestId="search-insight-create-page-content"
+                            className="pb-5"
                             onSubmit={handleSubmit}
-                            onCancel={handleCancel}
                             onChange={handleChange}
-                        />
+                        >
+                            {form => (
+                                <CodeInsightsCreationActions
+                                    mode={CodeInsightCreationMode.Creation}
+                                    licensed={licensed}
+                                    available={creationPermission?.available}
+                                    submitting={form.submitting}
+                                    errors={form.submitErrors?.[FORM_ERROR]}
+                                    clear={form.isFormClearActive}
+                                    onCancel={handleCancel}
+                                />
+                            )}
+                        </SearchInsightCreationContent>
                     </>
                 )
             }

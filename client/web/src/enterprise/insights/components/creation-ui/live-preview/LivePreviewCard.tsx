@@ -1,10 +1,10 @@
 import React, { forwardRef, HTMLAttributes } from 'react'
 
+import { mdiRefresh } from '@mdi/js'
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
-import RefreshIcon from 'mdi-react/RefreshIcon'
 
-import { Button, ForwardReferenceComponent } from '@sourcegraph/wildcard'
+import { Button, ForwardReferenceComponent, Icon } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, Series } from '../../../../../charts'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../views'
@@ -29,7 +29,7 @@ const LivePreviewUpdateButton: React.FunctionComponent<
 
     return (
         <Button variant="icon" disabled={disabled} className={styles.updateButton} onClick={onClick}>
-            Live preview <RefreshIcon size="1rem" />
+            Live preview <Icon svgPath={mdiRefresh} inline={false} aria-hidden={true} height="1rem" width="1rem" />
         </Button>
     )
 }

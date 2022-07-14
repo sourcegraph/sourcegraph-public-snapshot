@@ -29,7 +29,7 @@ export const INITIAL_INSIGHT_VALUES: CreateInsightFormFields = {
 }
 
 export interface UseInsightCreationFormProps {
-    mode: 'creation' | 'edit'
+    touched: boolean
     initialValue?: Partial<CreateInsightFormFields>
     onSubmit: (values: CreateInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onChange?: (event: FormChangeEvent<CreateInsightFormFields>) => void
@@ -50,8 +50,7 @@ export interface InsightCreationForm {
  * validations, fields dependencies)
  */
 export function useInsightCreationForm(props: UseInsightCreationFormProps): InsightCreationForm {
-    const { mode, initialValue = {}, onSubmit, onChange } = props
-    const isEdit = mode === 'edit'
+    const { touched, initialValue = {}, onSubmit, onChange } = props
 
     const form = useForm<CreateInsightFormFields>({
         initialValues: {
@@ -60,7 +59,7 @@ export function useInsightCreationForm(props: UseInsightCreationFormProps): Insi
         },
         onSubmit,
         onChange,
-        touched: isEdit,
+        touched,
     })
 
     const allReposMode = useField({

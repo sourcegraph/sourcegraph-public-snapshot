@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -50,18 +51,18 @@ type npmPackagesSyncer struct {
 var _ packagesSource = &npmPackagesSyncer{}
 var _ packagesDownloadSource = &npmPackagesSyncer{}
 
-func (npmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseNpmVersionedPackage(name + "@" + version)
+func (npmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseNpmVersionedPackage(string(name) + "@" + version)
 }
 
 func (npmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseNpmVersionedPackage(dep)
 }
 
-func (s *npmPackagesSyncer) ParsePackageFromName(name string) (reposource.Package, error) {
-	return s.ParsePackageFromRepoName("npm/" + strings.TrimPrefix(name, "@"))
+func (s *npmPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return s.ParsePackageFromRepoName(api.RepoName("npm/" + strings.TrimPrefix(string(name), "@")))
 }
-func (npmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (npmPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	pkg, err := reposource.ParseNpmPackageFromRepoURL(repoName)
 	if err != nil {
 		return nil, err
@@ -69,8 +70,8 @@ func (npmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.P
 	return &reposource.NpmVersionedPackage{NpmPackageName: pkg}, nil
 }
 
-func (s npmPackagesSyncer) GetPackage(ctx context.Context, name string) (reposource.Package, error) {
-	dep, err := reposource.ParseNpmVersionedPackage(name + "@")
+func (s npmPackagesSyncer) GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error) {
+	dep, err := reposource.ParseNpmVersionedPackage(string(name) + "@")
 	if err != nil {
 		return nil, err
 	}

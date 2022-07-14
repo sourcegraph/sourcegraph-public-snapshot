@@ -71,7 +71,7 @@ func TestParseGoDependencyFromRepoName(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			dep, err := ParseGoDependencyFromRepoName(test.name)
+			dep, err := ParseGoDependencyFromRepoName(api.RepoName(test.name))
 
 			assert.Equal(t, test.dep, dep)
 			if test.err == "" {

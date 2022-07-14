@@ -1,8 +1,7 @@
 import React, { useState } from 'react'
 
-import { mdiInformationOutline } from '@mdi/js'
+import { mdiInformationOutline, mdiChevronDown } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import { animated } from 'react-spring'
 
 import {
@@ -60,7 +59,7 @@ export const RunBatchSpecButton: React.FunctionComponent<React.PropsWithChildren
                     type="button"
                     className={styles.executionOptionsMenuButton}
                 >
-                    <ChevronDownIcon />
+                    <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
                     <VisuallyHidden>Options</VisuallyHidden>
                 </PopoverTrigger>
             </ButtonGroup>
@@ -106,7 +105,13 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
 
     const info = props.disabled ? (
         <Tooltip content={props.disabledTooltip}>
-            <Icon aria-label={props.disabledTooltip} className="ml-2" tabIndex={0} svgPath={mdiInformationOutline} />
+            <Icon
+                aria-label={props.disabledTooltip}
+                className="ml-2"
+                role="button"
+                tabIndex={0}
+                svgPath={mdiInformationOutline}
+            />
         </Tooltip>
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>

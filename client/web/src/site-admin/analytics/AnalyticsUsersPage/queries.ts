@@ -1,45 +1,25 @@
 import { gql } from '@sourcegraph/http-client'
 
-const analyticsStatItemFragment = gql`
-    fragment AnalyticsStatItemFragment on AnalyticsStatItem {
-        nodes {
-            date
-            count
-            uniqueUsers
-        }
-        summary {
-            totalCount
-            totalUniqueUsers
-        }
-    }
-`
-
-const analyticsStatItemSummaryFragment = gql`
-    fragment AnalyticsStatItemSummaryFragment on AnalyticsStatItemSummary {
-        totalCount
-        totalUniqueUsers
-        totalRegisteredUsers
-    }
-`
-
 export const USERS_STATISTICS = gql`
     query UsersStatistics($dateRange: AnalyticsDateRange!) {
         site {
             analytics {
                 users(dateRange: $dateRange) {
                     summary {
-                        avgDAU {
-                            ...AnalyticsStatItemSummaryFragment
-                        }
-                        avgWAU {
-                            ...AnalyticsStatItemSummaryFragment
-                        }
-                        avgMAU {
-                            ...AnalyticsStatItemSummaryFragment
-                        }
+                        avgDAU
+                        avgWAU
+                        avgMAU
                     }
                     activity {
-                        ...AnalyticsStatItemFragment
+                        nodes {
+                            date
+                            count
+                            uniqueUsers
+                        }
+                        summary {
+                            totalCount
+                            totalUniqueUsers
+                        }
                     }
                     frequencies {
                         daysUsed
@@ -58,6 +38,4 @@ export const USERS_STATISTICS = gql`
             totalCount
         }
     }
-    ${analyticsStatItemSummaryFragment}
-    ${analyticsStatItemFragment}
 `

@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -38,7 +39,7 @@ type dummyPackagesSource struct {
 }
 
 // GetPackage implements packagesDownloadSource
-func (d *dummyPackagesSource) GetPackage(ctx context.Context, name string) (reposource.Package, error) {
+func (d *dummyPackagesSource) GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error) {
 	d.getPackageCalled = true
 	return reposource.ParseGoDependencyFromName(name)
 }
@@ -48,12 +49,12 @@ func (d *dummyPackagesSource) ParseVersionedPackageFromConfiguration(dep string)
 	return reposource.ParseGoVersionedPackage(dep)
 }
 
-func (d *dummyPackagesSource) ParsePackageFromName(name string) (reposource.Package, error) {
+func (d *dummyPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	d.parsePackageFromNameCalled = true
 	return reposource.ParseGoDependencyFromName(name)
 }
 
-func (d *dummyPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (d *dummyPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	d.parsePackageFromRepoNameCalled = true
 	return reposource.ParseGoDependencyFromRepoName(repoName)
 }

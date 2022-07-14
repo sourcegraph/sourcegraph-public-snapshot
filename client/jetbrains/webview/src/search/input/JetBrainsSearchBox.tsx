@@ -5,7 +5,7 @@ import React, { useCallback, useState } from 'react'
 
 import classNames from 'classnames'
 
-import { SearchContextInputProps, QueryState, SubmitSearchProps } from '@sourcegraph/search'
+import { QueryState, SearchContextInputProps, SubmitSearchProps } from '@sourcegraph/search'
 import {
     IEditor,
     LazyMonacoQueryInput,
@@ -99,8 +99,17 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                 {props.searchContextsEnabled && props.showSearchContext && (
                     <>
                         <SearchContextDropdown
-                            /* eslint-disable-next-line no-restricted-syntax */
-                            {...props}
+                            authenticatedUser={props.authenticatedUser}
+                            searchContextsEnabled={props.searchContextsEnabled}
+                            showSearchContextManagement={props.showSearchContextManagement}
+                            defaultSearchContextSpec={props.defaultSearchContextSpec}
+                            setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            fetchSearchContexts={props.fetchSearchContexts}
+                            fetchAutoDefinedSearchContexts={props.fetchAutoDefinedSearchContexts}
+                            getUserSearchContextNamespaces={props.getUserSearchContextNamespaces}
+                            telemetryService={props.telemetryService}
+                            platformContext={props.platformContext}
                             query={queryState.query}
                             submitSearch={props.submitSearchOnSearchContextChange}
                             className={classNames(styles.searchBoxContextDropdown, 'jb-search-context-dropdown')}
@@ -119,9 +128,18 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         <Search />
                     </div>
                     <LazyMonacoQueryInput
-                        /* eslint-disable-next-line no-restricted-syntax */
-                        {...props}
-                        onHandleFuzzyFinder={props.onHandleFuzzyFinder}
+                        preventNewLine={true}
+                        autoFocus={props.autoFocus}
+                        caseSensitive={props.caseSensitive}
+                        fetchStreamSuggestions={props.fetchStreamSuggestions}
+                        globbing={props.globbing}
+                        isLightTheme={props.isLightTheme}
+                        isSourcegraphDotCom={props.isSourcegraphDotCom}
+                        onChange={props.onChange}
+                        onSubmit={props.onSubmit}
+                        patternType={props.patternType}
+                        queryState={props.queryState}
+                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                         className={styles.searchBoxInput}
                         onEditorCreated={onEditorCreated}
                         placeholder="Enter search query..."
