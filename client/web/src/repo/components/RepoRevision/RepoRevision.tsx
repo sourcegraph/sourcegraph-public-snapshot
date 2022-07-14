@@ -22,6 +22,4 @@ export const RepoRevisionWrapper: React.FunctionComponent<React.PropsWithChildre
 export const RepoRevisionChevronDownIcon: React.FunctionComponent<React.PropsWithChildren<IconProps>> = ({
     className,
     ...props
-}) => (
-    <Icon className={classNames(styles.breadcrumbIcon, className)} svgPath={mdiChevronDown} inline={false} {...props} />
-)
+}) => <Icon className={classNames(styles.breadcrumbIcon, className)} svgPath={mdiChevronDown} {...props} />
