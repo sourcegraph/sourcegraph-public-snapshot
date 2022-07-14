@@ -179,12 +179,10 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             })}
         </div>
     ) : isServerStale ? (
-        <H4 as={H3} className={styles.instruction}>
-            Finish editing your batch spec, then manually preview repositories.
-        </H4>
+        <H4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</H4>
     ) : (
         <>
-            <H4 as={H3} className={classNames(styles.instruction, styles.exampleOnStatement)}>
+            <H4 className={classNames(styles.instruction, styles.exampleOnStatement)}>
                 {hasPreviewed ? 'Modify your' : 'Add an'}
                 <span className="text-monospace mx-1">on:</span> statement to preview repositories.
                 {!hasPreviewed && (
@@ -303,9 +301,7 @@ const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: 
     const style = useSpring({ height: active ? '3rem' : '0rem', opacity: active ? 1 : 0 })
     return (
         <animated.div style={style}>
-            <H4 as={H3} className={classNames(styles.instruction, styles.waitingText)}>
-                {children}
-            </H4>
+            <H4 className={classNames(styles.instruction, styles.waitingText)}>{children}</H4>
         </animated.div>
     )
 }

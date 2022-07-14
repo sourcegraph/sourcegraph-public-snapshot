@@ -7,7 +7,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 // import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Icon, LoadingSpinner, H2, H4, Alert } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
 import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
@@ -274,8 +274,8 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <div className={styles.form}>
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
                     <div className={styles.editorContainer}>
-                        <H4 as={H2} className={styles.header}>
-                            Batch spec
+                        <H4 as={H3} className={styles.header}>
+                            Batch spec55
                         </H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
