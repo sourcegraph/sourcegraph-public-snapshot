@@ -1,7 +1,7 @@
 import React, { useContext, useMemo } from 'react'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, Text } from '@sourcegraph/wildcard'
+import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { Series } from '../../../../../charts'
 import { BarChart } from '../../../../../charts/components/bar-chart/BarChart'
@@ -18,6 +18,7 @@ import {
     useLivePreview,
     StateStatus,
     COMPUTE_MOCK_CHART,
+    EditableDataSeries,
 } from '../../../components'
 import { BackendInsightDatum, CategoricalChartContent, CodeInsightsBackendContext } from '../../../core'
 
@@ -33,45 +34,37 @@ interface ComputeLivePreviewProps {
     disabled: boolean
     repositories: string
     className?: string
-    series: {
-        query: string
-        label: string
-        stroke: string
-        groupBy?: GroupByField
-    }[]
+    groupBy: GroupByField
+    series: EditableDataSeries[]
 }
 
 export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps> = props => {
-    // For the purposes of building out this component before the backend is ready
-    // we are using the standard "line series" type data.
-    // TODO after backend is merged, remove update the series value to use that structure
-    const { disabled, repositories, series, className } = props
-    const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
-
-    const sanitizedSeries = series.map(srs => ({
-        query: srs.query,
-        label: srs.label,
-        stroke: srs.stroke,
-        groupBy: srs.groupBy,
-    }))
+    const { disabled, repositories, series, groupBy, className } = props
+    const { getInsightPreviewContent } = useContext(CodeInsightsBackendContext)
 
     const settings = useDeepMemo({
         disabled,
         repositories: getSanitizedRepositories(repositories),
-        series: sanitizedSeries,
+        // For the purposes of building out this component before the backend is ready
+        // we are using the standard "line series" type data.
+        // TODO after backend is merged, remove update the series value to use that structure
+        series: series.map(srs => ({
+            query: srs.query,
+            label: srs.name,
+            stroke: srs.stroke ?? 'blue',
+            groupBy,
+        })),
         // TODO: Revisit this hardcoded value. Compute does not use it, but it's still required
         //  for `searchInsightPreview`
-        step: {
-            days: 1,
-        },
+        step: { days: 1 },
     })
 
     const getLivePreview = useMemo(
         () => ({
             disabled: settings.disabled,
-            fetcher: () => getLivePreviewContent(settings),
+            fetcher: () => getInsightPreviewContent(settings),
         }),
-        [settings, getLivePreviewContent]
+        [settings, getInsightPreviewContent]
     )
 
     const { state, update } = useLivePreview(getLivePreview)
@@ -120,19 +113,15 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
                     <LivePreviewLegend series={state.data.series as Series<unknown>[]} />
                 )}
             </LivePreviewCard>
-
-            <Text className="mt-4 pl-2">
-                <strong>Timeframe:</strong> May 20, 2022 - Oct 20, 2022
-            </Text>
         </aside>
     )
 }
 
 const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] =>
     series.map(series => ({
-        group: series.name,
-        name: series.name,
+        // group: series.name,
+        name: series.name ? series.name : 'Other',
         value: series.data[0].value ?? 0,
-        fill: series.color ?? 'var(--blue)',
+        fill: series.name ? series.color ?? 'var(--blue)' : 'var(--oc-gray-4)',
         linkURL: series.data[0].link ?? '',
     }))

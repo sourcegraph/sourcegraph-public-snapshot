@@ -19,12 +19,10 @@ import {
     RepositoriesField,
     SubmissionErrors,
     useField,
-    EditableDataSeries,
     useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
 import { ComputeLivePreview } from '../../ComputeLivePreview'
-import { getSanitizedSeries } from '../../search-insight/utils/insight-sanitizer'
 import { CreateComputeInsightFormFields } from '../types'
 
 import { ComputeInsightMapPicker } from './ComputeInsightMapPicker'
@@ -37,7 +35,7 @@ const INITIAL_INSIGHT_VALUES: CreateComputeInsightFormFields = {
     dashboardReferenceCount: 0,
 }
 
-type NativeContainerProps = Omit<HTMLAttributes<HTMLDivElement>, 'onSubmit' | 'onChange'>
+type NativeContainerProps = Omit<HTMLAttributes<HTMLDivElement>, 'onSubmit' | 'onChange' | 'children'>
 
 export interface RenderPropertyInputs {
     submitting: boolean
@@ -110,7 +108,9 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
     // we should disable live chart preview
     const allFieldsForPreviewAreValid =
         repositories.meta.validState === 'VALID' &&
-        (series.meta.validState === 'VALID' || editSeries.some(series => series.valid))
+        (series.meta.validState === 'VALID' || series.meta.value.some(series => series.valid))
+
+    const validSeries = series.meta.value.filter(series => series.valid)
 
     return (
         <CreationUiLayout {...attributes}>
@@ -169,7 +169,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 <hr className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
-                    <ComputeInsightMapPicker series={series.input.value} {...groupBy.input} />
+                    <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
 
                     <small className="text-muted mt-3">
                         Learn more about <Link to="">grouping results</Link>
@@ -202,25 +202,9 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 as={ComputeLivePreview}
                 disabled={!allFieldsForPreviewAreValid}
                 repositories={repositories.meta.value}
-                series={seriesToPreview(series)}
+                series={validSeries}
+                groupBy={groupBy.meta.value}
             />
         </CreationUiLayout>
     )
-}
-
-function seriesToPreview(
-    currentSeries: EditableDataSeries[]
-): {
-    query: string
-    label: string
-    generatedFromCaptureGroup: boolean
-    stroke: string
-}[] {
-    const validSeries = currentSeries.filter(series => series.valid)
-    return getSanitizedSeries(validSeries).map(series => ({
-        query: series.query,
-        stroke: series.stroke ? series.stroke : '',
-        label: series.name,
-        generatedFromCaptureGroup: false,
-    }))
 }
