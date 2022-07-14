@@ -3,4 +3,4 @@
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-docker build -t "${IMAGE:-sourcegraph/syntax-highlighter}" .
+docker build --squash  -t "${IMAGE:-sourcegraph/syntax-highlighter}" .

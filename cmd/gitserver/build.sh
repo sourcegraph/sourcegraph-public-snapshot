@@ -21,7 +21,7 @@ export CGO_ENABLED=0
 pkg="github.com/sourcegraph/sourcegraph/cmd/gitserver"
 go build -trimpath -ldflags "-X github.com/sourcegraph/sourcegraph/internal/version.version=$VERSION  -X github.com/sourcegraph/sourcegraph/internal/version.timestamp=$(date +%s)" -buildmode exe -tags dist -o "$OUTPUT/$(basename $pkg)" "$pkg"
 
-docker build -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
+docker build --squash  -f cmd/gitserver/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

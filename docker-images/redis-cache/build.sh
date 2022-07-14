@@ -3,4 +3,4 @@
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-docker build -t "${IMAGE:-sourcegraph/redis-cache}" .
+docker build --squash  -t "${IMAGE:-sourcegraph/redis-cache}" .

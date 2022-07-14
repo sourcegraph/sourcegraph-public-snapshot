@@ -102,8 +102,8 @@ IMAGE=sourcegraph/postgres_exporter:server CACHE=true docker-images/postgres_exp
 echo "--- jaeger-all-in-one binary"
 cmd/server/jaeger.sh
 
-echo "--- docker build"
-docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+echo "--- docker build --squash "
+docker build --squash  -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

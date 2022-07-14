@@ -217,7 +217,7 @@ function install_src_cli() {
 ## Build the ignite-ubuntu image for use in firecracker.
 ## Set SRC_CLI_VERSION to the minimum required version in internal/src-cli/consts.go
 function generate_ignite_base_image() {
-  docker build -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
+  docker build --squash  -t "${EXECUTOR_FIRECRACKER_IMAGE}" --build-arg SRC_CLI_VERSION="${SRC_CLI_VERSION}" /tmp/ignite-ubuntu
   ignite image import --runtime docker "${EXECUTOR_FIRECRACKER_IMAGE}"
   docker image rm "${EXECUTOR_FIRECRACKER_IMAGE}"
   # Remove intermediate layers and base image used in ignite-ubuntu.

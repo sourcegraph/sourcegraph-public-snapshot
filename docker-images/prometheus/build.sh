@@ -49,7 +49,7 @@ if [[ "$CACHE" == "true" ]]; then
 fi
 
 # shellcheck disable=SC2086
-docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
+docker build --squash  ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \

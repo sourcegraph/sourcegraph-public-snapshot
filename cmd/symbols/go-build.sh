@@ -17,7 +17,7 @@ echo "--- docker symbols build"
 # Required due to use of RUN --mount=type=cache in Dockerfile.
 export DOCKER_BUILDKIT=1
 
-docker build -f cmd/symbols/Dockerfile -t symbols-build "$(pwd)" \
+docker build --squash  -f cmd/symbols/Dockerfile -t symbols-build "$(pwd)" \
   --target=symbols-build \
   --progress=plain \
   --build-arg VERSION \
