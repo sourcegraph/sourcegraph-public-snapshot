@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/sourcegraph/log"
 	"io/ioutil"
-	"log"
+	_ "log"
 	"net/http"
 	"os"
 	"sync"
@@ -65,12 +66,14 @@ func (b *BuildEvent) JobName() string {
 }
 
 type BuildStore struct {
+	logger log.Logger
 	builds map[int]*Build
 	m      sync.RWMutex
 }
 
-func NewBuildStore() *BuildStore {
+func NewBuildStore(logger log.Logger) *BuildStore {
 	return &BuildStore{
+		logger: logger.Scoped("store", "stores all the builds"),
 		builds: make(map[int]*Build),
 		m:      sync.RWMutex{},
 	}
@@ -90,14 +93,14 @@ func (s *BuildStore) Add(event *BuildEvent) {
 	}
 	build.Jobs = append(build.Jobs, event.Job)
 
-	log.Printf("Adding job. Build %d Total jobs %d", event.BuildNumber(), len(build.Jobs))
+	s.logger.Debug("Adding job", log.Int("BuildNumber", event.BuildNumber()), log.Int("TotalJobs", len(build.Jobs)))
 }
 
 func (s *BuildStore) DelByBuildNumber(num int) {
 	s.m.Lock()
 	defer s.m.Unlock()
 	delete(s.builds, num)
-	log.Printf("build %d deleted", num)
+	s.logger.Info("Build deleted", log.Int("BuildNumber", num))
 }
 
 func (s *BuildStore) GetByBuildNumber(num int) *Build {
@@ -108,6 +111,7 @@ func (s *BuildStore) GetByBuildNumber(num int) *Build {
 }
 
 type BuildTrackingServer struct {
+	logger  log.Logger
 	store   *BuildStore
 	bkToken string
 	slack   *SlackWebhookClient
@@ -119,14 +123,16 @@ func NewStepServer() *BuildTrackingServer {
 	if token == "" {
 		panic("Environment variable BK_WEBHOOK_TOKEN cannot be empty")
 	}
+	logger := log.Scoped("server", "Server that tracks completed builds")
 	return &BuildTrackingServer{
-		store:   NewBuildStore(),
+		logger:  logger,
+		store:   NewBuildStore(logger),
 		bkToken: token,
 		slack:   NewSlackWebhookClient(),
 	}
 }
 
-func processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, error) {
+func (s *BuildTrackingServer) processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, error) {
 	h, ok := req.Header["X-Buildkite-Token"]
 	if !ok || len(h) == 0 {
 		return nil, ErrInvalidToken
@@ -140,15 +146,15 @@ func processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, erro
 	}
 
 	eventName := h[0]
-	log.Printf("received event: %s", eventName)
+	s.logger.Debug("receied event", log.String("eventName", eventName))
 
 	var event BuildEvent
-	err := readBody(req, &event)
+	err := readBody(s.logger, req, &event)
 	if errors.Is(err, ErrRequestBody) {
-		log.Printf("faield to read body of request")
+		s.logger.Error("failed to read body of request", log.Error(err))
 		return nil, ErrRequestBody
 	} else if errors.Is(err, ErrJSONUnmarshall) {
-		log.Printf("faield to unmarshall body of request")
+		s.logger.Error("failed to unmarshall body of request", log.Error(err))
 		return nil, ErrJSONUnmarshall
 	}
 
@@ -156,7 +162,7 @@ func processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, erro
 }
 
 func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Request) {
-	event, err := processBuildkiteRequest(req, s.bkToken)
+	event, err := s.processBuildkiteRequest(req, s.bkToken)
 
 	switch err {
 	case ErrInvalidToken:
@@ -174,21 +180,22 @@ func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
+	s.logger.Debug("processing event", log.String("eventName", event.Event), log.Int("BuildNumber", event.BuildNumber()), log.String("JobName", event.JobName()))
 	go s.processEvent(event)
 	w.WriteHeader(http.StatusOK)
 }
 
-func readBody[T any](req *http.Request, target T) error {
-	log.Println("reading event detail from request")
+func readBody[T any](logger log.Logger, req *http.Request, target T) error {
+	logger.Debug("reading event detail from request")
 	data, err := ioutil.ReadAll(req.Body)
 	if err != nil {
-		log.Println("failed to read request body")
+		logger.Error("failed to read request body", log.Error(err))
 		return ErrRequestBody
 	}
 
 	err = json.Unmarshal(data, &target)
 	if err != nil {
-		log.Printf("failed to unmarshall request body: %v", err)
+		logger.Error("failed to unmarshall request body", log.Error(err))
 		return ErrJSONUnmarshall
 	}
 
@@ -197,16 +204,16 @@ func readBody[T any](req *http.Request, target T) error {
 
 func (s *BuildTrackingServer) notify(build *Build) error {
 	if len(build.Jobs) == 0 {
-		log.Printf("build %d has no jobs", *build.Number)
+		s.logger.Info("build has no jobs", log.Int("BuildNumber", *build.Number))
 		return nil
 	}
 
 	if build.hasFailed() {
-		log.Printf("build %d failed - sending notifcation", *build.Number)
+		s.logger.Info("detected failed build - sending notification", log.Int("BuildNumber", *build.Number))
 		return s.slack.sendNotification(build)
 	}
 
-	log.Printf("build %d successful", *build.Number)
+	s.logger.Info("build successful", log.Int("BuildNumber", *build.Number))
 	return nil
 }
 
@@ -220,7 +227,7 @@ func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 	if event.IsBuildFinished() {
 		build := s.store.GetByBuildNumber(event.BuildNumber())
 		if err := s.notify(build); err != nil {
-			log.Printf("failed to send notification for build %d: %v", event.BuildNumber(), err)
+			s.logger.Error("failed to send notification for build", log.Int("BuildNumber", event.BuildNumber()), log.Error(err))
 		}
 		// since the build is done we don't need it anymore
 		s.store.DelByBuildNumber(*event.Build.Number)
@@ -229,13 +236,20 @@ func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 
 func (s *BuildTrackingServer) Serve() error {
 	http.HandleFunc("/buildkite", s.handleEvent)
-	log.Print("listening on :8080")
+	s.logger.Info("listening on :8080")
 	return http.ListenAndServe(":8080", nil)
 }
 
 func main() {
+	sync := log.Init(log.Resource{
+		Name:      "BuildTracker",
+		Namespace: "CI",
+	})
+	defer sync.Sync()
+	println("logger inited")
 	server := NewStepServer()
+	println("server created")
 	if err := server.Serve(); err != nil {
-		log.Fatal(err)
+		server.logger.Fatal("server exited with error", log.Error(err))
 	}
 }
