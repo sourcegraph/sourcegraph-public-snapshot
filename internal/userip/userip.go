@@ -8,7 +8,7 @@ import (
 
 type contextKey int
 
-const userIPKey contextKey = iota
+type userIPKey struct{}
 
 // TODO naming?
 type UserIP struct {
@@ -17,7 +17,7 @@ type UserIP struct {
 }
 
 func FromContext(ctx context.Context) *UserIP {
-	a, ok := ctx.Value(userIPKey).(*UserIP)
+	a, ok := ctx.Value(userIPKey{}).(*UserIP)
 	if !ok || a == nil {
 		return nil
 	}
@@ -25,7 +25,7 @@ func FromContext(ctx context.Context) *UserIP {
 }
 
 func WithUserIP(ctx context.Context, userIP *UserIP) context.Context {
-	return context.WithValue(ctx, userIPKey, userIP)
+	return context.WithValue(ctx, userIPKey{}, userIP)
 }
 
 const (
