@@ -59,7 +59,7 @@ func SignIn(baseURL, email, password string) (*Client, error) {
 
 // authenticate initializes an authenticated client with given request body.
 func authenticate(baseURL, path string, body any) (*Client, error) {
-	client, err := NewClient(baseURL)
+	client, err := NewClient(baseURL, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "new client")
 	}
@@ -97,12 +97,23 @@ type Client struct {
 	csrfCookie    *http.Cookie
 	sessionCookie *http.Cookie
 
-	userID string
+	userID         string
+	requestLogger  io.StringWriter
+	responseLogger io.StringWriter
 }
 
 // NewClient instantiates a new client by performing a GET request then obtains the
-// CSRF token and cookie from its response, if there is one (old versions of Sourcegraph only.)
-func NewClient(baseURL string) (*Client, error) {
+// CSRF token and cookie from its response, if there is one (old versions of Sourcegraph only).
+// If request- or responseLogger are provided, the request and response bodies, respectively,
+// will be written to them for any GraphQL requests only.
+func NewClient(baseURL string, requestLogger, responseLogger io.StringWriter) (*Client, error) {
+	if requestLogger == nil {
+		requestLogger = io.Discard.(io.StringWriter)
+	}
+	if responseLogger == nil {
+		responseLogger = io.Discard.(io.StringWriter)
+	}
+
 	resp, err := http.Get(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "get URL")
@@ -114,6 +125,8 @@ func NewClient(baseURL string) (*Client, error) {
 		return nil, errors.Wrap(err, "read GET body")
 	}
 
+	responseLogger.WriteString(string(p))
+
 	csrfToken := extractCSRFToken(string(p))
 	var csrfCookie *http.Cookie
 	for _, cookie := range resp.Cookies() {
@@ -124,9 +137,11 @@ func NewClient(baseURL string) (*Client, error) {
 	}
 
 	return &Client{
-		baseURL:    baseURL,
-		csrfToken:  csrfToken,
-		csrfCookie: csrfCookie,
+		baseURL:        baseURL,
+		csrfToken:      csrfToken,
+		csrfCookie:     csrfCookie,
+		requestLogger:  requestLogger,
+		responseLogger: responseLogger,
 	}, nil
 }
 
@@ -138,6 +153,8 @@ func (c *Client) authenticate(path string, body any) error {
 	if err != nil {
 		return errors.Wrap(err, "marshal body")
 	}
+
+	c.requestLogger.WriteString(string(p))
 
 	req, err := http.NewRequest("POST", c.baseURL+path, bytes.NewReader(p))
 	if err != nil {
@@ -257,6 +274,8 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 		name = matches[2]
 	}
 
+	c.requestLogger.WriteString(string(body))
+
 	req, err := http.NewRequest("POST", fmt.Sprintf("%s/.api/graphql?%s", c.baseURL, name), bytes.NewReader(body))
 	if err != nil {
 		return err
@@ -285,6 +304,8 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 	if err != nil {
 		return errors.Wrap(err, "read response body")
 	}
+
+	c.responseLogger.WriteString(string(body))
 
 	// Check if the response format should be JSON
 	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {
