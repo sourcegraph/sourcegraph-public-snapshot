@@ -1,7 +1,0 @@
-[
-  {
-    "Description": "patterns to code host filters",
-    "Input": "github.com/sourcegraph",
-    "Query": "repo:^github\\.com/sourcegraph"
-  }
-]
