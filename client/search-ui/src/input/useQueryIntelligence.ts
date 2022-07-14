@@ -5,7 +5,7 @@ import { Observable } from 'rxjs'
 import * as uuid from 'uuid'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
-import { getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
+import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { getProviders } from '@sourcegraph/shared/src/search/query/providers'
 import { scanSearchQuery } from '@sourcegraph/shared/src/search/query/scanner'
 import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
@@ -106,9 +106,32 @@ export function useQueryDiagnostics(
                 memoizedOptions.interpretComments ?? false,
                 memoizedOptions.patternType
             )
-            const markers = scanned.type === 'success' ? getDiagnostics(scanned.term, memoizedOptions.patternType) : []
+            const markers =
+                scanned.type === 'success'
+                    ? getDiagnostics(scanned.term, memoizedOptions.patternType).map(toMarker.bind(null, model))
+                    : []
             Monaco.editor.setModelMarkers(model, 'diagnostics', markers)
         })
         return () => disposable.dispose()
     }, [editor, memoizedOptions])
+}
+
+const severityMap: Record<Diagnostic['severity'], Monaco.MarkerSeverity> = {
+    info: Monaco.MarkerSeverity.Info,
+    warning: Monaco.MarkerSeverity.Warning,
+    error: Monaco.MarkerSeverity.Error,
+}
+
+function toMarker(model: Monaco.editor.ITextModel, diagnostic: Diagnostic): Monaco.editor.IMarkerData {
+    const startPosition = model.getPositionAt(diagnostic.range.start)
+    const endPosition = model.getPositionAt(diagnostic.range.end)
+
+    return {
+        message: diagnostic.message,
+        severity: severityMap[diagnostic.severity],
+        startLineNumber: startPosition.lineNumber,
+        startColumn: startPosition.column,
+        endLineNumber: endPosition.lineNumber,
+        endColumn: endPosition.column,
+    }
 }
