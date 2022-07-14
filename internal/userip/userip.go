@@ -4,27 +4,28 @@ import (
 	"context"
 	"net/http"
 	"strings"
-
-	"github.com/sourcegraph/log"
 )
 
 type contextKey int
 
 const userIPKey contextKey = iota
 
-type UserIP string
-type XForwardedFor []string
+// TODO naming?
+type UserIP struct {
+	IP            string
+	XForwardedFor string
+}
 
-func FromContext(ctx context.Context) UserIP {
-	a, ok := ctx.Value(userIPKey).(UserIP)
-	if !ok || a == "" {
-		return ""
+func FromContext(ctx context.Context) *UserIP {
+	a, ok := ctx.Value(userIPKey).(*UserIP)
+	if !ok || a == nil {
+		return nil
 	}
 	return a
 }
 
-func WithUserIP(ctx context.Context, ip UserIP) context.Context {
-	return context.WithValue(ctx, userIPKey, ip)
+func WithUserIP(ctx context.Context, userIP *UserIP) context.Context {
+	return context.WithValue(ctx, userIPKey, userIP)
 }
 
 const (
@@ -45,34 +46,24 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 		t.RoundTripper = http.DefaultTransport
 	}
 
-	ip := FromContext(req.Context())
-	req.Header.Set(headerKeyUserIP, string(ip))
+	userIP := FromContext(req.Context())
+	if userIP != nil {
+		req.Header.Set(headerKeyUserIP, userIP.IP)
+		req.Header.Set(headerKeyForwardedFor, userIP.XForwardedFor)
+	}
 
 	return t.RoundTripper.RoundTrip(req)
 }
 
 func UserIPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		var ip UserIP
+		var userIP UserIP
+		userIP.IP = strings.Split(req.RemoteAddr, ":")[0]
+		userIP.XForwardedFor = req.Header.Get(headerKeyForwardedFor)
 
-		ip = UserIP(strings.Split(req.RemoteAddr, ":")[0])
 		ctx := req.Context()
-		ctxWithIP := WithUserIP(ctx, ip)
+		ctxWithIP := WithUserIP(ctx, &userIP)
 
 		next.ServeHTTP(rw, req.WithContext(ctxWithIP))
-	})
-}
-
-func HTTPMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
-		ctx := req.Context()
-
-		userIP := req.Header.Get(headerKeyUserIP)
-		forwardedFor := strings.Split(req.Header.Get(headerKeyForwardedFor), ",")
-		log.Scoped("userip", "logging user ip").Info("userip",
-			log.String("path", req.URL.Path), log.String("ip", userIP),
-			log.Strings("forwardedFor", forwardedFor))
-
-		next.ServeHTTP(rw, req.WithContext(ctx))
 	})
 }
