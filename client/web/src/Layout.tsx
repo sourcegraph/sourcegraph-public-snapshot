@@ -240,7 +240,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     }
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
-                    isExtensionAlertAnimating={isExtensionAlertAnimating}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                 />
             )}

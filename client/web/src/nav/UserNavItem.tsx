@@ -4,7 +4,6 @@ import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip } from 'reactstrap'
 
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_SHOW_HELP } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
@@ -33,7 +32,7 @@ import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
-export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
+export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
@@ -44,10 +43,6 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
-}
-
-export interface ExtensionAlertAnimationProps {
-    isExtensionAlertAnimating: boolean
 }
 
 /**
@@ -75,7 +70,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
         menuButtonRef,
         themePreference,
         onThemePreferenceChange,
-        isExtensionAlertAnimating,
         codeHostIntegrationMessaging,
         position = Position.bottomEnd,
     } = props
@@ -127,21 +121,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
-                            {isExtensionAlertAnimating && (
-                                <Tooltip
-                                    target={targetID}
-                                    placement="bottom"
-                                    isOpen={true}
-                                    modifiers={{
-                                        offset: {
-                                            offset: '0, 10px',
-                                        },
-                                    }}
-                                    className={styles.tooltip}
-                                >
-                                    Install the browser extension from here later
-                                </Tooltip>
-                            )}
                         </MenuButton>
 
                         <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">
