@@ -3,7 +3,7 @@ import React, { useContext, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
-import { Series } from '../../../../../charts'
+import { LegendItem, LegendList, Series } from '../../../../../charts'
 import { BarChart } from '../../../../../charts/components/bar-chart/BarChart'
 import { GroupByField } from '../../../../../graphql-operations'
 import {
@@ -13,7 +13,6 @@ import {
     LivePreviewChart,
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
-    LivePreviewLegend,
     getSanitizedRepositories,
     useLivePreview,
     StateStatus,
@@ -110,7 +109,15 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
                 )}
 
                 {state.status === StateStatus.Data && (
-                    <LivePreviewLegend series={state.data.series as Series<unknown>[]} />
+                    <LegendList className="mt-3">
+                        {state.data.series.map(series => (
+                            <LegendItem
+                                key={series.id}
+                                color={getComputeSeriesColor(series)}
+                                name={getComputeSeriesName(series)}
+                            />
+                        ))}
+                    </LegendList>
                 )}
             </LivePreviewCard>
         </aside>
@@ -119,9 +126,12 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
 
 const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] =>
     series.map(series => ({
-        // group: series.name,
-        name: series.name ? series.name : 'Other',
+        name: getComputeSeriesName(series),
+        fill: getComputeSeriesColor(series),
         value: series.data[0].value ?? 0,
-        fill: series.name ? series.color ?? 'var(--blue)' : 'var(--oc-gray-4)',
         linkURL: series.data[0].link ?? '',
     }))
+
+const getComputeSeriesName = (series: Series<any>): string => (series.name ? series.name : 'Other')
+const getComputeSeriesColor = (series: Series<any>): string =>
+    series.name ? series.color ?? 'var(--blue)' : 'var(--oc-gray-4)'
