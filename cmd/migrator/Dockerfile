@@ -1,17 +1,19 @@
-FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05
+FROM index.docker.io/sourcegraph/migrator:3.41.1@sha256:1e6c93f22bc11e35ebd44c5977e00e23dc3111e2d0aaafe7754e119cc32aaa52
 
-ARG COMMIT_SHA="unknown"
-ARG DATE="unknown"
-ARG VERSION="unknown"
+# We need root to add the correct version of curl, but we don't want to
+# accidentally change the default USER of the docker container while we're doing so.
+# So, we:
+#  1) check to make sure the current user is what we expect
+#  2) switch to root and install the patched version of curl
+#  3) switch back to the old user, double checking to make sure that we actually are running as the old user
+ARG BASE_USER=sourcegraph
 
-LABEL org.opencontainers.image.revision=${COMMIT_SHA}
-LABEL org.opencontainers.image.created=${DATE}
-LABEL org.opencontainers.image.version=${VERSION}
-LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-RUN apk update && apk add --no-cache \
-    tini
+USER root
+RUN apk del curl && apk add --no-cache --verbose 'curl>=7.79.1-r2'
 
-USER sourcegraph
+USER $BASE_USER
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
+
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/migrator"]
-COPY migrator /usr/local/bin/

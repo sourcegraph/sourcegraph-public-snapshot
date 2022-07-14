@@ -1,29 +1,19 @@
-FROM prometheuscommunity/postgres-exporter:v0.9.0@sha256:9100e51f477827840e06638f7ebec111799eece916c603fac2d2369bfbc9f507 as postgres_exporter
-FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05
-# hadolint ignore=DL3048
-LABEL com.sourcegraph.postgres_exporter.version=v0.9.0
+FROM index.docker.io/sourcegraph/postgres_exporter:3.41.1@sha256:84b39942a79fdbdeaa3a822be68165d02a1fd79e6577d1de126b7986ee24295d
 
-ARG COMMIT_SHA="unknown"
-ARG DATE="unknown"
-ARG VERSION="unknown"
+# We need root to add the correct version of curl, but we don't want to
+# accidentally change the default USER of the docker container while we're doing so.
+# So, we:
+#  1) check to make sure the current user is what we expect
+#  2) switch to root and install the patched version of curl
+#  3) switch back to the old user, double checking to make sure that we actually are running as the old user
+ARG BASE_USER=postgres_exporter
 
-LABEL org.opencontainers.image.revision=${COMMIT_SHA}
-LABEL org.opencontainers.image.created=${DATE}
-LABEL org.opencontainers.image.version=${VERSION}
-LABEL org.opencontainers.image.url=https://sourcegraph.com/
-LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph/
-LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-# hadolint ignore=DL3022
-COPY --from=postgres_exporter /bin/postgres_exporter /usr/local/bin/postgres_exporter
+USER root
+RUN apk del curl && apk add --no-cache --verbose 'curl>=7.79.1-r2'
 
-RUN addgroup -S postgres_exporter && adduser --uid 20001 -S postgres_exporter -G postgres_exporter
-
-USER postgres_exporter
-
-COPY ./*.yaml /config/
-ENV  PG_EXPORTER_EXTEND_QUERY_PATH=/config/queries.yaml
-
-EXPOSE 9187
+USER $BASE_USER
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
 ENTRYPOINT [ "/usr/local/bin/postgres_exporter"]

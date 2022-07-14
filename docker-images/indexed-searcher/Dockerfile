@@ -1,4 +1,4 @@
-FROM index.docker.io/sourcegraph/gitserver:3.41.1@sha256:d9f35585bdda0d20aa2bc79b8928b5b34d3ab1a404f4714fd36bb6f2a040e32d
+FROM index.docker.io/sourcegraph/indexed-searcher:3.41.1@sha256:786278f08b6e61a0ab203bd7325559321860b14b172741886f6154f0e13e425a
 
 # We need root to add the correct version of curl, but we don't want to
 # accidentally change the default USER of the docker container while we're doing so.
@@ -16,4 +16,5 @@ RUN apk del curl && apk add --no-cache --verbose 'curl>=7.79.1-r2'
 USER $BASE_USER
 RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/gitserver"]
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD zoekt-webserver -index $DATA_DIR -pprof -rpc

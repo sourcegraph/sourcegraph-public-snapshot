@@ -1,28 +1,19 @@
-# This Dockerfile was generated from github.com/sourcegraph/godockerize. It
-# was not written by a human, and as such looks janky. As you change this
-# file, please don't be scared to make it more pleasant / remove hadolint
-# ignores.
+FROM index.docker.io/sourcegraph/searcher:3.41.1@sha256:40b7da6e91c2c6bf9f65cfa8c44c7e6c2a2180319be6b62ac4ed986366479014
 
-FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05
+# We need root to add the correct version of curl, but we don't want to
+# accidentally change the default USER of the docker container while we're doing so.
+# So, we:
+#  1) check to make sure the current user is what we expect
+#  2) switch to root and install the patched version of curl
+#  3) switch back to the old user, double checking to make sure that we actually are running as the old user
+ARG BASE_USER=sourcegraph
 
-RUN apk --no-cache add pcre sqlite-libs libev
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-# The comby/comby image is a small binary-only distribution. See the bin and src directories
-# here: https://github.com/comby-tools/comby/tree/master/dockerfiles/alpine
-# hadolint ignore=DL3022
-COPY --from=comby/comby:1.7.1@sha256:6a581342b15e0032e6293ea2f4827af70f33646106b7c8900315bcc7d4b63b1a /usr/local/bin/comby /usr/local/bin/comby
+USER root
+RUN apk del curl && apk add --no-cache --verbose 'curl>=7.79.1-r2'
 
-ARG COMMIT_SHA="unknown"
-ARG DATE="unknown"
-ARG VERSION="unknown"
+USER $BASE_USER
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-LABEL org.opencontainers.image.revision=${COMMIT_SHA}
-LABEL org.opencontainers.image.created=${DATE}
-LABEL org.opencontainers.image.version=${VERSION}
-LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
-
-ENV CACHE_DIR=/mnt/cache/searcher
-RUN mkdir -p ${CACHE_DIR} && chown -R sourcegraph:sourcegraph ${CACHE_DIR}
-USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/searcher"]
-COPY searcher /usr/local/bin/

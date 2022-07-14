@@ -1,55 +1,21 @@
-###################################
-# Build syntect_server statically #
-###################################
+FROM index.docker.io/sourcegraph/syntax-highlighter:3.41.1@sha256:ce2c417dd5a2e133f4b2fe2a252d2bac8ba40b253b6a892b60df9f437b28d22d
 
-FROM rust:1.58-alpine3.14@sha256:fbc0cfaa6261179ca7653cc2b20ca9c3e936f3416a911a27a28694f8fb23b8b4 as ss
-RUN apk add --no-cache musl-dev>=1.1.24-r10
-COPY . /repo
-WORKDIR /repo
-RUN cargo test --release --workspace
-RUN cargo rustc --release
-RUN ls ./target
-RUN cp ./target/release/syntect_server /syntect_server
+# We need root to add the correct version of curl, but we don't want to
+# accidentally change the default USER of the docker container while we're doing so.
+# So, we:
+#  1) check to make sure the current user is what we expect
+#  2) switch to root and install the patched version of curl
+#  3) switch back to the old user, double checking to make sure that we actually are running as the old user
 
-################################
-# Build http-server-stabilizer #
-################################
-FROM golang:1.15.2-alpine@sha256:fc801399d044a8e01f125eeb5aa3f160a0d12d6e03ba17a1d0b22ce50dfede81 as hss
+# this is odd, we always ran as root here?
+ARG BASE_USER=root
 
-RUN apk add --no-cache git>=2.26.3
-RUN git clone https://github.com/slimsag/http-server-stabilizer /repo
-WORKDIR /repo
-RUN git checkout v1.0.4 && go build -o /http-server-stabilizer .
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-#######################
-# Compile final image #
-#######################
-FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05
-COPY --from=ss syntect_server /
-COPY --from=hss http-server-stabilizer /
+USER root
+RUN apk del curl && apk add --no-cache --verbose 'curl>=7.79.1-r2'
 
-EXPOSE 9238
-ENV ROCKET_ENV "production"
-ENV ROCKET_LIMITS "{json=10485760}"
+USER $BASE_USER
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-# syntect_server does not need a secret key since it uses no cookies, but
-# without one set Rocket emits a warning.
-ENV ROCKET_SECRET_KEY "SeerutKeyIsI7releuantAndknvsuZPluaseIgnorYA="
-
-# When keep-alive is on, we observe connection resets in our Go clients of
-# syntect_server. It is unclear why this is, especially because our Go clients do
-# not reuse the connection (i.e. we make a fresh connection every time).
-# Disabling keep-alive does resolve the issue though, our best guess is that
-# this is a bug in Hyper 0.10 (see https://github.com/SergioBenitez/Rocket/issues/928#issuecomment-464632953).
-# See https://github.com/sourcegraph/sourcegraph/issues/2615 for details on
-# what we observed when this was enabled with the default 5s.
-ENV ROCKET_KEEP_ALIVE=0
-
-# The more workers, the more resilient syntect_server is to getting stuck on
-# bad grammar/file combinations. If it happens with four workers, only 1/4th of
-# requests will be affected for a short period of time. Each worker can require
-# at peak around 1.1 GiB of memory.
-ENV WORKERS=4
-
-ENV QUIET=true
 CMD ["sh", "-c", "/http-server-stabilizer -listen=:9238 -prometheus-app-name=syntect_server -workers=$WORKERS -- env ROCKET_PORT={{.Port}} /syntect_server"]

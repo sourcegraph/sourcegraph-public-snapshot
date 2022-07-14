@@ -1,29 +1,19 @@
-# This Dockerfile was generated from github.com/sourcegraph/godockerize. It
-# was not written by a human, and as such looks janky. As you change this
-# file, please don't be scared to make it more pleasant / remove hadolint
-# ignores.
+FROM index.docker.io/sourcegraph/repo-updater:3.41.1@sha256:c827f60668304f21dec10b868d9fa1078002a4b660f29c880659bba219b3706e
 
-FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05 AS coursier
+# We need root to add the correct version of curl, but we don't want to
+# accidentally change the default USER of the docker container while we're doing so.
+# So, we:
+#  1) check to make sure the current user is what we expect
+#  2) switch to root and install the patched version of curl
+#  3) switch back to the old user, double checking to make sure that we actually are running as the old user
+ARG BASE_USER=sourcegraph
 
-# TODO(code-intel): replace with official streams when musl builds are upstreamed
-RUN wget -O coursier.zip https://github.com/sourcegraph/lsif-java/releases/download/v0.5.6/cs-musl.zip && \
-    unzip coursier.zip && \
-    mv cs-musl /usr/local/bin/coursier && \
-    chmod +x /usr/local/bin/coursier
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-FROM sourcegraph/alpine-3.14:154143_2022-06-13_1eababf8817e@sha256:f1c4ac9ca1a36257c1eb699d0acf489d83dd86e067b1fc3ea4a563231a047e05
+USER root
+RUN apk del curl && apk add --no-cache --verbose 'curl>=7.79.1-r2'
 
-ARG COMMIT_SHA="unknown"
-ARG DATE="unknown"
-ARG VERSION="unknown"
+USER $BASE_USER
+RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
-LABEL org.opencontainers.image.revision=${COMMIT_SHA}
-LABEL org.opencontainers.image.created=${DATE}
-LABEL org.opencontainers.image.version=${VERSION}
-LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
-
-COPY --from=coursier /usr/local/bin/coursier /usr/local/bin/coursier
-
-USER sourcegraph
 ENTRYPOINT ["/sbin/tini", "--", "/usr/local/bin/repo-updater"]
-COPY repo-updater /usr/local/bin/
