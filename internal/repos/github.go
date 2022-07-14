@@ -809,11 +809,13 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 }
 
 func (s *repositoryQuery) Next() bool {
-	if s.Created == nil || !s.Created.From.After(minCreated) {
+	if s.Created == nil || !s.Created.From.After(minCreated) || !s.Created.To.After(s.Created.From) {
 		return false
 	}
 
 	s.Cursor = ""
+	s.RefinedFrom = nil
+	s.ExpandedFrom = nil
 
 	size := s.Created.Size()
 	s.Created.To = s.Created.From.Add(-time.Second)
