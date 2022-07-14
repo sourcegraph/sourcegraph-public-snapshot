@@ -2459,7 +2459,7 @@ func TestCleanDetachedChangesets(t *testing.T) {
 				ExternalServiceType: extsvc.TypeGitHub,
 				ExternalBranch:      "refs/heads/batch-changes/test",
 				// Set beyond the retention period
-				DetachedAt: time.Now().Add(time.Duration(-48) * time.Hour),
+				DetachedAt: time.Now().Add(-48 * time.Hour),
 			},
 			wantDeleted: true,
 		},
