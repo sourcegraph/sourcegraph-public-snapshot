@@ -126,12 +126,11 @@ func (squirrel *SquirrelService) symbolInfo(ctx context.Context, point types.Rep
 
 // How to read a file from gitserver.
 func readFileFromGitserver(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
-	cmd := gitserver.NewClient(nil).GitCommand(api.RepoName(repoCommitPath.Repo), "cat-file", "blob", repoCommitPath.Commit+":"+repoCommitPath.Path)
-	stdout, stderr, err := cmd.DividedOutput(ctx)
+	data, err := gitserver.NewClient(nil).ReadFile(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path, nil)
 	if err != nil {
-		return nil, errors.Newf("failed to get file contents: %s\n\nstdout:\n\n%s\n\nstderr:\n\n%s", err, stdout, stderr)
+		return nil, errors.Newf("failed to get file contents: %s", err)
 	}
-	return stdout, nil
+	return data, nil
 }
 
 // DirOrNode is a union type that can either be a directory or a node. It's returned by getDef().

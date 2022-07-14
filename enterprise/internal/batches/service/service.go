@@ -1602,7 +1602,7 @@ func (s *Service) GetAvailableBulkOperations(ctx context.Context, opts GetAvaila
 		}
 
 		// PUBLISH
-		if !isChangesetArchived {
+		if !isChangesetArchived && !changeset.IsImported() {
 			bulkOperationsCounter[btypes.ChangesetJobTypePublish] += 1
 		}
 

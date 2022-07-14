@@ -151,7 +151,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
         platformContext,
     } = props
     const history = useHistory()
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')

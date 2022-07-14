@@ -1,15 +1,15 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { RouteComponentProps, useHistory, useLocation } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, Link, H3, Text } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, H3, Text, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -208,7 +208,7 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
 
         <span className={classNames(styles.button, 'd-none d-md-inline')}>
             <Link to={`./configuration/${policy.id}`} className="p-0">
-                <ChevronRightIcon />
+                <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
             </Link>
         </span>
     </>

@@ -29,9 +29,11 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >
@@ -296,9 +298,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >
@@ -517,9 +521,11 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >

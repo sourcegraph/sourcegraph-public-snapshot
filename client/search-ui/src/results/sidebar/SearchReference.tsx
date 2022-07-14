@@ -225,6 +225,13 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: true,
     },
     {
+        ...createQueryExampleFromString('has.description({regex-pattern})'),
+        field: FilterType.repo,
+        description: 'Search inside repositories that have a description matched by the provided regex pattern.',
+        examples: ['repo:has.description(linux kernel)', 'repo:has.description(go.*library)'],
+        showSuggestions: false,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,

@@ -347,37 +347,6 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                     </ul>
                 </li>
                 <li>
-                    CTA usage data
-                    <ul>
-                        <li>
-                            Browser extension
-                            <ul>
-                                <li>
-                                    Number of users who viewed / clicked the "install browser extension" CTA on the file
-                                    / search pages today
-                                </li>
-                                <li>
-                                    Number of views / clicks on the "install browser extension" CTA on the file / search
-                                    pages today
-                                </li>
-                            </ul>
-                        </li>
-                        <li>
-                            IDE extension
-                            <ul>
-                                <li>
-                                    Number of users who viewed / clicked the "install IDE extension" CTA on the file /
-                                    search pages today
-                                </li>
-                                <li>
-                                    Number of views / clicks on the "install IDE extension" CTA on the file / search
-                                    pages today
-                                </li>
-                            </ul>
-                        </li>
-                    </ul>
-                </li>
-                <li>
                     Code Host integration usage data (Browser extension / Native Integration)
                     <ul>
                         <li>Aggregate counts of current daily, weekly, and monthly unique users and total events</li>

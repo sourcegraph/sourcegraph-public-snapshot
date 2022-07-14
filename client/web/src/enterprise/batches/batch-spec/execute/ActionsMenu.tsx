@@ -93,7 +93,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
     const [menuReference, { width: menuWidth }] = useMeasure()
 
     return (
-        <div className="relative">
+        <div className="position-relative">
             {showPreviewButton && (
                 <Button
                     to={`${batchSpec.executionURL}/preview`}

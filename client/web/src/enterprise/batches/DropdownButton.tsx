@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiChevronDown } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 
 import {
     ProductStatusBadge,
@@ -16,6 +16,7 @@ import {
     H4,
     Text,
     Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
@@ -145,7 +146,7 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
                     </Tooltip>
                     {actions.length > 1 && (
                         <MenuButton variant="primary" className={styles.dropdownButton}>
-                            <ChevronDownIcon />
+                            <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
                             <VisuallyHidden>Actions</VisuallyHidden>
                         </MenuButton>
                     )}

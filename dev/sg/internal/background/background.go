@@ -22,13 +22,13 @@ type backgroundJobs struct {
 	wg    sync.WaitGroup
 	count atomic.Int32
 
-	results chan string
+	output chan string
 }
 
 // Context creates a context that can have background jobs added to it with background.Run
 func Context(ctx context.Context) context.Context {
 	return context.WithValue(ctx, jobsKey, &backgroundJobs{
-		results: make(chan string, 10), // reasonable default
+		output: make(chan string, 10), // reasonable default
 	})
 }
 
@@ -51,7 +51,7 @@ func Run(ctx context.Context, job func(ctx context.Context, out *std.Output), ve
 		jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()
 		job(jobCtx, out)
-		jobs.results <- strings.TrimSpace(b.String())
+		jobs.output <- strings.TrimSpace(b.String())
 	}()
 }
 
@@ -65,12 +65,16 @@ func Wait(ctx context.Context, out *std.Output) {
 	}
 	start := time.Now() // start clock for additional time waited
 
-	out.Write("") // separator for background output
+	firstResultWithOutput := true
 	out.VerboseLine(output.Styledf(output.StylePending, "Waiting for remaining background jobs to complete (%d total)...", count))
 	go func() {
-		for r := range jobs.results {
-			if r != "" {
-				out.Write(r)
+		for jobOutput := range jobs.output {
+			if jobOutput != "" {
+				if firstResultWithOutput {
+					out.Write("") // separator for background output
+					firstResultWithOutput = false
+				}
+				out.Write(jobOutput)
 			}
 			jobs.wg.Done()
 		}
@@ -78,7 +82,7 @@ func Wait(ctx context.Context, out *std.Output) {
 	jobs.wg.Wait()
 
 	// Done!
-	close(jobs.results)
+	close(jobs.output)
 	out.VerboseLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
 	analytics.LogEvent(ctx, "background_wait", nil, start)
 }

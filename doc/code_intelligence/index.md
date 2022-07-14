@@ -52,8 +52,8 @@ developers to explore code by
 <div class="cta-group">
 <a class="btn btn-primary" href="https://sourcegraph.com/github.com/dgrijalva/jwt-go/-/blob/token.go?L37:6#tab=references">★ Try it on public code!</a>
 <a class="btn" href="#code-intelligence-for-your-code">Enable it for your code</a>
-</div>
 <a class="btn" href="references/precise_examples">Examples</a>
+<a class="btn" href="references/indexers">🗂 Indexers</a>
 </div>
 
 Code Intelligence is made up of multiple features that build on top of each other:

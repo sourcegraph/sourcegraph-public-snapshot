@@ -63,7 +63,6 @@ const commonProps = (): UserNavItemProps => ({
     isLightTheme: true,
     onThemePreferenceChange,
     showDotComMarketing: boolean('showDotComMarketing', true),
-    isExtensionAlertAnimating: false,
     codeHostIntegrationMessaging: select(
         'codeHostIntegrationMessaging',
         ['browser-extension', 'native-integration'] as const,

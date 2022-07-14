@@ -34,7 +34,7 @@ func (dg *DependencyGraph) addDependency(a, b reposource.VersionedPackage) {
 	dg.edges[Edge{a, b}] = struct{}{}
 }
 
-func (dg *DependencyGraph) Roots() (roots []reposource.VersionedPackage) {
+func (dg *DependencyGraph) Roots() (roots []reposource.VersionedPackage, undeterminable bool) {
 	set := make(map[reposource.VersionedPackage]struct{}, len(dg.dependencies))
 	for pkg := range dg.dependencies {
 		set[pkg] = struct{}{}
@@ -49,7 +49,18 @@ func (dg *DependencyGraph) Roots() (roots []reposource.VersionedPackage) {
 		roots = append(roots, k)
 	}
 
-	return roots
+	if len(roots) == 0 {
+		// If we don't have roots (because of circular dependencies), we use
+		// every package as a root.
+		// Ideally we'd use other information (such as the data in
+		// `package.json` files) to find out what the direct dependencies are.
+		for pkg := range dg.dependencies {
+			roots = append(roots, pkg)
+		}
+		return roots, true
+	}
+
+	return roots, false
 }
 
 func (dg *DependencyGraph) AllEdges() (edges []Edge) {
@@ -71,19 +82,8 @@ func (dg *DependencyGraph) String() string {
 }
 
 func (dg *DependencyGraph) AsMap() map[string]interface{} {
-	roots := dg.Roots()
-	if len(roots) == 0 {
-		// If we don't have roots (because of circular dependencies), we use
-		// every package as a root.
-		// Ideally we'd use other information (such as the data in
-		// `package.json` files) to find out what the direct dependencies are.
-		//
-		// TODO: this should probably go to `Roots()` with a boolean that says
-		// `circular bool` and that we persist to the database.
-		for pkg := range dg.dependencies {
-			roots = append(roots, pkg)
-		}
-	}
+	roots, _ := dg.Roots()
+
 	sort.Slice(roots, func(i, j int) bool { return roots[i].Less(roots[j]) })
 
 	type item struct {
