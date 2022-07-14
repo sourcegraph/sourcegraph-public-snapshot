@@ -73,7 +73,9 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
     // NOTE: We plan to consolidate this logic with our Popover component in the future, but chose Radix first to support short-term accessibility needs.
     // GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/36080
     return (
-        <TooltipPrimitive.Root delayDuration={0} defaultOpen={defaultOpen}>
+        // The small delayDuration helps prevent the tooltip from immediately closing when it gets triggered in the
+        // exact spot the arrow is overlapping the content (allows time for the cursor to move more naturally)
+        <TooltipPrimitive.Root delayDuration={100} defaultOpen={defaultOpen}>
             <TooltipPrimitive.Trigger asChild={true}>{trigger}</TooltipPrimitive.Trigger>
             {
                 // The rest of the Tooltip components still need to be rendered for the content to correctly be shown conditionally.
