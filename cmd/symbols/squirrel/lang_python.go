@@ -65,6 +65,24 @@ func (squirrel *SquirrelService) getDefPython(ctx context.Context, node Node) (r
 				}
 				continue
 
+			case "with_statement":
+				for _, child := range children(cur) {
+					if child.Type() == "with_clause" {
+						for _, child := range children(cur) {
+							if child.Type() == "with_item" {
+								value := child.ChildByFieldName("value")
+								if value == nil {
+									continue
+								}
+								if value.Type() == "identifier" && value.Content(node.Contents) == ident {
+									return swapNodePtr(node, value), nil
+								}
+							}
+						}
+					}
+				}
+				continue
+
 			case "except_clause":
 				if cur.NamedChildCount() < 3 {
 					continue

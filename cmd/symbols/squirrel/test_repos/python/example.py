@@ -28,6 +28,11 @@ def f(x):
         #   v py.f.e ref
         _ = e
 
+    #                        vvvv py.f.file def
+    with open("file.txt") as file:
+        #     vvvv py.f.file fef
+        print(file)
+
     #          vvv py.f.lam def
     #               vvv py.f.lam ref
     _ = lambda lam: lam
