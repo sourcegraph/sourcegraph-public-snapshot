@@ -8,7 +8,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { GetInsightViewResult } from '../../../../../../graphql-operations'
+import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
 import {
     SeriesChartContent,
     SearchBasedInsight,
