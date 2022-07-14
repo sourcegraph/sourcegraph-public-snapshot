@@ -53,14 +53,13 @@ func fromContext(ctx context.Context) *paramsContext {
 // been stored in the context, in order to log a trace of the access.
 func Middleware(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		l := logger
 		ctx := r.Context()
 		userIP := userip.FromContext(ctx)
 		act := actor.FromContext(ctx)
 
-		// TODO DEVX We have a bug, we should able to use With, but it's mutating the parent logger which is very wrong
-		var fields []log.Field
 		if userIP != nil {
-			fields = append(fields, log.Object(
+			l = l.With(log.Object(
 				"actor",
 				log.String("ip", userIP.IP),
 				log.String("X-Forwarded-For", userIP.XForwardedFor),
@@ -83,17 +82,17 @@ func Middleware(logger log.Logger, next http.HandlerFunc) http.HandlerFunc {
 		}
 
 		if paramsCtx != nil {
-			fields = append(fields, log.Object(
+			l = l.With(log.Object(
 				"params",
 				log.String("repo", paramsCtx.repo),
 				log.String("cmd", paramsCtx.cmd),
 				log.Strings("args", paramsCtx.args),
 			))
 		} else {
-			fields = append(fields, log.String("params", "nil"))
+			l = l.With(log.String("params", "nil"))
 		}
 
-		logger.Info("acces request", fields...)
+		l.Info("acces request")
 		return
 	}
 }
