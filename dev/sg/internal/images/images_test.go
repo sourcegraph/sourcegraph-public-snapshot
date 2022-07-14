@@ -9,13 +9,13 @@ func TestParseTag(t *testing.T) {
 	tests := []struct {
 		name    string
 		tag     string
-		want    *SgImageTag
+		want    *MainTag
 		wantErr bool
 	}{
 		{
 			"base",
 			"12345_2021-01-02_abcdefghijkl",
-			&SgImageTag{
+			&MainTag{
 				buildNum:  12345,
 				date:      "2021-01-02",
 				shortSHA1: "abcdefghijkl",
@@ -31,7 +31,7 @@ func TestParseTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseTag(tt.tag)
+			got, err := ParseMainTag(tt.tag)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseTag() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -63,7 +63,7 @@ func Test_findLatestTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got, _ := findLatestTag(tt.tags); got != tt.want {
+			if got, _ := findLatestMainTag(tt.tags); got != tt.want {
 				t.Errorf("findLatestTag() = %v, want %v", got, tt.want)
 			}
 		})

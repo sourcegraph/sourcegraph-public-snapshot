@@ -1064,7 +1064,7 @@ Flags:
 * `--cr-username="<value>"`: `username` for the container registry
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
-* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)
+* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
 
 ## sg analytics
 

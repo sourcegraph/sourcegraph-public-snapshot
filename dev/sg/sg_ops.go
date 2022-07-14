@@ -42,7 +42,7 @@ var (
 			&cli.StringFlag{
 				Name:        "pin-tag",
 				Aliases:     []string{"t"},
-				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)",
+				Usage:       "pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)",
 				Destination: &opsUpdateImagesPinTagFlag,
 			},
 			&cli.StringFlag{
@@ -83,14 +83,13 @@ func opsUpdateImage(ctx *cli.Context) error {
 			dockerCredentials.Username = ""
 			dockerCredentials.Secret = ""
 		} else {
-			std.Out.WriteNoticef("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
+			std.Out.WriteSuccessf("Using credentials from docker credentials store (learn more https://docs.docker.com/engine/reference/commandline/login/#credentials-store)")
 			dockerCredentials = creds
 		}
 	}
 
 	if opsUpdateImagesPinTagFlag == "" {
-		std.Out.WriteWarningf("No pin tag is provided.")
-		std.Out.WriteWarningf("Falling back to the latest deveopment build available.")
+		std.Out.WriteWarningf("No pin tag (-t) is provided - will fall back to latest main branch tag available.")
 	}
 
 	return images.Update(args[0], *dockerCredentials, images.DeploymentType(opsUpdateImagesDeploymentKindFlag), opsUpdateImagesPinTagFlag)
