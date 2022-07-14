@@ -1,27 +1,47 @@
 package githubwebhook
 
 import (
+	"context"
+	"flag"
 	"os"
 	"testing"
-
-	"github.com/joho/godotenv"
 )
 
-var repoName = "susantoscott/Task-Tracker"
+var repoName = "ghe.sgdev.org/milton/test"
+var update = flag.Bool("update", false, "update github webhooks API testdata")
 
-func TestGitHubWebhooks_CreateAndList(t *testing.T) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		t.Skip()
-	}
+func TestGitHubWebhooks_List(t *testing.T) {
+	ctx := context.Background()
 	token := os.Getenv("ACCESS_TOKEN")
 
-	id, err := CreateSyncWebhook(repoName, "secret", token)
+	gh, err := NewGithubWebhookAPI()
+	if err != nil {
+		t.Fatal(err)
+	}
+	gh.client = NewTestClient(t, "List", update)
+
+	_, err = gh.ListSyncWebhooks(ctx, repoName, token)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestGitHubWebhooks_CreateListDelete(t *testing.T) {
+	ctx := context.Background()
+	token := os.Getenv("ACCESS_TOKEN")
+
+	gh, err := NewGithubWebhookAPI()
+	if err != nil {
+		t.Fatal(err)
+	}
+	gh.client = NewTestClient(t, "CreateListDelete", update)
+
+	id, err := gh.CreateSyncWebhook(ctx, repoName, "https://repoupdater.com", "secret", token)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	payloads, err := ListSyncWebhooks(repoName, token)
+	payloads, err := gh.ListSyncWebhooks(ctx, repoName, token)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -40,7 +60,7 @@ func TestGitHubWebhooks_CreateAndList(t *testing.T) {
 		countErr = "Created webhook more not equal to 1"
 	}
 
-	deleted, err := DeleteSyncWebhook(repoName, id, token)
+	deleted, err := gh.DeleteSyncWebhook(ctx, repoName, id, token)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -55,14 +75,20 @@ func TestGitHubWebhooks_CreateAndList(t *testing.T) {
 }
 
 func TestGitHubWebhooks_Find(t *testing.T) {
-	err := godotenv.Load(".env")
-	if err != nil {
-		t.Skip()
-	}
+	ctx := context.Background()
 	token := os.Getenv("ACCESS_TOKEN")
 
-	found := FindSyncWebhook(repoName, token)
+	gh, err := NewGithubWebhookAPI()
+	if err != nil {
+		t.Fatal(err)
+	}
+	gh.client = NewTestClient(t, "Find", update)
+
+	found := gh.FindSyncWebhook(ctx, repoName, token)
 	if !found {
 		t.Fatalf("Could not find webhook")
 	}
 }
+
+// assert object ID == some number
+// subsequent queries are not going to make an actual call
