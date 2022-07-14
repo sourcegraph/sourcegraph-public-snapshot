@@ -13,6 +13,7 @@ type contextKey int
 const userIPKey contextKey = iota
 
 type UserIP string
+type XForwardedFor []string
 
 func FromContext(ctx context.Context) UserIP {
 	a, ok := ctx.Value(userIPKey).(UserIP)
@@ -29,6 +30,8 @@ func WithUserIP(ctx context.Context, ip UserIP) context.Context {
 const (
 	// headerKeyUserIP
 	headerKeyUserIP = "X-Sourcegraph-User-IP"
+	// headerKeyForwardedFor
+	headerKeyForwardedFor = "X-Forwarded-For"
 )
 
 type HTTPTransport struct {
@@ -51,11 +54,8 @@ func (t *HTTPTransport) RoundTrip(req *http.Request) (*http.Response, error) {
 func UserIPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		var ip UserIP
-		if fIp := req.Header.Get("X-FORWARDED-FOR"); fIp != "" {
-			ip = UserIP(fIp)
-		} else {
-			ip = UserIP(strings.Split(req.RemoteAddr, ":")[0])
-		}
+
+		ip = UserIP(strings.Split(req.RemoteAddr, ":")[0])
 		ctx := req.Context()
 		ctxWithIP := WithUserIP(ctx, ip)
 
@@ -66,8 +66,13 @@ func UserIPMiddleware(next http.Handler) http.Handler {
 func HTTPMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		ctx := req.Context()
+
 		userIP := req.Header.Get(headerKeyUserIP)
-		log.Scoped("userip", "logging user ip").Info("userip", log.String("path", req.URL.Path), log.String("ip", userIP))
+		forwardedFor := strings.Split(req.Header.Get(headerKeyForwardedFor), ",")
+		log.Scoped("userip", "logging user ip").Info("userip",
+			log.String("path", req.URL.Path), log.String("ip", userIP),
+			log.Strings("forwardedFor", forwardedFor))
+
 		next.ServeHTTP(rw, req.WithContext(ctx))
 	})
 }
