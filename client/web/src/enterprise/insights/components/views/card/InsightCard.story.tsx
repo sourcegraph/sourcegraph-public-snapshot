@@ -153,11 +153,11 @@ function InsightCardWithChart() {
         <Card.Root style={{ width: '400px', height: '400px' }}>
             <Card.Header title="Insight with chart" subtitle="CSS migration insight chart">
                 <Button variant="icon" className="p-1">
-                    <Icon svgPath={mdiFilterOutline} inline={false} aria-hidden={true} height="1rem" width="1rem" />
+                    <Icon svgPath={mdiFilterOutline} inline={false} aria-label="Options" height="1rem" width="1rem" />
                 </Button>
                 <Menu>
                     <MenuButton variant="icon" className="p-1">
-                        <Icon svgPath={mdiDotsVertical} inline={false} aria-hidden={true} height={16} width={16} />
+                        <Icon svgPath={mdiDotsVertical} inline={false} aria-label="Filters" height={16} width={16} />
                     </MenuButton>
                     <MenuList>
                         <MenuItem onSelect={noop}>Create</MenuItem>
