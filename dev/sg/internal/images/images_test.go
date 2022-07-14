@@ -20,13 +20,13 @@ func TestParseTag(t *testing.T) {
 	tests := []struct {
 		name    string
 		tag     string
-		want    *MainTag
+		want    *ParsedMainBranchImageTag
 		wantErr bool
 	}{
 		{
 			"base",
 			"12345_2021-01-02_abcdefghijkl",
-			&MainTag{
+			&ParsedMainBranchImageTag{
 				buildNum:  12345,
 				date:      "2021-01-02",
 				shortSHA1: "abcdefghijkl",
@@ -42,7 +42,7 @@ func TestParseTag(t *testing.T) {
 		{
 			"from constructor",
 			images.MainBranchImageTag(mustTime(), "abcde", 1234),
-			&MainTag{
+			&ParsedMainBranchImageTag{
 				buildNum:  1234,
 				date:      "2006-01-02",
 				shortSHA1: "abcde",
@@ -52,7 +52,7 @@ func TestParseTag(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := ParseMainTag(tt.tag)
+			got, err := ParseMainBranchImageTag(tt.tag)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("ParseTag() error = %v, wantErr %v", err, tt.wantErr)
 				return

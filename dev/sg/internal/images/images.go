@@ -449,16 +449,18 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	return repo, nil
 }
 
-// MainTag is a structured representation of a parsed tag of MainBranchTagPublishFormat
-type MainTag struct {
+// ParsedMainBranchImageTag is a structured representation of a parsed tag created by
+// images.ParsedMainBranchImageTag.
+type ParsedMainBranchImageTag struct {
 	buildNum  int
 	date      string
 	shortSHA1 string
 }
 
-// ParseMainTag creates MainTag structs for strings that follow MainBranchTagPublishFormat
-func ParseMainTag(t string) (*MainTag, error) {
-	s := MainTag{}
+// ParseMainBranchImageTag creates MainTag structs for tags created by
+// images.MainBranchImageTag.
+func ParseMainBranchImageTag(t string) (*ParsedMainBranchImageTag, error) {
+	s := ParsedMainBranchImageTag{}
 	t = strings.TrimSpace(t)
 	var err error
 	n := strings.Split(t, "_")
@@ -482,7 +484,7 @@ func findLatestMainTag(tags []string) (string, error) {
 
 	var errs error
 	for _, tag := range tags {
-		stag, err := ParseMainTag(tag)
+		stag, err := ParseMainBranchImageTag(tag)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
