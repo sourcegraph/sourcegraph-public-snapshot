@@ -1090,6 +1090,11 @@
               "pattern": "^https?://"
             }
           }
+        },
+        "gitserver.accessLog": {
+          "description": "Enable gitserver access logging.",
+          "type": "boolean",
+          "default": false
         }
       },
       "examples": [{ "sentry": { "dsn": "https://mykey@sentry.io/myproject" } }],
