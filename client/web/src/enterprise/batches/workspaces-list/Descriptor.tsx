@@ -3,7 +3,7 @@ import { ReactElement } from 'react'
 import { mdiSourceBranch } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Icon, H4, Badge } from '@sourcegraph/wildcard'
+import { Icon, H3, H4, Badge } from '@sourcegraph/wildcard'
 
 import styles from './Descriptor.module.scss'
 
@@ -32,7 +32,9 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
     <div className={styles.container}>
         <div className={styles.status}>{statusIndicator}</div>
         <div className="flex-1">
-            <H4 className={styles.name}>{workspace?.repository.name ?? 'Workspace in hidden repository'}</H4>
+            <H4 as={H3} className={styles.name}>
+                {workspace?.repository.name ?? 'Workspace in hidden repository'}
+            </H4>
             {workspace && workspace.path !== '' && workspace.path !== '/' ? (
                 <span className={styles.path}>{workspace?.path}</span>
             ) : null}
