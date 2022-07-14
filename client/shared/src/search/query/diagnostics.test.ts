@@ -28,7 +28,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: Invalid filter value, expected one of: yes, no.",
+                    "message": "Invalid filter value, expected one of: yes, no.",
                     "range": {
                       "start": 0,
                       "end": 10
@@ -59,7 +59,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "warning",
-                    "message": "Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`file:\\" a term\\"\`.",
+                    "message": "This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`file:\\" a term\\"\`.",
                     "range": {
                       "start": 10,
                       "end": 15
@@ -74,7 +74,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: Invalid filter value, expected one of: diff, commit, symbol, repo, path, file.",
+                    "message": "Invalid filter value, expected one of: diff, commit, symbol, repo, path, file.",
                     "range": {
                       "start": 10,
                       "end": 15
@@ -91,7 +91,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 0,
                       "end": 9
@@ -119,7 +119,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 0,
                       "end": 9
@@ -149,7 +149,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 0,
                       "end": 9
@@ -173,7 +173,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 10,
                       "end": 26
@@ -197,7 +197,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 27,
                       "end": 44
@@ -221,7 +221,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 45,
                       "end": 57
@@ -250,7 +250,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 0,
                       "end": 15
@@ -274,7 +274,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 16,
                       "end": 33
@@ -298,7 +298,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
                     "range": {
                       "start": 34,
                       "end": 40
@@ -349,7 +349,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
+                    "message": "Query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
                     "range": {
                       "start": 0,
                       "end": 8
@@ -373,7 +373,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
+                    "message": "Query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
                     "range": {
                       "start": 0,
                       "end": 13
@@ -400,7 +400,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
+                    "message": "You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
                     "range": {
                       "start": 9,
                       "end": 22
@@ -424,7 +424,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
+                    "message": "You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
                     "range": {
                       "start": 0,
                       "end": 8
@@ -452,7 +452,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
+                    "message": "You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
                     "range": {
                       "start": 9,
                       "end": 19
@@ -476,7 +476,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
+                    "message": "You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
                     "range": {
                       "start": 0,
                       "end": 8
@@ -507,7 +507,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "warning",
-                    "message": "Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`repo:\\" a term\\"\`.",
+                    "message": "This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`repo:\\" a term\\"\`.",
                     "range": {
                       "start": 9,
                       "end": 14
@@ -515,7 +515,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "message": "Query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
                     "range": {
                       "start": 9,
                       "end": 14
@@ -531,7 +531,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "message": "Query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
                     "range": {
                       "start": 0,
                       "end": 8
@@ -551,7 +551,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "message": "Query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
                     "range": {
                       "start": 9,
                       "end": 14
@@ -567,7 +567,7 @@ describe('getDiagnostics()', () => {
                   },
                   {
                     "severity": "error",
-                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "message": "Query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
                     "range": {
                       "start": 0,
                       "end": 8
@@ -591,7 +591,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "warning",
-                    "message": "Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`repo:\\" a term\\"\`.",
+                    "message": "This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`repo:\\" a term\\"\`.",
                     "range": {
                       "start": 19,
                       "end": 24
@@ -608,7 +608,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
+                    "message": "Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
                     "range": {
                       "start": 0,
                       "end": 11
@@ -621,7 +621,7 @@ describe('getDiagnostics()', () => {
                 [
                   {
                     "severity": "error",
-                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
+                    "message": "Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
                     "range": {
                       "start": 0,
                       "end": 11
