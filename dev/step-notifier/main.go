@@ -93,14 +93,14 @@ func (s *BuildStore) Add(event *BuildEvent) {
 	}
 	build.Jobs = append(build.Jobs, event.Job)
 
-	s.logger.Debug("Adding job", log.Int("BuildNumber", event.BuildNumber()), log.Int("TotalJobs", len(build.Jobs)))
+	s.logger.Debug("job added", log.Int("buildNumber", event.BuildNumber()), log.Int("totalJobs", len(build.Jobs)))
 }
 
 func (s *BuildStore) DelByBuildNumber(num int) {
 	s.m.Lock()
 	defer s.m.Unlock()
 	delete(s.builds, num)
-	s.logger.Info("Build deleted", log.Int("BuildNumber", num))
+	s.logger.Info("build deleted", log.Int("buildNumber", num))
 }
 
 func (s *BuildStore) GetByBuildNumber(num int) *Build {
@@ -128,7 +128,7 @@ func NewStepServer() *BuildTrackingServer {
 		logger:  logger,
 		store:   NewBuildStore(logger),
 		bkToken: token,
-		slack:   NewSlackWebhookClient(),
+		slack:   NewSlackWebhookClient(logger),
 	}
 }
 
@@ -180,7 +180,7 @@ func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	s.logger.Debug("processing event", log.String("eventName", event.Event), log.Int("BuildNumber", event.BuildNumber()), log.String("JobName", event.JobName()))
+	s.logger.Info("processing event", log.String("eventName", event.Event), log.Int("buildNumber", event.BuildNumber()), log.String("JobName", event.JobName()))
 	go s.processEvent(event)
 	w.WriteHeader(http.StatusOK)
 }
@@ -204,16 +204,16 @@ func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 
 func (s *BuildTrackingServer) notify(build *Build) error {
 	if len(build.Jobs) == 0 {
-		s.logger.Info("build has no jobs", log.Int("BuildNumber", *build.Number))
+		s.logger.Info("build has no jobs", log.Int("buildNumber", *build.Number))
 		return nil
 	}
 
 	if build.hasFailed() {
-		s.logger.Info("detected failed build - sending notification", log.Int("BuildNumber", *build.Number))
+		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", *build.Number))
 		return s.slack.sendNotification(build)
 	}
 
-	s.logger.Info("build successful", log.Int("BuildNumber", *build.Number))
+	s.logger.Info("build successful", log.Int("buildNumber", *build.Number))
 	return nil
 }
 
@@ -227,7 +227,7 @@ func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 	if event.IsBuildFinished() {
 		build := s.store.GetByBuildNumber(event.BuildNumber())
 		if err := s.notify(build); err != nil {
-			s.logger.Error("failed to send notification for build", log.Int("BuildNumber", event.BuildNumber()), log.Error(err))
+			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.BuildNumber()), log.Error(err))
 		}
 		// since the build is done we don't need it anymore
 		s.store.DelByBuildNumber(*event.Build.Number)

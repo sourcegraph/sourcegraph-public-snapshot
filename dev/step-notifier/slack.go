@@ -3,8 +3,8 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"github.com/sourcegraph/log"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"net/url"
 	"os"
@@ -14,41 +14,47 @@ import (
 
 type SlackWebhookClient struct {
 	webhook string
+	logger  log.Logger
 	http.Client
 }
 
-func NewSlackWebhookClient() *SlackWebhookClient {
+func NewSlackWebhookClient(logger log.Logger) *SlackWebhookClient {
 	url := os.Getenv("SLACK_WEBHOOK")
 	if url == "" {
 		panic("SLACK_WEBHOOK cannot be empty")
 	}
 
 	return &SlackWebhookClient{
+		logger:  logger.Scoped("slack", "client which interacts with Slack's webhook API"),
 		webhook: url,
 	}
 }
 
 func (c *SlackWebhookClient) sendNotification(build *Build) error {
-	payload, err := createSlackJSON(build)
+	c.logger.Debug("creating slack json", log.Int("buildNumber", *build.Number))
+	payload, err := createSlackJSON(c.logger, build)
 	if err != nil {
 		return err
 	}
 
 	buf := bytes.NewBufferString(payload)
+	c.logger.Debug("sending notification", log.Int("buildNumber", *build.Number))
 	resp, err := c.Post(c.webhook, "application/json", buf)
 	if err != nil {
-		log.Printf("failed to send notification for build %d: %v", *build.Number, err)
+		c.logger.Error("failed to send notification", log.Int("buildNumber", *build.Number), log.Error(err))
 	}
 
 	if resp.StatusCode != http.StatusOK {
 		data, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			log.Printf("failed to read response body: %v", err)
+			c.logger.Error("failed to read body of response for failed notification", log.Int("buildNumber", *build.Number), log.Int("status", resp.StatusCode), log.Error(err))
 		}
 		body := string(data)
-		log.Printf("failed to send notification. Status Code %d\nBody:%s", resp.StatusCode, body)
+		c.logger.Error("error response received for notification", log.Int("buildNumber", *build.Number), log.Int("status", resp.StatusCode), log.String("body", body))
+		return err
 	}
 
+	c.logger.Info("notification posted", log.Int("buildNumber", *build.Number))
 	return nil
 }
 
@@ -68,7 +74,8 @@ type GrafanaPayload struct {
 	Range      GrafanaRange   `json:"range"`
 }
 
-func grafanaURLFor(build *Build) string {
+func grafanaURLFor(logger log.Logger, build *Build) string {
+	logger = logger.Scoped("grafana", "generates grafana links")
 	base, _ := url.Parse("http://sourcegraph.grafana.net/explore")
 	queryData := struct {
 		Build int
@@ -81,11 +88,11 @@ func grafanaURLFor(build *Build) string {
 
 	var buf bytes.Buffer
 	if err := tmplt.Execute(&buf, queryData); err != nil {
-		log.Printf("ERR failed to execute Expression template: %v", err)
+		logger.Error("failed to execute template", log.String("template", "Expression"), log.Error(err))
 	}
 	var expression = buf.String()
 
-	log.Println(expression)
+	logger.Debug("---->", log.String("expression", expression))
 
 	buf.Reset()
 	begin := time.Now().Add(-(1 * time.Hour)).UnixNano()
@@ -107,20 +114,21 @@ func grafanaURLFor(build *Build) string {
 
 	result, err := json.Marshal(data)
 	if err != nil {
-		log.Printf("failed to marshall GrafanaPayload: %v", err)
+		logger.Error("failed to marshall GrafanaPayload", log.Error(err))
 	}
 
-	log.Println(string(result))
+	logger.Debug("---->", log.String("GrafanaPayload", (string(result))))
 	var values = make(url.Values)
 	values.Add("orgId", "1")
 	values.Add("left", string(result))
 
 	base.RawQuery = values.Encode()
+	logger.Debug("---->", log.String("url params", base.RawQuery))
 
 	return base.String()
 }
 
-func createSlackJSON(build *Build) (string, error) {
+func createSlackJSON(logger log.Logger, build *Build) (string, error) {
 	failed := make([]string, 0)
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
@@ -139,7 +147,7 @@ func createSlackJSON(build *Build) (string, error) {
 		failed,
 		build.Author.Name,
 		*build.WebURL,
-		grafanaURLFor(build),
+		grafanaURLFor(logger, build),
 		"TBA",
 	}
 	tmplt := template.Must(template.New("SG").Parse(`
