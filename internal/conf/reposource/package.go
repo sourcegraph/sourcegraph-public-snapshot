@@ -2,6 +2,8 @@ package reposource
 
 import "github.com/sourcegraph/sourcegraph/internal/api"
 
+type PackageName string
+
 // Package encodes the abstract notion of a publishable artifact from different languages ecosystems.
 // For example, Package refers to:
 // - an npm package in the JS/TS ecosystem.
@@ -17,7 +19,7 @@ type Package interface {
 
 	// PackageSyntax is the string-formatted encoding of this Package, as accepted by the ecosystem's package manager.
 	// Notably, the version is not included.
-	PackageSyntax() string
+	PackageSyntax() PackageName
 
 	// RepoName provides a name that is "globally unique" for a Sourcegraph instance.
 	// The returned value is used for repo:... in queries.

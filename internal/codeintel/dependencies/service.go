@@ -2,6 +2,7 @@ package dependencies
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"time"
 
@@ -257,7 +258,7 @@ func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCo
 		}
 
 		for _, d := range serializableRepoDeps {
-			k := d.PackageSyntax() + d.PackageVersion()
+			k := fmt.Sprintf("%s%s", d.PackageSyntax(), d.PackageVersion())
 			if _, ok := set[k]; !ok {
 				set[k] = struct{}{}
 				allDeps = append(allDeps, d)
@@ -330,7 +331,7 @@ func (s *Service) IndexLockfiles(ctx context.Context, repoRevs map[api.RepoName]
 
 func (s *Service) upsertAndSyncDependencies(ctx context.Context, deps []shared.PackageDependency) error {
 	hash := func(dep Repo) string {
-		return strings.Join([]string{dep.Scheme, dep.Name, dep.Version}, ":")
+		return strings.Join([]string{dep.Scheme, string(dep.Name), dep.Version}, ":")
 	}
 
 	dependencies := make([]Repo, 0, len(deps))
@@ -459,7 +460,7 @@ type ListDependencyReposOpts struct {
 	// Scheme is the moniker scheme to filter for e.g. 'gomod', 'npm' etc.
 	Scheme string
 	// Name is the package name to filter for e.g. '@types/node' etc.
-	Name string
+	Name reposource.PackageName
 	// After is the value predominantly used for pagination. When sorting by
 	// newest first, this should be the ID of the last element in the previous
 	// page, when excluding versions it should be the last package name in the

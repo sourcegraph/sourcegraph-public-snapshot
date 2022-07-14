@@ -12,14 +12,14 @@ import (
 )
 
 type MockClient struct {
-	Packages map[string]*npm.PackageInfo
+	Packages map[reposource.PackageName]*npm.PackageInfo
 	Tarballs map[string][]byte
 }
 
 func NewMockClient(t testing.TB, deps ...string) *MockClient {
 	t.Helper()
 
-	packages := map[string]*npm.PackageInfo{}
+	packages := map[reposource.PackageName]*npm.PackageInfo{}
 	for _, dep := range deps {
 		d, err := reposource.ParseNpmVersionedPackage(dep)
 		if err != nil {
@@ -34,7 +34,7 @@ func NewMockClient(t testing.TB, deps ...string) *MockClient {
 			packages[name] = info
 		}
 
-		info.Description = name + " description"
+		info.Description = string(name) + " description"
 		version := info.Versions[d.Version]
 		if version == nil {
 			version = &npm.DependencyInfo{}
