@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
@@ -15,7 +15,6 @@ import {
     MenuDivider,
     MenuHeader,
     MenuItem,
-    useTimeoutManager,
     MenuLink,
     MenuList,
     Link,
@@ -49,33 +48,6 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
 
 export interface ExtensionAlertAnimationProps {
     isExtensionAlertAnimating: boolean
-}
-
-/**
- * React hook to manage the animation that occurs after the user dismisses
- * `InstallBrowserExtensionAlert`.
- *
- * This hook is called from the the LCA of `UserNavItem` and the component that triggers
- * the animation.
- */
-export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
-    startExtensionAlertAnimation: () => void
-} {
-    const [isAnimating, setIsAnimating] = useState(false)
-
-    const animationManager = useTimeoutManager()
-
-    const startExtensionAlertAnimation = useCallback(() => {
-        if (!isAnimating) {
-            setIsAnimating(true)
-
-            animationManager.setTimeout(() => {
-                setIsAnimating(false)
-            }, 5100)
-        }
-    }, [isAnimating, animationManager])
-
-    return { isExtensionAlertAnimating: isAnimating, startExtensionAlertAnimation }
 }
 
 /**

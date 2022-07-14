@@ -38,7 +38,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         resolvedRev: { commitID, defaultBranch },
         match,
         globbing,
-        onExtensionAlertDismissed,
         ...context
     } = props
     // The decoding depends on the pinned `history` version.

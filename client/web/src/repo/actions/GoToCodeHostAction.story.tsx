@@ -2,7 +2,6 @@
 import { useEffect, useState } from 'react'
 
 import { mdiGithub, mdiGitlab, mdiBitbucket } from '@mdi/js'
-import { action } from '@storybook/addon-actions'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons'
@@ -10,10 +9,6 @@ import { ExternalServiceKind } from '@sourcegraph/shared/src/schema'
 import { Button, Popover, PopoverTrigger, Icon } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../components/WebStory'
-
-const onClose = action('onClose')
-const onReject = action('onReject')
-const onInstall = action('onInstall')
 
 const decorator: DecoratorFn = story => <div className="container mt-3">{story()}</div>
 
