@@ -470,7 +470,7 @@ const querySyntaxHighlighting = EditorView.decorations.compute([decoratedTokens]
     const tokens = state.facet(decoratedTokens)
     const builder = new RangeSetBuilder<Decoration>()
     for (const token of tokens) {
-        builder.add(token.range.start, getEndPosition(token), decoratedToDecoration(token))
+        builder.add(token.range.start, token.range.end, decoratedToDecoration(token))
     }
     return builder.finish()
 })
@@ -575,46 +575,31 @@ function tokenInfo(): Extension {
         provide(field) {
             return EditorView.decorations.compute([field, decoratedTokens], state => {
                 const position = state.field(field)
-                if (position === null) {
+                if (!position) {
                     return Decoration.none
                 }
-                let tokenAtPosition = state.facet(decoratedTokens).find(token => isTokenInRange(position, token))
 
-                switch (tokenAtPosition?.type) {
-                    case 'field':
-                    case 'pattern':
-                    case 'metaRevision':
-                    case 'metaRepoRevisionSeparator':
-                    case 'metaSelector':
-                    case 'metaRegexp':
-                    case 'metaStructural':
-                    case 'metaPredicate':
-                        // These are the tokens we show hover information for
-                        break
+                const tooltipInfo = getTokensTooltipInformation(state.facet(decoratedTokens), position)
+                if (!tooltipInfo) {
+                    return Decoration.none
+                }
+                let { range } = tooltipInfo
+
+                const token = tooltipInfo.tokensAtCursor[0]
+                switch (token.type) {
                     case 'keyword': {
-                        // Find operator (AND and OR are supported)
+                        // Find operator (AND and OR are supported) and
+                        // highlight its operands too if possible
                         const operator = findOperatorNode(position, state.facet(parsedQuery))
                         if (operator) {
-                            return Decoration.set([
-                                focusedFilterDeco.range(
-                                    (operator.groupRange ?? operator.range).start,
-                                    (operator.groupRange ?? operator.range).end
-                                ),
-                            ])
+                            range = operator.groupRange ?? operator.range
                         }
                         // Highlight operator keyword only
                         break
                     }
-
-                    default:
-                        tokenAtPosition = undefined
-                        break
                 }
-                return tokenAtPosition
-                    ? Decoration.set([
-                          focusedFilterDeco.range(tokenAtPosition.range.start, getEndPosition(tokenAtPosition)),
-                      ])
-                    : Decoration.none
+
+                return Decoration.set([focusedFilterDeco.range(range.start, range.end)])
             })
         },
     })
@@ -645,7 +630,15 @@ function tokenInfo(): Extension {
 
                 return {
                     pos: tooltipInfo.range.start,
-                    end: tooltipInfo.range.end,
+                    // tooltipInfo.range.end is exclusive, but this needs to be
+                    // inclusive to correctly hide the tooltip when the cursor
+                    // moves to the next token
+                    end: tooltipInfo.range.end - 1,
+                    // Show token info above the text by default to avoid
+                    // interfering with autcompletion (otherwise this could show
+                    // the token info *below* the autocompletion popover, which
+                    // looks bad)
+                    above: true,
                     create(): TooltipView {
                         const dom = document.createElement('div')
                         dom.innerHTML = renderMarkdown(tooltipInfo.value)
@@ -667,10 +660,19 @@ function tokenInfo(): Extension {
 }
 
 function getTokensTooltipInformation(
-    tokens: DecoratedToken[],
+    tokens: readonly DecoratedToken[],
     position: number
-): { range: { start: number; end: number }; value: string } | null {
-    const tokensAtCursor = tokens.filter(token => isTokenInRange(position, token))
+): { tokensAtCursor: readonly DecoratedToken[]; range: { start: number; end: number }; value: string } | null {
+    const tokensAtCursor = tokens.filter(token => {
+        let { start, end } = token.range
+        switch (token.type) {
+            case 'field':
+                // +1 to include field separator :
+                end += 1
+                break
+        }
+        return start <= position && end > position
+    })
 
     if (tokensAtCursor?.length === 0) {
         return null
@@ -689,7 +691,8 @@ function getTokensTooltipInformation(
                             ? resolvedFilter.definition.description(resolvedFilter.negated)
                             : resolvedFilter.definition.description
                     )
-                    range = { start: token.range.start, end: getEndPosition(token) }
+                    // +1 to include field separator :
+                    range = { start: token.range.start, end: token.range.end + 1 }
                 }
                 break
             }
@@ -723,7 +726,7 @@ function getTokensTooltipInformation(
     if (!range) {
         return null
     }
-    return { range, value: values.join('') }
+    return { tokensAtCursor, range, value: values.join('') }
 }
 
 // Hooks query diagnostics into the editor.
@@ -797,14 +800,4 @@ function findOperatorNode(position: number, node: Node | null): Extract<Node, { 
         }
     }
     return node
-}
-
-function isTokenInRange(position: number, token: Pick<DecoratedToken, 'type' | 'range'>): boolean {
-    return token.range.start <= position && getEndPosition(token) > position
-}
-
-// Looks like there might be a bug with how the end range for a field is
-// computed? Need to add 1 to make this work properly.
-function getEndPosition(token: Pick<DecoratedToken, 'type' | 'range'>): number {
-    return token.range.end + (token.type === 'field' ? 1 : 0)
 }
