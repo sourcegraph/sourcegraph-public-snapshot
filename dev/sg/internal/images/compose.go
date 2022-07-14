@@ -89,6 +89,7 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 			originalImage, ok := service["image"].(string)
 			if !ok {
 				std.Out.WriteWarningf("%s: invalid image", name)
+				return nil
 			}
 
 			newImage, err := getUpdatedSourcegraphImage(originalImage, creds, pinTag)
