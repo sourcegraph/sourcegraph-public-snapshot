@@ -196,7 +196,6 @@ AND service_id = %s
 AND client_id = %s
 AND account_id = %s
 AND deleted_at IS NULL
-AND expired_at IS NULL
 `, spec.ServiceType, spec.ServiceID, spec.ClientID, spec.AccountID)).Scan(&existingID, &associatedUserID)
 	if err != nil && err != sql.ErrNoRows {
 		return err
