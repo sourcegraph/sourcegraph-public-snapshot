@@ -309,6 +309,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 message = `:mega: *${release.version} branch has been cut.`
             }
             try {
+                // Create and push new release branch from changelog commit
                 await execa('git', ['branch', branch])
                 await execa('git', ['push', 'origin', branch])
                 await postMessage(message, config.slackAnnounceChannel)
