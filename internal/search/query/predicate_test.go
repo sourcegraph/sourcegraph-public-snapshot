@@ -90,8 +90,13 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`literal`, `test`, &RepoDependenciesPredicate{}},
-			{`regex with revs`, `^npm/@bar:baz`, &RepoDependenciesPredicate{}},
+			{`literal`, `test`, &RepoDependenciesPredicate{RepoRev: "test"}},
+			{`regex with revs`, `^github\.com/org/repo$@v3.0:v4.0`, &RepoDependenciesPredicate{RepoRev: `^github\.com/org/repo$@v3.0:v4.0`}},
+			{`regex with transitive:yes`, `^github\.com/org/repo$ transitive:yes`, &RepoDependenciesPredicate{RepoRev: `^github\.com/org/repo$`, Transitive: true}},
+			{`transitive:no`, `transitive:no`, &RepoDependenciesPredicate{Transitive: false}},
+			// transitive:only is ignored for now
+			{`transitive:only`, `transitive:only`, &RepoDependenciesPredicate{Transitive: false}},
+			{`transitive:horse`, `transitive:horse`, &RepoDependenciesPredicate{Transitive: false}},
 		}
 
 		for _, tc := range valid {
@@ -103,7 +108,7 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 				}
 
 				if !reflect.DeepEqual(tc.expected, p) {
-					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+					t.Fatalf("expected %+v, got %+v", tc.expected, p)
 				}
 			})
 		}
