@@ -21,7 +21,7 @@ func TestRecord(t *testing.T) {
 		ctx = withContext(ctx, &paramsContext{})
 		Record(ctx, "github.com/foo/bar", []string{"git", "grep", "foo"})
 		pc := fromContext(ctx)
-		assert.NotNil(t, pc)
+		require.NotNil(t, pc)
 		assert.Equal(t, "github.com/foo/bar", pc.repo)
 		assert.Equal(t, "git", pc.cmd)
 		assert.Equal(t, []string{"grep", "foo"}, pc.args)
