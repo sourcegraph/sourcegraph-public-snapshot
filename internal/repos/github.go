@@ -745,12 +745,12 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 	}
 
 	// This is kind of like a modified binary search algorithm
-	// 1) We search for all repos matching the query, if we get <1000 repos we return it
+	// 1) We search for all repos matching the query, if we get <1000 repos we return them
 	// 2) If we get >1000 repos we slap a created filter to the query, searching for all repos that match the query between From (2007) and To (Now())
 	// 3) If the repos are still >1000 move the To pointer back half of the distance towards From
 	// 4) Repeat step 3 until results are <1000
-	// 5) At this point we have scanned all results: 2007 -> To, move the From and To pointers to the remaining unscanned timeslice (To -> Now()), repeat from step 3
-	// 6) Once all the repos created from 2007 to now are found, return
+	// 5) At this point we have scanned all results between 2007 -> To, move the From and To pointers to the remaining unscanned timeslice (To+1 -> Now()), repeat from step 3
+	// 6) Once all the repos created from 2007 to Now() are found, return
 	for {
 		res, err := q.Searcher.SearchRepos(ctx, github.SearchReposParams{
 			Query: q.String(),
