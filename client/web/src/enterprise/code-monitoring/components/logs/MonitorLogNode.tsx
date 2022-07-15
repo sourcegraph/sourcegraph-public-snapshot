@@ -1,9 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew } from '@mdi/js'
+import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew, mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
@@ -55,12 +53,21 @@ export const MonitorLogNode: React.FunctionComponent<
                 <Button
                     onClick={toggleExpanded}
                     className="btn-icon text-left pl-0 border-0 d-flex align-items-center flex-1"
-                    aria-label="Expand code monitor"
                 >
                     {expanded ? (
-                        <ChevronDownIcon className="mr-2 flex-shrink-0" />
+                        <Icon
+                            className="mr-2 flex-shrink-0"
+                            svgPath={mdiChevronDown}
+                            inline={false}
+                            aria-label="Collapse code monitor"
+                        />
                     ) : (
-                        <ChevronRightIcon className="mr-2 flex-shrink-0" />
+                        <Icon
+                            className="mr-2 flex-shrink-0"
+                            svgPath={mdiChevronRight}
+                            inline={false}
+                            aria-label="Expand code monitor"
+                        />
                     )}
                     {hasError ? (
                         <Tooltip content="One or more runs of this code monitor have an error" placement="top">

@@ -1,7 +1,7 @@
 import { ApolloClient } from '@apollo/client'
 import { ApolloCache } from '@apollo/client/cache'
 import { MutationUpdaterFunction } from '@apollo/client/core/types'
-import { from, Observable } from 'rxjs'
+import { from, Observable, throwError } from 'rxjs'
 
 import {
     UpdateLangStatsInsightResult,
@@ -49,6 +49,10 @@ export const updateInsight = (
                     update,
                 })
             )
+        }
+
+        case InsightType.Compute: {
+            return throwError(new Error('update mutation for the compute-powered insight is not implemented yet'))
         }
 
         case InsightType.LangStats: {

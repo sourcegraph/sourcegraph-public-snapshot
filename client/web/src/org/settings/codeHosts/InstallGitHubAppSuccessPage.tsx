@@ -1,10 +1,9 @@
 import React, { useEffect, useState } from 'react'
 
+import { mdiPlus, mdiGithub } from '@mdi/js'
 import classNames from 'classnames'
-import GithubIcon from 'mdi-react/GithubIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
 
-import { SourcegraphIcon, Card, CardBody, Link, H2, Text } from '@sourcegraph/wildcard'
+import { SourcegraphIcon, Card, CardBody, Link, H2, Text, Icon } from '@sourcegraph/wildcard'
 
 import { Page } from '../../../components/Page'
 import { PageTitle } from '../../../components/PageTitle'
@@ -44,7 +43,7 @@ export const InstallGitHubAppSuccessPage: React.FunctionComponent<React.PropsWit
                 <CardBody>
                     <div className="d-flex justify-content-center align-items-center">
                         <SourcegraphIcon className={classNames(styles.appLogo)} />
-                        <PlusIcon />
+                        <Icon svgPath={mdiPlus} inline={false} aria-hidden={true} />
                         {data ? (
                             <img
                                 alt="Organization logo"
@@ -52,7 +51,12 @@ export const InstallGitHubAppSuccessPage: React.FunctionComponent<React.PropsWit
                                 className={classNames('media', styles.appLogo)}
                             />
                         ) : (
-                            <GithubIcon className={classNames(styles.appLogo)} />
+                            <Icon
+                                className={classNames(styles.appLogo)}
+                                svgPath={mdiGithub}
+                                inline={false}
+                                aria-hidden={true}
+                            />
                         )}
                     </div>
                     <H2 className="text-center">Sourcegraph Cloud for GitHub installed on {data?.account.login}</H2>

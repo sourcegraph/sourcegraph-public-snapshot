@@ -50,7 +50,7 @@ const defaultProps: SearchBoxProps = {
     authenticatedUser: null,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     platformContext: NOOP_PLATFORM_CONTEXT,
-    editorComponent: 'monaco',
+    editorComponent: 'codemirror6',
 }
 
 export const SearchBoxStory: Story = () => (

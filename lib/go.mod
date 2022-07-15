@@ -18,7 +18,7 @@ require (
 	github.com/mattn/go-runewidth v0.0.13
 	github.com/mitchellh/copystructure v1.2.0
 	github.com/moby/term v0.0.0-20210619224110-3f7ff695adc6
-	github.com/muesli/termenv v0.9.0
+	github.com/muesli/termenv v0.12.0
 	github.com/sourcegraph/go-diff v0.6.1
 	github.com/sourcegraph/jsonx v0.0.0-20200629203448-1a936bd500cf
 	github.com/sourcegraph/log v0.0.0-20220707160925-6a936691c838
@@ -26,7 +26,7 @@ require (
 	github.com/xeipuuv/gojsonschema v1.2.0
 	go.uber.org/atomic v1.9.0
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20220704084225-05e143d24a9e
+	golang.org/x/sys v0.0.0-20220712014510-0a85c31ab51e
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211
 	gopkg.in/yaml.v2 v2.4.0
 	gopkg.in/yaml.v3 v3.0.1

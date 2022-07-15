@@ -1,5 +1,6 @@
-import { FC, HTMLAttributes } from 'react'
+import { FC, HTMLAttributes, ReactNode } from 'react'
 
+import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
 import { Code, Input, Link } from '@sourcegraph/wildcard'
 
 import {
@@ -13,6 +14,7 @@ import {
     getDefaultInputProps,
     insightRepositoriesAsyncValidator,
     insightRepositoriesValidator,
+    insightSeriesValidator,
     insightTitleValidator,
     RepositoriesField,
     SubmissionErrors,
@@ -20,7 +22,8 @@ import {
     useForm,
 } from '../../../../../components'
 import { useUiFeatures } from '../../../../../hooks'
-import { ComputeInsightMap, CreateComputeInsightFormFields } from '../types'
+import { ComputeLivePreview } from '../../ComputeLivePreview'
+import { CreateComputeInsightFormFields } from '../types'
 
 import { ComputeInsightMapPicker } from './ComputeInsightMapPicker'
 
@@ -28,30 +31,35 @@ const INITIAL_INSIGHT_VALUES: CreateComputeInsightFormFields = {
     series: [createDefaultEditSeries({ edit: true })],
     title: '',
     repositories: '',
-    groupBy: ComputeInsightMap.Repositories,
+    groupBy: GroupByField.REPO,
     dashboardReferenceCount: 0,
 }
 
-type NativeContainerProps = Omit<HTMLAttributes<HTMLDivElement>, 'onSubmit' | 'onChange'>
+type NativeContainerProps = Omit<HTMLAttributes<HTMLDivElement>, 'onSubmit' | 'onChange' | 'children'>
+
+export interface RenderPropertyInputs {
+    submitting: boolean
+    submitErrors: SubmissionErrors
+    isFormClearActive: boolean
+}
 
 interface ComputeInsightCreationContentProps extends NativeContainerProps {
-    mode?: 'creation' | 'edit'
+    touched: boolean
+    children: (input: RenderPropertyInputs) => ReactNode
     initialValue?: Partial<CreateComputeInsightFormFields>
-
     onChange: (event: FormChangeEvent<CreateComputeInsightFormFields>) => void
     onSubmit: (values: CreateComputeInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onCancel: () => void
 }
 
 export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProps> = props => {
-    const { mode = 'creation', initialValue, onChange, onSubmit, onCancel, ...attributes } = props
+    const { touched, initialValue, onChange, onSubmit, children, ...attributes } = props
     const { licensed } = useUiFeatures()
 
-    const { formAPI, ref, handleSubmit } = useForm<CreateComputeInsightFormFields>({
+    const { formAPI, values, handleSubmit } = useForm<CreateComputeInsightFormFields>({
         initialValues: { ...INITIAL_INSIGHT_VALUES, ...initialValue },
         onSubmit,
         onChange,
-        touched: mode === 'edit',
+        touched,
     })
 
     const title = useField({
@@ -73,6 +81,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
     const series = useField({
         name: 'series',
         formApi: formAPI,
+        validators: { sync: insightSeriesValidator },
     })
 
     const groupBy = useField({
@@ -80,9 +89,32 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
         formApi: formAPI,
     })
 
+    const handleFormReset = (): void => {
+        // TODO [VK] Change useForm API in order to implement form.reset method.
+        title.input.onChange('')
+        repositories.input.onChange('')
+        series.input.onChange([createDefaultEditSeries({ edit: true })])
+
+        // Focus first element of the form
+        repositories.input.ref.current?.focus()
+    }
+
+    const hasFilledValue =
+        values.series?.some(line => line.name !== '' || line.query !== '') ||
+        values.repositories !== '' ||
+        values.title !== ''
+
+    // If some fields that needed to run live preview  are invalid
+    // we should disable live chart preview
+    const allFieldsForPreviewAreValid =
+        repositories.meta.validState === 'VALID' &&
+        (series.meta.validState === 'VALID' || series.meta.value.some(series => series.valid))
+
+    const validSeries = series.meta.value.filter(series => series.valid)
+
     return (
         <CreationUiLayout {...attributes}>
-            <CreationUIForm as="form" ref={ref} onSubmit={handleSubmit}>
+            <CreationUIForm noValidate={true} onSubmit={handleSubmit} onReset={handleFormReset}>
                 <FormGroup
                     name="insight repositories"
                     title="Targeted repositories"
@@ -106,6 +138,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     innerRef={series.input.ref}
                     name="data series group"
                     title="Data series"
+                    error={series.meta.touched && series.meta.error}
                     subtitle={
                         licensed
                             ? 'Add any number of data series to your chart'
@@ -115,7 +148,8 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                     <FormSeries
                         seriesField={series}
                         repositories={repositories.input.value}
-                        showValidationErrorsOnMount={false}
+                        showValidationErrorsOnMount={formAPI.submitted}
+                        showColorPicker={false}
                         queryFieldDescription={
                             <ul className="pl-3">
                                 <li>
@@ -136,7 +170,7 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                 <hr className="my-4 w-100" />
 
                 <FormGroup name="map result" title="Map result">
-                    <ComputeInsightMapPicker series={series.input.value} {...groupBy.input} />
+                    <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
 
                     <small className="text-muted mt-3">
                         Learn more about <Link to="">grouping results</Link>
@@ -155,9 +189,23 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
                         {...getDefaultInputProps(title)}
                     />
                 </FormGroup>
+
+                <hr className="my-4 w-100" />
+
+                {children({
+                    submitting: formAPI.submitting,
+                    submitErrors: formAPI.submitErrors,
+                    isFormClearActive: hasFilledValue,
+                })}
             </CreationUIForm>
 
-            <CreationUIPreview>This is live preview</CreationUIPreview>
+            <CreationUIPreview
+                as={ComputeLivePreview}
+                disabled={!allFieldsForPreviewAreValid}
+                repositories={repositories.meta.value}
+                series={validSeries}
+                groupBy={groupBy.meta.value}
+            />
         </CreationUiLayout>
     )
 }

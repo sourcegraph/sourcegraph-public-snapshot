@@ -1,4 +1,4 @@
-import { FC } from 'react'
+import { FC, ReactNode } from 'react'
 
 import { noop } from 'rxjs'
 
@@ -15,10 +15,12 @@ import {
     insightRepositoriesValidator,
     insightRepositoriesAsyncValidator,
 } from '../../../../../components'
-import { Insight } from '../../../../../core'
 import { LangStatsCreationFormFields } from '../types'
 
-import { LangStatsInsightCreationForm } from './lang-stats-insight-creation-form/LangStatsInsightCreationForm'
+import {
+    LangStatsInsightCreationForm,
+    RenderPropertyInputs,
+} from './lang-stats-insight-creation-form/LangStatsInsightCreationForm'
 import { LangStatsInsightLivePreview } from './live-preview-chart/LangStatsInsightLivePreview'
 
 export const thresholdFieldValidator = createRequiredValidator('Threshold is a required field for code insight.')
@@ -31,43 +33,28 @@ const INITIAL_VALUES: LangStatsCreationFormFields = {
 }
 
 export interface LangStatsInsightCreationContentProps {
-    /**
-     * This component might be used in two different modes for creation and
-     * edit mode. In edit mode we change some text keys for form and trigger
-     * validation on form fields immediately.
-     */
-    mode?: 'creation' | 'edit'
-
+    touched: boolean
+    children: (input: RenderPropertyInputs) => ReactNode
     initialValues?: Partial<LangStatsCreationFormFields>
     className?: string
-    insight?: Insight
 
     onSubmit: (values: LangStatsCreationFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
-    onCancel?: () => void
 
     /** Change handlers is called every time when user changed any field within the form. */
     onChange?: (event: FormChangeEvent<LangStatsCreationFormFields>) => void
 }
 
 export const LangStatsInsightCreationContent: FC<LangStatsInsightCreationContentProps> = props => {
-    const {
-        mode = 'creation',
-        initialValues = {},
-        className,
-        onSubmit,
-        onCancel = noop,
-        onChange = noop,
-        insight,
-    } = props
+    const { touched, initialValues = {}, className, children, onSubmit, onChange = noop } = props
 
-    const { values, handleSubmit, formAPI, ref } = useForm<LangStatsCreationFormFields>({
+    const { values, handleSubmit, formAPI } = useForm<LangStatsCreationFormFields>({
         initialValues: {
             ...INITIAL_VALUES,
             ...initialValues,
         },
         onSubmit,
         onChange,
-        touched: mode === 'edit',
+        touched,
     })
 
     const repository = useField({
@@ -110,8 +97,6 @@ export const LangStatsInsightCreationContent: FC<LangStatsInsightCreationContent
         <CreationUiLayout data-testid="code-stats-insight-creation-page-content" className={className}>
             <CreationUIForm
                 as={LangStatsInsightCreationForm}
-                mode={mode}
-                innerRef={ref}
                 handleSubmit={handleSubmit}
                 submitErrors={formAPI.submitErrors}
                 submitting={formAPI.submitting}
@@ -120,10 +105,10 @@ export const LangStatsInsightCreationContent: FC<LangStatsInsightCreationContent
                 threshold={threshold}
                 isFormClearActive={hasFilledValue}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
-                insight={insight}
-                onCancel={onCancel}
                 onFormReset={handleFormReset}
-            />
+            >
+                {children}
+            </CreationUIForm>
 
             <CreationUIPreview
                 as={LangStatsInsightLivePreview}

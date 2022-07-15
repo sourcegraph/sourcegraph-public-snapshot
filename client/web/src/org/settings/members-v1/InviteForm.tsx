@@ -9,7 +9,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert, Icon, Input, Text, Code, Tooltip } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Input, Text, Code } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -120,52 +120,45 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                     />
                     <div className="d-block d-md-inline mb-sm-2">
                         {viewerCanAddUserToOrganization && (
-                            <Tooltip content="Add immediately without sending invitation (site admins only)">
-                                <Button
-                                    type="submit"
-                                    disabled={
-                                        loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'
-                                    }
-                                    className="mr-2"
-                                    variant="primary"
-                                >
-                                    {loading === 'addUserToOrganization' ? (
-                                        <LoadingSpinner />
-                                    ) : (
-                                        <Icon aria-hidden={true} svgPath={mdiPlus} />
-                                    )}{' '}
-                                    Add member
-                                </Button>
-                            </Tooltip>
+                            <Button
+                                type="submit"
+                                disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
+                                className="mr-2"
+                                data-tooltip="Add immediately without sending invitation (site admins only)"
+                                variant="primary"
+                            >
+                                {loading === 'addUserToOrganization' ? (
+                                    <LoadingSpinner />
+                                ) : (
+                                    <Icon aria-hidden={true} svgPath={mdiPlus} />
+                                )}{' '}
+                                Add member
+                            </Button>
                         )}
                         {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
-                            <Tooltip
-                                content={
+                            <Button
+                                type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
+                                disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
+                                variant={viewerCanAddUserToOrganization ? 'secondary' : 'primary'}
+                                data-tooltip={
                                     emailInvitesEnabled
                                         ? 'Send invitation email with link to join this organization'
                                         : 'Generate invitation link to manually send to user'
                                 }
+                                aria-label="Send or Generate Invitation link"
+                                onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
                             >
-                                <Button
-                                    type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
-                                    disabled={
-                                        loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'
-                                    }
-                                    variant={viewerCanAddUserToOrganization ? 'secondary' : 'primary'}
-                                    onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
-                                >
-                                    {loading === 'inviteUserToOrganization' ? (
-                                        <LoadingSpinner />
-                                    ) : (
-                                        <Icon aria-hidden={true} svgPath={mdiEmailOpenOutline} />
-                                    )}{' '}
-                                    {emailInvitesEnabled
-                                        ? viewerCanAddUserToOrganization
-                                            ? 'Send invitation to join'
-                                            : 'Send invitation'
-                                        : 'Generate invitation link'}
-                                </Button>
-                            </Tooltip>
+                                {loading === 'inviteUserToOrganization' ? (
+                                    <LoadingSpinner />
+                                ) : (
+                                    <Icon aria-hidden={true} svgPath={mdiEmailOpenOutline} />
+                                )}{' '}
+                                {emailInvitesEnabled
+                                    ? viewerCanAddUserToOrganization
+                                        ? 'Send invitation to join'
+                                        : 'Send invitation'
+                                    : 'Generate invitation link'}
+                            </Button>
                         )}
                     </div>
                 </Form>

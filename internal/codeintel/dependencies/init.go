@@ -1,7 +1,6 @@
 package dependencies
 
 import (
-	"context"
 	"sync"
 
 	"github.com/opentracing/opentracing-go"
@@ -12,7 +11,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/store"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -53,11 +51,6 @@ func GetService(db database.DB, gitService GitService, syncer Syncer) *Service {
 			Registerer: prometheus.DefaultRegisterer,
 		}
 
-		if !lockfileIndexingEnabled() {
-			logger.Warn("Disabling dependencies.store.UpsertLockfileDependencies")
-			store = &shim{store}
-		}
-
 		lockfilesService := lockfiles.GetService(gitService)
 		lockfilesSemaphore := semaphore.NewWeighted(int64(lockfilesSemaphoreWeight))
 		syncerSemaphore := semaphore.NewWeighted(int64(syncerSemaphoreWeight))
@@ -93,10 +86,4 @@ func TestService(db database.DB, gitService GitService, syncer Syncer) *Service 
 		syncerSemaphore,
 		&observation.TestContext,
 	)
-}
-
-type shim struct{ store.Store }
-
-func (s *shim) UpsertLockfileDependencies(ctx context.Context, repoName, commit string, deps []shared.PackageDependency) error {
-	return nil
 }

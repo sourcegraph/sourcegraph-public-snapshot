@@ -210,6 +210,15 @@ type Diff struct {
 	Deleted    types.Repos
 	Modified   types.Repos
 	Unmodified types.Repos
+
+	// ArchivedChanged contains repositories that have been archived or
+	// unarchived on the code host between the previous sync and the current one.
+	// This is required for Batch Changes to migrate changesets on those
+	// repositories in and out of the read-only state.
+	//
+	// This field is always a strict subset of Modified, and is therefore not
+	// counted in Len() or iterated over in Repos().
+	ArchivedChanged types.Repos
 }
 
 // Sort sorts all Diff elements by Repo.IDs.
@@ -219,6 +228,7 @@ func (d *Diff) Sort() {
 		d.Deleted,
 		d.Modified,
 		d.Unmodified,
+		d.ArchivedChanged,
 	} {
 		sort.Sort(ds)
 	}
@@ -720,6 +730,8 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		stored = types.Repos{existing}
 		fallthrough
 	case 1: // Existing repo, update.
+		wasArchived := stored[0].Archived
+
 		if !stored[0].Update(sourced) {
 			d.Unmodified = append(d.Unmodified, stored[0])
 			break
@@ -731,6 +743,11 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 
 		*sourced = *stored[0]
 		d.Modified = append(d.Modified, stored[0])
+
+		if (wasArchived == true && stored[0].Archived == false) ||
+			(wasArchived == false && stored[0].Archived == true) {
+			d.ArchivedChanged = append(d.ArchivedChanged, stored[0])
+		}
 	case 0: // New repo, create.
 		if !svc.IsSiteOwned() { // enforce user and org repo limits
 			siteAdded, err := tx.CountNamespacedRepos(ctx, 0, 0)

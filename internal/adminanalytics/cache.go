@@ -103,6 +103,7 @@ func refreshAnalyticsCache(ctx context.Context, db database.DB) error {
 			&Notebooks{DateRange: dateRange, DB: db, Cache: true},
 			&CodeIntel{DateRange: dateRange, DB: db, Cache: true},
 			&Repos{DB: db, Cache: true},
+			&BatchChanges{DateRange: dateRange, DB: db, Cache: true},
 		}
 		for _, store := range stores {
 			if err := store.CacheAll(ctx); err != nil {
@@ -128,7 +129,7 @@ func StartAnalyticsCacheRefresh(ctx context.Context, db database.DB) {
 
 	const delay = 24 * time.Hour
 	for {
-		if featureflag.FromContext(ctx).GetBoolOr("admin-analytics-enabled", false) {
+		if !featureflag.FromContext(ctx).GetBoolOr("admin-analytics-disabled", false) {
 			if err := refreshAnalyticsCache(ctx, db); err != nil {
 				logger.Error("Error refreshing admin analytics cache", log.Error(err))
 			}

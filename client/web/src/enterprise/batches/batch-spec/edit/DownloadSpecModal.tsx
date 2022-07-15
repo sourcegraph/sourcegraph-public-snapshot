@@ -1,10 +1,10 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, Link, Modal, H3, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Modal, H3, H4, Text, Icon } from '@sourcegraph/wildcard'
 
 import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
@@ -46,7 +46,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
                 }}
             >
                 <VisuallyHidden>Close</VisuallyHidden>
-                <CloseIcon className={styles.icon} />
+                <Icon className={styles.icon} svgPath={mdiClose} inline={false} aria-hidden={true} />
             </Button>
         </div>
 

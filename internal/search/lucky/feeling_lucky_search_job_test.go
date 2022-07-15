@@ -2,7 +2,6 @@ package lucky
 
 import (
 	"context"
-	"encoding/json"
 	"strconv"
 	"testing"
 
@@ -17,72 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/stretchr/testify/require"
 )
-
-func TestNewFeelingLuckySearchJob(t *testing.T) {
-	test := func(input string) string {
-		q, _ := query.ParseStandard(input)
-		b, _ := query.ToBasicQuery(q)
-		g := NewGenerator(b, rulesNarrow, rulesWiden)
-
-		var autoQ *autoQuery
-		type want struct {
-			Description string
-			Query       string
-		}
-		generated := []want{}
-
-		for {
-			autoQ, g = g()
-			if autoQ != nil {
-				generated = append(
-					generated,
-					want{
-						Description: autoQ.description,
-						Query:       query.StringHuman(autoQ.query.ToParseTree()),
-					})
-			}
-
-			if g == nil {
-				break
-			}
-		}
-
-		result, _ := json.MarshalIndent(generated, "", "  ")
-		return string(result)
-	}
-
-	t.Run("trigger unquoted rule", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`repo:^github\.com/sourcegraph/sourcegraph$ "monitor" "*Monitor"`)))
-	})
-
-	t.Run("trigger unordered patterns", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`context:global parse func`)))
-	})
-
-	t.Run("single pattern as lang", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`context:global python`)))
-	})
-
-	t.Run("one of many patterns as lang", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`context:global parse python`)))
-	})
-
-	t.Run("pattern as type", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`context:global fix commit`)))
-	})
-
-	t.Run("pattern as type multi patterns", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`context:global code monitor commit`)))
-	})
-
-	t.Run("pattern as type with expression", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`context:global code or monitor commit`)))
-	})
-
-	t.Run("type and lang multi rule", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`context:global go commit monitor code`)))
-	})
-}
 
 func TestNewFeelingLuckySearchJob_Run(t *testing.T) {
 	// Setup: A child job that sends the same result
@@ -158,182 +91,40 @@ func TestGeneratedSearchJob(t *testing.T) {
 	autogold.Want("limit results", autogold.Raw("test (500+ results)")).Equal(t, autogold.Raw(test(limits.DefaultMaxSearchResultsStreaming)))
 }
 
-func TestCombinations(t *testing.T) {
-	test := func(input string, rulesNarrow, rulesWiden []rule) string {
-		q, _ := query.ParseStandard(input)
-		b, _ := query.ToBasicQuery(q)
-		g := NewGenerator(b, rulesNarrow, rulesWiden)
-
-		var autoQ *autoQuery
-		type want struct {
-			Description string
-			Query       string
+func TestNewFeelingLuckySearchJob_ResultCount(t *testing.T) {
+	// This test ensures the invariant that generated queries do not run if
+	// at least RESULT_THRESHOLD results are emitted by the initial job. If
+	// less than RESULT_THRESHOLD results are seen, the logic will run a
+	// generated query, which always panics.
+	mockJob := mockjob.NewMockJob()
+	mockJob.RunFunc.SetDefaultHook(func(ctx context.Context, _ job.RuntimeClients, s streaming.Sender) (*search.Alert, error) {
+		for i := 0; i < RESULT_THRESHOLD; i++ {
+			s.Send(streaming.SearchEvent{
+				Results: []result.Match{&result.FileMatch{
+					File: result.File{Path: strconv.Itoa(i)},
+				}},
+			})
 		}
-		generated := []want{}
-
-		for {
-			autoQ, g = g()
-			if autoQ != nil {
-				generated = append(
-					generated,
-					want{
-						Description: autoQ.description,
-						Query:       query.StringHuman(autoQ.query.ToParseTree()),
-					})
-			}
-
-			if g == nil {
-				break
-			}
-		}
-
-		result, _ := json.MarshalIndent(generated, "", "  ")
-		return string(result)
-	}
-
-	t.Run("narrow and widen rules", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, rulesNarrow, rulesWiden)))
+		return nil, nil
 	})
 
-	t.Run("only narrow rules", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, rulesNarrow, nil)))
-	})
+	mockAutoQuery := &autoQuery{description: "mock", query: query.Basic{}}
 
-	t.Run("only widen rules", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`go commit yikes derp`, nil, rulesWiden)))
-	})
-}
-
-func Test_patternsAsFilters(t *testing.T) {
-	test := func(input string, rules []rule) string {
-		q, _ := query.ParseStandard(input)
-		b, _ := query.ToBasicQuery(q)
-		g := NewGenerator(b, nil, rules)
-
-		var autoQ *autoQuery
-		type want struct {
-			Description string
-			Input       string
-			Query       string
-		}
-		generated := []want{}
-
-		for {
-			autoQ, g = g()
-			if autoQ != nil {
-				generated = append(
-					generated,
-					want{
-						Description: autoQ.description,
-						Input:       input,
-						Query:       query.StringHuman(autoQ.query.ToParseTree()),
-					})
-			}
-
-			if g == nil {
-				break
-			}
-		}
-
-		result, _ := json.MarshalIndent(generated, "", "  ")
-		return string(result)
-	}
-
-	rules := []rule{
-		{
-			description: "patterns to code host filters",
-			transform:   transform{patternsToCodeHostFilters},
+	j := FeelingLuckySearchJob{
+		initialJob: mockJob,
+		generators: []next{func() (*autoQuery, next) { return mockAutoQuery, nil }},
+		newGeneratedJob: func(*autoQuery) job.Job {
+			return mockjob.NewStrictMockJob() // always panic, and should never get run.
 		},
 	}
 
-	t.Run("URL pattern as fully qualified repo filter", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph`, rules)))
+	var sent []result.Match
+	stream := streaming.StreamFunc(func(e streaming.SearchEvent) {
+		sent = append(sent, e.Results...)
 	})
 
-	t.Run("URL pattern as partially qualified repo filter", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph`, rules)))
-	})
-
-	t.Run("schemaless URL pattern as repo filter", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`github.com/sourcegraph`, rules)))
-	})
-
-	t.Run("URL blob", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/blob/main/lib/README.md#L50`, rules)))
-	})
-
-	t.Run("URL tree path", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/tree/main/lib`, rules)))
-	})
-
-	t.Run("URL tree branch revision", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/tree/2.12`, rules)))
-	})
-
-	t.Run("URL tree commit revision", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`https://github.com/sourcegraph/sourcegraph/commit/abc`, rules)))
-	})
-}
-
-func Test_regexpPatterns(t *testing.T) {
-	test := func(input string, rules []rule) string {
-		q, _ := query.ParseStandard(input)
-		b, _ := query.ToBasicQuery(q)
-		g := NewGenerator(b, nil, rules)
-
-		var autoQ *autoQuery
-		type want struct {
-			Description string
-			Input       string
-			Query       string
-		}
-		generated := []want{}
-
-		for {
-			autoQ, g = g()
-			if autoQ != nil {
-				generated = append(
-					generated,
-					want{
-						Description: autoQ.description,
-						Input:       input,
-						Query:       query.StringHuman(autoQ.query.ToParseTree()),
-					})
-			}
-
-			if g == nil {
-				break
-			}
-		}
-
-		result, _ := json.MarshalIndent(generated, "", "  ")
-		return string(result)
-	}
-
-	rules := []rule{
-		{
-			description: "patterns as regular expressions",
-			transform:   transform{regexpPatterns},
-		},
-	}
-
-	t.Run("valid regular expression", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`[a-z]+`, rules)))
-	})
-
-	t.Run("valid regular expression", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`a.*b`, rules)))
-	})
-
-	t.Run("valid regular expression with capture group", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`(ab)*`, rules)))
-	})
-
-	t.Run("invalid regular expression", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`c++`, rules)))
-	})
-
-	t.Run("pattern without enough regexp syntax", func(t *testing.T) {
-		autogold.Equal(t, autogold.Raw(test(`my.yaml.conf`, rules)))
+	t.Run("do not run generated queries over RESULT_THRESHOLD", func(t *testing.T) {
+		j.Run(context.Background(), job.RuntimeClients{}, stream)
+		require.Equal(t, RESULT_THRESHOLD, len(sent))
 	})
 }

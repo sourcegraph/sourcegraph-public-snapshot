@@ -6019,15 +6019,15 @@ type AnalyticsUsersSummaryResult {
     """
     Average DAUs
     """
-    avgDAU: AnalyticsStatItemSummary!
+    avgDAU: Float!
     """
     Average WAUs
     """
-    avgWAU: AnalyticsStatItemSummary!
+    avgWAU: Float!
     """
     Average MAUs
     """
-    avgMAU: AnalyticsStatItemSummary!
+    avgMAU: Float!
 }
 
 """
@@ -6061,6 +6061,14 @@ type AnalyticsCodeIntelResult {
     """
     definitionClicks: AnalyticsStatItem!
     """
+    Code Intel events made from web
+    """
+    inAppEvents: AnalyticsStatItem!
+    """
+    Code Intel events made from code host
+    """
+    codeHostEvents: AnalyticsStatItem!
+    """
     Browser extension installs
     """
     browserExtensionInstalls: AnalyticsStatItem!
@@ -6093,6 +6101,20 @@ type AnalyticsReposSummartResult {
 }
 
 """
+Batch changes analytics.
+"""
+type AnalyticsBatchChangesResult {
+    """
+    Changesets created
+    """
+    changesetsCreated: AnalyticsStatItem!
+    """
+    Changesets merged
+    """
+    changesetsMerged: AnalyticsStatItem!
+}
+
+"""
 Analytics describes a new site statistics.
 """
 type Analytics {
@@ -6116,6 +6138,10 @@ type Analytics {
     Repositories summary statistics.
     """
     repos: AnalyticsReposSummartResult!
+    """
+    Batch changes statistics
+    """
+    batchChanges(dateRange: AnalyticsDateRange): AnalyticsBatchChangesResult!
 }
 
 """

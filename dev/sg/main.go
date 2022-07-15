@@ -129,9 +129,14 @@ var sg = &cli.App{
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
+		// Add feedback flag to all commands and subcommands - we add this here, before
+		// we exit in bashCompletionsMode, so that '--feedback' is available via
+		// autocompletions.
+		addFeedbackFlags(cmd.App.Commands)
+
+		// All other setup pertains to running commands - to keep completions fast,
+		// we skip all other setup when in bashCompletions mode.
 		if bashCompletionsMode {
-			// All other setup pertains to running commands - to keep completions fast,
-			// we skip all other setup.
 			return nil
 		}
 
@@ -183,9 +188,6 @@ var sg = &cli.App{
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
-
-		// Add feedback subcommand to all commands and subcommands
-		addFeedbackFlags(cmd.App.Commands)
 
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {

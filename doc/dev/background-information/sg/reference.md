@@ -347,7 +347,7 @@ $ sg lint --help
 
 Flags:
 
-* `--annotations`: Write helpful output to annotations directory
+* `--annotations`: Write helpful output to ./annotations directory
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
@@ -574,8 +574,9 @@ Flags:
 * `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration upto
 
@@ -596,8 +597,9 @@ Flags:
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration undo
 
@@ -638,8 +640,9 @@ Flags:
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration validate
 
@@ -1060,8 +1063,8 @@ Flags:
 * `--cr-password="<value>"`: `password` or access token for the container registry
 * `--cr-username="<value>"`: `username` for the container registry
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--kind="<value>"`: the `kind` of deployment (one of 'k8s', 'helm') (default: k8s)
-* `--pin-tag="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)
+* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
+* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
 
 ## sg analytics
 

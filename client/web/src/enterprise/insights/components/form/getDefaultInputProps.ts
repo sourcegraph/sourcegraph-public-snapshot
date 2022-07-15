@@ -20,7 +20,7 @@ function getDefaultInputStatus<T>({ meta }: useFieldAPI<T>): InputStatus {
     return InputStatus.initial
 }
 
-function getDefaultInputError<T>({ meta }: useFieldAPI<T>): Pick<InputProps, 'error'> {
+function getDefaultInputError<T>({ meta }: useFieldAPI<T>): InputProps['error'] {
     return meta.touched && meta.error
 }
 

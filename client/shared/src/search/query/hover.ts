@@ -172,7 +172,7 @@ const toPredicateHover = (token: MetaPredicate): string => {
         case 'dependents':
         case 'revdeps':
             return '**Built-in predicate**. Search only repositories depending on repositories matching the regular expression'
-        case 'description':
+        case 'has.description':
             return '**Built-in predicate**. Search only inside repositories that have a **description** matching the given regular expression'
     }
     return ''

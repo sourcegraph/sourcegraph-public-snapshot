@@ -1,13 +1,9 @@
 import React from 'react'
 
-import { mdiCloudOffOutline } from '@mdi/js'
+import { mdiCloudOffOutline, mdiInformation, mdiAlert, mdiSync, mdiCheckboxMarkedCircle } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual, upperFirst } from 'lodash'
-import AlertIcon from 'mdi-react/AlertIcon'
-import CheckboxCircleIcon from 'mdi-react/CheckboxMarkedCircleIcon'
-import InformationCircleIcon from 'mdi-react/InformationCircleIcon'
-import SyncIcon from 'mdi-react/SyncIcon'
 import { Observable, Subscription, of } from 'rxjs'
 import { catchError, map, repeatWhen, delay, distinctUntilChanged, switchMap } from 'rxjs/operators'
 
@@ -19,18 +15,7 @@ import {
     CloudSyncIconRefresh,
     CloudCheckIconRefresh,
 } from '@sourcegraph/shared/src/components/icons'
-import {
-    Button,
-    Link,
-    Popover,
-    PopoverContent,
-    PopoverTrigger,
-    Position,
-    Icon,
-    H4,
-    Text,
-    Tooltip,
-} from '@sourcegraph/wildcard'
+import { Button, Link, Popover, PopoverContent, PopoverTrigger, Position, Icon, H4, Text } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { CircleDashedIcon } from '../components/CircleDashedIcon'
@@ -99,15 +84,60 @@ interface StatusMessageEntryProps {
 function entryIcon(entryType: EntryType): JSX.Element {
     switch (entryType) {
         case 'error':
-            return <InformationCircleIcon size={14} className={classNames('text-danger', styles.icon)} />
+            return (
+                <Icon
+                    className={classNames('text-danger', styles.icon)}
+                    svgPath={mdiInformation}
+                    inline={false}
+                    aria-label="Error"
+                    height={14}
+                    width={14}
+                />
+            )
         case 'warning':
-            return <AlertIcon size={14} className={classNames('text-warning', styles.icon)} />
+            return (
+                <Icon
+                    className={classNames('text-warning', styles.icon)}
+                    svgPath={mdiAlert}
+                    inline={false}
+                    aria-label="Warning"
+                    height={14}
+                    width={14}
+                />
+            )
         case 'success':
-            return <CheckboxCircleIcon size={14} className={classNames('text-success', styles.icon)} />
+            return (
+                <Icon
+                    className={classNames('text-success', styles.icon)}
+                    svgPath={mdiCheckboxMarkedCircle}
+                    inline={false}
+                    aria-label="Success"
+                    height={14}
+                    width={14}
+                />
+            )
         case 'progress':
-            return <SyncIcon size={14} className={classNames('text-primary', styles.icon)} />
+            return (
+                <Icon
+                    className={classNames('text-primary', styles.icon)}
+                    svgPath={mdiSync}
+                    inline={false}
+                    aria-label="In progress"
+                    height={14}
+                    width={14}
+                />
+            )
         case 'not-active':
-            return <CircleDashedIcon size={16} className={classNames(styles.icon, styles.iconOff)} />
+            return (
+                <Icon
+                    className={classNames(styles.icon, styles.iconOff)}
+                    as={CircleDashedIcon}
+                    inline={false}
+                    aria-label="Not active"
+                    height={16}
+                    width={16}
+                />
+            )
     }
 }
 
@@ -414,9 +444,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
     private renderIcon(): JSX.Element | null {
         if (isErrorLike(this.state.messagesOrError)) {
             return (
-                <Tooltip content="Sorry, we couldn’t fetch notifications!">
-                    <Icon aria-label="Sorry, we couldn’t fetch notifications!" as={CloudAlertIconRefresh} size="md" />
-                </Tooltip>
+                <Icon
+                    data-tooltip="Sorry, we couldn’t fetch notifications!"
+                    as={CloudAlertIconRefresh}
+                    size="md"
+                    aria-label="Sorry, we couldn’t fetch notifications!"
+                />
             )
         }
 
@@ -427,13 +460,12 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
             : 'No repositories'
         if (isNoActivityReason(this.state.messagesOrError)) {
             return (
-                <Tooltip content={codeHostMessage}>
-                    <Icon
-                        svgPath={mdiCloudOffOutline}
-                        size="md"
-                        {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
-                    />
-                </Tooltip>
+                <Icon
+                    data-tooltip={codeHostMessage}
+                    size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                    svgPath={mdiCloudOffOutline}
+                />
             )
         }
 
@@ -442,24 +474,33 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
         ) {
             codeHostMessage = this.state.isOpen ? undefined : 'Syncing repositories failed!'
             return (
-                <Tooltip content={codeHostMessage}>
-                    <Icon aria-label={codeHostMessage ?? ''} as={CloudAlertIconRefresh} size="md" />
-                </Tooltip>
+                <Icon
+                    data-tooltip={codeHostMessage}
+                    as={CloudAlertIconRefresh}
+                    size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                />
             )
         }
         if (this.state.messagesOrError.some(({ type }) => type === 'CloningProgress')) {
             codeHostMessage = this.state.isOpen ? undefined : 'Cloning repositories...'
             return (
-                <Tooltip content={codeHostMessage}>
-                    <Icon aria-label={codeHostMessage ?? ''} as={CloudSyncIconRefresh} size="md" />
-                </Tooltip>
+                <Icon
+                    data-tooltip={codeHostMessage}
+                    as={CloudSyncIconRefresh}
+                    size="md"
+                    {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+                />
             )
         }
         codeHostMessage = this.state.isOpen ? undefined : 'Repositories up-to-date'
         return (
-            <Tooltip content={codeHostMessage}>
-                <Icon aria-label={codeHostMessage ?? ''} as={CloudCheckIconRefresh} size="md" />
-            </Tooltip>
+            <Icon
+                data-tooltip={codeHostMessage}
+                as={CloudCheckIconRefresh}
+                size="md"
+                {...(codeHostMessage ? { 'aria-label': codeHostMessage } : { 'aria-hidden': true })}
+            />
         )
     }
 

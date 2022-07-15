@@ -298,7 +298,12 @@ export class MonacoEditor extends React.PureComponent<Props, State> {
                     data-placeholder={this.props.placeholder}
                     ref={this.setRef}
                     id={this.props.id}
-                    className={classNames(this.props.className, this.props.border !== false && 'border rounded')}
+                    data-editor="monaco"
+                    className={classNames(
+                        this.props.className,
+                        'test-editor',
+                        this.props.border !== false && 'border rounded'
+                    )}
                 />
                 {this.props.keyboardShortcutForFocus?.keybindings.map((keybinding, index) => (
                     <Shortcut key={index} {...keybinding} onMatch={this.focusInput} />

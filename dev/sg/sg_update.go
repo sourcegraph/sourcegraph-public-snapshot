@@ -13,6 +13,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/download"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/repo"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
@@ -89,19 +90,22 @@ func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bo
 	}
 
 	rev := strings.TrimPrefix(BuildCommit, "dev-")
+
+	// If the revision of sg is not found locally, the user has likely not run 'git fetch'
+	// recently, and we can skip the version check for now.
+	if !repo.HasCommit(ctx, rev) {
+		out.VerboseLine(output.Styledf(output.StyleWarning,
+			"current sg version %s not found locally - you may want to run 'git fetch origin main'.", rev))
+		return nil
+	}
+
+	// Check for new commits since the current build of 'sg'
 	revOut, err := run.GitCmd("rev-list", fmt.Sprintf("%s..origin/main", rev), "--", "./dev/sg")
 	if err != nil {
-		if strings.Contains(revOut, "bad revision") {
-			// installed revision is not available locally, that is fine - we wait for the
-			// user to eventually do a fetch
-			return errors.New("current sg version not found - you may want to run 'git fetch origin main'.")
-		}
-
 		// Unexpected error occured
 		analytics.LogEvent(ctx, "auto_update", []string{"check_error"}, start)
 		return err
 	}
-
 	revOut = strings.TrimSpace(revOut)
 	if revOut == "" {
 		// No newer commits found. sg is up to date.
