@@ -13,7 +13,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public class ConfigUtil {
-    private static final String DOTCOM_URL = "https://sourcegraph.com/";
+    public static final String DOTCOM_URL = "https://sourcegraph.com/";
 
     @NotNull
     public static JsonObject getConfigAsJson(@NotNull Project project) {

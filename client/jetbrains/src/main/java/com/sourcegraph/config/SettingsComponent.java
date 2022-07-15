@@ -82,7 +82,7 @@ public class SettingsComponent {
         urlTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
         urlTextField.getEmptyText().setText("https://sourcegraph.example.com");
-        urlTextField.setToolTipText("The default is \"https://sourcegraph.com\".");
+        urlTextField.setToolTipText("The default is \"" + ConfigUtil.DOTCOM_URL + "\".");
         addValidation(urlTextField, () ->
             urlTextField.getText().length() == 0 ? new ValidationInfo("Missing URL", urlTextField)
                 : (!JsonSchemaConfigurable.isValidURL(urlTextField.getText()) ? new ValidationInfo("This is an invalid URL", urlTextField)

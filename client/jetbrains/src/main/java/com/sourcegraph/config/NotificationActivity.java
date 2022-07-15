@@ -32,7 +32,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             notifyAboutUpdate(project);
         } else {
             String url = ConfigUtil.getEnterpriseUrl(project);
-            if (!ConfigUtil.isUrlNotificationDismissed() && (url.length() == 0 || url.startsWith("https://sourcegraph.com"))) {
+            if (!ConfigUtil.isUrlNotificationDismissed() && (url.length() == 0 || url.startsWith(ConfigUtil.DOTCOM_URL))) {
                 notifyAboutSourcegraphUrl();
             }
         }
