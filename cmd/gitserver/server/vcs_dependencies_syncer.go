@@ -181,6 +181,7 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	var cloned []reposource.VersionedPackage
 	for _, dependency := range cloneable {
 		if _, tagExists := tags[dependency.GitTagFromVersion()]; tagExists {
+			cloned = append(cloned, dependency)
 			continue
 		}
 		if err := s.gitPushDependencyTag(ctx, string(dir), dependency); err != nil {
