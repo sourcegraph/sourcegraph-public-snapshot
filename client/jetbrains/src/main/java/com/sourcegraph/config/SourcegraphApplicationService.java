@@ -24,6 +24,8 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
     public String anonymousUserId;
     public boolean isInstallEventLogged;
     public boolean isUrlNotificationDismissed;
+    @Nullable
+    public String lastUpdateNotificationPluginVersion; // The version of the plugin that last notified the user about an update
 
     @NotNull
     public static SourcegraphApplicationService getInstance() {
@@ -66,6 +68,11 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
 
     public boolean isUrlNotificationDismissed() {
         return isUrlNotificationDismissed;
+    }
+
+    @Nullable
+    public String getLastUpdateNotificationPluginVersion() {
+        return lastUpdateNotificationPluginVersion;
     }
 
     @Nullable

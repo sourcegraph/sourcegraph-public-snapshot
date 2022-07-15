@@ -18,7 +18,9 @@
             displayName="Sourcegraph"
             nonDefaultProject="false"
         />
-        <notificationGroup id="Sourcegraph" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph access" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph URL sharing" displayType="BALLOON"/>
+        <notificationGroup id="Sourcegraph plugin updates" displayType="STICKY_BALLOON"/>
         <projectService id="sourcegraph.findService" serviceImplementation="com.sourcegraph.find.FindService"/>
         <postStartupActivity implementation="com.sourcegraph.telemetry.PostStartupActivity"/>
         <postStartupActivity implementation="com.sourcegraph.config.NotificationActivity"/>
