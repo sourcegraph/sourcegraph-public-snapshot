@@ -3,6 +3,6 @@ package database
 var (
 	MockCannotCreateUserUsernameExistsErr = errCannotCreateUser{errorCodeUsernameExists}
 	MockCannotCreateUserEmailExistsErr    = errCannotCreateUser{errorCodeEmailExists}
-	MockUserNotFoundErr                   = userNotFoundErr{}
+	MockUserNotFoundErr                   = UserNotFoundErr{}
 	MockUserEmailNotFoundErr              = userEmailNotFoundError{}
 )

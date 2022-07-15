@@ -391,20 +391,40 @@ func (r *notebookResolver) Creator(ctx context.Context) (*graphqlbackend.UserRes
 	if r.notebook.CreatorUserID == 0 {
 		return nil, nil
 	}
-	return graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.CreatorUserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.CreatorUserID)
+	if err != nil {
+		// Handle soft-deleted users
+		if errors.HasType(err, database.UserNotFoundErr{}) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return user, nil
 }
 
 func (r *notebookResolver) Updater(ctx context.Context) (*graphqlbackend.UserResolver, error) {
 	if r.notebook.UpdaterUserID == 0 {
 		return nil, nil
 	}
-	return graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.UpdaterUserID)
+	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.UpdaterUserID)
+	if err != nil {
+		// Handle soft-deleted users
+		if errors.HasType(err, database.UserNotFoundErr{}) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return user, nil
 }
 
 func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.NamespaceResolver, error) {
 	if r.notebook.NamespaceUserID != 0 {
 		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalUserID(r.notebook.NamespaceUserID))
 		if err != nil {
+			// Handle soft-deleted users
+			if errors.HasType(err, database.UserNotFoundErr{}) {
+				return nil, nil
+			}
 			return nil, err
 		}
 		return &graphqlbackend.NamespaceResolver{Namespace: n}, nil
