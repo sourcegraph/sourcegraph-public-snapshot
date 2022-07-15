@@ -11,6 +11,7 @@ ARG BASE_USER=sourcegraph
 RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
 
 USER root
-    RUN for pkg in curl libcurl; do if apk info --installed $pkg; then apk add --no-cache "$pkg>=7.80.0-r2"; fi; done
+RUN for pkg in curl libcurl; do if apk info --installed $pkg; then apk add --no-cache "$pkg>=7.80.0-r2"; fi; done
+RUN if apk info --installed libcrypto1.1; then apk add --no-cache 'libcrypto1.1>=1.1.1q-r0' 'libssl1.1>=1.1.1q-r0'; fi
 USER $BASE_USER
 RUN if [[ "$(whoami)" != "${BASE_USER}" ]]; then echo "expected user to be '$BASE_USER', got '$(whoami)'" && exit 1; fi
