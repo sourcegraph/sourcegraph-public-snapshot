@@ -737,7 +737,7 @@ func TestGetNotebookWithSoftDeletedUserColumns(t *testing.T) {
 		t.Fatalf("Expected no error, got %s", err)
 	}
 
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
