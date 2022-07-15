@@ -157,7 +157,7 @@ func NewInternalClientFactory(subsystem string) *Factory {
 		),
 		MeteredTransportOpt(subsystem),
 		ActorTransportOpt,
-		ClientTransportOpt,
+		RequestClientTransportOpt,
 		TracedTransportOpt,
 	)
 }
@@ -635,11 +635,11 @@ func ActorTransportOpt(cli *http.Client) error {
 	return nil
 }
 
-// ClientTransportOpt wraps an existing http.Transport of an http.Client to pull the
-// original client's IP from the context and add it to each request's HTTP headers.
+// RequestClientTransportOpt wraps an existing http.Transport of an http.Client to pull
+// the original client's IP from the context and add it to each request's HTTP headers.
 //
-// Servers can use client.HTTPMiddleware to populate client context from incoming requests.
-func ClientTransportOpt(cli *http.Client) error {
+// Servers can use requestclient.HTTPMiddleware to populate client context from incoming requests.
+func RequestClientTransportOpt(cli *http.Client) error {
 	if cli.Transport == nil {
 		cli.Transport = http.DefaultTransport
 	}
