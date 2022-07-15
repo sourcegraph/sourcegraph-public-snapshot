@@ -93,7 +93,7 @@ const GitObjectPreview: FunctionComponent<React.PropsWithChildren<GitObjectPrevi
 }) => (
     <div>
         {GitObjectHeader}
-        <small>
+        <small aria-live="polite">
             {preview.preview.length === 0 ? (
                 <>Configuration policy does not match any known commits.</>
             ) : (
