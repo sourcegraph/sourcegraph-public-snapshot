@@ -125,7 +125,9 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   </small>
                 </span>
               </div>
-              <div>
+              <div
+                class=""
+              >
                 <div
                   class="fileMatchChildren"
                   data-testid="file-match-children"
@@ -399,7 +401,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   </small>
                 </span>
               </div>
-              <div>
+              <div
+                class=""
+              >
                 <div
                   class="fileMatchChildren"
                   data-testid="file-match-children"
@@ -623,7 +627,9 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   </small>
                 </span>
               </div>
-              <div>
+              <div
+                class=""
+              >
                 <div
                   class="fileMatchChildren"
                   data-testid="file-match-children"
