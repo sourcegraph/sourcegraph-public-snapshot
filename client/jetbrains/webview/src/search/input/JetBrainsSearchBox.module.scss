@@ -291,12 +291,8 @@
 
         :global(.cm-line) {
             ::selection {
-                background-color: var(--jb-selection-bg);
-
-            }
-
-            :global(.search-query-text)::selection {
                 color: var(--jb-selection-color);
+                background-color: var(--jb-selection-bg);
             }
         }
 
