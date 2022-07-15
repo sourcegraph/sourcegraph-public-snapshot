@@ -51,17 +51,6 @@ export function testSingleFilePage({
                 await getDriver().page.$$('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
             ).toHaveLength(1)
 
-            await getDriver().page.click('[data-testid="code-view-toolbar"] [data-testid="open-on-sourcegraph"]')
-
-            // // The button opens a new tab, so get the new page whose opener is the current page, and get its url.
-            const currentPageTarget = getDriver().page.target()
-            const newTarget = await getDriver().browser.waitForTarget(target => target.opener() === currentPageTarget)
-            const newPage = await newTarget.page()
-            expect(newPage?.url()).toBe(
-                `${sourcegraphBaseUrl}/${repoName}@4fb7cd90793ee6ab445f466b900e6bffb9b63d78/-/blob/call_opt.go?utm_source=chrome-extension`
-            )
-            await newPage?.close()
-
             await retry(async () => {
                 assert.strictEqual(
                     await getDriver().page.evaluate(

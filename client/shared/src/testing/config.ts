@@ -69,7 +69,7 @@ const configFields: ConfigFields = {
         description: 'The browser to use.',
         defaultValue: 'chrome',
         parser: (value: string) => {
-            if (!['chrome'].includes(value)) {
+            if (value !== 'chrome') {
                 throw new Error('BROWSER must be "chrome"')
             }
             return value

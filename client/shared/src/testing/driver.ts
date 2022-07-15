@@ -157,7 +157,7 @@ export class Driver {
 
     constructor(public browser: puppeteer.Browser, public page: puppeteer.Page, options: DriverOptions) {
         this.sourcegraphBaseUrl = options.sourcegraphBaseUrl
-        this.browserType = 'chrome'
+        this.browserType = options.browser ?? 'chrome'
         this.keepBrowser = !!options.keepBrowser
 
         // Record visited pages
