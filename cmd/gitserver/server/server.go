@@ -1662,8 +1662,8 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 
 	// Log which actor is accessing p4-exec.
 	//
-	// p4-exec is currently only used for fetch user based permissions information so
-	// we don't have a repo name.
+	// p4-exec is currently only used for fetching user based permissions information
+	// so, we don't have a repo name.
 	accesslog.Record(r.Context(), "<no-repo>", map[string]string{
 		"p4user": req.P4User,
 		"p4port": req.P4Port,
