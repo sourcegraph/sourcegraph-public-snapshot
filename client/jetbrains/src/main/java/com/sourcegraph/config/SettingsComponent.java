@@ -127,7 +127,7 @@ public class SettingsComponent {
             .getPanel();
         JPanel enterprisePanelContent = FormBuilder.createFormBuilder()
             .addLabeledComponent(urlLabel, urlTextField, 1)
-            .addTooltip("If your company has your own Sourcegraph instance, set its URL here")
+            .addTooltip("If your company has its own Sourcegraph instance, set its URL here")
             .addLabeledComponent(accessTokenLabel, accessTokenTextField, 1)
             .addComponentToRightColumn(userDocsLinkComment, 1)
             .addComponentToRightColumn(accessTokenLinkComment, 1)
