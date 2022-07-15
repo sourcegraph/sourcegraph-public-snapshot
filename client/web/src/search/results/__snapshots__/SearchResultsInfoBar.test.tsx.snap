@@ -89,10 +89,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag disabled 1`] = `
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
             data-placement="bottom"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
@@ -263,10 +264,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
             data-placement="bottom"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
@@ -434,10 +436,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, can create m
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
             data-placement="bottom"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
@@ -613,10 +616,11 @@ exports[`SearchResultsInfoBar code monitoring feature flag enabled, cannot creat
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
             data-placement="bottom"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
@@ -784,10 +788,11 @@ exports[`SearchResultsInfoBar unauthenticated user 1`] = `
           class="navItem"
         >
           <button
-            aria-label="Hide more matches on all results"
+            aria-label="Collapse"
             aria-live="polite"
             class="btn btnOutlineSecondary btnSm text-decoration-none"
             data-placement="bottom"
+            data-test-tooltip-content="Hide more matches on all results"
             data-testid="search-result-expand-btn"
             data-tooltip="Hide more matches on all results"
             type="button"
