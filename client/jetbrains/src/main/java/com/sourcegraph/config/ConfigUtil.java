@@ -26,73 +26,81 @@ public class ConfigUtil {
 
     @NotNull
     public static String getSourcegraphUrl(@NotNull Project project) {
-        String projectLevelUrl = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
+        // Project level
+        String projectLevelUrl = getProjectLevelConfig(project).getSourcegraphUrl();
         if (projectLevelUrl != null && projectLevelUrl.length() > 0) {
             return addSlashIfNeeded(projectLevelUrl);
         }
 
-        String applicationLevelUrl = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getSourcegraphUrl();
+        // Application level
+        String applicationLevelUrl = getProjectLevelConfig(project).getSourcegraphUrl();
         if (applicationLevelUrl != null && applicationLevelUrl.length() > 0) {
             return addSlashIfNeeded(applicationLevelUrl);
         }
 
+        // User level or default
         return addSlashIfNeeded(UserLevelConfig.getSourcegraphUrl());
-    }
-
-    @NotNull
-    private static String addSlashIfNeeded(@NotNull String url) {
-        return url.endsWith("/") ? url : url + "/";
     }
 
     @Nullable
     public static String getAccessToken(Project project) {
+        // Project level → application level
         String projectLevelAccessToken = getProjectLevelConfig(project).getAccessToken();
         return projectLevelAccessToken != null ? projectLevelAccessToken : getApplicationLevelConfig().getAccessToken();
     }
 
     @NotNull
     public static String getDefaultBranchName(@NotNull Project project) {
-        String projectLevelDefaultBranchName = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getDefaultBranchName();
+        // Project level
+        String projectLevelDefaultBranchName = getProjectLevelConfig(project).getDefaultBranchName();
         if (projectLevelDefaultBranchName != null && projectLevelDefaultBranchName.length() > 0) {
             return projectLevelDefaultBranchName;
         }
 
-        String applicationLevelDefaultBranchName = Objects.requireNonNull(SourcegraphApplicationService.getInstance()).getDefaultBranchName();
+        // Application level
+        String applicationLevelDefaultBranchName = getApplicationLevelConfig().getDefaultBranchName();
         if (applicationLevelDefaultBranchName != null && applicationLevelDefaultBranchName.length() > 0) {
             return applicationLevelDefaultBranchName;
         }
 
+        // User level or default
         String userLevelDefaultBranchName = UserLevelConfig.getDefaultBranchName();
         return userLevelDefaultBranchName != null ? userLevelDefaultBranchName : "main";
     }
 
     @NotNull
     public static String getRemoteUrlReplacements(@NotNull Project project) {
-        String projectLevelReplacements = Objects.requireNonNull(SourcegraphProjectService.getInstance(project)).getRemoteUrlReplacements();
+        // Project level
+        String projectLevelReplacements = getProjectLevelConfig(project).getRemoteUrlReplacements();
         if (projectLevelReplacements != null && projectLevelReplacements.length() > 0) {
             return projectLevelReplacements;
         }
 
-        String applicationLevelReplacements = Objects.requireNonNull(SourcegraphApplicationService.getInstance()).getRemoteUrlReplacements();
+        // Application level
+        String applicationLevelReplacements = getApplicationLevelConfig().getRemoteUrlReplacements();
         if (applicationLevelReplacements != null && applicationLevelReplacements.length() > 0) {
             return applicationLevelReplacements;
         }
 
+        // User level or default
         String userLevelRemoteUrlReplacements = UserLevelConfig.getRemoteUrlReplacements();
         return userLevelRemoteUrlReplacements != null ? userLevelRemoteUrlReplacements : "";
     }
 
     public static boolean isGlobbingEnabled(@NotNull Project project) {
+        // Project level → application level
         Boolean projectLevelIsGlobbingEnabled = getProjectLevelConfig(project).isGlobbingEnabled();
         return projectLevelIsGlobbingEnabled != null ? projectLevelIsGlobbingEnabled : getApplicationLevelConfig().isGlobbingEnabled();
     }
 
     @Nullable
     public static Search getLastSearch(@NotNull Project project) {
+        // Project level
         return getProjectLevelConfig(project).getLastSearch();
     }
 
     public static void setLastSearch(@NotNull Project project, @NotNull Search lastSearch) {
+        // Project level
         SourcegraphProjectService settings = getProjectLevelConfig(project);
         settings.lastSearchQuery = lastSearch.getQuery() != null ? lastSearch.getQuery() : "";
         settings.lastSearchCaseSensitive = lastSearch.isCaseSensitive();
@@ -103,33 +111,39 @@ public class ConfigUtil {
     @NotNull
     @Contract(pure = true)
     public static String getPluginVersion() {
+        // Internal version
         IdeaPluginDescriptor plugin = PluginManagerCore.getPlugin(PluginId.getId("com.sourcegraph.jetbrains"));
         return plugin != null ? plugin.getVersion() : "unknown";
     }
 
     @Nullable
     public static String getAnonymousUserId() {
-        return SourcegraphApplicationService.getInstance().getAnonymousUserId();
+        return getApplicationLevelConfig().getAnonymousUserId();
     }
 
     public static void setAnonymousUserId(@Nullable String anonymousUserId) {
-        SourcegraphApplicationService.getInstance().anonymousUserId = anonymousUserId;
+        getApplicationLevelConfig().anonymousUserId = anonymousUserId;
     }
 
     public static boolean isInstallEventLogged() {
-        return SourcegraphApplicationService.getInstance().isInstallEventLogged();
+        return getApplicationLevelConfig().isInstallEventLogged();
     }
 
     public static void setInstallEventLogged(boolean value) {
-        SourcegraphApplicationService.getInstance().isInstallEventLogged = value;
+        getApplicationLevelConfig().isInstallEventLogged = value;
     }
 
     public static boolean isUrlNotificationDismissed() {
-        return SourcegraphApplicationService.getInstance().isUrlNotificationDismissed();
+        return getApplicationLevelConfig().isUrlNotificationDismissed();
     }
 
     public static void setUrlNotificationDismissed(boolean value) {
-        SourcegraphApplicationService.getInstance().isUrlNotificationDismissed = value;
+        getApplicationLevelConfig().isUrlNotificationDismissed = value;
+    }
+
+    @NotNull
+    private static String addSlashIfNeeded(@NotNull String url) {
+        return url.endsWith("/") ? url : url + "/";
     }
 
     public static String getLastUpdateNotificationPluginVersion() {
