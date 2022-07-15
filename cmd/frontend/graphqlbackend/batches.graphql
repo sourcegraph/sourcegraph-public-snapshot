@@ -1885,6 +1885,55 @@ extend type Query {
     Determines if a batch change credential is authorized for a code host.
     """
     checkBatchChangesCredential(batchChangesCredential: ID!): EmptyResponse!
+
+    """
+    Takes the batch spec as input and resolves the workspaces for it, without persisting them.
+    This endpoint is used in src-cli to resolve workspaces.
+    """
+    resolveWorkspacesForBatchSpec(batchSpec: String!): [ResolvedBatchSpecWorkspace!]!
+}
+
+"""
+A not persisted resolved workspace, returned from resolveWorkspacesForBatchSpec.
+"""
+type ResolvedBatchSpecWorkspace {
+    """
+    The repository to run over.
+    """
+    repository: Repository!
+
+    """
+    The branch to run over.
+    """
+    branch: GitRef!
+
+    """
+    The path to run in.
+    """
+    path: String!
+
+    """
+    If true, only the files within the workspace will be fetched.
+    """
+    onlyFetchWorkspace: Boolean!
+
+    """
+    If true, this workspace has been skipped, because some rule forced this.
+    For now, the only one is a .batchignore file existing in the repository.
+    """
+    ignored: Boolean!
+
+    """
+    If true, this workspace has been skipped, because the code host on which
+    the repository is hosted is not supported.
+    """
+    unsupported: Boolean!
+
+    """
+    If this workspace was resolved based on a search, this is the list of paths
+    to files that have been included in the search results.
+    """
+    searchResultPaths: [String!]!
 }
 
 """
