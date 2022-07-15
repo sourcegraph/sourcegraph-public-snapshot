@@ -29,7 +29,8 @@
             id="sourcegraph.openFile"
             class="com.sourcegraph.website.OpenFile"
             text="Open Selection in Sourcegraph Web"
-            description="Open selection in Sourcegraph Web">
+            description="Open selection in Sourcegraph Web"
+            icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.searchSelection"
@@ -55,7 +56,8 @@
         <action
             id="com.sourcegraph.website.OpenRevisionAction"
             class="com.sourcegraph.website.OpenRevisionAction"
-            text="Open Revision Diff in Sourcegraph Web">
+            text="Open Revision Diff in Sourcegraph Web"
+            icon="/icons/sourcegraphLogo.svg">
             <add-to-group group-id="VcsHistoryActionsGroup" anchor="last"/>
             <add-to-group group-id="Vcs.Log.ContextMenu" anchor="last"/>
             <add-to-group group-id="VcsHistoryActionsGroup.Toolbar" anchor="last"/>
@@ -75,7 +77,7 @@
             class="com.sourcegraph.config.OpenPluginSettingsAction"
             text="Log in to Sourcegraph"
             description="Log in to Sourcegraph"
-            icon="/icons/sourcegraphLogo.png">
+            icon="/icons/sourcegraphLogo.svg">
         </action>
 
         <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph">
