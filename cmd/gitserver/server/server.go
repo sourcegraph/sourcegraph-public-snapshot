@@ -1660,7 +1660,7 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Log which which actor is accessing p4-exec.
+	// Log which actor is accessing p4-exec.
 	accesslog.Record(r.Context(), "", map[string]string{
 		"p4user": req.P4User,
 		"p4port": req.P4Port,
