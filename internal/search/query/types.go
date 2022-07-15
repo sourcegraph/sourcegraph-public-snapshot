@@ -360,7 +360,7 @@ func (p Parameters) RepoContainsFile() (include, exclude []string) {
 func (p Parameters) FileOwnership() (include, exclude []string) {
 	nodes := toNodes(p)
 
-	VisitTypedPredicate(nodes, func(pred *FileOwnershipPredicate, negated bool) {
+	VisitTypedPredicate(nodes, func(pred *FileHasOwnerPredicate, negated bool) {
 		if negated {
 			exclude = append(exclude, pred.Owner)
 		} else {
