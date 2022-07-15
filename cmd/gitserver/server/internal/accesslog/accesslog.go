@@ -140,7 +140,7 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 		}
 	})
 
-	return http.HandlerFunc(handler.ServeHTTP)
+	return handler.ServeHTTP
 }
 
 func shouldLog(c schema.SiteConfiguration) bool {
