@@ -9,6 +9,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 
 	"github.com/sourcegraph/log/logtest"
@@ -1124,7 +1125,7 @@ func TestLockfileDependents(t *testing.T) {
 	}
 }
 
-func TestListLockfileIndexes(t *testing.T) {
+func TestListAndCountLockfileIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -1183,58 +1184,73 @@ func TestListLockfileIndexes(t *testing.T) {
 		{ID: 3, RepositoryID: 2, Commit: "d34db33f", LockfileReferenceIDs: []int{5}, Lockfile: "lock2.file", Fidelity: "flat"},
 	}
 
-	for _, tt := range []struct {
-		opts     ListLockfileIndexesOpts
-		expected []shared.LockfileIndex
+	for i, tt := range []struct {
+		opts          ListLockfileIndexesOpts
+		expected      []shared.LockfileIndex
+		expectedCount int
 	}{
 		{
-			opts:     ListLockfileIndexesOpts{},
-			expected: []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1], lockfileIndexes[2]},
+			opts:          ListLockfileIndexesOpts{},
+			expected:      []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1], lockfileIndexes[2]},
+			expectedCount: 3,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{Limit: 2},
-			expected: []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+			opts:          ListLockfileIndexesOpts{Limit: 2},
+			expected:      []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+			expectedCount: 3,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{After: 1, Limit: 2},
-			expected: []shared.LockfileIndex{lockfileIndexes[1], lockfileIndexes[2]},
+			opts:          ListLockfileIndexesOpts{After: 1, Limit: 2},
+			expected:      []shared.LockfileIndex{lockfileIndexes[1], lockfileIndexes[2]},
+			expectedCount: 3,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{After: 2, Limit: 2},
-			expected: []shared.LockfileIndex{lockfileIndexes[2]},
+			opts:          ListLockfileIndexesOpts{After: 2, Limit: 2},
+			expected:      []shared.LockfileIndex{lockfileIndexes[2]},
+			expectedCount: 3,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{RepoName: "foo"},
-			expected: []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+			opts:          ListLockfileIndexesOpts{RepoName: "foo"},
+			expected:      []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+			expectedCount: 2,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{RepoName: "bar"},
-			expected: []shared.LockfileIndex{lockfileIndexes[2]},
+			opts:          ListLockfileIndexesOpts{RepoName: "bar"},
+			expected:      []shared.LockfileIndex{lockfileIndexes[2]},
+			expectedCount: 1,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{Commit: "cafebabe"},
-			expected: []shared.LockfileIndex{lockfileIndexes[0]},
+			opts:          ListLockfileIndexesOpts{Commit: "cafebabe"},
+			expected:      []shared.LockfileIndex{lockfileIndexes[0]},
+			expectedCount: 1,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{Commit: "d34db33f", RepoName: "bar"},
-			expected: []shared.LockfileIndex{lockfileIndexes[2]},
+			opts:          ListLockfileIndexesOpts{Commit: "d34db33f", RepoName: "bar"},
+			expected:      []shared.LockfileIndex{lockfileIndexes[2]},
+			expectedCount: 1,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{Lockfile: "lock.file"},
-			expected: []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+			opts:          ListLockfileIndexesOpts{Lockfile: "lock.file"},
+			expected:      []shared.LockfileIndex{lockfileIndexes[0], lockfileIndexes[1]},
+			expectedCount: 2,
 		},
 		{
-			opts:     ListLockfileIndexesOpts{Lockfile: "lock2.file"},
-			expected: []shared.LockfileIndex{lockfileIndexes[2]},
+			opts:          ListLockfileIndexesOpts{Lockfile: "lock2.file"},
+			expected:      []shared.LockfileIndex{lockfileIndexes[2]},
+			expectedCount: 1,
 		},
 	} {
-		lockfiles, err := store.ListLockfileIndexes(ctx, tt.opts)
+		lockfiles, count, err := store.ListLockfileIndexes(ctx, tt.opts)
 		if err != nil {
 			t.Fatalf("error: %s", err)
 		}
 
 		if diff := cmp.Diff(tt.expected, lockfiles); diff != "" {
-			t.Errorf("unexpected lockfiles (-want +got):\n%s", diff)
+			t.Errorf("[%d] unexpected lockfiles (-want +got):\n%s", i, diff)
+		}
+
+		if diff := cmp.Diff(tt.expectedCount, count); diff != "" {
+			t.Errorf("[%d] unexpected lockfiles count (-want +got):\n%s", i, diff)
 		}
 	}
 }
