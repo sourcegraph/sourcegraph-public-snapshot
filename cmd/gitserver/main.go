@@ -396,22 +396,22 @@ func editGitHubAppExternalServiceConfigToken(
 	var pkey []byte
 	var appID string
 
-	if dotcomConfig != nil {
+	if dotcomConfig != nil && envvar.SourcegraphDotComMode() {
 		pkey, err = base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
 		if err != nil {
 			return "", errors.Wrap(err, "decode private key")
 		}
 
 		appID = dotcomConfig.GithubAppCloud.AppID
-	}
-
-	if gitHubAppConfig != nil {
+	} else if gitHubAppConfig != nil {
 		pkey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
 		if err != nil {
 			return "", errors.Wrap(err, "decode private key")
 		}
 
 		appID = gitHubAppConfig.AppID
+	} else {
+		return "", errors.Wrap(err, "no site-level or dotcom GitHub App config found")
 	}
 
 	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
