@@ -241,16 +241,12 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                         )
                     }
                     const editorElement = document.querySelector<HTMLElement>(selector)
-                    if (!editorElement) {
-                        throw new Error(`Unable to find element with selector: ${selector}`)
+                    if (editorElement) {
+                        // Returns an EditorView
+                        // See https://codemirror.net/docs/ref/#view.EditorView^findFromDOM
+                        return fromDOM(editorElement)?.state.sliceDoc()
                     }
-                    // Returns an EditorView
-                    // See https://codemirror.net/docs/ref/#view.EditorView^findFromDOM
-                    const editor = fromDOM(editorElement)
-                    if (!editor) {
-                        throw new Error(`Element with selector "${selector}" is not a CodeMirror editor.`)
-                    }
-                    return editor.state.sliceDoc()
+                    return undefined
                 }, rootSelector)
             },
             replace(newText: string, method = 'type') {
