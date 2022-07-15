@@ -14,6 +14,10 @@ const ExternalServicePage = lazyComponent(
     () => import('../components/externalServices/ExternalServicePage'),
     'ExternalServicePage'
 )
+const GitHubAppSetupPage = lazyComponent(
+    () => import('../components/externalServices/GitHubAppSetupPage'),
+    'GitHubAppSetupPage'
+)
 
 export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
@@ -51,6 +55,11 @@ export const siteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
     {
         path: '/external-services/new',
         render: lazyComponent(() => import('./SiteAdminAddExternalServicesPage'), 'SiteAdminAddExternalServicesPage'),
+        exact: true,
+    },
+    {
+        path: '/external-services/github-app',
+        render: () => <GitHubAppSetupPage />,
         exact: true,
     },
     {
