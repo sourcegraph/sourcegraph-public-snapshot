@@ -87,4 +87,4 @@ Please refer to our reference architecture docs (coming soon) or contact our tea
 
 #### How does Sourcegraph scale?
 
-- [Click here to learn more about how each Sourcegraph service scales.](./scale)
+- [Click here to learn more about how each Sourcegraph service scales.](scale.md))
