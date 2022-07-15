@@ -8,13 +8,17 @@ import (
 )
 
 type LockfileIndexResolver struct {
-	executor shared.LockfileIndex
+	lockfile shared.LockfileIndex
 }
 
 func NewExecutorResolver(executor shared.LockfileIndex) *LockfileIndexResolver {
-	return &LockfileIndexResolver{executor: executor}
+	return &LockfileIndexResolver{lockfile: executor}
 }
 
 func (e *LockfileIndexResolver) ID() graphql.ID {
-	return relay.MarshalID("LockfileIndex", (int64(e.executor.ID)))
+	return relay.MarshalID("LockfileIndex", (int64(e.lockfile.ID)))
+}
+
+func (e *LockfileIndexResolver) Lockfile() string {
+	return e.lockfile.Lockfile
 }
