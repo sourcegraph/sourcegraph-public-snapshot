@@ -138,7 +138,7 @@ This behavior can be controlled by setting the `StalledMaxAge` and `MaxNumResets
 
 Cancelation of jobs in the database-backend store can be achieved in two ways:
 1. By removing the job record from the database. The worker will eventually notice that the record doesn't exist anymore and will stop execution.
-1. By setting `cancel` to `TRUE` on the record. Paired with the worker store setting `CancelInterval` will check for records to be canceled. These will ultimately end up in state `'canceled'`. This can be used to keep the record while still being able to cancel workloads.
+1. By setting `cancel` to `TRUE` on the record. If `CancelInterval` is set on the worker store, it will check for records to be canceled. These will ultimately end up in state `'canceled'`. This can be used to keep the record while still being able to cancel workloads.
 
 ## Adding a new worker
 
