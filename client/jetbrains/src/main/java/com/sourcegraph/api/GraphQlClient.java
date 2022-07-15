@@ -1,6 +1,10 @@
 package com.sourcegraph.api;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
+import org.apache.http.HttpEntity;
+import org.apache.http.HttpResponse;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -8,6 +12,7 @@ import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.util.EntityUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -16,14 +21,24 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
-public class GraphQl {
-    public static int callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws IOException {
+public class GraphQlClient {
+    public static HttpResponse callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws IOException {
         HttpPost request = createRequest(instanceUrl, accessToken, query, variables);
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             CloseableHttpResponse response = client.execute(request);
             response.close();
-            return response.getStatusLine().getStatusCode();
+            return response;
         }
+    }
+
+    public static JsonObject getResponseBodyJson(@NotNull HttpResponse response) throws IOException, JsonSyntaxException, IllegalStateException {
+        HttpEntity entity = response.getEntity();
+        String result = EntityUtils.toString(entity);
+        return JsonParser.parseString(result).getAsJsonObject();
+    }
+
+    public static int getStatusCode(@NotNull HttpResponse response) {
+        return response.getStatusLine().getStatusCode();
     }
 
     @NotNull

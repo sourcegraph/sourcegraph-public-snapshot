@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
+import com.sourcegraph.api.GraphQlClient;
 import com.sourcegraph.config.ConfigUtil;
 import com.sourcegraph.config.SettingsComponent;
 import org.jetbrains.annotations.NotNull;
@@ -49,7 +50,7 @@ public class GraphQlLogger {
             variables.add("events", events);
 
             try {
-                int responseStatusCode = GraphQl.callGraphQLService(instanceUrl, accessToken, query, variables);
+                int responseStatusCode = GraphQlClient.getStatusCode(GraphQlClient.callGraphQLService(instanceUrl, accessToken, query, variables));
                 if (callback != null) {
                     callback.accept(responseStatusCode);
                 }
