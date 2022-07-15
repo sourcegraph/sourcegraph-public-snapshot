@@ -39,49 +39,54 @@ For example, if you plan to add 100% more engaged users, and the resource usage 
 
 ## Components Overview
 
-Here is a list of components you will find in a typical Sourcegraph deployment:
+Here is a list of components you can find in a typical Sourcegraph deployment:
 
 ### Core Components
 
-|                                                |                                                                                                                                                                                                                                                                                                   |
-| :--------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [frontend](scale.md#frontend)                     | Serves the web application, extensions, and graphQL services. Almost every service has a link back to the frontend, from which it gathers configuration updates.                                                                                                                                  |
-| [github-proxy](scale.md#github-proxy)             | Proxies all requests to github.com to keep track of rate limits and prevent triggering abuse mechanisms                                                                                                                                                                                           |
-| [gitserver](scale.md#gitserver)                   | Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git                                                                                                                                                                          |
-| [precise-code-intel](scale.md#precise-code-intel) | Converts LSIF upload file into Postgres data. The entire index must be read into memory to be correlated                                                                                                                                                                                          |
-| [repo-updater](scale.md#repo-updater)             | Repo-updater tracks the state of repositories, and is responsible for automatically scheduling updates using gitserver. Other apps which desire updates or fetches should be telling repo-updater, rather than using gitserver directly, so repo-updater can take their changes into account.     |
-| [searcher](scale.md#searcher)                     | Provides on-demand unindexed search for repositories. It fetches archives from gitserver and searches them with regexp                                                                                                                                                                            |
-| [symbols](scale.md#symbols)                       | Indexes symbols in repositories using Ctags. By default, the symbols service saves SQLite DBs as files on disk, and copies an old one to a new file when a user visits a new commit. If Rockskip is enabled, the symbols are stored in the codeintel-db instead while the cache is stored on disk |
-| [syntect-server](scale.md#syntect-server)         | An HTTP server that exposes the Rust Syntect syntax highlighting library for use by other services                                                                                                                                                                                                |
-| [worker](scale.md#worker)                         | Runs a collection of background jobs (for both Code-Intel and Code-Insight) periodically or in response to an external event. It is currently janitorial and commit based.                                                                                                                        |
-| [zoekt-indexserver](scale.md#zoekt-indexserver)   | Indexes all enabled repositories on Sourcegraph, as well as keeping the indexes up to date                                                                                                                                                                                                        |
-| [zoekt-webserver](scale.md#zoekt-webserver)       | Runs searches from in-memory indexes, but persists these indexes to disk to avoid re-indexing everything on startup                                                                                                                                                                               |
-
-### Databases
-
-|                 |                                                                                                                                                                             |
-| :-------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [codeinsights-db](scale.md#codeinsights-db) | A PostgreSQL instance for storing code insights data                                                                                                                        |
-| [codeintel-db](scale.md#codeintel-db)    | A PostgreSQL instance for storing large-volume precise code intelligence data                                                                                               |
-| [minio](scale.md#minio)           | A MinIO instance that serves as a local S3-compatible object storage to hold user uploads for code-intel before they can be processed                                       |
-| [pgsql](scale.md#pgsql)           | The main database. It is a PostgreSQL instance where things like repo lists, user data, site config files are stored (anything not related to code-intel and code-insights) |
-| [redis-cache](scale.md#redis-cache)     | A Redis instance for storing cache data.                                                                                                                                    |
-| [redis-store](scale.md#redis-store)     | A Redis instance for storing short-term information such as user sessions.                                                                                                  |
+|                                                   |                                                                                                                                                                                                                                                                                               |
+| :------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [frontend](scale.md#frontend)                     | Serves the web application, extensions, and graphQL services. Almost every service has a link back to the frontend, from which it gathers configuration updates.                                                                                                                              |
+| [github-proxy](scale.md#github-proxy)             | Proxies all requests to github.com to keep track of rate limits and prevent triggering abuse mechanisms                                                                                                                                                                                       |
+| [gitserver](scale.md#gitserver)                   | Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git                                                                                                                                                                      |
+| [precise-code-intel](scale.md#precise-code-intel) | Converts LSIF upload file into Postgres data. The entire index must be read into memory to be correlated                                                                                                                                                                                      |
+| [repo-updater](scale.md#repo-updater)             | Repo-updater tracks the state of repositories, and is responsible for automatically scheduling updates using gitserver. Other apps which desire updates or fetches should be telling repo-updater, rather than using gitserver directly, so repo-updater can take their changes into account. |
+| [searcher](scale.md#searcher)                     | Provides on-demand unindexed search for repositories. It fetches archives from gitserver and searches them with regexp                                                                                                                                                                        |
+| [symbols](scale.md#symbols)                       | Indexes symbols in repositories using Ctags.                                                                                                                                                                                                                                                  |
+| [syntect-server](scale.md#syntect-server)         | An HTTP server that exposes the Rust Syntect syntax highlighting library for use by other services                                                                                                                                                                                            |
+| [worker](scale.md#worker)                         | Runs a collection of background jobs (for both Code-Intel and Code-Insight) periodically or in response to an external event. It is currently janitorial and commit based.                                                                                                                    |
+| [zoekt-indexserver](scale.md#zoekt-indexserver)   | Indexes all enabled repositories on Sourcegraph, as well as keeping the indexes up to date                                                                                                                                                                                                    |
+| [zoekt-webserver](scale.md#zoekt-webserver)       | Runs searches from in-memory indexes, but persists these indexes to disk to avoid re-indexing everything on startup                                                                                                                                                                           |
 
 ### External Services
 
-|            |                                                                                                                                     |
-| :--------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-| [cadvisor](scale.md#cadvisor)   | A cAdvisor instance that exports container monitoring metrics scraped by Prometheus and visualized in Grafana                       |
-| [grafana](scale.md#grafana)    | A Grafana instance that displays data from Prometheus and Jaeger. It is shipped with customized dashboards for Sourcegraph services |
-| [jaeger](scale.md#jeager)     | A Jaeger instance for end-to-end distributed tracing                                                                                |
-| [prometheus](scale.md#prometheus) | Collecting high-level, and low-cardinality, metrics across services.                                                                |
+A list of services that can be externalized. See our docs on [Using external services with Sourcegraph](../external_service/index.md) for detailed instruction.
+
+|                                             |                                                                                                                                                                                             |
+| :------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [codeinsights-db](scale.md#codeinsights-db) | A PostgreSQL instance for storing code insights data                                                                                                                                        |
+| [codeintel-db](scale.md#codeintel-db)       | A PostgreSQL instance for storing large-volume precise code intelligence data                                                                                                               |
+| [jaeger](scale.md#jeager)                   | A Jaeger instance for end-to-end distributed tracing                                                                                                                                        |
+| [minio](scale.md#minio)                     | A MinIO instance that serves as a local S3-compatible object storage to hold user uploads for code-intel before they can be processed                                                       |
+| [pgsql](scale.md#pgsql)                     | The main database --a PostgreSQL instance for storing long-term information, such as user information when using Sourcegraph’s built-in authentication provider instead of an external one. |
+| [redis-cache](scale.md#redis-cache)         | A Redis instance for storing cache data.                                                                                                                                                    |
+| [redis-store](scale.md#redis-store)         | A Redis instance for storing short-term information such as user sessions.                                                                                                                  |
+
+### Monitoring Tools
+
+Sourcegraph provides a number of tools to monitor the health and usage of your deployment. See our [Observability docs](../observability/index.md) for more information.
+You can also learn more about the architecture of Sourcegraph’s monitoring stack in [Sourcegraph monitoring architecture](https://handbook.sourcegraph.com/departments/engineering/dev/tools/observability/monitoring_architecture)
+
+|                                   |                                                                                                                                     |
+| :-------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| [cadvisor](scale.md#cadvisor)     | A custom cAdvisor instance that exports container monitoring metrics scraped by Prometheus and visualized in Grafana                |
+| [grafana](scale.md#grafana)       | A Grafana instance that displays data from Prometheus and Jaeger. It is shipped with customized dashboards for Sourcegraph services |
+| [prometheus](scale.md#prometheus) | A customized Prometheus instance for collecting high-level and low-cardinality, metrics across services                             |
 
 ---
 
 ## Scaling Guideline
 
-> This section provides you with a high-level overview of each Sourcegraph service --how they scale, how they work, and how they work together.
+> This section provides you with a high-level overview of how each Sourcegraph service works with resources, with a list of scaling factors and basic guideline 
 
 ### cAdvisor
 
@@ -90,11 +95,11 @@ A cAdvisor instance.
 It exports container monitoring metrics scraped by Prometheus and visualized in Grafana.
 ```
 
-| Resources   |                                                                       |
-| :---------- | :-------------------------------------------------------------------- |
-| `Overview`  | Designed to be a small footprint service                              |
-| `Factors`   | The number of requests (from Prometheus) would be the primary traffic |
-| `Guideline` | The default setup should work on deployments of all size              |
+| Resources   |                                                                                                                                                                             |
+| :---------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Overview`  | Scaling is not necessary as it is designed to be a small footprint service                                                                                                  |
+| `Factors`   | The number of requests (from Prometheus) would be the primary traffic                                                                                                       |
+| `Guideline` | Read [the list of known issues](https://docs.sourcegraph.com/dev/background-information/observability/cadvisor#known-issues) that can cause performance issues for cAdvisor |
 
 ---
 
@@ -113,7 +118,7 @@ A PostgreSQL instance for storing code insights data.
 
 | CPU           |                                                     |
 | :------------ | :-------------------------------------------------- |
-| `Overview`    | Database                                            |
+| `Overview`    | Executes queries                                    |
 | ``Factors``   | Number of active users                              |
 |               | Number of repositories                              |
 |               | Number of insight series defined                    |
@@ -139,7 +144,8 @@ A PostgreSQL instance for storing code insights data.
 |             | Number of matches per insight series                                       |
 |             | Compression ratio of insight data                                          |
 | `Guideline` | Depends entirely on usage and the specific Insights that are being created |
-| `Type`      | PVC                                                                        |
+| `Type`      | Persistent Volumes for Kubernetes                                          |
+|             | Persistent SSD for Docker Compose                                          |
 
 ---
 
@@ -157,7 +163,7 @@ A PostgreSQL instance for storing large-volume precise code intelligence data
 
 | CPU         |                                                                                                    |
 | :---------- | :------------------------------------------------------------------------------------------------- |
-| `Overview`  | Database                                                                                           |
+| `Overview`  | Executes queries                                                                                   |
 | `Factors`   | Number of active users                                                                             |
 |             | Frequency with which the instance runs precise code intelligence queries                           |
 | `Guideline` | The default value should work for all deployments. Please refer to the note below for more detail. |
@@ -179,7 +185,8 @@ A PostgreSQL instance for storing large-volume precise code intelligence data
 | `Guideline` | The index size and processed size are currently based on indexer used                   |
 |             | Requires ~4x the total size of repositories indexed by Rockskip                         |
 |             | Future support for SCIP provides a more stable approximation of index size -> processed |
-| `Type`      | PVC                                                                                     |
+| `Type`      | Persistent Volumes for Kubernetes                                                       |
+|             | Persistent SSD for Docker Compose                                                       |
 
 > NOTE: The database must be configured properly to consume resources properly and efficiently for better performance and to avoid regular usage from overwhelming built-in utilities (like autovacuum for example).  See our [database configuration guide](https://docs.sourcegraph.com/admin/config/postgres-conf) for more information.
 
@@ -248,12 +255,12 @@ It also prevents triggering abuse mechanisms.
 | `Factors`   | Number of API requests to GitHub and GitHub Enterprise      |
 | `Guideline` | The default setup should be sufficient for most deployments |
 
-| Storage     |                             |
-| :---------- | :-------------------------- |
-| `Overview`  | Does not require disk space |
-| `Factors`   | -                           |
-| `Guideline` | -                           |
-| `Type`      | -                           |
+| Storage     |      |
+| :---------- | :--- |
+| `Overview`  | -    |
+| `Factors`   | -    |
+| `Guideline` | -    |
+| `Type`      | None |
 
 ---
 
@@ -291,7 +298,7 @@ Other Sourcegraph services communicate with gitserver when they need data from g
 | `Guideline` | Greater than 20% free space accounting for the size of all repositories on disk, including soft-deleted repositories |
 |             | It can also be customized via a variable named SRC_REPOS_DESIRED_PERCENT_FREE                                        |
 |             | Update disk size of indexserver per adjustments made for gitserver disk size                                         |
-| `Type`      | Disk for Kubernetes                                                                                                  |
+| `Type`      | Persistent Volumes for Kubernetes                                                                                    |
 |             | Persistent SSD for Docker Compose                                                                                    |
 
 ---
@@ -331,6 +338,7 @@ A Jaeger instance for end-to-end distributed tracing
 ```
 A MinIO instance that serves as local S3-compatible object storage.
 It holds index uploads for precise code intelligence before they can be processed.
+The data is for temporary storage and content will be automatically deleted once processed.
 ```
 
 | Replica     |                                                         |
@@ -356,7 +364,8 @@ It holds index uploads for precise code intelligence before they can be processe
 | `Overview`  | A temporary storage location for the LSIF uploads |
 | `Factors`   | Size of the largest LSIF index                    |
 | `Guideline` | Equal to the size of the largest LSIF index file  |
-| `Type`      | PVC                                               |
+| `Type`      | Persistent Volumes for Kubernetes                 |
+|             | Persistent SSD for Docker Compose                 |
 
 ---
 
@@ -377,7 +386,7 @@ Basically anything not related to code-intel.
 
 | CPU         |                                                                                                                                                                                         |
 | :---------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Overview`  | A thread is dispatched per request                                                                                                                                                      |
+| `Overview`  | Executes queries                                                                                                                                                                        |
 | `Factors`   | The default setup should be sufficient for most deployments                                                                                                                             |
 | `Guideline` | The database must be configured properly following our [Postgres configuration guide](https://docs.sourcegraph.com/admin/config/postgres-conf)to use the assigned resources efficiently |
 
@@ -394,7 +403,8 @@ Basically anything not related to code-intel.
 |             | Number of insight queries                                                                                                                                                               |
 | `Guideline` | Starts at default as the value grows depending on the number of active users and activity                                                                                               |
 |             | The database must be configured properly following our [Postgres configuration guide](https://docs.sourcegraph.com/admin/config/postgres-conf)to use the assigned resources efficiently |
-| `Type`      | PVC                                                                                                                                                                                     |
+| `Type`      | Persistent Volumes for Kubernetes                                                                                                                                                       |
+|             | Persistent SSD for Docker Compose                                                                                                                                                       |
 
 > NOTE: The database must be configured properly to consume resources properly and efficiently for better performance and to avoid regular usage from overwhelming built-in utilities (like autovacuum for example).  See our [database configuration guide](https://docs.sourcegraph.com/admin/config/postgres-conf) for more information.
 
@@ -413,49 +423,48 @@ It converts LSIF upload file into Postgres data.
 | `Factors`   | Number of jobs in the upload queue                                                            |
 | `Guideline` | When there is a large queue backlog to increase the throughput at which uploads are processed |
 
-| CPU         |                                                                                                                                                                                                                                                              |
-| :---------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Overview`  | This service is I/O bound, reading from MinIO/GCS/S3 and writing to pgsql/codeintel-db. Correlation has been fairly optimized. Upload jobs may finish faster if the CPU is increased, but having it at a reasonable minimum should be the ideal target here. |
-| `Factors`   | Number of jobs in the upload queue                                                                                                                                                                                                                           |
-| `Guideline` | -                                                                                                                                                                                                                                                            |
+| CPU         |                                                                                                                                |
+| :---------- | :----------------------------------------------------------------------------------------------------------------------------- |
+| `Overview`  | This service is I/O bound: reading from MinIO/GCS/S3 and writing to pgsql/codeintel-db. Correlation has been fairly optimized. |
+| `Factors`   | Number of jobs in the upload queue                                                                                             |
+| `Guideline` | Upload jobs may finish faster if the CPU is increased, but having it at a reasonable minimum should be the ideal target here.  |
 
-| MEM         |                                                                                                                        |
-| :---------- | :--------------------------------------------------------------------------------------------------------------------- |
-| `Overview`  | The entire LSIF index file must be read into memory to be correlated. An upload will fail with an error message if OOM |
-| `Factors`   | Size of the largest LSIF index                                                                                         |
-| `Guideline` | The entire index must be read into memory to be correlated.                                                            |
-|             | Add memory when the uploaded index is too large to be processed without OOMing                                         |
-|             | Requires two times of the size of the largest LSIF index times upload_concurrency in memory                            |
+| MEM         |                                                                                                                     |
+| :---------- | :------------------------------------------------------------------------------------------------------------------ |
+| `Overview`  | The entire LSIF index file must be read into memory to be correlated, and causes uploads to fail when out of memory |
+| `Factors`   | Size of the largest LSIF index                                                                                      |
+| `Guideline` | The entire index must be read into memory to be correlated.                                                         |
+|             | Add memory when the uploaded index is too large to be processed without OOMing                                      |
+|             | Requires two times of the size of the largest LSIF index times upload_concurrency in memory                         |
 
-| Storage     |                             |
-| :---------- | :-------------------------- |
-| `Overview`  | Does not require disk space |
-| `Factors`   | -                           |
-| `Guideline` | -                           |
-| `Type`      | -                           |
+| Storage     |      |
+| :---------- | :--- |
+| `Overview`  | -    |
+| `Factors`   | -    |
+| `Guideline` | -    |
+| `Type`      | None |
 
 ---
 
 ### prometheus
 
 ```
-A Prometheus instance for collecting high-level and low-cardinality, metrics across services.
+A customized Prometheus instance for collecting high-level and low-cardinality, metrics across services.
+It currently bundles Alertmanager as well as integrations to the Sourcegraph web application.
 ```
 
-| Resources   |                                                                            |
-| :---------- | :------------------------------------------------------------------------- |
-| `Overview`  | The default setup should be sufficient for most deployments                |
-| `Factors`   | Size of deployment                                                         |
-| `Guideline` | Restrict Prometheus to scrape metrics from your Sourcegraph namespace only |
-
-> WARNING: Instances deployed to a Kubernetes multi-tenant cluster often run out of memory due to misconfiguration. Please ensure to configure your instance properly so that Prometheus is only scraping metrics from your Sourcegraph deployment namespace.
+| Resources   |                                                                                                                                                                                                        |
+| :---------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Overview`  | The default setup should be sufficient for most deployments                                                                                                                                            |
+| `Factors`   | Number of active users                                                                                                                                                                                 |
+| `Guideline` | For Kubernetes deployments, please follow the [instruction here](kubernetes/configure.md#filtering-cadvisor-metrics) to prevent Prometheus from scraping metrics outside of your Sourcegraph namespace |
 
 ---
 
 ### redis-cache
 
 ```
-A Redis instance for storing frontend cache data.
+A Redis instance for storing cache data for frontend.
 ```
 
 | Replica     |                                                         |
@@ -543,19 +552,19 @@ Services that desire updates or fetch communicate with repo-updater.
 | `Factors`   | Most of the syncing jobs are related more to internal and code host-specific rate limits |
 | `Guideline` | -                                                                                        |
 
-| Memory      |                                                                                                                                                                                                                                    |
-| :---------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Overview`  | The queue of repositories that need to be updated is stored in memory. It uses an in-memory queue and is mostly network intensive as it makes API calls and processes and writes those newly available data to the pgsql database. |
-| `Factors`   | Number of repositories                                                                                                                                                                                                             |
-| `Guideline` | Not memory intensive                                                                                                                                                                                                               |
-|             | This service is safe to restart at any time. The existing in-memory update queue is reset upon restart                                                                                                                             |
+| Memory      |                                                                                                                                                                                                                                   |
+| :---------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Overview`  | The queue of repositories that need to be updated is stored in memory. It uses an in-memory queue and is mostly network intensive as it makes API calls and processes and writes those newly available data to the pgsql database |
+| `Factors`   | Number of repositories                                                                                                                                                                                                            |
+| `Guideline` | Not memory intensive                                                                                                                                                                                                              |
+|             | This service is safe to restart at any time. The existing in-memory update queue is reset upon restart                                                                                                                            |
 
-| Storage     |                                                                 |
-| :---------- | :-------------------------------------------------------------- |
-| `Overview`  | A stateless service that directly writes to the pgsql database. |
-| `Factors`   | -                                                               |
-| `Guideline` | -                                                               |
-| `Type`      | -                                                               |
+| Storage     |                                                                |
+| :---------- | :------------------------------------------------------------- |
+| `Overview`  | A stateless service that directly writes to the pgsql database |
+| `Factors`   | -                                                              |
+| `Guideline` | -                                                              |
+| `Type`      | None                                                           |
 
 ---
 
@@ -604,7 +613,7 @@ Provides on-demand unindexed search for repositories.
 
 ```
 The backend for symbols operations.
-It indexes symbols in repositories using Ctags.
+Indexes symbols in repositories using Ctags.
 ```
 
 | Replica     |                                                                             |
@@ -627,14 +636,14 @@ It indexes symbols in repositories using Ctags.
 | `Factors`   | Size of all repositories                                            |
 | `Guideline` | Scale with the size of repositories                                 |
 
-| Storage     |                                                                                                                                                                                                                                                  |
-| :---------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `Overview`  | SBy default, the symbols service saves SQLite DBs as files on disk in LRU fashion and copies an old one to a new file when a user visits a new commit. If Rockskip is enabled, the symbols for some repos are stored in the codeintel-db instead |
-| `Factors`   | Size of the largest repository                                                                                                                                                                                                                   |
-| `Guideline` | At least 20% more than the size of your largest repository                                                                                                                                                                                       |
-|             | Using SSD is highly preferred                                                                                                                                                                                                                    |
-| `Type`      | Ephemeral storage for Kubernetes deployments.                                                                                                                                                                                                    |
-|             | Non-persistent SSD for Docker Compose                                                                                                                                                                                                            |
+| Storage     |                                                                                                                                                                                                                 |
+| :---------- | :-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Overview`  | Saves SQLite DBs as files on disk in LRU fashion and copies an old one to a new file when a user visits a new commit. If Rockskip is enabled, the symbols for some repos are stored in the codeintel-db instead |
+| `Factors`   | Size of the largest repository                                                                                                                                                                                  |
+| `Guideline` | At least 20% more than the size of your largest repository                                                                                                                                                      |
+|             | Using SSD is highly preferred                                                                                                                                                                                   |
+| `Type`      | Ephemeral storage for Kubernetes deployments.                                                                                                                                                                   |
+|             | Non-persistent SSD for Docker Compose                                                                                                                                                                           |
 
 ---
 
@@ -644,12 +653,12 @@ It indexes symbols in repositories using Ctags.
 An HTTP server that exposes the Rust Syntect syntax highlighting library to other services.
 ```
 
-| Replica     |                                                                                                                                                                                       |
-| :---------- | :------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `Overview`  | The constant overhead applies per worker process. Having a large number of processes is not necessarily useful (consumes more memory while idling) if there aren't many active users. |
-| `Factors`   | Number of active users                                                                                                                                                                |
-| `Guideline` | More users = more CPU and replicas                                                                                                                                                    |
-|             | Add replica when syntax highlighting queries take a long duration because of existing traffic                                                                                         |
+| Replica     |                                                                                                                                                                                      |
+| :---------- | :----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `Overview`  | The constant overhead applies per worker process. Having a large number of processes is not necessarily useful (consumes more memory while idling) if there aren't many active users |
+| `Factors`   | Number of active users                                                                                                                                                               |
+| `Guideline` | More users = more CPU and replicas                                                                                                                                                   |
+|             | Add replica when syntax highlighting queries take a long duration because of existing traffic                                                                                        |
 
 | CPU         |                                                                                                                                                                                                                                                                  |
 | :---------- | :--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -663,19 +672,19 @@ An HTTP server that exposes the Rust Syntect syntax highlighting library to othe
 | `Factors`   | Number of active users                                                                                                                              |
 | `Guideline` | There is additional memory consumption on receiving requests (< 25 MB), although, that's generally much smaller than the constant overhead (1-2 GB) |
 
-| Storage     |                         |
-| :---------- | :---------------------- |
-| `Overview`  | Does not use disk space |
-| `Factors`   | -                       |
-| `Guideline` | -                       |
-| `Type`      | -                       |
+| Storage     |      |
+| :---------- | :--- |
+| `Overview`  | -    |
+| `Factors`   | -    |
+| `Guideline` | -    |
+| `Type`      | None |
 
 ---
 
 ### worker
 
 ```
-worker runs a collection of background jobs periodically or in response to an external event. 
+Runs a collection of background jobs periodically or in response to an external event. 
 It is currently janitorial and commit-based.
 ```
 
@@ -701,12 +710,12 @@ It is currently janitorial and commit-based.
 |             | Number of insight series defined                               |
 | `Guideline` | Grow with the number of repositories and code-insight users    |
 
-| Storage     |                         |
-| :---------- | :---------------------- |
-| `Overview`  | Does not use disk space |
-| `Factors`   | -                       |
-| `Guideline` | -                       |
-| `Type`      | -                       |
+| Storage     |      |
+| :---------- | :--- |
+| `Overview`  | -    |
+| `Factors`   | -    |
+| `Guideline` | -    |
+| `Type`      | None |
 
 ---
 
@@ -714,7 +723,8 @@ It is currently janitorial and commit-based.
 
 ```
 Indexes all enabled repositories on Sourcegraph.
-It also keeps the indexes up to date
+It also keeps the indexes up to date.
+Lives inside the indexed-search pod in a Kubernetes deployment.
 ```
 
 | Replica     |                                           |
@@ -743,7 +753,7 @@ It also keeps the indexes up to date
 | `Overview`  | Stores search indexes             |
 | `Factors`   | Size of all repositories          |
 | `Guideline` | 50% of the gitserver disk size    |
-| `Type`      | PVC for Kubernetes                |
+| `Type`      | Persistent Volumes for Kubernetes |
 |             | Persistent SSD for Docker Compose |
 
 ---
@@ -753,6 +763,7 @@ It also keeps the indexes up to date
 ```
 Runs searches from in-memory indexes.
 The indexes are also persisted to disk to avoid re-indexing on startup.
+Lives inside the indexed-search pod in a Kubernetes deployment.
 ```
 
 | Replica     |                                                         |
@@ -781,7 +792,7 @@ The indexes are also persisted to disk to avoid re-indexing on startup.
 | `Overview`  | Serves and processes data from index-server |
 | `Factors`   | Size of all repositories                    |
 | `Guideline` | Scale with zoekt-indexserver                |
-| `Type`      | PVC for Kubernetes                          |
+| `Type`      | Persistent Volumes for Kubernetes           |
 |             | Persistent SSD for Docker Compose           |
 
 ---
