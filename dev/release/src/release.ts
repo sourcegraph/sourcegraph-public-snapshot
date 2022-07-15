@@ -301,11 +301,17 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         run: async config => {
             const { upcoming: release } = await releaseVersions(config)
             const branch = `${release.major}.${release.minor}`
-
+            let message: string
+            // notify cs team on patch release cut
+            if (release.patch !== 0) {
+                message = `:mega: *${release.version} branch has been cut cc: @cs`
+            } else {
+                message = `:mega: *${release.version} branch has been cut.`
+            }
             try {
                 await execa('git', ['branch', branch])
                 await execa('git', ['push', 'origin', branch])
-                await postMessage(`:mega: *${release.version} branch has been cut`, config.slackAnnounceChannel)
+                await postMessage(message, config.slackAnnounceChannel)
             } catch (error) {
                 console.error('Failed to create release branch', error)
             }
