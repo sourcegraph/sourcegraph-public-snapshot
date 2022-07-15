@@ -46,6 +46,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -125,65 +126,69 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
-                <div>
-                  <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
-                  >
+                <div
+                  class="fileMatchChildren"
+                  data-testid="file-match-children"
+                >
+                  <div>
                     <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
+                      class="test-file-match-children-item-wrapper itemCodeWrapper"
                     >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                      <div
+                        class="test-file-match-children-item item itemClickable"
+                        data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                        data-testid="file-match-children-item"
+                        role="link"
+                        tabindex="0"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <code
+                          class="code codeExcerpt"
+                          data-testid="code-excerpt"
+                        >
+                          <table>
+                            <tbody>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  1
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  2
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  3
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </code>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -315,6 +320,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -396,89 +402,93 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
-                <div>
-                  <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
-                  >
+                <div
+                  class="fileMatchChildren"
+                  data-testid="file-match-children"
+                >
+                  <div>
                     <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
+                      class="test-file-match-children-item-wrapper itemCodeWrapper"
                     >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                      <div
+                        class="test-file-match-children-item item itemClickable"
+                        data-href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
+                        data-testid="file-match-children-item"
+                        role="link"
+                        tabindex="0"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                4
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                5
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <code
+                          class="code codeExcerpt"
+                          data-testid="code-excerpt"
+                        >
+                          <table>
+                            <tbody>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  1
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  2
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  3
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  4
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  5
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </code>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -538,6 +548,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -617,65 +628,69 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
-                <div>
-                  <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
-                  >
+                <div
+                  class="fileMatchChildren"
+                  data-testid="file-match-children"
+                >
+                  <div>
                     <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
+                      class="test-file-match-children-item-wrapper itemCodeWrapper"
                     >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                      <div
+                        class="test-file-match-children-item item itemClickable"
+                        data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                        data-testid="file-match-children-item"
+                        role="link"
+                        tabindex="0"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <code
+                          class="code codeExcerpt"
+                          data-testid="code-excerpt"
+                        >
+                          <table>
+                            <tbody>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  1
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  2
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                              <tr>
+                                <td
+                                  class="line"
+                                >
+                                  3
+                                </td>
+                                <td
+                                  class="code"
+                                >
+                                   
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </code>
+                      </div>
                     </div>
                   </div>
                 </div>
