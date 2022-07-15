@@ -26,12 +26,12 @@
   },
   {
     "path": "internal/database",
-    "prefix": "ScanFirstBitbucketProjectPermissionsJob",
+    "prefix": "TestScanFirstBitbucketProjectPermissionsJob",
     "reason": "Used SELECT * in test, which is not backwards compatible. The actual code doesn't."
   },
   {
     "path": "internal/database",
-    "prefix": "BitbucketProjectPermissionsEnqueue",
+    "prefix": "TestBitbucketProjectPermissionsEnqueue",
     "reason": "Used SELECT * in test, which is not backwards compatible. The actual code doesn't."
   }
 ]
