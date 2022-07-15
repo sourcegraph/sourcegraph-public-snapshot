@@ -672,7 +672,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 // It returns the public non-archived repositories listed on the /search/repositories endpoint.
 // TODO: Remove this method when https://github.com/orgs/github-community/discussions/12554 gets resolved and just use listPublic()
 func (s *GitHubSource) listPublicNonArchived(ctx context.Context, results chan *githubResult) {
-	(&repositoryQuery{Query: "archived:false is:public", Searcher: s.v4Client}).Do(ctx, results)
+	s.listSearch(ctx, "archived:false is:public", results)
 }
 
 // listAffiliated handles the `affiliated` keyword of the `repositoryQuery` config option.
@@ -712,7 +712,7 @@ func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *g
 // created on it.
 var minCreated = time.Date(2007, time.June, 1, 0, 0, 0, 0, time.UTC)
 
-type dateRange struct{ From, To time.Time }
+type dateRange struct{ From, To, OriginalTo time.Time }
 
 func (r dateRange) String() string {
 	const dateFormat = "2006-01-02T15:04:05-07:00"
@@ -726,14 +726,12 @@ func (r dateRange) String() string {
 func (r dateRange) Size() time.Duration { return r.To.Sub(r.From) }
 
 type repositoryQuery struct {
-	Query        string
-	Created      *dateRange
-	Cursor       github.Cursor
-	First        int
-	Limit        int
-	Searcher     *github.V4Client
-	ExpandedFrom *time.Time
-	RefinedFrom  *time.Time
+	Query    string
+	Created  *dateRange
+	Cursor   github.Cursor
+	First    int
+	Limit    int
+	Searcher *github.V4Client
 }
 
 func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
@@ -757,10 +755,13 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			return
 		}
 
-		switch {
-		case res.TotalCount > q.Limit:
+		if res.TotalCount > q.Limit {
 			log15.Info(
-				fmt.Sprintf("repositoryQuery matched more than %d results, refining it and retrying, results count: %d", q.Limit, res.TotalCount),
+				"repositoryQuery matched more than limit, refining",
+				"limit",
+				q.Limit,
+				"results count",
+				res.TotalCount,
 				"query",
 				q.String(),
 			)
@@ -772,31 +773,8 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 
 			results <- &githubResult{err: errors.Errorf("repositoryQuery %q couldn't be refined further, results would be missed", q)}
 			return
-		case res.TotalCount < q.First:
-			// The total # of results between minCreated and now is less than 100, we break, so we can return those results
-			// because we will never find more.
-			if q.Created == nil || (q.Created != nil && q.Created.From.Sub(minCreated) <= 0) {
-				log15.Info(
-					fmt.Sprintf("repositoryQuery matched %d results, no more to find", res.TotalCount),
-					"query",
-					q.String(),
-				)
-				for i := range res.Repos {
-					results <- &githubResult{repo: &res.Repos[i]}
-				}
-				return
-			}
-			log15.Info(
-				fmt.Sprintf("repositoryQuery matched less than %d results, expanding it and retrying, results count: %d", q.First, res.TotalCount),
-				"query",
-				q.String(),
-			)
-			if q.Expand() {
-				log15.Info("repositoryQuery expanded", "query", q)
-				continue
-			}
-		}
 
+		}
 		log15.Info("repositoryQuery matched", "query", q, "total", res.TotalCount, "page", len(res.Repos))
 
 		for i := range res.Repos {
@@ -812,19 +790,14 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 }
 
 func (s *repositoryQuery) Next() bool {
-	if s.Created == nil || !s.Created.From.After(minCreated) || !s.Created.To.After(s.Created.From) {
+	if s.Created == nil || !s.Created.To.Before(s.Created.OriginalTo) || !s.Created.To.After(s.Created.From) {
 		return false
 	}
 
 	s.Cursor = ""
-	s.RefinedFrom = nil
-	s.ExpandedFrom = nil
 
-	size := s.Created.Size()
-	s.Created.To = s.Created.From.Add(-time.Second)
-	if s.Created.From = s.Created.To.Add(-size); s.Created.From.Before(minCreated) {
-		s.Created.From = minCreated
-	}
+	s.Created.From = s.Created.To.Add(time.Second)
+	s.Created.To = s.Created.OriginalTo
 
 	return true
 }
@@ -834,7 +807,8 @@ func (s *repositoryQuery) Next() bool {
 // use to miss matches.
 func (s *repositoryQuery) Refine() bool {
 	if s.Created == nil {
-		s.Created = &dateRange{From: minCreated, To: time.Now().UTC()}
+		timeNow := time.Now().UTC()
+		s.Created = &dateRange{From: minCreated, To: timeNow, OriginalTo: timeNow}
 		return true
 	}
 
@@ -843,43 +817,7 @@ func (s *repositoryQuery) Refine() bool {
 		return false
 	}
 
-	// when we refine we need to keep track of the goalpost for the sake of any
-	// expands happening afterwards
-	createdFrom := s.Created.From
-	s.RefinedFrom = &createdFrom
-
-	// There was an expansion in the past for this query, that means it is our new goalpost
-	// because we know if we got past it, we will get too few results
-	if s.ExpandedFrom != nil {
-		s.Created.From = s.Created.From.Add(s.ExpandedFrom.Sub(s.Created.From) / 2)
-		return true
-	}
-
-	s.Created.From = s.Created.From.Add(s.Created.Size() / 2)
-	return true
-}
-
-// Expand does one pass at expanding the query to match closer to 1000 repos, but still less.
-// This is so we maximize the number of matches in query search.
-func (s *repositoryQuery) Expand() bool {
-	if s.Created == nil || !s.Created.From.After(minCreated) {
-		// Can't expand further.
-		return false
-	}
-
-	// when we expand we need to keep track of the goalpost for the sake of any
-	// refines happening afterwards
-	createdFrom := s.Created.From
-	s.ExpandedFrom = &createdFrom
-
-	// There was a refining in the past for this query, that means it is our new goalpost
-	// because we know if we got past it, we will get too many results
-	if s.RefinedFrom != nil {
-		s.Created.From = s.Created.From.Add(-(s.Created.From.Sub(*s.RefinedFrom) / 2))
-		return true
-	}
-
-	s.Created.From = s.Created.From.Add(-(s.Created.From.Sub(minCreated) / 2))
+	s.Created.To = s.Created.To.Add(-(s.Created.Size() / 2))
 	return true
 }
 
