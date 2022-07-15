@@ -11,6 +11,11 @@
     padding: 0.25rem 0;
     position: relative;
 
+    :global(.core-workflow-improvements-enabled) & {
+        border: none !important;
+        border-top: none !important;
+    }
+
     &-clickable {
         cursor: pointer;
     }

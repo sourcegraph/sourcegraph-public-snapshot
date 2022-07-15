@@ -50,7 +50,7 @@ interface Props extends SettingsCascadeProps, TelemetryProps {
     /**
      * The icon to show to the left of the title.
      */
-    icon?: React.ComponentType<{ className?: string }>
+    icon: React.ComponentType<{ className?: string }>
 
     /**
      * Called when the file's search result is selected.

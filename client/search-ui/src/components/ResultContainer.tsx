@@ -33,7 +33,7 @@ export interface ResultContainerProps {
     /**
      * The icon to show left to the title.
      */
-    icon?: React.ComponentType<{ className?: string }>
+    icon: React.ComponentType<{ className?: string }>
 
     /**
      * The title component.
@@ -164,7 +164,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
         >
             <article aria-labelledby={`result-container-${index}`}>
                 <div className={styles.header} id={`result-container-${index}`}>
-                    {icon && (
+                    {!coreWorkflowImprovementsEnabled && (
                         <>
                             <Icon
                                 className="flex-shrink-0"

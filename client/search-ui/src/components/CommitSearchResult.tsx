@@ -40,7 +40,13 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
 
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <span className={classNames('test-search-result-label flex-grow-1', styles.titleInner)}>
+            <span
+                className={classNames(
+                    'test-search-result-label flex-grow-1',
+                    styles.titleInner,
+                    coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink
+                )}
+            >
                 <Link to={getRepositoryUrl(result.repository)}>{displayRepoName(result.repository)}</Link>
                 <span aria-hidden={true}> ›</span> <Link to={getCommitMatchUrl(result)}>{result.authorName}</Link>
                 <span aria-hidden={true}>{': '}</span>
@@ -75,7 +81,7 @@ export const CommitSearchResult: React.FunctionComponent<Props> = ({
     return (
         <ResultContainer
             index={index}
-            icon={!coreWorkflowImprovementsEnabled ? SourceCommitIcon : undefined}
+            icon={SourceCommitIcon}
             collapsible={false}
             defaultExpanded={true}
             title={renderTitle()}
