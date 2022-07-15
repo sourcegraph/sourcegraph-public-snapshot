@@ -1,5 +1,8 @@
 #!/usr/bin/env bash
 
+# DONOTMERGE
+exit 0
+
 set -exuo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 

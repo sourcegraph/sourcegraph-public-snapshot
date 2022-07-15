@@ -4,6 +4,15 @@
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 set -eux
 
+#DONOTMERGE
+echo "--- docker build"
+docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
+  --progress=plain \
+  --build-arg COMMIT_SHA \
+  --build-arg DATE \
+  --build-arg VERSION
+exit $?
+
 # Fail early if env vars are not set
 [ -n "$VERSION" ]
 [ -n "$IMAGE" ]
