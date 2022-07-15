@@ -773,21 +773,24 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			results <- &githubResult{err: errors.Errorf("repositoryQuery %q couldn't be refined further, results would be missed", q)}
 			return
 		case res.TotalCount < q.First:
-			log15.Info(
-				fmt.Sprintf("repositoryQuery matched less than %d results, expanding it and retrying, results count: %d", q.First, res.TotalCount),
-				"query",
-				q.String(),
-			)
-
 			// The total # of results between minCreated and now is less than 100, we break, so we can return those results
 			// because we will never find more.
 			if q.Created == nil || (q.Created != nil && q.Created.From.Sub(minCreated) <= 0) {
+				log15.Info(
+					fmt.Sprintf("repositoryQuery matched %d results, no more to find", res.TotalCount),
+					"query",
+					q.String(),
+				)
 				for i := range res.Repos {
 					results <- &githubResult{repo: &res.Repos[i]}
 				}
 				return
 			}
-
+			log15.Info(
+				fmt.Sprintf("repositoryQuery matched less than %d results, expanding it and retrying, results count: %d", q.First, res.TotalCount),
+				"query",
+				q.String(),
+			)
 			if q.Expand() {
 				log15.Info("repositoryQuery expanded", "query", q)
 				continue
