@@ -35,12 +35,7 @@ func (r *resolver) LockfileIndexes(ctx context.Context, args *graphqlbackend.Lis
 		Limit: p.limit,
 	}
 
-	lockfileIndexes, err := r.svc.ListLockfileIndexes(ctx, opts)
-	if err != nil {
-		return nil, err
-	}
-
-	totalCount, err := r.svc.CountLockfileIndexes(ctx, opts)
+	lockfileIndexes, totalCount, err := r.svc.ListLockfileIndexes(ctx, opts)
 	if err != nil {
 		return nil, err
 	}

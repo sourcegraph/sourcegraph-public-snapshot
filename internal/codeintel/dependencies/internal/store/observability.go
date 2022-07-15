@@ -19,7 +19,6 @@ type operations struct {
 	upsertDependencyRepos        *observation.Operation
 	upsertLockfileGraph          *observation.Operation
 	listLockfileIndexes          *observation.Operation
-	countLockfileIndexes         *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -50,6 +49,5 @@ func newOperations(observationContext *observation.Context) *operations {
 		upsertDependencyRepos:        op("UpsertDependencyRepos"),
 		upsertLockfileGraph:          op("UpsertLockfileGraph"),
 		listLockfileIndexes:          op("ListLockfileIndexes"),
-		countLockfileIndexes:         op("CountLockfileIndexes"),
 	}
 }

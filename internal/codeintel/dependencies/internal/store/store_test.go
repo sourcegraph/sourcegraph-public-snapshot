@@ -1240,18 +1240,13 @@ func TestListAndCountLockfileIndexes(t *testing.T) {
 			expectedCount: 1,
 		},
 	} {
-		lockfiles, err := store.ListLockfileIndexes(ctx, tt.opts)
+		lockfiles, count, err := store.ListLockfileIndexes(ctx, tt.opts)
 		if err != nil {
 			t.Fatalf("error: %s", err)
 		}
 
 		if diff := cmp.Diff(tt.expected, lockfiles); diff != "" {
 			t.Errorf("[%d] unexpected lockfiles (-want +got):\n%s", i, diff)
-		}
-
-		count, err := store.CountLockfileIndexes(ctx, tt.opts)
-		if err != nil {
-			t.Fatalf("error: %s", err)
 		}
 
 		if diff := cmp.Diff(tt.expectedCount, count); diff != "" {

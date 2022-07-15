@@ -498,10 +498,6 @@ type ListLockfileIndexesOpts struct {
 	Limit int
 }
 
-func (s *Service) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) ([]shared.LockfileIndex, error) {
+func (s *Service) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
 	return s.dependenciesStore.ListLockfileIndexes(ctx, store.ListLockfileIndexesOpts(opts))
-}
-
-func (s *Service) CountLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (int, error) {
-	return s.dependenciesStore.CountLockfileIndexes(ctx, store.ListLockfileIndexesOpts(opts))
 }
