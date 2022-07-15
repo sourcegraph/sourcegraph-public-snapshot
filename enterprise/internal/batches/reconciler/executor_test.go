@@ -49,6 +49,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	cstore := store.NewWithClock(db, &observation.TestContext, et.TestKey{}, clock)
 
 	admin := ct.CreateTestUser(t, db, true)
+	ctx = actor.WithActor(ctx, actor.FromUser(admin.ID))
 
 	repo, extSvc := ct.CreateTestRepo(t, ctx, db)
 	ct.CreateTestSiteCredential(t, cstore, repo)
@@ -1114,7 +1115,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 			sourcer := stesting.NewFakeSourcer(nil, fakeSource)
 
 			err := executePlan(
-				context.Background(),
+				actor.WithActor(ctx, actor.FromUser(tt.user.ID)),
 				logtest.Scoped(t),
 				gitClient,
 				sourcer,

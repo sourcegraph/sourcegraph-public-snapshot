@@ -38,7 +38,7 @@ export const CodeInsightsCreationActions: FC<CodeInsightsCreationActionsProps> =
             )}
 
             <div className="d-flex flex-wrap align-items-center">
-                {errors && <ErrorAlert className="w-100" error={errors} />}
+                {!!errors && <ErrorAlert className="w-100" error={errors} />}
 
                 <LoaderButton
                     type="submit"

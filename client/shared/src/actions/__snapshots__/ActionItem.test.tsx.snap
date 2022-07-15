@@ -228,8 +228,9 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
   <button
     aria-label="d"
-    class="test-action-item"
+    class="test-action-item actionItemLoading"
     data-tooltip="d"
+    disabled=""
     type="button"
   >
     <img
@@ -237,6 +238,17 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
       src="u"
     />
      g: t 
+    <div
+      class="loader"
+      data-testid="action-item-spinner"
+    >
+      <div
+        aria-label="Loading"
+        aria-live="polite"
+        class="mdi-icon loadingSpinner"
+        role="img"
+      />
+    </div>
   </button>
 </DocumentFragment>
 `;

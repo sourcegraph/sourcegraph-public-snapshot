@@ -132,7 +132,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                 {calculatorProps && <TimeSavedCalculator {...calculatorProps} />}
             </Card>
             <Text className="font-italic text-center mt-2">
-                All events are generated from entries in the event logs table.
+                All events are generated from entries in the event logs table and are updated every 24 hours.
             </Text>
         </>
     )

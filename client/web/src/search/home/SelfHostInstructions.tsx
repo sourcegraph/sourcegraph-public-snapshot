@@ -5,7 +5,7 @@ import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Icon, Code, H2, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Code, H2 } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 
@@ -65,16 +65,16 @@ export const SelfHostInstructions: React.FunctionComponent<React.PropsWithChildr
                     <strong>Quickstart:</strong> launch Sourcegraph at http://localhost:7080
                 </div>
                 <MarketingBlock wrapperClassName={styles.codeWrapper} contentClassName={styles.codeContent}>
-                    <Tooltip content={currentCopyTooltip} placement="top">
-                        <Button
-                            className={styles.copyButton}
-                            onClick={onCopy}
-                            aria-label="Copy Docker command to clipboard"
-                            variant="link"
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiContentCopy} />
-                        </Button>
-                    </Tooltip>
+                    <Button
+                        className={styles.copyButton}
+                        onClick={onCopy}
+                        data-tooltip={currentCopyTooltip}
+                        data-placement="top"
+                        aria-label="Copy Docker command to clipboard"
+                        variant="link"
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiContentCopy} />
+                    </Button>
                     <Code className={styles.codeBlock}>{dockerCommand}</Code>
                 </MarketingBlock>
                 <div className="d-flex justify-content-between">

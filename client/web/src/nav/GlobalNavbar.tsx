@@ -77,7 +77,7 @@ interface Props
         CodeInsightsProps,
         BatchChangesProps {
     history: H.History
-    location: H.Location<{ query: string }>
+    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     authRequired: boolean
     isSourcegraphDotCom: boolean
@@ -131,9 +131,9 @@ function useCalculatedNavLinkVariant(
 }
 
 const AnalyticsNavItem: React.FunctionComponent = () => {
-    const [isAdminAnalyticsEnabled] = useFeatureFlag('admin-analytics-enabled', false)
+    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
-    if (!isAdminAnalyticsEnabled) {
+    if (isAdminAnalyticsDisabled) {
         return null
     }
 

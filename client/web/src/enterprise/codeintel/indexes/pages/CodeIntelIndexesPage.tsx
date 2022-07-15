@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -73,7 +73,7 @@ const filters: FilteredConnectionFilter[] = [
     },
 ]
 
-export const CodeIntelIndexesPage: FunctionComponent<React.PropsWithChildren<CodeIntelIndexesPageProps>> = ({
+export const CodeIntelIndexesPage: FunctionComponent<CodeIntelIndexesPageProps> = ({
     authenticatedUser,
     repo,
     queryLsifIndexListByRepository = defaultQueryLsifIndexListByRepository,
@@ -81,9 +81,9 @@ export const CodeIntelIndexesPage: FunctionComponent<React.PropsWithChildren<Cod
     now,
     telemetryService,
     history,
-    ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelIndexes'), [telemetryService])
+    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryIndexes = useCallback(
@@ -109,15 +109,13 @@ export const CodeIntelIndexesPage: FunctionComponent<React.PropsWithChildren<Cod
                 className="mb-3"
             />
 
-            {repo && authenticatedUser?.siteAdmin && (
+            {!!repo && !!authenticatedUser?.siteAdmin && (
                 <Container className="mb-2">
                     <EnqueueForm repoId={repo.id} querySubject={querySubject} />
                 </Container>
             )}
 
-            {history.location.state && (
-                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
-            )}
+            {!!location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             <Container>
                 <div className="list-group position-relative">
@@ -132,7 +130,7 @@ export const CodeIntelIndexesPage: FunctionComponent<React.PropsWithChildren<Cod
                         nodeComponentProps={{ now }}
                         queryConnection={queryIndexes}
                         history={history}
-                        location={props.location}
+                        location={location}
                         cursorPaging={true}
                         filters={filters}
                         emptyElement={<EmptyAutoIndex />}

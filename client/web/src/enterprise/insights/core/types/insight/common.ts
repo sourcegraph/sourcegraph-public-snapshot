@@ -23,6 +23,7 @@ export enum InsightType {
     SearchBased = 'SearchBased',
     LangStats = 'LangStats',
     CaptureGroup = 'CaptureGroup',
+    Compute = 'Compute',
 }
 
 export enum InsightContentType {
@@ -57,6 +58,8 @@ export interface BaseInsight {
     isFrozen: boolean
     seriesCount: number
 
+    // TODO: move these fields out of base insight since they are
+    // specific to the search based and capture group insights only
     seriesDisplayOptions?: SeriesDisplayOptionsInput
     appliedSeriesDisplayOptions?: SeriesDisplayOptions
     defaultSeriesDisplayOptions?: SeriesDisplayOptions

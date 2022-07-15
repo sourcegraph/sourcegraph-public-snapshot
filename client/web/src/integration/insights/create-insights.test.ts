@@ -205,6 +205,7 @@ describe('Code insight create insight page', () => {
                                     },
                                     isCalculated: false,
                                     generatedFromCaptureGroups: false,
+                                    groupBy: null,
                                     __typename: 'SearchInsightDataSeriesDefinition',
                                 },
                                 {
@@ -221,6 +222,7 @@ describe('Code insight create insight page', () => {
                                     },
                                     isCalculated: false,
                                     generatedFromCaptureGroups: false,
+                                    groupBy: null,
                                     __typename: 'SearchInsightDataSeriesDefinition',
                                 },
                             ],

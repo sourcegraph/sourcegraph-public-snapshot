@@ -19,7 +19,6 @@ import {
     Position,
     PageSelector,
     H3,
-    Tooltip,
     Icon,
 } from '@sourcegraph/wildcard'
 
@@ -106,9 +105,12 @@ const MemberItem: React.FunctionComponent<React.PropsWithChildren<MemberItemProp
                     )}
                 >
                     <div className={styles.avatarContainer}>
-                        <Tooltip content={member.displayName || member.username}>
-                            <UserAvatar size={36} className={styles.avatar} user={member} />
-                        </Tooltip>
+                        <UserAvatar
+                            size={36}
+                            className={styles.avatar}
+                            user={member}
+                            data-tooltip={member.displayName || member.username}
+                        />
                     </div>
 
                     <div className="d-flex flex-column">

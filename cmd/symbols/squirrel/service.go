@@ -155,6 +155,8 @@ func (squirrel *SquirrelService) getDef(ctx context.Context, node Node) (*Node, 
 		return squirrel.getDefJava(ctx, node)
 	case "starlark":
 		return squirrel.getDefStarlark(ctx, node)
+	case "python":
+		return squirrel.getDefPython(ctx, node)
 	// case "go":
 	// case "csharp":
 	// case "python":

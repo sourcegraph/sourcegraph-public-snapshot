@@ -3,6 +3,7 @@ package adminanalytics
 import (
 	"context"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -40,6 +41,40 @@ func (s *CodeIntel) DefinitionClicks() (*AnalyticsFetcher, error) {
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
 		group:        "CodeIntel:DefinitionClicks",
+		cache:        s.Cache,
+	}, nil
+}
+
+func (s *CodeIntel) InAppEvents() (*AnalyticsFetcher, error) {
+	sourceCond := sqlf.Sprintf("source = 'WEB'")
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"goToDefinition.preloaded", "goToDefinition", "findReferences"}, sourceCond)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "CodeIntel:InAppEvents",
+		cache:        s.Cache,
+	}, nil
+}
+
+func (s *CodeIntel) CodeHostEvents() (*AnalyticsFetcher, error) {
+	sourceCond := sqlf.Sprintf("source = 'CODEHOSTINTEGRATION'")
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"goToDefinition.preloaded", "goToDefinition", "findReferences"}, sourceCond)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "CodeIntel:CodeHostEvents",
 		cache:        s.Cache,
 	}, nil
 }

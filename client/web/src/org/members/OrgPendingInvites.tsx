@@ -18,7 +18,6 @@ import {
     Position,
     PageSelector,
     H3,
-    Tooltip,
     Icon,
 } from '@sourcegraph/wildcard'
 
@@ -175,9 +174,12 @@ const InvitationItem: React.FunctionComponent<React.PropsWithChildren<Invitation
                 >
                     <div className={styles.avatarContainer}>
                         {invite.recipient && (
-                            <Tooltip content={invite.recipient.displayName || invite.recipient.username}>
-                                <UserAvatar size={24} className={styles.avatar} user={invite.recipient} />
-                            </Tooltip>
+                            <UserAvatar
+                                size={24}
+                                className={styles.avatar}
+                                user={invite.recipient}
+                                data-tooltip={invite.recipient.displayName || invite.recipient.username}
+                            />
                         )}
                         {!invite.recipient && invite.recipientEmail && (
                             <Icon className={styles.emailIcon} svgPath={mdiEmail} inline={false} aria-hidden={true} />

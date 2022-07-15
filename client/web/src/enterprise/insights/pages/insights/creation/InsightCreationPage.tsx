@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from 'react'
+import { FC, useContext, useMemo } from 'react'
 
 import { useHistory } from 'react-router'
 
@@ -28,9 +28,7 @@ interface InsightCreationPageProps extends TelemetryProps {
     mode: InsightCreationPageType
 }
 
-export const InsightCreationPage: React.FunctionComponent<
-    React.PropsWithChildren<InsightCreationPageProps>
-> = props => {
+export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
     const { mode, telemetryService } = props
 
     const history = useHistory()
