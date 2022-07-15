@@ -72,8 +72,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
         AnAction openAction = new DumbAwareAction("Open Sourcegraph (" + altSShortcutText + ")") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                FindService service = project.getService(FindService.class);
-                service.showPopup();
+                project.getService(FindService.class).showPopup();
                 notification.expire();
             }
         };
