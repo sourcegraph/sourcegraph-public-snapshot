@@ -1,26 +1,30 @@
 package errors
 
+// Warning embeds an error. It's purpose is to indicate that this error is not a critical error and
+// maybe ignored. Additionally, the recommended log level for this kind of an error is Warn.
 type Warning interface {
 	error
 	IsWarn() bool
 }
 
-// warning is the error that wraps an error with an error level.
 type warning struct {
-	error error
+	Err error
 }
 
-// Ensure that classifiedError always implements the error interface.
+// Ensure that warning always implements the error interface.
 var _ error = (*warning)(nil)
+
+// Ensure that warning always implements the Warning interface.
+var _ Warning = (*warning)(nil)
 
 func NewWarningError(err error) error {
 	return &warning{
-		error: err,
+		Err: err,
 	}
 }
 
 func (ce *warning) Error() string {
-	return ce.error.Error()
+	return ce.Err.Error()
 }
 
 // IsWarn always returns true. It exists to differentiate regular errors with Warning errors. That
