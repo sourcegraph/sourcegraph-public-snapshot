@@ -72,10 +72,11 @@ func TestHTTPMiddleware(t *testing.T) {
 
 		h.ServeHTTP(rec, req)
 		logs := exportLogs()
-		require.Len(t, logs, 1)
-		assert.Equal(t, accessEventMessage, logs[0].Message)
-		assert.Equal(t, "github.com/foo/bar", logs[0].Fields["params"].(map[string]any)["repo"])
-		assert.Equal(t, "192.168.1.1", logs[0].Fields["actor"].(map[string]any)["ip"])
+		require.Len(t, logs, 2)
+		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
+		assert.Equal(t, accessEventMessage, logs[1].Message)
+		assert.Equal(t, "github.com/foo/bar", logs[1].Fields["params"].(map[string]any)["repo"])
+		assert.Equal(t, "192.168.1.1", logs[1].Fields["actor"].(map[string]any)["ip"])
 	})
 
 	t.Run("handle, no recording", func(t *testing.T) {
@@ -92,7 +93,8 @@ func TestHTTPMiddleware(t *testing.T) {
 		// Should have handled but not logged
 		assert.True(t, handled)
 		logs := exportLogs()
-		require.Len(t, logs, 0)
+		require.Len(t, logs, 1)
+		assert.NotEqual(t, accessEventMessage, logs[0].Message)
 	})
 
 	t.Run("disabled, then enabled", func(t *testing.T) {
@@ -124,7 +126,7 @@ func TestHTTPMiddleware(t *testing.T) {
 		assert.True(t, handled)
 		logs = exportLogs()
 		require.Len(t, logs, 2)
-		assert.Equal(t, "access logging enabled", logs[0].Message)
+		assert.Equal(t, accessLoggingEnabledMessage, logs[0].Message)
 		assert.Equal(t, accessEventMessage, logs[1].Message)
 	})
 }

@@ -62,7 +62,11 @@ type accessLogger struct {
 
 var _ http.Handler = &accessLogger{}
 
-const accessEventMessage = "access"
+// messages are defined here to make assertions in testing.
+const (
+	accessEventMessage          = "access"
+	accessLoggingEnabledMessage = "access logging enabled"
+)
 
 func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// Prepare the context to hold the params which the handler is going to set.
@@ -126,7 +130,7 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 		logEnabled: atomic.NewBool(shouldLog(watcher.SiteConfig())),
 	}
 	if handler.logEnabled.Load() {
-		logger.Info("access logging enabled")
+		logger.Info(accessLoggingEnabledMessage)
 	}
 
 	// Allow live toggling of access logging
@@ -135,7 +139,7 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 		changed := handler.logEnabled.Swap(newShouldLog) != newShouldLog
 		if changed {
 			if newShouldLog {
-				logger.Info("access logging enabled")
+				logger.Info(accessLoggingEnabledMessage)
 			} else {
 				logger.Info("access logging disabled")
 			}
