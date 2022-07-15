@@ -15,6 +15,7 @@ import { InsightDashboard, InsightExecutionType, InsightType, isVirtualDashboard
 import {
     InsightCreateInput,
     MinimalCaptureGroupInsightData,
+    MinimalComputeInsightData,
     MinimalSearchBasedInsightData,
 } from '../../../code-insights-backend-types'
 import { createInsightView } from '../../deserialization/create-insight-view'
@@ -32,6 +33,7 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
 
     switch (insight.type) {
         case InsightType.CaptureGroup:
+        case InsightType.Compute:
         case InsightType.SearchBased: {
             return createSearchBasedInsight(apolloClient, insight, dashboard)
         }
@@ -55,7 +57,10 @@ export const createInsight = (apolloClient: ApolloClient<object>, input: Insight
     }
 }
 
-type CreationSeriesInsightData = MinimalSearchBasedInsightData | MinimalCaptureGroupInsightData
+type CreationSeriesInsightData =
+    | MinimalSearchBasedInsightData
+    | MinimalCaptureGroupInsightData
+    | MinimalComputeInsightData
 
 function createSearchBasedInsight(
     apolloClient: ApolloClient<object>,
@@ -68,7 +73,7 @@ function createSearchBasedInsight(
     // create the insight first and only after update this newly created insight with filter values
     // This is due to lack of gql API flexibility and should be fixed as soon as BE gql API
     // supports filters in the create insight mutation.
-    // TODO: Remove this imperative logic as soon as be supports filters
+    // TODO: Remove this imperative logic as soon as BE supports filters
     if (insight.executionType === InsightExecutionType.Backend && insight.filters) {
         return from(
             apolloClient.mutate<FirstStepCreateSearchBasedInsightResult>({
@@ -134,7 +139,7 @@ function createSearchBasedInsight(
 }
 
 /**
- * Updates Apollo cache after insight creation. Add insight to main insights gql query,
+ * Updates Apollo caches after insight creation. Add insight to main insights gql query,
  * add newly created insight to the cache dashboard that insight was crated from.
  */
 function searchInsightCreationOptimisticUpdate(

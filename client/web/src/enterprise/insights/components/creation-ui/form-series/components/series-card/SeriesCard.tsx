@@ -17,6 +17,14 @@ interface SeriesCardProps {
     query: string
     /** Color value of series. */
     stroke?: string
+
+    /**
+     * This prop hides color picker from the series form. This field is needed for
+     * compute powered insight creation UI, see https://github.com/sourcegraph/sourcegraph/issues/38832
+     * for more details whe compute doesn't have series colors
+     */
+    showColor?: boolean
+
     /** Custom class name for root button element. */
     className?: string
     /** Edit handler. */
@@ -29,7 +37,16 @@ interface SeriesCardProps {
  * Renders series card component, visual list item of series (name, color, query)
  * */
 export function SeriesCard(props: SeriesCardProps): ReactElement {
-    const { disabled, name, query, stroke: color = DEFAULT_DATA_SERIES_COLOR, className, onEdit, onRemove } = props
+    const {
+        disabled,
+        name,
+        query,
+        stroke: color = DEFAULT_DATA_SERIES_COLOR,
+        showColor = true,
+        className,
+        onEdit,
+        onRemove,
+    } = props
 
     return (
         <Card
@@ -41,12 +58,14 @@ export function SeriesCard(props: SeriesCardProps): ReactElement {
         >
             <div className={styles.cardInfo}>
                 <div className={classNames('mb-1 ', styles.cardTitle)}>
-                    <div
-                        data-testid="series-color-mark"
-                        /* eslint-disable-next-line react/forbid-dom-props */
-                        style={{ color: disabled ? 'var(--icon-muted)' : color }}
-                        className={styles.cardColorMark}
-                    />
+                    {showColor && (
+                        <div
+                            data-testid="series-color-mark"
+                            /* eslint-disable-next-line react/forbid-dom-props */
+                            style={{ color: disabled ? 'var(--icon-muted)' : color }}
+                            className={styles.cardColorMark}
+                        />
+                    )}
                     <span
                         data-testid="series-name"
                         title={name}

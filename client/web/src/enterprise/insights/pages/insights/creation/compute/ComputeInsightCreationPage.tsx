@@ -1,19 +1,30 @@
-import { FunctionComponent } from 'react'
+import { FunctionComponent, useCallback, useMemo } from 'react'
 
 import BarChartIcon from 'mdi-react/BarChartIcon'
 
+import { asError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Text, useLocalStorage } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Text, useLocalStorage, useObservable } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
-import { CodeInsightsPage, FormChangeEvent } from '../../../../components'
+import {
+    CodeInsightCreationMode,
+    CodeInsightsCreationActions,
+    CodeInsightsPage,
+    FORM_ERROR,
+    FormChangeEvent,
+    SubmissionErrors,
+} from '../../../../components'
+import { ComputeInsight } from '../../../../core'
+import { useUiFeatures } from '../../../../hooks'
+import { CodeInsightTrackType } from '../../../../pings'
 
 import { ComputeInsightCreationContent } from './components/ComputeInsightCreationContent'
 import { CreateComputeInsightFormFields } from './types'
+import { getSanitizedComputeInsight } from './utils/insight-sanitaizer'
 
 export interface InsightCreateEvent {
-    // TODO: It will be improved in https://github.com/sourcegraph/sourcegraph/issues/37965
-    insight: any
+    insight: ComputeInsight
 }
 
 interface ComputeInsightCreationPageProps extends TelemetryProps {
@@ -23,6 +34,11 @@ interface ComputeInsightCreationPageProps extends TelemetryProps {
 }
 
 export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreationPageProps> = props => {
+    const { telemetryService, onInsightCreateRequest, onSuccessfulCreation, onCancel } = props
+
+    const { licensed, insight } = useUiFeatures()
+    const creationPermission = useObservable(useMemo(() => insight.getCreationPermissions(), [insight]))
+
     // We do not use temporal user settings since form values are not so important to
     // waste users time for waiting response of yet another network request to just
     // render creation UI form.
@@ -36,16 +52,42 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
         setInitialFormValues(event.values)
     }
 
-    const handleSubmit = (): void => {
-        // TODO: It will be implemented in https://github.com/sourcegraph/sourcegraph/issues/37965
-    }
+    const handleSubmit = useCallback(
+        async (values: CreateComputeInsightFormFields): Promise<SubmissionErrors> => {
+            try {
+                const insight = getSanitizedComputeInsight(values)
 
-    const handleCancel = (): void => {
-        // TODO: It will be implemented in https://github.com/sourcegraph/sourcegraph/issues/37965
-    }
+                await onInsightCreateRequest({ insight })
+
+                // Clear initial values if user successfully created search insight
+                setInitialFormValues(undefined)
+                telemetryService.log('CodeInsightsComputeCreationPageSubmitClick')
+                telemetryService.log(
+                    'InsightAddition',
+                    { insightType: CodeInsightTrackType.ComputeInsight },
+                    { insightType: CodeInsightTrackType.ComputeInsight }
+                )
+
+                onSuccessfulCreation()
+            } catch (error) {
+                return { [FORM_ERROR]: asError(error) }
+            }
+
+            return
+        },
+        [onInsightCreateRequest, onSuccessfulCreation, setInitialFormValues, telemetryService]
+    )
+
+    const handleCancel = useCallback(() => {
+        // Clear initial values if user successfully created search insight
+        setInitialFormValues(undefined)
+        telemetryService.log('CodeInsightsComputeCreationPageCancelClick')
+
+        onCancel()
+    }, [setInitialFormValues, telemetryService, onCancel])
 
     return (
-        <CodeInsightsPage className="col-12">
+        <CodeInsightsPage className="col-11">
             <PageTitle title="Create compute insight - Code Insights" />
 
             <PageHeader
@@ -59,13 +101,25 @@ export const ComputeInsightCreationPage: FunctionComponent<ComputeInsightCreatio
             />
 
             <ComputeInsightCreationContent
+                touched={false}
                 initialValue={initialFormValues}
                 data-testid="search-insight-create-page-content"
                 className="pb-5"
                 onChange={handleChange}
                 onSubmit={handleSubmit}
-                onCancel={handleCancel}
-            />
+            >
+                {form => (
+                    <CodeInsightsCreationActions
+                        mode={CodeInsightCreationMode.Creation}
+                        licensed={licensed}
+                        available={creationPermission?.available}
+                        submitting={form.submitting}
+                        errors={form.submitErrors?.[FORM_ERROR]}
+                        clear={form.isFormClearActive}
+                        onCancel={handleCancel}
+                    />
+                )}
+            </ComputeInsightCreationContent>
         </CodeInsightsPage>
     )
 }
