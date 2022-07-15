@@ -25,6 +25,29 @@ public class ConfigUtil {
     }
 
     @NotNull
+    public static SettingsComponent.InstanceType getInstanceType(Project project) {
+        // Project level
+        String projectLevelSetting = getProjectLevelConfig(project).getInstanceType();
+        if (projectLevelSetting != null && !projectLevelSetting.isEmpty()) {
+            return projectLevelSetting.equals(SettingsComponent.InstanceType.ENTERPRISE.name())
+                ? SettingsComponent.InstanceType.ENTERPRISE : SettingsComponent.InstanceType.DOTCOM;
+        }
+
+
+        // Application level
+        String applicationLevelSetting = getApplicationLevelConfig().getInstanceType();
+        if (applicationLevelSetting != null && !applicationLevelSetting.isEmpty()) {
+            return applicationLevelSetting.equals(SettingsComponent.InstanceType.ENTERPRISE.name())
+                ? SettingsComponent.InstanceType.ENTERPRISE : SettingsComponent.InstanceType.DOTCOM;
+        }
+
+        // User level or default
+        String sourcegraphUrl = getSourcegraphUrl(project);
+        return sourcegraphUrl.startsWith("https://sourcegraph.com")
+            ? SettingsComponent.InstanceType.DOTCOM : SettingsComponent.InstanceType.ENTERPRISE;
+    }
+
+    @NotNull
     public static String getSourcegraphUrl(@NotNull Project project) {
         // Project level
         String projectLevelUrl = getProjectLevelConfig(project).getSourcegraphUrl();

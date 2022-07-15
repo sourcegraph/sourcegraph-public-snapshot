@@ -39,7 +39,8 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public boolean isModified() {
-        return !mySettingsComponent.getSourcegraphUrl().equals(ConfigUtil.getSourcegraphUrl(project))
+        return !mySettingsComponent.getInstanceType().equals(ConfigUtil.getInstanceType(project))
+            || !mySettingsComponent.getSourcegraphUrl().equals(ConfigUtil.getSourcegraphUrl(project))
             || !mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project))
             || !mySettingsComponent.getDefaultBranchName().equals(ConfigUtil.getDefaultBranchName(project))
             || !mySettingsComponent.getRemoteUrlReplacements().equals(ConfigUtil.getRemoteUrlReplacements(project))
@@ -63,6 +64,11 @@ public class SettingsConfigurable implements Configurable {
 
         publisher.beforeAction(context);
 
+        if (pSettings.instanceType != null) {
+            pSettings.instanceType = mySettingsComponent.getInstanceType().name();
+        } else {
+            aSettings.instanceType = mySettingsComponent.getInstanceType().name();
+        }
         if (pSettings.url != null) {
             pSettings.url = newUrl;
         } else {
@@ -96,6 +102,7 @@ public class SettingsConfigurable implements Configurable {
 
     @Override
     public void reset() {
+        mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
         mySettingsComponent.setSourcegraphUrl(ConfigUtil.getSourcegraphUrl(project));
         String accessToken = ConfigUtil.getAccessToken(project);
         mySettingsComponent.setAccessToken(accessToken != null ? accessToken : "");

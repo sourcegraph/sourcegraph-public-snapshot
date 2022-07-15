@@ -17,6 +17,9 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.JTextComponent;
+import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.util.Enumeration;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -26,13 +29,19 @@ import java.util.function.Supplier;
 public class SettingsComponent {
     private final Project project;
     private final JPanel panel;
+    private ButtonGroup instanceTypeButtonGroup;
     private JBTextField sourcegraphUrlTextField;
     private JBTextField accessTokenTextField;
+    private JBLabel userDocsLinkComment;
+    private JBLabel accessTokenLinkComment;
     private JBTextField defaultBranchNameTextField;
     private JBTextField remoteUrlReplacementsTextField;
     private JBCheckBox globbingCheckBox;
     private JBCheckBox isUrlNotificationDismissedCheckBox;
-    private JBLabel accessTokenLinkComment;
+
+    public JComponent getPreferredFocusedComponent() {
+        return defaultBranchNameTextField;
+    }
 
     public SettingsComponent(@NotNull Project project) {
         this.project = project;
@@ -50,8 +59,94 @@ public class SettingsComponent {
         return panel;
     }
 
-    public JComponent getPreferredFocusedComponent() {
-        return sourcegraphUrlTextField;
+    @NotNull
+    public InstanceType getInstanceType() {
+        return instanceTypeButtonGroup.getSelection().getActionCommand().equals(InstanceType.DOTCOM.name()) ? InstanceType.DOTCOM : InstanceType.ENTERPRISE;
+    }
+
+    public void setInstanceType(@NotNull InstanceType instanceType) {
+        for (Enumeration<AbstractButton> buttons = instanceTypeButtonGroup.getElements(); buttons.hasMoreElements(); ) {
+            AbstractButton button = buttons.nextElement();
+
+            button.setSelected(button.getActionCommand().equals(instanceType.name()));
+        }
+
+        setEnterpriseSettingsEnabled(instanceType == InstanceType.ENTERPRISE);
+    }
+
+    @NotNull
+    private JPanel createAuthenticationPanel() {
+        // Create URL field for the enterprise section
+        JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
+        sourcegraphUrlTextField = new JBTextField();
+        //noinspection DialogTitleCapitalization
+        sourcegraphUrlTextField.getEmptyText().setText("https://sourcegraph.example.com");
+        sourcegraphUrlTextField.setToolTipText("The default is \"https://sourcegraph.com\".");
+        addValidation(sourcegraphUrlTextField, () ->
+            sourcegraphUrlTextField.getText().length() == 0 ? new ValidationInfo("Missing URL", sourcegraphUrlTextField)
+                : (!JsonSchemaConfigurable.isValidURL(sourcegraphUrlTextField.getText()) ? new ValidationInfo("This is an invalid URL", sourcegraphUrlTextField)
+                : null));
+        addDocumentListener(sourcegraphUrlTextField, e -> updateAccessTokenLinkCommentText());
+
+        // Create access token field
+        JBLabel accessTokenLabel = new JBLabel("Access token:");
+        accessTokenTextField = new JBTextField();
+        accessTokenTextField.getEmptyText().setText("Paste your access token here");
+        addValidation(accessTokenTextField, () ->
+            (accessTokenTextField.getText().length() > 0 && accessTokenTextField.getText().length() != 40)
+                ? new ValidationInfo("Invalid access token", accessTokenTextField)
+                : null);
+
+        // Create comments
+        userDocsLinkComment = new JBLabel("<html><body>You might need an access token to sign in. See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> for a video guide,</body></html>", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
+        userDocsLinkComment.setBorder(JBUI.Borders.emptyLeft(10));
+        userDocsLinkComment.setCopyable(true);
+        accessTokenLinkComment = new JBLabel("", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
+        accessTokenLinkComment.setBorder(JBUI.Borders.emptyLeft(10));
+        accessTokenLinkComment.setCopyable(true);
+
+        // Set up radio buttons
+        ActionListener actionListener = event -> setEnterpriseSettingsEnabled(event.getActionCommand().equals(InstanceType.ENTERPRISE.name()));
+        JRadioButton sourcegraphDotComRadioButton = new JRadioButton("Use sourcegraph.com");
+        sourcegraphDotComRadioButton.setMnemonic(KeyEvent.VK_C);
+        sourcegraphDotComRadioButton.setActionCommand(InstanceType.DOTCOM.name());
+        sourcegraphDotComRadioButton.addActionListener(actionListener);
+        JRadioButton enterpriseInstanceRadioButton = new JRadioButton("Use an enterprise instance");
+        enterpriseInstanceRadioButton.setMnemonic(KeyEvent.VK_E);
+        enterpriseInstanceRadioButton.setActionCommand(InstanceType.ENTERPRISE.name());
+        enterpriseInstanceRadioButton.addActionListener(actionListener);
+        instanceTypeButtonGroup = new ButtonGroup();
+        instanceTypeButtonGroup.add(sourcegraphDotComRadioButton);
+        instanceTypeButtonGroup.add(enterpriseInstanceRadioButton);
+
+        // Assemble the two main panels
+        JBLabel dotComComment = new JBLabel("Use sourcegraph.com to search public code", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
+        dotComComment.setBorder(JBUI.Borders.emptyLeft(20));
+        JPanel dotComPanel = FormBuilder.createFormBuilder()
+            .addComponent(sourcegraphDotComRadioButton, 1)
+            .addComponentToRightColumn(dotComComment, 2)
+            .getPanel();
+        JPanel enterprisePanelContent = FormBuilder.createFormBuilder()
+            .addLabeledComponent(urlLabel, sourcegraphUrlTextField, 1)
+            .addTooltip("If your company has your own Sourcegraph instance, set its URL here")
+            .addLabeledComponent(accessTokenLabel, accessTokenTextField, 1)
+            .addComponentToRightColumn(userDocsLinkComment, 1)
+            .addComponentToRightColumn(accessTokenLinkComment, 1)
+            .getPanel();
+        enterprisePanelContent.setBorder(IdeBorderFactory.createEmptyBorder(JBUI.insets(1, 30, 0, 0)));
+        JPanel enterprisePanel = FormBuilder.createFormBuilder()
+            .addComponent(enterpriseInstanceRadioButton, 1)
+            .addComponent(enterprisePanelContent, 1)
+            .getPanel();
+
+        // Assemble the main panel
+        JPanel userAuthenticationPanel = FormBuilder.createFormBuilder()
+            .addComponent(dotComPanel)
+            .addComponent(enterprisePanel, 5)
+            .getPanel();
+        userAuthenticationPanel.setBorder(IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
+
+        return userAuthenticationPanel;
     }
 
     @NotNull
@@ -106,45 +201,16 @@ public class SettingsComponent {
         isUrlNotificationDismissedCheckBox.setSelected(value);
     }
 
-    @NotNull
-    private JPanel createAuthenticationPanel() {
-        JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
-        sourcegraphUrlTextField = new JBTextField();
-        //noinspection DialogTitleCapitalization
-        sourcegraphUrlTextField.getEmptyText().setText("https://sourcegraph.example.com");
-        sourcegraphUrlTextField.setToolTipText("The default is \"https://sourcegraph.com\".");
+    private void setEnterpriseSettingsEnabled(boolean enable) {
+        sourcegraphUrlTextField.setEnabled(enable);
+        accessTokenTextField.setEnabled(enable);
+        userDocsLinkComment.setEnabled(enable);
+        accessTokenLinkComment.setEnabled(enable);
+    }
 
-        addValidation(sourcegraphUrlTextField, () ->
-            sourcegraphUrlTextField.getText().length() == 0 ? new ValidationInfo("Missing URL", sourcegraphUrlTextField)
-                : (!JsonSchemaConfigurable.isValidURL(sourcegraphUrlTextField.getText()) ? new ValidationInfo("This is an invalid URL", sourcegraphUrlTextField)
-                : null));
-        addDocumentListener(sourcegraphUrlTextField, e -> updateAccessTokenLinkCommentText());
-
-        JBLabel accessTokenLabel = new JBLabel("Access token:");
-        accessTokenTextField = new JBTextField();
-        accessTokenTextField.getEmptyText().setText("Paste your access token here");
-        addValidation(accessTokenTextField, () ->
-            (accessTokenTextField.getText().length() > 0 && accessTokenTextField.getText().length() != 40)
-                ? new ValidationInfo("Invalid access token", accessTokenTextField)
-                : null);
-
-        JBLabel userDocsLinkComment = new JBLabel("<html><body>You might need an access token to sign in. See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> for a video guide,</body></html>", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
-        userDocsLinkComment.setBorder(JBUI.Borders.emptyLeft(10));
-        userDocsLinkComment.setCopyable(true);
-        accessTokenLinkComment = new JBLabel("", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
-        accessTokenLinkComment.setBorder(JBUI.Borders.emptyLeft(10));
-        accessTokenLinkComment.setCopyable(true);
-
-        JPanel userAuthenticationPanel = FormBuilder.createFormBuilder()
-            .addLabeledComponent(urlLabel, sourcegraphUrlTextField)
-            .addTooltip("If your company has your own Sourcegraph instance, set its URL here")
-            .addLabeledComponent(accessTokenLabel, accessTokenTextField)
-            .addComponentToRightColumn(userDocsLinkComment, 1)
-            .addComponentToRightColumn(accessTokenLinkComment, 1)
-            .getPanel();
-        userAuthenticationPanel.setBorder(IdeBorderFactory.createTitledBorder("User Authentication", true, JBUI.insetsTop(8)));
-
-        return userAuthenticationPanel;
+    public enum InstanceType {
+        DOTCOM,
+        ENTERPRISE,
     }
 
     private void addValidation(@NotNull JTextComponent component, @NotNull Supplier<ValidationInfo> validator) {
