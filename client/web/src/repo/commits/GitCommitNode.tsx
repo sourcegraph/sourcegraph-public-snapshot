@@ -51,7 +51,7 @@ export interface GitCommitNodeProps {
     preferAbsoluteTimestamps?: boolean
 
     /** Fragment to show at the end to the right of the SHA. */
-    afterElement?: React.ReactFragment
+    afterElement?: React.ReactNode
 
     /** Determine the git diff visualization UI */
     diffMode?: DiffMode
@@ -99,7 +99,7 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
         DeprecatedTooltipController.forceUpdate()
     }, [flashCopiedToClipboardMessage])
 
-    const copyToClipboard = useCallback((oid): void => {
+    const copyToClipboard = useCallback((oid: string): void => {
         eventLogger.log('CommitSHACopiedToClipboard')
         copy(oid)
         setFlashCopiedToClipboardMessage(true)

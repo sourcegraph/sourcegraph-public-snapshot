@@ -16,7 +16,7 @@ const MachineUserRecommendation = (
     </Text>
 )
 
-export const scopes: Partial<Record<ExternalServiceKind, React.ReactFragment>> = {
+export const scopes: Partial<Record<ExternalServiceKind, React.ReactNode>> = {
     [ExternalServiceKind.GITHUB]: (
         <small className="text-muted">
             Use an access token with <Code className={styles.codeInline}>repo</Code>,{' '}
@@ -35,7 +35,7 @@ export const scopes: Partial<Record<ExternalServiceKind, React.ReactFragment>> =
     ),
 }
 
-export const getMachineUserFragment = (serviceName: string): React.ReactFragment => (
+export const getMachineUserFragment = (serviceName: string): React.ReactNode => (
     <div className={styles.alertBodyBg + ' p-2 border border-2 rounded'}>
         <div className="px-2 py-1">
             <H4>

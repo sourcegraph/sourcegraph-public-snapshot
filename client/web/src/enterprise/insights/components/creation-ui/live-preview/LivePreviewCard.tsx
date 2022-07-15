@@ -49,7 +49,7 @@ const LivePreviewBanner: React.FunctionComponent<React.PropsWithChildren<unknown
 
 interface LivePreviewChartProps extends React.ComponentProps<typeof ParentSize> {}
 
-const LivePreviewChart: React.FunctionComponent<React.PropsWithChildren<LivePreviewChartProps>> = props => (
+const LivePreviewChart: React.FunctionComponent<LivePreviewChartProps> = props => (
     <ParentSize {...props} className={classNames(styles.chartBlock, props.className)} />
 )
 
