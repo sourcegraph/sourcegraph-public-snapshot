@@ -17,8 +17,6 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -27,6 +25,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 func BenchmarkPrometheusFieldName(b *testing.B) {

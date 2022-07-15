@@ -9,7 +9,6 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
-	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
@@ -514,7 +513,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	return getCommit()
 }
 
-func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string) (*phabricator.Client, error) {
+func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database.DB, origin string) (*phabricator.Client, error) {
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &database.LimitOffset{
@@ -542,7 +541,8 @@ func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string)
 			case *schema.PhabricatorConnection:
 				conn = c
 			default:
-				log15.Error("makePhabClientForOrigin", "error", errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg))
+				err := errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg)
+				logger.Error("makePhabClientForOrigin", log.Error(err))
 				continue
 			}
 
