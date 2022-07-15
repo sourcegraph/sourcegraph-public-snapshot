@@ -2,12 +2,14 @@ import {
     InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
     SeriesDisplayOptionsInput,
+    TimeIntervalStepUnit,
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
 } from '../../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import {
     MinimalCaptureGroupInsightData,
+    MinimalComputeInsightData,
     MinimalLangStatsInsightData,
     MinimalSearchBasedInsightData,
 } from '../../../code-insights-backend-types'
@@ -70,6 +72,36 @@ export function getCaptureGroupInsightUpdateInput(
             },
             seriesDisplayOptions: parseSeriesDisplayOptions(seriesDisplayOptions),
         },
+    }
+}
+
+export function getComputeInsightUpdateInput(insight: MinimalComputeInsightData): UpdateLineChartSearchInsightInput {
+    const { repositories, filters, groupBy } = insight
+
+    const serializedFilters: InsightViewFiltersInput = {
+        includeRepoRegex: filters.includeRepoRegexp,
+        excludeRepoRegex: filters.excludeRepoRegexp,
+        searchContexts: filters.context ? [filters.context] : [],
+    }
+
+    return {
+        dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
+            seriesId: series.id,
+            query: series.query,
+            options: {
+                label: series.name,
+                lineColor: series.stroke,
+            },
+            groupBy,
+            repositoryScope: { repositories },
+            // TODO: Remove this when BE supports seperate mutation for compute-powered insight
+            timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
+        })),
+        presentationOptions: {
+            title: insight.title,
+        },
+        // TODO: update when sorting all insights are supported
+        viewControls: { filters: serializedFilters, seriesDisplayOptions: {} },
     }
 }
 
