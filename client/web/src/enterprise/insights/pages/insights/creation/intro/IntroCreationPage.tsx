@@ -8,7 +8,7 @@ import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
+import { CodeInsightsPage } from '../../../../components'
 
 import {
     CaptureGroupInsightCard,
