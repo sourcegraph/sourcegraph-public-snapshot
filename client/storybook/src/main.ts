@@ -5,31 +5,31 @@ import CaseSensitivePathsPlugin from 'case-sensitive-paths-webpack-plugin'
 import { remove } from 'lodash'
 import signale from 'signale'
 import SpeedMeasurePlugin from 'speed-measure-webpack-plugin'
-import { DllReferencePlugin, Configuration, DefinePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
+import { Configuration, DefinePlugin, DllReferencePlugin, ProgressPlugin, RuleSetRule } from 'webpack'
 
 import {
-    NODE_MODULES_PATH,
-    ROOT_PATH,
+    getBabelLoader,
+    getBasicCSSLoader,
+    getCacheConfig,
     getCSSLoaders,
     getCSSModulesLoader,
-    getCacheConfig,
     getMonacoCSSRule,
     getMonacoTTFRule,
     getMonacoWebpackPlugin,
     getProvidePlugin,
-    getTerserPlugin,
-    getBabelLoader,
-    getBasicCSSLoader,
     getStatoscopePlugin,
+    getTerserPlugin,
+    NODE_MODULES_PATH,
+    ROOT_PATH,
     STATIC_ASSETS_PATH,
 } from '@sourcegraph/build-config'
 
 import { ensureDllBundleIsReady } from './dllPlugin'
 import { ENVIRONMENT_CONFIG } from './environment-config'
 import {
-    monacoEditorPath,
-    dllPluginConfig,
     dllBundleManifestPath,
+    dllPluginConfig,
+    monacoEditorPath,
     readJsonFile,
     storybookWorkspacePath,
 } from './webpack.config.common'
@@ -42,7 +42,7 @@ const getStoriesGlob = (): string[] => {
     // Due to an issue with constant recompiling (https://github.com/storybookjs/storybook/issues/14342)
     // we need to make the globs more specific (`(web|shared..)` also doesn't work). Once the above issue
     // is fixed, this can be removed and watched for `client/**/*.story.tsx` again.
-    const directoriesWithStories = ['branded', 'browser', 'shared', 'web', 'wildcard', 'search-ui']
+    const directoriesWithStories = ['branded', 'browser', 'jetbrains/webview', 'shared', 'web', 'wildcard', 'search-ui']
     const storiesGlobs = directoriesWithStories.map(packageDirectory =>
         path.resolve(ROOT_PATH, `client/${packageDirectory}/src/**/*.story.tsx`)
     )
@@ -223,6 +223,23 @@ const config: Config = {
                     cwd: path.resolve(ROOT_PATH, 'client/web/src/search/results/components/compute'),
                     report: 'json',
                     pathToElm: path.resolve(ROOT_PATH, 'node_modules/.bin/elm'),
+                },
+            },
+        })
+
+        // Node.js polyfills for JetBrains plugin
+        config.module.rules.push({
+            test: /(?:client\/(?:shared|jetbrains)|node_modules\/https-browserify)\/.*\.(ts|tsx|js|jsx)$/,
+            resolve: {
+                alias: {
+                    path: require.resolve('path-browserify'),
+                },
+                fallback: {
+                    path: require.resolve('path-browserify'),
+                    process: require.resolve('process/browser'),
+                    util: require.resolve('util'),
+                    http: require.resolve('stream-http'),
+                    https: require.resolve('https-browserify'),
                 },
             },
         })
