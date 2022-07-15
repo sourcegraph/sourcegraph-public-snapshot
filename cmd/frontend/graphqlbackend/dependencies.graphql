@@ -1,6 +1,8 @@
 extend type Query {
     """
     A list of lockfile indexes.
+
+    Site-admin only.
     """
     lockfileIndexes(
         """
