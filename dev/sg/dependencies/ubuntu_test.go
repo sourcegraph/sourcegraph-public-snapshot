@@ -15,7 +15,7 @@ import (
 )
 
 func TestUbuntuFix(t *testing.T) {
-	if !strings.Contains(*sgSetupTests, string(OSUbuntu)) {
+	if !strings.Contains(*sgSetupTests, string(OSLinux)) {
 		t.Skip("Skipping Ubuntu sg setup tests")
 	}
 
