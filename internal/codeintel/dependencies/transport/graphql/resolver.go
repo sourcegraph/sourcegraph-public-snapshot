@@ -63,10 +63,11 @@ type params struct {
 	limit int
 }
 
-func validateArgs(args *graphqlbackend.ListLockfileIndexesArgs) (p params, err error) {
+func validateArgs(args *graphqlbackend.ListLockfileIndexesArgs) (params, error) {
+	var p params
 	afterCount, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
-		return
+		return p, err
 	}
 	p.after = afterCount
 
@@ -76,5 +77,5 @@ func validateArgs(args *graphqlbackend.ListLockfileIndexesArgs) (p params, err e
 	}
 	p.limit = limit
 
-	return
+	return p, nil
 }
