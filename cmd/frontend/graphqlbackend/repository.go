@@ -50,7 +50,7 @@ type RepositoryResolver struct {
 	defaultBranchErr  error
 }
 
-func NewRepositoryResolver(logger log.Logger, db database.DB, repo *types.Repo) *RepositoryResolver {
+func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver {
 	// Protect against a nil repo
 	var name api.RepoName
 	var id api.RepoID
@@ -66,7 +66,7 @@ func NewRepositoryResolver(logger log.Logger, db database.DB, repo *types.Repo) 
 			Name: name,
 			ID:   id,
 		},
-		logger: logger,
+		logger: log.Scoped("nodes.repositoryResolver", ""),
 	}
 }
 
@@ -395,7 +395,7 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 
 	_, err := r.db.Phabricator().CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
 	if err != nil {
-		r.logger.Error("adding phabricator repo", log.String("callsign", args.Callsign), log.String("name", *args.URI), log.String("url", args.URL))
+		r.logger.Error("adding phabricator repo", log.String("callsign", args.Callsign), log.Stringp("name", args.URI), log.String("url", args.URL))
 	}
 	return nil, err
 }
@@ -428,7 +428,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		if err != nil {
 			return nil, err
 		}
-		r := NewRepositoryResolver(r.logger, db, repo)
+		r := NewRepositoryResolver(db, repo)
 		return r.Commit(ctx, &RepositoryCommitArgs{Rev: targetRef})
 	}
 

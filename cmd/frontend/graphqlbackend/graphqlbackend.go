@@ -609,7 +609,7 @@ func (r *schemaResolver) repositoryByID(ctx context.Context, id graphql.ID) (*Re
 	if err != nil {
 		return nil, err
 	}
-	return NewRepositoryResolver(r.logger, r.db, repo), nil
+	return NewRepositoryResolver(r.db, repo), nil
 }
 
 type RedirectResolver struct {
@@ -646,7 +646,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		if err != nil {
 			return nil, err
 		}
-		return &repositoryRedirect{repo: NewRepositoryResolver(r.logger, r.db, repo)}, nil
+		return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
 	}
 	var name api.RepoName
 	if args.Name != nil {
@@ -678,7 +678,7 @@ func (r *schemaResolver) RepositoryRedirect(ctx context.Context, args *repositor
 		}
 		return nil, err
 	}
-	return &repositoryRedirect{repo: NewRepositoryResolver(r.logger, r.db, repo)}, nil
+	return &repositoryRedirect{repo: NewRepositoryResolver(r.db, repo)}, nil
 }
 
 func (r *schemaResolver) PhabricatorRepo(ctx context.Context, args *struct {

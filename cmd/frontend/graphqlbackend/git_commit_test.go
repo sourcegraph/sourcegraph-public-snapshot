@@ -10,8 +10,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -21,7 +19,6 @@ import (
 )
 
 func TestGitCommitResolver(t *testing.T) {
-	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewMockDB()
 
@@ -42,7 +39,7 @@ func TestGitCommitResolver(t *testing.T) {
 	}
 
 	t.Run("URL Escaping", func(t *testing.T) {
-		repo := NewRepositoryResolver(logger, db, &types.Repo{Name: "xyz"})
+		repo := NewRepositoryResolver(db, &types.Repo{Name: "xyz"})
 		commitResolver := NewGitCommitResolver(db, repo, "c1", commit)
 		{
 			inputRev := "master^1"
@@ -118,7 +115,7 @@ func TestGitCommitResolver(t *testing.T) {
 			},
 		}} {
 			t.Run(tc.name, func(t *testing.T) {
-				repo := NewRepositoryResolver(logger, db, &types.Repo{Name: "bob-repo"})
+				repo := NewRepositoryResolver(db, &types.Repo{Name: "bob-repo"})
 				// We pass no commit here to test that it gets lazy loaded via
 				// the git.GetCommit mock above.
 				r := NewGitCommitResolver(db, repo, "c1", nil)
