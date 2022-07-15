@@ -2060,8 +2060,8 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return err
 	}
 
-	// Disable background garbage collection
-	if err := gitConfigSet(tmp, "gc.auto", "0"); err != nil {
+	// Set gc.auto depending on gitGCMode.
+	if err := gitSetAutoGC(tmp); err != nil {
 		return err
 	}
 
