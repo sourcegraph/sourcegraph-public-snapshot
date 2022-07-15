@@ -132,6 +132,14 @@ public class ConfigUtil {
         SourcegraphApplicationService.getInstance().isUrlNotificationDismissed = value;
     }
 
+    public static String getLastUpdateNotificationPluginVersion() {
+        return SourcegraphApplicationService.getInstance().getLastUpdateNotificationPluginVersion();
+    }
+
+    public static void setLastUpdateNotificationPluginVersionToCurrent() {
+        SourcegraphApplicationService.getInstance().lastUpdateNotificationPluginVersion = getPluginVersion();
+    }
+
     @NotNull
     private static SourcegraphApplicationService getApplicationLevelConfig() {
         return Objects.requireNonNull(SourcegraphApplicationService.getInstance());

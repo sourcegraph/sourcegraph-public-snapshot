@@ -1,9 +1,11 @@
 import React, { useContext, useMemo } from 'react'
 
-import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { useDeepMemo, Text } from '@sourcegraph/wildcard'
+import { groupBy } from 'lodash'
 
-import { Series } from '../../../../../charts'
+import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
+import { useDeepMemo } from '@sourcegraph/wildcard'
+
+import { LegendItem, LegendList, Series } from '../../../../../charts'
 import { BarChart } from '../../../../../charts/components/bar-chart/BarChart'
 import { GroupByField } from '../../../../../graphql-operations'
 import {
@@ -13,19 +15,23 @@ import {
     LivePreviewChart,
     LivePreviewBlurBackdrop,
     LivePreviewBanner,
-    LivePreviewLegend,
     getSanitizedRepositories,
     useLivePreview,
     StateStatus,
     COMPUTE_MOCK_CHART,
+    EditableDataSeries,
 } from '../../../components'
-import { BackendInsightDatum, CategoricalChartContent, CodeInsightsBackendContext } from '../../../core'
+import {
+    BackendInsightDatum,
+    CategoricalChartContent,
+    CodeInsightsBackendContext,
+    SeriesPreviewSettings,
+} from '../../../core'
 
 interface LanguageUsageDatum {
     name: string
     value: number
     fill: string
-    linkURL: string
     group?: string
 }
 
@@ -33,45 +39,38 @@ interface ComputeLivePreviewProps {
     disabled: boolean
     repositories: string
     className?: string
-    series: {
-        query: string
-        label: string
-        stroke: string
-        groupBy?: GroupByField
-    }[]
+    groupBy: GroupByField
+    series: EditableDataSeries[]
 }
 
 export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps> = props => {
-    // For the purposes of building out this component before the backend is ready
-    // we are using the standard "line series" type data.
-    // TODO after backend is merged, remove update the series value to use that structure
-    const { disabled, repositories, series, className } = props
-    const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
-
-    const sanitizedSeries = series.map(srs => ({
-        query: srs.query,
-        label: srs.label,
-        stroke: srs.stroke,
-        groupBy: srs.groupBy,
-    }))
+    const { disabled, repositories, series, groupBy, className } = props
+    const { getInsightPreviewContent } = useContext(CodeInsightsBackendContext)
 
     const settings = useDeepMemo({
         disabled,
         repositories: getSanitizedRepositories(repositories),
-        series: sanitizedSeries,
+        // For the purposes of building out this component before the backend is ready
+        // we are using the standard "line series" type data.
+        // TODO after backend is merged, remove update the series value to use that structure
+        series: series.map<SeriesPreviewSettings>(srs => ({
+            query: srs.query,
+            label: srs.name,
+            stroke: srs.stroke ?? 'blue',
+            generatedFromCaptureGroup: true,
+            groupBy,
+        })),
         // TODO: Revisit this hardcoded value. Compute does not use it, but it's still required
         //  for `searchInsightPreview`
-        step: {
-            days: 1,
-        },
+        step: { days: 1 },
     })
 
     const getLivePreview = useMemo(
         () => ({
             disabled: settings.disabled,
-            fetcher: () => getLivePreviewContent(settings),
+            fetcher: () => getInsightPreviewContent(settings),
         }),
-        [settings, getLivePreviewContent]
+        [settings, getInsightPreviewContent]
     )
 
     const { state, update } = useLivePreview(getLivePreview)
@@ -117,22 +116,41 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
                 )}
 
                 {state.status === StateStatus.Data && (
-                    <LivePreviewLegend series={state.data.series as Series<unknown>[]} />
+                    <LegendList className="mt-3">
+                        {state.data.series.map(series => (
+                            <LegendItem
+                                key={series.id}
+                                color={getComputeSeriesColor(series)}
+                                name={getComputeSeriesName(series)}
+                            />
+                        ))}
+                    </LegendList>
                 )}
             </LivePreviewCard>
-
-            <Text className="mt-4 pl-2">
-                <strong>Timeframe:</strong> May 20, 2022 - Oct 20, 2022
-            </Text>
         </aside>
     )
 }
 
-const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] =>
-    series.map(series => ({
-        group: series.name,
-        name: series.name,
-        value: series.data[0].value ?? 0,
-        fill: series.color ?? 'var(--blue)',
-        linkURL: series.data[0].link ?? '',
-    }))
+const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] => {
+    const seriesGroups = groupBy(series, series => series.name)
+
+    // Group series result by seres name and sum up series value with the same name
+    return Object.keys(seriesGroups).map(key =>
+        seriesGroups[key].reduce(
+            (memo, series) => {
+                memo.value += series.data.reduce((sum, datum) => sum + (series.getYValue(datum) ?? 0), 0)
+
+                return memo
+            },
+            {
+                name: getComputeSeriesName(seriesGroups[key][0]),
+                fill: getComputeSeriesColor(seriesGroups[key][0]),
+                value: 0,
+            }
+        )
+    )
+}
+
+const getComputeSeriesName = (series: Series<any>): string => (series.name ? series.name : 'Other')
+const getComputeSeriesColor = (series: Series<any>): string =>
+    series.name ? series.color ?? 'var(--blue)' : 'var(--oc-gray-4)'

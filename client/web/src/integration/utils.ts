@@ -1,3 +1,4 @@
+import { EditorView } from '@codemirror/view'
 import { Page } from 'puppeteer'
 
 import { SearchGraphQlOperations } from '@sourcegraph/search'
@@ -211,7 +212,6 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
         return api
     },
     codemirror6: (driver: Driver, rootSelector: string) => {
-        const inputSelector = `${rootSelector} .cm-content`
         // Selector to use to wait for the editor to be complete loaded
         const readySelector = `${rootSelector} .cm-line`
         const completionSelector = `${rootSelector} .cm-tooltip-autocomplete`
@@ -227,10 +227,27 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                 await driver.page.click(rootSelector)
             },
             getValue() {
-                return driver.page.evaluate(
-                    (inputSelector: string) => document.querySelector<HTMLDivElement>(inputSelector)?.textContent,
-                    inputSelector
-                )
+                return driver.page.evaluate((selector: string) => {
+                    // Typecast "as any" is used to avoid TypeScript complaining
+                    // about window not having this property. We decided that
+                    // it's fine to use this in a test context
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+                    const fromDOM = (window as any).CodeMirrorFindFromDOM as
+                        | typeof EditorView['findFromDOM']
+                        | undefined
+                    if (!fromDOM) {
+                        throw new Error(
+                            'CodeMirror DOM API not exposed. Ensure the web app is built with INTEGRATION_TESTS=true.'
+                        )
+                    }
+                    const editorElement = document.querySelector<HTMLElement>(selector)
+                    if (editorElement) {
+                        // Returns an EditorView
+                        // See https://codemirror.net/docs/ref/#view.EditorView^findFromDOM
+                        return fromDOM(editorElement)?.state.sliceDoc()
+                    }
+                    return undefined
+                }, rootSelector)
             },
             replace(newText: string, method = 'type') {
                 return driver.replaceText({
