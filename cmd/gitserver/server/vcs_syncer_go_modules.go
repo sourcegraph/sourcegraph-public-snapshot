@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"golang.org/x/mod/module"
 	modzip "golang.org/x/mod/zip"
 
@@ -46,19 +47,19 @@ type goModulesSyncer struct {
 	client *gomodproxy.Client
 }
 
-func (s goModulesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseGoVersionedPackage(name + "@" + version)
+func (s goModulesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseGoVersionedPackage(string(name) + "@" + version)
 }
 
 func (goModulesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseGoVersionedPackage(dep)
 }
 
-func (goModulesSyncer) ParsePackageFromName(name string) (reposource.Package, error) {
+func (goModulesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromName(name)
 }
 
-func (goModulesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (goModulesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromRepoName(repoName)
 }
 

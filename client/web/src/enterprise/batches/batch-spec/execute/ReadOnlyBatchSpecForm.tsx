@@ -5,7 +5,7 @@ import { useHistory } from 'react-router'
 import { useMutation } from '@sourcegraph/http-client'
 import { BatchSpecSource } from '@sourcegraph/shared/src/schema'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, H4, Link, Text } from '@sourcegraph/wildcard'
+import { Button, H3, H4, Link, Text } from '@sourcegraph/wildcard'
 
 import {
     BatchSpecExecutionFields,
@@ -116,7 +116,9 @@ const MemoizedReadOnlyBatchSpecForm: React.FunctionComponent<
         <div className={editorStyles.form}>
             <LibraryPane name={batchChange.name} isReadOnly={true} />
             <div className={editorStyles.editorContainer}>
-                <H4 className={editorStyles.header}>Batch spec</H4>
+                <H4 as={H3} className={editorStyles.header}>
+                    Batch spec
+                </H4>
                 {alert}
                 <BatchSpec
                     name={batchChange.name}

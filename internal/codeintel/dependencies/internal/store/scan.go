@@ -8,6 +8,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -105,13 +106,13 @@ func scanIntString(s dbutil.Scanner) (int, string, error) {
 	return i, str, nil
 }
 
-func scanIdNames(rows *sql.Rows, queryErr error) (nameIDs map[string]int, ids []int, err error) {
+func scanIdNames(rows *sql.Rows, queryErr error) (nameIDs map[reposource.PackageName]int, ids []int, err error) {
 	if queryErr != nil {
 		return nil, nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	nameIDs = make(map[string]int)
+	nameIDs = make(map[reposource.PackageName]int)
 	ids = []int{}
 
 	for rows.Next() {
@@ -120,7 +121,7 @@ func scanIdNames(rows *sql.Rows, queryErr error) (nameIDs map[string]int, ids []
 			return nil, nil, err
 		}
 
-		nameIDs[name] = id
+		nameIDs[reposource.PackageName(name)] = id
 		ids = append(ids, id)
 	}
 

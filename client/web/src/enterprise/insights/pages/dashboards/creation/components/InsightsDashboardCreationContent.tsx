@@ -44,9 +44,7 @@ export interface InsightsDashboardCreationContentProps {
 /**
  * Renders creation UI form content (fields, submit and cancel buttons).
  */
-export const InsightsDashboardCreationContent: React.FunctionComponent<
-    React.PropsWithChildren<InsightsDashboardCreationContentProps>
-> = props => {
+export const InsightsDashboardCreationContent: React.FunctionComponent<InsightsDashboardCreationContentProps> = props => {
     const { initialValues, owners, onSubmit, children } = props
 
     const { UIFeatures } = useContext(CodeInsightsBackendContext)

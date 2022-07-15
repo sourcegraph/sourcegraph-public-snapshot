@@ -38,7 +38,7 @@ export interface ResultContainerProps {
     /**
      * The title component.
      */
-    title: React.ReactFragment
+    title: React.ReactNode
 
     /**
      * CSS class name to apply to the title element.
@@ -46,20 +46,18 @@ export interface ResultContainerProps {
     titleClassName?: string
 
     /** The content to display next to the title. */
-    description?: React.ReactFragment
+    description?: React.ReactNode
 
     /**
      * The content of the result displayed underneath the result container's
      * header when collapsed.
      */
-    collapsedChildren?: React.ReactFragment
-
+    collapsedChildren?: React.ReactNode
     /**
      * The content of the result displayed underneath the result container's
      * header when expanded.
      */
-    expandedChildren?: React.ReactFragment
-
+    expandedChildren?: React.ReactNode
     /**
      * The label to display next to the collapse button
      */

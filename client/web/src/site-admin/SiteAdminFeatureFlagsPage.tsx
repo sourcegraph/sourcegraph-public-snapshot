@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { of, Observable, forkJoin } from 'rxjs'
 import { catchError, map, mergeMap } from 'rxjs/operators'
@@ -9,7 +9,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button, Code, H3, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button, Code, H3, Text, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -281,7 +281,7 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
 
             <span className={classNames(styles.button, 'd-none d-md-inline')}>
                 <Link to={`./feature-flags/configuration/${node.name}`} className="p-0">
-                    <ChevronRightIcon />
+                    <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
                 </Link>
             </span>
 

@@ -75,7 +75,7 @@ export const SearchPageInput: React.FunctionComponent<React.PropsWithChildren<Pr
     const showSearchContextManagement = useExperimentalFeatures(
         features => features.showSearchContextManagement ?? false
     )
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
 
     useEffect(() => {
         setUserQueryState({ query: props.queryPrefix || '' })

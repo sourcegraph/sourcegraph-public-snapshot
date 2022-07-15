@@ -1,6 +1,7 @@
 package reposource
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -8,11 +9,11 @@ import (
 )
 
 type PythonVersionedPackage struct {
-	Name    string
+	Name    PackageName
 	Version string
 }
 
-func NewPythonVersionedPackage(name, version string) *PythonVersionedPackage {
+func NewPythonVersionedPackage(name PackageName, version string) *PythonVersionedPackage {
 	return &PythonVersionedPackage{
 		Name:    name,
 		Version: version,
@@ -24,22 +25,22 @@ func NewPythonVersionedPackage(name, version string) *PythonVersionedPackage {
 func ParseVersionedPackage(dependency string) (*PythonVersionedPackage, error) {
 	var dep PythonVersionedPackage
 	if i := strings.LastIndex(dependency, "=="); i == -1 {
-		dep.Name = dependency
+		dep.Name = PackageName(dependency)
 	} else {
-		dep.Name = strings.TrimSpace(dependency[:i])
+		dep.Name = PackageName(strings.TrimSpace(dependency[:i]))
 		dep.Version = strings.TrimSpace(dependency[i+2:])
 	}
 	return &dep, nil
 }
 
-func ParsePythonPackageFromName(name string) (*PythonVersionedPackage, error) {
-	return ParseVersionedPackage(name)
+func ParsePythonPackageFromName(name PackageName) (*PythonVersionedPackage, error) {
+	return ParseVersionedPackage(string(name))
 }
 
 // ParsePythonPackageFromRepoName is a convenience function to parse a repo name in a
 // 'python/<name>(==<version>)?' format into a PythonVersionedPackage.
-func ParsePythonPackageFromRepoName(name string) (*PythonVersionedPackage, error) {
-	dependency := strings.TrimPrefix(name, "python/")
+func ParsePythonPackageFromRepoName(name api.RepoName) (*PythonVersionedPackage, error) {
+	dependency := strings.TrimPrefix(string(name), "python/")
 	if len(dependency) == len(name) {
 		return nil, errors.New("invalid python dependency repo name, missing python/ prefix")
 	}
@@ -50,15 +51,15 @@ func (p *PythonVersionedPackage) Scheme() string {
 	return "python"
 }
 
-func (p *PythonVersionedPackage) PackageSyntax() string {
+func (p *PythonVersionedPackage) PackageSyntax() PackageName {
 	return p.Name
 }
 
 func (p *PythonVersionedPackage) VersionedPackageSyntax() string {
 	if p.Version == "" {
-		return p.Name
+		return string(p.Name)
 	}
-	return p.Name + "==" + p.Version
+	return fmt.Sprintf("%s==%s", p.Name, p.Version)
 }
 
 func (p *PythonVersionedPackage) PackageVersion() string {

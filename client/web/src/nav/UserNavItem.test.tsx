@@ -62,7 +62,6 @@ describe('UserNavItem', () => {
                             themePreference={ThemePreference.Light}
                             authenticatedUser={USER}
                             showDotComMarketing={true}
-                            isExtensionAlertAnimating={false}
                             codeHostIntegrationMessaging="browser-extension"
                         />
                     </CompatRouter>
@@ -80,7 +79,6 @@ describe('UserNavItem', () => {
                 themePreference={ThemePreference.Light}
                 authenticatedUser={USER}
                 showDotComMarketing={true}
-                isExtensionAlertAnimating={false}
                 codeHostIntegrationMessaging="browser-extension"
             />,
             {

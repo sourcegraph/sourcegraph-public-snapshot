@@ -15,6 +15,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -85,7 +86,7 @@ func TestNpmCloneCommand(t *testing.T) {
 	tgz2 := createTgz(t, []fileInfo{{exampleTSFilepath, []byte(exampleTSFileContents)}})
 
 	client := npmtest.MockClient{
-		Packages: map[string]*npm.PackageInfo{
+		Packages: map[reposource.PackageName]*npm.PackageInfo{
 			"example": {
 				Versions: map[string]*npm.DependencyInfo{
 					exampleNpmVersion: {

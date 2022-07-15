@@ -69,7 +69,7 @@ FROM
 %s
 `
 
-func makeEventLogsQueries(dateRange string, events []string) (*sqlf.Query, *sqlf.Query, error) {
+func makeEventLogsQueries(dateRange string, events []string, conditions ...*sqlf.Query) (*sqlf.Query, *sqlf.Query, error) {
 	dateTruncExp, dateBetweenCond, err := makeDateParameters(dateRange, "timestamp")
 	if err != nil {
 		return nil, nil, err
@@ -78,6 +78,10 @@ func makeEventLogsQueries(dateRange string, events []string) (*sqlf.Query, *sqlf
 	conds := []*sqlf.Query{
 		sqlf.Sprintf("anonymous_user_id <> 'backend'"),
 		sqlf.Sprintf("timestamp %s", dateBetweenCond),
+	}
+
+	if len(conditions) > 0 {
+		conds = append(conds, conditions...)
 	}
 
 	if len(events) > 0 {

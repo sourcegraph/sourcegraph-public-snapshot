@@ -1,8 +1,7 @@
 import React from 'react'
 
-import { mdiAccount } from '@mdi/js'
+import { mdiAccount, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Icon, Link, H3, Text } from '@sourcegraph/wildcard'
 
@@ -60,7 +59,7 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
                 </H3>
                 {shortDescription && <Text className="mb-0 text-muted">{shortDescription}</Text>}
             </div>
-            {to && <ChevronRightIcon className="align-self-center" />}
+            {to && <Icon className="align-self-center" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />}
         </div>
     )
     return to ? (

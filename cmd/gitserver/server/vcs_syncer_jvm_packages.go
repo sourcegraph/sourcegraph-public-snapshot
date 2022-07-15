@@ -15,6 +15,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -60,19 +61,19 @@ type jvmPackagesSyncer struct {
 	fetch  func(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error)
 }
 
-func (jvmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseMavenVersionedPackage(name + ":" + version)
+func (jvmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseMavenVersionedPackage(string(name) + ":" + version)
 }
 
 func (jvmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseMavenVersionedPackage(dep)
 }
 
-func (jvmPackagesSyncer) ParsePackageFromName(name string) (reposource.Package, error) {
+func (jvmPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	return reposource.ParseMavenPackageFromName(name)
 }
 
-func (jvmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (jvmPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseMavenPackageFromRepoName(repoName)
 }
 

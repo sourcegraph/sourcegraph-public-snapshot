@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 
 	"github.com/sourcegraph/log"
@@ -49,19 +50,19 @@ type rustDependencySource struct {
 	client *crates.Client
 }
 
-func (rustDependencySource) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseRustVersionedPackage(name + "@" + version)
+func (rustDependencySource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseRustVersionedPackage(string(name) + "@" + version)
 }
 
 func (rustDependencySource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseRustVersionedPackage(dep)
 }
 
-func (rustDependencySource) ParsePackageFromName(name string) (reposource.Package, error) {
+func (rustDependencySource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	return reposource.ParseRustPackageFromName(name)
 
 }
-func (rustDependencySource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (rustDependencySource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseRustPackageFromRepoName(repoName)
 }
 

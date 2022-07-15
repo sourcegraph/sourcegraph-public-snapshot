@@ -15,6 +15,7 @@ interface TimeSavedCalculatorGroupItem {
     description: string
     percentage?: number
     hoursSaved?: number
+    eventsLabel?: string
 }
 
 interface TimeSavedCalculatorGroupProps {
@@ -121,54 +122,62 @@ export const TimeSavedCalculatorGroup: React.FunctionComponent<TimeSavedCalculat
                 </div>
             </Card>
             <div className={styles.calculatorList}>
-                {memoizedItems.map(({ label, percentage, minPerItem, hoursSaved, value, description }, index) => (
-                    <React.Fragment key={label}>
-                        <Text
-                            className="text-nowrap d-flex align-items-center"
-                            dangerouslySetInnerHTML={{ __html: label }}
-                        />
-                        {!!percentage && percentage >= 0 ? (
+                {memoizedItems.map(
+                    (
+                        { label, percentage, minPerItem, hoursSaved, value, description, eventsLabel = 'Events' },
+                        index
+                    ) => (
+                        <React.Fragment key={label}>
+                            <Text
+                                className="text-nowrap d-flex align-items-center"
+                                dangerouslySetInnerHTML={{ __html: label }}
+                            />
+                            {!!percentage && percentage >= 0 ? (
+                                <div className="d-flex flex-column align-items-center justify-content-center">
+                                    <Input
+                                        type="number"
+                                        value={percentage}
+                                        className={classNames(styles.calculatorInput, 'mb-1')}
+                                        onChange={event => updatePercentage(index, Number(event.target.value))}
+                                    />
+                                    <Text as="span">% of total</Text>
+                                </div>
+                            ) : (
+                                <div className="d-flex flex-column align-items-center justify-content-center">
+                                    <Text as="span" weight="bold" className={styles.countBoxValue}>
+                                        {formatNumber(value)}
+                                    </Text>
+                                    <Text as="span" alignment="center">
+                                        {eventsLabel}
+                                    </Text>
+                                </div>
+                            )}
                             <div className="d-flex flex-column align-items-center justify-content-center">
                                 <Input
                                     type="number"
-                                    value={percentage}
+                                    value={minPerItem}
                                     className={classNames(styles.calculatorInput, 'mb-1')}
-                                    onChange={event => updatePercentage(index, Number(event.target.value))}
+                                    onChange={event => updateMinPerItem(index, Number(event.target.value))}
                                 />
-                                <Text as="span">% of total</Text>
+                                <Text as="span" className="text-nowrap">
+                                    Minutes per
+                                </Text>
                             </div>
-                        ) : (
                             <div className="d-flex flex-column align-items-center justify-content-center">
                                 <Text as="span" weight="bold" className={styles.countBoxValue}>
-                                    {formatNumber(value)}
+                                    {formatNumber(hoursSaved)}
                                 </Text>
                                 <Text as="span" alignment="center">
-                                    Events
+                                    Hours saved
                                 </Text>
                             </div>
-                        )}
-                        <div className="d-flex flex-column align-items-center justify-content-center">
-                            <Input
-                                type="number"
-                                value={minPerItem}
-                                className={classNames(styles.calculatorInput, 'mb-1')}
-                                onChange={event => updateMinPerItem(index, Number(event.target.value))}
+                            <Text
+                                dangerouslySetInnerHTML={{ __html: description }}
+                                className="d-flex align-items-center"
                             />
-                            <Text as="span" className="text-nowrap">
-                                Minutes per
-                            </Text>
-                        </div>
-                        <div className="d-flex flex-column align-items-center justify-content-center">
-                            <Text as="span" weight="bold" className={styles.countBoxValue}>
-                                {formatNumber(hoursSaved)}
-                            </Text>
-                            <Text as="span" alignment="center">
-                                Hours saved
-                            </Text>
-                        </div>
-                        <Text dangerouslySetInnerHTML={{ __html: description }} className="d-flex align-items-center" />
-                    </React.Fragment>
-                ))}
+                        </React.Fragment>
+                    )
+                )}
             </div>
         </div>
     )

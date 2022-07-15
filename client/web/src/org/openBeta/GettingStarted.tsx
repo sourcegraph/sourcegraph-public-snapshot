@@ -1,14 +1,13 @@
 import React, { ReactNode, useEffect } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
+import { mdiCheckCircle, mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Link, LoadingSpinner, PageHeader, Badge, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Badge, H3, Tooltip, Icon } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
@@ -151,7 +150,16 @@ const Step: React.FunctionComponent<
     <li className={styles.entryItem}>
         <LinkableContainer to={to} onClick={onClick}>
             <div className={styles.iconContainer}>
-                {complete && <CheckCircleIcon className="text-success" size={14} />}
+                {complete && (
+                    <Icon
+                        className="text-success"
+                        svgPath={mdiCheckCircle}
+                        inline={false}
+                        aria-label="Success"
+                        height={14}
+                        width={14}
+                    />
+                )}
                 {!complete && <div className={styles.emptyCircle} />}
             </div>
             <H3
@@ -164,7 +172,7 @@ const Step: React.FunctionComponent<
             </H3>
             {to && (
                 <div className={styles.linkContainer}>
-                    <ArrowRightIcon />
+                    <Icon svgPath={mdiArrowRight} inline={false} aria-hidden={true} />
                 </div>
             )}
         </LinkableContainer>
