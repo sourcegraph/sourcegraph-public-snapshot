@@ -11,6 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/notebooks"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -394,7 +395,7 @@ func (r *notebookResolver) Creator(ctx context.Context) (*graphqlbackend.UserRes
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.CreatorUserID)
 	if err != nil {
 		// Handle soft-deleted users
-		if errors.HasType(err, database.UserNotFoundErr{}) {
+		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -409,7 +410,7 @@ func (r *notebookResolver) Updater(ctx context.Context) (*graphqlbackend.UserRes
 	user, err := graphqlbackend.UserByIDInt32(ctx, r.db, r.notebook.UpdaterUserID)
 	if err != nil {
 		// Handle soft-deleted users
-		if errors.HasType(err, database.UserNotFoundErr{}) {
+		if errcode.IsNotFound(err) {
 			return nil, nil
 		}
 		return nil, err
@@ -422,7 +423,7 @@ func (r *notebookResolver) Namespace(ctx context.Context) (*graphqlbackend.Names
 		n, err := graphqlbackend.NamespaceByID(ctx, r.db, graphqlbackend.MarshalUserID(r.notebook.NamespaceUserID))
 		if err != nil {
 			// Handle soft-deleted users
-			if errors.HasType(err, database.UserNotFoundErr{}) {
+			if errcode.IsNotFound(err) {
 				return nil, nil
 			}
 			return nil, err
