@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.api.GraphQlClient;
-import org.apache.http.HttpResponse;
+import com.sourcegraph.api.GraphQlResponse;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,9 +24,9 @@ public class ApiAuthenticator {
                 "}";
 
             try {
-                HttpResponse response = GraphQlClient.callGraphQLService(instanceUrl, accessToken, query, new JsonObject());
-                if (GraphQlClient.getStatusCode(response) == 200) {
-                    JsonElement id = GraphQlClient.getResponseBodyJson(response).getAsJsonObject().get("currentUser").getAsJsonObject().get("id");
+                GraphQlResponse response = GraphQlClient.callGraphQLService(instanceUrl, accessToken, query, new JsonObject());
+                if (response.getStatusCode() == 200) {
+                    JsonElement id = response.getBodyAsJson().getAsJsonObject("data").getAsJsonObject("currentUser").get("id");
                     callback.accept(id.isJsonNull() ? ConnectionStatus.COULD_CONNECT_BUT_NOT_AUTHENTICATED : ConnectionStatus.AUTHENTICATED);
                 } else {
                     callback.accept(ConnectionStatus.COULD_NOT_CONNECT);

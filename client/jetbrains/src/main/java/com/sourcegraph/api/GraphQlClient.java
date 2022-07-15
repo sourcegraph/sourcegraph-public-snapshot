@@ -1,7 +1,6 @@
 package com.sourcegraph.api;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -22,22 +21,24 @@ import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
 
 public class GraphQlClient {
-    public static HttpResponse callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws IOException {
+    @NotNull
+    public static GraphQlResponse callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws IOException {
         HttpPost request = createRequest(instanceUrl, accessToken, query, variables);
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
-            CloseableHttpResponse response = client.execute(request);
-            response.close();
+            CloseableHttpResponse httpResponse = client.execute(request);
+            GraphQlResponse response = new GraphQlResponse(getStatusCode(httpResponse), getResponseBody(httpResponse));
+            httpResponse.close();
             return response;
         }
     }
 
-    public static JsonObject getResponseBodyJson(@NotNull HttpResponse response) throws IOException, JsonSyntaxException, IllegalStateException {
+    @Nullable
+    private static String getResponseBody(@NotNull HttpResponse response) throws IOException, JsonSyntaxException, IllegalStateException {
         HttpEntity entity = response.getEntity();
-        String result = EntityUtils.toString(entity);
-        return JsonParser.parseString(result).getAsJsonObject();
+        return EntityUtils.toString(entity, StandardCharsets.UTF_8);
     }
 
-    public static int getStatusCode(@NotNull HttpResponse response) {
+    private static int getStatusCode(@NotNull HttpResponse response) {
         return response.getStatusLine().getStatusCode();
     }
 

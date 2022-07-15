@@ -50,7 +50,7 @@ public class GraphQlLogger {
             variables.add("events", events);
 
             try {
-                int responseStatusCode = GraphQlClient.getStatusCode(GraphQlClient.callGraphQLService(instanceUrl, accessToken, query, variables));
+                int responseStatusCode = GraphQlClient.callGraphQLService(instanceUrl, accessToken, query, variables).getStatusCode();
                 if (callback != null) {
                     callback.accept(responseStatusCode);
                 }
