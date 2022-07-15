@@ -60,9 +60,18 @@
     background-color: var(--border-color);
     border-bottom-left-radius: var(--border-radius);
     border-bottom-right-radius: var(--border-radius);
+    color: var(--text-muted);
 
     &-text {
-        color: var(--link-color);
-        margin-right: 0.125rem;
+        margin-left: 0.125rem;
+    }
+}
+
+.collapsible-results {
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+
+    &:hover {
+        border-color: var(--border-color-2);
     }
 }

@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 
+import classNames from 'classnames'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
@@ -114,9 +115,9 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
 
     const ranking = useMemo(() => {
         if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
-            return new LineRanking(coreWorkflowImprovementsEnabled ? 5 : 10)
+            return new LineRanking(coreWorkflowImprovementsEnabled ? 1 : 10)
         }
-        return new ZoektRanking(coreWorkflowImprovementsEnabled ? 3 : 5)
+        return new ZoektRanking(coreWorkflowImprovementsEnabled ? 1 : 5)
     }, [settings, coreWorkflowImprovementsEnabled])
 
     // The number of lines of context to show before and after each match.
@@ -132,8 +133,8 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 return contextLinesSetting
             }
         }
-        return DEFAULT_CONTEXT
-    }, [props.location, props.settingsCascade])
+        return coreWorkflowImprovementsEnabled ? 2 : DEFAULT_CONTEXT
+    }, [props.location, props.settingsCascade, coreWorkflowImprovementsEnabled])
 
     const items: MatchItem[] = useMemo(
         () =>
@@ -198,7 +199,10 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                         ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
                         : undefined
                 }
-                className={styles.titleInner}
+                className={classNames(
+                    styles.titleInner,
+                    coreWorkflowImprovementsEnabled && result.type !== 'path' && styles.mutedRepoFileLink
+                )}
             />
         ),
         allExpanded: props.allExpanded,

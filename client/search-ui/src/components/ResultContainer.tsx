@@ -235,14 +235,18 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
-                {!expanded && collapsedChildren}
-                {expanded && expandedChildren}
-                {coreWorkflowImprovementsEnabled && collapsible && (
-                    <button type="button" className={styles.toggleMatchesButton} onClick={toggle}>
-                        <span className={styles.toggleMatchesButtonText}>{expanded ? collapseLabel : expandLabel}</span>
-                        <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
-                    </button>
-                )}
+                <div className={coreWorkflowImprovementsEnabled && styles.collapsibleResults}>
+                    {!expanded && collapsedChildren}
+                    {expanded && expandedChildren}
+                    {coreWorkflowImprovementsEnabled && collapsible && (
+                        <button type="button" className={styles.toggleMatchesButton} onClick={toggle}>
+                            <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
+                            <span className={styles.toggleMatchesButtonText}>
+                                {expanded ? collapseLabel : expandLabel}
+                            </span>
+                        </button>
+                    )}
+                </div>
             </article>
         </Component>
     )

@@ -5,6 +5,10 @@
     padding: 0.25rem 0;
     position: relative;
 
+    :global(.core-workflow-improvements-enabled) & {
+        border: none;
+    }
+
     :global(.core-workflow-improvements-enabled) [data-collapsible='true'] & {
         border-bottom-left-radius: 0;
         border-bottom-right-radius: 0;
