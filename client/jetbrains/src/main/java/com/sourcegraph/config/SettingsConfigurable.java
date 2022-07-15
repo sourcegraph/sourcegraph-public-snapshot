@@ -40,8 +40,8 @@ public class SettingsConfigurable implements Configurable {
     @Override
     public boolean isModified() {
         return !mySettingsComponent.getInstanceType().equals(ConfigUtil.getInstanceType(project))
-            || !mySettingsComponent.getSourcegraphUrl().equals(ConfigUtil.getSourcegraphUrl(project))
-            || !mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project))
+            || !mySettingsComponent.getEnterpriseUrl().equals(ConfigUtil.getEnterpriseUrl(project))
+            || !(mySettingsComponent.getAccessToken().equals(ConfigUtil.getAccessToken(project)) || mySettingsComponent.getAccessToken().isEmpty() && ConfigUtil.getAccessToken(project) == null)
             || !mySettingsComponent.getDefaultBranchName().equals(ConfigUtil.getDefaultBranchName(project))
             || !mySettingsComponent.getRemoteUrlReplacements().equals(ConfigUtil.getRemoteUrlReplacements(project))
             || mySettingsComponent.isGlobbingEnabled() != ConfigUtil.isGlobbingEnabled(project)
@@ -58,7 +58,7 @@ public class SettingsConfigurable implements Configurable {
 
         String oldUrl = ConfigUtil.getSourcegraphUrl(project);
         String oldAccessToken = ConfigUtil.getAccessToken(project);
-        String newUrl = mySettingsComponent.getSourcegraphUrl();
+        String newUrl = mySettingsComponent.getEnterpriseUrl();
         String newAccessToken = mySettingsComponent.getAccessToken();
         PluginSettingChangeContext context = new PluginSettingChangeContext(oldUrl, oldAccessToken, newUrl, newAccessToken);
 
@@ -103,7 +103,7 @@ public class SettingsConfigurable implements Configurable {
     @Override
     public void reset() {
         mySettingsComponent.setInstanceType(ConfigUtil.getInstanceType(project));
-        mySettingsComponent.setSourcegraphUrl(ConfigUtil.getSourcegraphUrl(project));
+        mySettingsComponent.setEnterpriseUrl(ConfigUtil.getEnterpriseUrl(project));
         String accessToken = ConfigUtil.getAccessToken(project);
         mySettingsComponent.setAccessToken(accessToken != null ? accessToken : "");
         String defaultBranchName = ConfigUtil.getDefaultBranchName(project);

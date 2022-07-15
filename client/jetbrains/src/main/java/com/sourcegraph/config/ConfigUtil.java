@@ -17,7 +17,7 @@ public class ConfigUtil {
     public static JsonObject getConfigAsJson(@NotNull Project project) {
         JsonObject configAsJson = new JsonObject();
         configAsJson.addProperty("instanceURL", ConfigUtil.getSourcegraphUrl(project));
-        configAsJson.addProperty("accessToken", ConfigUtil.getAccessToken(project));
+        configAsJson.addProperty("accessToken", ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE ? ConfigUtil.getAccessToken(project) : null);
         configAsJson.addProperty("isGlobbingEnabled", ConfigUtil.isGlobbingEnabled(project));
         configAsJson.addProperty("pluginVersion", ConfigUtil.getPluginVersion());
         configAsJson.addProperty("anonymousUserId", ConfigUtil.getAnonymousUserId());
@@ -42,13 +42,23 @@ public class ConfigUtil {
         }
 
         // User level or default
-        String sourcegraphUrl = getSourcegraphUrl(project);
-        return sourcegraphUrl.startsWith("https://sourcegraph.com")
+        String enterpriseUrl = getEnterpriseUrl(project);
+        return (enterpriseUrl.equals("") || enterpriseUrl.startsWith("https://sourcegraph.com"))
             ? SettingsComponent.InstanceType.DOTCOM : SettingsComponent.InstanceType.ENTERPRISE;
     }
 
     @NotNull
     public static String getSourcegraphUrl(@NotNull Project project) {
+        if (getInstanceType(project) == SettingsComponent.InstanceType.DOTCOM) {
+            return "https://sourcegraph.com/";
+        } else {
+            String enterpriseUrl = getEnterpriseUrl(project);
+            return !enterpriseUrl.isEmpty() ? enterpriseUrl : "https://sourcegraph.com/";
+        }
+    }
+
+    @NotNull
+    public static String getEnterpriseUrl(@NotNull Project project) {
         // Project level
         String projectLevelUrl = getProjectLevelConfig(project).getSourcegraphUrl();
         if (projectLevelUrl != null && projectLevelUrl.length() > 0) {
@@ -62,7 +72,8 @@ public class ConfigUtil {
         }
 
         // User level or default
-        return addSlashIfNeeded(UserLevelConfig.getSourcegraphUrl());
+        String userLevelUrl = UserLevelConfig.getSourcegraphUrl();
+        return !userLevelUrl.equals("") ? addSlashIfNeeded(userLevelUrl) : "";
     }
 
     @Nullable

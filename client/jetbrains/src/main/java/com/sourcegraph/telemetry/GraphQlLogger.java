@@ -5,6 +5,7 @@ import com.google.gson.JsonObject;
 import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.sourcegraph.config.ConfigUtil;
+import com.sourcegraph.config.SettingsComponent;
 import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.utils.URIBuilder;
@@ -43,7 +44,7 @@ public class GraphQlLogger {
     // This could be exposed later as public, but currently, we don't use it externally.
     private static void logEvent(Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
         String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
-        String accessToken = ConfigUtil.getAccessToken(project);
+        String accessToken = ConfigUtil.getInstanceType(project) == SettingsComponent.InstanceType.ENTERPRISE ? ConfigUtil.getAccessToken(project) : null;
         new Thread(() -> {
             String query = "" +
                 "mutation LogEvents($events: [Event!]) {" +

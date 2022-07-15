@@ -12,6 +12,7 @@ import com.intellij.util.ui.JBUI;
 import com.intellij.util.ui.UIUtil;
 import com.jetbrains.jsonSchema.settings.mappings.JsonSchemaConfigurable;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -30,7 +31,7 @@ public class SettingsComponent {
     private final Project project;
     private final JPanel panel;
     private ButtonGroup instanceTypeButtonGroup;
-    private JBTextField sourcegraphUrlTextField;
+    private JBTextField urlTextField;
     private JBTextField accessTokenTextField;
     private JBLabel userDocsLinkComment;
     private JBLabel accessTokenLinkComment;
@@ -78,15 +79,15 @@ public class SettingsComponent {
     private JPanel createAuthenticationPanel() {
         // Create URL field for the enterprise section
         JBLabel urlLabel = new JBLabel("Sourcegraph URL:");
-        sourcegraphUrlTextField = new JBTextField();
+        urlTextField = new JBTextField();
         //noinspection DialogTitleCapitalization
-        sourcegraphUrlTextField.getEmptyText().setText("https://sourcegraph.example.com");
-        sourcegraphUrlTextField.setToolTipText("The default is \"https://sourcegraph.com\".");
-        addValidation(sourcegraphUrlTextField, () ->
-            sourcegraphUrlTextField.getText().length() == 0 ? new ValidationInfo("Missing URL", sourcegraphUrlTextField)
-                : (!JsonSchemaConfigurable.isValidURL(sourcegraphUrlTextField.getText()) ? new ValidationInfo("This is an invalid URL", sourcegraphUrlTextField)
+        urlTextField.getEmptyText().setText("https://sourcegraph.example.com");
+        urlTextField.setToolTipText("The default is \"https://sourcegraph.com\".");
+        addValidation(urlTextField, () ->
+            urlTextField.getText().length() == 0 ? new ValidationInfo("Missing URL", urlTextField)
+                : (!JsonSchemaConfigurable.isValidURL(urlTextField.getText()) ? new ValidationInfo("This is an invalid URL", urlTextField)
                 : null));
-        addDocumentListener(sourcegraphUrlTextField, e -> updateAccessTokenLinkCommentText());
+        addDocumentListener(urlTextField, e -> updateAccessTokenLinkCommentText());
 
         // Create access token field
         JBLabel accessTokenLabel = new JBLabel("Access token:");
@@ -98,12 +99,10 @@ public class SettingsComponent {
                 : null);
 
         // Create comments
-        userDocsLinkComment = new JBLabel("<html><body>You might need an access token to sign in. See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> for a video guide,</body></html>", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
+        userDocsLinkComment = new JBLabel("<html><body>You might need an access token to sign in. See our <a href=\"https://docs.sourcegraph.com/cli/how-tos/creating_an_access_token\">user docs</a> for a video guide</body></html>", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
         userDocsLinkComment.setBorder(JBUI.Borders.emptyLeft(10));
-        userDocsLinkComment.setCopyable(true);
         accessTokenLinkComment = new JBLabel("", UIUtil.ComponentStyle.SMALL, UIUtil.FontColor.BRIGHTER);
         accessTokenLinkComment.setBorder(JBUI.Borders.emptyLeft(10));
-        accessTokenLinkComment.setCopyable(true);
 
         // Set up radio buttons
         ActionListener actionListener = event -> setEnterpriseSettingsEnabled(event.getActionCommand().equals(InstanceType.ENTERPRISE.name()));
@@ -127,7 +126,7 @@ public class SettingsComponent {
             .addComponentToRightColumn(dotComComment, 2)
             .getPanel();
         JPanel enterprisePanelContent = FormBuilder.createFormBuilder()
-            .addLabeledComponent(urlLabel, sourcegraphUrlTextField, 1)
+            .addLabeledComponent(urlLabel, urlTextField, 1)
             .addTooltip("If your company has your own Sourcegraph instance, set its URL here")
             .addLabeledComponent(accessTokenLabel, accessTokenTextField, 1)
             .addComponentToRightColumn(userDocsLinkComment, 1)
@@ -150,12 +149,12 @@ public class SettingsComponent {
     }
 
     @NotNull
-    public String getSourcegraphUrl() {
-        return sourcegraphUrlTextField.getText();
+    public String getEnterpriseUrl() {
+        return urlTextField.getText();
     }
 
-    public void setSourcegraphUrl(@NotNull String value) {
-        sourcegraphUrlTextField.setText(value);
+    public void setEnterpriseUrl(@Nullable String value) {
+        urlTextField.setText(value != null ? value : "");
     }
 
     @NotNull
@@ -202,10 +201,12 @@ public class SettingsComponent {
     }
 
     private void setEnterpriseSettingsEnabled(boolean enable) {
-        sourcegraphUrlTextField.setEnabled(enable);
+        urlTextField.setEnabled(enable);
         accessTokenTextField.setEnabled(enable);
         userDocsLinkComment.setEnabled(enable);
+        userDocsLinkComment.setCopyable(enable);
         accessTokenLinkComment.setEnabled(enable);
+        accessTokenLinkComment.setCopyable(enable);
     }
 
     public enum InstanceType {
@@ -238,7 +239,7 @@ public class SettingsComponent {
     }
 
     private void updateAccessTokenLinkCommentText() {
-        String baseUrl = sourcegraphUrlTextField.getText();
+        String baseUrl = urlTextField.getText();
         String settingsUrl = (baseUrl.endsWith("/") ? baseUrl : baseUrl + "/") + "settings";
         accessTokenLinkComment.setText(isUrlValid(baseUrl)
             ? "<html><body>or go to <a href=\"" + settingsUrl + "\">" + settingsUrl + "</a> | \"Access tokens\" to create one.</body></html>"
