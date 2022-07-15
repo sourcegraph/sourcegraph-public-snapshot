@@ -2,24 +2,59 @@ package analytics
 
 import (
 	"context"
-	"time"
 
-	"github.com/google/uuid"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/otfields"
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/sdk/resource"
+	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
 
-	"github.com/sourcegraph/sourcegraph/dev/okay"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
 type eventStoreKey struct{}
 
 // WithContext enables analytics in this context.
-func WithContext(ctx context.Context, sgVersion string) context.Context {
+func WithContext(ctx context.Context, sgVersion string) (context.Context, error) {
+	processor, err := newSpanToDiskProcessor()
+	if err != nil {
+		return ctx, errors.Wrap(err, "newSpanToDiskProcessor")
+	}
+
+	provider := oteltracesdk.NewTracerProvider(
+		oteltracesdk.WithResource(newResource(otfields.Resource{
+			Name:       "sg",
+			Namespace:  "dev",
+			Version:    sgVersion,
+			InstanceID: "", // TODO 'git config user.name' or 'user.email' maybe?
+		})),
+		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
+		oteltracesdk.WithSpanProcessor(processor),
+	)
+
+	otel.SetTracerProvider(provider)
+	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
+		std.Out.WriteWarningf("opentelemetry: %s", err.Error())
+	}))
+
 	return context.WithValue(ctx, eventStoreKey{}, &eventStore{
-		sgVersion: sgVersion,
-		events:    make([]*okay.Event, 0, 10),
-	})
+		processor: processor,
+	}), nil
+}
+
+// newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
+// type.
+func newResource(r log.Resource) *resource.Resource {
+	return resource.NewWithAttributes(
+		semconv.SchemaURL,
+		semconv.ServiceNameKey.String(r.Name),
+		semconv.ServiceNamespaceKey.String(r.Namespace),
+		semconv.ServiceInstanceIDKey.String(r.InstanceID),
+		semconv.ServiceVersionKey.String(r.Version))
 }
 
 // getStore retrieves the events store from context if it exists. Callers should check
@@ -34,56 +69,4 @@ func getStore(ctx context.Context) *eventStore {
 
 func tracer() trace.Tracer {
 	return otel.Tracer("sg")
-}
-
-// LogEvent tracks an event in the per-run analytics store, if analytics are enabled,
-// in the context of a command.
-//
-// In general, usage should be as follows:
-//
-// - category denotes the category of the event, such as "lint_runner".
-// - labels denote subcategories this event belongs to, such as the specific lint runner.
-// - events denote what happened as part of this logged event, such as "failed" or
-//   "succeeded". These are treated as metrics with a count of 1.
-//
-// Events are automatically created with a duration relative to the provided start time,
-// and persisted to disk at the end of command execution.
-//
-// It returns the event that was created so that you can add additional metadata if
-// desired - use sparingly.
-func LogEvent(ctx context.Context, category string, labels []string, startedAt time.Time, events ...string) *okay.Event {
-	// Validate the incoming event
-	if category == "" {
-		panic("LogEvent.category must be set")
-	}
-	if startedAt.IsZero() {
-		panic("LogEvent.startedAt must be a valid time")
-	}
-
-	tracer().Start(ctx, category,
-		trace.WithTimestamp(startedAt),
-		trace.WithAttributes(
-			attribute.StringSlice("labels", labels),
-			attribute.StringSlice("events", events),
-		))
-
-	// Create the event
-	event := &okay.Event{
-		Name:      category,
-		Labels:    labels,
-		Timestamp: startedAt, // Timestamp as start of event
-		Metrics:   metrics,
-		UniqueKey: []string{"event_id"},
-		Properties: map[string]string{
-			"event_id": uuid.NewString(),
-		},
-	}
-
-	// Set to store
-	store := getStore(ctx)
-	if store != nil {
-		store.events = append(store.events, event)
-	}
-
-	return event
 }

@@ -4,54 +4,53 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
-	"net/http"
 	"os"
 
-	"github.com/honeycombio/libhoney-go"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 
-	"github.com/sourcegraph/sourcegraph/dev/okay"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+const defaultOtlpEndpoint = "api.honeycomb.io:443"
+const otlpEndpointKey = "OTEL_EXPORTER_OTLP_ENDPOINT"
+
 // Submit pushes all persisted events to OkayHQ.
-func Submit(okayToken string, gitHubLogin string) error {
-	events, err := Load()
+func Submit(ctx context.Context, honeycombToken string, gitHubLogin string) error {
+	spans, err := Load()
 	if err != nil {
 		return err
 	}
 
-	client := okay.NewClient(http.DefaultClient, okayToken)
-	for _, ev := range events {
-		// discard everything but the latest version of events. if event versions are
-		// migrate-able, do the migrations here.
-		if ev.Properties["event_version"] != eventVersion {
-			continue
-		}
-
-		// clean up data
-		for k, v := range ev.Properties {
-			if len(v) == 0 {
-				delete(ev.Properties, k)
-			}
-		}
-
-		// push to okayhq
-		hcev := libhoney.NewEvent()
-		hcev.Add(ev.Properties)
-		if err := client.Push(ev); err != nil {
-			return err
-		}
+	if _, exists := os.LookupEnv(otlpEndpointKey); !exists {
+		os.Setenv(otlpEndpointKey, defaultOtlpEndpoint)
+		// TODO auth
 	}
 
-	return client.Flush()
+	// Set up a trace exporter
+	client := otlptracegrpc.NewClient()
+	exporter, err := otlptrace.New(ctx, client)
+	if err != nil {
+		return errors.Wrap(err, "failed to create trace exporter")
+	}
+
+	// send spans and shut down
+	if err := exporter.ExportSpans(ctx, spans); err != nil {
+		return err
+	}
+
+	return exporter.Shutdown(ctx)
 }
 
 // Persist stores all events in context to disk.
-func Persist(ctx context.Context, command string, flags []string) error {
+func Persist(ctx context.Context) error {
 	store := getStore(ctx)
 	if store == nil {
 		return nil
 	}
-	return store.Persist(command, flags)
+	return store.Persist(ctx)
 }
 
 // Reset deletes all persisted events.
@@ -69,7 +68,7 @@ func Reset() error {
 }
 
 // Load retrieves all persisted events.
-func Load() ([]*okay.Event, error) {
+func Load() (spans []trace.ReadOnlySpan, err error) {
 	p, err := eventsPath()
 	if err != nil {
 		return nil, err
@@ -82,24 +81,20 @@ func Load() ([]*okay.Event, error) {
 	defer file.Close()
 
 	scanner := bufio.NewScanner(file)
-	var events []*okay.Event
 	for scanner.Scan() {
 		// Don't worry too much about malformed events, analytics are relatively optional
 		// so just grab what we can.
-		var event okay.Event
-		if err := json.Unmarshal(scanner.Bytes(), &event); err != nil {
+		var span tracetest.SpanStub
+		if err := json.Unmarshal(scanner.Bytes(), &span); err != nil {
 			continue // drop malformed data
 		}
 
 		// Now we ensure that this event is something we want to keep
-		if event.Properties == nil {
-			continue
-		}
-		if event.Properties[eventVersionPropertyKey] != eventVersion {
+		if !span.SpanContext.IsValid() {
 			continue
 		}
 
-		events = append(events, &event)
+		spans = append(spans, span.Snapshot())
 	}
-	return events, nil
+	return
 }

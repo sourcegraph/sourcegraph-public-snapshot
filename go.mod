@@ -199,6 +199,8 @@ require (
 
 require go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
 
+require go.opentelemetry.io/otel/exporters/stdout/stdouttrace v1.8.0 // indirect
+
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.101.0 // indirect
