@@ -81,6 +81,9 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 	}
 	clock := func() time.Time { return now }
 
+	ie := NewInsightEnqueuer(clock, nil)
+	ie.enqueueQueryRunnerJob = enqueueQueryRunnerJob
+
 	dataSeriesStore := store.NewMockDataSeriesStore()
 	featureStore := database.NewMockFeatureFlagStore()
 
@@ -99,7 +102,7 @@ func Test_discoverAndEnqueueInsights(t *testing.T) {
 		},
 	}, nil)
 
-	if err := discoverAndEnqueueInsights(ctx, clock, dataSeriesStore, featureStore, enqueueQueryRunnerJob); err != nil {
+	if err := ie.discoverAndEnqueueInsights(ctx, dataSeriesStore, featureStore); err != nil {
 		t.Fatal(err)
 	}
 

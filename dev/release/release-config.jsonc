@@ -13,7 +13,7 @@
     "captainSlackUsername": "mohammad.alam",
     "captainGitHubUsername": "mohammadualam",
     // Release versions
-    "previousRelease": "3.41.0",
+    "previousRelease": "3.41.1",
     "upcomingRelease": "3.42.0",
     // Release dates
     "oneWorkingWeekBeforeRelease": "15 July 2022 10:00 PST",

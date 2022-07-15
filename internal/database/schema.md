@@ -415,6 +415,7 @@ Referenced by:
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
+    "cm_action_jobs_state_idx" btree (state)
 Check constraints:
     "cm_action_jobs_only_one_action_type" CHECK ((
 CASE
@@ -613,6 +614,7 @@ Slack webhook actions configured on code monitors
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
+    "cm_trigger_jobs_state_idx" btree (state)
 Check constraints:
     "search_results_is_array" CHECK (jsonb_typeof(search_results) = 'array'::text)
 Foreign-key constraints:
@@ -728,6 +730,7 @@ Tracks a lockfile dependency that might be resolvable to a specific repository-c
  commit_bytea                     | bytea     |           | not null | 
  codeintel_lockfile_reference_ids | integer[] |           | not null | 
  lockfile                         | text      |           |          | 
+ fidelity                         | text      |           | not null | 'flat'::text
 Indexes:
     "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
     "codeintel_lockfiles_repository_id_commit_bytea_lockfile" UNIQUE, btree (repository_id, commit_bytea, lockfile)
@@ -740,6 +743,8 @@ Associates a repository-commit pair with the set of repository-level dependencie
 **codeintel_lockfile_reference_ids**: A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
+
+**fidelity**: Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...
 
 **lockfile**: Relative path of a lockfile in the given repository and the given commit.
 
@@ -1024,7 +1029,7 @@ Foreign-key constraints:
  last_heartbeat_at   | timestamp with time zone |           |          | 
  queued_at           | timestamp with time zone |           |          | now()
 Indexes:
-    "external_service_sync_jobs_state_idx" btree (state)
+    "external_service_sync_jobs_state_external_service_id" btree (state, external_service_id) INCLUDE (finished_at)
 Foreign-key constraints:
     "external_services_id_fk" FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON DELETE CASCADE
 
@@ -2256,6 +2261,7 @@ Indexes:
     "repo_archived" btree (archived)
     "repo_blocked_idx" btree ((blocked IS NOT NULL))
     "repo_created_at" btree (created_at)
+    "repo_description_trgm_idx" gin (lower(description) gin_trgm_ops)
     "repo_fork" btree (fork)
     "repo_hashed_name_idx" btree (sha256(lower(name::text)::bytea)) WHERE deleted_at IS NULL
     "repo_is_not_blocked_idx" btree ((blocked IS NULL))

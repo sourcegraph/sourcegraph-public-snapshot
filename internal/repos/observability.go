@@ -145,6 +145,7 @@ type StoreMetrics struct {
 	UpdateExternalServiceRepo          *metrics.REDMetrics
 	DeleteExternalServiceRepo          *metrics.REDMetrics
 	DeleteExternalServiceReposNotIn    *metrics.REDMetrics
+	UpdateRepo                         *metrics.REDMetrics
 	UpsertRepos                        *metrics.REDMetrics
 	UpsertSources                      *metrics.REDMetrics
 	ListExternalRepoSpecs              *metrics.REDMetrics

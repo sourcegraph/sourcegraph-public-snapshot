@@ -13,7 +13,6 @@ import { renderWithBrandedContext, RenderWithBrandedContextResult } from '@sourc
 import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 
 import { AuthenticatedUser } from '../../auth'
-import { OPTIONS } from '../components/SurveyUseCaseForm'
 import { mockVariables, submitSurveyMock } from '../page/SurveyPage.mocks'
 
 import { SurveyToast } from '.'
@@ -102,7 +101,7 @@ describe('SurveyToast', () => {
             })
 
             it('correctly proceed to use case form', () => {
-                const recommendRadioGroup = renderResult.getByText(
+                const recommendRadioGroup = renderResult.getByLabelText(
                     'How likely is it that you would recommend Sourcegraph to a friend?'
                 )
                 expect(recommendRadioGroup).toBeVisible()
@@ -112,7 +111,7 @@ describe('SurveyToast', () => {
                 const continueButton = renderResult.getByRole('button', { name: 'Continue' })
                 expect(continueButton).toBeVisible()
                 fireEvent.click(continueButton)
-                expect(renderResult.getByText('You use Sourcegraph to...')).toBeVisible()
+                expect(renderResult.getByLabelText('What do you use Sourcegraph for?')).toBeVisible()
             })
         })
 
@@ -207,25 +206,14 @@ describe('SurveyToast', () => {
 
             const continueButton = renderResult.getByRole('button', { name: 'Continue' })
             fireEvent.click(continueButton)
-            expect(renderResult.getByText('You use Sourcegraph to...')).toBeVisible()
+            expect(renderResult.getByLabelText('What do you use Sourcegraph for?')).toBeVisible()
         }
 
         beforeEach(() => moveToUseCaseForm())
 
         it('Should render use case form correctly', () => {
-            {
-                OPTIONS.map(({ labelValue }) => {
-                    expect(renderResult.getByLabelText(labelValue)).toBeVisible()
-                })
-            }
+            expect(renderResult.getByLabelText('What do you use Sourcegraph for?')).toBeVisible()
             expect(renderResult.getByLabelText('What would make Sourcegraph better?')).toBeVisible()
-        })
-
-        it('Should allow user to provide arbitrary use case', () => {
-            const otherUseCaseElement = renderResult.getByLabelText('Other')
-            fireEvent.click(otherUseCaseElement)
-
-            expect(renderResult.getByLabelText('What else do you use Sourcegraph to do?')).toBeVisible()
         })
 
         it('Should show some gratitude after usecase submission', async () => {
@@ -233,16 +221,8 @@ describe('SurveyToast', () => {
             expect(reasonInput).toBeVisible()
             fireEvent.change(reasonInput, { target: { value: mockVariables.better } })
 
-            const respondToIncidentCheck = renderResult.getByLabelText('Respond to incidents')
-            expect(respondToIncidentCheck).toBeVisible()
-            fireEvent.click(respondToIncidentCheck)
-
-            const otherUseCaseCheckbox = renderResult.getByLabelText('Other')
-            fireEvent.click(otherUseCaseCheckbox)
-
-            const otherUseCaseInput = renderResult.getByLabelText('What else do you use Sourcegraph to do?')
+            const otherUseCaseInput = renderResult.getByLabelText('What do you use Sourcegraph for?')
             expect(otherUseCaseInput).toBeVisible()
-
             fireEvent.change(otherUseCaseInput, { target: { value: mockVariables.otherUseCase } })
 
             const doneButton = renderResult.getByRole('button', { name: 'Done' })

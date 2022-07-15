@@ -36,10 +36,26 @@ func (j *selectJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 func (j *selectJob) Name() string {
 	return "SelectJob"
 }
-func (j *selectJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Printf("select", "%q", j.path),
+func (j *selectJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Printf("select", "%q", j.path),
+		)
 	}
+	return res
+}
+
+func (j *selectJob) Children() []job.Describer {
+	return []job.Describer{j.child}
+}
+
+func (j *selectJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *j
+	cp.child = job.Map(j.child, fn)
+	return &cp
 }
 
 // newSelectingStream returns a child Stream of parent that runs the select operation

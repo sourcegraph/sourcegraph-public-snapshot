@@ -15,11 +15,6 @@ Run go tests, optionally restricting which ones based on the only and exclude co
 EOF
 }
 
-# https://github.com/sourcegraph/sourcegraph/issues/28469
-function go-junit-report() {
-  go run github.com/jstemmer/go-junit-report@latest
-}
-
 # Set up richgo for better output
 function richgo() {
   # This fork gives us the `anyStyle` configuration required to hide log lines
@@ -50,9 +45,6 @@ function go_test() {
   test_exit_code="${PIPESTATUS[0]}"
   echo "--- Tests complete with status $test_exit_code"
   set -eo pipefail # resume being strict about errors
-
-  mkdir -p './test-reports'
-  go-junit-report <"$tmpfile" >>./test-reports/go-test-junit.xml
 
   # Create annotation from test failure
   if [ "$test_exit_code" -ne 0 ]; then

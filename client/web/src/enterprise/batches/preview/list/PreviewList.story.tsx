@@ -7,9 +7,8 @@ import { BatchSpecApplyPreviewConnectionFields, ChangesetApplyPreviewFields } fr
 import { MultiSelectContextProvider } from '../../MultiSelectContext'
 import { filterPublishableIDs } from '../utils'
 
-import { hiddenChangesetApplyPreviewStories } from './HiddenChangesetApplyPreviewNode.story'
 import { PreviewList } from './PreviewList'
-import { visibleChangesetApplyPreviewNodeStories } from './VisibleChangesetApplyPreviewNode.story'
+import { hiddenChangesetApplyPreviewStories, visibleChangesetApplyPreviewNodeStories } from './storyData'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 

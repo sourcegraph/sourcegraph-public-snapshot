@@ -385,6 +385,51 @@ func (s *InsightStore) GetDataSeries(ctx context.Context, args GetDataSeriesArgs
 	return scanDataSeries(s.Query(ctx, q))
 }
 
+// GetJustInTimeSearchSeriesToBackfill Is a special purpose func to get only just in time series that should
+// be converted to scoped backfilled insights
+func (s *InsightStore) GetJustInTimeSearchSeriesToBackfill(ctx context.Context) ([]types.InsightSeries, error) {
+	preds := make([]*sqlf.Query, 0, 1)
+
+	preds = append(preds, sqlf.Sprintf("deleted_at IS NULL"))
+	preds = append(preds, sqlf.Sprintf("CARDINALITY(repositories) > 0"))
+	preds = append(preds, sqlf.Sprintf("just_in_time = true"))
+	preds = append(preds, sqlf.Sprintf("backfill_attempts < 10"))
+	preds = append(preds, sqlf.Sprintf("generation_method !=  %s", "language-stats"))
+
+	q := sqlf.Sprintf(getInsightDataSeriesSql, sqlf.Join(preds, "\n AND"))
+	return scanDataSeries(s.Query(ctx, q))
+}
+
+// GetJustInTimeSearchSeriesToBackfill Is a special purpose func to convert a Just In Time search insight
+// to a scoped backfilled serach insight
+func (s *InsightStore) ConvertJustInTimeSearchSeriesToBackfill(ctx context.Context, series types.InsightSeries) error {
+	interval := timeseries.TimeInterval{
+		Unit:  types.IntervalUnit(series.SampleIntervalUnit),
+		Value: series.SampleIntervalValue,
+	}
+	if !interval.IsValid() {
+		interval = timeseries.DefaultInterval
+	}
+	nextRecording := interval.StepForwards(s.Now())
+	nextSnapshot := NextSnapshot(s.Now())
+
+	return s.Exec(ctx, sqlf.Sprintf(convertJITSeriesToBackfillSql, nextRecording, nextSnapshot, series.SeriesID))
+
+}
+
+const convertJITSeriesToBackfillSql = `
+-- source: enterprise/internal/insights/store/insight_store.go:ConvertJustInTimeSearchSeriesToBackfill
+UPDATE insight_series
+SET just_in_time = false,
+    next_recording_after = %s,
+	next_snapshot_after = %s,
+	backfill_queued_at = now()
+WHERE
+	series_id = %s
+	AND generation_method !='language-stats'
+	AND deleted_at is null;
+`
+
 func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, err error) {
 	if queryErr != nil {
 		return nil, queryErr
@@ -411,6 +456,7 @@ func scanDataSeries(rows *sql.Rows, queryErr error) (_ []types.InsightSeries, er
 			&temp.JustInTime,
 			&temp.GenerationMethod,
 			pq.Array(&temp.Repositories),
+			&temp.GroupBy,
 			&temp.BackfillAttempts,
 		); err != nil {
 			return []types.InsightSeries{}, err
@@ -480,6 +526,7 @@ func scanInsightViewSeries(rows *sql.Rows, queryErr error) (_ []types.InsightVie
 			&temp.SeriesSortMode,
 			&temp.SeriesSortDirection,
 			&temp.SeriesLimit,
+			&temp.GroupBy,
 			&temp.BackfillAttempts,
 		); err != nil {
 			return []types.InsightViewSeries{}, err
@@ -669,7 +716,7 @@ const deleteViewSql = `
 delete from insight_view where %s;
 `
 
-// CreateSeries will create a new insight data series. This series must be uniquely identified by the series ID.
+// IncrementBackfillAttempts increments backfill_attempts to track how many attempts at backfilling a series has taken.
 func (s *InsightStore) IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error {
 	return s.Exec(ctx, sqlf.Sprintf(incrementSeriesBackfillAttemptsSql, series.SeriesID))
 }
@@ -717,6 +764,7 @@ func (s *InsightStore) CreateSeries(ctx context.Context, series types.InsightSer
 		series.GeneratedFromCaptureGroups,
 		series.JustInTime,
 		series.GenerationMethod,
+		series.GroupBy,
 	))
 	var id int
 	err := row.Scan(&id)
@@ -735,6 +783,8 @@ type DataSeriesStore interface {
 	StampBackfill(ctx context.Context, series types.InsightSeries) (types.InsightSeries, error)
 	IncrementBackfillAttempts(ctx context.Context, series types.InsightSeries) error
 	SetSeriesEnabled(ctx context.Context, seriesId string, enabled bool) error
+	GetJustInTimeSearchSeriesToBackfill(ctx context.Context) ([]types.InsightSeries, error)
+	ConvertJustInTimeSearchSeriesToBackfill(ctx context.Context, series types.InsightSeries) error
 }
 
 type InsightMetadataStore interface {
@@ -800,12 +850,17 @@ type MatchSeriesArgs struct {
 	StepIntervalUnit          string
 	StepIntervalValue         int
 	GenerateFromCaptureGroups bool
+	GroupBy                   *string
 }
 
 func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesArgs) (_ types.InsightSeries, found bool, _ error) {
+	groupByClause := sqlf.Sprintf("group_by IS NULL")
+	if args.GroupBy != nil {
+		groupByClause = sqlf.Sprintf("group_by = %s", *args.GroupBy)
+	}
 	where := sqlf.Sprintf(
-		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s AND generated_from_capture_groups = %s",
-		args.Query, args.StepIntervalUnit, args.StepIntervalValue, args.GenerateFromCaptureGroups,
+		"(repositories = '{}' OR repositories is NULL) AND query = %s AND sample_interval_unit = %s AND sample_interval_value = %s AND generated_from_capture_groups = %s AND %s",
+		args.Query, args.StepIntervalUnit, args.StepIntervalValue, args.GenerateFromCaptureGroups, groupByClause,
 	)
 
 	q := sqlf.Sprintf(getInsightDataSeriesSql, where)
@@ -943,8 +998,8 @@ const createInsightSeriesSql = `
 INSERT INTO insight_series (series_id, query, created_at, oldest_historical_at, last_recorded_at,
                             next_recording_after, last_snapshot_at, next_snapshot_after, repositories,
 							sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-							just_in_time, generation_method)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+							just_in_time, generation_method, group_by)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING id;`
 
 const getInsightByViewSql = `
@@ -954,7 +1009,7 @@ i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.backfill_attempts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts
 FROM (%s) iv
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
          JOIN insight_series i ON ivs.insight_series_id = i.id
@@ -968,7 +1023,7 @@ i.series_id, i.query, i.created_at, i.oldest_historical_at, i.last_recorded_at,
 i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
 i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.backfill_attempts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts
 FROM dashboard_insight_view as dbiv
 		 JOIN insight_view iv ON iv.id = dbiv.insight_view_id
          JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
@@ -983,7 +1038,7 @@ const getInsightDataSeriesSql = `
 select id, series_id, query, created_at, oldest_historical_at, last_recorded_at, next_recording_after,
 last_snapshot_at, next_snapshot_after, (CASE WHEN deleted_at IS NULL THEN TRUE ELSE FALSE END) AS enabled,
 sample_interval_unit, sample_interval_value, generated_from_capture_groups,
-just_in_time, generation_method, repositories, backfill_attempts
+just_in_time, generation_method, repositories, group_by, backfill_attempts
 from insight_series
 WHERE %s
 `
@@ -1010,7 +1065,7 @@ SELECT iv.id, 0 as dashboard_insight_id, iv.unique_id, iv.title, iv.description,
        i.next_recording_after, i.backfill_queued_at, i.last_snapshot_at, i.next_snapshot_after, i.repositories,
        i.sample_interval_unit, i.sample_interval_value, iv.default_filter_include_repo_regex, iv.default_filter_exclude_repo_regex,
 	   iv.other_threshold, iv.presentation_type, i.generated_from_capture_groups, i.just_in_time, i.generation_method, iv.is_frozen,
-default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.backfill_attempts
+default_filter_search_contexts, iv.series_sort_mode, iv.series_sort_direction, iv.series_limit, i.group_by, i.backfill_attempts
 FROM insight_view iv
 JOIN insight_view_series ivs ON iv.id = ivs.insight_view_id
 JOIN insight_series i ON ivs.insight_series_id = i.id

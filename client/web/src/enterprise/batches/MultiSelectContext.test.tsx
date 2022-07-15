@@ -23,7 +23,7 @@ describe('MultiSelectContextProvider', () => {
         mutateAndAssert(
             getContext,
             context => {
-                context.setVisible(['1', '2'])
+                context.setVisible(true, ['1', '2'])
                 context.selectSingle('1')
             },
             ({ areAllVisibleSelected, isSelected, selected }) => {
@@ -74,7 +74,7 @@ describe('MultiSelectContextProvider', () => {
 
         mutateAndAssert(
             getContext,
-            context => context.setVisible(['1', '2']),
+            context => context.setVisible(true, ['1', '2']),
             ({ areAllVisibleSelected, isSelected, selected }) => {
                 if (selected === 'all') {
                     fail()
@@ -123,12 +123,158 @@ describe('MultiSelectContextProvider', () => {
         )
     })
 
+    test('selecting and deselecting additional visible works', () => {
+        const getContext = mountContext()
+
+        // initial visible data
+        mutateAndAssert(
+            getContext,
+            context => context.setVisible(false, ['1', '2']),
+            ({ areAllVisibleSelected, isSelected, selected }) => {
+                if (selected === 'all') {
+                    fail()
+                }
+
+                expect(selected.size).toBe(0)
+                expect(isSelected('1')).toBe(false)
+                expect(isSelected('2')).toBe(false)
+                expect(areAllVisibleSelected()).toBe(false)
+            }
+        )
+
+        // additional visible data loaded after the fact
+        mutateAndAssert(
+            getContext,
+            context => context.setVisible(false, ['3', '4']),
+            ({ areAllVisibleSelected, isSelected, selected }) => {
+                if (selected === 'all') {
+                    fail()
+                }
+
+                expect(selected.size).toBe(0)
+                expect(isSelected('3')).toBe(false)
+                expect(isSelected('4')).toBe(false)
+                expect(areAllVisibleSelected()).toBe(false)
+            }
+        )
+
+        // Repeat the test twice to ensure it's idempotent.
+        repeat(2, () =>
+            mutateAndAssert(
+                getContext,
+                context => context.selectVisible(),
+                ({ areAllVisibleSelected, isSelected, selected }) => {
+                    if (selected === 'all') {
+                        fail()
+                    }
+
+                    expect(selected.size).toBe(4)
+                    expect(isSelected('1')).toBe(true)
+                    expect(isSelected('2')).toBe(true)
+                    expect(isSelected('3')).toBe(true)
+                    expect(isSelected('4')).toBe(true)
+                    expect(areAllVisibleSelected()).toBe(true)
+                }
+            )
+        )
+
+        repeat(2, () =>
+            mutateAndAssert(
+                getContext,
+                context => context.deselectVisible(),
+                ({ areAllVisibleSelected, isSelected, selected }) => {
+                    if (selected === 'all') {
+                        fail()
+                    }
+
+                    expect(selected.size).toBe(0)
+                    expect(isSelected('1')).toBe(false)
+                    expect(isSelected('2')).toBe(false)
+                    expect(isSelected('3')).toBe(false)
+                    expect(isSelected('4')).toBe(false)
+                    expect(areAllVisibleSelected()).toBe(false)
+                }
+            )
+        )
+    })
+
+    test('selecting and deselecting additional visible after filter works', () => {
+        const getContext = mountContext()
+
+        // initial loaded data
+        mutateAndAssert(
+            getContext,
+            context => context.setVisible(false, ['1', '2']),
+            ({ areAllVisibleSelected, isSelected, selected }) => {
+                if (selected === 'all') {
+                    fail()
+                }
+
+                expect(selected.size).toBe(0)
+                expect(isSelected('1')).toBe(false)
+                expect(isSelected('2')).toBe(false)
+                expect(areAllVisibleSelected()).toBe(false)
+            }
+        )
+
+        // additional data loaded after a filter
+        mutateAndAssert(
+            getContext,
+            context => context.setVisible(true, ['3', '4']),
+            ({ areAllVisibleSelected, isSelected, selected }) => {
+                if (selected === 'all') {
+                    fail()
+                }
+
+                expect(selected.size).toBe(0)
+                expect(isSelected('3')).toBe(false)
+                expect(isSelected('4')).toBe(false)
+                expect(areAllVisibleSelected()).toBe(false)
+            }
+        )
+
+        // Repeat the test twice to ensure it's idempotent.
+        repeat(2, () =>
+            mutateAndAssert(
+                getContext,
+                context => context.selectVisible(),
+                ({ areAllVisibleSelected, isSelected, selected }) => {
+                    if (selected === 'all') {
+                        fail()
+                    }
+
+                    expect(selected.size).toBe(2)
+                    expect(isSelected('3')).toBe(true)
+                    expect(isSelected('4')).toBe(true)
+                    expect(areAllVisibleSelected()).toBe(true)
+                }
+            )
+        )
+
+        repeat(2, () =>
+            mutateAndAssert(
+                getContext,
+                context => context.deselectVisible(),
+                ({ areAllVisibleSelected, isSelected, selected }) => {
+                    if (selected === 'all') {
+                        fail()
+                    }
+
+                    expect(selected.size).toBe(0)
+                    expect(isSelected('3')).toBe(false)
+                    expect(isSelected('4')).toBe(false)
+                    expect(areAllVisibleSelected()).toBe(false)
+                }
+            )
+        )
+    })
+
     test('selecting and deselecting all works', () => {
         const getContext = mountContext()
 
         mutateAndAssert(
             getContext,
-            context => context.setVisible(['1', '2']),
+            context => context.setVisible(true, ['1', '2']),
             ({ selected }) => {
                 expect(selected).not.toBe('all')
             }

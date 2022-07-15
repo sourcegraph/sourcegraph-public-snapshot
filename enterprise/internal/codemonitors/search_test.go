@@ -30,43 +30,41 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
 		erroringJobs := []job.Job{
-			jobutil.NewParallelJob(&run.RepoSearchJob{Log: logtest.Scoped(t)}, &commit.SearchJob{Log: logtest.Scoped(t)}),
-			&run.RepoSearchJob{Log: logtest.Scoped(t)},
+			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.SearchJob{}),
+			&run.RepoSearchJob{},
 			jobutil.NewAndJob(&searcher.SymbolSearchJob{}, &commit.SearchJob{}),
-			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{Log: logtest.Scoped(t)}),
+			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{}),
 		}
 
 		for _, j := range erroringJobs {
 			t.Run("", func(t *testing.T) {
-				_, err := addCodeMonitorHook(logtest.Scoped(t), j, nil)
+				_, err := addCodeMonitorHook(j, nil)
 				require.Error(t, err)
 			})
 		}
 	})
 
 	t.Run("error on multiple commit search jobs", func(t *testing.T) {
-		_, err := addCodeMonitorHook(logtest.Scoped(t), jobutil.NewAndJob(&commit.SearchJob{Log: logtest.Scoped(t)}, &commit.SearchJob{Log: logtest.Scoped(t)}), nil)
+		_, err := addCodeMonitorHook(jobutil.NewAndJob(&commit.SearchJob{}, &commit.SearchJob{}), nil)
 		require.Error(t, err)
 	})
 
 	t.Run("no errors on only commit search", func(t *testing.T) {
 		nonErroringJobs := []job.Job{
-			jobutil.NewLimitJob(1000, &commit.SearchJob{Log: logtest.Scoped(t)}),
-			&commit.SearchJob{Log: logtest.Scoped(t)},
-			jobutil.NewTimeoutJob(0, &commit.SearchJob{Log: logtest.Scoped(t)}),
+			jobutil.NewLimitJob(1000, &commit.SearchJob{}),
+			&commit.SearchJob{},
+			jobutil.NewTimeoutJob(0, &commit.SearchJob{}),
 		}
 
 		for _, j := range nonErroringJobs {
 			t.Run("", func(t *testing.T) {
-				_, err := addCodeMonitorHook(logtest.Scoped(t), j, nil)
+				_, err := addCodeMonitorHook(j, nil)
 				require.NoError(t, err)
 			})
 		}
 	})
 
 	t.Run("no errors on allowed queries", func(t *testing.T) {
-		log := logtest.Scoped(t)
-
 		test := func(t *testing.T, input string) {
 			plan, err := query.Pipeline(query.InitRegexp(input))
 			require.NoError(t, err)
@@ -76,9 +74,9 @@ func TestAddCodeMonitorHook(t *testing.T) {
 				Protocol:            search.Streaming,
 				OnSourcegraphDotCom: true,
 			}
-			j, err := jobutil.NewPlanJob(log, inputs, plan)
+			j, err := jobutil.NewPlanJob(inputs, plan)
 			require.NoError(t, err)
-			addCodeMonitorHook(log, j, nil)
+			addCodeMonitorHook(j, nil)
 		}
 
 		queries := []string{

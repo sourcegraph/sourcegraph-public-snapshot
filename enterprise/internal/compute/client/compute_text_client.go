@@ -12,15 +12,15 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type ComputeTextStreamDecoder struct {
+type ComputeTextExtraStreamDecoder struct {
 	OnProgress func(progress *streamapi.Progress)
-	OnResult   func(results []compute.Text)
+	OnResult   func(results []compute.TextExtra)
 	OnAlert    func(*http.EventAlert)
 	OnError    func(*http.EventError)
 	OnUnknown  func(event, data []byte)
 }
 
-func (rr ComputeTextStreamDecoder) ReadAll(r io.Reader) error {
+func (rr ComputeTextExtraStreamDecoder) ReadAll(r io.Reader) error {
 	dec := http.NewDecoder(r)
 
 	for dec.Scan() {
@@ -31,7 +31,7 @@ func (rr ComputeTextStreamDecoder) ReadAll(r io.Reader) error {
 			if rr.OnResult == nil {
 				continue
 			}
-			var d []compute.Text
+			var d []compute.TextExtra
 			if err := json.Unmarshal(data, &d); err != nil {
 				return errors.Errorf("failed to decode compute compute text payload: %w", err)
 			}

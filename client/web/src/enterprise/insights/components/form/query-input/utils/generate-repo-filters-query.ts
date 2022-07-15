@@ -1,6 +1,6 @@
 import escapeRegExp from 'lodash/escapeRegExp'
 
-import { getSanitizedRepositories } from '../../../creation-ui-kit'
+import { getSanitizedRepositories } from '../../../creation-ui'
 
 export const generateRepoFiltersQuery = (repositoriesString: string): string => {
     const repositories = getSanitizedRepositories(repositoriesString)

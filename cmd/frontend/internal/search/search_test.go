@@ -10,10 +10,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
-
-	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	api2 "github.com/sourcegraph/sourcegraph/internal/api"
@@ -38,10 +37,10 @@ func TestServeStream_empty(t *testing.T) {
 	mock.PlanFunc.SetDefaultReturn(&run.SearchInputs{}, nil)
 
 	ts := httptest.NewServer(&streamHandler{
+		logger:              logtest.Scoped(t),
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
-		log:                 logtest.Scoped(t),
 	})
 	defer ts.Close()
 
@@ -97,11 +96,11 @@ func TestServeStream_chunkMatches(t *testing.T) {
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 
 	ts := httptest.NewServer(&streamHandler{
+		logger:              logtest.Scoped(t),
 		db:                  db,
 		flushTickerInternal: 1 * time.Millisecond,
 		pingTickerInterval:  1 * time.Millisecond,
 		searchClient:        mock,
-		log:                 logtest.Scoped(t),
 	})
 	defer ts.Close()
 
@@ -215,11 +214,11 @@ func TestDisplayLimit(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			ts := httptest.NewServer(&streamHandler{
+				logger:              logtest.Scoped(t),
 				db:                  db,
 				flushTickerInternal: 1 * time.Millisecond,
 				pingTickerInterval:  1 * time.Millisecond,
 				searchClient:        mock,
-				log:                 logtest.Scoped(t),
 			})
 			defer ts.Close()
 

@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -174,7 +175,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		Registerer: prometheus.DefaultRegisterer,
 	}
 
-	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer)
+	go watchSyncer(ctx, logger, syncer, updateScheduler, server.PermsSyncer, server.ChangesetSyncRegistry)
 	go func() {
 		err := syncer.Run(ctx, store, repos.RunOptions{
 			EnqueueInterval: repos.ConfRepoListUpdateInterval,
@@ -230,7 +231,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	globals.WatchExternalURL(nil)
 
 	debugDumpers["repos"] = updateScheduler
-	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(db, debugDumpers)
+	debugserverEndpoints.repoUpdaterStateEndpoint = repoUpdaterStatsHandler(debugDumpers)
 	debugserverEndpoints.listAuthzProvidersEndpoint = listAuthzProvidersHandler()
 	debugserverEndpoints.gitserverReposStatusEndpoint = gitserverReposStatusHandler(db)
 	debugserverEndpoints.rateLimiterStateEndpoint = rateLimiterStateHandler
@@ -413,7 +414,7 @@ func listAuthzProvidersHandler() http.HandlerFunc {
 	}
 }
 
-func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver.Dumper) http.HandlerFunc {
+func repoUpdaterStatsHandler(debugDumpers map[string]debugserver.Dumper) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		wantDumper := r.URL.Query().Get("dumper")
 		wantFormat := r.URL.Query().Get("format")
@@ -436,7 +437,7 @@ func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver
 				},
 			})
 			template.Must(tmpl.Parse(stateHTMLTemplate))
-			err := tmpl.Execute(w, reposDumper.DebugDump(r.Context(), db.ExternalServices()))
+			err := tmpl.Execute(w, reposDumper.DebugDump(r.Context()))
 			if err != nil {
 				http.Error(w, "Failed to render template: "+err.Error(), http.StatusInternalServerError)
 				return
@@ -449,7 +450,7 @@ func repoUpdaterStatsHandler(db database.DB, debugDumpers map[string]debugserver
 			if wantDumper != "" && wantDumper != name {
 				continue
 			}
-			dumps = append(dumps, dumper.DebugDump(r.Context(), db.ExternalServices()))
+			dumps = append(dumps, dumper.DebugDump(r.Context()))
 		}
 
 		p, err := json.MarshalIndent(dumps, "", "  ")
@@ -473,6 +474,7 @@ func watchSyncer(
 	syncer *repos.Syncer,
 	sched *repos.UpdateScheduler,
 	permsSyncer permsSyncer,
+	changesetSyncer batches.UnarchivedChangesetSyncRegistry,
 ) {
 	logger.Debug("started new repo syncer updates scheduler relay thread")
 
@@ -490,6 +492,13 @@ func watchSyncer(
 				// Schedule a repo permissions sync for all private repos that were added or
 				// modified.
 				permsSyncer.ScheduleRepos(ctx, getPrivateAddedOrModifiedRepos(diff)...)
+			}
+
+			// Similarly, changesetSyncer is only available in enterprise mode.
+			if changesetSyncer != nil && len(diff.ArchivedChanged) > 0 {
+				if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, diff.ArchivedChanged.IDs()); err != nil {
+					logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
+				}
 			}
 		}
 	}

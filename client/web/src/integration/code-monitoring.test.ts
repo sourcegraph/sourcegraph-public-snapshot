@@ -41,7 +41,7 @@ describe('Code monitoring', () => {
                             latestSettings: {
                                 id: 0,
                                 contents: JSON.stringify({
-                                    experimentalFeatures: { showOnboardingTour: true, codeMonitoring: true },
+                                    experimentalFeatures: { codeMonitoring: true },
                                 }),
                             },
                         },
@@ -52,7 +52,7 @@ describe('Code monitoring', () => {
                             latestSettings: {
                                 id: 470,
                                 contents: JSON.stringify({
-                                    experimentalFeatures: { showOnboardingTour: true, codeMonitoring: true },
+                                    experimentalFeatures: { codeMonitoring: true },
                                 }),
                             },
                             settingsURL: '/site-admin/global-settings',

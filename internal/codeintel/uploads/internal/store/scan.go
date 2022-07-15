@@ -6,6 +6,7 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/commitgraph"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
@@ -78,6 +79,31 @@ func scanCounts(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 
 	return visibilities, nil
 }
+
+// scanDumps scans a slice of dumps from the return value of `*Store.query`.
+func scanDump(s dbutil.Scanner) (dump shared.Dump, err error) {
+	return dump, s.Scan(
+		&dump.ID,
+		&dump.Commit,
+		&dump.Root,
+		&dump.VisibleAtTip,
+		&dump.UploadedAt,
+		&dump.State,
+		&dump.FailureMessage,
+		&dump.StartedAt,
+		&dump.FinishedAt,
+		&dump.ProcessAfter,
+		&dump.NumResets,
+		&dump.NumFailures,
+		&dump.RepositoryID,
+		&dump.RepositoryName,
+		&dump.Indexer,
+		&dbutil.NullString{S: &dump.IndexerVersion},
+		&dump.AssociatedIndexID,
+	)
+}
+
+var scanDumps = basestore.NewSliceScanner(scanDump)
 
 // scanSourcedCommits scans triples of repository ids/repository names/commits from the
 // return value of `*Store.query`. The output of this function is ordered by repository
@@ -164,4 +190,27 @@ func scanIntPairs(rows *sql.Rows, queryErr error) (_ map[int]int, err error) {
 	}
 
 	return values, nil
+}
+
+// scanCommitGraphView scans a commit graph view from the return value of `*Store.query`.
+func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *commitgraph.CommitGraphView, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	commitGraphView := commitgraph.NewCommitGraphView()
+
+	for rows.Next() {
+		var meta commitgraph.UploadMeta
+		var commit, token string
+
+		if err := rows.Scan(&meta.UploadID, &commit, &token, &meta.Distance); err != nil {
+			return nil, err
+		}
+
+		commitGraphView.Add(meta, commit, token)
+	}
+
+	return commitGraphView, nil
 }

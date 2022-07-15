@@ -59,6 +59,7 @@ type SearchSeriesPreviewInput struct {
 	Query                      string
 	Label                      string
 	GeneratedFromCaptureGroups bool
+	GroupBy                    *string
 }
 
 type SearchInsightLivePreviewInput struct {
@@ -67,6 +68,7 @@ type SearchInsightLivePreviewInput struct {
 	RepositoryScope            RepositoryScopeInput
 	TimeScope                  TimeScopeInput
 	GeneratedFromCaptureGroups bool
+	GroupBy                    *string
 }
 
 type InsightsArgs struct {
@@ -225,6 +227,7 @@ type SearchInsightDataSeriesDefinitionResolver interface {
 	TimeScope(ctx context.Context) (InsightTimeScope, error)
 	GeneratedFromCaptureGroups() (bool, error)
 	IsCalculated() (bool, error)
+	GroupBy() (*string, error)
 }
 
 type InsightPresentation interface {
@@ -400,6 +403,7 @@ type LineChartSearchInsightDataSeriesInput struct {
 	RepositoryScope            RepositoryScopeInput
 	Options                    LineChartDataSeriesOptionsInput
 	GeneratedFromCaptureGroups *bool
+	GroupBy                    *string
 }
 
 type LineChartDataSeriesOptionsInput struct {

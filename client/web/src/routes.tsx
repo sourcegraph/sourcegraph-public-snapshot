@@ -14,12 +14,10 @@ import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
 import { ConnectGitHubAppPage } from './org/settings/codeHosts/ConnectGitHubAppPage'
 import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
-import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
 import { ThemePreferenceProps } from './theme'
-import { UserExternalServicesOrRepositoriesUpdateProps } from './util'
 
 const SiteAdminArea = lazyComponent(() => import('./site-admin/SiteAdminArea'), 'SiteAdminArea')
 const ExtensionsArea = lazyComponent(() => import('./extensions/ExtensionsArea'), 'ExtensionsArea')
@@ -38,10 +36,8 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionAlertProps,
         CodeIntelligenceProps,
-        BatchChangesProps,
-        UserExternalServicesOrRepositoriesUpdateProps {
+        BatchChangesProps {
     isSourcegraphDotCom: boolean
     isMacPlatform: boolean
 }
@@ -170,7 +166,6 @@ export const routes: readonly LayoutRouteProps<any>[] = [
                     authenticatedUser={props.authenticatedUser}
                     telemetryService={props.telemetryService}
                     context={window.context}
-                    onUserExternalServicesOrRepositoriesUpdate={props.onUserExternalServicesOrRepositoriesUpdate}
                     setSelectedSearchContextSpec={props.setSelectedSearchContextSpec}
                 />
             ) : (

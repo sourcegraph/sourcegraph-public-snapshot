@@ -6,8 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -23,8 +21,7 @@ func NewResolver(db database.DB) graphqlbackend.SearchContextsResolver {
 }
 
 type Resolver struct {
-	db  database.DB
-	log log.Logger
+	db database.DB
 }
 
 func (r *Resolver) NodeResolvers() map[string]graphqlbackend.NodeByIDFunc {
@@ -65,7 +62,7 @@ func (r *Resolver) AutoDefinedSearchContexts(ctx context.Context) ([]graphqlback
 }
 
 func (r *Resolver) SearchContextBySpec(ctx context.Context, args graphqlbackend.SearchContextBySpecArgs) (graphqlbackend.SearchContextResolver, error) {
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.log, r.db, args.Spec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, args.Spec)
 	if err != nil {
 		return nil, err
 	}
@@ -122,7 +119,7 @@ func (r *Resolver) UpdateSearchContext(ctx context.Context, args graphqlbackend.
 		}
 	}
 
-	original, err := searchcontexts.ResolveSearchContextSpec(ctx, r.log, r.db, searchContextSpec)
+	original, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -183,7 +180,7 @@ func (r *Resolver) DeleteSearchContext(ctx context.Context, args graphqlbackend.
 		return nil, err
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.log, r.db, searchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
 	if err != nil {
 		return nil, err
 	}
@@ -290,7 +287,7 @@ func (r *Resolver) SearchContexts(ctx context.Context, args *graphqlbackend.List
 }
 
 func (r *Resolver) IsSearchContextAvailable(ctx context.Context, args graphqlbackend.IsSearchContextAvailableArgs) (bool, error) {
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.log, r.db, args.Spec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, args.Spec)
 	if err != nil {
 		return false, err
 	}
@@ -329,7 +326,7 @@ func (r *Resolver) SearchContextByID(ctx context.Context, id graphql.ID) (graphq
 		return nil, err
 	}
 
-	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.log, r.db, searchContextSpec)
+	searchContext, err := searchcontexts.ResolveSearchContextSpec(ctx, r.db, searchContextSpec)
 	if err != nil {
 		return nil, err
 	}

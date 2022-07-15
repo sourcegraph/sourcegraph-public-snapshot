@@ -1137,7 +1137,6 @@ type SurveyResponse struct {
 	Score        int32
 	Reason       *string
 	Better       *string
-	UseCases     []string
 	OtherUseCase *string
 	CreatedAt    time.Time
 }
@@ -1231,30 +1230,6 @@ type CodeHostIntegrationUsageInboundTrafficToWeb struct {
 	TotalCount   int32
 }
 
-// UserAndEventCount represents the number of events triggered in a given
-// time frame per user and overall.
-type UserAndEventCount struct {
-	UserCount  int32
-	EventCount int32
-}
-
-// FileAndSearchPageUserAndEventCounts represents the number of events triggered
-// on the "search result" and "file" pages in a given time frame.
-type FileAndSearchPageUserAndEventCounts struct {
-	StartTime             time.Time
-	DisplayedOnFilePage   UserAndEventCount
-	DisplayedOnSearchPage UserAndEventCount
-	ClickedOnFilePage     UserAndEventCount
-	ClickedOnSearchPage   UserAndEventCount
-}
-
-// CTAUsage represents the total number of CTAs displayed and clicked
-// on the "search result" and "file" pages over the current month.
-type CTAUsage struct {
-	DailyBrowserExtensionCTA FileAndSearchPageUserAndEventCounts
-	DailyIDEExtensionCTA     FileAndSearchPageUserAndEventCounts
-}
-
 // SavedSearches represents the total number of saved searches, users
 // using saved searches, and usage of saved searches.
 type SavedSearches struct {
@@ -1336,25 +1311,31 @@ type ExtensionUsageStatistics struct {
 }
 
 type CodeInsightsUsageStatistics struct {
-	WeeklyUsageStatisticsByInsight          []*InsightUsageStatistics
-	WeeklyInsightsPageViews                 *int32
-	WeeklyInsightsGetStartedPageViews       *int32
-	WeeklyInsightsUniquePageViews           *int32
-	WeeklyInsightsGetStartedUniquePageViews *int32
-	WeeklyInsightConfigureClick             *int32
-	WeeklyInsightAddMoreClick               *int32
-	WeekStart                               time.Time
-	WeeklyInsightCreators                   *int32
-	WeeklyFirstTimeInsightCreators          *int32
-	WeeklyAggregatedUsage                   []AggregatedPingStats
-	WeeklyGetStartedTabClickByTab           []InsightGetStartedTabClickPing
-	WeeklyGetStartedTabMoreClickByTab       []InsightGetStartedTabClickPing
-	InsightTimeIntervals                    []InsightTimeIntervalPing
-	InsightOrgVisible                       []OrgVisibleInsightPing
-	InsightTotalCounts                      InsightTotalCounts
-	TotalOrgsWithDashboard                  *int32
-	TotalDashboardCount                     *int32
-	InsightsPerDashboard                    InsightsPerDashboardPing
+	WeeklyUsageStatisticsByInsight               []*InsightUsageStatistics
+	WeeklyInsightsPageViews                      *int32
+	WeeklyStandaloneInsightPageViews             *int32
+	WeeklyStandaloneDashboardClicks              *int32
+	WeeklyStandaloneEditClicks                   *int32
+	WeeklyInsightsGetStartedPageViews            *int32
+	WeeklyInsightsUniquePageViews                *int32
+	WeeklyInsightsGetStartedUniquePageViews      *int32
+	WeeklyStandaloneInsightUniquePageViews       *int32
+	WeeklyStandaloneInsightUniqueDashboardClicks *int32
+	WeeklyStandaloneInsightUniqueEditClicks      *int32
+	WeeklyInsightConfigureClick                  *int32
+	WeeklyInsightAddMoreClick                    *int32
+	WeekStart                                    time.Time
+	WeeklyInsightCreators                        *int32
+	WeeklyFirstTimeInsightCreators               *int32
+	WeeklyAggregatedUsage                        []AggregatedPingStats
+	WeeklyGetStartedTabClickByTab                []InsightGetStartedTabClickPing
+	WeeklyGetStartedTabMoreClickByTab            []InsightGetStartedTabClickPing
+	InsightTimeIntervals                         []InsightTimeIntervalPing
+	InsightOrgVisible                            []OrgVisibleInsightPing
+	InsightTotalCounts                           InsightTotalCounts
+	TotalOrgsWithDashboard                       *int32
+	TotalDashboardCount                          *int32
+	InsightsPerDashboard                         InsightsPerDashboardPing
 }
 
 type CodeInsightsCriticalTelemetry struct {
@@ -1370,6 +1351,7 @@ type InsightUsageStatistics struct {
 	Hovers           *int32
 	UICustomizations *int32
 	DataPointClicks  *int32
+	FiltersChange    *int32
 }
 
 type PingName string

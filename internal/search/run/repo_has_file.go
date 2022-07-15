@@ -42,7 +42,7 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		ctx,
-		s.Log,
+		clients.Logger,
 		repos,
 		clients.Zoekt,
 		search.TextRequest,
@@ -104,7 +104,6 @@ func (s *RepoSearchJob) reposContainingPath(ctx context.Context, clients job.Run
 	// Concurrently run searcher for all unindexed repos regardless whether text or regexp.
 	g.Go(func() error {
 		searcherJob := &searcher.TextSearchJob{
-			Log:             s.Log,
 			PatternInfo:     searcherArgs.PatternInfo,
 			Repos:           unindexed,
 			Indexed:         false,

@@ -435,6 +435,7 @@ type ChangesetApplyPreviewConnectionStatsResolver interface {
 	Sleep() int32
 	Detach() int32
 	Archive() int32
+	Reattach() int32
 
 	Added() int32
 	Modified() int32

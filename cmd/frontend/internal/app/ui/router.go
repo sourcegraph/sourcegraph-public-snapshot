@@ -11,8 +11,6 @@ import (
 	"strconv"
 	"strings"
 
-	sglog "github.com/sourcegraph/log"
-
 	"github.com/NYTimes/gziphandler"
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
@@ -306,7 +304,7 @@ func initRouter(db database.DB, router *mux.Router, codeIntelResolver graphqlbac
 	}, nil, index)))
 
 	// streaming search
-	router.Get(routeSearchStream).Handler(search.StreamHandler(sglog.Scoped("Router", "Streaming search"), db))
+	router.Get(routeSearchStream).Handler(search.StreamHandler(db))
 
 	// search badge
 	router.Get(routeSearchBadge).Handler(searchBadgeHandler())
@@ -476,7 +474,7 @@ func serveErrorNoDebug(w http.ResponseWriter, r *http.Request, db database.DB, e
 		ext.Error.Set(span, true)
 		span.SetTag("err", err)
 		span.SetTag("error-id", errorID)
-		traceURL = trace.URL(trace.IDFromSpan(span), conf.ExternalURL(), conf.Tracer())
+		traceURL = trace.URL(trace.ID(r.Context()), conf.ExternalURL(), conf.Tracer())
 	}
 	log15.Error("ui HTTP handler error response", "method", r.Method, "request_uri", r.URL.RequestURI(), "status_code", statusCode, "error", err, "error_id", errorID, "trace", traceURL)
 

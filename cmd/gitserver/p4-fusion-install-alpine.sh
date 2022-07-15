@@ -38,7 +38,7 @@ set -x
 # Then extract the binary from /usr/local/bin/p4-fusion. Please rename it
 # follow the format and upload to the bucket here
 # https://console.cloud.google.com/storage/browser/sourcegraph-artifacts/p4-fusion
-export P4_FUSION_VERSION=v1.9
+export P4_FUSION_VERSION=v1.10
 
 # Runtime dependencies
 echo "--- p4-fusion apk runtime-deps"
@@ -49,7 +49,7 @@ echo "--- p4-fusion prebuilt binary check"
 if wget https://storage.googleapis.com/sourcegraph-artifacts/p4-fusion/p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64; then
   src=p4-fusion-"$P4_FUSION_VERSION"-musl-x86_64
   cat <<EOF | grep "$src" | sha256sum -c
-b2d841932f0d2be1b553e054b53219f986a564f44426cdbf8b3f179777c3f0a3  p4-fusion-v1.9-musl-x86_64
+4e4b6468461e083631f1db01ba20348d0e30eb719b406318e378cf2eb51dc8eb  p4-fusion-v1.10-musl-x86_64
 EOF
   chmod +x "$src"
   mv "$src" /usr/local/bin/p4-fusion
@@ -99,7 +99,7 @@ cd ..
 # We also need Helix Core C++ API to build p4-fusion
 echo "--- p4-fusion helix-core fetch"
 mkdir -p p4-fusion-src/vendor/helix-core-api/linux
-wget https://www.perforce.com/downloads/perforce/r21.2/bin.linux26x86_64/p4api.tgz
+wget https://www.perforce.com/downloads/perforce/r22.1/bin.linux26x86_64/p4api.tgz
 tar -C p4-fusion-src/vendor/helix-core-api/linux -xzf p4api.tgz --strip 1
 
 # Build p4-fusion

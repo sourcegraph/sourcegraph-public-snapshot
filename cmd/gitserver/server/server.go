@@ -255,9 +255,6 @@ type Server struct {
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
 
-	// Used for setRepoSizes function to run only during the first run of janitor
-	setRepoSizesOnce sync.Once
-
 	// GlobalBatchLogSemaphore is a semaphore shared between all requests to ensure that a
 	// maximum number of Git subprocesses are active for all /batch-log requests combined.
 	GlobalBatchLogSemaphore *semaphore.Weighted
@@ -1381,15 +1378,11 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(s.Logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-
 		s.Logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr), log.Strings("req.Args", req.Args))
 
-		// Temporary feature flag to disable this feature in case their are any regressions.
-		if conf.ExperimentalFeatures().EnableGitServerCommandExecFilter {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("invalid command"))
-			return
-		}
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("invalid command"))
+		return
 	}
 
 	ctx := r.Context()
@@ -2403,7 +2396,6 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 
 	err = syncer.Fetch(ctx, remoteURL, dir)
 	if err != nil {
-		s.Logger.Error("Failed to fetch", log.String("repo", string(repo)), log.Error(err))
 		return errors.Wrap(err, "failed to fetch")
 	}
 

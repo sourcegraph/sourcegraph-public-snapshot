@@ -6,8 +6,6 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/rpc"
 	zoektstream "github.com/google/zoekt/stream"
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 )
 
@@ -46,10 +44,10 @@ type StreamSearchEvent struct {
 }
 
 // ZoektDialer is a function that returns a zoekt.Streamer for the given endpoint.
-type ZoektDialer func(logger log.Logger, endpoint string) zoekt.Streamer
+type ZoektDialer func(endpoint string) zoekt.Streamer
 
 // NewCachedZoektDialer wraps a ZoektDialer with caching per endpoint.
-func NewCachedZoektDialer(logger log.Logger, dial ZoektDialer) ZoektDialer {
+func NewCachedZoektDialer(dial ZoektDialer) ZoektDialer {
 	d := &cachedZoektDialer{
 		streamers: map[string]zoekt.Streamer{},
 		dial:      dial,
@@ -63,7 +61,7 @@ type cachedZoektDialer struct {
 	dial      ZoektDialer
 }
 
-func (c *cachedZoektDialer) Dial(logger log.Logger, endpoint string) zoekt.Streamer {
+func (c *cachedZoektDialer) Dial(endpoint string) zoekt.Streamer {
 	c.mu.RLock()
 	s, ok := c.streamers[endpoint]
 	c.mu.RUnlock()
@@ -75,7 +73,7 @@ func (c *cachedZoektDialer) Dial(logger log.Logger, endpoint string) zoekt.Strea
 			s = &cachedStreamerCloser{
 				cachedZoektDialer: c,
 				endpoint:          endpoint,
-				Streamer:          c.dial(logger, endpoint),
+				Streamer:          c.dial(endpoint),
 			}
 			c.streamers[endpoint] = s
 		}
@@ -100,13 +98,13 @@ func (c *cachedStreamerCloser) Close() {
 }
 
 // ZoektDial connects to a Searcher HTTP RPC server at address (host:port).
-func ZoektDial(logger log.Logger, endpoint string) zoekt.Streamer {
+func ZoektDial(endpoint string) zoekt.Streamer {
 	client := rpc.Client(endpoint)
 	streamClient := &zoektStream{
 		Searcher: client,
 		Client:   zoektstream.NewClient("http://"+endpoint, zoektHTTPClient),
 	}
-	return NewMeteredSearcher(logger, endpoint, streamClient)
+	return NewMeteredSearcher(endpoint, streamClient)
 }
 
 type zoektStream struct {

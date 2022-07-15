@@ -5,7 +5,9 @@ import (
 	"database/sql"
 	"net/http"
 	"strings"
+	"time"
 
+	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
@@ -33,7 +35,11 @@ func main() {
 	reposVar := env.Get("ROCKSKIP_REPOS", "", "comma separated list of repositories to index (e.g. `github.com/torvalds/linux,github.com/pallets/flask`)")
 	repos := strings.Split(reposVar, ",")
 
-	if env.Get("USE_ROCKSKIP", "false", "use Rockskip to index the repos specified in ROCKSKIP_REPOS") == "true" {
+	minRepoSizeMb := env.MustGetInt("ROCKSKIP_MIN_REPO_SIZE_MB", -1, "all repos that are at least this big will be indexed using Rockskip")
+
+	repoToSize := map[string]int64{}
+
+	if env.Get("USE_ROCKSKIP", "false", "use Rockskip to index the repos specified in ROCKSKIP_REPOS, or repos over ROCKSKIP_MIN_REPO_SIZE_MB in size") == "true" {
 		shared.Main(func(observationContext *observation.Context, gitserverClient symbolsGitserver.GitserverClient, repositoryFetcher fetcher.RepositoryFetcher) (types.SearchFunc, func(http.ResponseWriter, *http.Request), []goroutine.BackgroundRoutine, string, error) {
 			rockskipSearchFunc, rockskipHandleStatus, rockskipBackgroundRoutines, rockskipCtagsCommand, err := SetupRockskip(observationContext, gitserverClient, repositoryFetcher)
 			if err != nil {
@@ -48,11 +54,36 @@ func main() {
 			}
 
 			searchFunc := func(ctx context.Context, args search.SymbolsParameters) (results result.Symbols, err error) {
-				if sliceContains(repos, string(args.Repo)) {
-					return rockskipSearchFunc(ctx, args)
-				} else {
-					return sqliteSearchFunc(ctx, args)
+				if reposVar != "" {
+					if sliceContains(repos, string(args.Repo)) {
+						return rockskipSearchFunc(ctx, args)
+					} else {
+						return sqliteSearchFunc(ctx, args)
+					}
 				}
+
+				if minRepoSizeMb != -1 {
+					var size int64
+					if _, ok := repoToSize[string(args.Repo)]; ok {
+						size = repoToSize[string(args.Repo)]
+					} else {
+						ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+						defer cancel()
+						size, err = gitserverClient.GetRepoSize(ctx, args.Repo)
+						if err != nil {
+							return sqliteSearchFunc(ctx, args)
+						}
+						repoToSize[string(args.Repo)] = size
+					}
+
+					if size >= int64(minRepoSizeMb)*1000*1000 {
+						return rockskipSearchFunc(ctx, args)
+					} else {
+						return sqliteSearchFunc(ctx, args)
+					}
+				}
+
+				return sqliteSearchFunc(ctx, args)
 			}
 
 			return searchFunc, rockskipHandleStatus, append(rockskipBackgroundRoutines, sqliteBackgroundRoutines...), rockskipCtagsCommand, nil
@@ -73,7 +104,9 @@ func SetupRockskip(observationContext *observation.Context, gitserverClient symb
 
 	db := mustInitializeCodeIntelDB(logger)
 	git := NewGitserver(repositoryFetcher)
-	createParser := func() (rockskip.ParseSymbolsFunc, error) { return createParserWithConfig(logger, config.Ctags) }
+	createParser := func() (ctags.Parser, error) {
+		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags)
+	}
 	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
@@ -104,34 +137,6 @@ func LoadRockskipConfig(baseConfig env.BaseConfig) RockskipConfig {
 		SymbolsCacheSize:        baseConfig.GetInt("SYMBOLS_CACHE_SIZE", "100000", "how many tuples of (path, symbol name, int ID) to cache in memory"),
 		PathSymbolsCacheSize:    baseConfig.GetInt("PATH_SYMBOLS_CACHE_SIZE", "10000", "how many sets of symbols for files to cache in memory"),
 	}
-}
-
-func createParserWithConfig(log log.Logger, config types.CtagsConfig) (rockskip.ParseSymbolsFunc, error) {
-	logger := log.Scoped("parser", "ctags parser")
-
-	parser, err := symbolsParser.SpawnCtags(logger, config)
-	if err != nil {
-		return nil, err
-	}
-
-	return func(path string, bytes []byte) (symbols []rockskip.Symbol, err error) {
-		entries, err := parser.Parse(path, bytes)
-		if err != nil {
-			return nil, err
-		}
-
-		symbols = []rockskip.Symbol{}
-		for _, entry := range entries {
-			symbols = append(symbols, rockskip.Symbol{
-				Name:   entry.Name,
-				Parent: entry.Parent,
-				Kind:   entry.Kind,
-				Line:   entry.Line - 1,
-			})
-		}
-
-		return symbols, nil
-	}, nil
 }
 
 func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {

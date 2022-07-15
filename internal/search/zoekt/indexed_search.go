@@ -9,10 +9,9 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 	"go.uber.org/atomic"
-
-	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -39,7 +38,6 @@ type IndexedRepoRevs struct {
 	// branchRepos is used to construct a zoektquery.BranchesRepos to efficiently
 	// marshal and send to zoekt
 	branchRepos map[string]*zoektquery.BranchRepos
-	Log         sglog.Logger
 }
 
 // add will add reporev and repo to the list of repository and branches to
@@ -174,7 +172,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 
 func PartitionRepos(
 	ctx context.Context,
-	logger sglog.Logger,
+	logger log.Logger,
 	repos []*search.RepositoryRevisions,
 	zoektStreamer zoekt.Streamer,
 	typ search.IndexedRequestType,
@@ -215,20 +213,20 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			indexed.Log.Warn("zoektIndexedRepos failed", sglog.Error(err))
+			logger.Warn("zoektIndexedRepos failed", log.Error(err))
 		}
 
 		return nil, repos, ctx.Err()
 	}
 
-	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
+	tr.LogFields(otlog.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
-	indexed, unindexed = zoektIndexedRepos(logger, list.Minimal, repos, filter)
+	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
 
 	tr.LogFields(
-		log.Int("indexed.size", len(indexed.RepoRevs)),
-		log.Int("unindexed.size", len(unindexed)),
+		otlog.Int("indexed.size", len(indexed.RepoRevs)),
+		otlog.Int("unindexed.size", len(unindexed)),
 	)
 
 	// Disable unindexed search
@@ -239,9 +237,9 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, logger sglog.Logger, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
+func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
-	searchOpts := SearchOpts(ctx, logger, k, args.FileMatchLimit, args.Select)
+	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
 	if deadline, ok := ctx.Deadline(); ok {
 		// If the user manually specified a timeout, allow zoekt to use all of the remaining timeout.
@@ -288,7 +286,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 
 	k := ResultCountFactor(len(repos.RepoRevs), fileMatchLimit, false)
-	searchOpts := SearchOpts(ctx, repos.Log, k, fileMatchLimit, selector)
+	searchOpts := SearchOpts(ctx, k, fileMatchLimit, selector)
 
 	// Start event stream.
 	t0 := time.Now()
@@ -404,8 +402,7 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 }
 
 func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches {
-	hms := make(result.ChunkMatches, 0, len(file.LineMatches))
-
+	cms := make(result.ChunkMatches, 0, len(file.ChunkMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -430,7 +427,7 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 			})
 		}
 
-		hms = append(hms, result.ChunkMatch{
+		cms = append(cms, result.ChunkMatch{
 			Content: string(l.Line),
 			// zoekt line numbers are 1-based rather than 0-based so subtract 1
 			ContentStart: result.Location{
@@ -442,7 +439,39 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 		})
 	}
 
-	return hms
+	for _, cm := range file.ChunkMatches {
+		if cm.FileName {
+			continue
+		}
+
+		ranges := make([]result.Range, 0, len(cm.Ranges))
+		for _, r := range cm.Ranges {
+			ranges = append(ranges, result.Range{
+				Start: result.Location{
+					Offset: int(r.Start.ByteOffset),
+					Line:   int(r.Start.LineNumber) - 1,
+					Column: int(r.Start.Column) - 1,
+				},
+				End: result.Location{
+					Offset: int(r.End.ByteOffset),
+					Line:   int(r.End.LineNumber) - 1,
+					Column: int(r.End.Column) - 1,
+				},
+			})
+		}
+
+		cms = append(cms, result.ChunkMatch{
+			Content: string(cm.Content),
+			ContentStart: result.Location{
+				Offset: int(cm.ContentStart.ByteOffset),
+				Line:   int(cm.ContentStart.LineNumber) - 1,
+				Column: int(cm.ContentStart.Column) - 1,
+			},
+			Ranges: ranges,
+		})
+	}
+
+	return cms
 }
 
 func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
@@ -453,7 +482,7 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 		InputRev: &inputRev,
 	}
 
-	symbols := make([]*result.SymbolMatch, 0, len(file.LineMatches))
+	symbols := make([]*result.SymbolMatch, 0, len(file.ChunkMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -474,6 +503,32 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 				m.SymbolInfo.ParentKind,
 				file.Language,
 				string(l.Line),
+				false,
+			))
+		}
+	}
+
+	for _, cm := range file.ChunkMatches {
+		if cm.FileName || len(cm.SymbolInfo) == 0 {
+			continue
+		}
+
+		for i, r := range cm.Ranges {
+			si := cm.SymbolInfo[i]
+			if si == nil {
+				continue
+			}
+
+			symbols = append(symbols, result.NewSymbolMatch(
+				newFile,
+				int(r.Start.LineNumber),
+				int(r.Start.Column)-1,
+				si.Sym,
+				si.Kind,
+				si.Parent,
+				si.ParentKind,
+				file.Language,
+				"", // Unused when column is set
 				false,
 			))
 		}
@@ -510,13 +565,12 @@ func contextWithoutDeadline(cOld context.Context) (context.Context, context.Canc
 // zoektIndexedRepos splits the revs into two parts: (1) the repository
 // revisions in indexedSet (indexed) and (2) the repositories that are
 // unindexed.
-func zoektIndexedRepos(logger sglog.Logger, indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs []*search.RepositoryRevisions, filter func(repo *zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
+func zoektIndexedRepos(indexedSet map[uint32]*zoekt.MinimalRepoListEntry, revs []*search.RepositoryRevisions, filter func(repo *zoekt.MinimalRepoListEntry) bool) (indexed *IndexedRepoRevs, unindexed []*search.RepositoryRevisions) {
 	// PERF: If len(revs) is large, we expect to be doing an indexed
 	// search. So set indexed to the max size it can be to avoid growing.
 	indexed = &IndexedRepoRevs{
 		RepoRevs:    make(map[api.RepoID]*search.RepositoryRevisions, len(revs)),
 		branchRepos: make(map[string]*zoektquery.BranchRepos, 1),
-		Log:         logger,
 	}
 	unindexed = make([]*search.RepositoryRevisions, 0)
 
@@ -571,51 +625,73 @@ func (*RepoSubsetTextSearchJob) Name() string {
 	return "ZoektRepoSubsetTextSearchJob"
 }
 
-func (z *RepoSubsetTextSearchJob) Tags() []log.Field {
-	tags := []log.Field{
-		trace.Stringer("query", z.Query),
-		log.String("type", string(z.Typ)),
-		log.Int32("fileMatchLimit", z.FileMatchLimit),
-		trace.Stringer("select", z.Select),
+func (z *RepoSubsetTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Int32("fileMatchLimit", z.FileMatchLimit),
+			trace.Stringer("select", z.Select),
+		)
+		// z.Repos is nil for un-indexed search
+		if z.Repos != nil {
+			res = append(res,
+				otlog.Int("numRepoRevs", len(z.Repos.RepoRevs)),
+				otlog.Int("numBranchRepos", len(z.Repos.branchRepos)),
+			)
+		}
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", z.Query),
+			otlog.String("type", string(z.Typ)),
+		)
 	}
-	// z.Repos is nil for un-indexed search
-	if z.Repos != nil {
-		tags = append(tags, log.Int("numRepoRevs", len(z.Repos.RepoRevs)))
-		tags = append(tags, log.Int("numBranchRepos", len(z.Repos.branchRepos)))
-	}
-	return tags
+	return res
 }
+
+func (*RepoSubsetTextSearchJob) Children() []job.Describer         { return nil }
+func (j *RepoSubsetTextSearchJob) MapChildren(job.MapFunc) job.Job { return j }
 
 type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
 	ZoektArgs        *search.ZoektParameters
 	RepoOpts         search.RepoOptions
-	Log              sglog.Logger
 }
 
 func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, t.Log, clients.DB, t.RepoOpts)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	return nil, DoZoektSearchGlobal(ctx, t.Log, clients.Zoekt, t.ZoektArgs, stream)
+	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
 }
 
 func (*GlobalTextSearchJob) Name() string {
 	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *GlobalTextSearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", t.GlobalZoektQuery.Query),
-		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
-		log.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
-		log.String("type", string(t.ZoektArgs.Typ)),
-		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
-		trace.Stringer("select", t.ZoektArgs.Select),
-		trace.Stringer("repoOpts", &t.RepoOpts),
+func (t *GlobalTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
+			trace.Stringer("select", t.ZoektArgs.Select),
+			trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
+			otlog.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", t.GlobalZoektQuery.Query),
+			otlog.String("type", string(t.ZoektArgs.Typ)),
+			trace.Scoped("repoOpts", t.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
+
+func (t *GlobalTextSearchJob) Children() []job.Describer       { return nil }
+func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }

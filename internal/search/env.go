@@ -10,8 +10,6 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/query"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
@@ -35,8 +33,6 @@ var (
 	indexersOnce sync.Once
 	indexers     *backend.Indexers
 
-	logger log.Logger
-
 	indexedListTTL = func() time.Duration {
 		ttl, _ := time.ParseDuration(env.Get("SRC_INDEXED_SEARCH_LIST_CACHE_TTL", "", "Indexed search list cache TTL"))
 		if ttl == 0 {
@@ -49,8 +45,8 @@ var (
 		return ttl
 	}()
 
-	indexedDialer = backend.NewCachedZoektDialer(logger, func(logger log.Logger, endpoint string) zoekt.Streamer {
-		return backend.NewCachedSearcher(indexedListTTL, backend.ZoektDial(logger, endpoint))
+	indexedDialer = backend.NewCachedZoektDialer(func(endpoint string) zoekt.Streamer {
+		return backend.NewCachedSearcher(indexedListTTL, backend.ZoektDial(endpoint))
 	})
 )
 
@@ -76,7 +72,7 @@ func IndexedEndpoints() *endpoint.Map {
 
 var ErrIndexDisabled = errors.New("indexed search has been disabled")
 
-func Indexed(logger log.Logger) zoekt.Streamer {
+func Indexed() zoekt.Streamer {
 	if !conf.SearchIndexEnabled() {
 		return &backend.FakeSearcher{SearchError: ErrIndexDisabled, ListError: ErrIndexDisabled}
 	}
@@ -84,12 +80,10 @@ func Indexed(logger log.Logger) zoekt.Streamer {
 	indexedSearchOnce.Do(func() {
 		if eps := IndexedEndpoints(); eps != nil {
 			indexedSearch = backend.NewCachedSearcher(indexedListTTL, backend.NewMeteredSearcher(
-				logger,
 				"", // no hostname means its the aggregator
 				&backend.HorizontalSearcher{
 					Map:  eps,
 					Dial: indexedDialer,
-					Log:  logger,
 				}))
 		}
 	})
@@ -132,9 +126,9 @@ func getEnv(environ []string, key string) (string, bool) {
 	return "", false
 }
 
-func reposAtEndpoint(dial func(log.Logger, string) zoekt.Streamer) func(context.Context, log.Logger, string) map[uint32]*zoekt.MinimalRepoListEntry {
-	return func(ctx context.Context, logger log.Logger, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
-		cl := dial(logger, endpoint)
+func reposAtEndpoint(dial func(string) zoekt.Streamer) func(context.Context, string) map[uint32]*zoekt.MinimalRepoListEntry {
+	return func(ctx context.Context, endpoint string) map[uint32]*zoekt.MinimalRepoListEntry {
+		cl := dial(endpoint)
 
 		resp, err := cl.List(ctx, &query.Const{Value: true}, &zoekt.ListOptions{Minimal: true})
 		if err != nil {

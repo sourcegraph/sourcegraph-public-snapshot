@@ -25,7 +25,11 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
         >
           :
         </span>
-        go
+        <span
+          class="search-query-text"
+        >
+          go
+        </span>
       </span>
     </span>
     <span
@@ -58,7 +62,11 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
         >
           :
         </span>
-        typescript
+        <span
+          class="search-query-text"
+        >
+          typescript
+        </span>
       </span>
     </span>
     <span
@@ -91,7 +99,26 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
         >
           :
         </span>
-        _test\\.go$
+        <span
+          class="search-query-text"
+        >
+          _test
+        </span>
+        <span
+          class="search-regexp-meta-escaped-character"
+        >
+          \\.
+        </span>
+        <span
+          class="search-query-text"
+        >
+          go
+        </span>
+        <span
+          class="search-regexp-meta-assertion"
+        >
+          $
+        </span>
       </span>
     </span>
     <span
@@ -126,7 +153,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
         </span>
         <svg
           aria-label="gitlab.com"
-          class="iconInline text-muted sidebarSectionIcon"
+          class="mdi-icon iconInline text-muted sidebarSectionIcon"
           data-state="closed"
           fill="currentColor"
           height="24"
@@ -168,7 +195,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
         </span>
         <svg
           aria-label="github.com"
-          class="iconInline text-muted sidebarSectionIcon"
+          class="mdi-icon iconInline text-muted sidebarSectionIcon"
           data-state="closed"
           fill="currentColor"
           height="24"
@@ -246,7 +273,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
         </span>
         <svg
           aria-label="gitlab.com"
-          class="iconInline text-muted sidebarSectionIcon"
+          class="mdi-icon iconInline text-muted sidebarSectionIcon"
           data-state="closed"
           fill="currentColor"
           height="24"
@@ -288,7 +315,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
         </span>
         <svg
           aria-label="github.com"
-          class="iconInline text-muted sidebarSectionIcon"
+          class="mdi-icon iconInline text-muted sidebarSectionIcon"
           data-state="closed"
           fill="currentColor"
           height="24"

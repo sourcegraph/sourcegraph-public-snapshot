@@ -11,7 +11,6 @@ import (
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/google/zoekt/stream"
 	"github.com/grafana/regexp"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -25,7 +24,7 @@ func (r *RepositoryResolver) TextSearchIndex() *repositoryTextSearchIndexResolve
 
 	return &repositoryTextSearchIndexResolver{
 		repo:   r,
-		client: search.Indexed(log.Scoped("repositoryTextSearchIndexResolver", "")),
+		client: search.Indexed(),
 	}
 }
 

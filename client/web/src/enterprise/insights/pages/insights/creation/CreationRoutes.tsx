@@ -67,6 +67,17 @@ export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<Cre
                     />
                 )}
             />
+
+            <Route
+                path={`${match.url}/group-results`}
+                exact={true}
+                render={() => (
+                    <InsightCreationLazyPage
+                        mode={InsightCreationPageType.Compute}
+                        telemetryService={telemetryService}
+                    />
+                )}
+            />
         </Switch>
     )
 }

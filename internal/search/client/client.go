@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/google/zoekt"
-
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -40,18 +39,18 @@ type SearchClient interface {
 
 func NewSearchClient(logger log.Logger, db database.DB, zoektStreamer zoekt.Streamer, searcherURLs *endpoint.Map) SearchClient {
 	return &searchClient{
+		logger:       logger,
 		db:           db,
 		zoekt:        zoektStreamer,
 		searcherURLs: searcherURLs,
-		log:          logger,
 	}
 }
 
 type searchClient struct {
+	logger       log.Logger
 	db           database.DB
 	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
-	log          log.Logger
 }
 
 func (s *searchClient) Plan(
@@ -63,7 +62,7 @@ func (s *searchClient) Plan(
 	settings *schema.Settings,
 	sourcegraphDotComMode bool,
 ) (*run.SearchInputs, error) {
-	return run.NewSearchInputs(ctx, s.log, s.db, version, patternType, searchQuery, protocol, settings, sourcegraphDotComMode)
+	return run.NewSearchInputs(ctx, s.db, version, patternType, searchQuery, protocol, settings, sourcegraphDotComMode)
 }
 
 func (s *searchClient) Execute(
@@ -71,11 +70,12 @@ func (s *searchClient) Execute(
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
 ) (*search.Alert, error) {
-	return execute.Execute(ctx, s.log, stream, inputs, s.JobClients())
+	return execute.Execute(ctx, stream, inputs, s.JobClients())
 }
 
 func (s *searchClient) JobClients() job.RuntimeClients {
 	return job.RuntimeClients{
+		Logger:       s.logger,
 		DB:           s.db,
 		Zoekt:        s.zoekt,
 		SearcherURLs: s.searcherURLs,

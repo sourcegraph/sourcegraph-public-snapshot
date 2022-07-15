@@ -61,6 +61,7 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
 
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -84,8 +85,12 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 
 	if !disableLog {
 		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
-		if requestName == "unknown" {
-			log.Printf(`logging complete query for unnamed GraphQL request above name=%s userID=%d source=%s:
+		if requestName == "unknown" || logAllRequests {
+			reason := ""
+			if requestName == "unknown" {
+				reason = "for unnamed GraphQL request above "
+			}
+			log.Printf(`logging complete query %sname=%s userID=%d source=%s:
 QUERY
 -----
 %s
@@ -94,7 +99,7 @@ VARIABLES
 ---------
 %v
 
-`, requestName, currentUserID, requestSource, queryString, variables)
+`, reason, requestName, currentUserID, requestSource, queryString, variables)
 		}
 	}
 
@@ -463,8 +468,16 @@ func NewSchema(
 // schemaResolver handles all GraphQL queries for Sourcegraph. To do this, it
 // uses subresolvers which are globals. Enterprise-only resolvers are assigned
 // to a field of EnterpriseResolvers.
+//
+// schemaResolver must be instantiated using newSchemaResolver.
 type schemaResolver struct {
-	logger sglog.Logger
+	logger            sglog.Logger
+	db                database.DB
+	repoupdaterClient *repoupdater.Client
+	nodeByIDFns       map[string]NodeByIDFunc
+
+	// SubResolvers are assigned using the Schema constructor.
+
 	BatchChangesResolver
 	AuthzResolver
 	CodeIntelResolver
@@ -476,15 +489,13 @@ type schemaResolver struct {
 	SearchContextsResolver
 	OrgRepositoryResolver
 	NotebooksResolver
-
-	db                database.DB
-	repoupdaterClient *repoupdater.Client
-	nodeByIDFns       map[string]NodeByIDFunc
 }
 
-// newSchemaResolver will return a new schemaResolver using repoupdater.DefaultClient.
+// newSchemaResolver will return a new, safely instantiated schemaResolver with some
+// defaults. It does not implement any sub-resolvers.
 func newSchemaResolver(db database.DB) *schemaResolver {
 	r := &schemaResolver{
+		logger:            sglog.Scoped("schemaResolver", "GraphQL schema resolver"),
 		db:                db,
 		repoupdaterClient: repoupdater.DefaultClient,
 	}
@@ -557,7 +568,7 @@ var EnterpriseResolvers = struct {
 
 // DEPRECATED
 func (r *schemaResolver) Root() *schemaResolver {
-	return &schemaResolver{db: r.db}
+	return newSchemaResolver(r.db)
 }
 
 func (r *schemaResolver) Repository(ctx context.Context, args *struct {

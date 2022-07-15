@@ -383,6 +383,21 @@ CREATE FUNCTION invalidate_session_for_userid_on_password_change() RETURNS trigg
     END;
 $$;
 
+CREATE FUNCTION merge_audit_log_transitions(internal hstore, arrayhstore hstore[]) RETURNS hstore
+    LANGUAGE plpgsql IMMUTABLE
+    AS $$
+    DECLARE
+        trans hstore;
+    BEGIN
+      FOREACH trans IN ARRAY arrayhstore
+      LOOP
+          internal := internal || hstore(trans->'column', trans->'new');
+      END LOOP;
+
+      RETURN internal;
+    END;
+$$;
+
 CREATE FUNCTION repo_block(reason text, at timestamp with time zone) RETURNS jsonb
     LANGUAGE sql IMMUTABLE STRICT
     AS $$
@@ -477,6 +492,12 @@ BEGIN
     NEW.first_version = NEW.version;
     RETURN NEW;
 END $$;
+
+CREATE AGGREGATE snapshot_transition_columns(hstore[]) (
+    SFUNC = merge_audit_log_transitions,
+    STYPE = hstore,
+    INITCOND = ''
+);
 
 CREATE TABLE access_tokens (
     id bigint NOT NULL,
@@ -1198,7 +1219,8 @@ CREATE TABLE codeintel_lockfiles (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
     codeintel_lockfile_reference_ids integer[] NOT NULL,
-    lockfile text
+    lockfile text,
+    fidelity text DEFAULT 'flat'::text NOT NULL
 );
 
 COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
@@ -1208,6 +1230,8 @@ COMMENT ON COLUMN codeintel_lockfiles.commit_bytea IS 'A 40-char revhash. Note t
 COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.';
 
 COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile in the given repository and the given commit.';
+
+COMMENT ON COLUMN codeintel_lockfiles.fidelity IS 'Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...';
 
 CREATE SEQUENCE codeintel_lockfiles_id_seq
     AS integer
@@ -3530,7 +3554,11 @@ CREATE INDEX changesets_publication_state_idx ON changesets USING btree (publica
 
 CREATE INDEX changesets_reconciler_state_idx ON changesets USING btree (reconciler_state);
 
+CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
+
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
+
+CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
 
@@ -3590,7 +3618,7 @@ CREATE INDEX external_service_repos_idx ON external_service_repos USING btree (e
 
 CREATE INDEX external_service_repos_org_id_idx ON external_service_repos USING btree (org_id) WHERE (org_id IS NOT NULL);
 
-CREATE INDEX external_service_sync_jobs_state_idx ON external_service_sync_jobs USING btree (state);
+CREATE INDEX external_service_sync_jobs_state_external_service_id ON external_service_sync_jobs USING btree (state, external_service_id) INCLUDE (finished_at);
 
 CREATE INDEX external_service_user_repos_idx ON external_service_repos USING btree (user_id, repo_id) WHERE (user_id IS NOT NULL);
 
@@ -3713,6 +3741,8 @@ CREATE INDEX repo_archived ON repo USING btree (archived);
 CREATE INDEX repo_blocked_idx ON repo USING btree (((blocked IS NOT NULL)));
 
 CREATE INDEX repo_created_at ON repo USING btree (created_at);
+
+CREATE INDEX repo_description_trgm_idx ON repo USING gin (lower(description) gin_trgm_ops);
 
 CREATE UNIQUE INDEX repo_external_unique_idx ON repo USING btree (external_service_type, external_service_id, external_id);
 
@@ -4156,23 +4186,6 @@ ALTER TABLE ONLY user_public_repos
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-INSERT INTO out_of_band_migrations VALUES (3, 'core-application', 'frontend-db.external-services', 'Encrypt configuration', 0, '2021-10-08 16:09:36.889968+00', NULL, true, false, false, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (6, 'core-application', 'frontend-db.external-accounts', 'Encrypt auth data', 0, '2021-10-08 16:09:36.986936+00', NULL, true, false, false, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (1, 'code-intelligence', 'codeintel-db.lsif_data_documents', 'Populate num_diagnostics from gob-encoded payload', 0, '2021-06-03 23:21:34.031614+00', NULL, true, false, true, 3, 25, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (2, 'campaigns', 'frontend-db.authenticators', 'Prepare for SSH pushes to code hosts', 0, '2021-10-08 16:09:36.662797+00', NULL, true, false, true, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (4, 'code-intelligence', 'codeintel-db.lsif_data_definitions', 'Populate num_locations from gob-encoded payload', 0, '2021-10-08 16:09:36.958858+00', NULL, true, false, true, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (5, 'code-intelligence', 'codeintel-db.lsif_data_references', 'Populate num_locations from gob-encoded payload', 0, '2021-10-08 16:09:36.958858+00', NULL, true, false, true, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (7, 'code-intelligence', 'codeintel-db.lsif_data_documents', 'Split payload into multiple columns', 0, '2021-10-08 16:09:36.999803+00', NULL, false, false, true, 3, 27, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (8, 'code-intelligence', 'frontend-db.lsif_uploads', 'Backfill committed_at', 0, '2021-10-08 16:09:37.097218+00', NULL, true, false, true, 3, 28, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (9, 'batch-changes', 'frontend-db.user-credentials', 'Encrypt batch changes user credentials', 0, '2021-10-08 16:09:37.127756+00', NULL, false, false, true, 3, 28, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (10, 'batch-changes', 'frontend-db.site-credentials', 'Encrypt batch changes site credentials', 0, '2021-10-08 16:09:37.157552+00', NULL, false, false, true, 3, 28, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (11, 'code-intelligence', 'lsif_uploads.num_references', 'Backfill LSIF upload reference counts', 0, '2022-02-23 02:58:26.401303+00', NULL, true, false, false, 3, 22, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (12, 'apidocs', 'codeintel-db.lsif_data_documentation_search', 'Index API docs for search', 0, '2022-02-23 02:58:31.007046+00', NULL, true, false, false, 3, 32, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (13, 'batch-changes', 'frontend-db.external_services', 'Calculate the webhook state of each external service', 0, '2022-02-23 02:58:32.425336+00', NULL, true, false, false, 3, 34, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (14, 'code-insights', 'db.insights_settings_migration_jobs', 'Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.', 0, '2021-12-02 09:39:00+00', NULL, true, false, true, 3, 35, NULL, NULL, '{}');
-
-SELECT pg_catalog.setval('out_of_band_migrations_id_seq', 1, false);
 
 INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
 INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);

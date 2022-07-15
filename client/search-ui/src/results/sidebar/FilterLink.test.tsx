@@ -126,6 +126,6 @@ describe('FilterLink', () => {
         renderWithBrandedContext(<>{links}</>)
         userEvent.click(screen.getByTestId('filter-link'))
 
-        sinon.assert.calledWithExactly(onFilterChosen, repoFilter1.value)
+        sinon.assert.calledWithExactly(onFilterChosen, repoFilter1.value, repoFilter1.kind)
     })
 })

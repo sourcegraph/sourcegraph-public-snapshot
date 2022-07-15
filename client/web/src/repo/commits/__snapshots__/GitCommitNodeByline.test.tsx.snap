@@ -9,8 +9,8 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
     <div>
       <img
         aria-hidden="true"
-        class="iconInline userAvatar mr-1 mr-2"
-        data-tooltip="Alice Zhao"
+        class="mdi-icon iconInline userAvatar mr-1 mr-2"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -21,14 +21,19 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        
       <span
         class="timestamp"
-        data-tooltip="1990-01-01"
+        data-state="closed"
       >
         about 16 years ago
       </span>
@@ -46,8 +51,8 @@ exports[`GitCommitNodeByline author 1`] = `
     <div>
       <img
         aria-hidden="true"
-        class="iconInline userAvatar mr-1 mr-2"
-        data-tooltip="Alice Zhao"
+        class="mdi-icon iconInline userAvatar mr-1 mr-2"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -58,14 +63,19 @@ exports[`GitCommitNodeByline author 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        
       <span
         class="timestamp"
-        data-tooltip="1990-01-01"
+        data-state="closed"
       >
         about 16 years ago
       </span>
@@ -85,16 +95,16 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       <img
         aria-hidden="true"
-        class="iconInline userAvatar"
-        data-tooltip="Alice Zhao (author)"
+        class="mdi-icon iconInline userAvatar"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
        
       <img
         aria-hidden="true"
-        class="iconInline userAvatar mr-2"
-        data-tooltip="bYang (committer)"
+        class="mdi-icon iconInline userAvatar mr-2"
+        data-state="closed"
         role="presentation"
         src="http://example.com/bob.png"
       />
@@ -104,22 +114,32 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        authored and commited by 
       <a
         class="font-weight-bold"
-        data-tooltip="Bob Yang <bob@example.com>"
+        data-state="closed"
         href="https://example.com/bobyang"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         bYang
       </a>
        
       <span
         class="timestamp"
-        data-tooltip="1991-01-01"
+        data-state="closed"
       >
         about 15 years ago
       </span>
@@ -139,16 +159,16 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       <img
         aria-hidden="true"
-        class="iconInline userAvatar"
-        data-tooltip="Alice Zhao (author)"
+        class="mdi-icon iconInline userAvatar"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
        
       <img
         aria-hidden="true"
-        class="iconInline userAvatar mr-2"
-        data-tooltip="bYang (committer)"
+        class="mdi-icon iconInline userAvatar mr-2"
+        data-state="closed"
         role="presentation"
         src="http://example.com/bob.png"
       />
@@ -158,22 +178,32 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        authored and commited by 
       <a
         class="font-weight-bold"
-        data-tooltip="Bob Yang <bob@example.com>"
+        data-state="closed"
         href="https://example.com/bobyang"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         bYang
       </a>
        
       <span
         class="timestamp"
-        data-tooltip="1991-01-01"
+        data-state="closed"
       >
         about 15 years ago
       </span>
@@ -191,8 +221,8 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
     <div>
       <img
         aria-hidden="true"
-        class="iconInline userAvatar mr-1 mr-2"
-        data-tooltip="Alice Zhao"
+        class="mdi-icon iconInline userAvatar mr-1 mr-2"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -203,14 +233,19 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        
       <span
         class="timestamp"
-        data-tooltip="1990-01-01"
+        data-state="closed"
       >
         about 16 years ago
       </span>
@@ -228,8 +263,8 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
     <div>
       <img
         aria-hidden="true"
-        class="iconInline userAvatar mr-1 mr-2"
-        data-tooltip="Alice Zhao"
+        class="mdi-icon iconInline userAvatar mr-1 mr-2"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -240,14 +275,19 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
+        <span
+          style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
+        >
+          User:
+        </span>
         Alice Zhao
       </span>
        
       <span
         class="timestamp"
-        data-tooltip="1990-01-01"
+        data-state="closed"
       >
         about 16 years ago
       </span>

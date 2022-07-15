@@ -47,9 +47,10 @@ export const getInsightsPreview = (
                     repositoryScope: { repositories: input.repositories },
                     timeScope: { stepInterval: { unit, value: +value } },
                     series: input.series.map(previewSeries => ({
-                        generatedFromCaptureGroups: previewSeries.generatedFromCaptureGroup,
+                        generatedFromCaptureGroups: !!previewSeries.generatedFromCaptureGroup,
                         query: previewSeries.query,
                         label: previewSeries.label,
+                        groupBy: previewSeries.groupBy,
                     })),
                 },
             },
@@ -76,7 +77,7 @@ export const getInsightsPreview = (
             const seriesMetadata = indexedSeries.map((generatedSeries, index) => ({
                 id: generatedSeries.seriesId,
                 name: generatedSeries.label,
-                query: inputMetadata[generatedSeries.label]?.query || '',
+                query: inputMetadata[`${generatedSeries.label}-${index}`]?.query || '',
                 stroke: getColorForSeries(generatedSeries.label, index),
             }))
 
@@ -91,9 +92,10 @@ export const getInsightsPreview = (
                         value: point.value,
                         dateTime: new Date(point.dateTime),
                         link: generateLinkURL({
-                            previousPoint: line.points[index - 1],
-                            series: seriesDefinitionMap[line.seriesId],
                             point,
+                            previousPoint: line.points[index - 1],
+                            query: seriesDefinitionMap[line.seriesId].query,
+                            repositories: input.repositories,
                         }),
                     })),
                     name: line.label,

@@ -40,6 +40,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
 		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
 		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
+		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
@@ -257,17 +258,8 @@ func (f RepoContainsCommitAfterPredicate) Name() string {
 	return "contains.commit.after"
 }
 func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
-	nodes := make([]Node, 0, 3)
-	nodes = append(nodes, Parameter{
-		Field: FieldCount,
-		Value: "99999",
-	}, Parameter{
-		Field: FieldRepoHasCommitAfter,
-		Value: f.TimeRef,
-	})
-
-	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return BuildPlan(nodes), nil
+	// Handled by repo pagination code
+	return nil, nil
 }
 
 // RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
@@ -324,6 +316,29 @@ func (f *RepoDependentsPredicate) ParseParams(params string) (err error) {
 func (f *RepoDependentsPredicate) Field() string { return FieldRepo }
 func (f *RepoDependentsPredicate) Name() string  { return "dependents" }
 func (f *RepoDependentsPredicate) Plan(parent Basic) (Plan, error) {
+	return nil, nil
+}
+
+/* repo:has.description(...) */
+
+type RepoHasDescriptionPredicate struct {
+	Pattern string
+}
+
+func (f *RepoHasDescriptionPredicate) ParseParams(params string) (err error) {
+	if _, err := regexp.Compile(params); err != nil {
+		return errors.Errorf("invalid repo:has.description() argument: %w", err)
+	}
+	if len(params) == 0 {
+		return errors.New("empty repo:has.description() predicate parameter")
+	}
+	f.Pattern = params
+	return nil
+}
+
+func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
+func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
+func (f *RepoHasDescriptionPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 

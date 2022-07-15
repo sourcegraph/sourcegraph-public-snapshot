@@ -1,5 +1,5 @@
-import { cleanup } from '@testing-library/react'
-import { renderHook, WrapperComponent, act } from '@testing-library/react-hooks'
+import { renderHook, cleanup, act } from '@testing-library/react'
+import { WrapperComponent } from '@testing-library/react-hooks'
 
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { MockTemporarySettings } from '@sourcegraph/shared/src/settings/temporary/testUtils'
@@ -20,7 +20,7 @@ const getFieldsAsObject = (value: object): object =>
 const TourId = 'MockTour'
 
 const setup = (settings: TemporarySettings['onboarding.quickStartTour'] = {}) => {
-    const wrapper: WrapperComponent<{}> = ({ children }) => (
+    const wrapper: WrapperComponent<React.PropsWithChildren<{}>> = ({ children }) => (
         <MockTemporarySettings settings={{ 'onboarding.quickStartTour': settings }}>{children}</MockTemporarySettings>
     )
     return renderHook(() => useTour(TourId), { wrapper })

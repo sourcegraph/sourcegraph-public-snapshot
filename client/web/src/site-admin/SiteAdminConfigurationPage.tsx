@@ -1,9 +1,8 @@
 import * as React from 'react'
 
-import * as jsonc from '@sqs/jsonc-parser'
-import { setProperty } from '@sqs/jsonc-parser/lib/edit'
 import classNames from 'classnames'
 import * as H from 'history'
+import * as jsonc from 'jsonc-parser'
 import { RouteComponentProps } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { delay, mergeMap, retryWhen, tap, timeout } from 'rxjs/operators'
@@ -25,10 +24,12 @@ import { fetchSite, reloadSite, updateSiteConfiguration } from './backend'
 
 import styles from './SiteAdminConfigurationPage.module.scss'
 
-const defaultFormattingOptions: jsonc.FormattingOptions = {
-    eol: '\n',
-    insertSpaces: true,
-    tabSize: 2,
+const defaultModificationOptions: jsonc.ModificationOptions = {
+    formattingOptions: {
+        eol: '\n',
+        insertSpaces: true,
+        tabSize: 2,
+    },
 }
 
 function editWithComments(
@@ -37,7 +38,7 @@ function editWithComments(
     value: any,
     comments: { [key: string]: string }
 ): jsonc.Edit {
-    const edit = setProperty(config, path, value, defaultFormattingOptions)[0]
+    const edit = jsonc.modify(config, path, value, defaultModificationOptions)[0]
     for (const commentKey of Object.keys(comments)) {
         edit.content = edit.content.replace(`"${commentKey}": true,`, comments[commentKey])
         edit.content = edit.content.replace(`"${commentKey}": true`, comments[commentKey])
@@ -55,7 +56,7 @@ const quickConfigureActions: {
         label: 'Set external URL',
         run: config => {
             const value = '<external URL>'
-            const edits = setProperty(config, ['externalURL'], value, defaultFormattingOptions)
+            const edits = jsonc.modify(config, ['externalURL'], value, defaultModificationOptions)
             return { edits, selectText: '<external URL>' }
         },
     },
@@ -64,7 +65,7 @@ const quickConfigureActions: {
         label: 'Set license key',
         run: config => {
             const value = '<license key>'
-            const edits = setProperty(config, ['licenseKey'], value, defaultFormattingOptions)
+            const edits = jsonc.modify(config, ['licenseKey'], value, defaultModificationOptions)
             return { edits, selectText: '<license key>' }
         },
     },

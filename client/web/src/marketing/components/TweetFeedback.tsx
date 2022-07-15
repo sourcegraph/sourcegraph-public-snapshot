@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import TwitterIcon from 'mdi-react/TwitterIcon'
+import { mdiTwitter } from '@mdi/js'
 
 import { ButtonLink, Icon, Text } from '@sourcegraph/wildcard'
 
@@ -30,7 +30,7 @@ export const TweetFeedback: React.FunctionComponent<React.PropsWithChildren<Twee
                     rel="noreferrer noopener"
                     variant="primary"
                 >
-                    <Icon className="mr-2" as={TwitterIcon} aria-hidden={true} />
+                    <Icon className="mr-2" aria-hidden={true} svgPath={mdiTwitter} />
                     Tweet feedback
                 </ButtonLink>
             </>

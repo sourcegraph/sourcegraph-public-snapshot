@@ -3,7 +3,8 @@ import { FunctionComponent, useRef, useState } from 'react'
 import { mdiLinkVariant } from '@mdi/js'
 import { useHistory } from 'react-router'
 
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
+import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
 import { Insight } from '../../../../../core'
@@ -11,12 +12,12 @@ import { useCopyURLHandler } from '../../../../../hooks/use-copy-url-handler'
 
 import styles from './CodeInsightIndependentPageActions.module.scss'
 
-interface Props {
+interface Props extends TelemetryProps {
     insight: Pick<Insight, 'title' | 'id' | 'type'>
 }
 
 export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props => {
-    const { insight } = props
+    const { insight, telemetryService } = props
 
     const history = useHistory()
 
@@ -39,20 +40,26 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
         setShowDeleteConfirm(true)
     }
 
+    const handleEditClick = (): void => {
+        telemetryService.log('StandaloneInsightPageEditClick')
+    }
+
     return (
         <div className={styles.container}>
-            <Button
-                variant="secondary"
-                ref={copyLinkButtonReference}
-                data-tooltip={isCopied ? 'Copied!' : undefined}
-                onClick={handleCopyLinkClick}
-            >
-                <Icon aria-hidden={true} svgPath={mdiLinkVariant} /> Copy link
-            </Button>
+            <Tooltip content={isCopied ? 'Copied!' : undefined}>
+                <Button variant="secondary" ref={copyLinkButtonReference} onClick={handleCopyLinkClick}>
+                    <Icon aria-hidden={true} svgPath={mdiLinkVariant} /> Copy link
+                </Button>
+            </Tooltip>
             <Button variant="danger" onClick={handleDeleteClick}>
                 Delete
             </Button>
-            <Button variant="primary" as={Link} to={`/insights/edit/${insight.id}?insight=${insight.id}`}>
+            <Button
+                variant="primary"
+                as={Link}
+                to={`/insights/edit/${insight.id}?insight=${insight.id}`}
+                onClick={handleEditClick}
+            >
                 Edit
             </Button>
 

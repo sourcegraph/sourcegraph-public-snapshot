@@ -4,8 +4,11 @@ import { LineChart, SeriesLikeChart } from '../../../../../../charts'
 import { LineChartProps } from '../../../../../../charts/components/line-chart/LineChart'
 import { SeriesWithData } from '../../../../../../charts/components/line-chart/utils'
 import { UseSeriesToggleReturn } from '../../../../../../insights/utils/use-series-toggle'
-import { SeriesBasedChartTypes } from '../../types'
 import { LockedChart } from '../locked/LockedChart'
+
+export enum SeriesBasedChartTypes {
+    Line,
+}
 
 export interface SeriesChartProps<D> extends SeriesLikeChart<D>, Omit<SVGProps<SVGSVGElement>, 'type'> {
     type: SeriesBasedChartTypes

@@ -4,9 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/opentracing/opentracing-go/log"
-
-	sglog "github.com/sourcegraph/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -19,13 +18,12 @@ import (
 
 // NewFilterJob creates a job that filters the streamed results
 // of its child job using the default authz.DefaultSubRepoPermsChecker.
-func NewFilterJob(logger sglog.Logger, child job.Job) job.Job {
-	return &subRepoPermsFilterJob{child: child, log: logger}
+func NewFilterJob(child job.Job) job.Job {
+	return &subRepoPermsFilterJob{child: child}
 }
 
 type subRepoPermsFilterJob struct {
 	child job.Job
-	log   sglog.Logger
 }
 
 func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -41,7 +39,7 @@ func (s *subRepoPermsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applySubRepoFiltering(ctx, s.log, checker, event.Results)
+		event.Results, err = applySubRepoFiltering(ctx, clients.Logger, checker, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -61,13 +59,21 @@ func (s *subRepoPermsFilterJob) Name() string {
 	return "SubRepoPermsFilterJob"
 }
 
-func (s *subRepoPermsFilterJob) Tags() []log.Field {
-	return []log.Field{}
+func (s *subRepoPermsFilterJob) Fields(job.Verbosity) []otlog.Field { return nil }
+
+func (s *subRepoPermsFilterJob) Children() []job.Describer {
+	return []job.Describer{s.child}
+}
+
+func (s *subRepoPermsFilterJob) MapChildren(fn job.MapFunc) job.Job {
+	cp := *s
+	cp.child = job.Map(s.child, fn)
+	return &cp
 }
 
 // applySubRepoFiltering filters a set of matches using the provided
 // authz.SubRepoPermissionChecker
-func applySubRepoFiltering(ctx context.Context, logger sglog.Logger, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
+func applySubRepoFiltering(ctx context.Context, logger log.Logger, checker authz.SubRepoPermissionChecker, matches []result.Match) ([]result.Match, error) {
 	if !authz.SubRepoEnabled(checker) {
 		return matches, nil
 	}
@@ -119,6 +125,6 @@ func applySubRepoFiltering(ctx context.Context, logger sglog.Logger, checker aut
 
 	// We don't want to return sensitive authz information or excluded paths to the
 	// user so we'll return generic error and log something more specific.
-	logger.Warn("Applying sub-repo permissions to search results", sglog.Error(errs))
+	logger.Warn("Applying sub-repo permissions to search results", log.Error(errs))
 	return filtered, errors.New("subRepoFilterFunc")
 }

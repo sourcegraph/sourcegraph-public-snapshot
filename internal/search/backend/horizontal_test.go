@@ -14,9 +14,6 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 
-	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,7 +23,7 @@ func TestHorizontalSearcher(t *testing.T) {
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(logger log.Logger, endpoint string) zoekt.Streamer {
+		Dial: func(endpoint string) zoekt.Streamer {
 			repoID, _ := strconv.Atoi(endpoint)
 			var rle zoekt.RepoListEntry
 			rle.Repository.Name = endpoint
@@ -40,9 +37,8 @@ func TestHorizontalSearcher(t *testing.T) {
 				Repos: []*zoekt.RepoListEntry{&rle},
 			}
 			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(logtest.Scoped(t), endpoint, client)
+			return NewMeteredSearcher(endpoint, client)
 		},
-		Log: logtest.Scoped(t),
 	}
 	defer searcher.Close()
 
@@ -131,14 +127,13 @@ func TestDoStreamSearch(t *testing.T) {
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(logger log.Logger, endpoint string) zoekt.Streamer {
+		Dial: func(endpoint string) zoekt.Streamer {
 			client := &FakeSearcher{
 				SearchError: errors.Errorf("test error"),
 			}
 			// Return metered searcher to test that codepath
-			return NewMeteredSearcher(logtest.Scoped(t), endpoint, client)
+			return NewMeteredSearcher(endpoint, client)
 		},
-		Log: logtest.Scoped(t),
 	}
 	defer searcher.Close()
 
@@ -171,13 +166,12 @@ func TestSyncSearchers(t *testing.T) {
 	dialNumCounter := 0
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Dial: func(logger log.Logger, endpoint string) zoekt.Streamer {
+		Dial: func(endpoint string) zoekt.Streamer {
 			dialNumCounter++
 			return &mock{
 				dialNum: dialNumCounter,
 			}
 		},
-		Log: logtest.Scoped(t),
 	}
 	defer searcher.Close()
 
@@ -204,8 +198,7 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 
 	searcher := &HorizontalSearcher{
 		Map: &endpoints,
-		Log: logtest.Scoped(t),
-		Dial: func(logger log.Logger, endpoint string) zoekt.Streamer {
+		Dial: func(endpoint string) zoekt.Streamer {
 			var client *FakeSearcher
 			switch endpoint {
 			case "dns-not-found":
@@ -261,7 +254,7 @@ func TestIgnoreDownEndpoints(t *testing.T) {
 				}
 			}
 
-			return NewMeteredSearcher(logtest.Scoped(t), endpoint, client)
+			return NewMeteredSearcher(endpoint, client)
 		},
 	}
 	defer searcher.Close()

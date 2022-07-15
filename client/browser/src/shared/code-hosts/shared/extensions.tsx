@@ -1,7 +1,7 @@
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { render } from 'react-dom'
+import { Renderer } from 'react-dom'
 
 import { ContributableMenu } from '@sourcegraph/client-api'
 import { DiffPart } from '@sourcegraph/codeintellify'
@@ -51,7 +51,7 @@ interface InjectProps
     extends PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
         ExtensionsControllerProps {
     history: H.History
-    render: typeof render
+    render: Renderer
 }
 
 interface RenderCommandPaletteProps

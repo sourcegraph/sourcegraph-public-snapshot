@@ -8,7 +8,7 @@ import (
 )
 
 type operations struct {
-	clear *observation.Operation
+	deleteLsifDataByUploadIds *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -28,6 +28,6 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		clear: op("Clear"),
+		deleteLsifDataByUploadIds: op("DeleteLsifDataByUploadIds"),
 	}
 }

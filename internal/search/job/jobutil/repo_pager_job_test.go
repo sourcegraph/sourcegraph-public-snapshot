@@ -3,12 +3,10 @@ package jobutil
 import (
 	"testing"
 
-	"github.com/hexops/autogold"
-	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,69 +18,17 @@ func Test_setRepos(t *testing.T) {
 		RepoRevs: map[api.RepoID]*search.RepositoryRevisions{
 			1: {Repo: types.MinimalRepo{Name: "indexed"}},
 		},
-		Log: logtest.Scoped(t),
 	}
 	unindexed := []*search.RepositoryRevisions{
-		{Repo: types.MinimalRepo{Name: "unindexed"}},
+		{Repo: types.MinimalRepo{Name: "unindexed1"}},
+		{Repo: types.MinimalRepo{Name: "unindexed2"}},
 	}
 
-	// Test function
-	test := func(job job.Job) string {
-		job = setRepos(logtest.Scoped(t), job, indexed, unindexed)
-		return "\n" + PrettyJSONVerbose(job)
-	}
-
-	autogold.Want("set repos for jobs that need them", `
-{
-  "PARALLEL": [
-    {
-      "ZoektRepoSubsetTextSearchJob": {
-        "Repos": {
-          "RepoRevs": {
-            "1": {
-              "Repo": {
-                "ID": 0,
-                "Name": "indexed",
-                "Stars": 0
-              },
-              "Revs": null
-            }
-          },
-          "Log": {}
-        },
-        "Query": null,
-        "Typ": "",
-        "FileMatchLimit": 0,
-        "Select": null
-      }
-    },
-    {
-      "SearcherTextSearchJob": {
-        "PatternInfo": null,
-        "Repos": [
-          {
-            "Repo": {
-              "ID": 0,
-              "Name": "unindexed",
-              "Stars": 0
-            },
-            "Revs": null
-          }
-        ],
-        "Indexed": false,
-        "UseFullDeadline": false,
-        "Features": {
-          "ContentBasedLangFilters": false,
-          "HybridSearch": false
-        },
-        "Log": {}
-      }
-    }
-  ]
-}`).Equal(t, test(
-		NewParallelJob(
-			&zoekt.RepoSubsetTextSearchJob{},
-			&searcher.TextSearchJob{Log: logtest.Scoped(t)},
-		),
-	))
+	j := NewParallelJob(
+		&zoekt.RepoSubsetTextSearchJob{},
+		&searcher.TextSearchJob{},
+	)
+	j = setRepos(j, indexed, unindexed)
+	require.Len(t, j.(*ParallelJob).children[0].(*zoekt.RepoSubsetTextSearchJob).Repos.RepoRevs, 1)
+	require.Len(t, j.(*ParallelJob).children[1].(*searcher.TextSearchJob).Repos, 2)
 }

@@ -42,6 +42,7 @@ Available comamndsets in `sg.config.yaml`:
 * oss
 * oss-web-standalone
 * oss-web-standalone-prod
+* otel
 * web-standalone
 * web-standalone-prod
 
@@ -101,11 +102,13 @@ Available commands in `sg.config.yaml`:
 * oss-symbols
 * oss-web
 * oss-worker
+* otel-collector
 * postgres_exporter
 * prometheus
 * redis-postgres
 * repo-updater
 * searcher
+* server
 * storybook
 * symbols
 * syntax-highlighter
@@ -344,7 +347,7 @@ $ sg lint --help
 
 Flags:
 
-* `--annotations`: Write helpful output to annotations directory
+* `--annotations`: Write helpful output to ./annotations directory
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
@@ -571,7 +574,9 @@ Flags:
 * `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration upto
 
@@ -592,8 +597,9 @@ Flags:
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration undo
 
@@ -634,8 +640,9 @@ Flags:
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration validate
 
@@ -650,7 +657,7 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration describe
@@ -781,6 +788,37 @@ Flags:
 * `--db="<value>"`: The target database `schema` to modify (default: frontend)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `-f="<value>"`: The output filepath
+
+## sg insights
+
+Tools to interact with Code Insights data.
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg insights decode-id
+
+Decodes an encoded insight ID found on the frontend into a view unique_id.
+
+Run 'sg insights decode-id' to decode 1+ frontend IDs which can then be used for SQL queries
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg insights series-ids
+
+Gets all insight series ID from the base64 encoded frontend ID.
+
+Run 'sg insights series-ids' to decode a frontend ID and find all related series IDs
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ## sg doctor
 
@@ -1025,8 +1063,8 @@ Flags:
 * `--cr-password="<value>"`: `password` or access token for the container registry
 * `--cr-username="<value>"`: `username` for the container registry
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--kind="<value>"`: the `kind` of deployment (one of 'k8s', 'helm') (default: k8s)
-* `--pin-tag="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)
+* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
+* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
 
 ## sg analytics
 

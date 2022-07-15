@@ -6,14 +6,16 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
-import { useQueryParameters } from '../../../hooks/use-query-parameters'
+import { useQueryParameters } from '../../../hooks'
 
 import { CaptureGroupCreationPage } from './capture-group'
-import { LangStatsInsightCreationPage } from './lang-stats/LangStatsInsightCreationPage'
+import { ComputeInsightCreationPage } from './compute'
+import { LangStatsInsightCreationPage } from './lang-stats'
 import { SearchInsightCreationPage } from './search-insight'
 
 export enum InsightCreationPageType {
     LangStats = 'lang-stats',
+    Compute = 'compute',
     Search = 'search-based',
     CaptureGroup = 'capture-group',
 }
@@ -76,6 +78,17 @@ export const InsightCreationPage: React.FunctionComponent<
     if (mode === InsightCreationPageType.Search) {
         return (
             <SearchInsightCreationPage
+                telemetryService={telemetryService}
+                onInsightCreateRequest={handleInsightCreateRequest}
+                onSuccessfulCreation={handleInsightSuccessfulCreation}
+                onCancel={handleCancel}
+            />
+        )
+    }
+
+    if (mode === InsightCreationPageType.Compute) {
+        return (
+            <ComputeInsightCreationPage
                 telemetryService={telemetryService}
                 onInsightCreateRequest={handleInsightCreateRequest}
                 onSuccessfulCreation={handleInsightSuccessfulCreation}

@@ -5,7 +5,6 @@ import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Alert, Button, ButtonProps, Link, Modal, Icon, H3 } from '@sourcegraph/wildcard'
@@ -93,7 +92,7 @@ export const InviteMemberModal: React.FunctionComponent<React.PropsWithChildren<
                 <H3>{title}</H3>
                 <Button className={classNames('btn-icon', styles.closeButton)} onClick={dismissWithLogging}>
                     <VisuallyHidden>Close</VisuallyHidden>
-                    <CloseIcon />
+                    <Icon svgPath={mdiClose} inline={false} aria-hidden={true} />
                 </Button>
             </div>
             {error && <ErrorAlert className={styles.alert} error={error} />}

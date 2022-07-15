@@ -17,6 +17,7 @@ import (
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -870,6 +871,12 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
 			opts.PublicationState = &publicationState
+		case btypes.ChangesetStateReadOnly:
+			externalState := btypes.ChangesetExternalStateReadOnly
+			publicationState := btypes.ChangesetPublicationStatePublished
+			opts.ExternalStates = []btypes.ChangesetExternalState{externalState}
+			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
+			opts.PublicationState = &publicationState
 		case btypes.ChangesetStateUnpublished:
 			publicationState := btypes.ChangesetPublicationStateUnpublished
 			opts.ReconcilerStates = []btypes.ReconcilerState{btypes.ReconcilerStateCompleted}
@@ -932,7 +939,7 @@ func listChangesetOptsFromArgs(args *graphqlbackend.ListChangesetsArgs, batchCha
 		if err != nil {
 			return opts, false, errors.Wrap(err, "unmarshalling repo id")
 		}
-		opts.RepoID = repoID
+		opts.RepoIDs = []api.RepoID{repoID}
 	}
 
 	return opts, safe, nil

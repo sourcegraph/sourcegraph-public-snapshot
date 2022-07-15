@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -74,7 +76,7 @@ func (r *insightSeriesResolver) Points(ctx context.Context, _ *graphqlbackend.In
 		excludeRepo(*r.filters.ExcludeRepoRegex)
 	}
 
-	scLoader := &scLoader{primary: database.NewDBWith(r.logger, r.workerBaseStore), log: r.logger}
+	scLoader := &scLoader{primary: database.NewDBWith(r.logger, r.workerBaseStore)}
 	inc, exc, err := unwrapSearchContexts(ctx, scLoader, r.filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
@@ -102,11 +104,10 @@ type SearchContextLoader interface {
 
 type scLoader struct {
 	primary database.DB
-	log     log.Logger
 }
 
 func (l *scLoader) GetByName(ctx context.Context, name string) (*sctypes.SearchContext, error) {
-	return searchcontexts.ResolveSearchContextSpec(ctx, l.log, l.primary, name)
+	return searchcontexts.ResolveSearchContextSpec(ctx, l.primary, name)
 }
 
 func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawContexts []string) ([]string, []string, error) {
@@ -251,7 +252,6 @@ type seriesResolverGenerator struct {
 	next             insightSeriesResolverGenerator
 	handlesSeries    handleSeriesFunc
 	generateResolver resolverGenerator
-	log              log.Logger
 }
 
 func (j *seriesResolverGenerator) handles(series types.InsightViewSeries) bool {
@@ -272,7 +272,7 @@ func (j *seriesResolverGenerator) Generate(ctx context.Context, series types.Ins
 	if j.next != nil {
 		return j.next.Generate(ctx, series, baseResolver, filters)
 	} else {
-		j.log.Error("no generator for insight series", log.String("seriesID", series.SeriesID))
+		log15.Error("no generator for insight series", "seriesID", series.SeriesID)
 		return nil, errors.New("no resolvers for insights series")
 	}
 }
@@ -281,7 +281,6 @@ func newSeriesResolverGenerator(handles handleSeriesFunc, generate resolverGener
 	return &seriesResolverGenerator{
 		handlesSeries:    handles,
 		generateResolver: generate,
-		log:              log.Scoped("seriesResolverGenerator", ""),
 	}
 }
 
@@ -318,7 +317,7 @@ func getRecordedSeriesPointOpts(ctx context.Context, db database.DB, definition 
 		excludeRepo(*filters.ExcludeRepoRegex)
 	}
 
-	scLoader := &scLoader{primary: db, log: log.Scoped("scLoader", "")}
+	scLoader := &scLoader{primary: db}
 	inc, exc, err := unwrapSearchContexts(ctx, scLoader, filters.SearchContexts)
 	if err != nil {
 		return nil, errors.Wrap(err, "unwrapSearchContexts")
@@ -429,20 +428,18 @@ func expandCaptureGroupSeriesRecorded(ctx context.Context, definition types.Insi
 }
 
 func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	slog := log.Scoped("expandCaptureGroupSeriesJustInTime", "Expand capture group series just in time")
-
 	executor := query.NewCaptureGroupExecutor(r.postgresDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
 	}
 
-	scLoader := &scLoader{primary: r.postgresDB, log: log.Scoped("scLoader", "")}
+	scLoader := &scLoader{primary: r.postgresDB}
 	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
 	if err != nil {
 		return nil, err
 	}
-	slog.Debug("capture group series", log.String("seriesId", definition.SeriesID), log.Strings("filteredRepos", matchedRepos))
+	log15.Debug("capture group series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
 	generatedSeries, err := executor.Execute(ctx, definition.Query, matchedRepos, interval)
 	if err != nil {
 		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
@@ -457,19 +454,18 @@ func expandCaptureGroupSeriesJustInTime(ctx context.Context, definition types.In
 }
 
 func streamingSeriesJustInTime(ctx context.Context, definition types.InsightViewSeries, r baseInsightResolver, filters types.InsightViewFilters) ([]graphqlbackend.InsightSeriesResolver, error) {
-	slog := log.Scoped("streamingSeriesJustInTime", "Streaming series just in time")
 	executor := query.NewStreamingExecutor(r.postgresDB, time.Now)
 	interval := timeseries.TimeInterval{
 		Unit:  types.IntervalUnit(definition.SampleIntervalUnit),
 		Value: definition.SampleIntervalValue,
 	}
 
-	scLoader := &scLoader{primary: r.postgresDB, log: log.Scoped("scLoader", "")}
+	scLoader := &scLoader{primary: r.postgresDB}
 	matchedRepos, err := filterRepositories(ctx, filters, definition.Repositories, scLoader)
 	if err != nil {
 		return nil, err
 	}
-	slog.Debug("just in time series", log.String("seriesId", definition.SeriesID), log.Strings("filteredRepos", matchedRepos))
+	log15.Debug("just in time series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
 	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval)
 	if err != nil {
 		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")

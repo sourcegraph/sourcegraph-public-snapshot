@@ -1,5 +1,7 @@
 # Security recommendations for code host access tokens on Sourcegraph Cloud
 
+> WARNING: [Private code on Sourcegraph.com is no longer supported](https://about.sourcegraph.com/blog/single-tenant-cloud) and all previously synced code will be removed on August 1.
+
 Both GitHub and GitLab code host connections for organizations require an access token. There are two types of tokens you can supply:
 
 - **Machine user token** (recommended):  

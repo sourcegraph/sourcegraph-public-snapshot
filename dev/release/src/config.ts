@@ -1,6 +1,6 @@
 import { readFileSync, unlinkSync } from 'fs'
 
-import { parse as parseJSONC } from '@sqs/jsonc-parser'
+import { parse as parseJSONC } from 'jsonc-parser'
 import * as semver from 'semver'
 
 import { cacheFolder, readLine, getWeekNumber } from './util'
