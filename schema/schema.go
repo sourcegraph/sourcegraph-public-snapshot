@@ -952,6 +952,20 @@ type GitLabWebhook struct {
 	Secret string `json:"secret"`
 }
 
+// GithubApp description: The config options for Sourcegraph GitHub App.
+type GithubApp struct {
+	// AppID description: The app ID of the GitHub App for Sourcegraph.
+	AppID string `json:"appID,omitempty"`
+	// ClientID description: The Client ID of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps .
+	ClientID string `json:"clientID,omitempty"`
+	// ClientSecret description: The Client Secret of the GitHub App for Sourcegraph, accessible from https://github.com/settings/apps .
+	ClientSecret string `json:"clientSecret,omitempty"`
+	// PrivateKey description: The base64-encoded private key of the GitHub App for Sourcegraph.
+	PrivateKey string `json:"privateKey,omitempty"`
+	// Slug description: The slug of the GitHub App for Sourcegraph.
+	Slug string `json:"slug,omitempty"`
+}
+
 // GithubAppCloud description: The config options for Sourcegraph Cloud GitHub App.
 type GithubAppCloud struct {
 	// AppID description: The app ID of the GitHub App for Sourcegraph Cloud.
@@ -1960,6 +1974,8 @@ type SiteConfiguration struct {
 	GitMaxConcurrentClones int `json:"gitMaxConcurrentClones,omitempty"`
 	// GitUpdateInterval description: JSON array of repo name patterns and update intervals. If a repo matches a pattern, the associated interval will be used. If it matches no patterns a default backoff heuristic will be used. Pattern matches are attempted in the order they are provided.
 	GitUpdateInterval []*UpdateIntervalRule `json:"gitUpdateInterval,omitempty"`
+	// GithubApp description: The config options for Sourcegraph GitHub App.
+	GithubApp *GithubApp `json:"githubApp,omitempty"`
 	// GithubClientID description: Client ID for GitHub. (DEPRECATED)
 	GithubClientID string `json:"githubClientID,omitempty"`
 	// GithubClientSecret description: Client secret for GitHub. (DEPRECATED)
