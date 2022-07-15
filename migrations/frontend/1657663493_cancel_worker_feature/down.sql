@@ -7,7 +7,6 @@ ALTER TABLE lsif_dependency_syncing_jobs DROP COLUMN IF EXISTS cancel;
 ALTER TABLE lsif_indexes DROP COLUMN IF EXISTS cancel;
 ALTER TABLE lsif_uploads DROP COLUMN IF EXISTS cancel;
 ALTER TABLE batch_spec_resolution_jobs DROP COLUMN IF EXISTS cancel;
-ALTER TABLE batch_spec_workspace_execution_jobs DROP COLUMN IF EXISTS cancel;
 ALTER TABLE changeset_jobs DROP COLUMN IF EXISTS cancel;
 ALTER TABLE changesets DROP COLUMN IF EXISTS cancel;
 ALTER TABLE cm_action_jobs DROP COLUMN IF EXISTS cancel;
