@@ -1473,74 +1473,9 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 		return ErrRetryNonFinal
 	}
 
-	// Check that batch spec is not applied
-	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpec.ID})
-	if err != nil && err != store.ErrNoResults {
-		return errors.Wrap(err, "checking whether batch spec has been applied")
+	if err = tx.RetryBatchSpecExecution(ctx, batchSpec.ID); err != nil {
+		return errors.Wrap(err, "retrying batch spec execution")
 	}
-	if err == nil && !batchChange.IsDraft() {
-		return errors.New("batch spec already applied")
-	}
-
-	// Load workspaces
-	workspaces, _, err := tx.ListBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
-	if err != nil {
-		return errors.Wrap(err, "loading batch spec workspaces")
-	}
-
-	workspaceIDs := make([]int64, 0, len(workspaces))
-	workspacesByID := map[int64]*btypes.BatchSpecWorkspace{}
-	for _, w := range workspaces {
-		workspaceIDs = append(workspaceIDs, w.ID)
-		workspacesByID[w.ID] = w
-	}
-
-	// Load jobs and check their state
-	jobs, err := tx.ListBatchSpecWorkspaceExecutionJobs(ctx, store.ListBatchSpecWorkspaceExecutionJobsOpts{
-		BatchSpecWorkspaceIDs: workspaceIDs,
-	})
-	if err != nil {
-		return errors.Wrap(err, "loading batch spec workspace execution jobs")
-	}
-
-	var (
-		jobsToDelete           []int64
-		changesetSpecsToDelete []int64
-		workspacesToRetry      []int64
-	)
-
-	for _, j := range jobs {
-		if !opts.IncludeCompleted && j.State == btypes.BatchSpecWorkspaceExecutionJobStateCompleted {
-			continue
-		}
-
-		jobsToDelete = append(jobsToDelete, j.ID)
-
-		w, ok := workspacesByID[j.BatchSpecWorkspaceID]
-		if !ok {
-			continue
-		}
-		workspacesToRetry = append(workspacesToRetry, w.ID)
-		changesetSpecsToDelete = append(changesetSpecsToDelete, w.ChangesetSpecIDs...)
-	}
-
-	// Delete the old execution jobs.
-	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobsToDelete); err != nil {
-		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
-	}
-
-	// Delete the changeset specs they have created.
-	if len(changesetSpecsToDelete) > 0 {
-		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecsToDelete}); err != nil {
-			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
-		}
-	}
-
-	// Create new jobs
-	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspacesToRetry); err != nil {
-		return errors.Wrap(err, "creating new batch spec workspace execution jobs")
-	}
-
 	return nil
 }
 
