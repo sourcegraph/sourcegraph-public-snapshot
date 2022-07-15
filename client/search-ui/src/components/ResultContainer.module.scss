@@ -6,6 +6,10 @@
     &:not(:last-of-type) {
         margin-bottom: 0.5rem;
     }
+
+    :global(.core-workflow-improvements-enabled) &:not(:last-of-type) {
+        margin-bottom: 1rem;
+    }
 }
 
 .header {
@@ -44,4 +48,28 @@
     display: flex;
     flex-shrink: 0;
     padding: 0;
+}
+
+.toggle-matches-button {
+    width: 100%;
+    text-align: left;
+    border: none;
+    padding: 0.25rem 0.5rem;
+    background-color: var(--border-color);
+    border-bottom-left-radius: var(--border-radius);
+    border-bottom-right-radius: var(--border-radius);
+    color: var(--text-muted);
+
+    &-text {
+        margin-left: 0.125rem;
+    }
+}
+
+.collapsible-results {
+    border-radius: var(--border-radius);
+    border: 1px solid var(--border-color);
+
+    &:hover {
+        border-color: var(--border-color-2);
+    }
 }

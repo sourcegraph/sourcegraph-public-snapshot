@@ -1,9 +1,10 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import React, { useEffect, useState } from 'react'
 
-import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft } from '@mdi/js'
+import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
 
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { formatRepositoryStarCount } from '../util/stars'
@@ -135,6 +136,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     as: Component = 'div',
     index,
 }) => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const [expanded, setExpanded] = useState(allExpanded || defaultExpanded)
     const formattedRepositoryStarCount = formatRepositoryStarCount(repoStars)
 
@@ -157,22 +159,27 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             data-testid="result-container"
             data-result-type={resultType}
             data-expanded={allExpanded}
+            data-collapsible={collapsible}
             onClick={trackReferencePanelClick}
         >
             <article aria-labelledby={`result-container-${index}`}>
                 <div className={styles.header} id={`result-container-${index}`}>
-                    <Icon
-                        className="flex-shrink-0"
-                        as={icon}
-                        {...(resultType
-                            ? {
-                                  'aria-label': `${resultType} result`,
-                              }
-                            : {
-                                  'aria-hidden': true,
-                              })}
-                    />
-                    <div className={classNames('mx-1', styles.headerDivider)} />
+                    {!coreWorkflowImprovementsEnabled && (
+                        <>
+                            <Icon
+                                className="flex-shrink-0"
+                                as={icon}
+                                {...(resultType
+                                    ? {
+                                          'aria-label': `${resultType} result`,
+                                      }
+                                    : {
+                                          'aria-hidden': true,
+                                      })}
+                            />
+                            <div className={classNames('mx-1', styles.headerDivider)} />
+                        </>
+                    )}
                     <CodeHostIcon repoName={repoName} className="text-muted flex-shrink-0 mr-1" />
                     <div
                         className={classNames(styles.headerTitle, titleClassName)}
@@ -183,13 +190,13 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                             <span className={classNames('ml-2', styles.headerDescription)}>{description}</span>
                         )}
                     </div>
-                    {matchCountLabel && (
+                    {!coreWorkflowImprovementsEnabled && matchCountLabel && (
                         <span className="d-flex align-items-center">
                             <small>{matchCountLabel}</small>
                             {collapsible && <div className={classNames('mx-2', styles.headerDivider)} />}
                         </span>
                     )}
-                    {collapsible && (
+                    {!coreWorkflowImprovementsEnabled && collapsible && (
                         <Button
                             data-testid="toggle-matches-container"
                             className={classNames('py-0', styles.toggleMatchesContainer)}
@@ -216,7 +223,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                             )}
                         </Button>
                     )}
-                    {matchCountLabel && formattedRepositoryStarCount && (
+                    {!coreWorkflowImprovementsEnabled && matchCountLabel && formattedRepositoryStarCount && (
                         <div className={classNames('mx-2', styles.headerDivider)} />
                     )}
                     {formattedRepositoryStarCount && (
@@ -226,8 +233,18 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
-                {!expanded && collapsedChildren}
-                {expanded && expandedChildren}
+                <div className={classNames(coreWorkflowImprovementsEnabled && styles.collapsibleResults)}>
+                    {!expanded && collapsedChildren}
+                    {expanded && expandedChildren}
+                    {coreWorkflowImprovementsEnabled && collapsible && (
+                        <button type="button" className={styles.toggleMatchesButton} onClick={toggle}>
+                            <Icon aria-hidden={true} svgPath={expanded ? mdiChevronUp : mdiChevronDown} />
+                            <span className={styles.toggleMatchesButtonText}>
+                                {expanded ? collapseLabel : expandLabel}
+                            </span>
+                        </button>
+                    )}
+                </div>
             </article>
         </Component>
     )

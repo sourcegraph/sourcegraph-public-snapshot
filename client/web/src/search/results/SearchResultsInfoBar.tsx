@@ -19,7 +19,7 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
 
@@ -142,7 +142,7 @@ const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
 export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props => {
-    const [coreWorkflowImprovementsEnabled] = useTemporarySetting('coreWorkflowImprovements.enabled')
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     const canCreateMonitorFromQuery = useMemo(() => {
         if (!props.query) {
