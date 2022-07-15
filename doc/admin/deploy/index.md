@@ -18,6 +18,8 @@ Sourcegraph has provided the [Resource Estimator](resource_estimator.md) as a st
 
 We recommend the Kubernetes deployment type if your deployment scenario includes a large codebase and many users. The [Kubernetes docs](kubernetes/index.md) provide additional information for [scaling Kubernetes deployments](kubernetes/scale.md).
 
+You can also learn more about how Sourcegraph service use their assigned resources in the [Scaling Overview for Services docs](./scale.md)
+
 ## Deployment types
 
 | Deployment Type | Suggested for | Setup time | Resource isolation | Auto-healing | Multi-machine | Complexity |
