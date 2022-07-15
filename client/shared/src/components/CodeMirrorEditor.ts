@@ -8,8 +8,11 @@ import { tags } from '@lezer/highlight'
 if (process.env.INTEGRATION_TESTS) {
     // Expose findFromDOM on the global object to be able to get the real input
     // value in integration tests
-    // @ts-ignore
-    window.CodeMirrorFindFromDOM = (element: HTMLElement): ReturnType<EditorView['findFromDOM']> =>
+    // Typecast "as any" is used to avoid TypeScript complaining about window
+    // not having this property. We decided that it's fine to use this in a test
+    // context
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+    ;(window as any).CodeMirrorFindFromDOM = (element: HTMLElement): ReturnType<typeof EditorView['findFromDOM']> =>
         EditorView.findFromDOM(element)
 }
 

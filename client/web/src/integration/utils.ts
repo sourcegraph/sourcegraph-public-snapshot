@@ -228,10 +228,17 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
             },
             getValue() {
                 return driver.page.evaluate((selector: string) => {
-                    // @ts-ignore
-                    const fromDOM = window.CodeMirrorFindFromDOM as typeof EditorView['findFromDOM'] | undefined
+                    // Typecast "as any" is used to avoid TypeScript complaining
+                    // about window not having this property. We decided that
+                    // it's fine to use this in a test context
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+                    const fromDOM = (window as any).CodeMirrorFindFromDOM as
+                        | typeof EditorView['findFromDOM']
+                        | undefined
                     if (!fromDOM) {
-                        throw new Error('CodeMirror DOM API not exposed')
+                        throw new Error(
+                            'CodeMirror DOM API not exposed. Ensure the web app is built with INTEGRATION_TESTS=true.'
+                        )
                     }
                     const editorElement = document.querySelector<HTMLElement>(selector)
                     if (!editorElement) {
@@ -239,7 +246,11 @@ const editors: Record<Editor, (driver: Driver, rootSelector: string) => EditorAP
                     }
                     // Returns an EditorView
                     // See https://codemirror.net/docs/ref/#view.EditorView^findFromDOM
-                    return fromDOM(editorElement)?.state.sliceDoc()
+                    const editor = fromDOM(editorElement)
+                    if (!editor) {
+                        throw new Error(`Element with selector "${selector}" is not a CodeMirror editor.`)
+                    }
+                    return editor.state.sliceDoc()
                 }, rootSelector)
             },
             replace(newText: string, method = 'type') {
