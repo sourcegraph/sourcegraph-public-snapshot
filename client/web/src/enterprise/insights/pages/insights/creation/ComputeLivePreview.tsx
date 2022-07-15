@@ -41,7 +41,7 @@ interface ComputeLivePreviewProps {
     }[]
 }
 
-export const ComputeLivePreview: React.FunctionComponent<React.PropsWithChildren<ComputeLivePreviewProps>> = props => {
+export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps> = props => {
     // For the purposes of building out this component before the backend is ready
     // we are using the standard "line series" type data.
     // TODO after backend is merged, remove update the series value to use that structure

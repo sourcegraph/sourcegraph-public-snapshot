@@ -404,7 +404,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
     const [collapsed, setCollapsed] = useState(true)
     const collapseIcon = collapsed ? mdiChevronLeft : mdiChevronDown
 
-    const handleOpenChange = useCallback(collapsed => setCollapsed(!collapsed), [])
+    const handleOpenChange = useCallback((collapsed: boolean) => setCollapsed(!collapsed), [])
 
     let buttonTextPrefix: ReactElement | null = null
     if (isFilterInfo(searchReference)) {
@@ -620,6 +620,6 @@ const SearchReference = React.memo(
 
 export function getSearchReferenceFactory(
     props: Omit<SearchReferenceProps, 'filter'>
-): (filter: string) => ReactElement {
+): (filter: string) => React.ReactNode {
     return (filter: string) => <SearchReference {...props} filter={filter} />
 }

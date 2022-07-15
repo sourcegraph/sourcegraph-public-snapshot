@@ -33,7 +33,7 @@ import { CancelExecutionModal } from './CancelExecutionModal'
 
 import styles from './ActionsMenu.module.scss'
 
-export const ActionsMenu: React.FunctionComponent<React.PropsWithChildren<{}>> = () => {
+export const ActionsMenu: React.FunctionComponent = () => {
     const { batchChange, batchSpec, setActionsError } = useBatchSpecContext<BatchSpecExecutionFields>()
 
     return <MemoizedActionsMenu batchChange={batchChange} batchSpec={batchSpec} setActionsError={setActionsError} />

@@ -35,7 +35,7 @@ export default config
 
 export const Unstarted: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}
@@ -46,7 +46,7 @@ export const Unstarted: Story = () => (
                     }
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview {...props} />
+                    <WorkspacesPreview />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -55,7 +55,7 @@ export const Unstarted: Story = () => (
 
 export const UnstartedWithCachedConnectionResult: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}
@@ -66,7 +66,7 @@ export const UnstartedWithCachedConnectionResult: Story = () => (
                     }
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview {...props} />
+                    <WorkspacesPreview />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -113,7 +113,7 @@ export const QueuedInProgress: Story = () => {
 
     return (
         <WebStory>
-            {props => (
+            {() => (
                 <MockedTestProvider link={inProgressConnectionMocks}>
                     <BatchSpecContextProvider
                         batchChange={mockBatchChange()}
@@ -124,7 +124,7 @@ export const QueuedInProgress: Story = () => {
                         }
                         refetchBatchChange={() => Promise.resolve()}
                     >
-                        <WorkspacesPreview {...props} />
+                        <WorkspacesPreview />
                     </BatchSpecContextProvider>
                 </MockedTestProvider>
             )}
@@ -172,14 +172,14 @@ export const QueuedInProgressWithCachedConnectionResult: Story = () => {
 
     return (
         <WebStory>
-            {props => (
+            {() => (
                 <MockedTestProvider link={inProgressConnectionMocks}>
                     <BatchSpecContextProvider
                         batchChange={mockBatchChange()}
                         batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
-                        <WorkspacesPreview {...props} />
+                        <WorkspacesPreview />
                     </BatchSpecContextProvider>
                 </MockedTestProvider>
             )}
@@ -228,14 +228,14 @@ export const FailedErrored: Story = () => {
 
     return (
         <WebStory>
-            {props => (
+            {() => (
                 <MockedTestProvider link={failedConnectionMocks}>
                     <BatchSpecContextProvider
                         batchChange={mockBatchChange()}
                         batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
-                        <WorkspacesPreview {...props} />
+                        <WorkspacesPreview />
                     </BatchSpecContextProvider>
                 </MockedTestProvider>
             )}
@@ -284,14 +284,14 @@ export const FailedErroredWithCachedConnectionResult: Story = () => {
 
     return (
         <WebStory>
-            {props => (
+            {() => (
                 <MockedTestProvider link={failedConnectionMocks}>
                     <BatchSpecContextProvider
                         batchChange={mockBatchChange()}
                         batchSpec={mockBatchSpec()}
                         refetchBatchChange={() => Promise.resolve()}
                     >
-                        <WorkspacesPreview {...props} />
+                        <WorkspacesPreview />
                     </BatchSpecContextProvider>
                 </MockedTestProvider>
             )}
@@ -303,7 +303,7 @@ FailedErroredWithCachedConnectionResult.storyName = 'failed/errored, with cached
 
 export const Succeeded: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}
@@ -322,7 +322,7 @@ export const Succeeded: Story = () => (
                         },
                     }}
                 >
-                    <WorkspacesPreview {...props} />
+                    <WorkspacesPreview />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
@@ -331,14 +331,14 @@ export const Succeeded: Story = () => (
 
 export const ReadOnly: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <MockedTestProvider link={new WildcardMockLink(UNSTARTED_WITH_CACHE_CONNECTION_MOCKS)}>
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}
                     batchSpec={mockBatchSpec()}
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview {...props} isReadOnly={true} />
+                    <WorkspacesPreview isReadOnly={true} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}

@@ -42,9 +42,7 @@ interface LineChartLivePreviewProps {
     series: LivePreviewSeries[]
 }
 
-export const LineChartLivePreview: React.FunctionComponent<
-    React.PropsWithChildren<LineChartLivePreviewProps>
-> = props => {
+export const LineChartLivePreview: React.FunctionComponent<LineChartLivePreviewProps> = props => {
     const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
     const seriesToggleState = useSeriesToggle()

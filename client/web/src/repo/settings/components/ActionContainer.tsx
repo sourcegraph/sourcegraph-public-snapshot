@@ -11,10 +11,10 @@ import styles from './ActionContainer.module.scss'
 
 export const BaseActionContainer: React.FunctionComponent<
     React.PropsWithChildren<{
-        title: React.ReactFragment
-        description: React.ReactFragment
-        action: React.ReactFragment
-        details?: React.ReactFragment
+        title: React.ReactNode
+        description: React.ReactNode
+        action: React.ReactNode
+        details?: React.ReactNode
         className?: string
     }>
 > = ({ title, description, action, details, className }) => (
@@ -31,10 +31,10 @@ export const BaseActionContainer: React.FunctionComponent<
 )
 
 interface Props {
-    title: React.ReactFragment
-    description: React.ReactFragment
+    title: React.ReactNode
+    description: React.ReactNode
     buttonClassName?: string
-    buttonLabel: React.ReactFragment
+    buttonLabel: React.ReactNode
     buttonSubtitle?: string
     buttonDisabled?: boolean
     info?: React.ReactNode
