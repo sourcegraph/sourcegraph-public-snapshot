@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Objects;
 
 public class ConfigUtil {
+    private static final String DOTCOM_URL = "https://sourcegraph.com/";
+
     @NotNull
     public static JsonObject getConfigAsJson(@NotNull Project project) {
         JsonObject configAsJson = new JsonObject();
@@ -43,17 +45,17 @@ public class ConfigUtil {
 
         // User level or default
         String enterpriseUrl = getEnterpriseUrl(project);
-        return (enterpriseUrl.equals("") || enterpriseUrl.startsWith("https://sourcegraph.com"))
+        return (enterpriseUrl.equals("") || enterpriseUrl.startsWith(DOTCOM_URL))
             ? SettingsComponent.InstanceType.DOTCOM : SettingsComponent.InstanceType.ENTERPRISE;
     }
 
     @NotNull
     public static String getSourcegraphUrl(@NotNull Project project) {
         if (getInstanceType(project) == SettingsComponent.InstanceType.DOTCOM) {
-            return "https://sourcegraph.com/";
+            return DOTCOM_URL;
         } else {
             String enterpriseUrl = getEnterpriseUrl(project);
-            return !enterpriseUrl.isEmpty() ? enterpriseUrl : "https://sourcegraph.com/";
+            return !enterpriseUrl.isEmpty() ? enterpriseUrl : DOTCOM_URL;
         }
     }
 
