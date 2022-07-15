@@ -7,6 +7,7 @@ import useResizeObserver from 'use-resize-observer'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
+import { BarChart } from '../../../../../../../../charts/components/bar-chart/BarChart'
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
 import { BackendInsightData, CategoricalChartContent, InsightContent } from '../../../../../../core'
 import { InsightContentType } from '../../../../../../core/types/insight/common'
@@ -87,7 +88,9 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                                         seriesToggleState={seriesToggleState}
                                         {...data.content}
                                     />
-                                ) : null}
+                                ) : (
+                                    <BarChart width={parent.width} height={parent.height} {...data.content} />
+                                )}
                             </>
                         )}
                     </ParentSize>
@@ -118,7 +121,7 @@ const hasData = (data: InsightContent<any>): boolean => {
         return data.content.series.every(series => series.data.length === 0)
     }
 
-    return data.content.data.length > 0
+    return data.content.data.length === 0
 }
 
 interface SeriesLegendsProps {

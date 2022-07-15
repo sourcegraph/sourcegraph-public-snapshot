@@ -4,6 +4,7 @@ import {
     CaptureGroupInsight,
     Insight,
     isCaptureGroupInsight,
+    isComputeInsight,
     isSearchBasedInsight,
     SearchBasedInsight,
 } from '../../../core'
@@ -23,6 +24,7 @@ type InsightWithLegend = SearchBasedInsight | CaptureGroupInsight
 
 const isManySeriesInsight = (insight: Insight): insight is InsightWithLegend =>
     isCaptureGroupInsight(insight) ||
+    isComputeInsight(insight) ||
     (isSearchBasedInsight(insight) && insight.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND)
 
 const getMinWidth = (breakpoint: BreakpointName, insight: Insight): number =>
