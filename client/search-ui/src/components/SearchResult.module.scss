@@ -11,6 +11,11 @@
     padding: 0.25rem 0;
     position: relative;
 
+    :global(.core-workflow-improvements-enabled) & {
+        border: none !important;
+        border-top: none !important;
+    }
+
     &-clickable {
         cursor: pointer;
     }
@@ -93,4 +98,16 @@
     background: var(--code-bg);
     display: inline-block;
     padding: 0.25rem;
+}
+
+.muted-repo-file-link {
+    color: var(--text-muted);
+
+    a {
+        color: var(--text-muted);
+
+        &:hover {
+            color: var(--text-muted);
+        }
+    }
 }

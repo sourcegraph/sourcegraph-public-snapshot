@@ -90,5 +90,6 @@ public class SourcegraphApplicationService implements PersistentStateComponent<S
         this.isGlobbingEnabled = settings.isGlobbingEnabled;
         this.anonymousUserId = settings.anonymousUserId;
         this.isUrlNotificationDismissed = settings.isUrlNotificationDismissed;
+        this.lastUpdateNotificationPluginVersion = settings.lastUpdateNotificationPluginVersion;
     }
 }

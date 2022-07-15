@@ -87,6 +87,28 @@ export function useNotebookEventHandlers({
                 return
             }
 
+            // Focus on the last `menuitem` of the prev block when using `Shift + Tab`
+            // while focusing on selected block element
+            if (
+                document.activeElement ===
+                    document.querySelector<HTMLDivElement>(`[data-block-id="${selectedBlockId}"] .block`) &&
+                event.shiftKey &&
+                event.key === 'Tab'
+            ) {
+                const previousBlockId = notebook.getPreviousBlockId(selectedBlockId)
+
+                if (previousBlockId) {
+                    event.preventDefault()
+
+                    focusBlock(previousBlockId)
+
+                    const menuItems = document.querySelectorAll<HTMLAnchorElement>(
+                        `[data-block-id="${previousBlockId}"] .block-menu [role="menuitem"]`
+                    )
+                    menuItems[menuItems.length - 1]?.focus()
+                }
+            }
+
             const isModifierKeyDown = isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)
             if (event.key === 'ArrowUp' || event.key === 'ArrowDown') {
                 const direction = event.key === 'ArrowUp' ? 'up' : 'down'

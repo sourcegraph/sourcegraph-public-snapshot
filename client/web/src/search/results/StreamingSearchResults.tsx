@@ -20,6 +20,7 @@ import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -84,6 +85,7 @@ export const StreamingSearchResults: React.FunctionComponent<
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     // Log view event on first load
     useEffect(
@@ -217,7 +219,12 @@ export const StreamingSearchResults: React.FunctionComponent<
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
     return (
-        <div className={styles.streamingSearchResults}>
+        <div
+            className={classNames(
+                styles.container,
+                coreWorkflowImprovementsEnabled && styles.containerWithImprovements
+            )}
+        >
             <PageTitle key="page-title" title={query} />
 
             <SearchSidebar
@@ -227,10 +234,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
-                className={classNames(
-                    styles.streamingSearchResultsSidebar,
-                    showSidebar && styles.streamingSearchResultsSidebarShow
-                )}
+                className={classNames(styles.sidebar, showSidebar && styles.sidebarShow)}
                 filters={results?.filters}
                 getRevisions={getRevisions}
                 prefixContent={
@@ -252,7 +256,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                 enableCodeInsights={codeInsightsEnabled && isCodeInsightsEnabled(props.settingsCascade)}
                 enableCodeMonitoring={enableCodeMonitoring}
                 resultsFound={resultsFound}
-                className={classNames('flex-grow-1', styles.streamingSearchResultsInfobar)}
+                className={classNames('flex-grow-1', styles.infobar)}
                 allExpanded={allExpanded}
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                 onSaveQueryClick={onSaveQueryClick}
@@ -267,18 +271,19 @@ export const StreamingSearchResults: React.FunctionComponent<
                 }
             />
 
-            <DidYouMean
-                telemetryService={props.telemetryService}
-                query={query}
-                patternType={patternType}
-                caseSensitive={caseSensitive}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
-            />
+            <div className={styles.contents}>
+                <DidYouMean
+                    telemetryService={props.telemetryService}
+                    query={query}
+                    patternType={patternType}
+                    caseSensitive={caseSensitive}
+                    selectedSearchContextSpec={props.selectedSearchContextSpec}
+                />
 
-            {results?.alert?.kind && <LuckySearch alert={results?.alert} />}
+                {results?.alert?.kind && <LuckySearch alert={results?.alert} />}
 
-            <div className={styles.streamingSearchResultsContainer}>
-                <GettingStartedTour.Info className="mt-2 mr-3 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
+                <GettingStartedTour.Info className="mt-2 mb-3" isSourcegraphDotCom={props.isSourcegraphDotCom} />
+
                 {showSavedSearchModal && (
                     <SavedSearchModal
                         {...props}
@@ -289,7 +294,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                     />
                 )}
                 {results?.alert && !results?.alert.kind && (
-                    <div className={classNames(styles.streamingSearchResultsContentCentered, 'mt-4')}>
+                    <div className={classNames(styles.alertArea, 'mt-4')}>
                         <SearchAlert alert={results.alert} caseSensitive={caseSensitive} patternType={patternType} />
                     </div>
                 )}

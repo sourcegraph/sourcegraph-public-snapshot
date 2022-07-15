@@ -144,10 +144,10 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     // we got the settings.
     if (collapsedSections) {
         body = (
-            <StickyBox className={styles.searchSidebarStickyBox}>
+            <StickyBox className={styles.stickyBox}>
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_TYPES}
-                    className={styles.searchSidebarItem}
+                    className={styles.item}
                     header="Search Types"
                     startCollapsed={collapsedSections?.[SectionID.SEARCH_TYPES]}
                     onToggle={persistToggleState}
@@ -162,7 +162,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     sectionId={SectionID.DYNAMIC_FILTERS}
-                    className={styles.searchSidebarItem}
+                    className={styles.item}
                     header="Dynamic filters"
                     startCollapsed={collapsedSections?.[SectionID.DYNAMIC_FILTERS]}
                     onToggle={persistToggleState}
@@ -172,7 +172,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                 {showReposSection ? (
                     <SearchSidebarSection
                         sectionId={SectionID.REPOSITORIES}
-                        className={styles.searchSidebarItem}
+                        className={styles.item}
                         header="Repositories"
                         startCollapsed={collapsedSections?.[SectionID.REPOSITORIES]}
                         onToggle={persistToggleState}
@@ -190,7 +190,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                 {props.getRevisions && repoName ? (
                     <SearchSidebarSection
                         sectionId={SectionID.REVISIONS}
-                        className={styles.searchSidebarItem}
+                        className={styles.item}
                         header="Revisions"
                         startCollapsed={collapsedSections?.[SectionID.REVISIONS]}
                         onToggle={persistToggleState}
@@ -202,7 +202,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                 ) : null}
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_REFERENCE}
-                    className={styles.searchSidebarItem}
+                    className={styles.item}
                     header="Search reference"
                     showSearch={true}
                     startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
@@ -218,7 +218,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_SNIPPETS}
-                    className={styles.searchSidebarItem}
+                    className={styles.item}
                     header="Search snippets"
                     startCollapsed={collapsedSections?.[SectionID.SEARCH_SNIPPETS]}
                     onToggle={persistToggleState}
@@ -227,7 +227,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                 </SearchSidebarSection>
                 <SearchSidebarSection
                     sectionId={SectionID.QUICK_LINKS}
-                    className={styles.searchSidebarItem}
+                    className={styles.item}
                     header="Quicklinks"
                     startCollapsed={collapsedSections?.[SectionID.QUICK_LINKS]}
                     onToggle={persistToggleState}
@@ -239,7 +239,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     }
 
     return (
-        <aside className={classNames(styles.searchSidebar, props.className)} role="region" aria-label="Search sidebar">
+        <aside className={classNames(styles.sidebar, props.className)} role="region" aria-label="Search sidebar">
             {props.prefixContent}
             {body}
         </aside>

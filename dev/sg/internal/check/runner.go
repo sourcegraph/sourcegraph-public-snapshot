@@ -5,9 +5,8 @@ import (
 	"fmt"
 	"io"
 	"strings"
+	"sync"
 	"time"
-
-	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -190,12 +189,34 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 
 		// used for progress bar - needs to be thread-safe since it can be updated from
 		// multiple categories at once.
-		checksDone           atomic.Float64
+		progressMu           sync.Mutex
+		checksDone           float64
 		updateChecksProgress = func() {
-			progress.SetValue(0, checksDone.Load()+1)
-			checksDone.Add(1)
+			progressMu.Lock()
+			defer progressMu.Unlock()
+
+			checksDone += 1
+			progress.SetValue(0, checksDone)
+		}
+		updateCheckSkipped = func(i int, checkName string, err error) {
+			progressMu.Lock()
+			defer progressMu.Unlock()
+
+			progress.StatusBarUpdatef(i, "Check %s skipped: %s", checkName, err.Error())
+		}
+		updateCheckFailed = func(i int, checkName string, err error) {
+			progressMu.Lock()
+			defer progressMu.Unlock()
+
+			errParts := strings.SplitN(err.Error(), "\n", 2)
+			if len(errParts) > 2 {
+				// truncate to one line - writing multple lines causes some jank
+				errParts[0] += " ..."
+			}
+			progress.StatusBarFailf(i, "Check %s failed: %s", checkName, errParts[0])
 		}
 	)
+
 	for i, category := range r.Categories {
 		progress.StatusBarUpdatef(i, "Running checks...")
 
@@ -222,7 +243,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 				// run checks concurrently
 				checksGroup.Go(func() (event string, err error) {
 					if err := check.IsEnabled(ctx, args); err != nil {
-						progress.StatusBarUpdatef(i, "Check %s skipped: %s", check.Name, err.Error())
+						updateCheckSkipped(i, check.Name, err)
+
 						return "skipped", nil
 					}
 
@@ -230,12 +252,8 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 					// progress to discard.
 					var updateOutput strings.Builder
 					if err := check.Update(ctx, std.NewFixedOutput(&updateOutput, true), args); err != nil {
-						errParts := strings.SplitN(err.Error(), "\n", 2)
-						if len(errParts) > 2 {
-							// truncate to one line - writing multple lines causes some jank
-							errParts[0] += " ..."
-						}
-						progress.StatusBarFailf(i, "Check %s failed: %s", check.Name, errParts[0])
+						updateCheckFailed(i, check.Name, err)
+
 						check.cachedCheckOutput = updateOutput.String()
 						return "error", err
 					}

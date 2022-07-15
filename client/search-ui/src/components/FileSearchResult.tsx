@@ -1,5 +1,6 @@
 import React, { useMemo } from 'react'
 
+import classNames from 'classnames'
 import * as H from 'history'
 import { Observable } from 'rxjs'
 import { AggregableBadge } from 'sourcegraph'
@@ -22,6 +23,7 @@ import {
     getRevision,
 } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Badge } from '@sourcegraph/wildcard'
 
@@ -92,34 +94,31 @@ const sumHighlightRanges = (count: number, item: MatchItem): number => count + i
 const BY_LINE_RANKING = 'by-line-number'
 const DEFAULT_CONTEXT = 1
 
+type CommonResultContainerProps = Omit<
+    ResultContainerProps,
+    | 'description'
+    | 'collapsedChildren'
+    | 'expandedChildren'
+    | 'collapsible'
+    | 'collapseLabel'
+    | 'expandLabel'
+    | 'matchCountLabel'
+>
+
 // This is a search result for types file (content), path, or symbol.
 export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     const result = props.result
     const repoAtRevisionURL = getRepositoryUrl(result.repository, result.branches)
     const revisionDisplayName = getRevision(result.branches, result.commit)
     const settings = props.settingsCascade.final
+
     const ranking = useMemo(() => {
         if (!isErrorLike(settings) && settings?.experimentalFeatures?.clientSearchResultRanking === BY_LINE_RANKING) {
-            return new LineRanking()
+            return new LineRanking(coreWorkflowImprovementsEnabled ? 1 : 10)
         }
-        return new ZoektRanking()
-    }, [settings])
-    const renderTitle = (): JSX.Element => (
-        <>
-            <RepoFileLink
-                repoName={result.repository}
-                repoURL={repoAtRevisionURL}
-                filePath={result.path}
-                fileURL={getFileMatchUrl(result)}
-                repoDisplayName={
-                    props.repoDisplayName
-                        ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
-                        : undefined
-                }
-                className={styles.titleInner}
-            />
-        </>
-    )
+        return new ZoektRanking(coreWorkflowImprovementsEnabled ? 1 : 5)
+    }, [settings, coreWorkflowImprovementsEnabled])
 
     // The number of lines of context to show before and after each match.
     const context = useMemo(() => {
@@ -171,8 +170,6 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             </>
         ) : undefined
 
-    let containerProps: ResultContainerProps
-
     const expandedMatchGroups = useMemo(() => ranking.expandedResults(items, context), [items, context, ranking])
     const collapsedMatchGroups = useMemo(() => ranking.collapsedResults(items, context), [items, context, ranking])
     const collapsedMatchCount = collapsedMatchGroups.matches.length
@@ -186,6 +183,38 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
     const matchCountLabel = matchCount ? `${matchCount} ${pluralize('match', matchCount, 'matches')}` : ''
 
     const expandedChildren = <FileMatchChildren {...props} result={result} {...expandedMatchGroups} />
+
+    const commonContainerProps: CommonResultContainerProps = {
+        index: props.index,
+        defaultExpanded: props.expanded,
+        icon: props.icon,
+        title: (
+            <RepoFileLink
+                repoName={result.repository}
+                repoURL={repoAtRevisionURL}
+                filePath={result.path}
+                fileURL={getFileMatchUrl(result)}
+                repoDisplayName={
+                    props.repoDisplayName
+                        ? `${props.repoDisplayName}${revisionDisplayName ? `@${revisionDisplayName}` : ''}`
+                        : undefined
+                }
+                className={classNames(
+                    styles.titleInner,
+                    coreWorkflowImprovementsEnabled && result.type !== 'path' && styles.mutedRepoFileLink
+                )}
+            />
+        ),
+        allExpanded: props.allExpanded,
+        repoName: result.repository,
+        repoStars: result.repoStars,
+        repoLastFetched: result.repoLastFetched,
+        onResultClicked: props.onSelect,
+        className: props.containerClassName,
+        resultType: result.type,
+    }
+
+    let containerProps: ResultContainerProps
 
     if (result.type === 'content' && result.hunks) {
         // We should only get here if the new streamed highlight format is sent
@@ -230,87 +259,53 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
             { limitedGrouped: [] as MatchGroup[], limitedMatchCount: 0 }
         )
 
+        const collapsedChildren = <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />
+        const expandedChildren = <FileMatchChildren {...props} result={result} grouped={grouped} />
+
         if (props.showAllMatches) {
             containerProps = {
-                index: props.index,
+                ...commonContainerProps,
                 collapsible: false,
-                defaultExpanded: props.expanded,
-                icon: props.icon,
-                title: renderTitle(),
-                description: undefined, // TODO we need badges for the descripiton
-                allExpanded: props.allExpanded,
-                collapsedChildren: <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />,
-                expandedChildren: <FileMatchChildren {...props} result={result} grouped={grouped} />,
+                description: undefined, // TODO we need badges for the description
+                collapsedChildren,
+                expandedChildren,
                 matchCountLabel,
-                repoName: result.repository,
-                repoStars: result.repoStars,
-                repoLastFetched: result.repoLastFetched,
-                onResultClicked: props.onSelect,
-                className: props.containerClassName,
-                resultType: result.type,
             }
         } else {
             const hideCount = matchCount - limitedMatchCount
             containerProps = {
-                index: props.index,
+                ...commonContainerProps,
                 collapsible: limitedMatchCount < matchCount,
-                defaultExpanded: props.expanded,
-                icon: props.icon,
-                title: renderTitle(),
-                description: undefined,
-                collapsedChildren: <FileMatchChildren {...props} result={result} grouped={limitedGrouped} />,
-                expandedChildren: <FileMatchChildren {...props} result={result} grouped={grouped} />,
-                collapseLabel: `Hide ${hideCount}`,
-                expandLabel: `${hideCount} more`,
-                allExpanded: props.allExpanded,
+                collapsedChildren,
+                expandedChildren,
+                collapseLabel: coreWorkflowImprovementsEnabled ? 'Show less' : `Hide ${hideCount}`,
+                expandLabel: coreWorkflowImprovementsEnabled
+                    ? `Show ${hideCount} more ${pluralize('match', hideCount, 'matches')}`
+                    : `${hideCount} more`,
                 matchCountLabel,
-                repoName: result.repository,
-                repoStars: result.repoStars,
-                repoLastFetched: result.repoLastFetched,
-                onResultClicked: props.onSelect,
-                className: props.containerClassName,
-                resultType: result.type,
             }
         }
     } else if (props.showAllMatches) {
         containerProps = {
-            index: props.index,
+            ...commonContainerProps,
             collapsible: false,
-            defaultExpanded: props.expanded,
-            icon: props.icon,
-            title: renderTitle(),
             description,
             expandedChildren,
-            allExpanded: props.allExpanded,
             matchCountLabel,
-            repoName: result.repository,
-            repoStars: result.repoStars,
-            repoLastFetched: result.repoLastFetched,
-            onResultClicked: props.onSelect,
-            className: props.containerClassName,
-            resultType: result.type,
         }
     } else {
         const length = highlightRangesCount - collapsedHighlightRangesCount
         containerProps = {
-            index: props.index,
+            ...commonContainerProps,
             collapsible: items.length > collapsedMatchCount,
-            defaultExpanded: props.expanded,
-            icon: props.icon,
-            title: renderTitle(),
             description,
             collapsedChildren: <FileMatchChildren {...props} result={result} {...collapsedMatchGroups} />,
             expandedChildren,
-            collapseLabel: `Hide ${length}`,
-            expandLabel: `${length} more`,
-            allExpanded: props.allExpanded,
+            collapseLabel: coreWorkflowImprovementsEnabled ? 'Show less' : `Hide ${length}`,
+            expandLabel: coreWorkflowImprovementsEnabled
+                ? `Show ${length} more ${pluralize('match', length, 'matches')}`
+                : `${length} more`,
             matchCountLabel,
-            repoName: result.repository,
-            repoStars: result.repoStars,
-            repoLastFetched: result.repoLastFetched,
-            onResultClicked: props.onSelect,
-            className: props.containerClassName,
-            resultType: result.type,
             as: props.as,
         }
     }

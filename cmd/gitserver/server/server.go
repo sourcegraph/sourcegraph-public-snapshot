@@ -2111,6 +2111,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return err
 	}
 
+	// Set gc.auto depending on gitGCMode.
+	if err := gitSetAutoGC(tmp); err != nil {
+		return err
+	}
+
 	if overwrite {
 		// remove the current repo by putting it into our temporary directory
 		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
