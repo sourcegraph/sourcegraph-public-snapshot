@@ -29,6 +29,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Gitserver `/exec` endpoint access logs can now be enabled with `"log": { "gitserver.accessLog": true }` ([#38798](https://github.com/sourcegraph/sourcegraph/pull/38798))
 - Gitserver `/exec` endpoint access logs can now be enabled with `"log": { "gitserver.accessLogs": true }` ([#38798](https://github.com/sourcegraph/sourcegraph/pull/38798))
 - Gitserver `/exec` endpoint access logs can now be enabled with `"log": { "gitserver.accessLogs": true }`. [#38798](https://github.com/sourcegraph/sourcegraph/pull/38798)
+- Gitserver `/exec` endpoint access logs can now be enabled by adding `"log": { "gitserver.accessLogs": true }` to the site config. [#38798](https://github.com/sourcegraph/sourcegraph/pull/38798)
 
 ### Changed
 

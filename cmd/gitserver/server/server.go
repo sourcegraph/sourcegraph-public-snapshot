@@ -360,7 +360,11 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", trace.WithRouteName("archive", s.handleArchive))
+	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("archive.accesslog", "archive endpoint access log"),
+		conf.DefaultClient(),
+		s.handleArchive,
+	)))
 	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.HTTPMiddleware(
 		s.Logger.Scoped("exec.accesslog", "exec endpoint access log"),
 		conf.DefaultClient(),
@@ -383,9 +387,13 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	mux.HandleFunc("/git/", trace.WithRouteName("git", func(rw http.ResponseWriter, r *http.Request) {
-		http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
-	}))
+	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
+		conf.DefaultClient(),
+		func(rw http.ResponseWriter, r *http.Request) {
+			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
+		},
+	)))
 
 	// Migration to hexagonal architecture starting here:
 
@@ -405,7 +413,12 @@ func (s *Server) Handler() http.Handler {
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
-	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", handleGetObject(getObjectFunc)))
+	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object",
+		accesslog.HTTPMiddleware(
+			s.Logger.Scoped("commands/get-object.accesslog", "commands/get-object endpoint access log"),
+			conf.DefaultClient(),
+			handleGetObject(getObjectFunc),
+		)))
 
 	return mux
 }
@@ -947,6 +960,13 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		pathspecs = q["path"]
 	)
 
+	// Log which which actor is accessing the repo.
+	accesslog.Record(r.Context(), repo, map[string]string{
+		"treeish": treeish,
+		"format":  format,
+		"path":    strings.Join(pathspecs, ","),
+	})
+
 	if err := checkSpecArgSafety(treeish); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		s.Logger.Error("gitserver.archive.CheckSpecArgSafety", log.Error(err))
@@ -1362,8 +1382,19 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
 	// Log which which actor is accessing the repo.
-	accesslog.Record(r.Context(), string(req.Repo), req.Args)
+	args := req.Args
+	cmd := ""
+	if len(req.Args) > 0 {
+		cmd = req.Args[0]
+		args = args[1:]
+	}
+	accesslog.Record(r.Context(), string(req.Repo), map[string]string{
+		"cmd":  cmd,
+		"args": strings.Join(args, " "),
+	})
+
 	s.exec(w, r, &req)
 }
 

@@ -19,27 +19,25 @@ func TestRecord(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		ctx := context.Background()
 		ctx = withContext(ctx, &paramsContext{})
-		Record(ctx, "github.com/foo/bar", []string{"git", "grep", "foo"})
+
+		meta := map[string]string{"cmd": "git", "args": "grep foo"}
+
+		Record(ctx, "github.com/foo/bar", meta)
+
 		pc := fromContext(ctx)
 		require.NotNil(t, pc)
 		assert.Equal(t, "github.com/foo/bar", pc.repo)
-		assert.Equal(t, "git", pc.cmd)
-		assert.Equal(t, []string{"grep", "foo"}, pc.args)
+		assert.Equal(t, meta, pc.metadata)
 	})
+
 	t.Run("OK not initialized context", func(t *testing.T) {
 		ctx := context.Background()
-		Record(ctx, "github.com/foo/bar", []string{"git", "grep", "foo"})
+
+		meta := map[string]string{"cmd": "git", "args": "grep foo"}
+
+		Record(ctx, "github.com/foo/bar", meta)
 		pc := fromContext(ctx)
 		assert.Nil(t, pc)
-	})
-	t.Run("OK no args", func(t *testing.T) {
-		ctx := context.Background()
-		ctx = withContext(ctx, &paramsContext{})
-		Record(ctx, "github.com/foo/bar", []string{"git"})
-		pc := fromContext(ctx)
-		assert.NotNil(t, pc)
-		assert.Equal(t, "git", pc.cmd)
-		assert.Nil(t, pc.args)
 	})
 }
 
@@ -61,7 +59,8 @@ func TestHTTPMiddleware(t *testing.T) {
 	t.Run("OK", func(t *testing.T) {
 		logger, exportLogs := logtest.Captured(t)
 		h := HTTPMiddleware(logger, &accessLogConf{}, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			Record(r.Context(), "github.com/foo/bar", []string{"git", "grep", "foo"})
+			meta := map[string]string{"cmd": "git", "args": "grep foo"}
+			Record(r.Context(), "github.com/foo/bar", meta)
 		}))
 
 		rec := httptest.NewRecorder()
@@ -102,7 +101,8 @@ func TestHTTPMiddleware(t *testing.T) {
 		c := &accessLogConf{disabled: true}
 		var handled bool
 		h := HTTPMiddleware(logger, c, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			Record(r.Context(), "github.com/foo/bar", []string{"git", "grep", "foo"})
+			meta := map[string]string{"cmd": "git", "args": "grep foo"}
+			Record(r.Context(), "github.com/foo/bar", meta)
 			handled = true
 		}))
 		rec := httptest.NewRecorder()

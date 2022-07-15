@@ -18,27 +18,21 @@ import (
 type contextKey struct{}
 
 type paramsContext struct {
-	repo string
-	cmd  string
-	args []string
+	repo     string
+	metadata map[string]string
 }
 
 // Record updates a mutable unexported field stored in the context,
 // making it available for Middleware to log at the end of the middleware
 // chain.
-func Record(ctx context.Context, repo string, args []string) {
+func Record(ctx context.Context, repo string, meta map[string]string) {
 	pc := fromContext(ctx)
 	if pc == nil {
 		return
 	}
 
 	pc.repo = repo
-	if len(args) > 0 {
-		pc.cmd = args[0]
-	}
-	if len(args) > 1 {
-		pc.args = args[1:]
-	}
+	pc.metadata = meta
 }
 
 func withContext(ctx context.Context, pc *paramsContext) context.Context {
@@ -92,7 +86,7 @@ func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			"actor",
 			log.String("ip", cli.IP),
 			log.String("X-Forwarded-For", cli.ForwardedFor),
-			log.Int32("actor", act.UID),
+			log.Int32("actorUID", act.UID),
 		))
 	}
 
@@ -107,18 +101,18 @@ func (a *accessLogger) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if paramsCtx != nil {
-		fields = append(fields, log.Object(
-			"params",
+		params := []log.Field{
 			log.String("repo", paramsCtx.repo),
-			log.String("cmd", paramsCtx.cmd),
-			log.Strings("args", paramsCtx.args),
-		))
+		}
+		for k, v := range paramsCtx.metadata {
+			params = append(params, log.String(k, v))
+		}
+		fields = append(fields, log.Object("params", params...))
 	} else {
 		fields = append(fields, log.String("params", "nil"))
 	}
 
 	a.logger.Info(accessEventMessage, fields...)
-	return
 }
 
 // HTTPMiddleware will extract actor information and params collected by Record that has
