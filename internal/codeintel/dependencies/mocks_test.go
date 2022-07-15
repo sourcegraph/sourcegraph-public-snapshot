@@ -549,7 +549,7 @@ func NewMockStore() *MockStore {
 			},
 		},
 		ListLockfileIndexesFunc: &StoreListLockfileIndexesFunc{
-			defaultHook: func(context.Context, store.ListLockfileIndexesOpts) (r0 []shared.LockfileIndex, r1 error) {
+			defaultHook: func(context.Context, store.ListLockfileIndexesOpts) (r0 []shared.LockfileIndex, r1 int, r2 error) {
 				return
 			},
 		},
@@ -611,7 +611,7 @@ func NewStrictMockStore() *MockStore {
 			},
 		},
 		ListLockfileIndexesFunc: &StoreListLockfileIndexesFunc{
-			defaultHook: func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error) {
+			defaultHook: func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
 				panic("unexpected invocation of MockStore.ListLockfileIndexes")
 			},
 		},
@@ -923,24 +923,24 @@ func (c StoreListDependencyReposFuncCall) Results() []interface{} {
 // StoreListLockfileIndexesFunc describes the behavior when the
 // ListLockfileIndexes method of the parent MockStore instance is invoked.
 type StoreListLockfileIndexesFunc struct {
-	defaultHook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error)
-	hooks       []func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error)
+	defaultHook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error)
+	hooks       []func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error)
 	history     []StoreListLockfileIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListLockfileIndexes delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) ListLockfileIndexes(v0 context.Context, v1 store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error) {
-	r0, r1 := m.ListLockfileIndexesFunc.nextHook()(v0, v1)
-	m.ListLockfileIndexesFunc.appendCall(StoreListLockfileIndexesFuncCall{v0, v1, r0, r1})
-	return r0, r1
+func (m *MockStore) ListLockfileIndexes(v0 context.Context, v1 store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
+	r0, r1, r2 := m.ListLockfileIndexesFunc.nextHook()(v0, v1)
+	m.ListLockfileIndexesFunc.appendCall(StoreListLockfileIndexesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the ListLockfileIndexes
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreListLockfileIndexesFunc) SetDefaultHook(hook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error)) {
+func (f *StoreListLockfileIndexesFunc) SetDefaultHook(hook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error)) {
 	f.defaultHook = hook
 }
 
@@ -948,7 +948,7 @@ func (f *StoreListLockfileIndexesFunc) SetDefaultHook(hook func(context.Context,
 // ListLockfileIndexes method of the parent MockStore instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *StoreListLockfileIndexesFunc) PushHook(hook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error)) {
+func (f *StoreListLockfileIndexesFunc) PushHook(hook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -956,20 +956,20 @@ func (f *StoreListLockfileIndexesFunc) PushHook(hook func(context.Context, store
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreListLockfileIndexesFunc) SetDefaultReturn(r0 []shared.LockfileIndex, r1 error) {
-	f.SetDefaultHook(func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error) {
-		return r0, r1
+func (f *StoreListLockfileIndexesFunc) SetDefaultReturn(r0 []shared.LockfileIndex, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
+		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreListLockfileIndexesFunc) PushReturn(r0 []shared.LockfileIndex, r1 error) {
-	f.PushHook(func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error) {
-		return r0, r1
+func (f *StoreListLockfileIndexesFunc) PushReturn(r0 []shared.LockfileIndex, r1 int, r2 error) {
+	f.PushHook(func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
+		return r0, r1, r2
 	})
 }
 
-func (f *StoreListLockfileIndexesFunc) nextHook() func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, error) {
+func (f *StoreListLockfileIndexesFunc) nextHook() func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -1013,7 +1013,10 @@ type StoreListLockfileIndexesFuncCall struct {
 	Result0 []shared.LockfileIndex
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
-	Result1 error
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
 }
 
 // Args returns an interface slice containing the arguments of this
@@ -1025,7 +1028,7 @@ func (c StoreListLockfileIndexesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreListLockfileIndexesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreLockfileDependenciesFunc describes the behavior when the

@@ -1,0 +1,45 @@
+extend type Query {
+    """
+    A list of lockfile indexes.
+    """
+    lockfileIndexes(
+        """
+        Returns the first n lockfile indexes from the list.
+        """
+        first: Int = 50
+        """
+        Opaque pagination cursor.
+        """
+        after: String
+    ): LockfileIndexConnection!
+}
+
+"""
+A list of lockfile indexes.
+"""
+type LockfileIndexConnection {
+    """
+    A list of lockfile indexes.
+    """
+    nodes: [LockfileIndex!]!
+
+    """
+    The total number of lockfile indexes in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+A lockfile index is an indexed lockfile in a repository.
+"""
+type LockfileIndex implements Node {
+    """
+    The unique ID for the lockfile index.
+    """
+    id: ID!
+}
