@@ -709,3 +709,40 @@ func TestListNotebooks(t *testing.T) {
 		})
 	}
 }
+
+func TestGetNotebookWithSoftDeletedUserColumns(t *testing.T) {
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	internalCtx := actor.WithInternalActor(context.Background())
+	u := db.Users()
+	n := notebooks.Notebooks(db)
+
+	user1, err := u.Create(internalCtx, database.NewUser{Username: "u1", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	user2, err := u.Create(internalCtx, database.NewUser{Username: "u2", Password: "p"})
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	createdNotebook, err := n.CreateNotebook(internalCtx, userNotebookFixture(user2.ID, true))
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	err = u.Delete(internalCtx, user2.ID)
+	if err != nil {
+		t.Fatalf("Expected no error, got %s", err)
+	}
+
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	input := map[string]any{"id": marshalNotebookID(createdNotebook.ID)}
+	var response struct{ Node notebooksapitest.Notebook }
+	apitest.MustExec(actor.WithActor(context.Background(), actor.FromUser(user1.ID)), t, schema, input, &response, queryNotebook)
+}
