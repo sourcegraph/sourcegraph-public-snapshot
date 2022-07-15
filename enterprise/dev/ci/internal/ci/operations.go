@@ -683,7 +683,13 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 		}
 
 		devImage := images.DevRegistryImage(app, tag)
+		// DONOTMERGE curlfix image
+		curlFixImage := images.PublishedRegistryImage(app, "3.41.1-curl7.80.0-r2")
+
 		cmds = append(cmds,
+			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, curlFixImage)),
+			bk.Cmd(fmt.Sprintf("docker push %s || exit 10", curlFixImage)),
+
 			// Retag the local image for dev registry
 			bk.Cmd(fmt.Sprintf("docker tag %s %s", localImage, devImage)),
 			// Publish tagged image
