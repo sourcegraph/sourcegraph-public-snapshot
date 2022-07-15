@@ -3,6 +3,7 @@ package graphql
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -16,15 +17,22 @@ type Resolver interface {
 
 type resolver struct {
 	svc *dependencies.Service
+	db  database.DB
 }
 
 func New(db database.DB) Resolver {
 	return &resolver{
 		svc: livedependencies.GetService(db, livedependencies.NewSyncer()),
+		db:  db,
 	}
 }
 
 func (r *resolver) LockfileIndexes(ctx context.Context, args *graphqlbackend.ListLockfileIndexesArgs) (graphqlbackend.LockfileIndexConnectionResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to query lockfile indexes.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
 	p, err := validateArgs(args)
 	if err != nil {
 		return nil, err
