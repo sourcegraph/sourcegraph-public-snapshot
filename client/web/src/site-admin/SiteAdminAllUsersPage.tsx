@@ -10,7 +10,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { CopyableText } from '../components/CopyableText'
@@ -131,16 +131,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     <div>
                         {window.context.sourcegraphDotComMode && (
                             <>
-                                <Tooltip content={`${orgCreationLabel} user tag to allow user to create organizations`}>
-                                    <Button
-                                        onClick={() => this.toggleOrgCreationTag(orgCreationLabel === 'Enable')}
-                                        disabled={this.state.loading}
-                                        variant="secondary"
-                                        size="sm"
-                                    >
-                                        {orgCreationLabel} org creation
-                                    </Button>
-                                </Tooltip>{' '}
+                                <Button
+                                    onClick={() => this.toggleOrgCreationTag(orgCreationLabel === 'Enable')}
+                                    disabled={this.state.loading}
+                                    data-tooltip={`${orgCreationLabel} user tag to allow user to create organizations`}
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    {orgCreationLabel} org creation
+                                </Button>{' '}
                             </>
                         )}
                         {!window.context.sourcegraphDotComMode && (
@@ -155,16 +154,15 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                             ) &&
                             ' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <Tooltip content="Force the user to re-authenticate on their next request">
-                                <Button
-                                    onClick={this.invalidateSessions}
-                                    disabled={this.state.loading}
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    Force sign-out
-                                </Button>
-                            </Tooltip>
+                            <Button
+                                onClick={this.invalidateSessions}
+                                disabled={this.state.loading}
+                                data-tooltip="Force the user to re-authenticate on their next request"
+                                variant="secondary"
+                                size="sm"
+                            >
+                                Force sign-out
+                            </Button>
                         )}{' '}
                         {window.context.resetPasswordEnabled && (
                             <Button

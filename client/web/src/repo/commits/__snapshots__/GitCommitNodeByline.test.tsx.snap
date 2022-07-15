@@ -10,7 +10,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-1 mr-2"
-        data-state="closed"
+        data-tooltip="Alice Zhao"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -21,7 +21,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-state="closed"
+        data-tooltip="alice@example.com"
       >
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
@@ -52,7 +52,7 @@ exports[`GitCommitNodeByline author 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-1 mr-2"
-        data-state="closed"
+        data-tooltip="Alice Zhao"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -63,7 +63,7 @@ exports[`GitCommitNodeByline author 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-state="closed"
+        data-tooltip="alice@example.com"
       >
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
@@ -96,7 +96,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar"
-        data-state="closed"
+        data-tooltip="Alice Zhao (author)"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -104,7 +104,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-2"
-        data-state="closed"
+        data-tooltip="bYang (committer)"
         role="presentation"
         src="http://example.com/bob.png"
       />
@@ -114,7 +114,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       <span
         class="font-weight-bold"
-        data-state="closed"
+        data-tooltip="alice@example.com"
       >
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
@@ -126,7 +126,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
        authored and commited by 
       <a
         class="font-weight-bold"
-        data-state="closed"
+        data-tooltip="Bob Yang <bob@example.com>"
         href="https://example.com/bobyang"
       >
         <span
@@ -160,7 +160,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar"
-        data-state="closed"
+        data-tooltip="Alice Zhao (author)"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -168,7 +168,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-2"
-        data-state="closed"
+        data-tooltip="bYang (committer)"
         role="presentation"
         src="http://example.com/bob.png"
       />
@@ -178,7 +178,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       <span
         class="font-weight-bold"
-        data-state="closed"
+        data-tooltip="alice@example.com"
       >
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
@@ -190,7 +190,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
        authored and commited by 
       <a
         class="font-weight-bold"
-        data-state="closed"
+        data-tooltip="Bob Yang <bob@example.com>"
         href="https://example.com/bobyang"
       >
         <span
@@ -222,7 +222,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-1 mr-2"
-        data-state="closed"
+        data-tooltip="Alice Zhao"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -233,7 +233,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-state="closed"
+        data-tooltip="alice@example.com"
       >
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"
@@ -264,7 +264,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-1 mr-2"
-        data-state="closed"
+        data-tooltip="Alice Zhao"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -275,7 +275,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-state="closed"
+        data-tooltip="alice@example.com"
       >
         <span
           style="border: 0px; height: 1px; margin: -1px; overflow: hidden; padding: 0px; position: absolute; width: 1px; white-space: nowrap; word-wrap: normal;"

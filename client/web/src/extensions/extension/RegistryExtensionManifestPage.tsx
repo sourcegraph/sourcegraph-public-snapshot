@@ -7,7 +7,7 @@ import { RouteComponentProps } from 'react-router'
 import { ConfiguredRegistryExtension } from '@sourcegraph/shared/src/extensions/extension'
 import extensionSchemaJSON from '@sourcegraph/shared/src/schema/extension.schema.json'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Alert, Icon, Code, H3, Tooltip } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { DynamicallyImportedMonacoSettingsEditor } from '../../settings/DynamicallyImportedMonacoSettingsEditor'
@@ -76,13 +76,12 @@ export class RegistryExtensionManifestPage extends React.PureComponent<Props, St
                 <div className="d-flex align-items-center justify-content-between">
                     <div className="d-flex align-items-center">
                         <H3 className="mb-0 mr-1">Manifest</H3>
-                        <Tooltip content="The published JSON description of how to run or access the extension">
-                            <Icon
-                                className="text-muted"
-                                aria-label="The published JSON description of how to run or access the extension"
-                                svgPath={mdiInformationOutline}
-                            />
-                        </Tooltip>
+                        <Icon
+                            className="text-muted"
+                            data-tooltip="The published JSON description of how to run or access the extension"
+                            aria-label="The published JSON description of how to run or access the extension"
+                            svgPath={mdiInformationOutline}
+                        />
                     </div>
                     <div>
                         {this.props.extension.manifest && (
