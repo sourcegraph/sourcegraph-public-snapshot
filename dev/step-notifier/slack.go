@@ -3,54 +3,37 @@ package main
 import (
 	"bytes"
 	"encoding/json"
-	"github.com/sourcegraph/log"
-	"io/ioutil"
-	"net/http"
+	"fmt"
 	"net/url"
-	"os"
 	"text/template"
 	"time"
+
+	"github.com/slack-go/slack"
+	"github.com/sourcegraph/log"
 )
 
-type SlackWebhookClient struct {
-	webhook string
+type SlackClient struct {
+	slack.Client
 	logger  log.Logger
-	http.Client
+	Channel string
 }
 
-func NewSlackWebhookClient(logger log.Logger) *SlackWebhookClient {
-	url := os.Getenv("SLACK_WEBHOOK")
-	if url == "" {
-		panic("SLACK_WEBHOOK cannot be empty")
-	}
-
-	return &SlackWebhookClient{
+func NewSlackClient(logger log.Logger, token string) *SlackClient {
+	return &SlackClient{
 		logger:  logger.Scoped("slack", "client which interacts with Slack's webhook API"),
-		webhook: url,
+		Client:  *slack.New(token),
+		Channel: "#william-buildchecker-webhook-test",
 	}
 }
 
-func (c *SlackWebhookClient) sendNotification(build *Build) error {
+func (c *SlackClient) sendNotification(build *Build) error {
 	c.logger.Debug("creating slack json", log.Int("buildNumber", *build.Number))
-	payload, err := createSlackJSON(c.logger, build)
-	if err != nil {
-		return err
-	}
+	blocks := createMessageBlocks(c.logger, build)
 
-	buf := bytes.NewBufferString(payload)
-	c.logger.Debug("sending notification", log.Int("buildNumber", *build.Number))
-	resp, err := c.Post(c.webhook, "application/json", buf)
+	c.logger.Debug("sending notification", log.Int("buildNumber", *build.Number), log.String("channel", c.Channel))
+	_, _, err := c.PostMessage(c.Channel, slack.MsgOptionBlocks(blocks...))
 	if err != nil {
-		c.logger.Error("failed to send notification", log.Int("buildNumber", *build.Number), log.Error(err))
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		data, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			c.logger.Error("failed to read body of response for failed notification", log.Int("buildNumber", *build.Number), log.Int("status", resp.StatusCode), log.Error(err))
-		}
-		body := string(data)
-		c.logger.Error("error response received for notification", log.Int("buildNumber", *build.Number), log.Int("status", resp.StatusCode), log.String("body", body))
+		c.logger.Error("failed to post message", log.Int("buildNumber", *build.Number), log.Error(err))
 		return err
 	}
 
@@ -128,105 +111,67 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 	return base.String()
 }
 
-func createSlackJSON(logger log.Logger, build *Build) (string, error) {
-	failed := make([]string, 0)
+func createMessageBlocks(logger log.Logger, build *Build) []slack.Block {
+	failed := make([]*slack.TextBlockObject, 0)
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
-			failed = append(failed, *j.Name)
+			failed = append(failed, &slack.TextBlockObject{
+				Type:  slack.PlainTextType,
+				Text:  *j.Name,
+				Emoji: true,
+			})
 		}
 	}
-	data := struct {
-		BuildNumber int
-		FailedSteps []string
-		Author      string
-		BuildURL    string
-		GrafanaURL  string
-		FlakeURL    string
-	}{
-		*build.Number,
-		failed,
-		build.Author.Name,
-		*build.WebURL,
-		grafanaURLFor(logger, build),
-		"TBA",
-	}
-	tmplt := template.Must(template.New("SG").Parse(`
-    {
-        "blocks": [
-        {
-            "type": "header",
-            "text": {
-                "type": "plain_test",
-                "text": "Build {{.BuildNumber}} failure"
-            }
-        },
-        {
-            "type": "divider"
-        },
-        {
-            "type": "section",
-            "text": {
-                "type": "mrkdwn",
-                "text": "The following steps failed:"
-            }
-        },
-        {
-            "type": "context",
-            "elements": [{
-                "type": "section",
-                "text": {
-                    "type": "mrkdwn",
-                    "text": "{{range .FailedSteps}}{{.}}\n{{end}}"
-                }
-            }],
-        },
-        {
-            "type": "divider"
-        },
-        {
-            "type": "actions",
-            "elements": [
-            {
-                "type": "button",
-                "style": "primary",
-                "text": {
-                    "type": "plain_text",
-                    "text": "View Build",
-                    "emoji": true
-                },
-                "url": "{{.BuildURL}}"
-            },
-            {
-                "type": "button",
-                "style": "default",
-                "text": {
-                    "type": "plain_text",
-                    "text": "View Grafana Logs",
-                    "emoji": true
-                },
-                "url": "{{.GrafanaURL}}"
-            },
-            {
-                "type": "button",
-                "style": "danger",
-                "text": {
-                    "type": "plain_text",
-                    "text": "Is this a flake?",
-                    "emoji": true
-                },
-                "url": "{{.FlakeURL}}"
-            },
-            ]
-        }
-        ]
-    }
-    `))
 
-	var buf bytes.Buffer
-	err := tmplt.Execute(&buf, data)
-	if err != nil {
-		return "", nil
+	blocks := []slack.Block{
+		slack.NewHeaderBlock(
+			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf("Build %d failed", *build.Number), true, false),
+		),
+		&slack.DividerBlock{
+			Type: slack.MBTDivider,
+		},
+		slack.NewSectionBlock(
+			&slack.TextBlockObject{Type: slack.MarkdownType, Text: "The following steps have failed"},
+			failed,
+			nil,
+		),
+		&slack.DividerBlock{
+			Type: slack.MBTDivider,
+		},
+		slack.NewSectionBlock(
+			&slack.TextBlockObject{Type: slack.MarkdownType, Text: fmt.Sprintf("<%s|%s>", *build.WebURL, *build.Message)},
+			[]*slack.TextBlockObject{
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Author*\n%s", build.Author.Name)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline*\n%s", *build.Pipeline.ID)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Commit*\n`%s`", *build.Commit)},
+			}, nil,
+		),
+		&slack.DividerBlock{
+			Type: slack.MBTDivider,
+		},
+		slack.NewActionBlock(
+			"",
+			[]slack.BlockElement{
+				&slack.ButtonBlockElement{
+					Type:  slack.METButton,
+					Style: slack.StylePrimary,
+					URL:   *build.URL,
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Go to build"},
+				},
+				&slack.ButtonBlockElement{
+					Type: slack.METButton,
+					URL:  grafanaURLFor(logger, build),
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View logs on Grafana"},
+				},
+				&slack.ButtonBlockElement{
+					Type:  slack.METButton,
+					Style: slack.StyleDanger,
+					URL:   grafanaURLFor(logger, build),
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a Flake ?"},
+				},
+			}...,
+		),
 	}
 
-	return buf.String(), nil
+	return blocks
 }

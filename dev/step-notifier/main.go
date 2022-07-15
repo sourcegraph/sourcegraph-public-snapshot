@@ -114,22 +114,26 @@ type BuildTrackingServer struct {
 	logger  log.Logger
 	store   *BuildStore
 	bkToken string
-	slack   *SlackWebhookClient
+	slack   *SlackClient
 }
 
-func NewStepServer() *BuildTrackingServer {
+func NewStepServer() (*BuildTrackingServer, error) {
+	slackToken := os.Getenv("SLACK_TOKEN")
+	if slackToken == "" {
+		return nil, fmt.Errorf("SLACK_TOKEN cannot be empty")
+	}
 	token := os.Getenv("BK_WEBHOOK_TOKEN")
 
 	if token == "" {
-		panic("Environment variable BK_WEBHOOK_TOKEN cannot be empty")
+		return nil, fmt.Errorf("BK_WEBHOOK_TOKEN cannot be empty")
 	}
 	logger := log.Scoped("server", "Server that tracks completed builds")
 	return &BuildTrackingServer{
 		logger:  logger,
 		store:   NewBuildStore(logger),
 		bkToken: token,
-		slack:   NewSlackWebhookClient(logger),
-	}
+		slack:   NewSlackClient(logger, slackToken),
+	}, nil
 }
 
 func (s *BuildTrackingServer) processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, error) {
@@ -246,9 +250,10 @@ func main() {
 		Namespace: "CI",
 	})
 	defer sync.Sync()
-	println("logger inited")
-	server := NewStepServer()
-	println("server created")
+	server, err := NewStepServer()
+	if err != nil {
+		panic(err)
+	}
 	if err := server.Serve(); err != nil {
 		server.logger.Fatal("server exited with error", log.Error(err))
 	}
