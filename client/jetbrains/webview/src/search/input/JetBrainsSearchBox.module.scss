@@ -20,7 +20,7 @@
         display: flex;
         flex-grow: 1;
         align-items: center;
-        background-color: var(--code-bg);
+        background-color: var(--jb-list-bg);
         height: 100%;
         max-width: 100%;
 
@@ -289,6 +289,13 @@
         :global(.cm-content),
         :global(.cm-scroller) {
             font-family: inherit;
+        }
+
+        :global(.cm-line) {
+            ::selection {
+                color: var(--jb-selection-color);
+                background-color: var(--jb-selection-bg);
+            }
         }
 
         :global(.cm-tooltip):global(.cm-tooltip-autocomplete) {
