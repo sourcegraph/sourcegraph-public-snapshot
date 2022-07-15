@@ -42,4 +42,9 @@ type LockfileIndex implements Node {
     The unique ID for the lockfile index.
     """
     id: ID!
+
+    """
+    The relative path of the lockfile that was resolved and indexed.
+    """
+    lockfile: String!
 }
