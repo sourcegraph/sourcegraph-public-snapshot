@@ -1394,6 +1394,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -2041,6 +2042,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 

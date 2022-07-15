@@ -445,6 +445,7 @@ func TestPermissionLevels(t *testing.T) {
 
 					var graphqlID graphql.ID
 					if tc.user != 0 {
+						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
 						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
@@ -482,6 +483,7 @@ func TestPermissionLevels(t *testing.T) {
 					if !tc.wantErr && len(errors) != 0 {
 						t.Fatalf("got error but didn't expect one: %v", errors)
 					} else if tc.wantErr && len(errors) == 0 {
+						t.Log(res)
 						t.Fatal("expected error but got none")
 					}
 					if !tc.wantErr {
@@ -755,6 +757,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 
 					var graphqlID graphql.ID
 					if tc.user != 0 {
+						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
 						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
@@ -1198,7 +1201,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 					name:        "non-site-admin for other user",
 					currentUser: userID,
 					user:        adminID,
-					wantAuthErr: true,
+					wantAuthErr: false, // not an auth error because it's simply invisible, and therefore not found
 				},
 				{
 					name:        "non-site-admin for self",
@@ -1228,6 +1231,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 
 					var batchChangesCredentialID graphql.ID
 					if tc.user != 0 {
+						ctx := actor.WithActor(ctx, actor.FromUser(tc.user))
 						cred, err := cstore.UserCredentials().Create(ctx, database.UserCredentialScope{
 							Domain:              database.UserCredentialDomainBatches,
 							ExternalServiceID:   "https://github.com/",
