@@ -235,7 +235,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
-                <div className={coreWorkflowImprovementsEnabled && styles.collapsibleResults}>
+                <div className={classNames(coreWorkflowImprovementsEnabled && styles.collapsibleResults)}>
                     {!expanded && collapsedChildren}
                     {expanded && expandedChildren}
                     {coreWorkflowImprovementsEnabled && collapsible && (

@@ -133,8 +133,8 @@ export const FileSearchResult: React.FunctionComponent<React.PropsWithChildren<P
                 return contextLinesSetting
             }
         }
-        return coreWorkflowImprovementsEnabled ? 2 : DEFAULT_CONTEXT
-    }, [props.location, props.settingsCascade, coreWorkflowImprovementsEnabled])
+        return DEFAULT_CONTEXT
+    }, [props.location, props.settingsCascade])
 
     const items: MatchItem[] = useMemo(
         () =>
