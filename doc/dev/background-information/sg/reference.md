@@ -1066,6 +1066,26 @@ Flags:
 * `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
 * `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
 
+### sg ops inspect-tag
+
+Inspect main branch tag details from a image or tag.
+
+```sh
+# Inspect a full image
+$ sg ops inspect-tag index.docker.io/sourcegraph/cadvisor:159625_2022-07-11_225c8ae162cc@sha256:foobar
+
+# Inspect just the tag
+$ sg ops inspect-tag 159625_2022-07-11_225c8ae162cc
+
+# Get the build number
+$ sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--property, -p="<value>"`: only output a specific `property` (one of: 'build', 'date', 'commit')
+
 ## sg analytics
 
 Manage analytics collected by sg.
