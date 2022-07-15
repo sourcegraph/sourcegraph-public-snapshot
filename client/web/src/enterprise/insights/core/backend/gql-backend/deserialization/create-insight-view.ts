@@ -1,9 +1,14 @@
 import { Duration } from 'date-fns'
 import { uniq } from 'lodash'
 
-import { InsightViewNode, TimeIntervalStepInput, TimeIntervalStepUnit } from '../../../../../../graphql-operations'
+import {
+    GroupByField,
+    InsightViewNode,
+    TimeIntervalStepInput,
+    TimeIntervalStepUnit,
+} from '../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
-import { Insight, InsightExecutionType, InsightType } from '../../../types'
+import { ComputeInsight, Insight, InsightExecutionType, InsightType } from '../../../types'
 import { BaseInsight } from '../../../types/insight/common'
 
 /**
@@ -13,8 +18,9 @@ import { BaseInsight } from '../../../types/insight/common'
  * api for insights.
  */
 export const createInsightView = (insight: InsightViewNode): Insight => {
-    const baseInsight: Omit<BaseInsight, 'title' | 'type' | 'executionType'> = {
+    const baseInsight: Omit<BaseInsight, 'type' | 'executionType'> = {
         id: insight.id,
+        title: insight.presentation.title,
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
         seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
@@ -25,9 +31,12 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
+            const isComputeInsight = insight.dataSeriesDefinitions.some(series => series.groupBy)
             const isCaptureGroupInsight = insight.dataSeriesDefinitions.some(
                 series => series.generatedFromCaptureGroups
             )
+
+            const { appliedFilters } = insight
             // We do not support different time scope for different series at the moment
             const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
             const repositories = uniq(
@@ -37,13 +46,12 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             if (isCaptureGroupInsight) {
                 // It's safe because capture group insight always has only 1 data series
                 const { query } = insight.dataSeriesDefinitions[0] ?? {}
-                const { presentation, appliedFilters } = insight
+                const { appliedFilters } = insight
 
                 return {
                     ...baseInsight,
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.CaptureGroup,
-                    title: presentation.title,
                     repositories,
                     query,
                     step,
@@ -71,13 +79,29 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         : '',
             }))
 
-            const { presentation, appliedFilters } = insight
+            if (isComputeInsight) {
+                // It's safe because capture group insight always has only 1 data series
+                const { groupBy } = insight.dataSeriesDefinitions[0] ?? {}
+
+                return {
+                    ...baseInsight,
+                    executionType: InsightExecutionType.Backend,
+                    type: InsightType.Compute,
+                    groupBy: groupBy ?? GroupByField.REPO,
+                    repositories,
+                    series,
+                    filters: {
+                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
+                        context: appliedFilters.searchContexts?.[0] ?? '',
+                    },
+                } as ComputeInsight
+            }
 
             return {
                 ...baseInsight,
                 executionType: InsightExecutionType.Backend,
                 type: InsightType.SearchBased,
-                title: presentation.title,
                 repositories,
                 series,
                 step,

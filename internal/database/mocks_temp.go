@@ -19580,7 +19580,7 @@ func NewMockGlobalStateStore() *MockGlobalStateStore {
 			},
 		},
 		GetFunc: &GlobalStateStoreGetFunc{
-			defaultHook: func(context.Context) (r0 *GlobalState, r1 error) {
+			defaultHook: func(context.Context) (r0 GlobalState, r1 error) {
 				return
 			},
 		},
@@ -19602,7 +19602,7 @@ func NewStrictMockGlobalStateStore() *MockGlobalStateStore {
 			},
 		},
 		GetFunc: &GlobalStateStoreGetFunc{
-			defaultHook: func(context.Context) (*GlobalState, error) {
+			defaultHook: func(context.Context) (GlobalState, error) {
 				panic("unexpected invocation of MockGlobalStateStore.Get")
 			},
 		},
@@ -19742,15 +19742,15 @@ func (c GlobalStateStoreEnsureInitializedFuncCall) Results() []interface{} {
 // GlobalStateStoreGetFunc describes the behavior when the Get method of the
 // parent MockGlobalStateStore instance is invoked.
 type GlobalStateStoreGetFunc struct {
-	defaultHook func(context.Context) (*GlobalState, error)
-	hooks       []func(context.Context) (*GlobalState, error)
+	defaultHook func(context.Context) (GlobalState, error)
+	hooks       []func(context.Context) (GlobalState, error)
 	history     []GlobalStateStoreGetFuncCall
 	mutex       sync.Mutex
 }
 
 // Get delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGlobalStateStore) Get(v0 context.Context) (*GlobalState, error) {
+func (m *MockGlobalStateStore) Get(v0 context.Context) (GlobalState, error) {
 	r0, r1 := m.GetFunc.nextHook()(v0)
 	m.GetFunc.appendCall(GlobalStateStoreGetFuncCall{v0, r0, r1})
 	return r0, r1
@@ -19759,7 +19759,7 @@ func (m *MockGlobalStateStore) Get(v0 context.Context) (*GlobalState, error) {
 // SetDefaultHook sets function that is called when the Get method of the
 // parent MockGlobalStateStore instance is invoked and the hook queue is
 // empty.
-func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (*GlobalState, error)) {
+func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (GlobalState, error)) {
 	f.defaultHook = hook
 }
 
@@ -19767,7 +19767,7 @@ func (f *GlobalStateStoreGetFunc) SetDefaultHook(hook func(context.Context) (*Gl
 // Get method of the parent MockGlobalStateStore instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (*GlobalState, error)) {
+func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (GlobalState, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -19775,20 +19775,20 @@ func (f *GlobalStateStoreGetFunc) PushHook(hook func(context.Context) (*GlobalSt
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GlobalStateStoreGetFunc) SetDefaultReturn(r0 *GlobalState, r1 error) {
-	f.SetDefaultHook(func(context.Context) (*GlobalState, error) {
+func (f *GlobalStateStoreGetFunc) SetDefaultReturn(r0 GlobalState, r1 error) {
+	f.SetDefaultHook(func(context.Context) (GlobalState, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GlobalStateStoreGetFunc) PushReturn(r0 *GlobalState, r1 error) {
-	f.PushHook(func(context.Context) (*GlobalState, error) {
+func (f *GlobalStateStoreGetFunc) PushReturn(r0 GlobalState, r1 error) {
+	f.PushHook(func(context.Context) (GlobalState, error) {
 		return r0, r1
 	})
 }
 
-func (f *GlobalStateStoreGetFunc) nextHook() func(context.Context) (*GlobalState, error) {
+func (f *GlobalStateStoreGetFunc) nextHook() func(context.Context) (GlobalState, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -19826,7 +19826,7 @@ type GlobalStateStoreGetFuncCall struct {
 	Arg0 context.Context
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *GlobalState
+	Result0 GlobalState
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

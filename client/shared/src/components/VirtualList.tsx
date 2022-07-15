@@ -60,7 +60,7 @@ export class VirtualList<TItem, TExtraItemProps = undefined> extends React.PureC
             <Element className={this.props.className} ref={this.props.onRef} aria-label={this.props['aria-label']}>
                 {this.props.items.slice(0, this.props.itemsToShow).map((item, index) => (
                     <VisibilitySensor
-                        onChange={isVisible => this.onChangeVisibility(isVisible, index)}
+                        onChange={(isVisible: boolean) => this.onChangeVisibility(isVisible, index)}
                         key={this.props.itemKey(item)}
                         containment={this.props.containment}
                         partialVisibility={true}

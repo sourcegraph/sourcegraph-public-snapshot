@@ -77,7 +77,7 @@ interface Props
         CodeInsightsProps,
         BatchChangesProps {
     history: H.History
-    location: H.Location<{ query: string }>
+    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     authRequired: boolean
     isSourcegraphDotCom: boolean

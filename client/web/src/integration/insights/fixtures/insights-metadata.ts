@@ -61,6 +61,7 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 6,
             },
+            groupBy: null,
         },
         {
             __typename: 'SearchInsightDataSeriesDefinition',
@@ -77,6 +78,7 @@ export const createJITMigrationToGQLInsightMetadataFixture = (options: InsightOp
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 6,
             },
+            groupBy: null,
         },
     ],
 })
@@ -123,6 +125,7 @@ export const STORYBOOK_GROWTH_INSIGHT_METADATA_FIXTURE: InsightViewNode = {
                 unit: TimeIntervalStepUnit.WEEK,
                 value: 6,
             },
+            groupBy: null,
         },
     ],
 }
@@ -161,6 +164,7 @@ export const SOURCEGRAPH_LANG_STATS_INSIGHT_METADATA_FIXTURE: InsightViewNode = 
             },
             isCalculated: false,
             generatedFromCaptureGroups: false,
+            groupBy: null,
             __typename: 'SearchInsightDataSeriesDefinition',
         },
     ],

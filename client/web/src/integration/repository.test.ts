@@ -82,6 +82,7 @@ describe('Repository', () => {
             const shortRepositoryName = 'sourcegraph/jsonrpc2'
             const repositoryName = `github.com/${shortRepositoryName}`
             const repositorySourcegraphUrl = `/${repositoryName}`
+            const commitUrl = `${repositorySourcegraphUrl}/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81?visible=1`
             const clickedFileName = 'async.go'
             const clickedCommit = ''
             const fileEntries = ['jsonrpc2.go', clickedFileName]
@@ -136,10 +137,8 @@ describe('Repository', () => {
                                                     '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                             },
                                         ],
-                                        url:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                                        canonicalURL:
-                                            '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                                        url: commitUrl,
+                                        canonicalURL: commitUrl,
                                         externalURLs: [
                                             {
                                                 url:
@@ -312,9 +311,8 @@ describe('Repository', () => {
                                         '/github.com/sourcegraph/jsonrpc2/-/commit/9e615b1c32cc519130575e8d10d0d0fee8a5eb6c',
                                 },
                             ],
-                            url: '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
-                            canonicalURL:
-                                '/github.com/sourcegraph/jsonrpc2/-/commit/15c2290dcb37731cc4ee5a2a1c1e5a25b4c28f81',
+                            url: commitUrl,
+                            canonicalURL: commitUrl,
                             externalURLs: [
                                 {
                                     url:
@@ -414,7 +412,7 @@ describe('Repository', () => {
                 })
             }, 'Blob')
 
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
             await driver.assertWindowLocation(`/${repositoryName}/-/blob/${clickedFileName}`)
 
             // Assert breadcrumb order
@@ -436,7 +434,10 @@ describe('Repository', () => {
                 selector: '[data-testid="git-commit-node-oid"]',
                 action: 'click',
             })
+            await driver.page.waitForSelector('[data-testid="repository-commit-page"]')
             await driver.page.waitForSelector('[data-testid="git-commit-node-message-subject"]')
+            await driver.assertWindowLocation(commitUrl)
+
             await assertSelectorHasText(
                 '[data-testid="git-commit-node-message-subject"]',
                 'update LSIF indexing CI workflow'
@@ -494,7 +495,7 @@ describe('Repository', () => {
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
@@ -522,7 +523,9 @@ describe('Repository', () => {
                 "https://github.com/ggilmore/q-test/blob/master/Geoffrey's%20random%20queries.32r242442bf/%25%20token.4288249258.sql"
             )
 
-            const blobContent = await driver.page.evaluate(() => document.querySelector('.test-repo-blob')?.textContent)
+            const blobContent = await driver.page.evaluate(
+                () => document.querySelector('[data-testid="repo-blob"]')?.textContent
+            )
             assert.strictEqual(blobContent, `content for: ${filePath}\nsecond line\nthird line`)
         })
 
@@ -549,7 +552,7 @@ describe('Repository', () => {
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
@@ -576,7 +579,7 @@ describe('Repository', () => {
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
             await driver.page.$eval('.test-tree-file-link', linkElement => (linkElement as HTMLElement).click())
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
             const breadcrumbTexts = await driver.page.evaluate(() =>
@@ -1047,7 +1050,7 @@ describe('Repository', () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repoName}`)
 
             try {
-                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 5000 })
+                await driver.page.waitForSelector('.test-file-decoration-container', { timeout: 10000 })
             } catch {
                 throw new Error('Expected to see file decorations')
             }

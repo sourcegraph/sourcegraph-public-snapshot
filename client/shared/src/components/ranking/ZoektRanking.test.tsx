@@ -2,7 +2,7 @@ import { testDataRealMatches } from './PerFileResultRankingTestHelpers'
 import { ZoektRanking } from './ZoektRanking'
 
 describe('ZoektRanking', () => {
-    const ranking = new ZoektRanking()
+    const ranking = new ZoektRanking(5)
     test('collapsedResults', () => {
         expect(ranking.collapsedResults(testDataRealMatches, 1).grouped).toMatchInlineSnapshot(`
             Array [

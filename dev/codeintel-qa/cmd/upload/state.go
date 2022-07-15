@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -35,6 +37,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 		if err != nil {
 			return err
 		}
+		request, response := internal.LastRequestResponsePair()
 
 		if verbose {
 			parts := make([]string, 0, len(repoNames))
@@ -73,7 +76,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 					}
 
 					if oldState != "COMPLETED" {
-						fmt.Printf("[%5s] %s Finished processing index for %s@%s - ID %s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, uploadState.upload.commit[:7], uploadState.upload.id)
+						fmt.Printf("[%5s] %s Finished processing index %s for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, uploadState.upload.id, repoName, uploadState.upload.commit[:7])
 					}
 				} else if uploadState.state != "QUEUED" && uploadState.state != "PROCESSING" {
 					var payload struct {
@@ -91,6 +94,11 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], &uploadState.upload.id, errors.Wrap(err, "error getting audit logs"))
 					}
 
+					var dst bytes.Buffer
+					json.Indent(&dst, []byte(response), "", "\t")
+					fmt.Printf("GRAPHQL REQUEST:\n%s\n\n", strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(request, "\\t", "\t"), "\\n", "\n"), "\n\n", "\n"))
+					fmt.Printf("GRAPHQL RESPONSE:\n%s\n\n", dst.String())
+					fmt.Printf("RAW STATE DUMP:\n%+v\n", state)
 					fmt.Printf("RAW PAYLOAD DUMP:\n%+v\n", payload)
 					fmt.Println("SEARCHING FOR ID", uploadState.upload.id)
 
@@ -112,7 +120,7 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
 					}
 
-					return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], uploadState.upload.id, logs)
+					return errors.Newf("unexpected state '%s' for %s (%s@%s)\nAudit Logs:\n%s", uploadState.state, uploadState.upload.id, uploadState.upload.repoName, uploadState.upload.commit[:7], logs)
 				}
 			}
 

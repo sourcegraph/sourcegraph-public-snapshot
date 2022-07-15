@@ -49,7 +49,7 @@ func TestOrgRepositories(t *testing.T) {
 			Schema: func() *graphql.Schema {
 				t.Helper()
 
-				parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil, nil)
+				parsedSchema, parseSchemaErr := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil, nil, nil)
 				if parseSchemaErr != nil {
 					t.Fatal(parseSchemaErr)
 				}
@@ -101,7 +101,7 @@ func TestAddOrgsOpenBetaStats(t *testing.T) {
 	db.OrgsFunc.SetDefaultReturn(orgs)
 	db.UsersFunc.SetDefaultReturn(users)
 
-	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil, nil)
+	schema, err := graphqlbackend.NewSchema(db, nil, nil, nil, nil, nil, nil, nil, nil, NewResolver(db), nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

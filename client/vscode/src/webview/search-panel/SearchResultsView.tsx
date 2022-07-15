@@ -244,7 +244,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
     )
 
     const fetchStreamSuggestions = useCallback(
-        (query): Observable<SearchMatch[]> =>
+        (query: string): Observable<SearchMatch[]> =>
             wrapRemoteObservable(extensionCoreAPI.fetchStreamSuggestions(query, instanceURL)),
         [extensionCoreAPI, instanceURL]
     )

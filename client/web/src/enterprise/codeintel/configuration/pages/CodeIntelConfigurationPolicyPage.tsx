@@ -3,7 +3,7 @@ import { FunctionComponent, useCallback, useEffect, useState } from 'react'
 import { ApolloError } from '@apollo/client'
 import { mdiDelete } from '@mdi/js'
 import * as H from 'history'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
@@ -45,6 +45,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
     lockfileIndexingEnabled = window.context?.codeIntelLockfileIndexingEnabled,
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfigurationPolicy'), [telemetryService])
+    const location = useLocation<{ message: string; modal: string }>()
 
     const { policyConfig, loadingPolicyConfig, policyConfigError } = usePolicyConfigurationByID(id)
     const [saved, setSaved] = useState<CodeIntelligenceConfigurationPolicyFields>()
@@ -129,9 +130,7 @@ export const CodeIntelConfigurationPolicyPage: FunctionComponent<
             {savingError && <ErrorAlert prefix="Error saving configuration policy" error={savingError} />}
             {deleteError && <ErrorAlert prefix="Error deleting configuration policy" error={deleteError} />}
 
-            {history.location.state && (
-                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
-            )}
+            {location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
 
             {policy.protected ? (
                 <Alert variant="info">
