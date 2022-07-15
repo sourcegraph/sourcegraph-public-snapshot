@@ -372,7 +372,11 @@ func (s *Server) Handler() http.Handler {
 	)))
 	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
 	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
-	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", s.handleP4Exec))
+	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("p4-exec.accesslog", "p4-exec endpoint access log"),
+		conf.DefaultClient(),
+		s.handleP4Exec,
+	)))
 	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
@@ -1655,6 +1659,13 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]), http.StatusBadRequest)
 		return
 	}
+
+	// Log which which actor is accessing p4-exec.
+	accesslog.Record(r.Context(), "", map[string]string{
+		"p4user": req.P4User,
+		"p4port": req.P4Port,
+		"args":   strings.Join(req.Args, " "),
+	})
 
 	// Make sure credentials are valid before heavier operation
 	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
