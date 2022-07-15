@@ -47,7 +47,7 @@ interface ComputeInsightCreationContentProps extends NativeContainerProps {
     touched: boolean
     children: (input: RenderPropertyInputs) => ReactNode
     initialValue?: Partial<CreateComputeInsightFormFields>
-    onChange: (event: FormChangeEvent<CreateComputeInsightFormFields>) => void
+    onChange?: (event: FormChangeEvent<CreateComputeInsightFormFields>) => void
     onSubmit: (values: CreateComputeInsightFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
 }
 
