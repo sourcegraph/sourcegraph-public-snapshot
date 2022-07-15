@@ -322,8 +322,8 @@ type Parameters []Parameter
 // (include) and negated (exclude) values.
 func (p Parameters) IncludeExcludeValues(field string) (include, exclude []string) {
 	VisitField(toNodes(p), field, func(v string, negated bool, _ Annotation) {
-		// This is not handled as an includes pattern.
-		if strings.HasPrefix(v, "owned.by(") {
+		// TODO: How do we avoid specialcasing the predicate here?
+		if strings.HasPrefix(v, "has.owner(") {
 			return
 		}
 

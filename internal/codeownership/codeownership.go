@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"strings"
+	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -23,29 +24,16 @@ import (
 )
 
 func ForResult(r result.FileMatch, db database.DB) []string {
-	codeownersFile := ResolveCodeownerFile(db, r.Repo.Name, r.CommitID)
-
-	if codeownersFile == "" {
-		return []string{}
-	}
-
-	return ForFilePath(codeownersFile, r.File.Path)
+	ruleset := ResolveRuleset(db, r.Repo.Name, r.CommitID)
+	return ForFilePath(ruleset, r.File.Path)
 }
 
-func ForFilePath(ownersFile string, path string) []string {
-	var err error
-
-	if ownersFile == "" {
+func ForFilePath(ruleset codeowners.Ruleset, path string) []string {
+	if ruleset == nil {
 		return []string{}
 	}
 
-	ruleSet, err := codeowners.ParseFile(strings.NewReader(ownersFile))
-	if err != nil {
-		log.Fatal(err)
-		return []string{}
-	}
-
-	rule, err := ruleSet.Match(path)
+	rule, err := ruleset.Match(path)
 	if err != nil {
 		log.Fatal(err)
 		return []string{}
@@ -63,7 +51,7 @@ func ForFilePath(ownersFile string, path string) []string {
 	return owners
 }
 
-func ResolveCodeownerFile(db database.DB, repoName api.RepoName, commitID api.CommitID) string {
+func ResolveRuleset(db database.DB, repoName api.RepoName, commitID api.CommitID) codeowners.Ruleset {
 	var content []byte
 
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
@@ -77,23 +65,37 @@ func ResolveCodeownerFile(db database.DB, repoName api.RepoName, commitID api.Co
 		authz.DefaultSubRepoPermsChecker,
 	)
 
-	if content != nil {
-		return string(content)
+	if content == nil {
+		content, _ = gitserver.NewClient(db).ReadFile(
+			ctx,
+			repoName,
+			commitID,
+			".github/CODEOWNERS",
+			authz.DefaultSubRepoPermsChecker,
+		)
 	}
 
-	content, _ = gitserver.NewClient(db).ReadFile(
-		ctx,
-		repoName,
-		commitID,
-		".github/CODEOWNERS",
-		authz.DefaultSubRepoPermsChecker,
-	)
-
-	if content != nil {
-		return string(content)
+	if content == nil {
+		content, _ = gitserver.NewClient(db).ReadFile(
+			ctx,
+			repoName,
+			commitID,
+			"docs/CODEOWNERS",
+			authz.DefaultSubRepoPermsChecker,
+		)
 	}
 
-	return ""
+	if content == nil {
+		return nil
+	}
+
+	ruleSet, err := codeowners.ParseFile(strings.NewReader(string(content)))
+	if err != nil {
+		log.Fatal(err)
+		return nil
+	}
+
+	return ruleSet
 }
 
 // This returns a regex for potential filenames that are owned by the owner. The reason why this is
@@ -133,8 +135,39 @@ func (s *codeownershipFilterJob) Run(ctx context.Context, clients job.RuntimeCli
 
 	var errs error
 
+	mux := &sync.Mutex{}
+	rules := make(map[string]codeowners.Ruleset)
+
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event.Results = applyCodeOwnershipFiltering(ctx, event.Results, s.db, s.fileOwnersMustInclude, s.fileOwnersMustExclude)
+		// Filter matches in place
+		filtered := event.Results[:0]
+
+	OUTER:
+		for _, m := range event.Results {
+			switch mm := m.(type) {
+			case *result.FileMatch:
+				cachekey := fmt.Sprintf("%s@%s", mm.Repo.Name, mm.CommitID)
+
+				mux.Lock()
+				if rules[cachekey] == nil {
+					rules[cachekey] = ResolveRuleset(s.db, mm.Repo.Name, mm.CommitID)
+				}
+				owners := ForFilePath(rules[cachekey], mm.File.Path)
+				mux.Unlock()
+
+				for _, mustIncludeOwner := range s.fileOwnersMustInclude {
+					if !contains(owners, mustIncludeOwner) {
+						continue OUTER
+					}
+				}
+
+				filtered = append(filtered, m)
+			default:
+				filtered = append(filtered, m)
+			}
+		}
+
+		event.Results = filtered
 		stream.Send(event)
 	})
 
@@ -161,37 +194,11 @@ func (s *codeownershipFilterJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-func applyCodeOwnershipFiltering(ctx context.Context, matches []result.Match, db database.DB, fileOwnersMustInclude []string, fileOwnersMustExclude []string) []result.Match {
-	// Filter matches in place
-	filtered := matches[:0]
-
-OUTER:
-	for _, m := range matches {
-		switch mm := m.(type) {
-		case *result.FileMatch:
-			fmt.Printf("event: %+v\n", mm.File)
-
-			for _, mustIncludeOwner := range fileOwnersMustInclude {
-				if !contains(ForResult(*mm, db), mustIncludeOwner) {
-					continue OUTER
-				}
-			}
-
-			filtered = append(filtered, m)
-		default:
-			filtered = append(filtered, m)
-		}
-	}
-
-	return filtered
-}
-
 func contains(s []string, str string) bool {
 	for _, v := range s {
 		if v == str {
 			return true
 		}
 	}
-
 	return false
 }

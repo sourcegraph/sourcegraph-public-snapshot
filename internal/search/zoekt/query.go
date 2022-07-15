@@ -31,7 +31,7 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		}
 	}
 
-	// Handle file:owned.by() predicates
+	// Handle file:has.owner() predicates
 	fileOwnersMustInclude, _ := b.FileOwnership()
 
 	// Handle file: and -file: filters.

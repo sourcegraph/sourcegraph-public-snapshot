@@ -3,7 +3,6 @@ package graphqlbackend
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"io/fs"
 	"net/url"
 	"os"
@@ -126,15 +125,8 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 }
 
 func (r *GitTreeEntryResolver) CodeOwners(ctx context.Context) ([]string, error) {
-	codeownersFile := codeownership.ResolveCodeownerFile(r.db, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()))
-
-	fmt.Printf("%+v\n", codeownersFile)
-
-	if codeownersFile == "" {
-		return []string{}, nil
-	}
-
-	return codeownership.ForFilePath(codeownersFile, r.Path()), nil
+	ruleset := codeownership.ResolveRuleset(r.db, r.commit.repoResolver.RepoName(), api.CommitID(r.commit.OID()))
+	return codeownership.ForFilePath(ruleset, r.Path()), nil
 }
 
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }

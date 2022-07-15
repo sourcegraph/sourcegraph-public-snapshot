@@ -45,7 +45,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
 		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
-		"owned.by":         func() Predicate { return &FileOwnershipPredicate{} },
+		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
 }
 
@@ -409,26 +409,26 @@ func nonPredicateRepos(q Basic) []Node {
 	return res
 }
 
-/* file:owned.by(pattern) */
+/* file:has.owner(pattern) */
 
-type FileOwnershipPredicate struct {
+type FileHasOwnerPredicate struct {
 	Owner string
 }
 
-func (f *FileOwnershipPredicate) ParseParams(params string) error {
+func (f *FileHasOwnerPredicate) ParseParams(params string) error {
 	if _, err := regexp.Compile(params); err != nil {
-		return errors.Errorf("file:owned.by argument: %w", err)
+		return errors.Errorf("file:has.owner argument: %w", err)
 	}
 	if params == "" {
-		return errors.Errorf("file:owned.by argument should not be empty")
+		return errors.Errorf("file:has.owner argument should not be empty")
 	}
 	f.Owner = params
 	return nil
 }
 
-func (f FileOwnershipPredicate) Field() string { return FieldFile }
-func (f FileOwnershipPredicate) Name() string  { return "owned.by" }
-func (f *FileOwnershipPredicate) Plan(parent Basic) (Plan, error) {
-	// Handled by idk what
+func (f FileHasOwnerPredicate) Field() string { return FieldFile }
+func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
+func (f *FileHasOwnerPredicate) Plan(parent Basic) (Plan, error) {
+	// Handled by codeownership.NewFilterJob
 	return nil, nil
 }
