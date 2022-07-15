@@ -135,12 +135,20 @@ func UserCredentialsWith(logger log.Logger, other basestore.ShareableStore, key 
 }
 
 func (s *userCredentialsStore) With(other basestore.ShareableStore) UserCredentialsStore {
-	return &userCredentialsStore{logger: s.logger, Store: s.Store.With(other)}
+	return &userCredentialsStore{
+		logger: s.logger,
+		Store:  s.Store.With(other),
+		key:    s.key,
+	}
 }
 
 func (s *userCredentialsStore) Transact(ctx context.Context) (UserCredentialsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &userCredentialsStore{logger: s.logger, Store: txBase}, err
+	return &userCredentialsStore{
+		logger: s.logger,
+		Store:  txBase,
+		key:    s.key,
+	}, err
 }
 
 // UserCredentialScope represents the unique scope for a credential. Only one
@@ -441,7 +449,7 @@ WHERE
 	user_id = %s AND
 	external_service_type = %s AND
 	external_service_id = %s AND
-  %s -- authz query conds
+	%s -- authz query conds
 `
 
 const userCredentialsListQueryFmtstr = `
@@ -496,7 +504,7 @@ SET
 	ssh_migration_applied = %s
 WHERE
 	id = %s AND
-  %s -- authz query conds
+	%s -- authz query conds
 RETURNING %s
 `
 
@@ -567,9 +575,27 @@ func userCredentialsAuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, er
 	if err != nil {
 		return nil, errors.Wrap(err, "getting auth user from context")
 	}
-	if user.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins {
-		return sqlf.Sprintf("(TRUE)"), nil
-	}
-
-	return sqlf.Sprintf("(user_credentials.user_id = %s)", user.ID), nil
+	return sqlf.Sprintf(
+		userCredentialsAuthzQueryCondsFmtstr,
+		user.ID,
+		!conf.Get().AuthzEnforceForSiteAdmins,
+		user.ID,
+	), nil
 }
+
+const userCredentialsAuthzQueryCondsFmtstr = `
+(
+	(
+		user_credentials.user_id = %s  -- user credential user is the same as the actor
+	)
+	OR
+	(
+		%s  -- negated authz.enforceForSiteAdmins site config setting
+		AND EXISTS (
+			SELECT 1
+			FROM users
+			WHERE site_admin = TRUE AND id = %s  -- actor user ID
+		)
+	)
+)
+`

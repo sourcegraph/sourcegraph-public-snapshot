@@ -289,6 +289,9 @@ func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID
 func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	cred, err := r.store.UserCredentials().GetByID(ctx, id)
 	if err != nil {
+		if err == store.ErrNoResults {
+			return nil, nil
+		}
 		return nil, err
 	}
 

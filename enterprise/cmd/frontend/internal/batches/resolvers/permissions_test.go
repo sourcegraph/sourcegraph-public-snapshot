@@ -483,7 +483,6 @@ func TestPermissionLevels(t *testing.T) {
 					if !tc.wantErr && len(errors) != 0 {
 						t.Fatalf("got error but didn't expect one: %v", errors)
 					} else if tc.wantErr && len(errors) == 0 {
-						t.Log(res)
 						t.Fatal("expected error but got none")
 					}
 					if !tc.wantErr {
