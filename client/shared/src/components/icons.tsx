@@ -2,8 +2,6 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
-import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
-
 export interface IconProps {
     className?: string
     size?: number
@@ -103,10 +101,8 @@ export const WrapDisabledIcon: React.FunctionComponent<React.PropsWithChildren<I
 )
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
-export const CloudAlertIconRefresh = React.forwardRef((props, reference) => (
+export const CloudAlertIconRefresh: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg
-        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -129,14 +125,11 @@ export const CloudAlertIconRefresh = React.forwardRef((props, reference) => (
             </clipPath>
         </defs>
     </svg>
-)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
-CloudAlertIconRefresh.displayName = 'CloudAlertIconRefresh'
+)
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
-export const CloudSyncIconRefresh = React.forwardRef((props, reference) => (
+export const CloudSyncIconRefresh: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg
-        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -163,14 +156,11 @@ export const CloudSyncIconRefresh = React.forwardRef((props, reference) => (
             </clipPath>
         </defs>
     </svg>
-)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
-CloudSyncIconRefresh.displayName = 'CloudSyncIconRefresh'
+)
 
 // TODO: Rename name when refresh design is complete
-// eslint-disable-next-line react/display-name
-export const CloudCheckIconRefresh = React.forwardRef((props, reference) => (
+export const CloudCheckIconRefresh: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
     <svg
-        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -193,5 +183,4 @@ export const CloudCheckIconRefresh = React.forwardRef((props, reference) => (
             </clipPath>
         </defs>
     </svg>
-)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
-CloudCheckIconRefresh.displayName = 'CloudCheckIconRefresh'
+)
