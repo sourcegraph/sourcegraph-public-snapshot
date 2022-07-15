@@ -168,15 +168,10 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                     <div className={classNames(styles.border, 'mb-3')} />
                     <ul className="mb-3 pl-3">
                         <Text as="li">
-                            Promote the{' '}
-                            <AnchorLink to="/help/integration/editor" target="_blank">
-                                IDE extension
+                            <AnchorLink to="https://about.sourcegraph.com/blog/notebooks-ci" target="_blank">
+                                Learn more
                             </AnchorLink>{' '}
-                            and{' '}
-                            <AnchorLink to="/help/cli" target="_blank">
-                                SRC CLI
-                            </AnchorLink>{' '}
-                            to your users to allow them to search where they work.
+                            about how notebooks improves onbaording, code reuse and saves developers time.
                         </Text>
                     </ul>
                 </div>
