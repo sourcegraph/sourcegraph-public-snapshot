@@ -1400,7 +1400,7 @@
       "type": "string",
       "group": "Sourcegraph Enterprise license"
     },
-    "githubApp": {
+    "gitHubApp": {
       "description": "The config options for Sourcegraph GitHub App.",
       "type": "object",
       "properties": {
