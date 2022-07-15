@@ -56,7 +56,7 @@ public class ConfigUtil {
         }
 
         // Application level
-        String applicationLevelUrl = getProjectLevelConfig(project).getSourcegraphUrl();
+        String applicationLevelUrl = getApplicationLevelConfig().getSourcegraphUrl();
         if (applicationLevelUrl != null && applicationLevelUrl.length() > 0) {
             return addSlashIfNeeded(applicationLevelUrl);
         }
