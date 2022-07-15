@@ -125,9 +125,23 @@ func HTTPMiddleware(logger log.Logger, watcher conftypes.WatchableSiteConfig, ne
 		next:       next,
 		logEnabled: atomic.NewBool(shouldLog(watcher.SiteConfig())),
 	}
+	if handler.logEnabled.Load() {
+		logger.Info("access logging enabled")
+	}
+
+	// Allow live toggling of access logging
 	watcher.Watch(func() {
-		handler.logEnabled.Store(shouldLog(watcher.SiteConfig()))
+		newShouldLog := shouldLog(watcher.SiteConfig())
+		changed := handler.logEnabled.Swap(newShouldLog) != newShouldLog
+		if changed {
+			if newShouldLog {
+				logger.Info("access logging enabled")
+			} else {
+				logger.Info("access logging disabled")
+			}
+		}
 	})
+
 	return http.HandlerFunc(handler.ServeHTTP)
 }
 
@@ -135,5 +149,5 @@ func shouldLog(c schema.SiteConfiguration) bool {
 	if c.Log == nil {
 		return false
 	}
-	return c.Log.GitserverAccessLog
+	return c.Log.GitserverAccessLogs
 }

@@ -27,6 +27,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Search query inputs are now backed by the CodeMirror library instead of Monaco. Monaco can be re-enabled by setting `experimentalFeatures.editor` to `"monaco"`. [38584](https://github.com/sourcegraph/sourcegraph/pull/38584)
 - Better search-based code navigation for Python using tree-sitter [#38459](https://github.com/sourcegraph/sourcegraph/pull/38459)
 - Gitserver `/exec` endpoint access logs can now be enabled with `"log": { "gitserver.accessLog": true }` ([#38798](https://github.com/sourcegraph/sourcegraph/pull/38798))
+- Gitserver `/exec` endpoint access logs can now be enabled with `"log": { "gitserver.accessLogs": true }` ([#38798](https://github.com/sourcegraph/sourcegraph/pull/38798))
 
 ### Changed
 

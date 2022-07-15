@@ -1067,8 +1067,8 @@ type JVMPackagesConnection struct {
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
-	// GitserverAccessLog description: Enable gitserver access logging.
-	GitserverAccessLog bool `json:"gitserver.accessLog,omitempty"`
+	// GitserverAccessLogs description: Enable gitserver access logging.
+	GitserverAccessLogs bool `json:"gitserver.accessLogs,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }

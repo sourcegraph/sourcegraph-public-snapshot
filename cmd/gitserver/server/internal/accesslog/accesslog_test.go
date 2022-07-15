@@ -53,7 +53,7 @@ var _ conftypes.WatchableSiteConfig = &accessLogConf{}
 func (a *accessLogConf) Watch(cb func()) { a.callback = cb }
 func (a *accessLogConf) SiteConfig() schema.SiteConfiguration {
 	return schema.SiteConfiguration{
-		Log: &schema.Log{GitserverAccessLog: !a.disabled},
+		Log: &schema.Log{GitserverAccessLogs: !a.disabled},
 	}
 }
 
@@ -123,7 +123,8 @@ func TestHTTPMiddleware(t *testing.T) {
 		// Enabled, should have handled AND generated a log message
 		assert.True(t, handled)
 		logs = exportLogs()
-		require.Len(t, logs, 1)
-		assert.Equal(t, accessEventMessage, logs[0].Message)
+		require.Len(t, logs, 2)
+		assert.Equal(t, "access logging enabled", logs[0].Message)
+		assert.Equal(t, accessEventMessage, logs[1].Message)
 	})
 }
