@@ -162,6 +162,22 @@ type fakeDepsService struct {
 	deps map[reposource.PackageName][]dependencies.Repo
 }
 
+func (s *fakeDepsService) UpsertDependencyRepos(ctx context.Context, deps []dependencies.Repo) ([]dependencies.Repo, error) {
+	for _, dep := range deps {
+		alreadyExists := false
+		for _, existingDep := range s.deps[dep.Name] {
+			if existingDep.Version == dep.Version {
+				alreadyExists = true
+				break
+			}
+		}
+		if !alreadyExists {
+			s.deps[dep.Name] = append(s.deps[dep.Name], dep)
+		}
+	}
+	return deps, nil
+}
+
 func (s *fakeDepsService) ListDependencyRepos(ctx context.Context, opts dependencies.ListDependencyReposOpts) ([]dependencies.Repo, error) {
 	return s.deps[opts.Name], nil
 }
