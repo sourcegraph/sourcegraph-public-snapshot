@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react'
+import React, { useCallback, useState } from 'react'
 
 import { useHistory } from 'react-router'
 
@@ -20,21 +20,40 @@ export const UPDATE_USER = gql`
 `
 
 interface Props {
+    value
+    initialValue
+    doUpdate
     after?: React.ReactNode
 }
 
 /**
  * A form to edit a user's profile.
  */
-export const EditGitHubAppForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({ after }) => {
+export const EditGitHubAppForm: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
+    value,
+    initialValue,
+    doUpdate,
+    after,
+}) => {
     const history = useHistory()
 
-    const onSubmit = useCallback<React.FormEventHandler>(event => {}, [])
+    const onSubmit = useCallback<React.FormEventHandler>(
+        event => {
+            event.preventDefault()
+            doUpdate()
+        },
+        [doUpdate]
+    )
+
+    const [gitHubAppFields, setGitHubAppFields] = useState(initialValue)
+    const onChange = useCallback<React.ComponentProps<typeof GitHubAppFormFields>['onChange']>(newValue => {
+        setGitHubAppFields(previous => ({ ...previous, ...newValue }))
+    }, [])
 
     return (
         <Container>
             <Form className="w-100" onSubmit={onSubmit}>
-                <GitHubAppFormFields disabled={false} />
+                <GitHubAppFormFields onChange={onChange} value={gitHubAppFields} disabled={false} />
                 <Button type="submit" disabled={false} id="test-EditUserProfileForm__save" variant="primary">
                     Save
                 </Button>

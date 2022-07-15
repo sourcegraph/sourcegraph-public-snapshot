@@ -1,7 +1,8 @@
-import React from 'react'
+import React, { useCallback } from 'react'
 
-import { gql } from '@sourcegraph/http-client'
-import { PageHeader, Link, Text } from '@sourcegraph/wildcard'
+import { gql, useMutation, useQuery } from '@apollo/client'
+
+import { PageHeader, Link, Text, LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../PageTitle'
 
@@ -18,18 +19,60 @@ export const EditUserProfilePageGQLFragment = gql`
     }
 `
 
-export const GitHubAppSetupPage: React.FunctionComponent = ({ ...props }) => (
-    <div>
-        <PageTitle title="Configure GitHub App" />
-        <PageHeader path={[{ text: 'GitHub App' }]} headingElement="h2" />
-        <EditGitHubAppForm
-            after={
-                window.context.sourcegraphDotComMode && (
-                    <Text className="mt-4">
-                        <Link to="https://about.sourcegraph.com/contact">Contact support</Link> to delete your account.
-                    </Text>
-                )
+const GET_SITE_CONFIG = gql`
+    query GetSite {
+        site {
+            id
+            configuration {
+                effectiveContents
             }
-        />
-    </div>
-)
+        }
+    }
+`
+
+const SET_SITE_CONFIG = gql`
+    mutation UpdateSiteConfiguration($lastID: Int!, $input: String!) {
+        updateSiteConfiguration(lastID: $lastID, input: $input)
+    }
+`
+
+export const GitHubAppSetupPage: React.FunctionComponent = ({ ...props }) => {
+    const { loading, error, data } = useQuery(GET_SITE_CONFIG)
+    const [updateSettings] = useMutation(SET_SITE_CONFIG)
+
+    let config = {}
+    if (!loading) {
+        config = JSON.parse(data.site.configuration.effectiveContents)
+    }
+
+    const doSettingsUpdate = useCallback(async () => {
+        try {
+            await updateSettings({ variables: { id: data.site.id, input: JSON.stringify(config) } })
+        } catch {
+            console.log('SettingsUpdateFailed')
+        }
+    }, [updateSettings, config, data])
+
+    return (
+        <div>
+            <PageTitle title="Configure GitHub App" />
+            <PageHeader path={[{ text: 'GitHub App' }]} headingElement="h2" />
+            {loading && <LoadingSpinner />}
+            {!loading && data && (
+                <EditGitHubAppForm
+                    value={config}
+                    initialValue={config}
+                    doUpdate={doSettingsUpdate}
+                    after={
+                        window.context.sourcegraphDotComMode && (
+                            <Text className="mt-4">
+                                <Link to="https://about.sourcegraph.com/contact">Contact support</Link> to delete your
+                                account.
+                            </Text>
+                        )
+                    }
+                />
+            )}
+        </div>
+    )
+}
