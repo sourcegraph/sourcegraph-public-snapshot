@@ -25,6 +25,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Resource Estimator: Ability to export the estimated results as override file for Helm and Docker Compose. [#18](https://github.com/sourcegraph/resource-estimator/pull/18)
 - A toggle to enable/disable a beta simplified UI has been added to the user menu. This new UI is still actively in development and any changes visible with the toggle enabled may not be stable are subject to change. [#38763](https://github.com/sourcegraph/sourcegraph/pull/38763)
 - Search query inputs are now backed by the CodeMirror library instead of Monaco. Monaco can be re-enabled by setting `experimentalFeatures.editor` to `"monaco"`. [38584](https://github.com/sourcegraph/sourcegraph/pull/38584)
+- Better search-based code navigation for Python using tree-sitter [#38459](https://github.com/sourcegraph/sourcegraph/pull/38459)
 
 ### Changed
 
@@ -88,6 +89,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Code Insights: Sort and limit filters have been added to capture group insights. This gives users more control over which series are displayed. [#34611](https://github.com/sourcegraph/sourcegraph/pull/34611)
 - [Running batch changes server-side](https://docs.sourcegraph.com/batch_changes/explanations/server_side) is now in beta! In addition to using src-cli to run batch changes locally, you can now run them server-side as well. This requires installing executors. While running server-side unlocks a new and improved UI experience, you can still use src-cli just like before.
 - Code Monitoring: pings for new action types [#37288](https://github.com/sourcegraph/sourcegraph/pull/37288)
+- Better search-based code navigation for Java using tree-sitter [#34875](https://github.com/sourcegraph/sourcegraph/pull/34875)
 
 ### Changed
 
