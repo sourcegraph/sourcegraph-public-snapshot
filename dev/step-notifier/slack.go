@@ -142,9 +142,10 @@ func createMessageBlocks(logger log.Logger, build *Build) []slack.Block {
 			&slack.TextBlockObject{Type: slack.MarkdownType, Text: fmt.Sprintf("<%s|%s>", *build.WebURL, *build.Message)},
 			[]*slack.TextBlockObject{
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Author*\n%s", build.Author.Name)},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline*\n%s", *build.Pipeline.ID)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline*\n%s", build.PipelineName())},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Commit*\n`%s`", *build.Commit)},
-			}, nil,
+			},
+			nil,
 		),
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,

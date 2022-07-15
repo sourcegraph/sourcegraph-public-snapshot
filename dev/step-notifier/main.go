@@ -25,13 +25,25 @@ type Build struct {
 	Jobs []buildkite.Job
 }
 
-func (b *Build) hasFailed() bool {
+func (b *Build) HasFailed() bool {
 	for _, j := range b.Jobs {
 		if j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0 {
 			return true
 		}
 	}
 	return false
+}
+
+func (b *Build) PipelineName() string {
+	fmt.Printf("%+v\n\n%+v\n\n", b.Pipeline, b)
+	if b.Pipeline == nil {
+		return "N/A"
+	}
+	if b.Pipeline.Name == nil {
+		return "N/A"
+	}
+	return *b.Pipeline.Name
+
 }
 
 func NewBuildFrom(event *BuildEvent) *Build {
@@ -190,8 +202,8 @@ func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Reque
 }
 
 func readBody[T any](logger log.Logger, req *http.Request, target T) error {
-	logger.Debug("reading event detail from request")
 	data, err := ioutil.ReadAll(req.Body)
+	logger.Debug("read body of request", log.String("data", string(data)))
 	if err != nil {
 		logger.Error("failed to read request body", log.Error(err))
 		return ErrRequestBody
@@ -212,7 +224,7 @@ func (s *BuildTrackingServer) notify(build *Build) error {
 		return nil
 	}
 
-	if build.hasFailed() {
+	if build.HasFailed() {
 		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", *build.Number))
 		return s.slack.sendNotification(build)
 	}
