@@ -331,6 +331,13 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 	return include, exclude
 }
 
+type RepoHasFileContentArgs struct {
+	// At least one of these should be non-empty
+	Path    string
+	Content string
+	Negated bool
+}
+
 func (p Parameters) RepoContainsFile() (include, exclude []string) {
 	nodes := toNodes(p)
 	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {

@@ -3,31 +3,34 @@ package repos
 import (
 	"context"
 	"fmt"
+	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
 
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -50,14 +53,18 @@ func (r *Resolved) String() string {
 
 func NewResolver(db database.DB) *Resolver {
 	return &Resolver{
+		// TODO populate loger, zoekt, searcher
 		db:        db,
 		gitserver: gitserver.NewClient(db),
 	}
 }
 
 type Resolver struct {
+	logger    log.Logger
 	db        database.DB
 	gitserver gitserver.Client
+	zoekt     zoekt.Streamer
+	searcher  *endpoint.Map
 }
 
 func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
@@ -484,6 +491,104 @@ func (r *Resolver) filterHasCommitAfter(
 	}
 
 	return filteredRepoRevs, nil
+}
+
+func (r *Resolver) filterRepoHasFileContent(
+	ctx context.Context, 
+	repoRevs []*search.RepositoryRevisions, 
+	args []query.RepoHasFileContentArgs
+) ([]*search.RepositoryRevisions, error) {
+	// Early return if there are no filters
+	if len(args) == 0 {
+		return repoRevs, nil
+	}
+
+	indexed, unindexed, err := searchzoekt.PartitionRepos(
+		ctx,
+		r.logger,
+		repoRevs,
+		r.zoekt,
+		search.TextRequest,
+		query.Yes, // TODO respect index:no
+		false,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	minimalRepoMap := make(map[api.RepoID]types.MinimalRepo, len(repoRevs))
+	for _, repoRev := range repoRevs {
+		minimalRepoMap[repoRev.Repo.ID] = repoRev.Repo
+	}
+
+	var (
+		mu sync.Mutex
+		filtered = map[api.RepoID]*search.RepositoryRevisions{}
+		addRepoRev = func(id api.RepoID, rev string) {
+			mu.Lock()
+			defer mu.Unlock()
+
+			repoRev := filtered[id]
+			if repoRev == nil {
+				minimalRepo, ok := minimalRepoMap[id]
+				if !ok {
+					// Skip any repos that weren't in our requested repos.
+					// This should never happen.
+					return 
+				}
+				repoRev = &search.RepositoryRevisions{
+					Repo:  minimalRepo,
+				}
+			}
+			repoRev.Revs = append(repoRev.Revs, rev)
+			filtered[id] = repoRev
+		}
+	)
+
+	g := group.New().WithContext(ctx).WithMaxConcurrency(16)
+
+	{ // Use zoekt for indexed revs
+		var fileMatchOr []zoektquery.Q
+		for _, opt := range args {
+			var children []zoektquery.Q
+			if opt.Path != "" {
+				re, err := syntax.Parse(opt.Path, 0)
+				if err != nil {
+					return nil, err
+				}
+				// TODO case sensitivity
+				children = append(children, &zoektquery.Regexp{Regexp: re, FileName: true, CaseSensitive: false})
+			}
+			if opt.Content != "" {
+				re, err := syntax.Parse(opt.Content, 0)
+				if err != nil {
+					return nil, err
+				}
+				children = append(children, &zoektquery.Regexp{Regexp: re, Content: true, CaseSensitive: false})
+			}
+			q := zoektquery.NewAnd(children...)
+			if opt.Negated {
+				q = &zoektquery.Not{Child: q}
+			}
+			fileMatchOr = append(fileMatchOr, q)
+		}
+		q := &zoektquery.Type{
+			Type: zoektquery.TypeRepo,
+			Child: zoektquery.NewAnd(
+				&zoektquery.BranchesRepos{List: indexed.BranchRepos()},
+				zoektquery.NewOr(fileMatchOr...),
+			),
+		}
+		opts := &zoekt.SearchOptions{ ChunkMatches: true, }
+		g.Go(func(ctx context.Context) error {
+			return r.zoekt.StreamSearch(ctx, q, opts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+				// TODO
+			}))
+		})
+	}
+
+
+
 }
 
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
@@ -944,45 +1049,6 @@ func (e MissingLockfileIndexing) Error() string {
 
 	fmt.Fprintf(&out, "%s", strings.Join(revs, ","))
 	return out.String()
-}
-
-// Get all private repos for the the current actor. On sourcegraph.com, those are
-// only the repos directly added by the user. Otherwise it's all repos the user has
-// access to on all connected code hosts / external services.
-func PrivateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
-	defer tr.Finish()
-
-	userID := int32(0)
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a.IsAuthenticated() {
-			userID = a.UID
-		} else {
-			tr.LazyPrintf("skipping private repo resolution for unauthed user")
-			return nil
-		}
-	}
-	tr.LogFields(otlog.Int32("userID", userID))
-
-	// TODO: We should use repos.Resolve here. However, the logic for
-	// UserID is different to repos.Resolve, so we need to work out how
-	// best to address that first.
-	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-		UserID:         userID, // Zero valued when not in sourcegraph.com mode
-		OnlyPrivate:    true,
-		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
-		OnlyForks:      repoOptions.OnlyForks,
-		NoForks:        repoOptions.NoForks,
-		OnlyArchived:   repoOptions.OnlyArchived,
-		NoArchived:     repoOptions.NoArchived,
-		ExcludePattern: query.UnionRegExps(repoOptions.MinusRepoFilters),
-	})
-
-	if err != nil {
-		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
-		tr.LazyPrintf("error resolving user private repos: %v", err)
-	}
-	return userPrivateRepos
 }
 
 type RepoRevSpecs struct {
