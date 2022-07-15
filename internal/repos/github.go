@@ -1,14 +1,11 @@
 package repos
 
 import (
-	"bytes"
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net/url"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -951,19 +948,6 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 	}
 
 	return nil
-}
-
-func exampleRepositoryQuerySplit(q string) string {
-	var qs []string
-	for _, suffix := range []string{"created:>=2019", "created:2018", "created:2016..2017", "created:<2016"} {
-		qs = append(qs, fmt.Sprintf("%s %s", q, suffix))
-	}
-	// Avoid escaping < and >
-	var b bytes.Buffer
-	enc := json.NewEncoder(&b)
-	enc.SetEscapeHTML(false)
-	_ = enc.Encode(qs)
-	return strings.TrimSpace(b.String())
 }
 
 func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.CodeHostRepository, error) {
