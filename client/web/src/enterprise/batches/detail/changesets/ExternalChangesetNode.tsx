@@ -95,7 +95,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
             </Button>
             {selectable ? (
                 <div className="p-2">
-                    {/* eslint-disable-next-line no-restricted-syntax*/}
                     <InputTooltip
                         id={`select-changeset-${node.id}`}
                         type="checkbox"
@@ -103,7 +102,6 @@ export const ExternalChangesetNode: React.FunctionComponent<React.PropsWithChild
                         onChange={toggleSelected}
                         disabled={!viewerCanAdminister}
                         tooltip={tooltipLabel}
-                        placement="right"
                         aria-label={tooltipLabel}
                     />
                 </div>
