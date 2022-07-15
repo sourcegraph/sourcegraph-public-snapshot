@@ -1,6 +1,6 @@
 // causes false positive on act()
 /* eslint-disable @typescript-eslint/no-floating-promises */
-import { act, renderHook } from '@testing-library/react-hooks'
+import { renderHook, act } from '@testing-library/react'
 
 import { useThemeState } from './stores'
 import { ThemePreference } from './stores/themeState'

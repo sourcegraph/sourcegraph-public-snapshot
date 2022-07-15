@@ -83,9 +83,6 @@ export const Tooltip: React.FunctionComponent<TooltipProps> = ({
                         className={styles.tooltipContent}
                         side={placement}
                         role="tooltip"
-                        // This offset helps prevent the tooltip from immediately closing when it gets triggered in the
-                        // exact spot the arrow is overlapping the content
-                        alignOffset={1}
                     >
                         {content}
 

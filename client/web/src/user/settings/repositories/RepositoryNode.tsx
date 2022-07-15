@@ -12,7 +12,7 @@ import {
 import classNames from 'classnames'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
-import { Badge, LoadingSpinner, Link, Icon, Checkbox, Tooltip } from '@sourcegraph/wildcard'
+import { Badge, LoadingSpinner, Link, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { ExternalServiceKind } from '../../../graphql-operations'
 
@@ -46,20 +46,20 @@ const StatusIcon: React.FunctionComponent<React.PropsWithChildren<StatusIconProp
     }
     if (mirrorInfo.cloneInProgress) {
         return (
-            <Tooltip content="Clone in progress.">
-                <small className="mr-2 text-success">
-                    <LoadingSpinner />
-                </small>
-            </Tooltip>
+            <small data-tooltip="Clone in progress." className="mr-2 text-success">
+                <LoadingSpinner />
+            </small>
         )
     }
     if (!mirrorInfo.cloned) {
         return (
-            <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
-                <small className="mr-2 text-muted">
-                    <Icon aria-hidden={true} svgPath={mdiCloudOutline} />
-                </small>
-            </Tooltip>
+            <small
+                className="mr-2 text-muted"
+                data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
+                aria-label="Visit the repository to clone it. See its mirroring settings for diagnostics."
+            >
+                <Icon aria-hidden={true} svgPath={mdiCloudOutline} />
+            </small>
         )
     }
     return (

@@ -313,6 +313,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		withYarnCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("INTEGRATION_TESTS", "true"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
@@ -559,7 +560,7 @@ func codeIntelQA(candidateTag string) operations.Operation {
 		p.AddStep(":docker::brain: Code Intel QA",
 			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
 				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
-				ChannelName: "code-intel",
+				ChannelName: "code-intel-buildkite",
 				Conditions: bk.SlackStepNotifyPayloadConditions{
 					Failed: true,
 				},

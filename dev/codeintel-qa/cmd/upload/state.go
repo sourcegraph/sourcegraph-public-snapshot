@@ -3,6 +3,8 @@ package main
 import (
 	"context"
 	"fmt"
+	"os"
+	"os/exec"
 	"sort"
 	"strconv"
 	"strings"
@@ -98,6 +100,16 @@ func monitor(ctx context.Context, repoNames []string, uploads []uploadMeta) erro
 							logs = upload.AuditLogs
 							break
 						}
+					}
+
+					// Set in run-integration.sh
+					containerName := os.Getenv("CONTAINER")
+					fmt.Printf("Running pg_dump in container %s\n", containerName)
+					out, err := exec.Command("docker", "exec", containerName, "sh", "-c", "pg_dump -U postgres -d sourcegraph -a --column-inserts --table='lsif_uploads*'").CombinedOutput()
+					if err != nil {
+						fmt.Printf("Failed to dump: %s\n%s", err.Error(), out)
+					} else {
+						fmt.Printf("DUMP:\n\n%s\n\n\n", out)
 					}
 
 					return errors.Newf("unexpected state '%s' for %s@%s - ID %s\nAudit Logs:\n%s", uploadState.state, uploadState.upload.repoName, uploadState.upload.commit[:7], uploadState.upload.id, logs)

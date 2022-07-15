@@ -8,6 +8,8 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
@@ -31,7 +33,7 @@ type Store interface {
 	ListDependencyRepos(ctx context.Context, opts ListDependencyReposOpts) (dependencyRepos []shared.Repo, err error)
 	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
-	ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, err error)
+	ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, totalCount int, err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -262,7 +264,7 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency, lockfile,
 // `codeintel_lockfiles` entry and the full graph is represented in
 // `codeintel_lockfile_references` as edges in the `depends_on` column.
 func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockfile string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error) {
-	ctx, _, endObservation := s.operations.upsertLockfileDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.upsertLockfileGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", repoName),
 		log.String("commit", commit),
 	}})
@@ -596,7 +598,7 @@ ORDER BY r.name, lf.commit_bytea
 // ListDependencyReposOpts are options for listing dependency repositories.
 type ListDependencyReposOpts struct {
 	Scheme          string
-	Name            string
+	Name            reposource.PackageName
 	After           any
 	Limit           int
 	NewestFirst     bool
@@ -666,7 +668,7 @@ func makeListDependencyReposConds(opts ListDependencyReposOpts) []*sqlf.Query {
 		case !opts.NewestFirst && after > 0:
 			conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
 		}
-	case string:
+	case string, reposource.PackageName:
 		switch {
 		case opts.NewestFirst:
 			panic("cannot set NewestFirst and pass name-based offset")
@@ -697,8 +699,8 @@ type ListLockfileIndexesOpts struct {
 }
 
 // ListLockfileIndexes returns lockfile indexes.
-func (s *store) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, err error) {
-	ctx, _, endObservation := s.operations.listDependencyRepos.With(ctx, &err, observation.Args{LogFields: []log.Field{
+func (s *store) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, totalCount int, err error) {
+	ctx, _, endObservation := s.operations.listLockfileIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", opts.RepoName),
 		log.String("commit", opts.Commit),
 		log.String("lockfile", opts.Commit),
@@ -708,14 +710,30 @@ func (s *store) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexe
 	defer func() {
 		endObservation(1, observation.Args{LogFields: []log.Field{
 			log.Int("numIndexes", len(indexes)),
+			log.Int("totalCount", totalCount),
 		}})
 	}()
 
-	return scanLockfileIndexes(s.db.Query(ctx, sqlf.Sprintf(
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	totalCount, err = basestore.ScanInt(tx.QueryRow(ctx, sqlf.Sprintf(
+		countLockfileIndexesQuery,
+		sqlf.Join(makeListLockfileIndexesConds(opts, true), "AND"),
+	)))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	indexes, err = scanLockfileIndexes(tx.Query(ctx, sqlf.Sprintf(
 		listLockfileIndexesQuery,
-		sqlf.Join(makeListLockfileIndexesConds(opts), "AND"),
+		sqlf.Join(makeListLockfileIndexesConds(opts, false), "AND"),
 		makeLimit(opts.Limit),
 	)))
+	return indexes, totalCount, err
 }
 
 const listLockfileIndexesQuery = `
@@ -727,7 +745,14 @@ ORDER BY id ASC
 %s
 `
 
-func makeListLockfileIndexesConds(opts ListLockfileIndexesOpts) []*sqlf.Query {
+const countLockfileIndexesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:CountLockfileIndexes
+SELECT COUNT(1)
+FROM codeintel_lockfiles
+WHERE %s
+`
+
+func makeListLockfileIndexesConds(opts ListLockfileIndexesOpts, forCount bool) []*sqlf.Query {
 	conds := make([]*sqlf.Query, 0, 2)
 
 	if opts.RepoName != "" {
@@ -742,7 +767,7 @@ func makeListLockfileIndexesConds(opts ListLockfileIndexesOpts) []*sqlf.Query {
 		conds = append(conds, sqlf.Sprintf("lockfile = %s", opts.Lockfile))
 	}
 
-	if opts.After != 0 {
+	if opts.After != 0 && !forCount {
 		conds = append(conds, sqlf.Sprintf("id > %s", opts.After))
 	}
 

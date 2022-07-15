@@ -28,7 +28,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 1,
-                "endColumn": 5
+                "endColumn": 6
               }
             }
         `)
@@ -43,7 +43,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 18,
-                "endColumn": 22
+                "endColumn": 23
               }
             }
         `)
@@ -78,7 +78,7 @@ describe('getHoverResult()', () => {
                 "startLineNumber": 1,
                 "endLineNumber": 1,
                 "startColumn": 1,
-                "endColumn": 5
+                "endColumn": 6
               }
             }
         `)

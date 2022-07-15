@@ -6015,15 +6015,15 @@ type AnalyticsUsersSummaryResult {
     """
     Average DAUs
     """
-    avgDAU: AnalyticsStatItemSummary!
+    avgDAU: Float!
     """
     Average WAUs
     """
-    avgWAU: AnalyticsStatItemSummary!
+    avgWAU: Float!
     """
     Average MAUs
     """
-    avgMAU: AnalyticsStatItemSummary!
+    avgMAU: Float!
 }
 
 """
@@ -6056,6 +6056,14 @@ type AnalyticsCodeIntelResult {
     "GoToDef" click
     """
     definitionClicks: AnalyticsStatItem!
+    """
+    Code Intel events made from web
+    """
+    inAppEvents: AnalyticsStatItem!
+    """
+    Code Intel events made from code host
+    """
+    codeHostEvents: AnalyticsStatItem!
     """
     Browser extension installs
     """

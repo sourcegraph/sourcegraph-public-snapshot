@@ -1,11 +1,9 @@
 import React, { useCallback, useEffect, useState } from 'react'
 
 import { useMutation, useQuery } from '@apollo/client'
+import { mdiEmail, mdiCog, mdiChevronDown } from '@mdi/js'
 import classNames from 'classnames'
 import copy from 'copy-to-clipboard'
-import ChevronDown from 'mdi-react/ChevronDownIcon'
-import CogIcon from 'mdi-react/CogIcon'
-import EmailIcon from 'mdi-react/EmailIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import {
@@ -20,7 +18,7 @@ import {
     Position,
     PageSelector,
     H3,
-    Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
@@ -176,11 +174,16 @@ const InvitationItem: React.FunctionComponent<React.PropsWithChildren<Invitation
                 >
                     <div className={styles.avatarContainer}>
                         {invite.recipient && (
-                            <Tooltip content={invite.recipient.displayName || invite.recipient.username}>
-                                <UserAvatar size={24} className={styles.avatar} user={invite.recipient} />
-                            </Tooltip>
+                            <UserAvatar
+                                size={24}
+                                className={styles.avatar}
+                                user={invite.recipient}
+                                data-tooltip={invite.recipient.displayName || invite.recipient.username}
+                            />
                         )}
-                        {!invite.recipient && invite.recipientEmail && <EmailIcon className={styles.emailIcon} />}
+                        {!invite.recipient && invite.recipientEmail && (
+                            <Icon className={styles.emailIcon} svgPath={mdiEmail} inline={false} aria-hidden={true} />
+                        )}
                     </div>
                     <div className="d-flex flex-column">
                         {invite.recipient && (
@@ -224,10 +227,14 @@ const InvitationItem: React.FunctionComponent<React.PropsWithChildren<Invitation
                                 className={styles.inviteMenu}
                                 disabled={loading}
                             >
-                                <CogIcon size={15} />
-                                <span aria-hidden={true}>
-                                    <ChevronDown size={15} />
-                                </span>
+                                <Icon svgPath={mdiCog} inline={false} aria-label="Options" height={15} width={15} />
+                                <Icon
+                                    svgPath={mdiChevronDown}
+                                    inline={false}
+                                    aria-hidden={true}
+                                    height={15}
+                                    width={15}
+                                />
                             </MenuButton>
 
                             <MenuList position={Position.bottomEnd}>

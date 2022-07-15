@@ -36,8 +36,8 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -53,6 +53,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -359,11 +360,23 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", trace.WithRouteName("archive", s.handleArchive))
-	mux.HandleFunc("/exec", trace.WithRouteName("exec", s.handleExec))
+	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("archive.accesslog", "archive endpoint access log"),
+		conf.DefaultClient(),
+		s.handleArchive,
+	)))
+	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		conf.DefaultClient(),
+		s.handleExec,
+	)))
 	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
 	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
-	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", s.handleP4Exec))
+	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("p4-exec.accesslog", "p4-exec endpoint access log"),
+		conf.DefaultClient(),
+		s.handleP4Exec,
+	)))
 	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
@@ -378,9 +391,13 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	mux.HandleFunc("/git/", trace.WithRouteName("git", func(rw http.ResponseWriter, r *http.Request) {
-		http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
-	}))
+	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
+		conf.DefaultClient(),
+		func(rw http.ResponseWriter, r *http.Request) {
+			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
+		},
+	)))
 
 	// Migration to hexagonal architecture starting here:
 
@@ -400,7 +417,12 @@ func (s *Server) Handler() http.Handler {
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
-	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", handleGetObject(getObjectFunc)))
+	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object",
+		accesslog.HTTPMiddleware(
+			s.Logger.Scoped("commands/get-object.accesslog", "commands/get-object endpoint access log"),
+			conf.DefaultClient(),
+			handleGetObject(getObjectFunc),
+		)))
 
 	return mux
 }
@@ -942,6 +964,13 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		pathspecs = q["path"]
 	)
 
+	// Log which which actor is accessing the repo.
+	accesslog.Record(r.Context(), repo, map[string]string{
+		"treeish": treeish,
+		"format":  format,
+		"path":    strings.Join(pathspecs, ","),
+	})
+
 	if err := checkSpecArgSafety(treeish); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		s.Logger.Error("gitserver.archive.CheckSpecArgSafety", log.Error(err))
@@ -1357,6 +1386,19 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Log which which actor is accessing the repo.
+	args := req.Args
+	cmd := ""
+	if len(req.Args) > 0 {
+		cmd = req.Args[0]
+		args = args[1:]
+	}
+	accesslog.Record(r.Context(), string(req.Repo), map[string]string{
+		"cmd":  cmd,
+		"args": strings.Join(args, " "),
+	})
+
 	s.exec(w, r, &req)
 }
 
@@ -1617,6 +1659,16 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]), http.StatusBadRequest)
 		return
 	}
+
+	// Log which actor is accessing p4-exec.
+	//
+	// p4-exec is currently only used for fetching user based permissions information
+	// so, we don't have a repo name.
+	accesslog.Record(r.Context(), "<no-repo>", map[string]string{
+		"p4user": req.P4User,
+		"p4port": req.P4Port,
+		"args":   strings.Join(req.Args, " "),
+	})
 
 	// Make sure credentials are valid before heavier operation
 	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)

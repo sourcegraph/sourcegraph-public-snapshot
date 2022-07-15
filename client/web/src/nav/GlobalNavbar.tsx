@@ -58,7 +58,7 @@ import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { UserNavItem } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
@@ -72,13 +72,12 @@ interface Props
         TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
-        ExtensionAlertAnimationProps,
         ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
     history: H.History
-    location: H.Location<{ query: string }>
+    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     authRequired: boolean
     isSourcegraphDotCom: boolean
@@ -132,9 +131,9 @@ function useCalculatedNavLinkVariant(
 }
 
 const AnalyticsNavItem: React.FunctionComponent = () => {
-    const [isAdminAnalyticsEnabled] = useFeatureFlag('admin-analytics-enabled', false)
+    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
 
-    if (!isAdminAnalyticsEnabled) {
+    if (isAdminAnalyticsDisabled) {
         return null
     }
 

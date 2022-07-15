@@ -29,9 +29,7 @@ func TestNonLocalDefinition(t *testing.T) {
 	annotations := []annotation{}
 
 	readFile := func(ctx context.Context, path types.RepoCommitPath) ([]byte, error) {
-		contents, err := os.ReadFile(filepath.Join("test_repos", path.Repo, path.Path))
-		fatalIfErrorLabel(t, err, "reading a file")
-		return contents, nil
+		return os.ReadFile(filepath.Join("test_repos", path.Repo, path.Path))
 	}
 
 	tempSquirrel := New(readFile, nil)
@@ -123,8 +121,8 @@ func TestNonLocalDefinition(t *testing.T) {
 			continue
 		}
 		m := symbolToTagToAnnotations[symbol]
-		if m["def"] == nil {
-			// It's probably a path definition
+		if m["def"] == nil && m["path"] != nil {
+			// It's a path definition, which is checked separately
 			continue
 		}
 		var wantAnn *annotation
@@ -158,6 +156,10 @@ func TestNonLocalDefinition(t *testing.T) {
 				t.Fatalf("no definition range for symbol %s", symbol)
 			}
 
+			if m["print"] != nil {
+				squirrel.breadcrumbs.prettyPrint(squirrel.readFile)
+			}
+
 			got := types.RepoCommitPathPoint{
 				RepoCommitPath: gotSymbolInfo.Definition.RepoCommitPath,
 				Point: types.Point{
@@ -180,6 +182,9 @@ func TestNonLocalDefinition(t *testing.T) {
 
 	// Also test path definitions
 	for _, a := range annotations {
+		if solo != "" && a.symbol != solo {
+			continue
+		}
 		for _, tag := range a.tags {
 			if tag == "path" {
 				squirrel.breadcrumbs = Breadcrumbs{}
