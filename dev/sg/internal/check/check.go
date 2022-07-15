@@ -76,6 +76,13 @@ func FileContains(fileName, content string) func(context.Context) error {
 	}
 }
 
+func FileExists(fileName string) func(context.Context) error {
+	return func(context.Context) error {
+		_, err := os.Stat(fileName)
+		return err
+	}
+}
+
 // This ties the check to having the library installed with apt-get on Ubuntu,
 // which against the principle of checking dependencies independently of their
 // installation method. Given they're just there for comby and sqlite, the chances

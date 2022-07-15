@@ -197,7 +197,10 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
+require (
+	github.com/acobaugh/osrelease v0.1.0
+	go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
+)
 
 require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect

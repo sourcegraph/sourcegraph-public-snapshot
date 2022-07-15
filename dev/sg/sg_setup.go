@@ -43,7 +43,10 @@ var setupCommand = &cli.Command{
 			currentOS = overridesOS
 		}
 
-		setup := dependencies.Setup(cmd.App.Reader, std.Out, dependencies.OS(currentOS))
+		setup, err := dependencies.Setup(cmd.App.Reader, std.Out, dependencies.OS(currentOS))
+		if err != nil {
+			return err
+		}
 		setup.AnalyticsCategory = "setup"
 		setup.RenderDescription = func(out *std.Output) {
 			printSgSetupWelcomeScreen(out)
