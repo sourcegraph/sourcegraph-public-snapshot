@@ -3,7 +3,10 @@
 .container {
     width: 100%;
     display: grid;
-    grid-template-columns: auto 1fr;
+    // minmax(0, 1fr) for the contents column so it shrinks down. This causes
+    // horizontal scrollbars to appear on the search results code chunks instead
+    // of on the whole page.
+    grid-template-columns: auto minmax(0, 1fr);
     grid-template-rows: auto 1fr;
     grid-template-areas:
         'sidebar infobar'
@@ -13,7 +16,7 @@
     column-gap: 1rem;
 
     &--with-improvements {
-        grid-template-columns: 1fr auto;
+        grid-template-columns: minmax(0, 1fr) auto;
         grid-template-areas:
             'infobar  sidebar'
             'contents sidebar';
@@ -22,7 +25,7 @@
     @media (--md-breakpoint-down) {
         &,
         &--with-improvements {
-            grid-template-columns: auto;
+            grid-template-columns: minmax(0, 1fr);
             grid-template-rows: auto auto 1fr;
             grid-template-areas:
                 'infobar'
@@ -50,12 +53,6 @@
 }
 
 .contents {
-    // Hack!! Fixes some possible nested scrolling on diff searches
-    // due to size calculations on diff results. The parent will scroll
-    // instead so this doesn't really hide anything.
-    overflow-y: hidden;
-    overflow-x: hidden;
-
     grid-area: contents;
 }
 

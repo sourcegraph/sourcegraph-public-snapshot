@@ -8,6 +8,10 @@
     }
 
     :global(.core-workflow-improvements-enabled) &:not(:last-of-type) {
+        // Prevents the sticky items below from affecting
+        // anything outside of the result container.
+        isolation: isolate;
+
         margin-bottom: 1rem;
     }
 }
@@ -18,6 +22,13 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
+
+    :global(.core-workflow-improvements-enabled) & {
+        position: sticky;
+        top: 0;
+        z-index: 1; // Show on top of search result contents
+        background-color: var(--body-bg);
+    }
 
     &-title {
         flex: 1 1 auto;
@@ -60,12 +71,24 @@
     border-bottom-right-radius: var(--border-radius);
     color: var(--text-muted);
 
+    // When expanded, stick collapse button to the bottom of the
+    // screen if there are enough search results to cause scrolling.
+    &--expanded {
+        position: sticky;
+        bottom: 0;
+    }
+
     &-text {
         margin-left: 0.125rem;
     }
 }
 
 .collapsible-results {
+    // The LastSyncedIcon is absolutely-positions inside the search results.
+    // This causes it to show over the sticky header when scrolling unless
+    // we isolate the search result contents.
+    isolation: isolate;
+
     border-radius: var(--border-radius);
     border: 1px solid var(--border-color);
 
