@@ -57,34 +57,7 @@ func ResolveRuleset(db database.DB, repoName api.RepoName, commitID api.CommitID
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	content, _ = gitserver.NewClient(db).ReadFile(
-		ctx,
-		repoName,
-		commitID,
-		"CODEOWNERS",
-		authz.DefaultSubRepoPermsChecker,
-	)
-
-	if content == nil {
-		content, _ = gitserver.NewClient(db).ReadFile(
-			ctx,
-			repoName,
-			commitID,
-			".github/CODEOWNERS",
-			authz.DefaultSubRepoPermsChecker,
-		)
-	}
-
-	if content == nil {
-		content, _ = gitserver.NewClient(db).ReadFile(
-			ctx,
-			repoName,
-			commitID,
-			"docs/CODEOWNERS",
-			authz.DefaultSubRepoPermsChecker,
-		)
-	}
-
+	content = loadOwnershipFile(ctx, db, repoName, commitID)
 	if content == nil {
 		return nil
 	}
@@ -96,6 +69,24 @@ func ResolveRuleset(db database.DB, repoName api.RepoName, commitID api.CommitID
 	}
 
 	return ruleSet
+}
+
+func loadOwnershipFile(ctx context.Context, db database.DB, repoName api.RepoName, commitID api.CommitID) []byte {
+	for _, path := range []string{"CODEOWNERS", ".github/CODEOWNERS", ".gitlab/CODEOWNERS", "docs/CODEOWNERS"} {
+		content, _ := gitserver.NewClient(db).ReadFile(
+			ctx,
+			repoName,
+			commitID,
+			path,
+			authz.DefaultSubRepoPermsChecker,
+		)
+
+		if content != nil {
+			return content
+		}
+	}
+
+	return nil
 }
 
 // This returns a regex for potential filenames that are owned by the owner. The reason why this is
@@ -149,8 +140,14 @@ func (s *codeownershipFilterJob) Run(ctx context.Context, clients job.RuntimeCli
 				cachekey := fmt.Sprintf("%s@%s", mm.Repo.Name, mm.CommitID)
 
 				mux.Lock()
-				if rules[cachekey] == nil {
+				ruleset, ok := rules[cachekey]
+				if !ok {
 					rules[cachekey] = ResolveRuleset(s.db, mm.Repo.Name, mm.CommitID)
+					ruleset = rules[cachekey]
+				}
+				if len(ruleset) == 0 {
+					// If the repo has no ownership rules, it can never fullfil ownership query
+					continue OUTER
 				}
 				owners := ForFilePath(rules[cachekey], mm.File.Path)
 				mux.Unlock()
