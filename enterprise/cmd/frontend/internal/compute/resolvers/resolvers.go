@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/inconshreveable/log15"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	"github.com/sourcegraph/log"
@@ -194,7 +193,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := gql.NewRepositoryResolver(log.Scoped("ResolverList", ""), db, repoName.ToRepo())
+		resolver := gql.NewRepositoryResolver(db, repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
