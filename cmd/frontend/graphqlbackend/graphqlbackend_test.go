@@ -17,6 +17,8 @@ import (
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/inconshreveable/log15"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -83,7 +85,7 @@ func TestResolverTo(t *testing.T) {
 		&FileMatchResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: db},
+		&RepositoryResolver{db: db, logger: logtest.Scoped(t)},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&settingsSubject{},
