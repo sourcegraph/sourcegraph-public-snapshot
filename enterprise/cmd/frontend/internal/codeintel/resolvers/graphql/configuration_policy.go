@@ -58,7 +58,7 @@ func (r *configurationPolicyResolver) Repository(ctx context.Context) (_ *gql.Re
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(r.db, repo), nil
+	return gql.NewRepositoryResolver(r.logger, r.db, repo), nil
 }
 
 func (r *configurationPolicyResolver) RepositoryPatterns() *[]string {

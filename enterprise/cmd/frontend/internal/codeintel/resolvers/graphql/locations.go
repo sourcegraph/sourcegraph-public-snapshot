@@ -213,7 +213,7 @@ func (r *CachedLocationResolver) resolveRepository(ctx context.Context, id api.R
 		return nil, err
 	}
 
-	return gql.NewRepositoryResolver(r.db, repo), nil
+	return gql.NewRepositoryResolver(r.logger, r.db, repo), nil
 }
 
 // Commit resolves the git commit with the given repository resolver and commit hash. This method may

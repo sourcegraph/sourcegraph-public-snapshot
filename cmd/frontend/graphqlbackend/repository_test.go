@@ -19,6 +19,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+
+	"github.com/sourcegraph/log/logtest"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
@@ -68,6 +70,8 @@ func TestRepository_Commit(t *testing.T) {
 func TestRepositoryHydration(t *testing.T) {
 	t.Parallel()
 
+	logger := logtest.Scoped(t)
+
 	makeRepos := func() (*types.Repo, *types.Repo) {
 		const id = 42
 		name := fmt.Sprintf("repo-%d", id)
@@ -100,7 +104,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, minimalRepo)
+		repoResolver := NewRepositoryResolver(logger, db, minimalRepo)
 		assertRepoResolverHydrated(ctx, t, repoResolver, hydratedRepo)
 		mockrequire.CalledOnce(t, rs.GetFunc)
 	})
@@ -115,7 +119,7 @@ func TestRepositoryHydration(t *testing.T) {
 		db := database.NewMockDB()
 		db.ReposFunc.SetDefaultReturn(rs)
 
-		repoResolver := NewRepositoryResolver(db, minimalRepo)
+		repoResolver := NewRepositoryResolver(logger, db, minimalRepo)
 		_, err := repoResolver.Description(ctx)
 		require.ErrorIs(t, err, dbErr)
 
@@ -152,6 +156,7 @@ func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *Repository
 func TestRepositoryLabel(t *testing.T) {
 	test := func(name string) string {
 		r := &RepositoryResolver{
+			logger: logtest.Scoped(t),
 			RepoMatch: result.RepoMatch{
 				Name: api.RepoName(name),
 				ID:   api.RepoID(0),
@@ -219,7 +224,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 				gitserver.Mocks.ResolveRevision = nil
 			})
 
-			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}}
+			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t)}
 			branch, err := res.DefaultBranch(ctx)
 			if tt.wantErr != nil && err != nil {
 				if tt.wantErr.Error() != err.Error() {

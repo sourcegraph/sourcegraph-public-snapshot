@@ -8,6 +8,8 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
+	"github.com/sourcegraph/log"
+
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -192,7 +194,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 		if existing, ok := repoResolvers[repoKey{repoName, rev}]; ok {
 			return existing
 		}
-		resolver := gql.NewRepositoryResolver(db, repoName.ToRepo())
+		resolver := gql.NewRepositoryResolver(log.Scoped("ResolverList", ""), db, repoName.ToRepo())
 		resolver.RepoMatch.Rev = rev
 		repoResolvers[repoKey{repoName, rev}] = resolver
 		return resolver
