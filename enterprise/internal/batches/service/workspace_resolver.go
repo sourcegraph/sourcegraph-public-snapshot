@@ -31,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	onlib "github.com/sourcegraph/sourcegraph/lib/batches/on"
+	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -683,6 +684,20 @@ func findWorkspaces(
 				fetchWorkspace = false
 			}
 
+			steps, err := stepsForRepo(spec, template.Repository{
+				Name:        string(workspace.Repo.Name),
+				Branch:      workspace.Branch,
+				FileMatches: workspace.FileMatches,
+			})
+			if err != nil {
+				return nil, err
+			}
+
+			// If the workspace doesn't have any steps we don't need to include it.
+			if len(steps) == 0 {
+				continue
+			}
+
 			workspaces = append(workspaces, &RepoWorkspace{
 				RepoRevision:       workspace.RepoRevision,
 				Path:               path,
@@ -714,4 +729,38 @@ func (r *RepoRevision) Key() repoRevKey {
 		Branch: r.Branch,
 		Commit: string(r.Commit),
 	}
+}
+
+// stepsForRepo calculates the steps required to run on the given repo.
+func stepsForRepo(spec *batcheslib.BatchSpec, repo template.Repository) ([]batcheslib.Step, error) {
+	taskSteps := []batcheslib.Step{}
+	for _, step := range spec.Steps {
+		// If no if condition is given, just go ahead and add the step to the list.
+		if step.IfCondition() == "" {
+			taskSteps = append(taskSteps, step)
+			continue
+		}
+
+		batchChange := template.BatchChangeAttributes{
+			Name:        spec.Name,
+			Description: spec.Description,
+		}
+		stepCtx := &template.StepContext{
+			Repository:  repo,
+			BatchChange: batchChange,
+		}
+		static, boolVal, err := template.IsStaticBool(step.IfCondition(), stepCtx)
+		if err != nil {
+			return nil, err
+		}
+
+		// If we could evaluate the condition statically and the resulting
+		// boolean is false, we don't add that step.
+		if !static {
+			taskSteps = append(taskSteps, step)
+		} else if boolVal {
+			taskSteps = append(taskSteps, step)
+		}
+	}
+	return taskSteps, nil
 }
