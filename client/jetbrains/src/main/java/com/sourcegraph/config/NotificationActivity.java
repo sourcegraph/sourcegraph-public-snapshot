@@ -1,6 +1,5 @@
 package com.sourcegraph.config;
 
-import com.intellij.icons.AllIcons;
 import com.intellij.notification.Notification;
 import com.intellij.notification.NotificationType;
 import com.intellij.notification.Notifications;
@@ -78,7 +77,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
                 notification.expire();
             }
         };
-        AnAction learnMoreAction = new DumbAwareAction("Learn More", "Opens browser to describe the latest changes", AllIcons.Ide.External_link_arrow) {
+        AnAction learnMoreAction = new DumbAwareAction("Learn More", "Opens browser to describe the latest changes", null) {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 String whatsNewUrl = "https://plugins.jetbrains.com/plugin/9682-sourcegraph#:~:text=What%E2%80%99s%20New";
