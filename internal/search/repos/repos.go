@@ -8,15 +8,18 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
+	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
@@ -30,6 +33,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -51,9 +55,11 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d}", len(r.RepoRevs), len(r.MissingRepoRevs))
 }
 
-func NewResolver(db database.DB) *Resolver {
+func NewResolver(logger log.Logger, db database.DB, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
 	return &Resolver{
-		// TODO populate loger, zoekt, searcher
+		logger:    logger,
+		zoekt:     zoekt,
+		searcher:  searcher,
 		db:        db,
 		gitserver: gitserver.NewClient(db),
 	}
@@ -235,13 +241,24 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	normalized, normalizedMissingRepoRevs, err := r.normalizeRefs(ctx, associatedRepoRevs)
 	missingRepoRevs = append(missingRepoRevs, normalizedMissingRepoRevs...)
 	if err != nil {
-		return Resolved{}, err
+		return Resolved{}, errors.Wrap(err, "normalize refs")
 	}
 	tr.LazyPrintf("finished glob expansion")
 
 	tr.LazyPrintf("starting rev filtering")
 	filteredRepoRevs, err := r.filterHasCommitAfter(ctx, normalized, op)
+	if err != nil {
+		return Resolved{}, errors.Wrap(err, "filter has commit after")
+	}
 	tr.LazyPrintf("completed rev filtering")
+
+	tr.LazyPrintf("starting contains filtering")
+	filteredRepoRevs, missingHasFileContentRevs, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op.HasFileContent)
+	missingRepoRevs = append(missingRepoRevs, missingHasFileContentRevs...)
+	if err != nil {
+		return Resolved{}, errors.Wrap(err, "filter has file content")
+	}
+	tr.LazyPrintf("finished contains filtering")
 
 	if len(missingRepoRevs) > 0 {
 		err = errors.Append(err, &MissingRepoRevsError{Missing: missingRepoRevs})
@@ -494,13 +511,24 @@ func (r *Resolver) filterHasCommitAfter(
 }
 
 func (r *Resolver) filterRepoHasFileContent(
-	ctx context.Context, 
-	repoRevs []*search.RepositoryRevisions, 
-	args []query.RepoHasFileContentArgs
-) ([]*search.RepositoryRevisions, error) {
+	ctx context.Context,
+	repoRevs []*search.RepositoryRevisions,
+	args []query.RepoHasFileContentArgs,
+) (
+	_ []*search.RepositoryRevisions,
+	_ []RepoRevSpecs,
+	err error,
+) {
+	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent", "")
+	tr.LogFields(otlog.Int("inputRevCount", len(repoRevs)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
 	// Early return if there are no filters
 	if len(args) == 0 {
-		return repoRevs, nil
+		return repoRevs, nil, nil
 	}
 
 	indexed, unindexed, err := searchzoekt.PartitionRepos(
@@ -513,7 +541,7 @@ func (r *Resolver) filterRepoHasFileContent(
 		false,
 	)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	minimalRepoMap := make(map[api.RepoID]types.MinimalRepo, len(repoRevs))
@@ -522,22 +550,19 @@ func (r *Resolver) filterRepoHasFileContent(
 	}
 
 	var (
-		mu sync.Mutex
-		filtered = map[api.RepoID]*search.RepositoryRevisions{}
+		mu         sync.Mutex
+		filtered   = map[api.RepoID]*search.RepositoryRevisions{}
 		addRepoRev = func(id api.RepoID, rev string) {
-			mu.Lock()
-			defer mu.Unlock()
-
 			repoRev := filtered[id]
 			if repoRev == nil {
 				minimalRepo, ok := minimalRepoMap[id]
 				if !ok {
 					// Skip any repos that weren't in our requested repos.
 					// This should never happen.
-					return 
+					return
 				}
 				repoRev = &search.RepositoryRevisions{
-					Repo:  minimalRepo,
+					Repo: minimalRepo,
 				}
 			}
 			repoRev.Revs = append(repoRev.Revs, rev)
@@ -545,16 +570,31 @@ func (r *Resolver) filterRepoHasFileContent(
 		}
 	)
 
+	var (
+		missingMu  sync.Mutex
+		missing    []RepoRevSpecs
+		addMissing = func(rs RepoRevSpecs) {
+			missingMu.Lock()
+			missing = append(missing, rs)
+			missingMu.Unlock()
+		}
+	)
+
 	g := group.New().WithContext(ctx).WithMaxConcurrency(16)
 
-	{ // Use zoekt for indexed revs
+	g.Go(func(ctx context.Context) error {
+		tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContentIndexed", "")
+		defer func() {
+			tr.SetError(err)
+			tr.Finish()
+		}()
 		var fileMatchOr []zoektquery.Q
 		for _, opt := range args {
 			var children []zoektquery.Q
 			if opt.Path != "" {
 				re, err := syntax.Parse(opt.Path, 0)
 				if err != nil {
-					return nil, err
+					return err
 				}
 				// TODO case sensitivity
 				children = append(children, &zoektquery.Regexp{Regexp: re, FileName: true, CaseSensitive: false})
@@ -562,7 +602,7 @@ func (r *Resolver) filterRepoHasFileContent(
 			if opt.Content != "" {
 				re, err := syntax.Parse(opt.Content, 0)
 				if err != nil {
-					return nil, err
+					return err
 				}
 				children = append(children, &zoektquery.Regexp{Regexp: re, Content: true, CaseSensitive: false})
 			}
@@ -572,23 +612,117 @@ func (r *Resolver) filterRepoHasFileContent(
 			}
 			fileMatchOr = append(fileMatchOr, q)
 		}
-		q := &zoektquery.Type{
-			Type: zoektquery.TypeRepo,
-			Child: zoektquery.NewAnd(
-				&zoektquery.BranchesRepos{List: indexed.BranchRepos()},
-				zoektquery.NewOr(fileMatchOr...),
-			),
+		var q zoektquery.Q = zoektquery.NewAnd(
+			&zoektquery.BranchesRepos{
+				List: indexed.BranchRepos(),
+			},
+			&zoektquery.Type{
+				Type:  zoektquery.TypeRepo,
+				Child: zoektquery.NewOr(fileMatchOr...),
+			},
+		)
+		q = zoektquery.Simplify(q)
+		repoList, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Minimal: true})
+		if err != nil {
+			return err
 		}
-		opts := &zoekt.SearchOptions{ ChunkMatches: true, }
-		g.Go(func(ctx context.Context) error {
-			return r.zoekt.StreamSearch(ctx, q, opts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-				// TODO
-			}))
-		})
+		mu.Lock()
+		for id, entry := range repoList.Minimal {
+			for _, branch := range entry.Branches {
+				addRepoRev(api.RepoID(int32(id)), branch.Name)
+			}
+		}
+		mu.Unlock()
+		return nil
+	})
+
+	{ // Use searcher for unindexed revs
+		for _, repoRevs := range unindexed {
+			for _, rev := range repoRevs.Revs {
+				repo, rev := repoRevs.Repo, rev
+
+				g.Go(func(ctx context.Context) error {
+					for _, arg := range args {
+						commitID, err := r.gitserver.ResolveRevision(
+							ctx,
+							repo.Name,
+							rev,
+							gitserver.ResolveRevisionOptions{NoEnsureRevision: true},
+						)
+						if err != nil {
+							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
+								return err
+							}
+							addMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}})
+							continue
+						}
+
+						patternInfo := search.TextPatternInfo{
+							Pattern:         arg.Content,
+							IsNegated:       arg.Negated,
+							IsRegExp:        true,
+							IsCaseSensitive: false,
+							FileMatchLimit:  1,
+						}
+
+						if arg.Path != "" {
+							patternInfo.IncludePatterns = []string{arg.Path}
+						}
+
+						foundMatches := false
+						onMatches := func(fms []*protocol.FileMatch) {
+							if len(fms) > 0 {
+								foundMatches = true
+							}
+						}
+
+						_, err = searcher.Search(
+							ctx,
+							r.searcher,
+							repo.Name,
+							repo.ID,
+							"", // not using zoekt, don't need branch
+							commitID,
+							false, // not using zoekt, don't need indexing
+							&patternInfo,
+							time.Hour,         // depend on context for timeout
+							nil,               // not using zoekt, don't need indexing
+							search.Features{}, // not using any search features
+							onMatches,
+						)
+						if err != nil {
+							return err
+						}
+
+						if !foundMatches {
+							return nil
+						}
+					}
+
+					// If we made it here, we found a match for each of the contains filters.
+					mu.Lock()
+					addRepoRev(repo.ID, rev)
+					mu.Unlock()
+					return nil
+				})
+			}
+		}
 	}
 
+	if err := g.Wait(); err != nil {
+		return nil, nil, err
+	}
 
+	// Filter the input revs to only those that matched all the contains conditions
+	matchedRepoRevs := repoRevs[:0]
+	for _, repoRev := range repoRevs {
+		if matched, ok := filtered[repoRev.Repo.ID]; ok {
+			matchedRepoRevs = append(matchedRepoRevs, matched)
+		}
+	}
 
+	tr.LogFields(otlog.Int("filteredRevCount", len(matchedRepoRevs)))
+	return matchedRepoRevs, missing, nil
 }
 
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is

@@ -338,6 +338,40 @@ type RepoHasFileContentArgs struct {
 	Negated bool
 }
 
+func (p Parameters) RepoHasFile() (res []RepoHasFileContentArgs) {
+	nodes := toNodes(p)
+	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    v,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.Pattern,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsContentPredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Content: pred.Pattern,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.File,
+			Content: pred.Content,
+			Negated: negated,
+		})
+	})
+
+	return res
+}
+
 func (p Parameters) RepoContainsFile() (include, exclude []string) {
 	nodes := toNodes(p)
 	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {

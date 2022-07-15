@@ -108,8 +108,8 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 }
 
 func (rb *IndexedRepoRevs) BranchRepos() []zoektquery.BranchRepos {
-	brs := make([]zoektquery.BranchRepos, 0, len(repos.branchRepos))
-	for _, br := range repos.branchRepos {
+	brs := make([]zoektquery.BranchRepos, 0, len(rb.branchRepos))
+	for _, br := range rb.branchRepos {
 		brs = append(brs, *br)
 	}
 	return brs

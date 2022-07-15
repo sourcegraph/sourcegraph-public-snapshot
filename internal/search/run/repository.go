@@ -15,10 +15,8 @@ import (
 )
 
 type RepoSearchJob struct {
-	RepoOpts                     search.RepoOptions
-	FilePatternsReposMustInclude []string
-	FilePatternsReposMustExclude []string
-	Features                     search.Features
+	RepoOpts search.RepoOptions
+	Features search.Features
 
 	Mode search.GlobalSearchMode
 }
@@ -27,18 +25,9 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := searchrepos.NewResolver(clients.DB)
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
 	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
-
-		// Filter the repos if there is a repohasfile: or -repohasfile field.
-		if len(s.FilePatternsReposMustExclude) > 0 || len(s.FilePatternsReposMustInclude) > 0 {
-			// Fallback to batch for reposToAdd
-			page.RepoRevs, err = s.reposToAdd(ctx, clients, page.RepoRevs)
-			if err != nil {
-				return err
-			}
-		}
 
 		stream.Send(streaming.SearchEvent{
 			Results: repoRevsToRepoMatches(page.RepoRevs),
@@ -62,8 +51,6 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	case job.VerbosityMax:
 		res = append(res,
 			log.Bool("contentBasedLangFilters", s.Features.ContentBasedLangFilters),
-			trace.Strings("filePatternsReposMustInclude", s.FilePatternsReposMustInclude),
-			trace.Strings("filePatternsReposMustExclude", s.FilePatternsReposMustExclude),
 		)
 		fallthrough
 	case job.VerbosityBasic:

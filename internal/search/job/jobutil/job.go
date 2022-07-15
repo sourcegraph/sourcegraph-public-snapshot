@@ -434,11 +434,9 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 						mode = search.SkipUnindexed
 					}
 					addJob(&run.RepoSearchJob{
-						RepoOpts:                     repoOptions,
-						Features:                     features,
-						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
-						FilePatternsReposMustExclude: patternInfo.FilePatternsReposMustExclude,
-						Mode:                         mode,
+						RepoOpts: repoOptions,
+						Features: features,
+						Mode:     mode,
 					})
 				}
 			}
@@ -524,7 +522,6 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(b, p)
 
@@ -556,8 +553,6 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
 		ExcludePattern:               query.UnionRegExps(filesExclude),
-		FilePatternsReposMustInclude: filesReposMustInclude,
-		FilePatternsReposMustExclude: filesReposMustExclude,
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),
 		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
 		Languages:                    langInclude,
@@ -636,6 +631,7 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 		OnlyArchived:        archived == query.Only,
 		NoArchived:          archived == query.No,
 		Visibility:          visibility,
+		HasFileContent:      b.RepoHasFile(),
 		CommitAfter:         b.RepoContainsCommitAfter(),
 	}
 }
