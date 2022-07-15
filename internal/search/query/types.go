@@ -335,25 +335,50 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 	return include, exclude
 }
 
-func (p Parameters) RepoContainsFile() (include, exclude []string) {
+// RepoHasFileContentArgs represents the args of any of the following predicates:
+// - repo:contains.file(f)
+// - repo:contains.content(c)
+// - repo:contains(file:f content:c)
+// - repohasfile:f
+type RepoHasFileContentArgs struct {
+	// At least one of these strings should be non-empty
+	Path    string // optional
+	Content string // optional
+	Negated bool
+}
+
+func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 	nodes := toNodes(p)
 	VisitField(nodes, FieldRepoHasFile, func(v string, negated bool, _ Annotation) {
-		if negated {
-			exclude = append(exclude, v)
-		} else {
-			include = append(include, v)
-		}
+		res = append(res, RepoHasFileContentArgs{
+			Path:    v,
+			Negated: negated,
+		})
 	})
 
 	VisitTypedPredicate(nodes, func(pred *RepoContainsFilePredicate, negated bool) {
-		if negated {
-			exclude = append(exclude, pred.Pattern)
-		} else {
-			include = append(include, pred.Pattern)
-		}
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.Pattern,
+			Negated: negated,
+		})
 	})
 
-	return include, exclude
+	VisitTypedPredicate(nodes, func(pred *RepoContainsContentPredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Content: pred.Pattern,
+			Negated: negated,
+		})
+	})
+
+	VisitTypedPredicate(nodes, func(pred *RepoContainsPredicate, negated bool) {
+		res = append(res, RepoHasFileContentArgs{
+			Path:    pred.File,
+			Content: pred.Content,
+			Negated: negated,
+		})
+	})
+
+	return res
 }
 
 func (p Parameters) RepoContainsCommitAfter() (value string) {
