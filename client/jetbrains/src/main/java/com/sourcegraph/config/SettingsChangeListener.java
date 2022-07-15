@@ -13,6 +13,7 @@ import com.intellij.openapi.project.Project;
 import com.intellij.util.messages.MessageBus;
 import com.intellij.util.messages.MessageBusConnection;
 import com.sourcegraph.browser.JavaToJSBridge;
+import com.sourcegraph.find.FindService;
 import com.sourcegraph.telemetry.GraphQlLogger;
 import org.jetbrains.annotations.NotNull;
 
@@ -56,7 +57,7 @@ public class SettingsChangeListener implements Disposable {
                 if (context.newUrl != null) {
                     ApiAuthenticator.testConnection(context.newUrl, context.newAccessToken, (status) -> {
                         if (status == ApiAuthenticator.ConnectionStatus.AUTHENTICATED) {
-                            notifyAboutSuccessfulConnection();
+                            notifyAboutSuccessfulConnection(project);
                         }
                     });
                 }
@@ -64,17 +65,25 @@ public class SettingsChangeListener implements Disposable {
         });
     }
 
-    private void notifyAboutSuccessfulConnection() {
+    private void notifyAboutSuccessfulConnection(Project project) {
         KeyboardShortcut altSShortcut = new KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.ALT_DOWN_MASK), null);
         String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
         Notification notification = new Notification("Sourcegraph access", "Sourcegraph authentication success",
             "Your Sourcegraph account has been connected to the Sourcegraph plugin. Press " + altSShortcutText + " to open Sourcegraph.", NotificationType.INFORMATION);
+        AnAction setUrlAction = new DumbAwareAction("Open Sourcegraph (" + altSShortcutText + ")") {
+            @Override
+            public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
+                project.getService(FindService.class).showPopup();
+                notification.expire();
+            }
+        };
         AnAction dismissAction = new DumbAwareAction("Dismiss") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
                 notification.expire();
             }
         };
+        notification.addAction(setUrlAction);
         notification.addAction(dismissAction);
         Notifications.Bus.notify(notification);
     }
