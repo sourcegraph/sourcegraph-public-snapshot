@@ -6,6 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
@@ -163,7 +164,7 @@ func TestObservabilityActiveAlertsAlert(t *testing.T) {
 				return
 			}
 			fn := observabilityActiveAlertsAlert(prom)
-			gotAlerts := fn(tt.args.args)
+			gotAlerts := fn(database.NewMockDB(), tt.args.args)
 			if len(gotAlerts) != len(tt.want) {
 				t.Errorf("expected %+v, got %+v", tt.want, gotAlerts)
 				return

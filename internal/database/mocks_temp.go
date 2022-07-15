@@ -3577,6 +3577,9 @@ type MockDB struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *DBTransactFunc
+	// UpdateChecksFunc is an instance of a mock function object controlling
+	// the behavior of the method UpdateChecks.
+	UpdateChecksFunc *DBUpdateChecksFunc
 	// UserCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserCredentials.
 	UserCredentialsFunc *DBUserCredentialsFunc
@@ -3743,6 +3746,11 @@ func NewMockDB() *MockDB {
 		},
 		TransactFunc: &DBTransactFunc{
 			defaultHook: func(context.Context) (r0 DB, r1 error) {
+				return
+			},
+		},
+		UpdateChecksFunc: &DBUpdateChecksFunc{
+			defaultHook: func() (r0 UpdateChecksStore) {
 				return
 			},
 		},
@@ -3928,6 +3936,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.Transact")
 			},
 		},
+		UpdateChecksFunc: &DBUpdateChecksFunc{
+			defaultHook: func() UpdateChecksStore {
+				panic("unexpected invocation of MockDB.UpdateChecks")
+			},
+		},
 		UserCredentialsFunc: &DBUserCredentialsFunc{
 			defaultHook: func(encryption.Key) UserCredentialsStore {
 				panic("unexpected invocation of MockDB.UserCredentials")
@@ -4051,6 +4064,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		TransactFunc: &DBTransactFunc{
 			defaultHook: i.Transact,
+		},
+		UpdateChecksFunc: &DBUpdateChecksFunc{
+			defaultHook: i.UpdateChecks,
 		},
 		UserCredentialsFunc: &DBUserCredentialsFunc{
 			defaultHook: i.UserCredentials,
@@ -6987,6 +7003,104 @@ func (c DBTransactFuncCall) Args() []interface{} {
 // invocation.
 func (c DBTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// DBUpdateChecksFunc describes the behavior when the UpdateChecks method of
+// the parent MockDB instance is invoked.
+type DBUpdateChecksFunc struct {
+	defaultHook func() UpdateChecksStore
+	hooks       []func() UpdateChecksStore
+	history     []DBUpdateChecksFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateChecks delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockDB) UpdateChecks() UpdateChecksStore {
+	r0 := m.UpdateChecksFunc.nextHook()()
+	m.UpdateChecksFunc.appendCall(DBUpdateChecksFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateChecks method
+// of the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBUpdateChecksFunc) SetDefaultHook(hook func() UpdateChecksStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateChecks method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBUpdateChecksFunc) PushHook(hook func() UpdateChecksStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBUpdateChecksFunc) SetDefaultReturn(r0 UpdateChecksStore) {
+	f.SetDefaultHook(func() UpdateChecksStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBUpdateChecksFunc) PushReturn(r0 UpdateChecksStore) {
+	f.PushHook(func() UpdateChecksStore {
+		return r0
+	})
+}
+
+func (f *DBUpdateChecksFunc) nextHook() func() UpdateChecksStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBUpdateChecksFunc) appendCall(r0 DBUpdateChecksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBUpdateChecksFuncCall objects describing
+// the invocations of this function.
+func (f *DBUpdateChecksFunc) History() []DBUpdateChecksFuncCall {
+	f.mutex.Lock()
+	history := make([]DBUpdateChecksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBUpdateChecksFuncCall is an object that describes an invocation of
+// method UpdateChecks on an instance of MockDB.
+type DBUpdateChecksFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 UpdateChecksStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBUpdateChecksFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBUpdateChecksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // DBUserCredentialsFunc describes the behavior when the UserCredentials
@@ -35413,6 +35527,520 @@ func (c TemporarySettingsStoreOverwriteTemporarySettingsFuncCall) Args() []inter
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c TemporarySettingsStoreOverwriteTemporarySettingsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// MockUpdateChecksStore is a mock implementation of the UpdateChecksStore
+// interface (from the package
+// github.com/sourcegraph/sourcegraph/internal/database) used for unit
+// testing.
+type MockUpdateChecksStore struct {
+	// FinishCheckFunc is an instance of a mock function object controlling
+	// the behavior of the method FinishCheck.
+	FinishCheckFunc *UpdateChecksStoreFinishCheckFunc
+	// GetStatusFunc is an instance of a mock function object controlling
+	// the behavior of the method GetStatus.
+	GetStatusFunc *UpdateChecksStoreGetStatusFunc
+	// HandleFunc is an instance of a mock function object controlling the
+	// behavior of the method Handle.
+	HandleFunc *UpdateChecksStoreHandleFunc
+	// StartCheckFunc is an instance of a mock function object controlling
+	// the behavior of the method StartCheck.
+	StartCheckFunc *UpdateChecksStoreStartCheckFunc
+}
+
+// NewMockUpdateChecksStore creates a new mock of the UpdateChecksStore
+// interface. All methods return zero values for all results, unless
+// overwritten.
+func NewMockUpdateChecksStore() *MockUpdateChecksStore {
+	return &MockUpdateChecksStore{
+		FinishCheckFunc: &UpdateChecksStoreFinishCheckFunc{
+			defaultHook: func(context.Context, string, string) (r0 error) {
+				return
+			},
+		},
+		GetStatusFunc: &UpdateChecksStoreGetStatusFunc{
+			defaultHook: func(context.Context) (r0 Status, r1 bool, r2 error) {
+				return
+			},
+		},
+		HandleFunc: &UpdateChecksStoreHandleFunc{
+			defaultHook: func() (r0 basestore.TransactableHandle) {
+				return
+			},
+		},
+		StartCheckFunc: &UpdateChecksStoreStartCheckFunc{
+			defaultHook: func(context.Context) (r0 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockUpdateChecksStore creates a new mock of the
+// UpdateChecksStore interface. All methods panic on invocation, unless
+// overwritten.
+func NewStrictMockUpdateChecksStore() *MockUpdateChecksStore {
+	return &MockUpdateChecksStore{
+		FinishCheckFunc: &UpdateChecksStoreFinishCheckFunc{
+			defaultHook: func(context.Context, string, string) error {
+				panic("unexpected invocation of MockUpdateChecksStore.FinishCheck")
+			},
+		},
+		GetStatusFunc: &UpdateChecksStoreGetStatusFunc{
+			defaultHook: func(context.Context) (Status, bool, error) {
+				panic("unexpected invocation of MockUpdateChecksStore.GetStatus")
+			},
+		},
+		HandleFunc: &UpdateChecksStoreHandleFunc{
+			defaultHook: func() basestore.TransactableHandle {
+				panic("unexpected invocation of MockUpdateChecksStore.Handle")
+			},
+		},
+		StartCheckFunc: &UpdateChecksStoreStartCheckFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockUpdateChecksStore.StartCheck")
+			},
+		},
+	}
+}
+
+// NewMockUpdateChecksStoreFrom creates a new mock of the
+// MockUpdateChecksStore interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockUpdateChecksStoreFrom(i UpdateChecksStore) *MockUpdateChecksStore {
+	return &MockUpdateChecksStore{
+		FinishCheckFunc: &UpdateChecksStoreFinishCheckFunc{
+			defaultHook: i.FinishCheck,
+		},
+		GetStatusFunc: &UpdateChecksStoreGetStatusFunc{
+			defaultHook: i.GetStatus,
+		},
+		HandleFunc: &UpdateChecksStoreHandleFunc{
+			defaultHook: i.Handle,
+		},
+		StartCheckFunc: &UpdateChecksStoreStartCheckFunc{
+			defaultHook: i.StartCheck,
+		},
+	}
+}
+
+// UpdateChecksStoreFinishCheckFunc describes the behavior when the
+// FinishCheck method of the parent MockUpdateChecksStore instance is
+// invoked.
+type UpdateChecksStoreFinishCheckFunc struct {
+	defaultHook func(context.Context, string, string) error
+	hooks       []func(context.Context, string, string) error
+	history     []UpdateChecksStoreFinishCheckFuncCall
+	mutex       sync.Mutex
+}
+
+// FinishCheck delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUpdateChecksStore) FinishCheck(v0 context.Context, v1 string, v2 string) error {
+	r0 := m.FinishCheckFunc.nextHook()(v0, v1, v2)
+	m.FinishCheckFunc.appendCall(UpdateChecksStoreFinishCheckFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the FinishCheck method
+// of the parent MockUpdateChecksStore instance is invoked and the hook
+// queue is empty.
+func (f *UpdateChecksStoreFinishCheckFunc) SetDefaultHook(hook func(context.Context, string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// FinishCheck method of the parent MockUpdateChecksStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UpdateChecksStoreFinishCheckFunc) PushHook(hook func(context.Context, string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UpdateChecksStoreFinishCheckFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UpdateChecksStoreFinishCheckFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, string, string) error {
+		return r0
+	})
+}
+
+func (f *UpdateChecksStoreFinishCheckFunc) nextHook() func(context.Context, string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UpdateChecksStoreFinishCheckFunc) appendCall(r0 UpdateChecksStoreFinishCheckFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UpdateChecksStoreFinishCheckFuncCall
+// objects describing the invocations of this function.
+func (f *UpdateChecksStoreFinishCheckFunc) History() []UpdateChecksStoreFinishCheckFuncCall {
+	f.mutex.Lock()
+	history := make([]UpdateChecksStoreFinishCheckFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UpdateChecksStoreFinishCheckFuncCall is an object that describes an
+// invocation of method FinishCheck on an instance of MockUpdateChecksStore.
+type UpdateChecksStoreFinishCheckFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 string
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UpdateChecksStoreFinishCheckFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UpdateChecksStoreFinishCheckFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UpdateChecksStoreGetStatusFunc describes the behavior when the GetStatus
+// method of the parent MockUpdateChecksStore instance is invoked.
+type UpdateChecksStoreGetStatusFunc struct {
+	defaultHook func(context.Context) (Status, bool, error)
+	hooks       []func(context.Context) (Status, bool, error)
+	history     []UpdateChecksStoreGetStatusFuncCall
+	mutex       sync.Mutex
+}
+
+// GetStatus delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockUpdateChecksStore) GetStatus(v0 context.Context) (Status, bool, error) {
+	r0, r1, r2 := m.GetStatusFunc.nextHook()(v0)
+	m.GetStatusFunc.appendCall(UpdateChecksStoreGetStatusFuncCall{v0, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the GetStatus method of
+// the parent MockUpdateChecksStore instance is invoked and the hook queue
+// is empty.
+func (f *UpdateChecksStoreGetStatusFunc) SetDefaultHook(hook func(context.Context) (Status, bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetStatus method of the parent MockUpdateChecksStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UpdateChecksStoreGetStatusFunc) PushHook(hook func(context.Context) (Status, bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UpdateChecksStoreGetStatusFunc) SetDefaultReturn(r0 Status, r1 bool, r2 error) {
+	f.SetDefaultHook(func(context.Context) (Status, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UpdateChecksStoreGetStatusFunc) PushReturn(r0 Status, r1 bool, r2 error) {
+	f.PushHook(func(context.Context) (Status, bool, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *UpdateChecksStoreGetStatusFunc) nextHook() func(context.Context) (Status, bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UpdateChecksStoreGetStatusFunc) appendCall(r0 UpdateChecksStoreGetStatusFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UpdateChecksStoreGetStatusFuncCall objects
+// describing the invocations of this function.
+func (f *UpdateChecksStoreGetStatusFunc) History() []UpdateChecksStoreGetStatusFuncCall {
+	f.mutex.Lock()
+	history := make([]UpdateChecksStoreGetStatusFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UpdateChecksStoreGetStatusFuncCall is an object that describes an
+// invocation of method GetStatus on an instance of MockUpdateChecksStore.
+type UpdateChecksStoreGetStatusFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 Status
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 bool
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UpdateChecksStoreGetStatusFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UpdateChecksStoreGetStatusFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// UpdateChecksStoreHandleFunc describes the behavior when the Handle method
+// of the parent MockUpdateChecksStore instance is invoked.
+type UpdateChecksStoreHandleFunc struct {
+	defaultHook func() basestore.TransactableHandle
+	hooks       []func() basestore.TransactableHandle
+	history     []UpdateChecksStoreHandleFuncCall
+	mutex       sync.Mutex
+}
+
+// Handle delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockUpdateChecksStore) Handle() basestore.TransactableHandle {
+	r0 := m.HandleFunc.nextHook()()
+	m.HandleFunc.appendCall(UpdateChecksStoreHandleFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Handle method of the
+// parent MockUpdateChecksStore instance is invoked and the hook queue is
+// empty.
+func (f *UpdateChecksStoreHandleFunc) SetDefaultHook(hook func() basestore.TransactableHandle) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Handle method of the parent MockUpdateChecksStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *UpdateChecksStoreHandleFunc) PushHook(hook func() basestore.TransactableHandle) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UpdateChecksStoreHandleFunc) SetDefaultReturn(r0 basestore.TransactableHandle) {
+	f.SetDefaultHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UpdateChecksStoreHandleFunc) PushReturn(r0 basestore.TransactableHandle) {
+	f.PushHook(func() basestore.TransactableHandle {
+		return r0
+	})
+}
+
+func (f *UpdateChecksStoreHandleFunc) nextHook() func() basestore.TransactableHandle {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UpdateChecksStoreHandleFunc) appendCall(r0 UpdateChecksStoreHandleFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UpdateChecksStoreHandleFuncCall objects
+// describing the invocations of this function.
+func (f *UpdateChecksStoreHandleFunc) History() []UpdateChecksStoreHandleFuncCall {
+	f.mutex.Lock()
+	history := make([]UpdateChecksStoreHandleFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UpdateChecksStoreHandleFuncCall is an object that describes an invocation
+// of method Handle on an instance of MockUpdateChecksStore.
+type UpdateChecksStoreHandleFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 basestore.TransactableHandle
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UpdateChecksStoreHandleFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UpdateChecksStoreHandleFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// UpdateChecksStoreStartCheckFunc describes the behavior when the
+// StartCheck method of the parent MockUpdateChecksStore instance is
+// invoked.
+type UpdateChecksStoreStartCheckFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []UpdateChecksStoreStartCheckFuncCall
+	mutex       sync.Mutex
+}
+
+// StartCheck delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockUpdateChecksStore) StartCheck(v0 context.Context) error {
+	r0 := m.StartCheckFunc.nextHook()(v0)
+	m.StartCheckFunc.appendCall(UpdateChecksStoreStartCheckFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the StartCheck method of
+// the parent MockUpdateChecksStore instance is invoked and the hook queue
+// is empty.
+func (f *UpdateChecksStoreStartCheckFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// StartCheck method of the parent MockUpdateChecksStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *UpdateChecksStoreStartCheckFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *UpdateChecksStoreStartCheckFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *UpdateChecksStoreStartCheckFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *UpdateChecksStoreStartCheckFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *UpdateChecksStoreStartCheckFunc) appendCall(r0 UpdateChecksStoreStartCheckFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of UpdateChecksStoreStartCheckFuncCall objects
+// describing the invocations of this function.
+func (f *UpdateChecksStoreStartCheckFunc) History() []UpdateChecksStoreStartCheckFuncCall {
+	f.mutex.Lock()
+	history := make([]UpdateChecksStoreStartCheckFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// UpdateChecksStoreStartCheckFuncCall is an object that describes an
+// invocation of method StartCheck on an instance of MockUpdateChecksStore.
+type UpdateChecksStoreStartCheckFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c UpdateChecksStoreStartCheckFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c UpdateChecksStoreStartCheckFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

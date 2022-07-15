@@ -12,11 +12,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -51,7 +51,7 @@ const (
 // appended to at init time.
 //
 // The functions are called each time the Site.alerts value is queried, so they must not block.
-var AlertFuncs []func(AlertFuncArgs) []*Alert
+var AlertFuncs []func(database.DB, AlertFuncArgs) []*Alert
 
 // AlertFuncArgs are the arguments provided to functions in AlertFuncs used to populate the GraphQL
 // Site.alerts value. They allow the functions to customize the returned alerts based on the
@@ -76,7 +76,7 @@ func (r *siteResolver) Alerts(ctx context.Context) ([]*Alert, error) {
 
 	var alerts []*Alert
 	for _, f := range AlertFuncs {
-		alerts = append(alerts, f(args)...)
+		alerts = append(alerts, f(r.db, args)...)
 	}
 	return alerts, nil
 }
@@ -119,7 +119,7 @@ func init() {
 	}
 
 	// Warn about invalid site configuration.
-	AlertFuncs = append(AlertFuncs, func(args AlertFuncArgs) []*Alert {
+	AlertFuncs = append(AlertFuncs, func(_ database.DB, args AlertFuncArgs) []*Alert {
 		// 🚨 SECURITY: Only the site admin should care about the site configuration being invalid, as they
 		// are the only one who can take action on that. Additionally, it may be unsafe to expose information
 		// about the problems with the configuration (e.g. if the error message contains sensitive information).
@@ -174,25 +174,30 @@ func init() {
 	})
 }
 
-func updateAvailableAlert(args AlertFuncArgs) []*Alert {
+func updateAvailableAlert(db database.DB, args AlertFuncArgs) []*Alert {
 	// We only show update alerts to admins. This is not for security reasons, as we already
 	// expose the version number of the instance to all users via the user settings page.
 	if !args.IsSiteAdmin {
 		return nil
 	}
 
-	globalUpdateStatus := updatecheck.Last()
-	if globalUpdateStatus == nil || updatecheck.IsPending() || !globalUpdateStatus.HasUpdate() || globalUpdateStatus.Err != nil {
+	status, isPending, err := db.UpdateChecks().GetStatus(context.Background())
+	if err != nil {
+		log15.Error("failed to fetch latest status for update check", "error", err)
+		return nil
+	}
+
+	if isPending || !status.HasUpdate() || status.Error != "" {
 		return nil
 	}
 	// ensure the user has opted in to receiving notifications for minor updates and there is one available
-	if !args.ViewerFinalSettings.AlertsShowPatchUpdates && !isMinorUpdateAvailable(version.Version(), globalUpdateStatus.UpdateVersion) {
+	if !args.ViewerFinalSettings.AlertsShowPatchUpdates && !isMinorUpdateAvailable(version.Version(), status.UpdateVersion) {
 		return nil
 	}
-	message := fmt.Sprintf("An update is available: [Sourcegraph v%s](https://about.sourcegraph.com/blog) - [changelog](https://about.sourcegraph.com/changelog)", globalUpdateStatus.UpdateVersion)
+	message := fmt.Sprintf("An update is available: [Sourcegraph v%s](https://about.sourcegraph.com/blog) - [changelog](https://about.sourcegraph.com/changelog)", status.UpdateVersion)
 
 	// dismission key includes the version so after it is dismissed the alert comes back for the next update.
-	key := "update-available-" + globalUpdateStatus.UpdateVersion
+	key := "update-available-" + status.UpdateVersion
 	return []*Alert{{TypeValue: AlertTypeInfo, MessageValue: message, IsDismissibleWithKeyValue: key}}
 }
 
@@ -213,7 +218,7 @@ func isMinorUpdateAvailable(currentVersion, updateVersion string) bool {
 	return cv.Major() != uv.Major() || cv.Minor() != uv.Minor()
 }
 
-func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
+func emailSendingNotConfiguredAlert(_ database.DB, args AlertFuncArgs) []*Alert {
 	if !args.IsSiteAdmin {
 		return nil
 	}
@@ -234,12 +239,16 @@ func emailSendingNotConfiguredAlert(args AlertFuncArgs) []*Alert {
 	return nil
 }
 
-func outOfDateAlert(args AlertFuncArgs) []*Alert {
-	globalUpdateStatus := updatecheck.Last()
-	if globalUpdateStatus == nil || updatecheck.IsPending() {
+func outOfDateAlert(db database.DB, args AlertFuncArgs) []*Alert {
+	status, isPending, err := db.UpdateChecks().GetStatus(context.Background())
+	if err != nil {
+		log15.Error("failed to fetch latest status for update check", "error", err)
 		return nil
 	}
-	offline := globalUpdateStatus.Err != nil // Whether or not instance can connect to Sourcegraph.com for update checks
+	if isPending {
+		return nil
+	}
+	offline := status.Error != "" // Whether or not instance can connect to Sourcegraph.com for update checks
 	now := time.Now()
 	monthsOutOfDate, err := version.HowLongOutOfDate(now)
 	if err != nil {
@@ -301,8 +310,8 @@ func determineOutOfDateAlert(isAdmin bool, months int, offline bool) *Alert {
 }
 
 // observabilityActiveAlertsAlert directs admins to check Grafana if critical alerts are firing
-func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(AlertFuncArgs) []*Alert {
-	return func(args AlertFuncArgs) []*Alert {
+func observabilityActiveAlertsAlert(prom srcprometheus.Client) func(database.DB, AlertFuncArgs) []*Alert {
+	return func(_ database.DB, args AlertFuncArgs) []*Alert {
 		// true by default - change settings.schema.json if this changes
 		// blocked by https://github.com/sourcegraph/sourcegraph/issues/12190
 		observabilitySiteAlertsDisabled := true

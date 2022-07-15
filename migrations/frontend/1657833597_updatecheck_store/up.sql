@@ -1,0 +1,1 @@
+-- CREATE TABLE IF NOT EXISTS update_checks

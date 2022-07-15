@@ -42,6 +42,7 @@ type DB interface {
 	Settings() SettingsStore
 	SubRepoPerms() SubRepoPermsStore
 	TemporarySettings() TemporarySettingsStore
+	UpdateChecks() UpdateChecksStore
 	UserCredentials(encryption.Key) UserCredentialsStore
 	UserEmails() UserEmailsStore
 	UserExternalAccounts() UserExternalAccountsStore
@@ -184,6 +185,10 @@ func (d *db) SubRepoPerms() SubRepoPermsStore {
 
 func (d *db) TemporarySettings() TemporarySettingsStore {
 	return TemporarySettingsWith(d.Store)
+}
+
+func (d *db) UpdateChecks() UpdateChecksStore {
+	return UpdateChecksWith(d.Store)
 }
 
 func (d *db) UserCredentials(key encryption.Key) UserCredentialsStore {

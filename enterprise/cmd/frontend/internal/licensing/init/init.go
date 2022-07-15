@@ -50,7 +50,7 @@ func Init(ctx context.Context, db database.DB, conf conftypes.UnifiedWatchable, 
 		return licensing.Check(licensing.FeatureBranding)
 	})
 
-	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
+	graphqlbackend.AlertFuncs = append(graphqlbackend.AlertFuncs, func(_ database.DB, args graphqlbackend.AlertFuncArgs) []*graphqlbackend.Alert {
 		if !licensing.EnforceTiers {
 			return nil
 		}

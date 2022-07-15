@@ -6907,6 +6907,9 @@ type MockEnterpriseDB struct {
 	// TransactFunc is an instance of a mock function object controlling the
 	// behavior of the method Transact.
 	TransactFunc *EnterpriseDBTransactFunc
+	// UpdateChecksFunc is an instance of a mock function object controlling
+	// the behavior of the method UpdateChecks.
+	UpdateChecksFunc *EnterpriseDBUpdateChecksFunc
 	// UserCredentialsFunc is an instance of a mock function object
 	// controlling the behavior of the method UserCredentials.
 	UserCredentialsFunc *EnterpriseDBUserCredentialsFunc
@@ -7083,6 +7086,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		TransactFunc: &EnterpriseDBTransactFunc{
 			defaultHook: func(context.Context) (r0 database.DB, r1 error) {
+				return
+			},
+		},
+		UpdateChecksFunc: &EnterpriseDBUpdateChecksFunc{
+			defaultHook: func() (r0 database.UpdateChecksStore) {
 				return
 			},
 		},
@@ -7278,6 +7286,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.Transact")
 			},
 		},
+		UpdateChecksFunc: &EnterpriseDBUpdateChecksFunc{
+			defaultHook: func() database.UpdateChecksStore {
+				panic("unexpected invocation of MockEnterpriseDB.UpdateChecks")
+			},
+		},
 		UserCredentialsFunc: &EnterpriseDBUserCredentialsFunc{
 			defaultHook: func(encryption.Key) database.UserCredentialsStore {
 				panic("unexpected invocation of MockEnterpriseDB.UserCredentials")
@@ -7408,6 +7421,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		TransactFunc: &EnterpriseDBTransactFunc{
 			defaultHook: i.Transact,
+		},
+		UpdateChecksFunc: &EnterpriseDBUpdateChecksFunc{
+			defaultHook: i.UpdateChecks,
 		},
 		UserCredentialsFunc: &EnterpriseDBUserCredentialsFunc{
 			defaultHook: i.UserCredentials,
@@ -10566,6 +10582,105 @@ func (c EnterpriseDBTransactFuncCall) Args() []interface{} {
 // invocation.
 func (c EnterpriseDBTransactFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// EnterpriseDBUpdateChecksFunc describes the behavior when the UpdateChecks
+// method of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBUpdateChecksFunc struct {
+	defaultHook func() database.UpdateChecksStore
+	hooks       []func() database.UpdateChecksStore
+	history     []EnterpriseDBUpdateChecksFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateChecks delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockEnterpriseDB) UpdateChecks() database.UpdateChecksStore {
+	r0 := m.UpdateChecksFunc.nextHook()()
+	m.UpdateChecksFunc.appendCall(EnterpriseDBUpdateChecksFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateChecks method
+// of the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBUpdateChecksFunc) SetDefaultHook(hook func() database.UpdateChecksStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateChecks method of the parent MockEnterpriseDB instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *EnterpriseDBUpdateChecksFunc) PushHook(hook func() database.UpdateChecksStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBUpdateChecksFunc) SetDefaultReturn(r0 database.UpdateChecksStore) {
+	f.SetDefaultHook(func() database.UpdateChecksStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBUpdateChecksFunc) PushReturn(r0 database.UpdateChecksStore) {
+	f.PushHook(func() database.UpdateChecksStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBUpdateChecksFunc) nextHook() func() database.UpdateChecksStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBUpdateChecksFunc) appendCall(r0 EnterpriseDBUpdateChecksFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBUpdateChecksFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBUpdateChecksFunc) History() []EnterpriseDBUpdateChecksFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBUpdateChecksFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBUpdateChecksFuncCall is an object that describes an
+// invocation of method UpdateChecks on an instance of MockEnterpriseDB.
+type EnterpriseDBUpdateChecksFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.UpdateChecksStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBUpdateChecksFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBUpdateChecksFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // EnterpriseDBUserCredentialsFunc describes the behavior when the
