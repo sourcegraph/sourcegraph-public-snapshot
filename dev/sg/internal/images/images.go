@@ -398,16 +398,17 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 }
 
 func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *imageRepository, err error) {
-	repo = &imageRepository{name: ref.Name, imageRef: ref}
+	// TODO(@bobheadxi) Figure out what is going on here and simplify - we set the
+	// imageRef, call a function that does something to imageRepository, and then reset
+	// imageRef later using values from ref?
+	repo = &imageRepository{
+		name:     ref.Name,
+		imageRef: ref,
+	}
 	repo.authToken, err = repo.fetchAuthToken(ref.Registry)
 	if err != nil {
 		return nil, nil
 	}
-	tags, err := repo.fetchAllTags()
-	if err != nil {
-		return nil, err
-	}
-
 	repo.imageRef = &ImageReference{
 		Registry: ref.Registry,
 		Name:     ref.Name,
@@ -415,12 +416,17 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 		Tag:      ref.Tag,
 	}
 
+	// Determine the target tag
 	var targetTag string
-	isDevTag := pinTag == ""
-	if isDevTag {
-		targetTag, err = findLatestTag(tags)
+	useMainTag := pinTag == ""
+	if useMainTag {
+		tags, err := repo.fetchAllTags()
 		if err != nil {
-			std.Out.Verbose("findLatestTag: " + err.Error())
+			return nil, err
+		}
+		targetTag, err = findLatestMainTag(tags)
+		if err != nil {
+			std.Out.Verbose("findLatestMainTag: " + err.Error())
 		}
 	} else {
 		targetTag = pinTag
@@ -432,7 +438,7 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	// for release build, we use semver tags and they are immutable, so no update is needed if the current tag is the same as target tag
 	// for dev builds, if the current tag is the same as the latest tag, also no update is needed
 	// for mutable tags (neither release nor dev tag, e.g. `insiders`), we always need to fetch the latest digest.
-	if (isReleaseTag || isDevTag) && isAlreadyLatest {
+	if (isReleaseTag || useMainTag) && isAlreadyLatest {
 		return repo, ErrNoUpdateNeeded
 	}
 	repo.imageRef.Tag = targetTag
@@ -446,15 +452,18 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	return repo, nil
 }
 
-type SgImageTag struct {
+// ParsedMainBranchImageTag is a structured representation of a parsed tag created by
+// images.ParsedMainBranchImageTag.
+type ParsedMainBranchImageTag struct {
 	buildNum  int
 	date      string
 	shortSHA1 string
 }
 
-// ParseTag creates SgImageTag structs for strings that follow MainBranchTagPublishFormat
-func ParseTag(t string) (*SgImageTag, error) {
-	s := SgImageTag{}
+// ParseMainBranchImageTag creates MainTag structs for tags created by
+// images.MainBranchImageTag.
+func ParseMainBranchImageTag(t string) (*ParsedMainBranchImageTag, error) {
+	s := ParsedMainBranchImageTag{}
 	t = strings.TrimSpace(t)
 	var err error
 	n := strings.Split(t, "_")
@@ -471,14 +480,14 @@ func ParseTag(t string) (*SgImageTag, error) {
 	return &s, nil
 }
 
-// Assume we use 'sourcegraph' tag format of :[build_number]_[date]_[short SHA1]
-func findLatestTag(tags []string) (string, error) {
+// Assume we use 'sourcegraph' tag format of ':[build_number]_[date]_[short SHA1]'
+func findLatestMainTag(tags []string) (string, error) {
 	maxBuildID := 0
 	targetTag := ""
 
 	var errs error
 	for _, tag := range tags {
-		stag, err := ParseTag(tag)
+		stag, err := ParseMainBranchImageTag(tag)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
