@@ -503,3 +503,19 @@ func scanBatchSpecWorkspaceExecutionJobs(rows *sql.Rows, queryErr error) ([]*bty
 		return nil
 	})
 }
+
+// RetryBatchSpecExecution TODO
+func (s *Store) RetryBatchSpecExecution(ctx context.Context, id int64) (err error) {
+	ctx, _, endObservation := s.operations.retryBatchSpecExecution.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("ID", int(id)),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(retryBatchSpecExecutionFmtstr, id)
+	return s.Exec(ctx, q)
+}
+
+const retryBatchSpecExecutionFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:RetryBatchSpecExecution
+select from func_retry_batch_spec_execution(%s);
+`
