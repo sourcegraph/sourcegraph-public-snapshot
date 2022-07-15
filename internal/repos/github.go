@@ -98,6 +98,17 @@ func IsGitHubAppCloudEnabled(dotcom *schema.Dotcom) bool {
 		dotcom.GithubAppCloud.Slug != ""
 }
 
+// IsGitHubAppEnabled returns true if all required configuration options for
+// Sourcegraph GitHub App are filled by checking the given config.
+func IsGitHubAppEnabled(schema *schema.GitHubApp) bool {
+	return schema != nil &&
+		schema.AppID != "" &&
+		schema.PrivateKey != "" &&
+		schema.Slug != "" &&
+		schema.ClientID != "" &&
+		schema.ClientSecret != ""
+}
+
 // GetOrRenewGitHubAppInstallationAccessToken extracts and returns the token
 // stored in the given external service config. It automatically renews and
 // updates the access token if it had expired or about to expire in 5 minutes.
@@ -231,24 +242,33 @@ func newGithubSource(
 
 	useGitHubApp := false
 	dotcomConfig := conf.SiteConfig().Dotcom
-	if envvar.SourcegraphDotComMode() &&
-		c.GithubAppInstallationID != "" &&
-		IsGitHubAppCloudEnabled(dotcomConfig) {
-		privateKey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-		if err != nil {
-			return nil, errors.Wrap(err, "decode private key")
+	gitHubAppConfig := conf.SiteConfig().GitHubApp
+	if c.GithubAppInstallationID != "" &&
+		((envvar.SourcegraphDotComMode() &&
+			IsGitHubAppCloudEnabled(dotcomConfig)) || IsGitHubAppEnabled(gitHubAppConfig)) {
+		var privateKey []byte
+		var appID string
+
+		if dotcomConfig != nil && envvar.SourcegraphDotComMode() {
+			privateKey, err = base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+			if err != nil {
+				return nil, errors.Wrap(err, "decode private key")
+			}
+			appID = dotcomConfig.GithubAppCloud.AppID
+		} else {
+			privateKey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
+			if err != nil {
+				return nil, errors.Wrap(err, "decode private key")
+			}
+			appID = gitHubAppConfig.AppID
 		}
 
-		auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, privateKey)
+		auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, privateKey)
 		if err != nil {
 			return nil, errors.Wrap(err, "new authenticator with GitHub App")
 		}
 
-		apiURL, err := url.Parse("https://api.github.com")
-		if err != nil {
-			return nil, errors.Wrap(err, "parse api.github.com")
-		}
-		client := github.NewV3Client(log.Scoped("dotcom-app", "github client for Sourcegraph Cloud GitHub app"),
+		client := github.NewV3Client(log.Scoped("app", "github client for Sourcegraph GitHub app"),
 			urn, apiURL, auther, nil)
 
 		installationID, err := strconv.ParseInt(c.GithubAppInstallationID, 10, 64)

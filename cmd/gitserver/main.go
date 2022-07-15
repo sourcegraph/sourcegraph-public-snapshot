@@ -342,9 +342,13 @@ func getRemoteURLFunc(
 			continue
 		}
 
-		dotcomConfig := conf.SiteConfig().Dotcom
-		if envvar.SourcegraphDotComMode() &&
-			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&
+		var dotcomConfig *schema.Dotcom
+		if envvar.SourcegraphDotComMode() {
+			dotcomConfig = conf.SiteConfig().Dotcom
+		}
+		gitHubAppConfig := conf.SiteConfig().GitHubApp
+		if ((envvar.SourcegraphDotComMode() &&
+			repos.IsGitHubAppCloudEnabled(dotcomConfig)) || repos.IsGitHubAppEnabled(gitHubAppConfig)) &&
 			svc.Kind == extsvc.KindGitHub {
 			rawConfig, err := svc.Config.Decrypt(ctx)
 			if err != nil {
@@ -352,7 +356,7 @@ func getRemoteURLFunc(
 			}
 			installationID := gjson.Get(rawConfig, "githubAppInstallationID").Int()
 			if installationID > 0 {
-				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, dotcomConfig, installationID, cli)
+				rawConfig, err = editGitHubAppExternalServiceConfigToken(ctx, externalServiceStore, svc, rawConfig, dotcomConfig, gitHubAppConfig, installationID, cli)
 				if err != nil {
 					return "", errors.Wrap(err, "edit GitHub App external service config token")
 				}
@@ -373,6 +377,7 @@ func editGitHubAppExternalServiceConfigToken(
 	svc *types.ExternalService,
 	rawConfig string,
 	dotcomConfig *schema.Dotcom,
+	gitHubAppConfig *schema.GitHubApp,
 	installationID int64,
 	cli httpcli.Doer,
 ) (string, error) {
@@ -388,12 +393,28 @@ func editGitHubAppExternalServiceConfigToken(
 		return "", errors.Errorf("only GitHub App on GitHub.com is supported, but got %q", baseURL)
 	}
 
-	pkey, err := base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
-	if err != nil {
-		return "", errors.Wrap(err, "decode private key")
+	var pkey []byte
+	var appID string
+
+	if dotcomConfig != nil {
+		pkey, err = base64.StdEncoding.DecodeString(dotcomConfig.GithubAppCloud.PrivateKey)
+		if err != nil {
+			return "", errors.Wrap(err, "decode private key")
+		}
+
+		appID = dotcomConfig.GithubAppCloud.AppID
 	}
 
-	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(dotcomConfig.GithubAppCloud.AppID, pkey)
+	if gitHubAppConfig != nil {
+		pkey, err = base64.StdEncoding.DecodeString(gitHubAppConfig.PrivateKey)
+		if err != nil {
+			return "", errors.Wrap(err, "decode private key")
+		}
+
+		appID = gitHubAppConfig.AppID
+	}
+
+	auther, err := auth.NewOAuthBearerTokenWithGitHubApp(appID, pkey)
 	if err != nil {
 		return "", errors.Wrap(err, "new authenticator with GitHub App")
 	}

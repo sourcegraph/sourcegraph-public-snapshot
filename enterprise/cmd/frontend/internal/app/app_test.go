@@ -67,7 +67,7 @@ func TestNewGitHubAppCloudSetupHandler(t *testing.T) {
 
 	require.Nil(t, err)
 
-	h := newGitHubAppCloudSetupHandler(db, apiURL, client)
+	h := newGitHubAppSetupHandler(db, apiURL, client)
 
 	t.Run("user not logged in (no actor in context)", func(t *testing.T) {
 		resp := httptest.NewRecorder()
