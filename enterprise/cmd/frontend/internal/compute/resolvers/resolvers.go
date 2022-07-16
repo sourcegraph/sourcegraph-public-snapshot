@@ -8,7 +8,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
-
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/compute"
 	"github.com/sourcegraph/sourcegraph/internal/database"

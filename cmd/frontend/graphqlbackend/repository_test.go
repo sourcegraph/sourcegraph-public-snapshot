@@ -19,8 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/log/logtest"
 )
 
 const exampleCommitSHA1 = "1234567890123456789012345678901234567890"
@@ -154,7 +152,6 @@ func assertRepoResolverHydrated(ctx context.Context, t *testing.T, r *Repository
 func TestRepositoryLabel(t *testing.T) {
 	test := func(name string) string {
 		r := &RepositoryResolver{
-			logger: logtest.Scoped(t),
 			RepoMatch: result.RepoMatch{
 				Name: api.RepoName(name),
 				ID:   api.RepoID(0),
@@ -222,7 +219,7 @@ func TestRepository_DefaultBranch(t *testing.T) {
 				gitserver.Mocks.ResolveRevision = nil
 			})
 
-			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}, logger: logtest.Scoped(t)}
+			res := &RepositoryResolver{RepoMatch: result.RepoMatch{Name: "repo"}}
 			branch, err := res.DefaultBranch(ctx)
 			if tt.wantErr != nil && err != nil {
 				if tt.wantErr.Error() != err.Error() {
