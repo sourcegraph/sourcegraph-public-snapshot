@@ -22,8 +22,8 @@ export const EditUserProfilePageGQLFragment = gql`
 const GET_SITE_CONFIG = gql`
     query GetSite {
         site {
-            id
             configuration {
+                id
                 effectiveContents
             }
         }
@@ -45,13 +45,18 @@ export const GitHubAppSetupPage: React.FunctionComponent = ({ ...props }) => {
         config = JSON.parse(data.site.configuration.effectiveContents)
     }
 
-    const doSettingsUpdate = useCallback(async () => {
-        try {
-            await updateSettings({ variables: { id: data.site.id, input: JSON.stringify(config) } })
-        } catch {
-            console.log('SettingsUpdateFailed')
-        }
-    }, [updateSettings, config, data])
+    const doSettingsUpdate = useCallback(
+        async updatedConfig => {
+            try {
+                await updateSettings({
+                    variables: { lastID: parseInt(data.site.configuration.id), input: JSON.stringify(updatedConfig) },
+                })
+            } catch {
+                console.log('SettingsUpdateFailed')
+            }
+        },
+        [updateSettings, config, data]
+    )
 
     return (
         <div>

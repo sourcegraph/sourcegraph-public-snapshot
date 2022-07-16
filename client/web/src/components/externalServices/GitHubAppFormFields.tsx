@@ -18,6 +18,7 @@ export const GitHubAppFormFields: React.FunctionComponent<React.PropsWithChildre
             onChange({
                 ...value,
                 gitHubApp: {
+                    ...value.gitHubApp,
                     slug: event.target.value,
                 },
             })
@@ -25,19 +26,47 @@ export const GitHubAppFormFields: React.FunctionComponent<React.PropsWithChildre
         [onChange, value]
     )
     const onAppIDChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => onChange({ ...value.gitHubApp, appID: event.target.value }),
+        event =>
+            onChange({
+                ...value,
+                gitHubApp: {
+                    ...value.gitHubApp,
+                    appID: event.target.value,
+                },
+            }),
         [onChange, value]
     )
     const onClientIDChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => onChange({ ...value.gitHubApp, clientID: event.target.value }),
+        event =>
+            onChange({
+                ...value,
+                gitHubApp: {
+                    ...value.gitHubApp,
+                    clientID: event.target.value,
+                },
+            }),
         [onChange, value]
     )
     const onClientSecretChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => onChange({ ...value.gitHubApp, clientSecret: event.target.value }),
+        event =>
+            onChange({
+                ...value,
+                gitHubApp: {
+                    ...value.gitHubApp,
+                    clientSecret: event.target.value,
+                },
+            }),
         [onChange, value]
     )
     const onPrivateKeyChange = useCallback<React.ChangeEventHandler<HTMLInputElement>>(
-        event => onChange({ ...value.gitHubApp, privateKey: event.target.value }),
+        event =>
+            onChange({
+                ...value,
+                gitHubApp: {
+                    ...value.gitHubApp,
+                    privateKey: event.target.value,
+                },
+            }),
         [onChange, value]
     )
     return (
@@ -50,7 +79,7 @@ export const GitHubAppFormFields: React.FunctionComponent<React.PropsWithChildre
                     required={true}
                     aria-describedby="GitHubAppFormFields__slug-help"
                     onChange={onSlugChange}
-                    value={value.gitHubApp.slug}
+                    value={value.gitHubApp ? value.gitHubApp.slug : ''}
                 />
                 <small id="GitHubAppFormFields__slug-help" className="form-text text-muted">
                     The App Slug is the URL-friendly name of your GitHub App. You can find this on the settings page for
@@ -67,7 +96,7 @@ export const GitHubAppFormFields: React.FunctionComponent<React.PropsWithChildre
                 label="App ID"
                 required={true}
                 onChange={onAppIDChange}
-                value={value.gitHubApp.appID}
+                value={value.gitHubApp ? value.gitHubApp.appID : ''}
             />
 
             <Input
@@ -79,7 +108,7 @@ export const GitHubAppFormFields: React.FunctionComponent<React.PropsWithChildre
                 label="Client ID"
                 required={true}
                 onChange={onClientIDChange}
-                value={value.gitHubApp.clientID}
+                value={value.gitHubApp ? value.gitHubApp.clientID : ''}
             />
 
             <Input
@@ -91,7 +120,7 @@ export const GitHubAppFormFields: React.FunctionComponent<React.PropsWithChildre
                 label="Client Secret"
                 required={true}
                 onChange={onClientSecretChange}
-                value={value.gitHubApp.clientSecret}
+                value={value.gitHubApp ? value.gitHubApp.clientSecret : ''}
             />
 
             <div className="form-group">
@@ -105,7 +134,7 @@ export const GitHubAppFormFields: React.FunctionComponent<React.PropsWithChildre
                     className="form-group w-100"
                     required={true}
                     onChange={onPrivateKeyChange}
-                    value={value.gitHubApp.privateKey}
+                    value={value.gitHubApp ? value.gitHubApp.privateKey : ''}
                 />
             </div>
         </div>

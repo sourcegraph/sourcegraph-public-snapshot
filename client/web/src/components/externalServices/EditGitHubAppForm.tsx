@@ -37,18 +37,22 @@ export const EditGitHubAppForm: React.FunctionComponent<React.PropsWithChildren<
 }) => {
     const history = useHistory()
 
-    const onSubmit = useCallback<React.FormEventHandler>(
-        event => {
-            event.preventDefault()
-            doUpdate()
-        },
-        [doUpdate]
-    )
-
     const [gitHubAppFields, setGitHubAppFields] = useState(initialValue)
     const onChange = useCallback<React.ComponentProps<typeof GitHubAppFormFields>['onChange']>(newValue => {
         setGitHubAppFields(previous => ({ ...previous, ...newValue }))
     }, [])
+
+    const onSubmit = useCallback<React.FormEventHandler>(
+        event => {
+            event.preventDefault()
+            setGitHubAppFields(previous => ({
+                ...previous,
+                gitHubApp: { ...previous.gitHubApp, privateKey: btoa(previous.gitHubApp.privateKey) },
+            }))
+            doUpdate(gitHubAppFields)
+        },
+        [doUpdate, gitHubAppFields]
+    )
 
     return (
         <Container>
