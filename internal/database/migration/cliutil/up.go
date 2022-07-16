@@ -30,6 +30,11 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
 		Value: false,
 	}
+	privilegedHashFlag := &cli.StringFlag{
+		Name:  "privileged-hash",
+		Usage: "Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.",
+		Value: "",
+	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
 		Usage: "Ignore a previously failed attempt if it will be immediately retried by this operation.",
@@ -59,6 +64,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		return runner.Options{
 			Operations:           operations,
 			PrivilegedMode:       privilegedMode,
+			PrivilegedHash:       privilegedHashFlag.Get(cmd),
 			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
 		}, nil
 	}
@@ -107,6 +113,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			schemaNamesFlag,
 			unprivilegedOnlyFlag,
 			noopPrivilegedFlag,
+			privilegedHashFlag,
 			ignoreSingleDirtyLogFlag,
 			skipUpgradeValidationFlag,
 		},
