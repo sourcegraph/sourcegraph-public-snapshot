@@ -38,7 +38,7 @@ type LockfileIndex struct {
 type Repo struct {
 	ID      int
 	Scheme  string
-	Name    string
+	Name    reposource.PackageName
 	Version string
 }
 
@@ -46,7 +46,7 @@ type PackageDependency interface {
 	RepoName() api.RepoName
 	GitTagFromVersion() string
 	Scheme() string
-	PackageSyntax() string
+	PackageSyntax() reposource.PackageName
 	PackageVersion() string
 }
 
@@ -54,7 +54,7 @@ type PackageDependencyLiteral struct {
 	RepoNameValue          api.RepoName
 	GitTagFromVersionValue string
 	SchemeValue            string
-	PackageSyntaxValue     string
+	PackageSyntaxValue     reposource.PackageName
 	PackageVersionValue    string
 }
 
@@ -62,7 +62,7 @@ func TestPackageDependencyLiteral(
 	repoNameValue api.RepoName,
 	gitTagFromVersionValue string,
 	schemeValue string,
-	packageSyntaxValue string,
+	packageSyntaxValue reposource.PackageName,
 	packageVersionValue string,
 ) PackageDependency {
 	return PackageDependencyLiteral{
@@ -74,11 +74,11 @@ func TestPackageDependencyLiteral(
 	}
 }
 
-func (d PackageDependencyLiteral) RepoName() api.RepoName    { return d.RepoNameValue }
-func (d PackageDependencyLiteral) GitTagFromVersion() string { return d.GitTagFromVersionValue }
-func (d PackageDependencyLiteral) Scheme() string            { return d.SchemeValue }
-func (d PackageDependencyLiteral) PackageSyntax() string     { return d.PackageSyntaxValue }
-func (d PackageDependencyLiteral) PackageVersion() string    { return d.PackageVersionValue }
+func (d PackageDependencyLiteral) RepoName() api.RepoName                { return d.RepoNameValue }
+func (d PackageDependencyLiteral) GitTagFromVersion() string             { return d.GitTagFromVersionValue }
+func (d PackageDependencyLiteral) Scheme() string                        { return d.SchemeValue }
+func (d PackageDependencyLiteral) PackageSyntax() reposource.PackageName { return d.PackageSyntaxValue }
+func (d PackageDependencyLiteral) PackageVersion() string                { return d.PackageVersionValue }
 
 func SerializePackageDependencies(deps []reposource.VersionedPackage) []PackageDependency {
 	serializableRepoDeps := make([]PackageDependency, 0, len(deps))

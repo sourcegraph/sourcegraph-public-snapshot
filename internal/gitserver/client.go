@@ -184,7 +184,8 @@ type Client interface {
 	// BlameFile returns Git blame information about a file.
 	BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
 
-	// GitCommand creates a new GitCommand.
+	// GitCommand is deprecated. You should use one of the other methods provided
+	// here or add a new one if what you need doesn't exist.
 	GitCommand(repo api.RepoName, args ...string) GitCommand
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch

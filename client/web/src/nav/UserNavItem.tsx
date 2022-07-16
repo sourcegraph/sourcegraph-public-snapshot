@@ -1,10 +1,9 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip } from 'reactstrap'
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
@@ -17,7 +16,6 @@ import {
     MenuDivider,
     MenuHeader,
     MenuItem,
-    useTimeoutManager,
     MenuLink,
     MenuList,
     Link,
@@ -37,7 +35,7 @@ import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
-export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
+export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
@@ -48,37 +46,6 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
-}
-
-export interface ExtensionAlertAnimationProps {
-    isExtensionAlertAnimating: boolean
-}
-
-/**
- * React hook to manage the animation that occurs after the user dismisses
- * `InstallBrowserExtensionAlert`.
- *
- * This hook is called from the the LCA of `UserNavItem` and the component that triggers
- * the animation.
- */
-export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
-    startExtensionAlertAnimation: () => void
-} {
-    const [isAnimating, setIsAnimating] = useState(false)
-
-    const animationManager = useTimeoutManager()
-
-    const startExtensionAlertAnimation = useCallback(() => {
-        if (!isAnimating) {
-            setIsAnimating(true)
-
-            animationManager.setTimeout(() => {
-                setIsAnimating(false)
-            }, 5100)
-        }
-    }, [isAnimating, animationManager])
-
-    return { isExtensionAlertAnimating: isAnimating, startExtensionAlertAnimation }
 }
 
 /**
@@ -106,7 +73,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
         menuButtonRef,
         themePreference,
         onThemePreferenceChange,
-        isExtensionAlertAnimating,
         codeHostIntegrationMessaging,
         position = Position.bottomEnd,
     } = props
@@ -160,21 +126,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
-                            {isExtensionAlertAnimating && (
-                                <Tooltip
-                                    target={targetID}
-                                    placement="bottom"
-                                    isOpen={true}
-                                    modifiers={{
-                                        offset: {
-                                            offset: '0, 10px',
-                                        },
-                                    }}
-                                    className={styles.tooltip}
-                                >
-                                    Install the browser extension from here later
-                                </Tooltip>
-                            )}
                         </MenuButton>
 
                         <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">

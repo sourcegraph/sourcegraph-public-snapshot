@@ -7,7 +7,7 @@ import { filter } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
-import { Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
 import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
@@ -75,17 +75,16 @@ export class GoToPermalinkAction extends React.PureComponent<
         }
 
         return (
-            <Tooltip content="Permalink (with full Git commit SHA)">
-                <RepoHeaderActionButtonLink
-                    aria-label="Permalink"
-                    className="btn-icon"
-                    file={false}
-                    to={this.permalinkURL}
-                    onSelect={this.onClick.bind(this)}
-                >
-                    <Icon aria-hidden={true} svgPath={mdiLink} />
-                </RepoHeaderActionButtonLink>
-            </Tooltip>
+            <RepoHeaderActionButtonLink
+                className="btn-icon"
+                file={false}
+                to={this.permalinkURL}
+                onSelect={this.onClick.bind(this)}
+                data-tooltip="Permalink (with full Git commit SHA)"
+                aria-label="Permalink (with full Git commit SHA)"
+            >
+                <Icon aria-hidden={true} svgPath={mdiLink} />
+            </RepoHeaderActionButtonLink>
         )
     }
 

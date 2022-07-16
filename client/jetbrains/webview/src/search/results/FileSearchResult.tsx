@@ -101,7 +101,9 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
                 infoColumn={
                     formattedRepositoryStarCount && (
                         <>
-                            {lines.length} {lines.length > 1 ? 'matches' : 'match'}
+                            <span className={styles.matches}>
+                                {lines.length} {lines.length > 1 ? 'matches' : 'match'}
+                            </span>
                             <InfoDivider />
                             <SearchResultStar />
                             {formattedRepositoryStarCount}

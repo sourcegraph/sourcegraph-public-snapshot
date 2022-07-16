@@ -76,10 +76,10 @@ func ParseNpmPackageNameWithoutVersion(input string) (NpmPackageName, error) {
 
 // ParseNpmPackageFromRepoURL is a convenience function to parse a string in a
 // 'npm/(scope/)?name' format into an NpmPackageName.
-func ParseNpmPackageFromRepoURL(urlPath string) (*NpmPackageName, error) {
-	match := npmURLRegex.FindStringSubmatch(urlPath)
+func ParseNpmPackageFromRepoURL(repoName api.RepoName) (*NpmPackageName, error) {
+	match := npmURLRegex.FindStringSubmatch(string(repoName))
 	if match == nil {
-		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", urlPath)
+		return nil, errors.Errorf("expected path in npm/(scope/)?name format but found %s", repoName)
 	}
 	result := make(map[string]string)
 	for i, groupName := range npmURLRegex.SubexpNames() {
@@ -93,7 +93,7 @@ func ParseNpmPackageFromRepoURL(urlPath string) (*NpmPackageName, error) {
 
 // ParseNpmPackageFromPackageSyntax is a convenience function to parse a
 // string in a '(@scope/)?name' format into an NpmPackageName.
-func ParseNpmPackageFromPackageSyntax(pkg string) (*NpmPackageName, error) {
+func ParseNpmPackageFromPackageSyntax(pkg PackageName) (*NpmPackageName, error) {
 	dep, err := ParseNpmVersionedPackage(fmt.Sprintf("%s@0", pkg))
 	if err != nil {
 		return nil, err
@@ -147,11 +147,11 @@ func (pkg *NpmPackageName) CloneURL() string {
 // This is largely for "lower-level" code interacting with the npm API.
 //
 // In most cases, you want to use NpmVersionedPackage's VersionedPackageSyntax() instead.
-func (pkg *NpmPackageName) PackageSyntax() string {
+func (pkg *NpmPackageName) PackageSyntax() PackageName {
 	if pkg.scope != "" {
-		return fmt.Sprintf("@%s/%s", pkg.scope, pkg.name)
+		return PackageName(fmt.Sprintf("@%s/%s", pkg.scope, pkg.name))
 	}
-	return pkg.name
+	return PackageName(pkg.name)
 }
 
 // NpmVersionedPackage is a "versioned package" for use by npm commands, such as

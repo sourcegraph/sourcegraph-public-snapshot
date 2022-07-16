@@ -1,8 +1,7 @@
 package repos
 
 import (
-	"context"
-
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gomodproxy"
@@ -41,22 +40,14 @@ type goPackagesSource struct {
 
 var _ packagesSource = &goPackagesSource{}
 
-func (s *goPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
-	mod, err := s.client.GetVersion(ctx, name, version)
-	if err != nil {
-		return nil, err
-	}
-	return reposource.NewGoVersionedPackage(*mod), nil
-}
-
 func (goPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseGoVersionedPackage(dep)
 }
 
-func (goPackagesSource) ParsePackageFromName(name string) (reposource.Package, error) {
+func (goPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromName(name)
 }
 
-func (goPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (goPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseGoDependencyFromRepoName(repoName)
 }

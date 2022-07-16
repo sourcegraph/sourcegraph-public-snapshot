@@ -30,10 +30,10 @@ type packagesSource interface {
 	ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error)
 	// ParsePackageFromRepoName parses a Sourcegraph repository name of the package.
 	// For example: "npm/react" or "maven/com.google.guava/guava".
-	ParsePackageFromRepoName(repoName string) (reposource.Package, error)
+	ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error)
 	// ParsePackageFromName parses a package from the name of the package, as accepted by the ecosystem's package manager.
 	// For example: "react" or "com.google.guava:guava".
-	ParsePackageFromName(name string) (reposource.Package, error)
+	ParsePackageFromName(name reposource.PackageName) (reposource.Package, error)
 	// functions in this file that switch against concrete implementations of this interface:
 	// getPackage(): to fetch the description of this package, only supported by a few implementations.
 	// metadata(): to store gob-encoded structs with implementation-specific metadata.
@@ -41,7 +41,7 @@ type packagesSource interface {
 
 type packagesDownloadSource interface {
 	// GetPackage sends a request to the package host to get metadata about this package, like the description.
-	GetPackage(ctx context.Context, name string) (reposource.Package, error)
+	GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error)
 }
 
 var _ Source = &PackagesSource{}
@@ -53,7 +53,7 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 		return
 	}
 
-	handledPackages := make(map[string]struct{})
+	handledPackages := make(map[reposource.PackageName]struct{})
 
 	for _, dep := range deps {
 		if _, ok := handledPackages[dep.PackageSyntax()]; !ok {
@@ -81,7 +81,8 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 	}()
 
 	const batchLimit = 100
-	lastName := ""
+	var lastName reposource.PackageName
+	lastName = ""
 	for {
 		depRepos, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
 			Scheme:          s.scheme,
@@ -134,7 +135,7 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 }
 
 func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.Repo, error) {
-	parsedPkg, err := s.src.ParsePackageFromRepoName(repoName)
+	parsedPkg, err := s.src.ParsePackageFromRepoName(api.RepoName(repoName))
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +170,7 @@ func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
 	}
 }
 
-func getPackage(ctx context.Context, s packagesSource, name string) (reposource.Package, error) {
+func getPackage(ctx context.Context, s packagesSource, name reposource.PackageName) (reposource.Package, error) {
 	switch d := s.(type) {
 	case packagesDownloadSource:
 		return d.GetPackage(ctx, name)

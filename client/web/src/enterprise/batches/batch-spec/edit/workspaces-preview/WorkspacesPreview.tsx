@@ -249,7 +249,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">
                     {error && <ErrorAlert error={error} className="w-100 mb-0" />}
-                    <div className={styles.iconContainer}>
+                    <div className={styles.iconContainer} aria-hidden={true}>
                         <PreviewLoadingSpinner
                             className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
                         />
@@ -300,8 +300,8 @@ const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: 
     // that if text is forced to wrap, it isn't cut off.
     const style = useSpring({ height: active ? '3rem' : '0rem', opacity: active ? 1 : 0 })
     return (
-        <animated.h4 className={classNames(styles.instruction, styles.waitingText)} style={style}>
-            {children}
-        </animated.h4>
+        <animated.div style={style}>
+            <H4 className={classNames(styles.instruction, styles.waitingText)}>{children}</H4>
+        </animated.div>
     )
 }

@@ -7,7 +7,7 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
 import {
@@ -42,11 +42,12 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                     </small>
                 )}
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
-                        <small className="ml-2 text-muted">
-                            <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
-                        </small>
-                    </Tooltip>
+                    <small
+                        className="ml-2 text-muted"
+                        data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
+                    </small>
                 )}
             </div>
 
@@ -57,11 +58,15 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                     </Button>
                 )}{' '}
                 {
-                    <Tooltip content="Repository settings">
-                        <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
-                        </Button>
-                    </Tooltip>
+                    <Button
+                        to={`/${node.name}/-/settings`}
+                        data-tooltip="Repository settings"
+                        variant="secondary"
+                        size="sm"
+                        as={Link}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                    </Button>
                 }{' '}
             </div>
         </div>

@@ -53,7 +53,7 @@ func uploadAll(ctx context.Context, commitsByRepo map[string][]string, limiter *
 					return
 				}
 
-				fmt.Printf("[%5s] %s Finished uploading index for %s@%s - ID %s\n", internal.TimeSince(start), internal.EmojiSuccess, repoName, commit[:7], graphqlID)
+				fmt.Printf("[%5s] %s Finished uploading index %s for %s@%s\n", internal.TimeSince(start), internal.EmojiSuccess, graphqlID, repoName, commit[:7])
 
 				uploadCh <- uploadMeta{
 					id:       graphqlID,

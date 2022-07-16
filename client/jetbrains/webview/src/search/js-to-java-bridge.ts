@@ -301,6 +301,7 @@ async function createPreviewContentForPathMatch(match: PathMatch): Promise<Previ
         resultType: match.type,
         fileName,
         repoUrl: match.repository,
+        commit: match.commit,
         path: match.path,
         content: encodeContent(content),
     }

@@ -69,8 +69,7 @@ export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<Cre
             />
 
             <Route
-                path={`${match.url}/compute`}
-                exact={true}
+                path={`${match.url}/group-results`}
                 render={() => (
                     <InsightCreationLazyPage
                         mode={InsightCreationPageType.Compute}

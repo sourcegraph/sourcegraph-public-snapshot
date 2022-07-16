@@ -39,7 +39,6 @@ import {
     ALL_INSIGHTS_DASHBOARD,
     BackendInsight,
     CodeInsightsBackendContext,
-    DEFAULT_SERIES_DISPLAY_OPTIONS,
     InsightFilters,
 } from '../../../../../core'
 import { GET_INSIGHT_VIEW_GQL } from '../../../../../core/backend/gql-backend'
@@ -79,16 +78,14 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const [filterVisualMode, setFilterVisualMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(insight.seriesDisplayOptions)
-
     const filterInput: InsightViewFiltersInput = {
         includeRepoRegex: debouncedFilters.includeRepoRegexp,
         excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
         searchContexts: [debouncedFilters.context],
     }
     const displayInput: SeriesDisplayOptionsInput = {
-        limit: seriesDisplayOptions?.limit,
-        sortOptions: seriesDisplayOptions?.sortOptions,
+        limit: insight.seriesDisplayOptions?.limit,
+        sortOptions: insight.seriesDisplayOptions?.sortOptions,
     }
 
     const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
@@ -111,7 +108,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
         }
     )
 
-    const { trackMouseLeave, trackMouseEnter, trackDatumClicks, trackFilterChanges } = useCodeInsightViewPings({
+    const { trackMouseLeave, trackMouseEnter, trackDatumClicks } = useCodeInsightViewPings({
         telemetryService,
         insightType: getTrackingTypeByInsightType(insight.type),
     })
@@ -167,11 +164,9 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         visualMode={filterVisualMode}
                         onVisualModeChange={setFilterVisualMode}
                         onFiltersChange={handleFilterChange}
-                        onFilterValuesChange={trackFilterChanges}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
-                        originalSeriesDisplayOptions={DEFAULT_SERIES_DISPLAY_OPTIONS}
-                        onSeriesDisplayOptionsChange={setSeriesDisplayOptions}
+                        seriesCount={insight.seriesCount}
                     />
                 )}
 

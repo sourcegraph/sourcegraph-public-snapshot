@@ -126,7 +126,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     label: 'Complex searches',
                     minPerItem: 5,
                     description:
-                        'These searches that would require ad-hoc scripting to accomplish without Sourcegraph.  These searches often answer  specific and valuable questions such as finding occurrences of log4j at a specific version globally.',
+                        'Without Sourcegraph, these searches would require complex scripting. They often answer specific and valuable questions such as finding occurrences of log4j at a specific version globally.',
                     percentage: 3,
                     value: totalCount,
                 },
@@ -227,7 +227,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 </div>
             </Card>
             <Text className="font-italic text-center mt-2">
-                All events are generated from entries in the event logs table.
+                All events are generated from entries in the event logs table and are updated every 24 hours.
             </Text>
         </>
     )

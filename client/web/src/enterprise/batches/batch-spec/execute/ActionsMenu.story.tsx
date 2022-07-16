@@ -22,9 +22,9 @@ export default config
 
 export const Executing: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={EXECUTING_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -32,9 +32,9 @@ export const Executing: Story = () => (
 
 export const Failed: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_WITH_ERRORS_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -42,9 +42,9 @@ export const Failed: Story = () => (
 
 export const Completed: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu />
             </BatchSpecContextProvider>
         )}
     </WebStory>
@@ -52,9 +52,9 @@ export const Completed: Story = () => (
 
 export const CompletedWithErrors: Story = () => (
     <WebStory>
-        {props => (
+        {() => (
             <BatchSpecContextProvider batchChange={mockBatchChange()} batchSpec={COMPLETED_WITH_ERRORS_BATCH_SPEC}>
-                <ActionsMenu {...props} />
+                <ActionsMenu />
             </BatchSpecContextProvider>
         )}
     </WebStory>

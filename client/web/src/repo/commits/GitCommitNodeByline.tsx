@@ -2,8 +2,6 @@ import React from 'react'
 
 import classNames from 'classnames'
 
-import { Tooltip } from '@sourcegraph/wildcard'
-
 import { Timestamp } from '../../components/time/Timestamp'
 import { SignatureFields } from '../../graphql-operations'
 import { formatPersonName, PersonLink } from '../../person/PersonLink'
@@ -49,16 +47,18 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
         return (
             <div data-testid="git-commit-node-byline" className={className}>
                 <div className="flex-shrink-0">
-                    <Tooltip content={`${formatPersonName(author.person)} (author)`}>
-                        <UserAvatar inline={true} className={avatarClassName} user={author.person} />
-                    </Tooltip>{' '}
-                    <Tooltip content={`${formatPersonName(committer.person)} (committer)`}>
-                        <UserAvatar
-                            inline={true}
-                            className={classNames('mr-2', avatarClassName)}
-                            user={committer.person}
-                        />
-                    </Tooltip>
+                    <UserAvatar
+                        inline={true}
+                        className={avatarClassName}
+                        user={author.person}
+                        data-tooltip={`${formatPersonName(author.person)} (author)`}
+                    />{' '}
+                    <UserAvatar
+                        inline={true}
+                        className={classNames('mr-2', avatarClassName)}
+                        user={committer.person}
+                        data-tooltip={`${formatPersonName(committer.person)} (committer)`}
+                    />
                 </div>
                 <div className="overflow-hidden">
                     {!compact ? (
@@ -83,13 +83,12 @@ export const GitCommitNodeByline: React.FunctionComponent<React.PropsWithChildre
     return (
         <div data-testid="git-commit-node-byline" className={className}>
             <div>
-                <Tooltip content={formatPersonName(author.person)}>
-                    <UserAvatar
-                        inline={true}
-                        className={classNames('mr-1 mr-2', avatarClassName)}
-                        user={author.person}
-                    />
-                </Tooltip>
+                <UserAvatar
+                    inline={true}
+                    className={classNames('mr-1 mr-2', avatarClassName)}
+                    user={author.person}
+                    data-tooltip={formatPersonName(author.person)}
+                />
             </div>
             <div className="overflow-hidden">
                 {!compact && (
