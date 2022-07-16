@@ -86,19 +86,25 @@ const ORIGINAL_FILTERS: InsightFilters = {
     includeRepoRegexp: '',
     excludeRepoRegexp: '',
     context: '',
+    seriesDisplayOptions: {
+        limit: '20',
+        sortOptions: {
+            direction: SeriesSortDirection.DESC,
+            mode: SeriesSortMode.RESULT_COUNT,
+        },
+    },
 }
 
 const FILTERS: InsightFilters = {
     includeRepoRegexp: 'hello world loooong loooooooooooooong repo filter regular expressssssion',
     excludeRepoRegexp: 'hello world loooong loooooooooooooong repo filter regular expressssssion',
     context: '',
-}
-
-const ORIGINAL_SERIES_DISPLAY_OPTIONS = {
-    limit: 20,
-    sortOptions: {
-        direction: SeriesSortDirection.DESC,
-        mode: SeriesSortMode.RESULT_COUNT,
+    seriesDisplayOptions: {
+        limit: '20',
+        sortOptions: {
+            direction: SeriesSortDirection.DESC,
+            mode: SeriesSortMode.RESULT_COUNT,
+        },
     },
 }
 
@@ -111,8 +117,7 @@ export const DrillDownFiltersShowcase: Story = () => (
             onFiltersChange={console.log}
             onFilterSave={console.log}
             onCreateInsightRequest={console.log}
-            onSeriesDisplayOptionsChange={console.log}
-            originalSeriesDisplayOptions={ORIGINAL_SERIES_DISPLAY_OPTIONS}
+            seriesCount={20}
         />
     </MockedTestProvider>
 )
@@ -130,11 +135,7 @@ export const DrillDownFiltersHorizontalMode: Story = () => {
                 onFiltersChange={console.log}
                 onFilterSave={console.log}
                 onCreateInsightRequest={console.log}
-                onSeriesDisplayOptionsChange={console.log}
-                originalSeriesDisplayOptions={{
-                    limit: 20,
-                    sortOptions: { direction: SeriesSortDirection.DESC, mode: SeriesSortMode.RESULT_COUNT },
-                }}
+                seriesCount={20}
             />
         </MockedTestProvider>
     )

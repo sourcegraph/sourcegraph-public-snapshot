@@ -1,7 +1,6 @@
 import {
     InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
-    SeriesDisplayOptionsInput,
     TimeIntervalStepUnit,
     UpdateLineChartSearchInsightInput,
     UpdatePieChartSearchInsightInput,
@@ -24,8 +23,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
         searchContexts: insight.filters.context ? [insight.filters.context] : [],
     }
 
-    // TODO: update when sorting all insights are supported
-    const seriesDisplayOptions: SeriesDisplayOptionsInput = {}
+    const seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesCount, insight.seriesDisplayOptions)
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -51,6 +49,8 @@ export function getCaptureGroupInsightUpdateInput(
     const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
+    const _seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesCount, seriesDisplayOptions)
+
     return {
         dataSeries: [
             {
@@ -70,7 +70,7 @@ export function getCaptureGroupInsightUpdateInput(
                 excludeRepoRegex: filters.excludeRepoRegexp,
                 searchContexts: insight.filters.context ? [filters.context] : [],
             },
-            seriesDisplayOptions: parseSeriesDisplayOptions(seriesDisplayOptions),
+            seriesDisplayOptions: _seriesDisplayOptions,
         },
     }
 }

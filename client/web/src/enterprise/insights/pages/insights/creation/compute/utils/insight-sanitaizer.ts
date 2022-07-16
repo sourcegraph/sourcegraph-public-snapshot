@@ -1,5 +1,7 @@
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedRepositories, getSanitizedSeries } from '../../../../../components'
 import { ComputeInsight, InsightExecutionType, InsightType } from '../../../../../core'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { CreateComputeInsightFormFields } from '../types'
 
 export const getSanitizedComputeInsight = (values: CreateComputeInsightFormFields): ComputeInsight => ({
@@ -17,5 +19,13 @@ export const getSanitizedComputeInsight = (values: CreateComputeInsightFormField
         excludeRepoRegexp: '',
         includeRepoRegexp: '',
         context: '',
+        seriesDisplayOptions: {
+            limit: `${MAX_NUMBER_OF_SERIES}`,
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
     },
+    seriesCount: 0,
 })
