@@ -7,6 +7,8 @@ import (
 	"sync"
 	"time"
 
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
@@ -63,7 +65,9 @@ func Wait(ctx context.Context, out *std.Output) {
 	if count == 0 {
 		return // no jobs registered
 	}
-	start := time.Now() // start clock for additional time waited
+	ctx, span := analytics.StartSpan(ctx, "background_wait",
+		trace.WithAttributes(attribute.Int("jobs", int(count))))
+	defer span.End()
 
 	firstResultWithOutput := true
 	out.VerboseLine(output.Styledf(output.StylePending, "Waiting for remaining background jobs to complete (%d total)...", count))
@@ -84,5 +88,5 @@ func Wait(ctx context.Context, out *std.Output) {
 	// Done!
 	close(jobs.output)
 	out.VerboseLine(output.Line(output.EmojiSuccess, output.StyleSuccess, "Background jobs done!"))
-	analytics.LogEvent(ctx, "background_wait", nil, start)
+	span.Succeeded()
 }

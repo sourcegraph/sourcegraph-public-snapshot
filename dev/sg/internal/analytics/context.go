@@ -6,23 +6,23 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/otfields"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	"go.opentelemetry.io/otel/trace"
+	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 )
 
-type eventStoreKey struct{}
-
 // WithContext enables analytics in this context.
 func WithContext(ctx context.Context, sgVersion string) (context.Context, error) {
 	processor, err := newSpanToDiskProcessor()
 	if err != nil {
-		return ctx, errors.Wrap(err, "newSpanToDiskProcessor")
+		return ctx, errors.Wrap(err, "disk exporter")
 	}
 
 	provider := oteltracesdk.NewTracerProvider(
@@ -41,10 +41,22 @@ func WithContext(ctx context.Context, sgVersion string) (context.Context, error)
 		std.Out.WriteWarningf("opentelemetry: %s", err.Error())
 	}))
 
-	return context.WithValue(ctx, eventStoreKey{}, &eventStore{
-		processor: processor,
+	var rootSpan *Span
+	ctx, rootSpan = StartSpan(ctx, "sg", trace.WithAttributes(
+		attribute.Bool("root_span", true),
+	))
+
+	return context.WithValue(ctx, spansStoreKey{}, &spansStore{
+		rootSpan: rootSpan.Span,
+		provider: provider,
 	}), nil
 }
+
+const (
+	sgAnalyticsVersionResourceKey = "sg.analytics_version"
+	// Increment to make breaking changes to spans and discard old spans
+	sgAnalyticsVersion = "v1"
+)
 
 // newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
 // type.
@@ -54,19 +66,15 @@ func newResource(r log.Resource) *resource.Resource {
 		semconv.ServiceNameKey.String(r.Name),
 		semconv.ServiceNamespaceKey.String(r.Namespace),
 		semconv.ServiceInstanceIDKey.String(r.InstanceID),
-		semconv.ServiceVersionKey.String(r.Version))
+		semconv.ServiceVersionKey.String(r.Version),
+		attribute.String(sgAnalyticsVersionResourceKey, sgAnalyticsVersion))
 }
 
-// getStore retrieves the events store from context if it exists. Callers should check
-// that the store is non-nil before attempting to use it.
-func getStore(ctx context.Context) *eventStore {
-	store, ok := ctx.Value(eventStoreKey{}).(*eventStore)
-	if !ok {
-		return nil
+func isValidVersion(spans *tracepb.ResourceSpans) bool {
+	for _, attribute := range spans.GetResource().GetAttributes() {
+		if attribute.GetKey() == sgAnalyticsVersionResourceKey {
+			return attribute.Value.GetStringValue() == sgAnalyticsVersion
+		}
 	}
-	return store
-}
-
-func tracer() trace.Tracer {
-	return otel.Tracer("sg")
+	return false
 }

@@ -3,45 +3,53 @@ package analytics
 import (
 	"bufio"
 	"context"
-	"encoding/json"
 	"os"
 
-	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
-	"go.opentelemetry.io/otel/sdk/trace"
-	"go.opentelemetry.io/otel/sdk/trace/tracetest"
+	coltracepb "go.opentelemetry.io/proto/otlp/collector/trace/v1"
+	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
+	"google.golang.org/protobuf/encoding/protojson"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-const defaultOtlpEndpoint = "api.honeycomb.io:443"
-const otlpEndpointKey = "OTEL_EXPORTER_OTLP_ENDPOINT"
+const (
+	honeycombEndpoint  = "grpc://api.honeycomb.io:443"
+	otlpEndpointEnvKey = "OTEL_EXPORTER_OTLP_ENDPOINT"
+)
 
 // Submit pushes all persisted events to OkayHQ.
-func Submit(ctx context.Context, honeycombToken string, gitHubLogin string) error {
+func Submit(ctx context.Context, honeycombToken string) error {
 	spans, err := Load()
 	if err != nil {
 		return err
 	}
 
-	if _, exists := os.LookupEnv(otlpEndpointKey); !exists {
-		os.Setenv(otlpEndpointKey, defaultOtlpEndpoint)
-		// TODO auth
+	// if endpoint is not set, point to Honeycomb
+	var otlpOptions []otlptracegrpc.Option
+	if _, exists := os.LookupEnv(otlpEndpointEnvKey); !exists {
+		println("honeycomb mode")
+		os.Setenv(otlpEndpointEnvKey, honeycombEndpoint)
+		otlpOptions = append(otlpOptions, otlptracegrpc.WithHeaders(map[string]string{
+			"x-honeycomb-team": honeycombToken,
+		}))
 	}
 
 	// Set up a trace exporter
-	client := otlptracegrpc.NewClient()
-	exporter, err := otlptrace.New(ctx, client)
-	if err != nil {
-		return errors.Wrap(err, "failed to create trace exporter")
+	client := otlptracegrpc.NewClient(otlpOptions...)
+	if err := client.Start(ctx); err != nil {
+		return errors.Wrap(err, "failed to initialize export client")
 	}
 
 	// send spans and shut down
-	if err := exporter.ExportSpans(ctx, spans); err != nil {
-		return err
+	if err := client.UploadTraces(ctx, spans); err != nil {
+		return errors.Wrap(err, "failed to export spans")
+	}
+	if err := client.Stop(ctx); err != nil {
+		return errors.Wrap(err, "failed to flush span exporter")
 	}
 
-	return exporter.Shutdown(ctx)
+	return nil
 }
 
 // Persist stores all events in context to disk.
@@ -55,7 +63,7 @@ func Persist(ctx context.Context) error {
 
 // Reset deletes all persisted events.
 func Reset() error {
-	p, err := eventsPath()
+	p, err := spansPath()
 	if err != nil {
 		return err
 	}
@@ -68,8 +76,8 @@ func Reset() error {
 }
 
 // Load retrieves all persisted events.
-func Load() (spans []trace.ReadOnlySpan, err error) {
-	p, err := eventsPath()
+func Load() (spans []*tracepb.ResourceSpans, err error) {
+	p, err := spansPath()
 	if err != nil {
 		return nil, err
 	}
@@ -82,19 +90,19 @@ func Load() (spans []trace.ReadOnlySpan, err error) {
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		// Don't worry too much about malformed events, analytics are relatively optional
-		// so just grab what we can.
-		var span tracetest.SpanStub
-		if err := json.Unmarshal(scanner.Bytes(), &span); err != nil {
+		var req coltracepb.ExportTraceServiceRequest
+		if err := protojson.Unmarshal(scanner.Bytes(), &req); err != nil {
+			println(err.Error())
 			continue // drop malformed data
 		}
 
-		// Now we ensure that this event is something we want to keep
-		if !span.SpanContext.IsValid() {
-			continue
+		spans = append(spans, req.GetResourceSpans()...)
+		for _, s := range req.GetResourceSpans() {
+			if !isValidVersion(s) {
+				continue
+			}
+			spans = append(spans, s)
 		}
-
-		spans = append(spans, span.Snapshot())
 	}
 	return
 }
