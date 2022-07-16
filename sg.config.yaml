@@ -40,7 +40,6 @@ env:
   PROMETHEUS_URL: http://localhost:9090
   JAEGER_SERVER_URL: http://localhost:16686
   ZOEKT_HOST: localhost:3070
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://localhost:4317
 
   SRC_DEVELOPMENT: 'true'
   SRC_PROF_HTTP: ''

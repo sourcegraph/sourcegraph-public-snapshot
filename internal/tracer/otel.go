@@ -3,7 +3,6 @@ package tracer
 import (
 	"context"
 	"io"
-	"os"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -31,8 +30,7 @@ const defaultOtlpEndpoint = "http://otel-collector:4318"
 // to OpenTelemetry tracing) without making changes to existing tracing code.
 //
 // All configuration is sourced directly from the environment using the specification
-// laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md,
-// with one minor adjustment - the OTEL_EXPORTER_OTLP_ENDPOINT defaults to 'http://otel-collector:4318'.
+// laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
 func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
 	logger = logger.Scoped("otel", "OpenTelemetry tracer")
 
@@ -72,33 +70,11 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	return bridge, otelTracerProvider, &otelBridgeCloser{provider}, nil
 }
 
-func envHasOtelEndpoint() bool {
-	for _, k := range []string{
-		// https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
-		"OTEL_EXPORTER_OTLP_ENDPOINT",
-		"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
-	} {
-		if _, set := os.LookupEnv(k); set {
-			return true
-		}
-	}
-	return false
-}
-
 // newOTelCollectorExporter creates a processor that exports spans to an OpenTelemetry
 // collector.
 func newOTelCollectorExporter(ctx context.Context, logger log.Logger, debug bool) (oteltracesdk.SpanProcessor, error) {
 	// Set up client for otel-collector
-	var client otlptrace.Client
-	if envHasOtelEndpoint() {
-		// use configured
-		client = otlptracegrpc.NewClient()
-	} else {
-		// set a default
-		logger.Info("OpenTelemetry exporter endpoint not set, using custom default endpoint",
-			log.String("endpoint", defaultOtlpEndpoint))
-		client = otlptracegrpc.NewClient(otlptracegrpc.WithEndpoint(defaultOtlpEndpoint))
-	}
+	client := otlptracegrpc.NewClient()
 
 	// Initialize exporter
 	traceExporter, err := otlptrace.New(ctx, client)
