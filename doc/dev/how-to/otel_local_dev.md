@@ -2,6 +2,9 @@
 
 > WARNING: OpenTelemetry support is a work in progress, and so are these docs!
 
+General OpenTelemetry export configuration is done via environment variables according to the [official configuration options specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options).
+For example, in local development we set the `OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4317` in `sg.config.yaml`.
+
 ## Tracing
 
 1. Set `dev-private` site config to use `opentelemetry`
