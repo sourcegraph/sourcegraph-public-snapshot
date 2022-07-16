@@ -15,7 +15,7 @@ The migration runner is currently being run with -unprivileged-only. The indicat
 
 This option is used to fail-fast upgrades that require manual user intervention. To allow the migrator to make additional progress, the privileged query/queries must be applied manually with a superuser (most commonly via a psql shell attached to the Postgres instance).
 
-To be interactively instructed through the manual process, re-run the migrator with the [`--noop-privileged`](#option-2-noop-privileged) flag. Otherwise, you can manually [find and apply the target privileged migrations](dirty_database.md#2-run-the-sql-queries-to-finish-incomplete-migrations) and [manually add a migration log entry](dirty_database#3-add-a-migration-log-entry).
+To be interactively instructed through the manual process, re-run the migrator with the [`--noop-privileged`](#option-2-noop-privileged) flag. Otherwise, you can manually [find and apply the target privileged migrations](dirty_database.md#2-run-the-sql-queries-to-finish-incomplete-migrations) and [manually add a migration log entry](dirty_database.md#3-add-a-migration-log-entry).
 
 ## Option 2: `--noop-privileged`
 
