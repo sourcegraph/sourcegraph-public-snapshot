@@ -33,22 +33,33 @@ const staticExtensions: Extension = [
 export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, wrapCode, isLightTheme }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
-    const [dynamicExtensions, updateExtensions] = useExtension((wrapCode: boolean, isLightTheme: boolean) => [
-        wrapCode ? EditorView.lineWrapping : [],
-        EditorView.darkTheme.of(isLightTheme === false),
-    ])
+    const dynamicExtensions = useMemo(
+        () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
+        [wrapCode, isLightTheme]
+    )
+
+    const [compartment, updateCompartment] = useCompartment(dynamicExtensions)
 
     const history = useHistory()
+    const location = useLocation()
+
+    // Keep history and location in a ref so that we can use the latest value in
+    // the onSelection callback without having to recreate it and having to
+    // reconfigure the editor extensions
     const historyRef = useRef(history)
     historyRef.current = history
-
-    const location = useLocation()
     const locationRef = useRef(location)
     locationRef.current = location
 
-    const onSelection = useCallback((range: SelectedLineRange) => {
+    const onSelection = useCallback((range: SelectedLineRange, event: MouseEvent) => {
         const parameters = new URLSearchParams(locationRef.current.search)
         let query: string | undefined
+        // If the shift key is pressed and the URL currently contains a position
+        // then we are going to replace the history entry instead of adding a
+        // new one. This avoids two history entries for the common operation of
+        // selecting the start line first and then selecting the end line via
+        // shift+click
+        const replace = event.shiftKey
 
         if (range?.line !== range?.endLine && range?.endLine) {
             query = toPositionOrRangeQueryParameter({
@@ -64,23 +75,23 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         updateBrowserHistoryIfNecessary(
             historyRef.current,
             locationRef.current,
-            addLineRangeQueryParameter(parameters, query)
+            addLineRangeQueryParameter(parameters, query),
+            replace
         )
     }, [])
 
-    const extensions = useMemo(() => [staticExtensions, dynamicExtensions, selectableLineNumbers({ onSelection })], [
-        dynamicExtensions,
+    const extensions = useMemo(() => [staticExtensions, compartment, selectableLineNumbers({ onSelection })], [
+        compartment,
         onSelection,
     ])
 
     const editor = useCodeMirror(container, blobInfo.content, extensions)
 
-    // Update extensions when prop change
     useEffect(() => {
         if (editor) {
-            updateExtensions(editor, wrapCode, isLightTheme)
+            updateCompartment(editor, dynamicExtensions)
         }
-    }, [editor, updateExtensions, wrapCode, isLightTheme])
+    }, [editor, updateCompartment, dynamicExtensions])
 
     // Update selected lines when URL changes
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
@@ -94,26 +105,29 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
 }
 
 /**
- * Helper hook for creating an extension that depends on on some input props.
- * If this proves to be useful it should be moved to the shared CodeMirror code.
+ * Helper hook for extensions that depend on on some input props.
+ * With this hook the extension is isolated in a compartment so it can be
+ * updated without reconfiguring the whole editor.
  *
- * The provided callback is not called by this hook directly. It is only called
- * when the returned setter is called. It's the responsibily of the component to
- * call the setter with all necessary values.
- *
- * Like with useState, the callback function is ignored in subsequent renders,
- * so it shouldn't close over any variables that change during render.
+ * If this proves to be useful it should be moved to the shared CodeMirror
+ * directory.
  */
-export function useExtension<T extends unknown[]>(
-    callback: (...args: T) => Extension
-): [Extension, (editor: EditorView, ...args: T) => void] {
+export function useCompartment(
+    initialExtension: Extension
+): [Extension, (editor: EditorView, extension: Extension) => void] {
     return useMemo(() => {
         const compartment = new Compartment()
         return [
-            compartment.of([]),
-            (editor, ...args) => editor.dispatch({ effects: compartment.reconfigure(callback(...args)) }),
+            compartment.of(initialExtension),
+            (editor, extension: Extension) => {
+                // This check avoids an unnecessary update when the editor is
+                // first created
+                if (initialExtension !== extension) {
+                    editor.dispatch({ effects: compartment.reconfigure(extension) })
+                }
+            },
         ]
-        // callback is intentionally ignored in subsequent renders
+        // initialExtension is intentionally ignored in subsequent renders
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [])
 }
