@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Link, PopoverTrigger, FeedbackPrompt, H2, H3, Text } from '@sourcegraph/wildcard'
@@ -14,6 +14,7 @@ export const CodeInsightsLearnMore: React.FunctionComponent<
     React.PropsWithChildren<CodeInsightsLearnMoreProps>
 > = props => {
     const { telemetryService, ...otherProps } = props
+    const triggerButtonReference = useRef<HTMLButtonElement>(null)
     const textDocumentClickPingName = useLogEventName('InsightsGetStartedDocsClicks')
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({
@@ -62,8 +63,13 @@ export const CodeInsightsLearnMore: React.FunctionComponent<
                         Have a question or idea about Code Insights? We want to hear your feedback!
                     </Text>
 
-                    <FeedbackPrompt onSubmit={handleSubmitFeedback}>
-                        <PopoverTrigger as={Button} variant="link" className={styles.feedbackTrigger}>
+                    <FeedbackPrompt onSubmit={handleSubmitFeedback} triggerButtonReference={triggerButtonReference}>
+                        <PopoverTrigger
+                            as={Button}
+                            variant="link"
+                            className={styles.feedbackTrigger}
+                            ref={triggerButtonReference}
+                        >
                             Share your thoughts
                         </PopoverTrigger>
                     </FeedbackPrompt>

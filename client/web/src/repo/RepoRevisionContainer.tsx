@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState, useRef } from 'react'
 
 import * as H from 'history'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
@@ -22,7 +22,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { RevisionSpec } from '@sourcegraph/shared/src/util/url'
-import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position, useUpdateEffect } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { BatchChangesProps } from '../batches'
@@ -132,8 +132,16 @@ interface RepoRevisionBreadcrumbProps extends Pick<RepoRevisionContainerProps, '
 const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
     React.PropsWithChildren<RepoRevisionBreadcrumbProps>
 > = ({ revision, resolvedRevisionOrError, repo }) => {
+    const popoverTriggerReference = useRef<HTMLButtonElement | null>(null)
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = useCallback(() => setPopoverOpen(previous => !previous), [])
+
+    useUpdateEffect(() => {
+        if (!popoverOpen) {
+            popoverTriggerReference.current?.focus()
+        }
+    }, [popoverOpen])
+
     return (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
             <PopoverTrigger
@@ -145,6 +153,7 @@ const RepoRevisionContainerBreadcrumb: React.FunctionComponent<
                 outline={true}
                 variant="secondary"
                 size="sm"
+                ref={popoverTriggerReference}
             >
                 {(revision && revision === resolvedRevisionOrError.commitID
                     ? resolvedRevisionOrError.commitID.slice(0, 7)

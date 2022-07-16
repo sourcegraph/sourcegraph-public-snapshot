@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useRef } from 'react'
 
 import { Button, FeedbackPrompt } from '@sourcegraph/wildcard'
 
@@ -11,15 +11,21 @@ interface SourcegraphExtensionFeedbackProps {
 export const SourcegraphExtensionFeedback: React.FunctionComponent<
     React.PropsWithChildren<SourcegraphExtensionFeedbackProps>
 > = ({ extensionID }) => {
+    const triggerButtonReference = useRef<HTMLButtonElement>(null)
     const textPrefix = `Sourcegraph extension ${extensionID}: `
     const labelId = 'sourcegraph-extension-feedback-modal'
 
     const { handleSubmitFeedback } = useHandleSubmitFeedback({ textPrefix })
 
     return (
-        <FeedbackPrompt modal={true} modalLabelId={labelId} onSubmit={handleSubmitFeedback}>
+        <FeedbackPrompt
+            triggerButtonReference={triggerButtonReference}
+            modal={true}
+            modalLabelId={labelId}
+            onSubmit={handleSubmitFeedback}
+        >
             {({ onClick }) => (
-                <Button className="p-0" onClick={onClick} variant="link">
+                <Button className="p-0" onClick={onClick} variant="link" ref={triggerButtonReference}>
                     <small>Message the author</small>
                 </Button>
             )}

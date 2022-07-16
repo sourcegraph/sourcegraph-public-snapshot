@@ -161,6 +161,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     searchContextsEnabled,
     ...props
 }) => {
+    const triggerButtonReference = useRef<HTMLButtonElement>(null)
     // Workaround: can't put this in optional parameter value because of https://github.com/babel/babel/issues/11166
     branding = branding ?? window.context?.branding
 
@@ -347,13 +348,18 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                     {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {props.authenticatedUser && (
                         <NavAction>
-                            <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
+                            <FeedbackPrompt
+                                triggerButtonReference={triggerButtonReference}
+                                onSubmit={handleSubmitFeedback}
+                                productResearchEnabled={true}
+                            >
                                 <PopoverTrigger
                                     as={Button}
                                     aria-label="Feedback"
                                     variant="secondary"
                                     outline={true}
                                     size="sm"
+                                    ref={triggerButtonReference}
                                     className={styles.feedbackTrigger}
                                 >
                                     <span>Feedback</span>

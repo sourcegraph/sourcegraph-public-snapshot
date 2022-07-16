@@ -3,7 +3,16 @@ import React, { DOMAttributes, useRef, useState } from 'react'
 import { mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 
-import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
+import {
+    Button,
+    createRectangle,
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+    Position,
+    useUpdateEffect,
+    Icon,
+} from '@sourcegraph/wildcard'
 
 import { Insight, InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
@@ -76,6 +85,12 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         // eslint-disable-next-line @typescript-eslint/no-floating-promises
         onInsightCreate(values)
     }
+
+    useUpdateEffect(() => {
+        if (!isOpen) {
+            targetButtonReference.current?.focus()
+        }
+    }, [isOpen])
 
     return (
         <Popover isOpen={isOpen} anchor={anchor} onOpenChange={event => onVisibilityChange(event.isOpen)}>

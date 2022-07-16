@@ -4,7 +4,7 @@ import { mdiClose, mdiCheck } from '@mdi/js'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, useUpdateEffect } from '@sourcegraph/wildcard'
 
 import { Popover, PopoverContent, Position, Button, FlexTextArea, LoadingSpinner, Link, H3, Text } from '../..'
 import { useAutoFocus, useLocalStorage } from '../../..'
@@ -191,6 +191,7 @@ interface FeedbackPromptProps extends FeedbackPromptContentProps {
     modal?: boolean
     modalLabelId?: string
     children: React.FunctionComponent<React.PropsWithChildren<FeedbackPromptTriggerProps>> | ReactNode
+    triggerButtonReference?: React.RefObject<HTMLButtonElement>
 }
 
 export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
@@ -202,6 +203,7 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
     modal = false,
     modalLabelId = 'sourcegraph-feedback-modal',
     productResearchEnabled,
+    triggerButtonReference,
 }) => {
     const [isOpen, setIsOpen] = useState(() => !!openByDefault)
     const ChildrenComponent = typeof children === 'function' && children
@@ -223,6 +225,12 @@ export const FeedbackPrompt: React.FunctionComponent<FeedbackPromptProps> = ({
             onClose={handleClosePrompt}
         />
     )
+
+    useUpdateEffect(() => {
+        if (!isOpen && triggerButtonReference) {
+            triggerButtonReference.current?.focus()
+        }
+    }, [isOpen])
 
     if (modal) {
         return (

@@ -1,7 +1,7 @@
-import React, { useState } from 'react'
+import React, { useRef, useState } from 'react'
 
 import { escapeRevspecForURL } from '@sourcegraph/common'
-import { Button, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, Popover, PopoverContent, PopoverTrigger, Position, useUpdateEffect } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../featureFlags/useFeatureFlag'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -38,6 +38,7 @@ interface RepositoryComparePopoverProps {
 export const RepositoryComparePopover: React.FunctionComponent<
     React.PropsWithChildren<RepositoryComparePopoverProps>
 > = ({ id, comparison, repo, type }) => {
+    const popoverTriggerReference = useRef<HTMLButtonElement | null>(null)
     const [popoverOpen, setPopoverOpen] = useState(false)
     const togglePopover = (): void => setPopoverOpen(previous => !previous)
 
@@ -68,6 +69,12 @@ export const RepositoryComparePopover: React.FunctionComponent<
     const defaultBranch = repo.defaultBranch?.abbrevName || 'HEAD'
     const currentRevision = comparison[type]?.revision || undefined
 
+    useUpdateEffect(() => {
+        if (!popoverOpen) {
+            popoverTriggerReference.current?.focus()
+        }
+    }, [popoverOpen])
+
     return (
         <Popover isOpen={popoverOpen} onOpenChange={event => setPopoverOpen(event.isOpen)}>
             <PopoverTrigger
@@ -76,6 +83,7 @@ export const RepositoryComparePopover: React.FunctionComponent<
                 outline={true}
                 className="d-flex align-items-center text-nowrap"
                 id={id}
+                ref={popoverTriggerReference}
                 aria-label={`Change ${type} Git revspec for comparison`}
             >
                 <div className="text-muted mr-1">{type}: </div>
