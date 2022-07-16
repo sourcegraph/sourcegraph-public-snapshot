@@ -1,15 +1,19 @@
 import { Duration } from 'date-fns'
 import { uniq } from 'lodash'
 
+import { SeriesSortDirection } from '@sourcegraph/shared/src/schema'
+
 import {
-    GroupByField,
     InsightViewNode,
+    SeriesSortMode,
+    GroupByField,
     TimeIntervalStepInput,
     TimeIntervalStepUnit,
 } from '../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
 import { ComputeInsight, Insight, InsightExecutionType, InsightType } from '../../../types'
 import { BaseInsight } from '../../../types/insight/common'
+import { MAX_NUMBER_OF_SERIES } from '../methods/get-backend-insight-data/deserializators'
 
 /**
  * Transforms/casts gql api insight model to FE insight model. We still
@@ -23,10 +27,11 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         title: insight.presentation.title,
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
-        seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+        seriesDisplayOptions: parseSeriesDisplayOptions(insight.seriesCount, insight.appliedSeriesDisplayOptions),
         dashboards: insight.dashboards?.nodes ?? [],
         appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
         defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
+        seriesCount: insight.seriesCount,
     }
 
     switch (insight.presentation.__typename) {
@@ -42,6 +47,19 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             const repositories = uniq(
                 insight.dataSeriesDefinitions.flatMap(series => series.repositoryScope.repositories)
             )
+
+            // Transform display options into format compatible with our input forms
+            // TODO: Remove when we consume GQL types directly
+            const seriesDisplayOptions = {
+                limit: `${Math.min(
+                    baseInsight.seriesDisplayOptions?.limit ?? MAX_NUMBER_OF_SERIES,
+                    MAX_NUMBER_OF_SERIES
+                )}`,
+                sortOptions: {
+                    direction: baseInsight.seriesDisplayOptions?.sortOptions?.direction ?? SeriesSortDirection.DESC,
+                    mode: baseInsight.seriesDisplayOptions?.sortOptions?.mode ?? SeriesSortMode.RESULT_COUNT,
+                },
+            }
 
             if (isCaptureGroupInsight) {
                 // It's safe because capture group insight always has only 1 data series
@@ -59,9 +77,10 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                         context: appliedFilters.searchContexts?.[0] ?? '',
+                        seriesDisplayOptions,
                     },
-                    appliedSeriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
-                    defaultSeriesDisplayOptions: parseSeriesDisplayOptions(insight.defaultSeriesDisplayOptions),
+                    appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
+                    defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
                 }
             }
 
@@ -109,6 +128,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                     excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                     context: appliedFilters.searchContexts?.[0] ?? '',
+                    seriesDisplayOptions,
                 },
             }
         }

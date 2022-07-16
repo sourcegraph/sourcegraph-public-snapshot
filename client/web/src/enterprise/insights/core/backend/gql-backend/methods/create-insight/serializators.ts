@@ -55,7 +55,8 @@ export function getCaptureGroupInsightCreateInput(
         options: { title: insight.title },
         viewControls: {
             seriesDisplayOptions:
-                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+                insight.seriesDisplayOptions ||
+                parseSeriesDisplayOptions(insight.seriesCount, insight.appliedSeriesDisplayOptions),
             filters: {
                 excludeRepoRegex: insight.filters.excludeRepoRegexp,
                 includeRepoRegex: insight.filters.includeRepoRegexp,
