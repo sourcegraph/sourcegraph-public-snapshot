@@ -1,5 +1,5 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 
 import { mdiArrowCollapseUp, mdiChevronDown, mdiArrowExpandDown, mdiChevronLeft, mdiChevronUp } from '@mdi/js'
 import classNames from 'classnames'
@@ -142,11 +142,20 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
 
     useEffect(() => setExpanded(allExpanded || defaultExpanded), [allExpanded, defaultExpanded])
 
-    const toggle = (): void => {
+    const rootRef = useRef<HTMLElement>(null)
+    const toggle = useCallback((): void => {
         if (collapsible) {
             setExpanded(expanded => !expanded)
         }
-    }
+
+        // Scroll back to top of result when collapsing
+        if (coreWorkflowImprovementsEnabled && expanded) {
+            setTimeout(() => {
+                const reducedMotion = !window.matchMedia('(prefers-reduced-motion: no-preference)').matches
+                rootRef.current?.scrollIntoView({ block: 'nearest', behavior: reducedMotion ? 'auto' : 'smooth' })
+            }, 0)
+        }
+    }, [collapsible, coreWorkflowImprovementsEnabled, expanded])
 
     const trackReferencePanelClick = (): void => {
         if (onResultClicked) {
@@ -161,6 +170,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
             data-expanded={allExpanded}
             data-collapsible={collapsible}
             onClick={trackReferencePanelClick}
+            ref={rootRef}
         >
             <article aria-labelledby={`result-container-${index}`}>
                 <div className={styles.header} id={`result-container-${index}`}>
