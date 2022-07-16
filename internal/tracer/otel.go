@@ -3,6 +3,7 @@ package tracer
 import (
 	"context"
 	"io"
+	"os"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -11,36 +12,29 @@ import (
 	otpropagator "go.opentelemetry.io/contrib/propagators/ot"
 	"go.opentelemetry.io/otel"
 	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
 	w3cpropagator "go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 	oteltrace "go.opentelemetry.io/otel/trace"
-	"google.golang.org/grpc"
-	"google.golang.org/grpc/credentials/insecure"
 
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// If the OpenTelemetry Collector is running on a local cluster (minikube or
-// microk8s), it should be accessible through the NodePort service at the
-// `localhost:30080` endpoint. Otherwise, replace `localhost` with the
-// endpoint of your cluster. If you run the app inside k8s, then you can
-// probably connect directly to the service through dns
-//
-// OTEL_EXPORTER_OTLP_ENDPOINT is the name chosen because it is used in other
-// projects: https://sourcegraph.com/search?q=OTEL_EXPORTER_OTLP_ENDPOINT+-f:vendor
-var otelCollectorEndpoint = env.Get("OTEL_EXPORTER_OTLP_ENDPOINT", "127.0.0.1:4317", "Address of OpenTelemetry collector")
+const defaultOtlpEndpoint = "http://otel-collector:4318"
 
 // newOTelBridgeTracer creates an opentracing.Tracer that exports all OpenTracing traces
 // as OpenTelemetry traces to an OpenTelemetry collector (effectively "bridging" the two
 // APIs). This enables us to continue leveraging the OpenTracing API (which is a predecessor
 // to OpenTelemetry tracing) without making changes to existing tracing code.
+//
+// All configuration is sourced directly from the environment using the specification
+// laid out in https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md,
+// with one minor adjustment - the OTEL_EXPORTER_OTLP_ENDPOINT defaults to 'http://otel-collector:4318'.
 func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
-	logger = logger.Scoped("otel", "OpenTelemetry tracer").
-		With(log.String("otel-collector.endpoint", otelCollectorEndpoint))
+	logger = logger.Scoped("otel", "OpenTelemetry tracer")
 
 	// Ensure propagation between services continues to work. This is also done by another
 	// project that uses the OpenTracing bridge:
@@ -78,17 +72,36 @@ func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, 
 	return bridge, otelTracerProvider, &otelBridgeCloser{provider}, nil
 }
 
+func envHasOtelEndpoint() bool {
+	for _, k := range []string{
+		// https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md
+		"OTEL_EXPORTER_OTLP_ENDPOINT",
+		"OTEL_EXPORTER_OTLP_TRACES_ENDPOINT",
+	} {
+		if _, set := os.LookupEnv(k); set {
+			return true
+		}
+	}
+	return false
+}
+
 // newOTelCollectorExporter creates a processor that exports spans to an OpenTelemetry
 // collector.
 func newOTelCollectorExporter(ctx context.Context, logger log.Logger, debug bool) (oteltracesdk.SpanProcessor, error) {
-	conn, err := grpc.DialContext(ctx, otelCollectorEndpoint,
-		grpc.WithTransportCredentials(insecure.NewCredentials()))
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to create gRPC connection to collector")
+	// Set up client for otel-collector
+	var client otlptrace.Client
+	if envHasOtelEndpoint() {
+		// use configured
+		client = otlptracegrpc.NewClient()
+	} else {
+		// set a default
+		logger.Info("OpenTelemetry exporter endpoint not set, using custom default endpoint",
+			log.String("endpoint", defaultOtlpEndpoint))
+		client = otlptracegrpc.NewClient(otlptracegrpc.WithEndpoint(defaultOtlpEndpoint))
 	}
 
-	// Set up a trace exporter
-	traceExporter, err := otlptracegrpc.New(ctx, otlptracegrpc.WithGRPCConn(conn))
+	// Initialize exporter
+	traceExporter, err := otlptrace.New(ctx, client)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create trace exporter")
 	}
