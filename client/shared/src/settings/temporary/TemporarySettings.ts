@@ -27,10 +27,6 @@ export interface TemporarySettingsSchema {
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
     'homepage.userInvites.tab': number
-    'integrations.vscode.lastDetectionTimestamp': number
-    'integrations.jetbrains.lastDetectionTimestamp': number
-    'cta.browserExtensionAlertDismissed': boolean
-    'cta.ideExtensionAlertDismissed': boolean
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
     'batches.downloadSpecModalDismissed': boolean
     'codeintel.badge.used': boolean

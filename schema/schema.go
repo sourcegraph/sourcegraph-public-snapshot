@@ -1727,6 +1727,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// Editor description: Specifies which (code) editor to use for query and text input
 	Editor *string `json:"editor,omitempty"`
+	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
+	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableExtensionsDecorationsColumnView description: If extension supports column view show its decorations in a separate column in the blob view.
 	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
