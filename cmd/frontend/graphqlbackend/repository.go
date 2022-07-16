@@ -9,6 +9,7 @@ import (
 
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
 
@@ -66,10 +67,6 @@ func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver
 			Name: name,
 			ID:   id,
 		},
-		logger: log.Scoped("repositoryResolver", "resolve a specific repository").
-			With(log.Object("repo",
-				log.String("name", string(name)),
-				log.String("id", string(id)))),
 	}
 }
 
@@ -320,7 +317,7 @@ func (r *RepositoryResolver) hydrate(ctx context.Context) error {
 			return
 		}
 
-		r.logger.Debug("RepositoryResolver.hydrate", log.String("repo.ID", string(r.IDInt32())))
+		log15.Debug("RepositoryResolver.hydrate", "repo.ID", r.IDInt32())
 
 		var repo *types.Repo
 		repo, r.err = r.db.Repos().Get(ctx, r.IDInt32())
@@ -398,7 +395,7 @@ func (r *schemaResolver) AddPhabricatorRepo(ctx context.Context, args *struct {
 
 	_, err := r.db.Phabricator().CreateIfNotExists(ctx, args.Callsign, api.RepoName(*args.URI), args.URL)
 	if err != nil {
-		r.logger.Error("adding phabricator repo", log.String("callsign", args.Callsign), log.Stringp("name", args.URI), log.String("url", args.URL))
+		log15.Error("adding phabricator repo", "callsign", args.Callsign, "name", args.URI, "url", args.URL)
 	}
 	return nil, err
 }
@@ -449,7 +446,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 		return nil, errors.New("unable to resolve the origin of the phabricator instance")
 	}
 
-	client, clientErr := makePhabClientForOrigin(ctx, r.logger, db, origin)
+	client, clientErr := makePhabClientForOrigin(ctx, db, origin)
 
 	patch := ""
 	if args.Patch != nil {
@@ -516,7 +513,7 @@ func (r *schemaResolver) ResolvePhabricatorDiff(ctx context.Context, args *struc
 	return getCommit()
 }
 
-func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database.DB, origin string) (*phabricator.Client, error) {
+func makePhabClientForOrigin(ctx context.Context, db database.DB, origin string) (*phabricator.Client, error) {
 	opt := database.ExternalServicesListOptions{
 		Kinds: []string{extsvc.KindPhabricator},
 		LimitOffset: &database.LimitOffset{
@@ -544,8 +541,7 @@ func makePhabClientForOrigin(ctx context.Context, logger log.Logger, db database
 			case *schema.PhabricatorConnection:
 				conn = c
 			default:
-				err := errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg)
-				logger.Error("makePhabClientForOrigin", log.Error(err))
+				log15.Error("makePhabClientForOrigin", "error", errors.Errorf("want *schema.PhabricatorConnection but got %T", cfg))
 				continue
 			}
 

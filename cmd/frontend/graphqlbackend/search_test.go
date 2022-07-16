@@ -12,7 +12,6 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
-
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
