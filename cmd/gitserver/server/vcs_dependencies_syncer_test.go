@@ -12,8 +12,6 @@ import (
 	"strings"
 	"testing"
 
-	"golang.org/x/exp/maps"
-
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -149,13 +147,6 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 2, "foo@0.0.2": 2})
 	})
 
-	bothV2andV3Refs := map[string]string{}
-	maps.Copy(bothV2andV3Refs, onlyV2Refs)
-	bothV2andV3Refs["refs/tags/v0.0.3"] = "ba94b95e16bf902e983ead70dc6ee0edd6b03a3b"
-	bothV2andV3Refs["refs/tags/v0.0.3^{}"] = "c93e10f82d5d34341b2836202ebb6b0faa95fa71"
-	// latest branch has been updated to point to 0.0.3 instead of 0.0.2
-	bothV2andV3Refs["refs/heads/latest"] = "c93e10f82d5d34341b2836202ebb6b0faa95fa71"
-
 	t.Run("lazy-sync version via revspec", func(t *testing.T) {
 		// the v0.0.3 tag should be created on-demand through the revspec parameter
 		// For context, see https://github.com/sourcegraph/sourcegraph/pull/38811
@@ -167,7 +158,14 @@ func TestVcsDependenciesSyncer_Fetch(t *testing.T) {
 			Name:    "foo",
 			Version: "0.0.3",
 		}})
-		s.assertRefs(t, dir, bothV2andV3Refs)
+		s.assertRefs(t, dir, map[string]string{
+			// latest branch has been updated to point to 0.0.3 instead of 0.0.2
+			"refs/heads/latest":   "c93e10f82d5d34341b2836202ebb6b0faa95fa71",
+			"refs/tags/v0.0.2":    "7e2e4506ef1f5cd97187917a67bfb7a310f78687",
+			"refs/tags/v0.0.2^{}": "6cff53ec57702e8eec10569a3d981dacbaee4ed3",
+			"refs/tags/v0.0.3":    "ba94b95e16bf902e983ead70dc6ee0edd6b03a3b",
+			"refs/tags/v0.0.3^{}": "c93e10f82d5d34341b2836202ebb6b0faa95fa71",
+		})
 		// We triggered a single download for v0.0.3 since it was lazily requested.
 		// We triggered a v0.0.1 download since it's still erroring.
 		s.assertDownloadCounts(t, depsSource, map[string]int{"foo@0.0.1": 3, "foo@0.0.2": 2, "foo@0.0.3": 1})

@@ -94,12 +94,14 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-var versionAlreadySynced = errors.New("Version already exists")
+// it's safe to silently ignore this error because there's no problem that needs to be fixed
+// if the version is already synced.
+var errVersionAlreadySynced = errors.New("version already synced")
 
 func (s *vcsPackagesSyncer) lazySyncRequestedVersion(ctx context.Context, dir GitDir, name reposource.PackageName, existingVersions []string, requestedVersion string) error {
 	for _, existingVersion := range existingVersions {
 		if existingVersion == requestedVersion {
-			return versionAlreadySynced
+			return errVersionAlreadySynced
 		}
 	}
 	dep, err := s.source.ParseVersionedPackageFromNameAndVersion(name, requestedVersion)
@@ -138,11 +140,23 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	}
 
 	if revspec != "" {
+		// Optionally try to resolve the version of the user-provided revspec (formatted as `"v${VERSION}^0"`).
+		// This logic lives inside `vcsPackagesSyncer` meaning this repo must be a package repo where all
+		// the git tags are created by our npm/crates/pypi/maven integrations (no human commits/branches/tags).
+		// Package repos only create git tags using the format `"v${VERSION}"`.
+		//
+		// Unlike other versions, we silently ignore all errors from resolving requestedVersion because it could
+		// be any random user-provided string, with no guarantee that it's a valid version string that resolves
+		// to an existing dependency version.
+		//
+		// We assume the revspec is formatted as `"v${VERSION}^0"` but it could be any random string or
+		// a git commit SHA. It should be harmless if the string is invalid, worst case the resolution fails
+		// and we silently ignore the error.
 		requestedVersion := strings.TrimSuffix(strings.TrimPrefix(revspec, "v"), "^0")
 		err = s.lazySyncRequestedVersion(ctx, dir, depName, versions, requestedVersion)
 		if err == nil {
 			versions = append(versions, requestedVersion)
-		}
+		} // else silently ignore error, see comment above why.
 	}
 
 	var errs errors.MultiError

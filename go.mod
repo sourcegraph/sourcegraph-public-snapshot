@@ -199,8 +199,6 @@ require (
 
 require go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
 
-require golang.org/x/exp v0.0.0-20220713135740-79cabaa25d75
-
 require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
