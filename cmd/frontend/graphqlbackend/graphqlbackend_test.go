@@ -25,8 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
-
-	"github.com/sourcegraph/log/logtest"
 )
 
 func BenchmarkPrometheusFieldName(b *testing.B) {
@@ -85,7 +83,7 @@ func TestResolverTo(t *testing.T) {
 		&FileMatchResolver{db: db},
 		&NamespaceResolver{},
 		&NodeResolver{},
-		&RepositoryResolver{db: db, logger: logtest.Scoped(t)},
+		&RepositoryResolver{db: db},
 		&CommitSearchResultResolver{},
 		&gitRevSpec{},
 		&settingsSubject{},
