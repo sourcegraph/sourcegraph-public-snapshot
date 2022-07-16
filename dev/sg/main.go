@@ -156,7 +156,7 @@ var sg = &cli.App{
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
 		}
-		cmd.Context = background.Context(cmd.Context)
+		cmd.Context = background.Context(cmd.Context, verbose)
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// Set up analytics and hooks for each command.
@@ -218,7 +218,7 @@ var sg = &cli.App{
 				if err != nil {
 					out.WriteWarningf("update check: %s", err)
 				}
-			}, verbose)
+			})
 		}
 
 		// Call registered hooks last
