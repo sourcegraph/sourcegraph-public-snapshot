@@ -324,6 +324,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "enableCodeMirrorFileView": {
+          "description": "Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
