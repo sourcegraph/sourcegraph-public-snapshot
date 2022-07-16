@@ -51,9 +51,12 @@ func updateToPrebuiltSG(ctx context.Context) (string, error) {
 	// with redirections.
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "GitHub latest release")
 	}
 	defer resp.Body.Close()
+	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
+		return "", errors.Newf("GitHub latest release: unexpected status code %d", resp.StatusCode)
+	}
 
 	location := resp.Header.Get("location")
 	if location == "" {
