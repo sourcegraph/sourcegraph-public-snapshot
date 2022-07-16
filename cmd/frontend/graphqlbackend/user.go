@@ -584,6 +584,7 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 	var out []*RepositoryResolver
 	for _, repo := range repos {
 		out = append(out, &RepositoryResolver{
+			logger: r.logger,
 			RepoMatch: result.RepoMatch{
 				ID:   repo.RepoID,
 				Name: api.RepoName(repo.RepoURI),
