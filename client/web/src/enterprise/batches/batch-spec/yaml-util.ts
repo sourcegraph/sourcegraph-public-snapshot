@@ -389,6 +389,8 @@ export function quoteYAMLString(key: string, value: string): string {
     }
 
     if (needsEscaping) {
+        // to properly escape the characters, we pass the raw string value into `JSON.stringify`,
+        // we use the raw string because we don't want to ignore special characters in regular expressions.
         const updatedValue = JSON.stringify(String.raw`${value}`)
         ast = load(key + ': ' + updatedValue + '\n')
 
@@ -398,7 +400,6 @@ export function quoteYAMLString(key: string, value: string): string {
         }
     }
 
-    // If this is still happening, bail out, we don't know what to do here.
     return value
 }
 
@@ -466,6 +467,9 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
  * @param query the updated query to be inserted
  */
 export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string => {
+    // we pass in a key of `repositoriesMatchingQuery` into quoteYAMLString because we want to simplify
+    // the operation for quoting a YAML String. Passing in a YAMLSequence adds an unnecessary overhead,
+    // since we are concerned with quoting the value, passing in a normal string works just fine.
     const possiblyQuotedQuery = quoteYAMLString('repositoriesMatchingQuery', query);
     return insertFieldIntoLibraryItem(librarySpec, `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n\n`, 'on', false)
 }
