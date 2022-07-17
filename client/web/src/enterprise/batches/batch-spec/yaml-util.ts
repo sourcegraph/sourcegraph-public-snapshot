@@ -3,6 +3,7 @@ import {
     load,
     Kind as YAMLKind,
     YamlMap as YAMLMap,
+    YAMLMapping,
     YAMLNode,
     YAMLSequence,
     YAMLScalar,
@@ -347,31 +348,38 @@ export const isMinimalBatchSpec = (spec: string): boolean => {
 /**
  * Inspects a given string value and determines if it needs to be quoted to produce valid yaml.
  *
+ * @param key the key of the string value to be inspected
  * @param value the string value to inspect
  */
-export function quoteYAMLString(value: string): string {
+export function quoteYAMLString(key: string, value: string): string {
     let needsQuotes = false
+    let needsEscaping = false
+
     // First we need to craft an AST where the value is the value to a key in an object.
-    let ast = load('name: ' + value + '\n')
+    let ast = load(key + ': ' + value + '\n')
+
     // If that is not parseable, we might need quotes. Try that.
     if (!isYAMLMap(ast) || ast.errors.length > 0) {
-        ast = load('name: "' + value + '"\n')
+        ast = load(key + ': "' + value + '"\n')
         needsQuotes = true
-        // If this is still happening, bail out, we don't know what to do here.
+
+        // We don't bail out here, we assume some characters in the value needs escaping,
+        // we set the value of `needsEscaping` to true
         if (!isYAMLMap(ast) || ast.errors.length > 0) {
-            return value
+            needsQuotes = false
+            needsEscaping = true
         }
     }
 
     // Then we traverse the AST to find the name key, so we can get the YAMLValue.
-    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name')
-    if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
+    const keyMapping = find(ast.mappings, mapping => mapping.key.value === key) as YAMLMapping
+    if (!keyMapping || !isYAMLScalar(keyMapping.value)) {
         return value
     }
 
     // For that value, we let the parser determine the type. If the type is not string,
     // we also want to quote the value.
-    const type = determineScalarType(nameMapping.value)
+    const type = determineScalarType(keyMapping.value)
     if (type !== ScalarType.string) {
         needsQuotes = true
     }
@@ -379,6 +387,18 @@ export function quoteYAMLString(value: string): string {
     if (needsQuotes) {
         return `"${value}"`
     }
+
+    if (needsEscaping) {
+        const updatedValue = JSON.stringify(String.raw`${value}`)
+        ast = load(key + ': ' + updatedValue + '\n')
+
+        // if there are no errors then we assume double quoting and escaping special characters works.
+        if (ast.errors.length === 0) {
+            return updatedValue
+        }
+    }
+
+    // If this is still happening, bail out, we don't know what to do here.
     return value
 }
 
@@ -411,7 +431,7 @@ export const insertFieldIntoLibraryItem = (
         return librarySpec
     }
 
-    const finalValue = quotable ? quoteYAMLString(value) : value
+    const finalValue = quotable ? quoteYAMLString(key, value) : value
 
     // Stitch the new <value> into the spec.
     return (
@@ -446,15 +466,8 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
  * @param query the updated query to be inserted
  */
 export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string => {
-    let updatedQuery = `- repositoriesMatchingQuery: ${query}\n\n`
-    const ast = load(updatedQuery)
-
-    if (ast.errors.length > 0) {
-        updatedQuery = `- repositoriesMatchingQuery: |
-        ${query}\n\n`
-    }
-
-    return insertFieldIntoLibraryItem(librarySpec, updatedQuery, 'on', false)
+    const possiblyQuotedQuery = quoteYAMLString('repositoriesMatchingQuery', query);
+    return insertFieldIntoLibraryItem(librarySpec, `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n\n`, 'on', false)
 }
 
 /**
