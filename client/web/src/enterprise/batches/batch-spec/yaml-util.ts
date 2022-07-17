@@ -348,19 +348,18 @@ export const isMinimalBatchSpec = (spec: string): boolean => {
 /**
  * Inspects a given string value and determines if it needs to be quoted to produce valid yaml.
  *
- * @param key the key of the string value to be inspected
  * @param value the string value to inspect
  */
-export function quoteYAMLString(key: string, value: string): string {
+export function quoteYAMLString(value: string): string {
     let needsQuotes = false
     let needsEscaping = false
 
     // First we need to craft an AST where the value is the value to a key in an object.
-    let ast = load(key + ': ' + value + '\n')
+    let ast = load('name: ' + value + '\n')
 
     // If that is not parseable, we might need quotes. Try that.
     if (!isYAMLMap(ast) || ast.errors.length > 0) {
-        ast = load(key + ': "' + value + '"\n')
+        ast = load('name: "' + value + '"\n')
         needsQuotes = true
 
         // We don't bail out here, we assume some characters in the value needs escaping,
@@ -372,14 +371,14 @@ export function quoteYAMLString(key: string, value: string): string {
     }
 
     // Then we traverse the AST to find the name key, so we can get the YAMLValue.
-    const keyMapping = find(ast.mappings, mapping => mapping.key.value === key) as YAMLMapping
-    if (!keyMapping || !isYAMLScalar(keyMapping.value)) {
+    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name') as YAMLMapping
+    if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
         return value
     }
 
     // For that value, we let the parser determine the type. If the type is not string,
     // we also want to quote the value.
-    const type = determineScalarType(keyMapping.value)
+    const type = determineScalarType(nameMapping.value)
     if (type !== ScalarType.string) {
         needsQuotes = true
     }
@@ -392,7 +391,7 @@ export function quoteYAMLString(key: string, value: string): string {
         // to properly escape the characters, we pass the raw string value into `JSON.stringify`,
         // we use the raw string because we don't want to ignore special characters in regular expressions.
         const updatedValue = JSON.stringify(String.raw`${value}`)
-        ast = load(key + ': ' + updatedValue + '\n')
+        ast = load('name: ' + updatedValue + '\n')
 
         // if there are no errors then we assume double quoting and escaping special characters works.
         if (ast.errors.length === 0) {
@@ -432,7 +431,7 @@ export const insertFieldIntoLibraryItem = (
         return librarySpec
     }
 
-    const finalValue = quotable ? quoteYAMLString(key, value) : value
+    const finalValue = quotable ? quoteYAMLString(value) : value
 
     // Stitch the new <value> into the spec.
     return (
@@ -463,7 +462,7 @@ export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): 
     // we pass in a key of `repositoriesMatchingQuery` into quoteYAMLString because we want to simplify
     // the operation for quoting a YAML String. Passing in a YAMLSequence adds an unnecessary overhead,
     // since we are concerned with quoting the value, passing in a normal string works just fine.
-    const possiblyQuotedQuery = quoteYAMLString('repositoriesMatchingQuery', query)
+    const possiblyQuotedQuery = quoteYAMLString(query)
     return insertFieldIntoLibraryItem(
         librarySpec,
         `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n\n`,
