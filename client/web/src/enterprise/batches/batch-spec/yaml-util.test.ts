@@ -2,6 +2,7 @@ import {
     excludeRepo,
     haveMatchingWorkspaces,
     insertFieldIntoLibraryItem,
+    quoteYAMLString
 } from './yaml-util'
 
 const SPEC_WITH_ONE_REPOSITORY = `name: hello-world
@@ -342,6 +343,24 @@ describe('Batch spec yaml utils', () => {
                     SPEC_WITH_ONE_REPOSITORY.replace('hello-world', newName)
                 )
             }
+        })
+    })
+
+    describe('quoteYAMLString', () => {
+        it('should add double quote a numeric value', () => {
+            const quotedString = quoteYAMLString('name', '1024');
+            expect(quotedString).toEqual('"1024"')
+        })
+
+        it('should not quote a string without special characters', () => {
+            const unQuotedString = quoteYAMLString('name', 'random-name')
+            expect(unQuotedString).toEqual('random-name')
+        })
+
+        it('should double quote and escape special characters if contained in the value', () => {
+            const quotedString = quoteYAMLString('name', String.raw`fork:yes repo:^github\.com/foo/bar$ file:package.json "scaling-palm-tree": "..."`)
+            console.log(quotedString)
+            expect(quotedString).toEqual(String.raw`"fork:yes repo:^github\\.com/foo/bar$ file:package.json \"scaling-palm-tree\": \"...\""`)
         })
     })
 })
