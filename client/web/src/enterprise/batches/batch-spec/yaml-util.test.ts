@@ -343,18 +343,17 @@ describe('Batch spec yaml utils', () => {
 
     describe('quoteYAMLString', () => {
         it('should add double quote a numeric value', () => {
-            const quotedString = quoteYAMLString('name', '1024')
+            const quotedString = quoteYAMLString('1024')
             expect(quotedString).toEqual('"1024"')
         })
 
         it('should not quote a string without special characters', () => {
-            const unQuotedString = quoteYAMLString('name', 'random-name')
+            const unQuotedString = quoteYAMLString('random-name')
             expect(unQuotedString).toEqual('random-name')
         })
 
         it('should double quote and escape special characters if contained in the value', () => {
             const quotedString = quoteYAMLString(
-                'name',
                 String.raw`fork:yes repo:^github\.com/foo/bar$ file:package.json "scaling-palm-tree": "..."`
             )
             console.log(quotedString)
