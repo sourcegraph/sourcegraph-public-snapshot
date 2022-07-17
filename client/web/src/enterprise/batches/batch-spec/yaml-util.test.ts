@@ -1,9 +1,4 @@
-import {
-    excludeRepo,
-    haveMatchingWorkspaces,
-    insertFieldIntoLibraryItem,
-    quoteYAMLString
-} from './yaml-util'
+import { excludeRepo, haveMatchingWorkspaces, insertFieldIntoLibraryItem, quoteYAMLString } from './yaml-util'
 
 const SPEC_WITH_ONE_REPOSITORY = `name: hello-world
 on:
@@ -348,7 +343,7 @@ describe('Batch spec yaml utils', () => {
 
     describe('quoteYAMLString', () => {
         it('should add double quote a numeric value', () => {
-            const quotedString = quoteYAMLString('name', '1024');
+            const quotedString = quoteYAMLString('name', '1024')
             expect(quotedString).toEqual('"1024"')
         })
 
@@ -358,9 +353,14 @@ describe('Batch spec yaml utils', () => {
         })
 
         it('should double quote and escape special characters if contained in the value', () => {
-            const quotedString = quoteYAMLString('name', String.raw`fork:yes repo:^github\.com/foo/bar$ file:package.json "scaling-palm-tree": "..."`)
+            const quotedString = quoteYAMLString(
+                'name',
+                String.raw`fork:yes repo:^github\.com/foo/bar$ file:package.json "scaling-palm-tree": "..."`
+            )
             console.log(quotedString)
-            expect(quotedString).toEqual(String.raw`"fork:yes repo:^github\\.com/foo/bar$ file:package.json \"scaling-palm-tree\": \"...\""`)
+            expect(quotedString).toEqual(
+                String.raw`"fork:yes repo:^github\\.com/foo/bar$ file:package.json \"scaling-palm-tree\": \"...\""`
+            )
         })
     })
 })

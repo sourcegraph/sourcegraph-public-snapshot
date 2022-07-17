@@ -470,8 +470,13 @@ export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): 
     // we pass in a key of `repositoriesMatchingQuery` into quoteYAMLString because we want to simplify
     // the operation for quoting a YAML String. Passing in a YAMLSequence adds an unnecessary overhead,
     // since we are concerned with quoting the value, passing in a normal string works just fine.
-    const possiblyQuotedQuery = quoteYAMLString('repositoriesMatchingQuery', query);
-    return insertFieldIntoLibraryItem(librarySpec, `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n\n`, 'on', false)
+    const possiblyQuotedQuery = quoteYAMLString('repositoriesMatchingQuery', query)
+    return insertFieldIntoLibraryItem(
+        librarySpec,
+        `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n\n`,
+        'on',
+        false
+    )
 }
 
 /**
