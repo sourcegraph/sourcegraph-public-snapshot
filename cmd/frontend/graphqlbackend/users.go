@@ -2,7 +2,10 @@ package graphqlbackend
 
 import (
 	"context"
+	"fmt"
 	"sync"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -104,6 +107,10 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 		l = append(l, &UserResolver{
 			db:   r.db,
 			user: user,
+			logger: log.Scoped("userResolver", "resolves a specific user").With(
+				log.Object("repo",
+					log.String("db", fmt.Sprintf("%v", r.db)),
+					log.String("user", fmt.Sprintf("%v ", user)))),
 		})
 	}
 	return l, nil
