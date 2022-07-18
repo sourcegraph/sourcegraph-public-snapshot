@@ -37,6 +37,28 @@ type LockfileIndexConnection {
 }
 
 """
+Fidelity of a lockfile index.
+"""
+enum LockfileIndexFidelity {
+    """
+    Couldn't build a complete graph from lockfile. It's instead a flat list of
+    dependencies found in the lockfile.
+    """
+    FLAT
+
+    """
+    If we couldn't determine the roots of the dependency graph because it's
+    circular. That means we can't say what's a direct dependency and what not, but
+    we can tell which dependency depends on which other dependency.
+    """
+    CIRCULAR
+
+    """
+    Full dependency graph.
+    """
+    GRAPH
+}
+"""
 A lockfile index is an indexed lockfile in a repository.
 """
 type LockfileIndex implements Node {
@@ -49,4 +71,19 @@ type LockfileIndex implements Node {
     The relative path of the lockfile that was resolved and indexed.
     """
     lockfile: String!
+
+    """
+    The repository of the lockfile.
+    """
+    repository: Repository!
+
+    """
+    The commit at which the lockfile was indexed.
+    """
+    commit: GitCommit!
+
+    """
+    The fidelity of the dependency graph.
+    """
+    fidelity: LockfileIndexFidelity!
 }
