@@ -2,11 +2,9 @@ package cliutil
 
 import (
 	"context"
-	"time"
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -47,9 +45,8 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 			if err != nil {
 				return err
 			}
-			oobMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second, &observation.TestContext)
 
-			if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, oobMigrationRunner); err != nil {
+			if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner(db)); err != nil {
 				return err
 			}
 

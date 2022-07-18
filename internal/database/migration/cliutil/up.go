@@ -3,12 +3,10 @@ package cliutil
 import (
 	"context"
 	"fmt"
-	"time"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
@@ -44,7 +42,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 	}
 	skipOutOfBandMigrationValidationFlag := &cli.BoolFlag{
 		Name:  "skip-oobmigration-validation",
-		Usage: "Do not attempt to validate the progress of out-of-band migrationsi.",
+		Usage: "Do not attempt to validate the progress of out-of-band migrations.",
 		// NOTE: version 0.0.0+dev (the development version) effectively skips this check as well
 		Value: development,
 	}
@@ -99,15 +97,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			}
 		}
 		if !skipOutOfBandMigrationValidationFlag.Get(cmd) {
-			if err := oobmigration.ValidateOutOfBandMigrationRunner(
-				ctx,
-				db,
-				oobmigration.NewRunnerWithDB(
-					db,
-					time.Second,
-					&observation.TestContext,
-				),
-			); err != nil {
+			if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner(db)); err != nil {
 				return err
 			}
 		}
