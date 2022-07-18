@@ -461,7 +461,6 @@ export const useWorkspacesListConnection = (
         },
         getConnection: result => {
             const data = dataOrThrowErrors(result)
-
             if (!data.node) {
                 throw new Error(`Batch spec with ID ${batchSpecID} does not exist`)
             }

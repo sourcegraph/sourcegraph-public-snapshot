@@ -13,8 +13,8 @@ import { useConnectionUrl } from './useConnectionUrl'
 export interface UseConnectionResult<TData> {
     connection?: Connection<TData>
     error?: ApolloError
-    fetchMore: () => void
-    refetchAll: () => void
+    fetchMore: () => Promise<void>
+    refetchAll: () => Promise<void>
     loading: boolean
     hasNextPage: boolean
     startPolling: (pollInterval: number) => void
@@ -58,8 +58,10 @@ export const useConnection = <TResult, TVariables, TData>({
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
     const searchParameters = useSearchParameters()
+    const isFetchingMore = useRef(false);
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
+    console.log('variables', variables,)
     const firstReference = useRef({
         /**
          * The number of results that we will typically want to load in the next request (unless `visible` is used).
@@ -109,7 +111,6 @@ export const useConnection = <TResult, TVariables, TData>({
         fetchPolicy: options?.fetchPolicy,
         onCompleted: options?.onCompleted,
     })
-
     /**
      * Map over Apollo results to provide type-compatible `GraphQLResult`s for consumers.
      * This ensures good interoperability between `FilteredConnection` and `useConnection`.
@@ -129,7 +130,11 @@ export const useConnection = <TResult, TVariables, TData>({
 
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
-
+        console.log('FETCH MORE', {
+            ...variables,
+            // Use cursor paging if possible, otherwise fallback to multiplying `first`
+            ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
+        })
         await fetchMore({
             variables: {
                 ...variables,
@@ -137,6 +142,7 @@ export const useConnection = <TResult, TVariables, TData>({
                 ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
             },
             updateQuery: (previousResult, { fetchMoreResult }) => {
+
                 if (!fetchMoreResult) {
                     return previousResult
                 }
@@ -153,7 +159,7 @@ export const useConnection = <TResult, TVariables, TData>({
                     // we just need to update `first` to fetch more results next time
                     firstReference.current.actual *= 2
                 }
-
+                console.log(previousResult, fetchMoreResult, 'FETCH MORE')
                 return fetchMoreResult
             },
         })
@@ -161,7 +167,15 @@ export const useConnection = <TResult, TVariables, TData>({
 
     const refetchAll = useCallback(async (): Promise<void> => {
         const first = connection?.nodes.length || firstReference.current.actual
+        console.log('REFETCH', {
+            ...variables,
+            first,
+        })
+        if (isFetchingMore.current) {
+            console.log('SKIPPED')
+            return;
 
+        }
         await refetch({
             ...variables,
             first,
@@ -173,11 +187,28 @@ export const useConnection = <TResult, TVariables, TData>({
     // would only poll for the first page of results.
     const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)
 
+    console.log(connection && loading, 'loading')
+
+    let isLoading = false;
+    if (loading) {
+        isLoading = true
+    } else if (isFetchingMore.current) {
+        isLoading = true;
+    }
     return {
         connection,
-        loading,
+        loading: isLoading,
         error,
-        fetchMore: fetchMoreData,
+        fetchMore: () => {
+             /* this pauses existing intervals otherwise slow connections may override. fetchMore doesn't work well with polling :(
+                https://github.com/apollographql/apollo-client/issues/1087#issuecomment-287458528
+            */
+            isFetchingMore.current = true;
+             return fetchMoreData().finally(() => {
+                isFetchingMore.current = false;
+             })
+        }
+        ,
         refetchAll,
         hasNextPage: connection ? hasNextPage(connection) : false,
         startPolling: startExecution,
