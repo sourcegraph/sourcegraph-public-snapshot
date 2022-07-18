@@ -237,7 +237,13 @@ describe('Code insight edit insight page', () => {
                         includeRepoRegex: '',
                         searchContexts: [],
                     },
-                    seriesDisplayOptions: {},
+                    seriesDisplayOptions: {
+                        limit: 2,
+                        sortOptions: {
+                            direction: 'DESC',
+                            mode: 'RESULT_COUNT',
+                        },
+                    },
                 },
             },
             id: '001',

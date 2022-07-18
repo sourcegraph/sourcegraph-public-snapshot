@@ -55,7 +55,8 @@ export function getCaptureGroupInsightCreateInput(
         options: { title: insight.title },
         viewControls: {
             seriesDisplayOptions:
-                insight.seriesDisplayOptions || parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
+                insight.seriesDisplayOptions ||
+                parseSeriesDisplayOptions(insight.seriesCount, insight.appliedSeriesDisplayOptions),
             filters: {
                 excludeRepoRegex: insight.filters.excludeRepoRegexp,
                 includeRepoRegex: insight.filters.includeRepoRegexp,
@@ -134,6 +135,7 @@ export function getComputeInsightCreateInput(
             repositoryScope: { repositories: insight.repositories },
             timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
             groupBy: insight.groupBy,
+            generatedFromCaptureGroups: true,
         })),
         options: { title: insight.title },
     }

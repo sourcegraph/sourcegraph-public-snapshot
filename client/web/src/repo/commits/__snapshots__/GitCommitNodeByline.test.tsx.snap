@@ -10,7 +10,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-1 mr-2"
-        data-tooltip="Alice Zhao"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -21,7 +21,7 @@ exports[`GitCommitNodeByline author (compact) 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
         Alice Zhao
       </span>
@@ -47,7 +47,7 @@ exports[`GitCommitNodeByline author 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-1 mr-2"
-        data-tooltip="Alice Zhao"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -58,7 +58,7 @@ exports[`GitCommitNodeByline author 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
         Alice Zhao
       </span>
@@ -86,7 +86,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar"
-        data-tooltip="Alice Zhao (author)"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -94,7 +94,7 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-2"
-        data-tooltip="bYang (committer)"
+        data-state="closed"
         role="presentation"
         src="http://example.com/bob.png"
       />
@@ -104,14 +104,14 @@ exports[`GitCommitNodeByline different author and committer (compact) 1`] = `
     >
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
         Alice Zhao
       </span>
        authored and commited by 
       <a
         class="font-weight-bold"
-        data-tooltip="Bob Yang <bob@example.com>"
+        data-state="closed"
         href="https://example.com/bobyang"
       >
         bYang
@@ -140,7 +140,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar"
-        data-tooltip="Alice Zhao (author)"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -148,7 +148,7 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-2"
-        data-tooltip="bYang (committer)"
+        data-state="closed"
         role="presentation"
         src="http://example.com/bob.png"
       />
@@ -158,14 +158,14 @@ exports[`GitCommitNodeByline different author and committer 1`] = `
     >
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
         Alice Zhao
       </span>
        authored and commited by 
       <a
         class="font-weight-bold"
-        data-tooltip="Bob Yang <bob@example.com>"
+        data-state="closed"
         href="https://example.com/bobyang"
       >
         bYang
@@ -192,7 +192,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-1 mr-2"
-        data-tooltip="Alice Zhao"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -203,7 +203,7 @@ exports[`GitCommitNodeByline omit GitHub committer 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
         Alice Zhao
       </span>
@@ -229,7 +229,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
       <img
         aria-hidden="true"
         class="mdi-icon iconInline userAvatar mr-1 mr-2"
-        data-tooltip="Alice Zhao"
+        data-state="closed"
         role="presentation"
         src="http://example.com/alice.png"
       />
@@ -240,7 +240,7 @@ exports[`GitCommitNodeByline same author and committer 1`] = `
       committed by 
       <span
         class="font-weight-bold"
-        data-tooltip="alice@example.com"
+        data-state="closed"
       >
         Alice Zhao
       </span>
