@@ -113,6 +113,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                         context: appliedFilters.searchContexts?.[0] ?? '',
+                        seriesDisplayOptions,
                     },
                 } as ComputeInsight
             }
