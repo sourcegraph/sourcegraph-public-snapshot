@@ -231,8 +231,8 @@ func (r *Runner) applyMigrations(
 	return droppedLock, nil
 }
 
-// checkPrivilegedState determines if we should fail-fast or print a warning abot privileged migration
-// beahvior given the set of definitions to apply.
+// checkPrivilegedState determines if we should fail-fast or print a warning about privileged migration
+// behavior given the set of definitions to apply.
 func (r *Runner) checkPrivilegedState(
 	operation MigrationOperation,
 	schemaContext schemaContext,
