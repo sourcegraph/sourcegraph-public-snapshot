@@ -22,13 +22,15 @@ type backgroundJobs struct {
 	wg    sync.WaitGroup
 	count atomic.Int32
 
-	output chan string
+	verbose bool
+	output  chan string
 }
 
 // Context creates a context that can have background jobs added to it with background.Run
-func Context(ctx context.Context) context.Context {
+func Context(ctx context.Context, verbose bool) context.Context {
 	return context.WithValue(ctx, jobsKey, &backgroundJobs{
-		output: make(chan string, 10), // reasonable default
+		verbose: verbose,
+		output:  make(chan string, 10), // reasonable default
 	})
 }
 
@@ -40,13 +42,13 @@ func loadFromContext(ctx context.Context) *backgroundJobs {
 // this job is complete.
 //
 // Jobs get a context timeout of 30 seconds.
-func Run(ctx context.Context, job func(ctx context.Context, out *std.Output), verbose bool) {
+func Run(ctx context.Context, job func(ctx context.Context, out *std.Output)) {
 	jobs := loadFromContext(ctx)
 	jobs.wg.Add(1)
 	jobs.count.Add(1)
 
 	b := new(bytes.Buffer)
-	out := std.NewOutput(b, verbose)
+	out := std.NewOutput(b, jobs.verbose)
 	go func() {
 		jobCtx, cancel := context.WithTimeout(ctx, 30*time.Second)
 		defer cancel()

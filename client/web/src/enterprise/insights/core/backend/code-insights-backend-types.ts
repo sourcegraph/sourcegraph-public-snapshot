@@ -129,7 +129,7 @@ export interface BackendInsightDatum {
 }
 
 export interface BackendInsightData {
-    content: SeriesChartContent<any>
+    data: InsightContent<any>
     isFetchingHistoricalData: boolean
 }
 

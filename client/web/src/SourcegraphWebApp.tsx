@@ -70,7 +70,6 @@ import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionArea
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { FeatureFlagsProvider } from './featureFlags/FeatureFlagsProvider'
-import { IdeExtensionTracker } from './IdeExtensionTracker'
 import { CodeInsightsProps } from './insights/types'
 import { Layout, LayoutProps } from './Layout'
 import { BlockInput } from './notebooks'
@@ -87,7 +86,6 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
-import { NotepadContainer } from './search/Notepad'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -99,7 +97,6 @@ import {
     getExperimentalFeatures,
     useNavbarQueryState,
 } from './stores'
-import { BrowserExtensionTracker } from './tracking/BrowserExtensionTracker'
 import { eventLogger } from './tracking/eventLogger'
 import { withActivation } from './tracking/withActivation'
 import { UserAreaRoute } from './user/area/UserArea'
@@ -420,13 +417,13 @@ export class SourcegraphWebApp extends React.Component<
                                                                         }
                                                                         globbing={this.state.globbing}
                                                                         streamSearch={aggregateStreamingSearch}
+                                                                        onCreateNotebookFromNotepad={
+                                                                            this.onCreateNotebook
+                                                                        }
                                                                     />
                                                                 </CodeHostScopeProvider>
                                                             )}
                                                         />
-                                                        <NotepadContainer onCreateNotebook={this.onCreateNotebook} />
-                                                        <IdeExtensionTracker />
-                                                        <BrowserExtensionTracker />
                                                     </CompatRouter>
                                                 </Router>
                                             </ScrollManager>

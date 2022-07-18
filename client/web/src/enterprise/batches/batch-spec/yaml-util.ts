@@ -3,6 +3,7 @@ import {
     load,
     Kind as YAMLKind,
     YamlMap as YAMLMap,
+    YAMLMapping,
     YAMLNode,
     YAMLSequence,
     YAMLScalar,
@@ -351,20 +352,26 @@ export const isMinimalBatchSpec = (spec: string): boolean => {
  */
 export function quoteYAMLString(value: string): string {
     let needsQuotes = false
+    let needsEscaping = false
+
     // First we need to craft an AST where the value is the value to a key in an object.
     let ast = load('name: ' + value + '\n')
+
     // If that is not parseable, we might need quotes. Try that.
     if (!isYAMLMap(ast) || ast.errors.length > 0) {
         ast = load('name: "' + value + '"\n')
         needsQuotes = true
-        // If this is still happening, bail out, we don't know what to do here.
+
+        // We don't bail out here, we assume some characters in the value needs escaping,
+        // we set the value of `needsEscaping` to true
         if (!isYAMLMap(ast) || ast.errors.length > 0) {
-            return value
+            needsQuotes = false
+            needsEscaping = true
         }
     }
 
     // Then we traverse the AST to find the name key, so we can get the YAMLValue.
-    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name')
+    const nameMapping = find(ast.mappings, mapping => mapping.key.value === 'name') as YAMLMapping
     if (!nameMapping || !isYAMLScalar(nameMapping.value)) {
         return value
     }
@@ -379,6 +386,19 @@ export function quoteYAMLString(value: string): string {
     if (needsQuotes) {
         return `"${value}"`
     }
+
+    if (needsEscaping) {
+        // to properly escape the characters, we pass the raw string value into `JSON.stringify`,
+        // we use the raw string because we don't want to ignore special characters in regular expressions.
+        const updatedValue = JSON.stringify(String.raw`${value}`)
+        ast = load('name: ' + updatedValue + '\n')
+
+        // if there are no errors then we assume double quoting and escaping special characters works.
+        if (ast.errors.length === 0) {
+            return updatedValue
+        }
+    }
+
     return value
 }
 
@@ -438,8 +458,18 @@ export const insertNameIntoLibraryItem = (librarySpec: string, name: string): st
  * @param librarySpec the raw batch spec YAML example code from a library spec
  * @param query the updated query to be inserted
  */
-export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string =>
-    insertFieldIntoLibraryItem(librarySpec, `- repositoriesMatchingQuery: ${query}\n\n`, 'on', false)
+export const insertQueryIntoLibraryItem = (librarySpec: string, query: string): string => {
+    // we pass in a key of `repositoriesMatchingQuery` into quoteYAMLString because we want to simplify
+    // the operation for quoting a YAML String. Passing in a YAMLSequence adds an unnecessary overhead,
+    // since we are concerned with quoting the value, passing in a normal string works just fine.
+    const possiblyQuotedQuery = quoteYAMLString(query)
+    return insertFieldIntoLibraryItem(
+        librarySpec,
+        `- repositoriesMatchingQuery: ${possiblyQuotedQuery}\n\n`,
+        'on',
+        false
+    )
+}
 
 /**
  * Parses and performs a comparison between the values for the "on", "importChangesets",

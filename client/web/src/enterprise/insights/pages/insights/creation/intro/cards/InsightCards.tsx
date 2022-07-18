@@ -6,6 +6,7 @@ import { Link, Button, CardBody, Card, H2, H3, Text } from '@sourcegraph/wildcar
 
 import {
     CaptureGroupInsightChart,
+    ComputeInsightChart,
     LangStatsInsightChart,
     SearchBasedInsightChart,
 } from '../../../../../modals/components/MediaCharts'
@@ -68,6 +69,18 @@ export const SearchInsightCard: React.FunctionComponent<React.PropsWithChildren<
         </InsightCardBody>
 
         <InsightCardExampleBlock>Tracking architecture, naming, or language migrations.</InsightCardExampleBlock>
+    </InsightCard>
+)
+
+export const ComputeInsightCard: React.FunctionComponent<React.PropsWithChildren<InsightCardProps>> = props => (
+    <InsightCard {...props}>
+        <ComputeInsightChart className={styles.chart} />
+        <InsightCardBody title="Group results" className="mb-3">
+            Insight that <b>groups results</b> by repository, path, author or date. You will define each data series
+            manually.
+        </InsightCardBody>
+
+        <InsightCardExampleBlock>Tracking a migration by repository.</InsightCardExampleBlock>
     </InsightCard>
 )
 

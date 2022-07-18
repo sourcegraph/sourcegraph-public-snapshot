@@ -125,7 +125,13 @@ describe('Backend insight drill down filters', () => {
                 includeRepoRegex: '',
                 excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
             },
-            seriesDisplayOptions: {},
+            seriesDisplayOptions: {
+                limit: 2,
+                sortOptions: {
+                    direction: 'DESC',
+                    mode: 'RESULT_COUNT',
+                },
+            },
         })
     })
 
@@ -260,7 +266,13 @@ describe('Backend insight drill down filters', () => {
                     includeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                     excludeRepoRegex: 'github.com/sourcegraph/sourcegraph',
                 },
-                seriesDisplayOptions: {},
+                seriesDisplayOptions: {
+                    limit: 2,
+                    sortOptions: {
+                        direction: 'DESC',
+                        mode: 'RESULT_COUNT',
+                    },
+                },
             },
         })
     })
