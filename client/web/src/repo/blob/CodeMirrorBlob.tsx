@@ -4,12 +4,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Compartment, Extension } from '@codemirror/state'
+import { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfNecessary } from './Blob'
@@ -33,16 +33,21 @@ const staticExtensions: Extension = [
 export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, wrapCode, isLightTheme }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
-    const [dynamicExtensions, updateExtensions] = useExtension((wrapCode: boolean, isLightTheme: boolean) => [
-        wrapCode ? EditorView.lineWrapping : [],
-        EditorView.darkTheme.of(isLightTheme === false),
-    ])
+    const dynamicExtensions = useMemo(
+        () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
+        [wrapCode, isLightTheme]
+    )
+
+    const [compartment, updateCompartment] = useCompartment(dynamicExtensions)
 
     const history = useHistory()
+    const location = useLocation()
+
+    // Keep history and location in a ref so that we can use the latest value in
+    // the onSelection callback without having to recreate it and having to
+    // reconfigure the editor extensions
     const historyRef = useRef(history)
     historyRef.current = history
-
-    const location = useLocation()
     const locationRef = useRef(location)
     locationRef.current = location
 
@@ -68,52 +73,33 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         )
     }, [])
 
-    const extensions = useMemo(() => [staticExtensions, dynamicExtensions, selectableLineNumbers({ onSelection })], [
-        dynamicExtensions,
+    const extensions = useMemo(() => [staticExtensions, compartment, selectableLineNumbers({ onSelection })], [
+        compartment,
         onSelection,
     ])
 
     const editor = useCodeMirror(container, blobInfo.content, extensions)
 
-    // Update extensions when prop change
     useEffect(() => {
         if (editor) {
-            updateExtensions(editor, wrapCode, isLightTheme)
+            updateCompartment(editor, dynamicExtensions)
         }
-    }, [editor, updateExtensions, wrapCode, isLightTheme])
+    }, [editor, updateCompartment, dynamicExtensions])
 
     // Update selected lines when URL changes
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
     useEffect(() => {
         if (editor) {
-            selectLines(editor, position.line ? position : null)
+            // This check is necessary because at the moment the position
+            // information is updated before the file content, meaning it's
+            // possible that the currently loaded document has fewer lines.
+            if (!position?.line || editor.state.doc.lines >= (position.endLine ?? position.line)) {
+                selectLines(editor, position.line ? position : null)
+            }
         }
-    }, [editor, position])
+        // blobInfo isn't used but we need to trigger the line selection and focus
+        // logic whenever the content changes
+    }, [editor, position, blobInfo])
 
     return <div ref={setContainer} className={`${className} overflow-hidden`} />
-}
-
-/**
- * Helper hook for creating an extension that depends on on some input props.
- * If this proves to be useful it should be moved to the shared CodeMirror code.
- *
- * The provided callback is not called by this hook directly. It is only called
- * when the returned setter is called. It's the responsibily of the component to
- * call the setter with all necessary values.
- *
- * Like with useState, the callback function is ignored in subsequent renders,
- * so it shouldn't close over any variables that change during render.
- */
-export function useExtension<T extends unknown[]>(
-    callback: (...args: T) => Extension
-): [Extension, (editor: EditorView, ...args: T) => void] {
-    return useMemo(() => {
-        const compartment = new Compartment()
-        return [
-            compartment.of([]),
-            (editor, ...args) => editor.dispatch({ effects: compartment.reconfigure(callback(...args)) }),
-        ]
-        // callback is intentionally ignored in subsequent renders
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 }
