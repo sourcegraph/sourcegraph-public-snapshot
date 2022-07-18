@@ -43,19 +43,19 @@ Here is a list of components you can find in a typical Sourcegraph deployment:
 
 ### Core Components
 
-|                                                     |                                                                                                                                                                                                                                                                                  |
-| :-------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`frontend`](scale.md#frontend)                     | Serves the web application, extensions, and graphQL services. Almost every service has a link back to the frontend, from which it gathers configuration updates.                                                                                                                 |
-| [`github-proxy`](scale.md#github-proxy)             | Proxies all requests to github.com to keep track of rate limits and prevent triggering abuse mechanisms.                                                                                                                                                                         |
-| [`gitserver`](scale.md#gitserver)                   | Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git.                                                                                                                                                        |
-| [`precise-code-intel`](scale.md#precise-code-intel) | Converts LSIF upload file into Postgres data. The entire index must be read into memory to be correlated.                                                                                                                                                                        |
-| [`repo-updater`](scale.md#repo-updater)             | Tracks the state of repositories, and is responsible for automatically scheduling updates using gitserver. Other apps which desire updates or fetches should be telling repo-updater, rather than using gitserver directly, so repo-updater can take their changes into account. |
-| [`searcher`](scale.md#searcher)                     | Provides on-demand unindexed search for repositories. It fetches archives from gitserver and searches them with regexp.                                                                                                                                                          |
-| [`symbols`](scale.md#symbols)                       | Indexes symbols in repositories using Ctags.                                                                                                                                                                                                                                     |
-| [`syntect-server`](scale.md#syntect-server)         | An HTTP server that exposes the Rust Syntect syntax highlighting library for use by other services.                                                                                                                                                                              |
-| [`worker`](scale.md#worker)                         | Runs a collection of background jobs periodically in response to internal requests and external events. It is currently janitorial and commit based.                                                                                                                             |
-| [`zoekt-indexserver`](scale.md#zoekt-indexserver)   | Indexes all enabled repositories on Sourcegraph and keeps the indexes up to date. Lives inside the indexed-search pod in a Kubernetes deployment.                                                                                                                                |
-| [`zoekt-webserver`](scale.md#zoekt-webserver)       | Runs searches from indexes stored in memory and disk. The indexes are persisted to disk to avoid re-indexing on startup. Lives inside the indexed-search pod in a Kubernetes deployment.                                                                                         |
+|                                                     |                                                                                                                                                                                          |
+| :-------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`frontend`](scale.md#frontend)                     | Serves the web application, extensions, and graphQL services. Almost every service has a link back to the frontend, from which it gathers configuration updates.                         |
+| [`github-proxy`](scale.md#github-proxy)             | Proxies all requests to github.com to keep track of rate limits and prevent triggering abuse mechanisms.                                                                                 |
+| [`gitserver`](scale.md#gitserver)                   | Mirrors repositories from their code host. All other Sourcegraph services talk to gitserver when they need data from git.                                                                |
+| [`precise-code-intel`](scale.md#precise-code-intel) | Converts LSIF upload file into Postgres data. The entire index must be read into memory to be correlated.                                                                                |
+| [`repo-updater`](scale.md#repo-updater)             | Tracks the state of repositories. It is responsible for automatically scheduling updates using gitserver and for synchronizing metadata between code hosts and external services.        |
+| [`searcher`](scale.md#searcher)                     | Provides on-demand unindexed search for repositories. It fetches archives from gitserver and searches them with regexp.                                                                  |
+| [`symbols`](scale.md#symbols)                       | Indexes symbols in repositories using Ctags.                                                                                                                                             |
+| [`syntect-server`](scale.md#syntect-server)         | An HTTP server that exposes the Rust Syntect syntax highlighting library for use by other services.                                                                                      |
+| [`worker`](scale.md#worker)                         | Runs a collection of background jobs periodically in response to internal requests and external events. It is currently janitorial and commit based.                                     |
+| [`zoekt-indexserver`](scale.md#zoekt-indexserver)   | Indexes all enabled repositories on Sourcegraph and keeps the indexes up to date. Lives inside the indexed-search pod in a Kubernetes deployment.                                        |
+| [`zoekt-webserver`](scale.md#zoekt-webserver)       | Runs searches from indexes stored in memory and disk. The indexes are persisted to disk to avoid re-indexing on startup. Lives inside the indexed-search pod in a Kubernetes deployment. |
 
 ### External Services
 
@@ -289,7 +289,7 @@ Other Sourcegraph services communicate with gitserver when they need data from g
 
 | Memory      |                                                                                                |
 | :---------- | :--------------------------------------------------------------------------------------------- |
-| `Overview`  | Objects associate with the running git commands                                                |
+| `Overview`  | Data associate with the running git commands                                                   |
 | `Factors`   | Size of all repositories                                                                       |
 |             | Size of the largest repository                                                                 |
 | `Guideline` | Depends on the git commands to be executed --the more or larger the git commands = more memory |
@@ -542,7 +542,7 @@ A Redis instance for storing short-term information such as user sessions.
 Repo-updater tracks the state of repositories.
 It is responsible for automatically scheduling updates using gitserver. 
 It is also responsible for synchronizing metadata between code hosts and external services.
-Services that desire updates or fetch communicate with repo-updater.
+Services that desire updates or fetch must communicate with repo-updater instead of gitserver.
 ```
 
 | Replica     |                                                         |
@@ -577,6 +577,7 @@ Services that desire updates or fetch communicate with repo-updater.
 
 ```
 Provides on-demand unindexed search for repositories. 
+It relies on the OS file page cache to speed up future searches
 ```
 
 | Replica     |                                                                     |
@@ -592,19 +593,20 @@ Provides on-demand unindexed search for repositories.
 | `Factors`   | Number of active users                                                                         |
 | `Guideline` | More engaged users = more CPU                                                                  |
 
-| Memory      |                                                                                                                                    |
-| :---------- | :--------------------------------------------------------------------------------------------------------------------------------- |
-| `Overview`  | Searcher fetches archives from gitserver and stores them on disk, and relies on the OS file page cache to speed up future searches |
-| `Factors`   | Size of the largest repository                                                                                                     |
-|             | Number of monorepos                                                                                                                |
-| `Guideline` | More memory requires for running queries that have results returned from the largest repository                                    |
+| Memory      |                                                                       |
+| :---------- | :-------------------------------------------------------------------- |
+| `Overview`  | Searcher fetches archives from gitserver and stores them on disk      |
+| `Factors`   | Number of active users                                                |
+| `Guideline` | Not a memory-intensive service as the search results are streamed out |
+|             | Memory usage is based on the number of concurrent search requests     |
+|             | More memory will be useful around page cache                          |
 
 | Storage     |                                                                                |
 | :---------- | :----------------------------------------------------------------------------- |
 | `Overview`  | Searcher primarily uses disk space to cache archives for unindexed search      |
 | `Factors`   | Size of the largest repository                                                 |
 | `Guideline` | Requires enough disk space to store the largest repository                     |
-|             | The most important thing is ensuring fast IO for storage                       |
+|             | The most important thing is to ensure fast IO for storage                      |
 |             | Add more disks or replicas if you have lots of unindexed searches              |
 |             | More disk space will help speed up future caches                               |
 | `Type`      | Ephemeral storage for Kubernetes deployments                                   |
@@ -736,7 +738,7 @@ Lives inside the indexed-search pod in a Kubernetes deployment.
 The main guideline for scaling a zoekt-indexserver is the size of your largest repository.
 ```
 
-> NOTE: As indexserver currently only indexes one repository at a time, having more CPU and memory are not as important here than in webserver
+> NOTE: As indexserver currently only indexes one repository at a time, having more CPU and memory are not as important here than in webserver.
 
 | Replica     |                                                       |
 | :---------- | :---------------------------------------------------- |
@@ -759,7 +761,7 @@ The main guideline for scaling a zoekt-indexserver is the size of your largest r
 
 | Storage     |                                                                       |
 | :---------- | :-------------------------------------------------------------------- |
-| `Overview`  | Shares storage with zoekt-webserver                                   |
+| `Overview`  | Stores index. Storage is shared with zoekt-webserver                  |
 | `Factors`   | Size of all repositories                                              |
 | `Guideline` | 50% of the gitserver disk size                                        |
 |             | Disk IO is important as it constantly reads from disk during searches |
@@ -767,7 +769,7 @@ The main guideline for scaling a zoekt-indexserver is the size of your largest r
 | `Type`      | Persistent Volumes for Kubernetes                                     |
 |             | Persistent SSD for Docker Compose                                     |
 
-> WARNING: We recommend to provide zoekt-indexserver with lots of resources when trying to add a lot of new repositories that requires indexing from a new external service, then scale down.
+> WARNING: We recommend providing zoekt-indexserver with more resources when trying to add a lot of new repositories that requires indexing from a new external service, and then scale down once indexing is completed.
 
 ---
 
@@ -775,11 +777,12 @@ The main guideline for scaling a zoekt-indexserver is the size of your largest r
 
 ```
 Runs searches from indexes stored in memory and disk.
+It serves and processes data from zoekt-indexserver.
 The indexes are persisted to disk to avoid re-indexing on startup.
 Lives inside the indexed-search pod in a Kubernetes deployment.
 ```
 
-> NOTE: Adding more CPU and memory will help speed up searches
+> NOTE: Adding more CPU and memory helps speed up searches.
 
 | Replica     |                                                         |
 | :---------- | :------------------------------------------------------ |
@@ -789,30 +792,32 @@ Lives inside the indexed-search pod in a Kubernetes deployment.
 | `Guideline` | More repositories = more CPU and replicas               |
 |             | Replicas number must be parallel with zoekt-indexserver |
 
-| CPU         |                                            |
-| :---------- | :----------------------------------------- |
-| `Overview`  | Goroutines are dispatched per search query |
-| `Factors`   | Number of repositories                     |
-|             | Size of the largest repository             |
-| `Guideline` | More repositories = more CPU and replicas  |
+| CPU         |                                              |
+| :---------- | :------------------------------------------- |
+| `Overview`  | Goroutines are dispatched per search query   |
+| `Factors`   | Number of repositories                       |
+|             | Number of active users                       |
+| `Guideline` | Scales with the number of search requests    |
+|             | More search requests = more CPU and replicas |
 
-| Memory      |                                                               |
-| :---------- | :------------------------------------------------------------ |
-| `Overview`  | Parts of the index are stored in memory                       |
-| `Factors`   | Number of repositories                                        |
-|             | Size of all repositories                                      |
-| `Guideline` | Scales with the number of repositories and code-insight users |
+| Memory      |                                         |
+| :---------- | :-------------------------------------- |
+| `Overview`  | Parts of the index are stored in memory |
+| `Factors`   | Number of repositories                  |
+|             | Size of all repositories                |
+| `Guideline` | Scales with the number of repositories  |
+|             | More repositories = more memory         |
 
-| Storage     |                                                                                                   |
-| :---------- | :------------------------------------------------------------------------------------------------ |
-| `Overview`  | The storage is shared with zoekt-indexserver. It serves and processes data from zoekt-indexserver |
-| `Factors`   | Size of all repositories                                                                          |
-| `Guideline` | 50% of the gitserver disk size                                                                    |
-|             | Disk IO is important as it constantly reads from disk during searches                             |
-|             | Scale with zoekt-indexserver                                                                      |
-| `Type`      | Persistent Volumes for Kubernetes                                                                 |
-|             | Persistent SSD for Docker Compose                                                                 |
+| Storage     |                                                                       |
+| :---------- | :-------------------------------------------------------------------- |
+| `Overview`  | Stores index. Storage is shared with zoekt-indexserver.               |
+| `Factors`   | Size of all repositories                                              |
+| `Guideline` | 50% of the gitserver disk size                                        |
+|             | Disk IO is important as it constantly reads from disk during searches |
+|             | Scale with zoekt-indexserver                                          |
+| `Type`      | Persistent Volumes for Kubernetes                                     |
+|             | Persistent SSD for Docker Compose                                     |
 
-> WARNING: Check the peak bursts rather than average over time when monitoring CPU usage for zoekt as it depends on when the searches happen.
+> WARNING: Check the peak bursts rather than the average over time when monitoring CPU usage for zoekt as it depends on when the searches happen.
 
 ---
