@@ -7,3 +7,9 @@
         padding-bottom: 1rem;
     }
 }
+
+.information {
+    @media (--xs-breakpoint-down) {
+        grid-column: 1 / -1;
+    }
+}
