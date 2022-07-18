@@ -393,6 +393,8 @@ type CreateBatchSpecFromRawOpts struct {
 	AllowIgnored     bool
 	AllowUnsupported bool
 	NoCache          bool
+
+	BatchChangeID int64
 }
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
@@ -418,6 +420,8 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	// Actor is guaranteed to be set here, because CheckNamespaceAccess above enforces it.
 	a := actor.FromContext(ctx)
 	spec.UserID = a.UID
+
+	spec.BatchChangeID = opts.BatchChangeID
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
@@ -782,11 +786,17 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 	ctx, _, endObservation := s.operations.getBatchChangeMatchingBatchSpec.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	// TODO: Should name be case-insensitive? i.e. are "foo" and "Foo" the same?
-	opts := store.GetBatchChangeOpts{
-		Name:            spec.Spec.Name,
-		NamespaceUserID: spec.NamespaceUserID,
-		NamespaceOrgID:  spec.NamespaceOrgID,
+	var opts store.GetBatchChangeOpts
+
+	if spec.BatchChangeID == 0 {
+		opts = store.GetBatchChangeOpts{ID: spec.BatchChangeID}
+	} else {
+		// TODO: Should name be case-insensitive? i.e. are "foo" and "Foo" the same?
+		opts = store.GetBatchChangeOpts{
+			Name:            spec.Spec.Name,
+			NamespaceUserID: spec.NamespaceUserID,
+			NamespaceOrgID:  spec.NamespaceOrgID,
+		}
 	}
 
 	batchChange, err := s.store.GetBatchChange(ctx, opts)
