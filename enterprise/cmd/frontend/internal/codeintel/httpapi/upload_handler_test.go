@@ -452,6 +452,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 		operations:  NewOperations(&observation.TestContext),
+		logger:      logtest.Scoped(t),
 	}
 	h.handleEnqueue(w, r)
 
