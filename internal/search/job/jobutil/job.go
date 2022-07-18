@@ -24,6 +24,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	"github.com/sourcegraph/sourcegraph/internal/search/smart"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -42,12 +43,19 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	}
 
 	jobTree := NewOrJob(children...)
-
+	newJob := func(b query.Basic) (job.Job, error) {
+		return NewBasicJob(inputs, b)
+	}
 	if inputs.PatternType == query.SearchTypeLucky {
-		newJob := func(b query.Basic) (job.Job, error) {
-			return NewBasicJob(inputs, b)
-		}
 		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
+	} else if inputs.PatternType == query.SearchTypeSmart && len(plan) == 1 {
+		newJobTree, err := smart.NewSmartJob(plan[0], newJob)
+		if err != nil {
+			return nil, err
+		}
+		if newJobTree != nil {
+			jobTree = newJobTree
+		}
 	}
 
 	return NewAlertJob(inputs, jobTree), nil

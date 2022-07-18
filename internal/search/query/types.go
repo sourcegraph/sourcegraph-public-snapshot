@@ -35,6 +35,7 @@ const (
 	SearchTypeStructural
 	SearchTypeLucky
 	SearchTypeStandard
+	SearchTypeSmart
 )
 
 func (s SearchType) String() string {
@@ -49,6 +50,8 @@ func (s SearchType) String() string {
 		return "structural"
 	case SearchTypeLucky:
 		return "lucky"
+	case SearchTypeSmart:
+		return "smart"
 	default:
 		return fmt.Sprintf("unknown{%d}", s)
 	}
