@@ -175,6 +175,19 @@ func TestApplySubRepoFiltering(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "should filter commit matches where the diff is empty",
+			args: args{
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
+				matches: []result.Match{
+					&result.CommitMatch{
+						ModifiedFiles: []string{unauthorizedFileName, "another-file.txt"},
+						DiffPreview:   &result.MatchedString{Content: ""},
+					},
+				},
+			},
+			wantMatches: []result.Match{},
+		},
 	}
 
 	for _, tt := range tests {

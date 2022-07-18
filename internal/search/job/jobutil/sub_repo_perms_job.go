@@ -110,7 +110,9 @@ func applySubRepoFiltering(ctx context.Context, logger log.Logger, checker authz
 				continue
 			}
 			if allowed {
-				filtered = append(filtered, m)
+				if !diffIsEmpty(mm.DiffPreview) {
+					filtered = append(filtered, m)
+				}
 			}
 		case *result.RepoMatch:
 			// Repo filtering is taking care of by our usual repo filtering logic
@@ -127,4 +129,13 @@ func applySubRepoFiltering(ctx context.Context, logger log.Logger, checker authz
 	// user so we'll return generic error and log something more specific.
 	logger.Warn("Applying sub-repo permissions to search results", log.Error(errs))
 	return filtered, errors.New("subRepoFilterFunc")
+}
+
+func diffIsEmpty(diffPreview *result.MatchedString) bool {
+	if diffPreview != nil {
+		if diffPreview.Content == "" || len(diffPreview.MatchedRanges) == 0 {
+			return true
+		}
+	}
+	return false
 }
