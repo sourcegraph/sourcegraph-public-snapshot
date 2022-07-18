@@ -13,6 +13,6 @@ func NewExpirer(store DBStore, policyMatcher PolicyMatcher, metrics *metrics) go
 		dbStore:       store,
 		policyMatcher: policyMatcher,
 		metrics:       metrics,
-		logger:        log.Scoped("expirer", ""),
+		logger:        log.Scoped("NewExpirer", ""),
 	})
 }
