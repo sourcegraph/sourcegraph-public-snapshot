@@ -451,7 +451,6 @@ func getListRetryBatchSpecWorkspacesQuery(opts *ListRetryBatchSpecWorkspacesOpts
 
 const listRetryBatchSpecWorkspacesFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ListRetryBatchSpecWorkspaces
-
 SELECT batch_spec_workspaces.id, batch_spec_workspaces.changeset_spec_ids
 FROM batch_spec_workspaces
 		 INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
