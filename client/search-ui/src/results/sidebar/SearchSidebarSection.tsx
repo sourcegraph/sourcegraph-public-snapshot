@@ -4,6 +4,7 @@ import classNames from 'classnames'
 import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 import ChevronLeftIcon from 'mdi-react/ChevronLeftIcon'
 
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Button, Collapse, CollapseHeader, CollapsePanel, Icon, H2, H5, Input } from '@sourcegraph/wildcard'
 
 import { FilterLink, FilterLinkProps } from './FilterLink'
@@ -41,6 +42,8 @@ export const SearchSidebarSection: React.FunctionComponent<{
         noResultText = 'No results',
         clearSearchOnChange = children,
     }) => {
+        const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
         const [filter, setFilter] = useState('')
 
         // Clears the filter whenever clearSearchOnChange changes (defaults to the
@@ -117,11 +120,20 @@ export const SearchSidebarSection: React.FunctionComponent<{
                         <H5 as={H2} className="flex-grow-1" id={`search-sidebar-section-header-${sectionId}`}>
                             {header}
                         </H5>
-                        <Icon aria-hidden={true} className="mr-1" as={isOpened ? ChevronDownIcon : ChevronLeftIcon} />
+                        <Icon
+                            aria-hidden={true}
+                            className={classNames(!coreWorkflowImprovementsEnabled && 'mr-1')}
+                            as={isOpened ? ChevronDownIcon : ChevronLeftIcon}
+                        />
                     </CollapseHeader>
 
                     <CollapsePanel>
-                        <div className={classNames('pb-4', !searchVisible && 'border-top')}>
+                        <div
+                            className={classNames(
+                                'pb-4',
+                                !searchVisible && !coreWorkflowImprovementsEnabled && 'border-top'
+                            )}
+                        >
                             {searchVisible && (
                                 <Input
                                     type="search"
