@@ -22,13 +22,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -383,6 +384,12 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		// during a short period during this time. A 1-hour grace period is very
 		// conservative.
 		if err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
+			multi = errors.Append(multi, err)
+		}
+
+		// gc.pid is set by git gc and our sg maintenance script. 24 hours is twice the
+		// time git gc uses internally.
+		if err := removeFileOlderThan(gitDir.Path(gcLockFile), time.Hour*24); err != nil {
 			multi = errors.Append(multi, err)
 		}
 
@@ -1109,6 +1116,17 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 
 	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
 
+	err = lockRepoForGC(dir)
+	if err != nil {
+		logger.Debug(
+			"could not lock repository for sg maintenance. There is probably another git gc operation running.",
+			log.String("dir", string(dir)),
+			log.Error(err),
+		)
+		return nil
+	}
+	defer removeGCLockFile(dir)
+
 	b, err := cmd.CombinedOutput()
 	if err != nil {
 		if err := writeSGMLog(dir, b); err != nil {
@@ -1120,6 +1138,35 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 	// Remove the log file after a successful run.
 	_ = os.Remove(dir.Path(sgmLog))
 	return nil
+}
+
+const gcLockFile = "gc.pid"
+
+func lockRepoForGC(dir GitDir) error {
+	// Setting permissions to 644 to mirror the permissions that git gc sets for gc.pid.
+	f, err := os.OpenFile(dir.Path(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		return err
+	}
+
+	// We cut the hostname to 256 bytes, just like git gc does. See HOST_NAME_MAX in
+	// github.com/git/git.
+	name := hostname.Get()
+	hostNameMax := 256
+	if len(name) > hostNameMax {
+		name = name[0:hostNameMax]
+	}
+
+	_, err = f.Write([]byte(fmt.Sprintf("%d %s", os.Getpid(), name)))
+	if err1 := f.Close(); err1 != nil && err == nil {
+		err = err1
+	}
+
+	return err
+}
+
+func removeGCLockFile(dir GitDir) error {
+	return os.Remove(dir.Path(gcLockFile))
 }
 
 // We run git-prune only if there are enough loose objects. This approach is
