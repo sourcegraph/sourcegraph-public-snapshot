@@ -563,6 +563,7 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
 * `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
@@ -587,6 +588,7 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
