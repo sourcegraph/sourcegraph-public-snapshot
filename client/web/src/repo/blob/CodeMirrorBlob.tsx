@@ -90,9 +90,16 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
     useEffect(() => {
         if (editor) {
-            selectLines(editor, position.line ? position : null)
+            // This check is necessary because at the moment the position
+            // information is updated before the file content, meaning it's
+            // possible that the currently loaded document has fewer lines.
+            if (!position?.line || editor.state.doc.lines >= (position.endLine ?? position.line)) {
+                selectLines(editor, position.line ? position : null)
+            }
         }
-    }, [editor, position])
+        // blobInfo isn't used but we need to trigger the line selection and focus
+        // logic whenever the content changes
+    }, [editor, position, blobInfo])
 
     return <div ref={setContainer} className={`${className} overflow-hidden`} />
 }
