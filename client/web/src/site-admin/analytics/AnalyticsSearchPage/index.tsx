@@ -142,7 +142,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     label: 'Core workflow',
                     minPerItem: 5,
                     description:
-                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language and features like syntax aware search patterns and the ability to search code, diffs, and commit messages at any revision.',
+                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language, syntax aware search patterns, and the ability to search code, diffs, and commit messages at any revision.',
                     percentage: 75,
                     value: totalCount,
                 },
