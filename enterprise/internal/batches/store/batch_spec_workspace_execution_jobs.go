@@ -134,6 +134,7 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx context.C
 	return s.Exec(ctx, q)
 }
 
+// DeleteBatchSpecWorkspaceExecutionJobsOpts options used to determine which jobs to delete.
 type DeleteBatchSpecWorkspaceExecutionJobsOpts struct {
 	IDs          []int64
 	WorkspaceIDs []int64
