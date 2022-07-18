@@ -399,6 +399,47 @@ func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID 
 	return s.Exec(ctx, q)
 }
 
+// ListUncompletedBatchSpecWorkspaces lists all btypes.BatchSpecWorkspace that have not been completed.
+func (s *Store) ListUncompletedBatchSpecWorkspaces(ctx context.Context, opts ListBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, next int64, err error) {
+	ctx, _, endObservation := s.operations.listUncompletedBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := sqlf.Sprintf(listUncompletedBatchSpecWorkspaceExecutionJobFmtstr, opts.BatchSpecID)
+
+	cs = make([]*btypes.BatchSpecWorkspace, 0)
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
+		var c btypes.BatchSpecWorkspace
+		if err := sc.Scan(
+			&c.ID,
+			&jsonIDsSet{Assocs: &c.ChangesetSpecIDs},
+		); err != nil {
+			return err
+		}
+		cs = append(cs, &c)
+		return nil
+	})
+
+	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
+		next = cs[len(cs)-1].ID
+		cs = cs[:len(cs)-1]
+	}
+
+	return cs, next, err
+}
+
+const listUncompletedBatchSpecWorkspaceExecutionJobFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ListUncompletedBatchSpecWorkspaceExecutionJob
+
+SELECT batch_spec_workspaces.id, batch_spec_workspaces.changeset_spec_ids
+FROM batch_spec_workspaces
+		 INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+		 INNER JOIN batch_spec_workspace_execution_jobs
+					on batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id
+WHERE repo.deleted_at IS NULL
+	AND batch_spec_workspaces.batch_spec_id = %s
+	AND batch_spec_workspace_execution_jobs.state != 'completed';
+`
+
 func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) error {
 	var stepCacheResults json.RawMessage
 
