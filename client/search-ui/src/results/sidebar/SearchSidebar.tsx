@@ -144,7 +144,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     // we got the settings.
     if (collapsedSections) {
         body = (
-            <StickyBox className={styles.stickyBox}>
+            <StickyBox className={styles.stickyBox} offsetTop={8}>
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_TYPES}
                     className={styles.item}
