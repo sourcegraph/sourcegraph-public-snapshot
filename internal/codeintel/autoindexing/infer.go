@@ -92,7 +92,7 @@ func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string
 		return "", "", false
 	}
 
-	logger := log.Scoped("inferNpmRepositoryAndRevision", "")
+	logger := log.Scoped("inferPythonRepositoryAndRevision", "")
 	pythonPkg, err := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
 
 	if err != nil {
