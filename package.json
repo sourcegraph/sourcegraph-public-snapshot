@@ -319,7 +319,6 @@
     "process": "^0.11.10",
     "protoc-gen-ts": "0.8.1",
     "puppeteer": "^13.5.1",
-    "puppeteer-firefox": "^0.5.1",
     "react-refresh": "^0.10.0",
     "rimraf": "^3.0.2",
     "sass": "^1.32.4",
