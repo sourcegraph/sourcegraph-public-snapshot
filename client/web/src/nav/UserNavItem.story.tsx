@@ -63,7 +63,6 @@ const commonProps = (): UserNavItemProps => ({
     isLightTheme: true,
     onThemePreferenceChange,
     showDotComMarketing: boolean('showDotComMarketing', true),
-    isExtensionAlertAnimating: false,
     codeHostIntegrationMessaging: select(
         'codeHostIntegrationMessaging',
         ['browser-extension', 'native-integration'] as const,
@@ -74,11 +73,9 @@ const commonProps = (): UserNavItemProps => ({
     position: Position.bottomStart,
 })
 
-const OpenByDefaultWrapper: React.FunctionComponent<
-    React.PropsWithChildren<{
-        children: React.FunctionComponent<React.PropsWithChildren<{ menuButtonRef: React.Ref<HTMLButtonElement> }>>
-    }>
-> = ({ children }) => {
+const OpenByDefaultWrapper: React.FunctionComponent<{
+    children: React.FunctionComponent<React.PropsWithChildren<{ menuButtonRef: React.Ref<HTMLButtonElement> }>>
+}> = ({ children }) => {
     const menuButtonReference = useRef<HTMLButtonElement>(null)
 
     useEffect(() => {

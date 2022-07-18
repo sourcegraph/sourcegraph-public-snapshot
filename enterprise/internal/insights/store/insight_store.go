@@ -880,10 +880,18 @@ type UpdateFrontendSeriesArgs struct {
 	Repositories      []string
 	StepIntervalUnit  string
 	StepIntervalValue int
+	GroupBy           *string
 }
 
 func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFrontendSeriesArgs) error {
-	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql, args.Query, pq.Array(args.Repositories), args.StepIntervalUnit, args.StepIntervalValue, args.SeriesID))
+	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql,
+		args.Query,
+		pq.Array(args.Repositories),
+		args.StepIntervalUnit,
+		args.StepIntervalValue,
+		args.GroupBy,
+		args.SeriesID,
+	))
 }
 
 func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, error) {
@@ -1083,7 +1091,7 @@ WHERE series.series_id = %s
 const updateFrontendSeriesSql = `
 -- source: enterprise/internal/insights/store/insight_store.go:UpdateFrontendSeries
 UPDATE insight_series
-SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s
+SET query = %s, repositories = %s, sample_interval_unit = %s, sample_interval_value = %s, group_by = %s
 WHERE series_id = %s
 `
 

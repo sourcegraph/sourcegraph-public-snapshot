@@ -173,10 +173,8 @@ const triggerDashboardMenuItem = async (
 
     const dashboardMenuItem = screen.getByTestId(testId)
 
-    // We're simulating keyboard navigation here to circumvent a bug in ReachUI
-    // does not respond to programmatic click events on menu items
     dashboardMenuItem.focus()
-    user.keyboard(' ')
+    user.click(dashboardMenuItem)
 }
 
 beforeEach(() => {

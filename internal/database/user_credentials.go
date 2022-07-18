@@ -8,6 +8,9 @@ import (
 
 	"github.com/keegancsmith/sqlf"
 
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -117,25 +120,35 @@ type UserCredentialsStore interface {
 
 // userCredentialsStore provides access to the `user_credentials` table.
 type userCredentialsStore struct {
+	logger log.Logger
 	*basestore.Store
 	key encryption.Key
 }
 
 // UserCredentialsWith instantiates and returns a new UserCredentialsStore using the other store handle.
-func UserCredentialsWith(other basestore.ShareableStore, key encryption.Key) UserCredentialsStore {
+func UserCredentialsWith(logger log.Logger, other basestore.ShareableStore, key encryption.Key) UserCredentialsStore {
 	return &userCredentialsStore{
-		Store: basestore.NewWithHandle(other.Handle()),
-		key:   key,
+		logger: logger,
+		Store:  basestore.NewWithHandle(other.Handle()),
+		key:    key,
 	}
 }
 
 func (s *userCredentialsStore) With(other basestore.ShareableStore) UserCredentialsStore {
-	return &userCredentialsStore{Store: s.Store.With(other)}
+	return &userCredentialsStore{
+		logger: s.logger,
+		Store:  s.Store.With(other),
+		key:    s.key,
+	}
 }
 
 func (s *userCredentialsStore) Transact(ctx context.Context) (UserCredentialsStore, error) {
 	txBase, err := s.Store.Transact(ctx)
-	return &userCredentialsStore{Store: txBase}, err
+	return &userCredentialsStore{
+		logger: s.logger,
+		Store:  txBase,
+		key:    s.key,
+	}, err
 }
 
 // UserCredentialScope represents the unique scope for a credential. Only one
@@ -151,6 +164,12 @@ type UserCredentialScope struct {
 // authenticator. If the scope already has a credential, an error will be
 // returned.
 func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialScope, credential auth.Authenticator) (*UserCredential, error) {
+	// SECURITY: check that the current user is authorised to create a user
+	// credential for the given user scope.
+	if err := userCredentialsAuthzScope(ctx, NewDBWith(s.logger, s), scope); err != nil {
+		return nil, err
+	}
+
 	id, err := keyID(ctx, s.key)
 	if err != nil {
 		return nil, err
@@ -184,6 +203,11 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 // Update updates a user credential in the database. If the credential cannot be found,
 // an error is returned.
 func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
+	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	if err != nil {
+		return err
+	}
+
 	credential.UpdatedAt = timeutil.Now()
 
 	q := sqlf.Sprintf(
@@ -197,6 +221,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 		credential.UpdatedAt,
 		credential.SSHMigrationApplied,
 		credential.ID,
+		authz,
 		sqlf.Join(userCredentialsColumns, ", "),
 	)
 
@@ -212,7 +237,12 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
 func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
-	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s", id)
+	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	if err != nil {
+		return err
+	}
+
+	q := sqlf.Sprintf("DELETE FROM user_credentials WHERE id = %s AND %s", id, authz)
 	res, err := s.ExecResult(ctx, q)
 	if err != nil {
 		return err
@@ -230,10 +260,16 @@ func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
 // GetByID returns the user credential matching the given ID, or
 // UserCredentialNotFoundErr if no such credential exists.
 func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
+	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	if err != nil {
+		return nil, err
+	}
+
 	q := sqlf.Sprintf(
-		"SELECT %s FROM user_credentials WHERE id = %s",
+		"SELECT %s FROM user_credentials WHERE id = %s AND %s",
 		sqlf.Join(userCredentialsColumns, ", "),
 		id,
+		authz,
 	)
 
 	cred := UserCredential{key: s.key}
@@ -250,6 +286,11 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 // GetByScope returns the user credential matching the given scope, or
 // UserCredentialNotFoundErr if no such credential exists.
 func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
+	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	if err != nil {
+		return nil, err
+	}
+
 	q := sqlf.Sprintf(
 		userCredentialsGetByScopeQueryFmtstr,
 		sqlf.Join(userCredentialsColumns, ", "),
@@ -257,6 +298,7 @@ func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredent
 		scope.UserID,
 		scope.ExternalServiceType,
 		scope.ExternalServiceID,
+		authz,
 	)
 
 	cred := UserCredential{key: s.key}
@@ -302,7 +344,12 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 
 // List returns all user credentials matching the given options.
 func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
-	preds := []*sqlf.Query{}
+	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	if err != nil {
+		return nil, 0, err
+	}
+
+	preds := []*sqlf.Query{authz}
 	if opts.Scope.Domain != "" {
 		preds = append(preds, sqlf.Sprintf("domain = %s", opts.Scope.Domain))
 	}
@@ -332,10 +379,6 @@ func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsLis
 			"encryption_key_id NOT IN ('', %s)",
 			UserCredentialUnmigratedEncryptionKeyID,
 		))
-	}
-
-	if len(preds) == 0 {
-		preds = append(preds, sqlf.Sprintf("TRUE"))
 	}
 
 	forUpdate := &sqlf.Query{}
@@ -405,7 +448,8 @@ WHERE
 	domain = %s AND
 	user_id = %s AND
 	external_service_type = %s AND
-	external_service_id = %s
+	external_service_id = %s AND
+	%s -- authz query conds
 `
 
 const userCredentialsListQueryFmtstr = `
@@ -459,7 +503,8 @@ SET
 	updated_at = %s,
 	ssh_migration_applied = %s
 WHERE
-	id = %s
+	id = %s AND
+	%s -- authz query conds
 RETURNING %s
 `
 
@@ -496,3 +541,61 @@ func keyID(ctx context.Context, key encryption.Key) (string, error) {
 
 	return "", nil
 }
+
+var errUserCredentialCreateAuthz = errors.New("current user cannot create a user credential in this scope")
+
+func userCredentialsAuthzScope(ctx context.Context, db DB, scope UserCredentialScope) error {
+	a := actor.FromContext(ctx)
+	if a.IsInternal() {
+		return nil
+	}
+
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return errors.Wrap(err, "getting auth user from context")
+	}
+	if user.SiteAdmin && !conf.Get().AuthzEnforceForSiteAdmins {
+		return nil
+	}
+
+	if user.ID != scope.UserID {
+		return errUserCredentialCreateAuthz
+	}
+
+	return nil
+}
+
+func userCredentialsAuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
+	a := actor.FromContext(ctx)
+	if a.IsInternal() {
+		return sqlf.Sprintf("(TRUE)"), nil
+	}
+
+	user, err := db.Users().GetByCurrentAuthUser(ctx)
+	if err != nil {
+		return nil, errors.Wrap(err, "getting auth user from context")
+	}
+	return sqlf.Sprintf(
+		userCredentialsAuthzQueryCondsFmtstr,
+		user.ID,
+		!conf.Get().AuthzEnforceForSiteAdmins,
+		user.ID,
+	), nil
+}
+
+const userCredentialsAuthzQueryCondsFmtstr = `
+(
+	(
+		user_credentials.user_id = %s  -- user credential user is the same as the actor
+	)
+	OR
+	(
+		%s  -- negated authz.enforceForSiteAdmins site config setting
+		AND EXISTS (
+			SELECT 1
+			FROM users
+			WHERE site_admin = TRUE AND id = %s  -- actor user ID
+		)
+	)
+)
+`

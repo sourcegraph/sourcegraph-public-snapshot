@@ -1,5 +1,7 @@
 import { Meta, Story } from '@storybook/react'
 
+import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
+
 import { WebStory } from '../../../../../components/WebStory'
 import { CodeInsightsBackendStoryMock } from '../../../CodeInsightsBackendStoryMock'
 import { BackendInsightDatum, SeriesChartContent } from '../../../core'
@@ -73,7 +75,12 @@ const codeInsightsBackend = {
 export const ComputeLivePreview: Story = () => (
     <CodeInsightsBackendStoryMock mocks={codeInsightsBackend}>
         <div className="m-3 px-4 py-5 bg-white">
-            <ComputeLivePreviewComponent disabled={false} repositories="sourcegraph/sourcegraph" series={[]} />
+            <ComputeLivePreviewComponent
+                disabled={false}
+                repositories="sourcegraph/sourcegraph"
+                series={[]}
+                groupBy={GroupByField.AUTHOR}
+            />
         </div>
     </CodeInsightsBackendStoryMock>
 )

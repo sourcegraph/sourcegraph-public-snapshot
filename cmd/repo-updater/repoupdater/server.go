@@ -14,6 +14,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/batches"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
@@ -39,11 +40,8 @@ type Server struct {
 	GitserverClient interface {
 		ListCloned(context.Context) ([]string, error)
 	}
-	ChangesetSyncRegistry interface {
-		// EnqueueChangesetSyncs will queue the supplied changesets to sync ASAP.
-		EnqueueChangesetSyncs(ctx context.Context, ids []int64) error
-	}
-	RateLimitSyncer interface {
+	ChangesetSyncRegistry batches.ChangesetSyncRegistry
+	RateLimitSyncer       interface {
 		// SyncRateLimiters should be called when an external service changes so that
 		// our internal rate limiters are kept in sync
 		SyncRateLimiters(ctx context.Context, ids ...int64) error

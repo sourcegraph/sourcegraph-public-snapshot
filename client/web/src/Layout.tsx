@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
+import React, { Suspense, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
@@ -20,6 +20,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
@@ -42,7 +43,6 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { useExtensionAlertAnimation } from './nav/UserNavItem'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { RepoContainerRoute } from './repo/RepoContainer'
@@ -169,15 +169,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     const themeProps = useThemeProps()
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     const breadcrumbProps = useBreadcrumbs()
-
-    // Control browser extension discoverability animation here.
-    // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
-    const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
-    const onExtensionAlertDismissed = useCallback(() => {
-        startExtensionAlertAnimation()
-    }, [startExtensionAlertAnimation])
 
     useScrollToLocationHash(props.location)
 
@@ -207,7 +201,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...props,
         ...themeProps,
         ...breadcrumbProps,
-        onExtensionAlertDismissed,
         isMacPlatform: isMacPlatform(),
     }
 
@@ -215,7 +208,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         <div
             className={classNames(
                 styles.layout,
-                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
+                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME,
+                coreWorkflowImprovementsEnabled && 'core-workflow-improvements-enabled'
             )}
         >
             <KeyboardShortcutsHelp
@@ -249,7 +243,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     }
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
-                    isExtensionAlertAnimating={isExtensionAlertAnimating}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                 />
             )}

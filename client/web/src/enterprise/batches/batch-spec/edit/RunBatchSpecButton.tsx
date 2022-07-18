@@ -105,7 +105,13 @@ const ExecutionOption: React.FunctionComponent<React.PropsWithChildren<Execution
 
     const info = props.disabled ? (
         <Tooltip content={props.disabledTooltip}>
-            <Icon aria-label={props.disabledTooltip} className="ml-2" tabIndex={0} svgPath={mdiInformationOutline} />
+            <Icon
+                aria-label={props.disabledTooltip}
+                className="ml-2"
+                role="button"
+                tabIndex={0}
+                svgPath={mdiInformationOutline}
+            />
         </Tooltip>
     ) : props.moreInfo ? (
         <Button className="m-0 ml-2 p-0 border-0" onClick={() => setInfoOpen(!infoOpen)}>

@@ -138,9 +138,7 @@ describe('Search', () => {
                 const editor = await createEditorAPI(driver, queryInputSelector)
                 await editor.replace('-file')
                 await editor.selectSuggestion('-file')
-                // Using a regular expression here because currently the
-                // value for CodeMirror includes placeholders
-                expect(await editor.getValue()).toMatch(/^-file:/)
+                expect(await editor.getValue()).toStrictEqual('-file:')
                 await percySnapshotWithVariants(driver.page, `Search home page (${editorName})`)
                 await accessibilityAudit(driver.page)
             })
@@ -235,6 +233,8 @@ describe('Search', () => {
                 test('Is set from the URL query parameter when loading a search-related page', async () => {
                     await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=foo')
                     const editor = await createEditorAPI(driver, queryInputSelector)
+                    await editor.waitForIt()
+                    await driver.page.waitForSelector('[data-testid="results-info-bar"]')
                     expect(await editor.getValue()).toStrictEqual('foo')
                     // Field value is cleared when navigating to a non search-related page
                     await driver.page.waitForSelector('a[href="/extensions"]')
@@ -243,6 +243,8 @@ describe('Search', () => {
                     expect(await editor.getValue()).toStrictEqual(undefined)
                     // Field value is restored when the back button is pressed
                     await driver.page.goBack()
+                    await editor.waitForIt()
+                    await driver.page.waitForSelector('[data-testid="results-info-bar"]')
                     expect(await editor.getValue()).toStrictEqual('foo')
                 })
 

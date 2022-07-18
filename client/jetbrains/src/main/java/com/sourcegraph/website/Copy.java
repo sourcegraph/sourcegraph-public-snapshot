@@ -18,7 +18,7 @@ public class Copy extends FileActionBase {
         CopyPasteManager.getInstance().setContents(new StringSelection(urlWithoutUtm));
 
         // Display notification
-        Notification notification = new Notification("Sourcegraph", "Sourcegraph",
+        Notification notification = new Notification("Sourcegraph URL sharing", "Sourcegraph",
             "File URL copied to clipboard." + urlWithoutUtm, NotificationType.INFORMATION);
         Notifications.Bus.notify(notification);
     }

@@ -67,8 +67,6 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
         insightType: getTrackingTypeByInsightType(insight.type),
     })
 
-    const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
-
     return (
         <InsightCard
             {...otherProps}
@@ -79,7 +77,11 @@ export function BuiltInInsight(props: BuiltInInsightProps): React.ReactElement {
         >
             <InsightCardHeader
                 title={
-                    <Link to={shareableUrl} target="_blank" rel="noopener noreferrer">
+                    <Link
+                        to={`${window.location.origin}/insights/insight/${insight.id}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                    >
                         {insight.title}
                     </Link>
                 }

@@ -203,8 +203,8 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 
 To run integration tests for the web app:
 
-1. Run `yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
-    - Alternatively, `yarn build-web` will only build a bundle once.
+1. Run `INTEGRATION_TESTS=true yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
+    - Alternatively, `INTEGRATION_TESTS=true yarn build-web` will only build a bundle once.
 1. If you need to test Enterprise features such as Batch Changes, set `ENTERPRISE=1` when building.
 1. Run `yarn test-integration` in the repository root to run the tests.
 

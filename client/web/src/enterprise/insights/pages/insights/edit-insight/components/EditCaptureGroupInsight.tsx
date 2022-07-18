@@ -43,7 +43,12 @@ export const EditCaptureGroupInsight: React.FunctionComponent<
 
         // Preserve backend insight filters since these filters aren't represented
         // in the editing form
-        return onSubmit({ ...sanitizedInsight, filters: insight.filters })
+        return onSubmit({
+            ...sanitizedInsight,
+            filters: insight.filters,
+            seriesDisplayOptions: insight.seriesDisplayOptions,
+            seriesCount: insight.seriesCount,
+        })
     }
 
     return (
