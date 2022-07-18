@@ -85,7 +85,12 @@ export const CREATE_EMPTY_BATCH_CHANGE = gql`
 // to a batch change has already been applied.
 export const CREATE_BATCH_SPEC_FROM_RAW = gql`
     mutation CreateBatchSpecFromRaw($spec: String!, $noCache: Boolean!, $namespace: ID!, $batchChangeID: ID!) {
-        createBatchSpecFromRaw(batchSpec: $spec, noCache: $noCache, namespace: $namespace, batchChangeID: $batchChangeID) {
+        createBatchSpecFromRaw(
+            batchSpec: $spec
+            noCache: $noCache
+            namespace: $namespace
+            batchChangeID: $batchChangeID
+        ) {
             id
             createdAt
         }

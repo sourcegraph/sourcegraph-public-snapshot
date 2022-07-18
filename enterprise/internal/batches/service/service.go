@@ -646,6 +646,8 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		return nil, err
 	}
 
+	fmt.Printf("\n about to repace new spec with BC of %d and old spec has batch ID: %d", newSpec.BatchChangeID, batchSpec.BatchChangeID)
+
 	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,
 		allowUnsupported: opts.AllowUnsupported,
@@ -734,6 +736,7 @@ func replaceBatchSpec(ctx context.Context, tx *store.Store, oldSpec, newSpec *bt
 	newSpec.NamespaceOrgID = oldSpec.NamespaceOrgID
 	newSpec.NamespaceUserID = oldSpec.NamespaceUserID
 	newSpec.UserID = oldSpec.UserID
+	newSpec.BatchChangeID = oldSpec.BatchChangeID
 
 	return nil
 }
@@ -788,7 +791,7 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 
 	var opts store.GetBatchChangeOpts
 
-	if spec.BatchChangeID == 0 {
+	if spec.BatchChangeID != 0 {
 		opts = store.GetBatchChangeOpts{ID: spec.BatchChangeID}
 	} else {
 		// TODO: Should name be case-insensitive? i.e. are "foo" and "Foo" the same?
