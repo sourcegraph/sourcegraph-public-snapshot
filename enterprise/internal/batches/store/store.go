@@ -249,11 +249,12 @@ type operations struct {
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
 
-	createBatchSpecWorkspace       *observation.Operation
-	getBatchSpecWorkspace          *observation.Operation
-	listBatchSpecWorkspaces        *observation.Operation
-	countBatchSpecWorkspaces       *observation.Operation
-	markSkippedBatchSpecWorkspaces *observation.Operation
+	createBatchSpecWorkspace           *observation.Operation
+	getBatchSpecWorkspace              *observation.Operation
+	listBatchSpecWorkspaces            *observation.Operation
+	countBatchSpecWorkspaces           *observation.Operation
+	markSkippedBatchSpecWorkspaces     *observation.Operation
+	listUncompletedBatchSpecWorkspaces *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
@@ -262,7 +263,6 @@ type operations struct {
 	deleteBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	cancelBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	retryBatchSpecWorkspaceExecutionJobs               *observation.Operation
-	retryBatchSpecExecution                            *observation.Operation
 
 	createBatchSpecResolutionJob *observation.Operation
 	getBatchSpecResolutionJob    *observation.Operation
@@ -384,11 +384,12 @@ func newOperations(observationContext *observation.Context) *operations {
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
 
-			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
-			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
-			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
-			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
-			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
+			createBatchSpecWorkspace:           op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:              op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:            op("ListBatchSpecWorkspaces"),
+			countBatchSpecWorkspaces:           op("CountBatchSpecWorkspaces"),
+			markSkippedBatchSpecWorkspaces:     op("MarkSkippedBatchSpecWorkspaces"),
+			listUncompletedBatchSpecWorkspaces: op("ListUncompletedBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
 			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),
@@ -397,7 +398,6 @@ func newOperations(observationContext *observation.Context) *operations {
 			deleteBatchSpecWorkspaceExecutionJobs:              op("DeleteBatchSpecWorkspaceExecutionJobs"),
 			cancelBatchSpecWorkspaceExecutionJobs:              op("CancelBatchSpecWorkspaceExecutionJobs"),
 			retryBatchSpecWorkspaceExecutionJobs:               op("RetryBatchSpecWorkspaceExecutionJobs"),
-			retryBatchSpecExecution:                            op("RetryBatchSpecExecution"),
 
 			createBatchSpecResolutionJob: op("CreateBatchSpecResolutionJob"),
 			getBatchSpecResolutionJob:    op("GetBatchSpecResolutionJob"),
