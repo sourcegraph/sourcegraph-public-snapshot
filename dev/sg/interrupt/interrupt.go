@@ -21,14 +21,26 @@ func Register(hook func()) {
 // Listen starts a goroutine that listens for interrupts and executes registered hooks
 // before exiting with status 1.
 func Listen() {
-	interrupt := make(chan os.Signal, 1)
+	interrupt := make(chan os.Signal, 2)
 	signal.Notify(interrupt, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 	go func() {
 		<-interrupt
+
+		// prevent additional hooks from registering once we've received an interrupt
 		mux.Lock()
+
+		go func() {
+			// If we receive a second interrupt, forcibly exit.
+			<-interrupt
+			os.Exit(1)
+		}()
+
+		// Execute all hooks
 		for _, h := range hooks {
 			h()
 		}
+
+		// Done and exit!
 		os.Exit(1)
 	}()
 }

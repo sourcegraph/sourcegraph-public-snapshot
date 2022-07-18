@@ -96,6 +96,7 @@ export function getComputeInsightUpdateInput(insight: MinimalComputeInsightData)
             repositoryScope: { repositories },
             // TODO: Remove this when BE supports seperate mutation for compute-powered insight
             timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
+            generatedFromCaptureGroups: true,
         })),
         presentationOptions: {
             title: insight.title,

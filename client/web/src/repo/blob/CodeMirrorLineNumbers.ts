@@ -150,31 +150,34 @@ export function selectLines(view: EditorView, newRange: SelectedLineRange): void
 
     const effects: StateEffect<unknown>[] = [setSelectedLines.of(newRange)]
 
-    if (newRange) {
-        effects.push(
-            EditorView.scrollIntoView(
-                view.state.doc.line(newRange.line).from,
-                // This is not ideal but  shouldScrollIntoView operates on the
-                // rendered lines, of which not all might be in view. In that case
-                // "nearest" ensures that the line will be visible but it won't have
-                // any affect if the line is already visible.
-                { y: shouldScrollIntoView(view, newRange) ? 'center' : 'nearest' }
-            )
-        )
+    if (newRange && shouldScrollIntoView(view, newRange)) {
+        effects.push(EditorView.scrollIntoView(view.state.doc.line(newRange.line).from, { y: 'center' }))
     }
 
     view.dispatch({ effects })
 }
 
+/**
+ * This function determines whether or not the selected lines are in view by
+ * comparing the top/bottom positions of the line (which are relative to the
+ * document top) to the scroll position of the scroll container.
+ *
+ * Simply using EditorView.viewport doesn't work because those returns the range
+ * of *rendered* lines, not just *visible* lines (some lines are rendered
+ * outside of the editor viewport).
+ */
 function shouldScrollIntoView(view: EditorView, range: SelectedLineRange): boolean {
     if (!range) {
         return false
     }
 
-    const from = view.state.doc.line(range.line).from
-    const to = range.endLine ? view.state.doc.line(range.endLine).to : undefined
+    const from = view.lineBlockAt(view.state.doc.line(range.line).from)
+    const to = range.endLine ? view.lineBlockAt(view.state.doc.line(range.endLine).to) : from
 
-    return from >= view.viewport.to || (to ?? from) <= view.viewport.from
+    return (
+        from.top + from.height >= view.scrollDOM.scrollTop + view.scrollDOM.clientHeight ||
+        to.top <= view.scrollDOM.scrollTop
+    )
 }
 
 function isSingleLine(range: SelectedLineRange): boolean {

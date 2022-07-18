@@ -38,7 +38,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         case 'LineChartInsightViewPresentation': {
             const isComputeInsight = insight.dataSeriesDefinitions.some(series => series.groupBy)
             const isCaptureGroupInsight = insight.dataSeriesDefinitions.some(
-                series => series.generatedFromCaptureGroups
+                series => series.generatedFromCaptureGroups && !series.groupBy
             )
 
             const { appliedFilters } = insight
@@ -113,6 +113,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                         context: appliedFilters.searchContexts?.[0] ?? '',
+                        seriesDisplayOptions,
                     },
                 } as ComputeInsight
             }

@@ -135,6 +135,7 @@ export function getComputeInsightCreateInput(
             repositoryScope: { repositories: insight.repositories },
             timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
             groupBy: insight.groupBy,
+            generatedFromCaptureGroups: true,
         })),
         options: { title: insight.title },
     }

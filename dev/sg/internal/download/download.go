@@ -28,13 +28,22 @@ func Executable(ctx context.Context, url string, path string) error {
 	}
 	defer resp.Body.Close()
 
+	// Sometimes the release is available, but the binaries are not
+	if resp.StatusCode == http.StatusNotFound {
+		return nil
+	}
+
 	if resp.StatusCode != http.StatusOK {
 		return errors.Newf("downloading %s: status %d",
 			url, resp.StatusCode)
 	}
 
 	content := &bytes.Buffer{}
-	content.ReadFrom(resp.Body)
+	if n, err := content.ReadFrom(resp.Body); err != nil {
+		return errors.Wrap(err, "reading response")
+	} else if n == 0 {
+		return errors.New("got empty response")
+	}
 
 	updated, err := fileutil.UpdateFileIfDifferent(path, content.Bytes())
 	if err != nil {

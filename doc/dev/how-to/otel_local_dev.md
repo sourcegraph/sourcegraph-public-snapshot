@@ -2,6 +2,8 @@
 
 > WARNING: OpenTelemetry support is a work in progress, and so are these docs!
 
+General OpenTelemetry export configuration is done via environment variables according to the [official configuration options specification](https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options).
+
 ## Tracing
 
 1. Set `dev-private` site config to use `opentelemetry`
