@@ -297,7 +297,7 @@ func dependencyGcloud() *dependency {
 					"curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
 					Input(cio.Input).
 					Run().
-					Map(func(ctx context.Context, line []byte, dst io.Writer) (int, error) {
+					Map(func(_ context.Context, line []byte, dst io.Writer) (int, error) {
 						// Listen for gcloud telling us to source paths
 						if matches := gcloudSourceRegexp.FindSubmatch(line); len(matches) > 0 {
 							shouldSource := matches[gcloudSourceRegexp.SubexpIndex("path")]
