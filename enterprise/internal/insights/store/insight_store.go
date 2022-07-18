@@ -874,6 +874,26 @@ func (s *InsightStore) FindMatchingSeries(ctx context.Context, args MatchSeriesA
 	return rows[0], true, nil
 }
 
+type UpdateFrontendSeriesArgs struct {
+	SeriesID          string
+	Query             string
+	Repositories      []string
+	StepIntervalUnit  string
+	StepIntervalValue int
+	GroupBy           *string
+}
+
+func (s *InsightStore) UpdateFrontendSeries(ctx context.Context, args UpdateFrontendSeriesArgs) error {
+	return s.Exec(ctx, sqlf.Sprintf(updateFrontendSeriesSql,
+		args.Query,
+		pq.Array(args.Repositories),
+		args.StepIntervalUnit,
+		args.StepIntervalValue,
+		args.GroupBy,
+		args.SeriesID,
+	))
+}
+
 func (s *InsightStore) GetReferenceCount(ctx context.Context, id int) (int, error) {
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(getReferenceCountSql, id)))
 	if err != nil {
