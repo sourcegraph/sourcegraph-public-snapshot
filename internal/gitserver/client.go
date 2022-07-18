@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -103,44 +102,6 @@ func NewClient(db database.DB) *ClientImplementor {
 	}
 }
 
-type GitoliteLister struct {
-	addrs func() []string
-	cli   httpcli.Doer
-}
-
-func NewGitoliteLister(cli httpcli.Doer) *GitoliteLister {
-	return &GitoliteLister{
-		cli: cli,
-		addrs: func() []string {
-			return conf.Get().ServiceConnections().GitServers
-		},
-	}
-}
-
-func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
-	addrs := c.addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
-	}
-	// The gitserver calls the shared Gitolite server in response to this request, so
-	// we need to only call a single gitserver (or else we'd get duplicate results).
-	addr := addrForKey(gitoliteHost, addrs)
-
-	req, err := http.NewRequest("GET", "http://"+addr+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.cli.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&list)
-	return list, err
-}
-
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
 	return &ClientImplementor{
 		logger: sglog.Scoped("NewTestClient", "Test New client"),
@@ -164,11 +125,15 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 
 // ClientImplementor is a gitserver client.
 type ClientImplementor struct {
-	// HTTP client to use
-	httpClient httpcli.Doer
-
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
+
+	// UserAgent is a string identifying who the client is. It will be logged in
+	// the telemetry in gitserver.
+	UserAgent string
+
+	// HTTP client to use
+	httpClient httpcli.Doer
 
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
@@ -182,10 +147,6 @@ type ClientImplementor struct {
 	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
 	// and sync the pinned map.
 	pinned func() map[string]string
-
-	// UserAgent is a string identifying who the client is. It will be logged in
-	// the telemetry in gitserver.
-	UserAgent string
 
 	// db is a connection to the database
 	db database.DB
