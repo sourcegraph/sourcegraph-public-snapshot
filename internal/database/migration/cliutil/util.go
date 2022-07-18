@@ -4,6 +4,7 @@ import (
 	"context"
 	"flag"
 	"strconv"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
@@ -13,6 +14,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -129,4 +132,10 @@ func extractDatabase(ctx context.Context, r Runner) (database.DB, error) {
 	}
 
 	return database.NewDB(log.Scoped("migrator", ""), shareableStore), nil
+}
+
+var migratorObservationContext = &observation.TestContext
+
+func outOfBandMigrationRunner(db database.DB) *oobmigration.Runner {
+	return oobmigration.NewRunnerWithDB(db, time.Second, migratorObservationContext)
 }

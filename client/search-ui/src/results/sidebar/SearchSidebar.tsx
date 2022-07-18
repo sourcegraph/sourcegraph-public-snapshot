@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
 import { useHistory } from 'react-router'
 import StickyBox from 'react-sticky-box'
@@ -19,7 +20,7 @@ import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSide
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Code } from '@sourcegraph/wildcard'
+import { Button, Code, Icon } from '@sourcegraph/wildcard'
 
 import { getDynamicFilterLinks, getRepoFilterLinks, getSearchSnippetLinks } from './FilterLink'
 import { getFiltersOfKind, useLastRepoName } from './helpers'
@@ -74,6 +75,7 @@ const selectFromQueryState = ({
 export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<SearchSidebarProps>> = props => {
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
+    const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     // The zustand store for search query state is referenced through context
     // because there may be different global stores across clients
@@ -144,7 +146,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     // we got the settings.
     if (collapsedSections) {
         body = (
-            <StickyBox className={styles.stickyBox}>
+            <>
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_TYPES}
                     className={styles.item}
@@ -234,14 +236,21 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                 >
                     {getQuickLinks(props.settingsCascade)}
                 </SearchSidebarSection>
-            </StickyBox>
+            </>
         )
     }
 
     return (
         <aside className={classNames(styles.sidebar, props.className)} role="region" aria-label="Search sidebar">
-            {props.prefixContent}
-            {body}
+            <StickyBox className={styles.stickyBox} offsetTop={8}>
+                <div className={styles.header}>
+                    <Button variant="icon" onClick={() => setSelectedTab(null)}>
+                        <Icon svgPath={mdiClose} aria-label="Close sidebar" />
+                    </Button>
+                </div>
+                {props.prefixContent}
+                {body}
+            </StickyBox>
         </aside>
     )
 }
