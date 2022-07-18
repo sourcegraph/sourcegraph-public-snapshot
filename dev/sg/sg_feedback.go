@@ -29,23 +29,17 @@ func addFeedbackFlags(commands []*cli.Command) {
 	}
 
 	for _, command := range commands {
-		// if the command is an ancestor command, there's no need to add the feedback
-		// flag to the command, we bail out early here.
-		if command.Action == nil {
-			if len(command.Subcommands) != 0 {
-				addFeedbackFlags(command.Subcommands)
+		if command.Action != nil {
+			command.Flags = append(command.Flags, &feedbackFlag)
+			action := command.Action
+			command.Action = func(ctx *cli.Context) error {
+				if feedbackFlag.Get(ctx) {
+					return feedbackAction(ctx)
+				}
+				return action(ctx)
 			}
-			continue
 		}
-
-		command.Flags = append(command.Flags, &feedbackFlag)
-		action := command.Action
-		command.Action = func(ctx *cli.Context) error {
-			if feedbackFlag.Get(ctx) {
-				return feedbackAction(ctx)
-			}
-			return action(ctx)
-		}
+		
 
 		addFeedbackFlags(command.Subcommands)
 	}
