@@ -23,7 +23,7 @@ h3 {
 # Scaling Overview for Services
 
 This page provides a comprehensive overview of how each Sourcegraph service scales.
-In order to support the growth of your instance usage, it is recommended to scale Sourcegraph based on the scaling refactors suggested below.
+In order to support the growth of your instance usage, it is recommended to scale Sourcegraph based on the scaling factors suggested below.
 
 Grafana should be the first stop you make if you plan to expand on one of the scaling factors or when you are experiencing a system performance issue. 
 
@@ -789,7 +789,7 @@ Lives inside the indexed-search pod in a Kubernetes deployment.
 
 | Storage     |                                             |
 | :---------- | :------------------------------------------ |
-| `Overview`  | Serves and processes data from index-server |
+| `Overview`  | Serves and processes data from zoekt-indexserver |
 | `Factors`   | Size of all repositories                    |
 | `Guideline` | Scale with zoekt-indexserver                |
 | `Type`      | Persistent Volumes for Kubernetes           |
