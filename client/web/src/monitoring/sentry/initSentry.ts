@@ -16,7 +16,7 @@ declare global {
 // Log supplied error to console if in development mode
 function logErrorToConsole(error: unknown): void {
     if (error && process.env.NODE_ENV === 'development') {
-        // eslint-disable-next-line @sourcegraph/sourcegraph/no-unexplained-console-error
+        // Log this error to the console
         console.error(error)
     }
 }
