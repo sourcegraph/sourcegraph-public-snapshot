@@ -9,7 +9,6 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -135,29 +134,44 @@ func (s *Store) CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx context.C
 	return s.Exec(ctx, q)
 }
 
+type DeleteBatchSpecWorkspaceExecutionJobsOpts struct {
+	IDs          []int64
+	WorkspaceIDs []int64
+}
+
 const deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr = `
 -- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:DeleteBatchSpecWorkspaceExecutionJobs
 DELETE FROM
 	batch_spec_workspace_execution_jobs
 WHERE
-	id = ANY (%s)
+	%s
 RETURNING id
 `
 
-// DeleteBatchSpecWorkspaceExecutionJobs
-func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, ids []int64) (err error) {
+// DeleteBatchSpecWorkspaceExecutionJobs deletes jobs based on the provided options.
+func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts DeleteBatchSpecWorkspaceExecutionJobsOpts) (err error) {
 	ctx, _, endObservation := s.operations.deleteBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
-	q := sqlf.Sprintf(deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr, pq.Array(ids))
-	deleted, err := basestore.ScanInts(s.Query(ctx, q))
-	if err != nil {
-		return err
+	q := getDeleteBatchSpecWorkspaceExecutionJobsQuery(&opts)
+	return s.Store.Exec(ctx, q)
+}
+
+func getDeleteBatchSpecWorkspaceExecutionJobsQuery(opts *DeleteBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
+	var preds []*sqlf.Query
+
+	if len(opts.IDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.id = ANY (%s)", pq.Array(opts.IDs)))
 	}
-	if len(deleted) != len(ids) {
-		return errors.Newf("wrong number of jobs deleted: %d instead of %d", len(deleted), len(ids))
+
+	if len(opts.WorkspaceIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.batch_spec_workspace_id = ANY (%s)", pq.Array(opts.WorkspaceIDs)))
 	}
-	return nil
+
+	return sqlf.Sprintf(
+		deleteBatchSpecWorkspaceExecutionJobsQueryFmtstr,
+		sqlf.Join(preds, "\n AND "),
+	)
 }
 
 // GetBatchSpecWorkspaceExecutionJobOpts captures the query options needed for getting a BatchSpecWorkspaceExecutionJob
@@ -503,19 +517,3 @@ func scanBatchSpecWorkspaceExecutionJobs(rows *sql.Rows, queryErr error) ([]*bty
 		return nil
 	})
 }
-
-// RetryBatchSpecExecution TODO
-func (s *Store) RetryBatchSpecExecution(ctx context.Context, id int64) (err error) {
-	ctx, _, endObservation := s.operations.retryBatchSpecExecution.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(id)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	q := sqlf.Sprintf(retryBatchSpecExecutionFmtstr, id)
-	return s.Exec(ctx, q)
-}
-
-const retryBatchSpecExecutionFmtstr = `
--- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:RetryBatchSpecExecution
-select from func_retry_batch_spec_execution(%s);
-`
