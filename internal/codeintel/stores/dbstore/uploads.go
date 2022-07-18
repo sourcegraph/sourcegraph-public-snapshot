@@ -766,6 +766,9 @@ func (s *Store) DeleteUploadByID(ctx context.Context, id int) (_ bool, err error
 	}
 	defer func() { err = tx.Done(err) }()
 
+	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "direct delete by ID request")
+	defer unset(ctx)
+
 	repositoryID, deleted, err := basestore.ScanFirstInt(tx.Store.Query(ctx, sqlf.Sprintf(deleteUploadByIDQuery, id)))
 	if err != nil {
 		return false, err
