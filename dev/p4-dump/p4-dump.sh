@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
+cd "$(dirname "${BASH_SOURCE[0]}")"
 set -euo pipefail
 
 OUTPUT=$(mktemp -d -t p4dump_XXXXXXX)
