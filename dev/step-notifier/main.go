@@ -34,8 +34,14 @@ func (b *Build) HasFailed() bool {
 	return false
 }
 
+func (b *Build) AvatarURL() string {
+	if b.Creator == nil {
+		return ""
+	}
+	return b.Creator.AvatarURL
+}
+
 func (b *Build) PipelineName() string {
-	fmt.Printf("%+v\n\n%+v\n\n", b.Pipeline, b)
 	if b.Pipeline == nil {
 		return "N/A"
 	}

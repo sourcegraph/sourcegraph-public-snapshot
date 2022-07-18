@@ -145,7 +145,9 @@ func createMessageBlocks(logger log.Logger, build *Build) []slack.Block {
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline*\n%s", build.PipelineName())},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Commit*\n`%s`", *build.Commit)},
 			},
-			nil,
+			slack.NewAccessory(
+				slack.NewImageBlockElement(fmt.Sprintf("%s.jpg", build.AvatarURL()), "avatar"),
+			),
 		),
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,
