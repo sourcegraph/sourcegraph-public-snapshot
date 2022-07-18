@@ -11,8 +11,8 @@ import { Validator } from '../../../../../../form/hooks/useField'
 
 import { DrillDownFiltersFormValues } from './DrillDownInsightFilters'
 
-export const validRegexp: Validator<string> = (value = '') => {
-    if (value.trim() === '') {
+export const validRegexp: Validator<string | null> = (value = '') => {
+    if (!value || value.trim() === '') {
         return
     }
 
@@ -26,8 +26,8 @@ export const validRegexp: Validator<string> = (value = '') => {
 }
 
 interface InsightRepositoriesFilter {
-    include: string
-    exclude: string
+    include: string | null
+    exclude: string | null
 }
 
 export function getSerializedRepositoriesFilter(filter: InsightRepositoriesFilter): string {

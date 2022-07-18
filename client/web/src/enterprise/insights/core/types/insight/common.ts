@@ -32,8 +32,8 @@ export enum InsightContentType {
 }
 
 export interface InsightFilters {
-    includeRepoRegex: string
-    excludeRepoRegex: string
+    includeRepoRegex: InsightViewNode['appliedFilters']['includeRepoRegex']
+    excludeRepoRegex: InsightViewNode['appliedFilters']['excludeRepoRegex']
     searchContexts: string
     repositories?: string[]
     seriesDisplayOptions: {

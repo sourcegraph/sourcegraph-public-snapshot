@@ -9,7 +9,7 @@ import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Button, Icon, Link, H4 } from '@sourcegraph/wildcard'
 
 import { LoaderButton } from '../../../../../../../../../components/LoaderButton'
-import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../../../graphql-operations'
+import { InsightViewNode, SeriesSortDirection, SeriesSortMode } from '../../../../../../../../../graphql-operations'
 import { useField } from '../../../../../../form/hooks/useField'
 import { FormChangeEvent, SubmissionResult, useForm, FORM_ERROR } from '../../../../../../form/hooks/useForm'
 import { SortFilterSeriesPanel } from '../../sort-filter-series-panel/SortFilterSeriesPanel'
@@ -36,8 +36,8 @@ export enum FilterSectionVisualMode {
 
 export interface DrillDownFiltersFormValues {
     searchContexts: string
-    includeRepoRegex: string
-    excludeRepoRegex: string
+    includeRepoRegex: InsightViewNode['appliedFilters']['includeRepoRegex']
+    excludeRepoRegex: InsightViewNode['appliedFilters']['excludeRepoRegex']
     seriesDisplayOptions: {
         limit: string
         sortOptions: {
@@ -273,6 +273,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                                 className={styles.input}
                                 status={getFilterInputStatus(includeRegex)}
                                 {...includeRegex.input}
+                                value={includeRegex.input.value ?? undefined}
                             />
                         </LabelWithReset>
 
@@ -288,6 +289,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                                 className={styles.input}
                                 status={getFilterInputStatus(excludeRegex)}
                                 {...excludeRegex.input}
+                                value={excludeRegex.input.value ?? undefined}
                             />
                         </LabelWithReset>
                     </fieldset>
@@ -349,7 +351,7 @@ export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
     return [excludeRepoRegex, includeRepoRegex, searchContexts].some(hasActiveUnaryFilter)
 }
 
-const hasActiveUnaryFilter = (filter: string): boolean => filter.trim() !== ''
+const hasActiveUnaryFilter = (filter: string | null): boolean => !!filter && filter.trim() !== ''
 
 interface SubmitButtonTextProps {
     submitting: boolean
