@@ -31,6 +31,7 @@ type Service struct {
 	syncer             Syncer
 	syncerSemaphore    *semaphore.Weighted
 	operations         *operations
+	logger             sglog.Logger
 }
 
 func newService(
@@ -50,6 +51,7 @@ func newService(
 		syncer:             syncer,
 		syncerSemaphore:    syncerSemaphore,
 		operations:         newOperations(observationContext),
+		logger:             observationContext.Logger,
 	}
 }
 
@@ -274,7 +276,6 @@ func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, repoCo
 func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 	ctx, cancel := context.WithCancel(ctx)
 	g, ctx := errgroup.WithContext(ctx)
-	logger := sglog.Scoped("sync", "")
 	defer cancel()
 
 	for _, repo := range repos {
@@ -293,7 +294,7 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 			defer s.syncerSemaphore.Release(1)
 
 			if err := s.syncer.Sync(ctx, repo); err != nil {
-				logger.Warn("Failed to sync dependency repo", sglog.String("repo", string(repo)), sglog.Error(err))
+				s.logger.Warn("Failed to sync dependency repo", sglog.String("repo", string(repo)), sglog.Error(err))
 			}
 
 			return nil

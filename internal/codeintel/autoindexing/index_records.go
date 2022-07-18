@@ -42,12 +42,11 @@ func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, c
 // explicitly via a GraphQL query parameter. If no configuration was supplield then a false valued
 // flag is returned.
 func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
+	logger := log.Scoped("explicitConfigurationFactory", "")
 	return func(ctx context.Context, repositoryID int, commit string) ([]store.Index, bool, error) {
 		if configuration == "" {
 			return nil, false, nil
 		}
-
-		logger := log.Scoped("makeExplicitConfigurationFactory", "")
 
 		indexConfiguration, err := config.UnmarshalJSON([]byte(configuration))
 		if err != nil {
@@ -73,14 +72,12 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInDatabase(ctx context.C
 		return nil, false, nil
 	}
 
-	logger := log.Scoped("getIndexRecordsFromConfigurationInDatabase", "")
-
 	indexConfiguration, err := config.UnmarshalJSON(indexConfigurationRecord.Data)
 	if err != nil {
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the database should always take precedence, even
 		// if it's broken.
-		logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
+		s.logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 		return nil, true, nil
 	}
 
@@ -104,13 +101,12 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInRepository(ctx context
 		return nil, false, errors.Wrap(err, "gitserver.RawContents")
 	}
 
-	logger := log.Scoped("getIndexRecordsFromConfigurationInRepository", "")
 	indexConfiguration, err := config.UnmarshalYAML(content)
 	if err != nil {
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the repository should always take precedence over
 		// an auto-inferred configuration, even if it's broken.
-		logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
+		s.logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 		return nil, true, nil
 	}
 

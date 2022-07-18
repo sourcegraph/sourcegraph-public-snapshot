@@ -1,7 +1,6 @@
 package http
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/sourcegraph/log"
@@ -23,12 +22,12 @@ import (
 const logPrefix = "codeintel.uploads.transport.http"
 
 func handleErr(w http.ResponseWriter, err error, logMessage string, statusCode int) {
-	logger := log.Scoped("handleErr", "")
+	logger := log.Scoped("codeintel.uploads.transport.http", "")
 	if statusCode >= 500 {
-		logger.Error(fmt.Sprintf("%s: %s", logPrefix, logMessage), log.Error(err))
+		logger.Error(logMessage, log.Error(err))
 	}
 
 	if w != nil {
-		http.Error(w, fmt.Sprintf("%s: %s: %s", logPrefix, logMessage, err), statusCode)
+		logger.Error(logMessage, log.Error(err))
 	}
 }

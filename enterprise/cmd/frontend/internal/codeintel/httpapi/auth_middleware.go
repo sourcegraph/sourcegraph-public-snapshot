@@ -47,7 +47,7 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 			// Skip auth check if it's not enabled in the instance's site configuration, if this
 			// user is a site admin (who can upload LSIF to any repository on the instance), or
 			// if the request a subsequent request of a multi-part upload.
-			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, db) || hasQuery(r, "uploadId") {
+			if !conf.Get().LsifEnforceAuth || isSiteAdmin(ctx, operation.Logger, db) || hasQuery(r, "uploadId") {
 				trace.Log(log.Event("bypassing code host auth check"))
 				return 0, nil
 			}
@@ -79,9 +79,8 @@ func authMiddleware(next http.Handler, db database.DB, authValidators AuthValida
 	})
 }
 
-func isSiteAdmin(ctx context.Context, db database.DB) bool {
+func isSiteAdmin(ctx context.Context, logger sglog.Logger, db database.DB) bool {
 	user, err := db.Users().GetByCurrentAuthUser(ctx)
-	logger := sglog.Scoped("isSiteAdmin", "")
 	if err != nil {
 		if errcode.IsNotFound(err) || err == database.ErrNoCurrentUser {
 			return false

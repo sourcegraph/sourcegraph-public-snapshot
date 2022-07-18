@@ -174,8 +174,6 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 	// 	return nil, err
 	// }
 
-	logger := log.Scoped("inferIndexJobsFromRepositoryStructure", "")
-
 	repoName, err := s.dbStore.RepoName(ctx, repositoryID)
 	if err != nil {
 		return nil, err
@@ -187,7 +185,7 @@ func (s *IndexEnqueuer) inferIndexJobsFromRepositoryStructure(ctx context.Contex
 	}
 
 	if len(indexes) > maximumIndexJobsPerInferredConfiguration {
-		logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
+		s.logger.Info("Too many inferred roots. Scheduling no index jobs for repository.", log.Int("repository_id", repositoryID))
 		return nil, nil
 	}
 

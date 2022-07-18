@@ -3,6 +3,8 @@ package expiration
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -11,5 +13,6 @@ func NewExpirer(store DBStore, policyMatcher PolicyMatcher, metrics *metrics) go
 		dbStore:       store,
 		policyMatcher: policyMatcher,
 		metrics:       metrics,
+		logger:        log.Scoped("expirer", ""),
 	})
 }

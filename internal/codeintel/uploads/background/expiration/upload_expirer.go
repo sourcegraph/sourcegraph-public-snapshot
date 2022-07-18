@@ -152,8 +152,6 @@ func (e *expirer) handleUploads(
 		expiredUploadIDs   = make([]int, 0, len(uploads))
 	)
 
-	logger := log.Scoped("handleUploads", "")
-
 	for _, upload := range uploads {
 		protected, checkErr := e.isUploadProtectedByPolicy(ctx, commitMap, upload, now)
 		if checkErr != nil {
@@ -189,7 +187,7 @@ func (e *expirer) handleUploads(
 	}
 
 	if count := len(expiredUploadIDs); count > 0 {
-		logger.Info("Expiring codeintel uploads", log.Int("count", count))
+		e.logger.Info("Expiring codeintel uploads", log.Int("count", count))
 		e.metrics.numUploadsExpired.Add(float64(count))
 	}
 

@@ -63,8 +63,7 @@ func (s *scheduler) handle(ctx context.Context) (err error) {
 }
 
 func (s *scheduler) handleError(err error) {
-	logger := log.Scoped("handleError", "")
-	logger.Error("Failed to schedule index jobs", log.Error(err))
+	s.logger.Error("Failed to schedule index jobs", log.Error(err))
 }
 
 func (s *scheduler) handleRepository(
