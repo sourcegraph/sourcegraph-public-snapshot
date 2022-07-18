@@ -152,6 +152,7 @@ export const useConnection = <TResult, TVariables, TData>({
                     // `fetchMoreResult`s. We must rely on the consumer-provided `getConnection` here in
                     // order to access and modify the actual `nodes` in the connection response because we
                     // don't know the exact response structure
+                    // some funk
                     const previousNodes = getConnection({ data: previousResult }).nodes
                     getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
                 } else {
