@@ -48,7 +48,6 @@ describe('Code insight create insight page', () => {
         await driver.page.waitForSelector('[data-testid="create-search-insights"]')
         await driver.page.waitForSelector('[data-testid="create-lang-usage-insight"]')
         await driver.page.waitForSelector('[data-testid="explore-extensions"]')
-        await driver.page.waitForSelector('[data-testid="create-compute-insights"]')
 
         await percySnapshotWithVariants(driver.page, 'Create new insight page — Welcome popup')
         await accessibilityAudit(driver.page)
@@ -62,7 +61,6 @@ describe('Code insight create insight page', () => {
         await driver.page.waitForSelector('[data-testid="create-search-insights"]')
         await driver.page.waitForSelector('[data-testid="create-lang-usage-insight"]')
         await driver.page.waitForSelector('[data-testid="explore-extensions"]')
-        await driver.page.waitForSelector('[data-testid="create-compute-insights"]')
 
         await percySnapshotWithVariants(driver.page, 'Create new insight page')
         await accessibilityAudit(driver.page)
