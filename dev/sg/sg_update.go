@@ -43,37 +43,34 @@ var updateCommand = &cli.Command{
 }
 
 // updateToPrebuiltSG downloads the latest release of sg prebuilt binaries and install it.
-func updateToPrebuiltSG(ctx context.Context) (string, error) {
+func updateToPrebuiltSG(ctx context.Context) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", "https://github.com/sourcegraph/sg/releases/latest", nil)
 	if err != nil {
-		return "", err
+		return false, err
 	}
 	// We use the RountTripper to make an HTTP request without having to deal
 	// with redirections.
 	resp, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
-		return "", errors.Wrap(err, "GitHub latest release")
+		return false, errors.Wrap(err, "GitHub latest release")
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 400 {
-		return "", errors.Newf("GitHub latest release: unexpected status code %d", resp.StatusCode)
+		return false, errors.Newf("GitHub latest release: unexpected status code %d", resp.StatusCode)
 	}
 
 	location := resp.Header.Get("location")
 	if location == "" {
-		return "", errors.New("GitHub latest release: empty location")
+		return false, errors.New("GitHub latest release: empty location")
 	}
 	location = strings.ReplaceAll(location, "/tag/", "/download/")
 	downloadURL := fmt.Sprintf("%s/sg_%s_%s", location, runtime.GOOS, runtime.GOARCH)
 
 	currentExecPath, err := os.Executable()
 	if err != nil {
-		return "", err
+		return false, err
 	}
-	if err := download.Executable(ctx, downloadURL, currentExecPath); err != nil {
-		return "", err
-	}
-	return currentExecPath, nil
+	return download.Executable(ctx, downloadURL, currentExecPath)
 }
 
 func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bool) error {
@@ -138,13 +135,18 @@ func checkSgVersionAndUpdate(ctx context.Context, out *std.Output, skipUpdate bo
 	}
 
 	out.WriteLine(output.Line(output.EmojiInfo, output.StyleSuggestion, "Auto updating sg ..."))
-	if _, err := updateToPrebuiltSG(ctx); err != nil {
+	updated, err := updateToPrebuiltSG(ctx)
+	if err != nil {
 		span.RecordError("failed", err)
 		return errors.Newf("failed to install update: %s", err)
 	}
+	if !updated {
+		span.Skipped("not_updated")
+		return nil
+	}
+
 	out.WriteSuccessf("sg has been updated!")
 	out.Write("To see what's new, run 'sg version changelog'.")
-
 	span.Succeeded()
 	return nil
 }
