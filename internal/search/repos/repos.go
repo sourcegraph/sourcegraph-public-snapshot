@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/google/zoekt/stream"
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	otlog "github.com/opentracing/opentracing-go/log"
@@ -553,6 +554,8 @@ func (r *Resolver) filterRepoHasFileContent(
 		mu         sync.Mutex
 		filtered   = map[api.RepoID]*search.RepositoryRevisions{}
 		addRepoRev = func(id api.RepoID, rev string) {
+			mu.Lock()
+			defer mu.Unlock()
 			repoRev := filtered[id]
 			if repoRev == nil {
 				minimalRepo, ok := minimalRepoMap[id]
@@ -616,24 +619,21 @@ func (r *Resolver) filterRepoHasFileContent(
 			&zoektquery.BranchesRepos{
 				List: indexed.BranchRepos(),
 			},
-			&zoektquery.Type{
-				Type:  zoektquery.TypeRepo,
-				Child: zoektquery.NewOr(fileMatchOr...),
-			},
+			zoektquery.NewOr(fileMatchOr...),
 		)
 		q = zoektquery.Simplify(q)
-		repoList, err := r.zoekt.List(ctx, q, &zoekt.ListOptions{Minimal: true})
-		if err != nil {
-			return err
-		}
-		mu.Lock()
-		for id, entry := range repoList.Minimal {
-			for _, branch := range entry.Branches {
-				addRepoRev(api.RepoID(int32(id)), branch.Name)
+		return r.zoekt.StreamSearch(ctx, q, &zoekt.SearchOptions{ShardMaxMatchCount: 1}, stream.SenderFunc(func(res *zoekt.SearchResult) {
+			for _, file := range res.Files {
+				inputRevs := indexed.RepoRevs[api.RepoID(int32(file.RepositoryID))].Revs
+				for _, branch := range file.Branches {
+					for _, inputRev := range inputRevs {
+						if branch == inputRev || (branch == "HEAD" && inputRev == "") {
+							addRepoRev(api.RepoID(file.RepositoryID), inputRev)
+						}
+					}
+				}
 			}
-		}
-		mu.Unlock()
-		return nil
+		}))
 	})
 
 	{ // Use searcher for unindexed revs
@@ -654,7 +654,7 @@ func (r *Resolver) filterRepoHasFileContent(
 								return err
 							}
 							addMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}})
-							continue
+							return nil
 						}
 
 						patternInfo := search.TextPatternInfo{
@@ -700,9 +700,7 @@ func (r *Resolver) filterRepoHasFileContent(
 					}
 
 					// If we made it here, we found a match for each of the contains filters.
-					mu.Lock()
 					addRepoRev(repo.ID, rev)
-					mu.Unlock()
 					return nil
 				})
 			}
