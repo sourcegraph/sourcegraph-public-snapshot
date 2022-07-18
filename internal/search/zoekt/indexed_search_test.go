@@ -159,12 +159,12 @@ func TestIndexedSearch(t *testing.T) {
 			},
 			wantMatchCount: 5,
 			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/foobar", Commit: "2", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/foobar", Rev: "HEAD", Commit: "2", Path: "baz.go"},
 			},
 			wantMatchInputRevs: []string{
-				"",
-				"",
+				"HEAD",
+				"HEAD",
 			},
 			wantErr: false,
 		},
@@ -360,9 +360,9 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 
 func TestZoektIndexedRepos(t *testing.T) {
 	repos := makeRepositoryRevisions(
-		"foo/indexed-one@",
-		"foo/indexed-two@",
-		"foo/indexed-three@",
+		"foo/indexed-one@HEAD",
+		"foo/indexed-two@HEAD",
+		"foo/indexed-three@HEAD",
 		"foo/partially-indexed@HEAD:bad-rev",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
@@ -492,9 +492,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
 			Repo: types.MinimalRepo{ID: api.RepoID(1), Name: "test/repo"},
-			Revs: []search.RevisionSpecifier{
-				{RevSpec: revSpec},
-			},
+			Revs: []string{revSpec},
 		}
 	}
 	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{
@@ -518,7 +516,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}{
 		{
 			rev:           "",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
 			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{
@@ -782,10 +780,14 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoName, revs := search.ParseRepositoryRevisions(repospec)
+		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
+		revs := make([]string, 0, len(revSpecs))
+		for _, revSpec := range revSpecs {
+			revs = append(revs, revSpec.RevSpec)
+		}
 		if len(revs) == 0 {
-			// treat empty list as preferring master
-			revs = []search.RevisionSpecifier{{RevSpec: ""}}
+			// treat empty list as HEAD
+			revs = []string{"HEAD"}
 		}
 		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
 	}
