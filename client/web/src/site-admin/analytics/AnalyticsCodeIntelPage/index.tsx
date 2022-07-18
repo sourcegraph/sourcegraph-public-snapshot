@@ -113,7 +113,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
             label: 'Intel events',
             color: 'var(--purple)',
             description:
-                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this caculation down into use cases and types of code intel to be able independantly value product capabilities.',
+                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code intel to be able to independently value product capabilities.',
             value: totalEvents,
             items: [
                 {
