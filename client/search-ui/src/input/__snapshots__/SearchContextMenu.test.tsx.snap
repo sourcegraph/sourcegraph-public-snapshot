@@ -21,6 +21,7 @@ Array [
      
     <small
       class="itemDescription"
+      data-state="closed"
       title="Your repositories on Sourcegraph"
     >
       Your repositories on Sourcegraph
@@ -47,6 +48,7 @@ Array [
      
     <small
       class="itemDescription"
+      data-state="closed"
       title="Only code in version 1.5"
     >
       Only code in version 1.5
