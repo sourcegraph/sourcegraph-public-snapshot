@@ -249,12 +249,12 @@ type operations struct {
 	listSiteCredentials  *observation.Operation
 	updateSiteCredential *observation.Operation
 
-	createBatchSpecWorkspace           *observation.Operation
-	getBatchSpecWorkspace              *observation.Operation
-	listBatchSpecWorkspaces            *observation.Operation
-	countBatchSpecWorkspaces           *observation.Operation
-	markSkippedBatchSpecWorkspaces     *observation.Operation
-	listUncompletedBatchSpecWorkspaces *observation.Operation
+	createBatchSpecWorkspace       *observation.Operation
+	getBatchSpecWorkspace          *observation.Operation
+	listBatchSpecWorkspaces        *observation.Operation
+	countBatchSpecWorkspaces       *observation.Operation
+	markSkippedBatchSpecWorkspaces *observation.Operation
+	listRetryBatchSpecWorkspaces   *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
@@ -384,12 +384,12 @@ func newOperations(observationContext *observation.Context) *operations {
 			listSiteCredentials:  op("ListSiteCredentials"),
 			updateSiteCredential: op("UpdateSiteCredential"),
 
-			createBatchSpecWorkspace:           op("CreateBatchSpecWorkspace"),
-			getBatchSpecWorkspace:              op("GetBatchSpecWorkspace"),
-			listBatchSpecWorkspaces:            op("ListBatchSpecWorkspaces"),
-			countBatchSpecWorkspaces:           op("CountBatchSpecWorkspaces"),
-			markSkippedBatchSpecWorkspaces:     op("MarkSkippedBatchSpecWorkspaces"),
-			listUncompletedBatchSpecWorkspaces: op("ListUncompletedBatchSpecWorkspaces"),
+			createBatchSpecWorkspace:       op("CreateBatchSpecWorkspace"),
+			getBatchSpecWorkspace:          op("GetBatchSpecWorkspace"),
+			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
+			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
+			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
+			listRetryBatchSpecWorkspaces:   op("ListRetryBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
 			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),
