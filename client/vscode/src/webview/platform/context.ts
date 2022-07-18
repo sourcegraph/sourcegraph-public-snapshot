@@ -9,7 +9,6 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
-import { DeprecatedTooltipController } from '@sourcegraph/wildcard'
 
 import { ExtensionCoreAPI } from '../../contract'
 
@@ -29,7 +28,6 @@ export interface VSCodePlatformContext
         | 'getStaticExtensions'
         | 'telemetryService'
         | 'clientApplication'
-        | 'forceUpdateTooltip'
     > {
     // Ensure telemetryService is non-nullable.
     telemetryService: VsceTelemetryService
@@ -62,7 +60,6 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
         sideloadedExtensionURL: new BehaviorSubject<string | null>(null),
         clientApplication: 'other', // TODO add 'vscode-extension' to `clientApplication`,
         getScriptURLForExtension: () => undefined,
-        forceUpdateTooltip: () => DeprecatedTooltipController.forceUpdate(),
         // TODO showInputBox
         // TODO showMessage
     }

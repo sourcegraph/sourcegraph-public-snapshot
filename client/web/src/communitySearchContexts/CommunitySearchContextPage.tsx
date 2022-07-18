@@ -39,7 +39,7 @@ export interface CommunitySearchContextPageProps
         TelemetryProps,
         KeyboardShortcutsProps,
         ExtensionsControllerProps<'executeCommand'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         SearchContextInputProps,
         Pick<SearchContextProps, 'fetchSearchContextBySpec'> {
     authenticatedUser: AuthenticatedUser | null

@@ -42,7 +42,7 @@ interface Props
         ActivationProps,
         KeyboardShortcutsProps,
         TelemetryProps,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
+        PlatformContextProps<'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
         SearchContextInputProps {
     authenticatedUser: AuthenticatedUser | null

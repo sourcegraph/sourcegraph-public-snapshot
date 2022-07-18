@@ -327,13 +327,7 @@ export interface FileInfoWithContent extends FileInfoWithRepoName {
 export interface CodeIntelligenceProps extends TelemetryProps {
     platformContext: Pick<
         BrowserPlatformContext,
-        | 'forceUpdateTooltip'
-        | 'urlToFile'
-        | 'sideloadedExtensionURL'
-        | 'requestGraphQL'
-        | 'settings'
-        | 'refreshSettings'
-        | 'sourcegraphURL'
+        'urlToFile' | 'sideloadedExtensionURL' | 'requestGraphQL' | 'settings' | 'refreshSettings' | 'sourcegraphURL'
     >
     codeHost: CodeHost
     extensionsController: Controller

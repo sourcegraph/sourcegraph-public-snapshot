@@ -13,7 +13,7 @@ import { SearchResultsInfoBar, SearchResultsInfoBarProps } from './SearchResults
 const history = createMemoryHistory()
 const COMMON_PROPS: Omit<SearchResultsInfoBarProps, 'enableCodeMonitoring'> = {
     extensionsController,
-    platformContext: { forceUpdateTooltip: noop, settings: NEVER },
+    platformContext: { settings: NEVER },
     history,
     location: createLocation('/search'),
     authenticatedUser: { id: 'userID' },

@@ -43,7 +43,7 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'settings'>,
         TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {

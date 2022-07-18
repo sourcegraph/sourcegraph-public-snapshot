@@ -81,7 +81,6 @@ const createMockController = (extensionHostAPI: Remote<FlatExtensionHostAPI>): C
 const createMockPlatformContext = (
     partialMocks?: Partial<CodeIntelligenceProps['platformContext']>
 ): CodeIntelligenceProps['platformContext'] => ({
-    forceUpdateTooltip: noop,
     urlToFile: toPrettyBlobURL,
     requestGraphQL: mockRequestGraphQL(),
     sideloadedExtensionURL: new Subject<string | null>(),

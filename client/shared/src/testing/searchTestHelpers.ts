@@ -325,11 +325,10 @@ export const extensionsController: Controller = {
 
 export const NOOP_PLATFORM_CONTEXT: Pick<
     PlatformContext,
-    'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'
+    'sourcegraphURL' | 'requestGraphQL' | 'urlToFile' | 'settings'
 > = {
     requestGraphQL: () => EMPTY,
     urlToFile: () => '',
     settings: of(NOOP_SETTINGS_CASCADE),
-    forceUpdateTooltip: () => {},
     sourcegraphURL: '',
 }
