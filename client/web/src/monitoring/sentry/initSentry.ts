@@ -71,7 +71,7 @@ export function initSentry(): void {
                 beforeSend(event, hint) {
                     logErrorToConsole(hint?.originalException)
                     return null
-                }
+                },
             })
         })
     }
