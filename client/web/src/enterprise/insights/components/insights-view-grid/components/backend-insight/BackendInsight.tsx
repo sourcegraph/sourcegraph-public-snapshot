@@ -108,9 +108,16 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         }
     )
 
+    const isFetchingHistoricalData = insightData?.isFetchingHistoricalData
+
     useEffect(() => {
+        // polling is disabled ignore all
+        if (!enablePolling) {
+            return
+        }
+
         // No insight data yet nothing to do
-        if (!insightData) {
+        if (isFetchingHistoricalData === undefined) {
             return
         }
 
@@ -130,12 +137,21 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
         // we should start polling but multiple calls to startPolling reset the timer so
         // make sure we aren't already polling.
-        if (insightData.isFetchingHistoricalData && !isPolling) {
+        if (isFetchingHistoricalData && !isPolling) {
             setIsPolling(true)
             startPolling(pollingInterval)
             return
         }
-    }, [error, insightData, isPolling, isVisible, pollingInterval, startPolling, stopPolling])
+    }, [
+        enablePolling,
+        error,
+        isFetchingHistoricalData,
+        isPolling,
+        isVisible,
+        pollingInterval,
+        startPolling,
+        stopPolling,
+    ])
 
     async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
         try {
