@@ -14,6 +14,8 @@ import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
 
+const REPO_DESC_LENGTH = 500
+
 export interface RepoSearchResultProps {
     result: RepositoryMatch
     onSelect: () => void
@@ -105,8 +107,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         <div>
                             <small>
                                 <em>
-                                    {result.description.length > 500
-                                        ? result.description.slice(0, 500) + ' ...'
+                                    {result.description.length > REPO_DESC_LENGTH
+                                        ? result.description.slice(0, REPO_DESC_LENGTH) + ' ...'
                                         : result.description}
                                 </em>
                             </small>
