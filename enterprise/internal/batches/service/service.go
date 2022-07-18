@@ -1408,7 +1408,7 @@ func (s *Service) RetryBatchSpecWorkspaces(ctx context.Context, workspaceIDs []i
 	}
 
 	// Delete the old execution jobs.
-	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
+	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, store.DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs}); err != nil {
 		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
 	}
 
@@ -1473,9 +1473,45 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 		return ErrRetryNonFinal
 	}
 
-	if err = tx.RetryBatchSpecExecution(ctx, batchSpec.ID); err != nil {
-		return errors.Wrap(err, "retrying batch spec execution")
+	// Check that batch spec is not applied
+	batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{BatchSpecID: batchSpec.ID})
+	if err != nil && err != store.ErrNoResults {
+		return errors.Wrap(err, "checking whether batch spec has been applied")
 	}
+	if err == nil && !batchChange.IsDraft() {
+		return errors.New("batch spec already applied")
+	}
+
+	workspaces, _, err := tx.ListUncompletedBatchSpecWorkspaces(ctx, store.ListBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID})
+	if err != nil {
+		return errors.Wrap(err, "loading batch spec workspace execution jobs")
+	}
+
+	var changesetSpecsIDs []int64
+	workspaceIDs := make([]int64, len(workspaces))
+
+	for i, w := range workspaces {
+		changesetSpecsIDs = append(changesetSpecsIDs, w.ChangesetSpecIDs...)
+		workspaceIDs[i] = w.ID
+	}
+
+	// Delete the old execution jobs.
+	if err := tx.DeleteBatchSpecWorkspaceExecutionJobs(ctx, store.DeleteBatchSpecWorkspaceExecutionJobsOpts{WorkspaceIDs: workspaceIDs}); err != nil {
+		return errors.Wrap(err, "deleting batch spec workspace execution jobs")
+	}
+
+	// Delete the changeset specs they have created.
+	if len(changesetSpecsIDs) > 0 {
+		if err := tx.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{IDs: changesetSpecsIDs}); err != nil {
+			return errors.Wrap(err, "deleting batch spec workspace changeset specs")
+		}
+	}
+
+	// Create new jobs
+	if err := tx.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, workspaceIDs); err != nil {
+		return errors.Wrap(err, "creating new batch spec workspace execution jobs")
+	}
+
 	return nil
 }
 
