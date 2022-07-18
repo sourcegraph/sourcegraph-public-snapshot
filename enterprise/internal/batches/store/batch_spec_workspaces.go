@@ -399,13 +399,14 @@ func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID 
 	return s.Exec(ctx, q)
 }
 
+// ListRetryBatchSpecWorkspacesOpts options to determine which btypes.BatchSpecWorkspace to retrieve for retrying.
 type ListRetryBatchSpecWorkspacesOpts struct {
 	LimitOpts
 	BatchSpecID      int64
 	IncludeCompleted bool
 }
 
-// ListRetryBatchSpecWorkspaces lists all btypes.BatchSpecWorkspace that have not been completed.
+// ListRetryBatchSpecWorkspaces lists all btypes.BatchSpecWorkspace to retry.
 func (s *Store) ListRetryBatchSpecWorkspaces(ctx context.Context, opts ListRetryBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, next int64, err error) {
 	ctx, _, endObservation := s.operations.listRetryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
