@@ -1459,6 +1459,45 @@ type NotebooksUsageStatistics struct {
 	NotebookAddedComputeBlocksCount  *int32
 }
 
+type AdminAnalyticsUsageStatistics struct {
+	AdminAnalyticsSearchPageViews                                *int32
+	AdminAnalyticsCodeIntelPageViews                             *int32
+	AdminAnalyticsUsersPageViews                                 *int32
+	AdminAnalyticsBatchChangesPageViews                          *int32
+	AdminAnalyticsNotebooksPageViews                             *int32
+	AdminAnalyticsSearchPercentageInputEdited                    *int32
+	AdminAnalyticsSearchMinutesInputEdited                       *int32
+	AdminAnalyticsCodeIntelPercentageInputEdited                 *int32
+	AdminAnalyticsCodeIntelMinutesInputEdited                    *int32
+	AdminAnalyticsBatchChangesPercentageInputEdited              *int32
+	AdminAnalyticsBatchChangesMinutesInputEdited                 *int32
+	AdminAnalyticsNotebooksPercentageInputEdited                 *int32
+	AdminAnalyticsNotebooksMinutesInputEdited                    *int32
+	AdminAnalyticsSearchDateRangeLAST_WEEKSelected               *int32
+	AdminAnalyticsSearchDateRangeLAST_MONTHSelected              *int32
+	AdminAnalyticsSearchDateRangeLAST_THREE_MONTHSSelected       *int32
+	AdminAnalyticsCodeIntelDateRangeLAST_WEEKSelected            *int32
+	AdminAnalyticsCodeIntelDateRangeLAST_MONTHSelected           *int32
+	AdminAnalyticsCodeIntelDateRangeLAST_THREE_MONTHSSelected    *int32
+	AdminAnalyticsUsersDateRangeLAST_WEEKSelected                *int32
+	AdminAnalyticsUsersDateRangeLAST_MONTHSelected               *int32
+	AdminAnalyticsUsersDateRangeLAST_THREE_MONTHSSelected        *int32
+	AdminAnalyticsBatchChangesDateRangeLAST_WEEKSelected         *int32
+	AdminAnalyticsBatchChangesDateRangeLAST_MONTHSelected        *int32
+	AdminAnalyticsBatchChangesDateRangeLAST_THREE_MONTHSSelected *int32
+	AdminAnalyticsNotebooksDateRangeLAST_WEEKSelected            *int32
+	AdminAnalyticsNotebooksDateRangeLAST_MONTHSelected           *int32
+	AdminAnalyticsNotebooksDateRangeLAST_THREE_MONTHSSelected    *int32
+	AdminAnalyticsSearchAggTotalsClicked                         *int32
+	AdminAnalyticsSearchAggUniquesClicked                        *int32
+	AdminAnalyticsCodeIntelAggTotalsClicked                      *int32
+	AdminAnalyticsCodeIntelAggUniquesClicked                     *int32
+	AdminAnalyticsUsersAggTotalsClicked                          *int32
+	AdminAnalyticsUsersAggUniquesClicked                         *int32
+	AdminAnalyticsNotebooksAggTotalsClicked                      *int32
+	AdminAnalyticsNotebooksAggUniquesClicked                     *int32
+}
+
 // Secret represents the secrets table
 type Secret struct {
 	ID int32

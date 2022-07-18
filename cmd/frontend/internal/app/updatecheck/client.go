@@ -264,6 +264,17 @@ func getAndMarshalCodeMonitoringUsageJSON(ctx context.Context, db database.DB) (
 	return json.Marshal(codeMonitoringUsage)
 }
 
+func getAndMarshalAdminAnalyticsUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
+	defer recordOperation("getAndMarshalAdminAnalyticsUsageJSON")
+
+	adminAnalyticsUsage, err := usagestats.GetAdminAnalyticsUsageStatistics(ctx, db)
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(adminAnalyticsUsage)
+}
+
 func getAndMarshalNotebooksUsageJSON(ctx context.Context, db database.DB) (_ json.RawMessage, err error) {
 	defer recordOperation("getAndMarshalNotebooksUsageJSON")
 
@@ -394,6 +405,7 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		CodeInsightsCriticalTelemetry: []byte("{}"),
 		CodeMonitoringUsage:           []byte("{}"),
 		NotebooksUsage:                []byte("{}"),
+		AdminAnalyticsUsage:           []byte("{}"),
 		CodeHostIntegrationUsage:      []byte("{}"),
 		IDEExtensionsUsage:            []byte("{}"),
 	}
@@ -504,6 +516,11 @@ func updateBody(ctx context.Context, db database.DB) (io.Reader, error) {
 		r.NotebooksUsage, err = getAndMarshalNotebooksUsageJSON(ctx, db)
 		if err != nil {
 			logFunc("telemetry: updatecheck.getAndMarshalNotebooksUsageJSON failed", "error", err)
+		}
+
+		r.AdminAnalyticsUsage, err = getAndMarshalAdminAnalyticsUsageJSON(ctx, db)
+		if err != nil {
+			logFunc("telemetry: updatecheck.getAndMarshalAdminAnalyticsUsageJSON failed", "error", err)
 		}
 
 		r.CodeHostIntegrationUsage, err = getAndMarshalCodeHostIntegrationUsageJSON(ctx, db)
