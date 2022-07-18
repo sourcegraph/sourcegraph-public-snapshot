@@ -43,7 +43,13 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		out.WriteLine(output.Emoji(output.EmojiSuccess, "schema okay!"))
 
 		if !skipOutOfBandMigrationsFlag.Get(cmd) {
-			if err := validateOutOfBandMigrations(ctx, r); err != nil {
+			db, err := extractDatabase(ctx, r)
+			if err != nil {
+				return err
+			}
+			oobMigrationRunner := oobmigration.NewRunnerWithDB(db, time.Second, &observation.TestContext)
+
+			if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, oobMigrationRunner); err != nil {
 				return err
 			}
 
@@ -63,18 +69,4 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 			skipOutOfBandMigrationsFlag,
 		},
 	}
-}
-
-func validateOutOfBandMigrations(ctx context.Context, r Runner) error {
-	db, err := extractDatabase(ctx, r)
-	if err != nil {
-		return err
-	}
-	runner := oobmigration.NewRunnerWithDB(db, time.Second, &observation.TestContext)
-
-	if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, runner); err != nil {
-		return err
-	}
-
-	return nil
 }
