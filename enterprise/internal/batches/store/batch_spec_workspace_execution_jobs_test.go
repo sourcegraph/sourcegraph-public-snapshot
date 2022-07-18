@@ -9,6 +9,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
+	"github.com/stretchr/testify/assert"
 
 	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
@@ -717,6 +718,11 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			if have, want := len(jobs), 0; have != want {
 				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
 			}
+		})
+
+		t.Run("invalid option", func(t *testing.T) {
+			err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{})
+			assert.Equal(t, "invalid options: would delete all jobs", err.Error())
 		})
 	})
 }

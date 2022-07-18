@@ -155,6 +155,10 @@ func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts 
 	ctx, _, endObservation := s.operations.deleteBatchSpecWorkspaceExecutionJobs.With(ctx, &err, observation.Args{LogFields: []log.Field{}})
 	defer endObservation(1, observation.Args{})
 
+	if len(opts.IDs) == 0 && len(opts.WorkspaceIDs) == 0 {
+		return errors.New("invalid options: would delete all jobs")
+	}
+
 	q := getDeleteBatchSpecWorkspaceExecutionJobsQuery(&opts)
 	deleted, err := basestore.ScanInts(s.Query(ctx, q))
 	if err != nil {
