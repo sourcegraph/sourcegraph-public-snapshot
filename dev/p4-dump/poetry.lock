@@ -1,0 +1,62 @@
+[[package]]
+name = "click"
+version = "8.1.3"
+description = "Composable command line interface toolkit"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[package.dependencies]
+colorama = {version = "*", markers = "platform_system == \"Windows\""}
+
+[[package]]
+name = "colorama"
+version = "0.4.5"
+description = "Cross-platform colored terminal text."
+category = "main"
+optional = false
+python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
+
+[[package]]
+name = "p4python"
+version = "2022.1.2299330"
+description = "P4Python - Python interface to Perforce API"
+category = "main"
+optional = false
+python-versions = "*"
+
+[metadata]
+lock-version = "1.1"
+python-versions = "^3.10"
+content-hash = "786af3c3b1b823b8461e0e6894a690d281922c8ca4237eae5ff85412090ce7a8"
+
+[metadata.files]
+click = [
+    {file = "click-8.1.3-py3-none-any.whl", hash = "sha256:bb4d8133cb15a609f44e8213d9b391b0809795062913b383c62be0ee95b1db48"},
+    {file = "click-8.1.3.tar.gz", hash = "sha256:7682dc8afb30297001674575ea00d1814d808d6a36af415a82bd481d37ba7b8e"},
+]
+colorama = [
+    {file = "colorama-0.4.5-py2.py3-none-any.whl", hash = "sha256:854bf444933e37f5824ae7bfc1e98d5bce2ebe4160d46b5edf346a89358e99da"},
+    {file = "colorama-0.4.5.tar.gz", hash = "sha256:e6c6b4334fc50988a639d9b98aa429a0b57da6e17b9a44f0451f930b6967b7a4"},
+]
+p4python = [
+    {file = "p4python-2022.1.2299330-cp310-cp310-macosx_10_12_x86_64.whl", hash = "sha256:47e4afbd7fdaf42951ff903992efc7adc9803881713846a0e694b28771d1c17c"},
+    {file = "p4python-2022.1.2299330-cp310-cp310-manylinux_2_24_x86_64.whl", hash = "sha256:4fb2ee841f51f9b432d1305cb49688f8c0848543c3545619a0c81404ba8cbe7d"},
+    {file = "p4python-2022.1.2299330-cp310-cp310-win32.whl", hash = "sha256:28f1e78715ceb7bdebb5b9d40601f1417aa3ef2cac95452e98595f1065942f42"},
+    {file = "p4python-2022.1.2299330-cp310-cp310-win_amd64.whl", hash = "sha256:e737b88a7451991446b3af467a46c74ffa0ca523e1feb42d9d5e32f79cde9111"},
+    {file = "p4python-2022.1.2299330-cp36-cp36m-macosx_10_9_x86_64.whl", hash = "sha256:f5ba60390310c3ddb8ea9c134165201247621fe5105a2469164c5ced8b8220eb"},
+    {file = "p4python-2022.1.2299330-cp36-cp36m-manylinux_2_24_x86_64.whl", hash = "sha256:d9f0bcb622c43c9ee7d372d5545fb4168c60d60807aa40aafa42e53dc44d2cde"},
+    {file = "p4python-2022.1.2299330-cp37-cp37m-macosx_10_9_x86_64.whl", hash = "sha256:3f36ed8ef1bc3a72168e1a2ad406187e9a0f4bfeb058e2e9edebee2e5f9dcccf"},
+    {file = "p4python-2022.1.2299330-cp37-cp37m-manylinux_2_24_x86_64.whl", hash = "sha256:b482d021b7e492da5e07936257fad9a114168d04bb64ad2a9e250c5703bc16ea"},
+    {file = "p4python-2022.1.2299330-cp37-cp37m-win32.whl", hash = "sha256:1e2132be6c9eb596b58af50557ae2a7715390c2f7ff4d07fbd73cd2b5337f8ea"},
+    {file = "p4python-2022.1.2299330-cp37-cp37m-win_amd64.whl", hash = "sha256:c370b52f6ff56a378f722b47bac758540bc8d6f8366eb33848628b0a031683c2"},
+    {file = "p4python-2022.1.2299330-cp38-cp38-macosx_10_12_x86_64.whl", hash = "sha256:7641efd0a681c760828b098a23525f303cc4055ff05bb2d2320a71c09e00c2f8"},
+    {file = "p4python-2022.1.2299330-cp38-cp38-manylinux_2_24_x86_64.whl", hash = "sha256:283ae7fb1e0d0f111555487da138b04516d37e23cc66855c58475aa144921731"},
+    {file = "p4python-2022.1.2299330-cp38-cp38-win32.whl", hash = "sha256:47cbb5ee665175e2ae5852b1bf118ba3dfb395a49cb92de4095d15a34a9c748a"},
+    {file = "p4python-2022.1.2299330-cp38-cp38-win_amd64.whl", hash = "sha256:0d14083572fbfab00a1c385ecde4e06fa856e3ccaadec330f83484c7dd24d9f1"},
+    {file = "p4python-2022.1.2299330-cp39-cp39-macosx_10_12_universal2.whl", hash = "sha256:b1de83b29f7e6096fa020cf3f6c030ee8c81d2488bd69f60eafd459cfdf081d7"},
+    {file = "p4python-2022.1.2299330-cp39-cp39-manylinux_2_24_x86_64.whl", hash = "sha256:73a926b5394dcfc7bce7db3892a55ecdf8f22e4114708ad1742f9792170c298f"},
+    {file = "p4python-2022.1.2299330-cp39-cp39-win32.whl", hash = "sha256:561ded7644877bf734df358fd1e544892ec02bbc44e76aaf8d3d87a4c7334be2"},
+    {file = "p4python-2022.1.2299330-cp39-cp39-win_amd64.whl", hash = "sha256:b6759accdd3bcfe5518c69f618a7442a8a6d60444d299492ae70cbde39bbfaf3"},
+    {file = "p4python-2022.1.2299330.tar.gz", hash = "sha256:166064cca29eb6d9b3529c6fb6916a4d6a2841fa721d22c5e3ffe99a8b571d49"},
+]

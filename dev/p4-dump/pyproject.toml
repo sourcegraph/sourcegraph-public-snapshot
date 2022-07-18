@@ -1,0 +1,21 @@
+[tool.poetry]
+name = "p4-dump"
+version = "0.1.0"
+description = ""
+authors = ["Geoffrey Gilmore <me@ggilmore.net>"]
+license = "MIT"
+
+[[tool.p4python.source]]
+name = 'private'
+url = 'http://example.com/simple'
+
+[tool.poetry.dependencies]
+python = "^3.10"
+p4python = "^2022.1.2299330"
+click = "^8.1.3"
+
+[tool.poetry.dev-dependencies]
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
