@@ -19,7 +19,7 @@ else
   aws configure set aws_access_key_id "$BUILDKITE_HMAC_KEY" --profile buildkite
   aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
 
-  checksum=$(find "./client" "./ui" -type f -exec sha1sum {} \; | sort -k 2 | sha1sum | awk '{print $1}')
+  checksum=$(find "./client" "./ui" "package.json" -type f -exec sha1sum {} \; | sort -k 2 | sha1sum | awk '{print $1}')
   cache_file="cache-client-bundle-$checksum.tar.gz"
   cache_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_file"
 
