@@ -103,8 +103,10 @@ echo "--- jaeger-all-in-one binary"
 cmd/server/jaeger.sh
 
 echo "--- docker build"
+docker pull sourcegraph/server:insiders
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
-  --build-arg VERSION
+  --build-arg VERSION \
+  --cache-from sourcegraph/server:insiders
