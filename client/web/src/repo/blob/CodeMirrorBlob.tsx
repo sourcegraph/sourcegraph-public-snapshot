@@ -4,12 +4,12 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Compartment, Extension } from '@codemirror/state'
+import { Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { editorHeight, useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfNecessary } from './Blob'
@@ -95,32 +95,4 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
     }, [editor, position])
 
     return <div ref={setContainer} className={`${className} overflow-hidden`} />
-}
-
-/**
- * Helper hook for extensions that depend on on some input props.
- * With this hook the extension is isolated in a compartment so it can be
- * updated without reconfiguring the whole editor.
- *
- * If this proves to be useful it should be moved to the shared CodeMirror
- * directory.
- */
-export function useCompartment(
-    initialExtension: Extension
-): [Extension, (editor: EditorView, extension: Extension) => void] {
-    return useMemo(() => {
-        const compartment = new Compartment()
-        return [
-            compartment.of(initialExtension),
-            (editor, extension: Extension) => {
-                // This check avoids an unnecessary update when the editor is
-                // first created
-                if (initialExtension !== extension) {
-                    editor.dispatch({ effects: compartment.reconfigure(extension) })
-                }
-            },
-        ]
-        // initialExtension is intentionally ignored in subsequent renders
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [])
 }
