@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/codeownership/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
@@ -160,6 +161,13 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	}
 
 	basicJob := NewParallelJob(children...)
+
+	{ // Apply code ownership post-search filter
+		fileOwnersMustInclude, fileOwnersMustExclude := b.FileHasOwner()
+		if len(fileOwnersMustInclude) > 0 || len(fileOwnersMustExclude) > 0 {
+			basicJob = codeownershipjob.New(basicJob, fileOwnersMustInclude, fileOwnersMustExclude)
+		}
+	}
 
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
