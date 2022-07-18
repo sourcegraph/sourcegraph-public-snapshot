@@ -179,10 +179,6 @@ $ sg ci build --force --commit my-commit main-dry-run
 $ sg ci build --help
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg ci preview
 
 Preview the pipeline that would be run against the currently checked out branch.
@@ -459,10 +455,6 @@ $ sg db reset-redis
 $ sg db add-user -name=foo
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg db reset-pg
 
 Drops, recreates and migrates the specified Sourcegraph database.
@@ -517,10 +509,6 @@ $ sg migration add --db codeintel 'add missing index'
 # Squash migrations for default database
 $ sg migration squash
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration add
 
@@ -794,10 +782,6 @@ Flags:
 Tools to interact with Code Insights data.
 
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg insights decode-id
 
 Decodes an encoded insight ID found on the frontend into a view unique_id.
@@ -841,10 +825,6 @@ $ sg secret list
 # ease of use
 $ sg secret reset buildkite
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg secret reset
 
@@ -894,10 +874,6 @@ $ sg teammate time thorsten ball
 # Open their handbook bio
 $ sg teammate handbook asdine
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg teammate time
 
@@ -966,10 +942,6 @@ $ sg adr view 420
 # Create a new ADR!
 $ sg adr create my ADR title
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg adr list
 
@@ -1045,10 +1017,6 @@ Commands used by operations teams to perform common tasks.
 Supports internal deploy-sourcegraph repos (non-customer facing)
 
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg ops update-images
 
 Updates images in given directory to latest published image.
@@ -1090,10 +1058,6 @@ Flags:
 
 Manage analytics collected by sg.
 
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg analytics submit
 

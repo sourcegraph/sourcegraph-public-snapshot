@@ -29,13 +29,15 @@ func addFeedbackFlags(commands []*cli.Command) {
 	}
 
 	for _, command := range commands {
-		command.Flags = append(command.Flags, &feedbackFlag)
-		action := command.Action
-		command.Action = func(ctx *cli.Context) error {
-			if feedbackFlag.Get(ctx) {
-				return feedbackAction(ctx)
+		if command.Action != nil {
+			command.Flags = append(command.Flags, &feedbackFlag)
+			action := command.Action
+			command.Action = func(ctx *cli.Context) error {
+				if feedbackFlag.Get(ctx) {
+					return feedbackAction(ctx)
+				}
+				return action(ctx)
 			}
-			return action(ctx)
 		}
 
 		addFeedbackFlags(command.Subcommands)
