@@ -44,7 +44,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 	}
 	skipOutOfBandMigrationValidationFlag := &cli.BoolFlag{
 		Name:  "skip-oobmigration-validation",
-		Usage: "Do not attempt to validate the progress of out-of-band migrationsi.",
+		Usage: "Do not attempt to validate the progress of out-of-band migrations.",
 		// NOTE: version 0.0.0+dev (the development version) effectively skips this check as well
 		Value: development,
 	}
