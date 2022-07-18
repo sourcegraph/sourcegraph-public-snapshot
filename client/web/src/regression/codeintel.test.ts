@@ -13,7 +13,7 @@ import { ensureLoggedInOrCreateTestUser, getGlobalSettings } from './util/helper
 import { getTestTools } from './util/init'
 import { TestResourceManager } from './util/TestResourceManager'
 
-describe('Code intelligence regression test suite', () => {
+describe('Code graph regression test suite', () => {
     const testUsername = 'test-sg-codeintel'
     const config = getConfig(
         'gitHubToken',
@@ -99,7 +99,7 @@ describe('Code intelligence regression test suite', () => {
         }
     })
 
-    describe('Basic code intelligence regression test suite', () => {
+    describe('Basic code graph regression test suite', () => {
         const innerResourceManager = new TestResourceManager()
         before(async () => {
             innerResourceManager.add('Global setting', 'codeIntel.lsif', await setGlobalLSIFSetting(gqlClient, false))

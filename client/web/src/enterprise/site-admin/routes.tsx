@@ -1,3 +1,5 @@
+import { Redirect } from 'react-router'
+
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { siteAdminAreaRoutes } from '../../site-admin/routes'
@@ -103,35 +105,58 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             batchChangesEnabled && batchChangesWebhookLogsEnabled,
     },
 
-    // Code intelligence upload routes
+    //     {
+    //     // Allow unauthenticated viewers to view the "new subscription" page to price out a subscription (instead
+    //     // of just dumping them on a sign-in page).
+    //     path: EnterprisePageRoutes.SubscriptionsNew,
+    //     exact: true,
+    //     render: lazyComponent(
+    //         () => import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'),
+    //         'NewProductSubscriptionPageOrRedirectUser'
+    //     ),
+    // },
+    // {
+    //     // Redirect from old /user/subscriptions/new -> /subscriptions/new.
+    //     path: EnterprisePageRoutes.OldSubscriptionsNew,
+    //     exact: true,
+    //     render: () => <Redirect to="/subscriptions/new" />,
+    // },
+
+    // Code graph upload routes
     {
-        path: '/code-intelligence/uploads',
+        path: '/code-intelligence',
+        exact: false,
+        render: props => <Redirect to={props.location.pathname.replace('/code-intelligence/', '/code-graph/')} />,
+    },
+    {
+        path: '/code-graph/uploads',
         render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadsPage'), 'CodeIntelUploadsPage'),
         exact: true,
     },
+
     {
-        path: '/code-intelligence/uploads/:id',
+        path: '/code-graph/uploads/:id',
         render: lazyComponent(() => import('../codeintel/uploads/pages/CodeIntelUploadPage'), 'CodeIntelUploadPage'),
         exact: true,
     },
 
     // Auto-indexing routes
     {
-        path: '/code-intelligence/indexes',
+        path: '/code-graph/indexes',
         render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexesPage'), 'CodeIntelIndexesPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
     {
-        path: '/code-intelligence/indexes/:id',
+        path: '/code-graph/indexes/:id',
         render: lazyComponent(() => import('../codeintel/indexes/pages/CodeIntelIndexPage'), 'CodeIntelIndexPage'),
         exact: true,
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
 
-    // Code intelligence configuration
+    // Code graph configuration
     {
-        path: '/code-intelligence/configuration',
+        path: '/code-graph/configuration',
         render: lazyComponent(
             () => import('../codeintel/configuration/pages/CodeIntelConfigurationPage'),
             'CodeIntelConfigurationPage'
@@ -139,7 +164,7 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
     },
     {
-        path: '/code-intelligence/configuration/:id',
+        path: '/code-graph/configuration/:id',
         render: lazyComponent(
             () => import('../codeintel/configuration/pages/CodeIntelConfigurationPolicyPage'),
             'CodeIntelConfigurationPolicyPage'

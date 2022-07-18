@@ -136,10 +136,10 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
 
     return (
         <div className="code-intel-uploads">
-            <PageTitle title="Precise code intelligence uploads" />
+            <PageTitle title="Precise code graph uploads" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Precise code intelligence uploads' }]}
+                path={[{ text: 'Precise code graph uploads' }]}
                 description={`LSIF indexes uploaded to Sourcegraph from CI or from auto-indexing ${
                     repo ? 'for this repository' : 'over all repositories'
                 }.`}

@@ -93,18 +93,18 @@ export const CodeIntelConfigurationPage: FunctionComponent<
 
     return (
         <>
-            <PageTitle title="Precise code intelligence configuration" />
+            <PageTitle title="Precise code graph configuration" />
             <CodeIntelConfigurationPageHeader>
                 <PageHeader
                     headingElement="h2"
                     path={[
                         {
-                            text: <>Precise code intelligence configuration</>,
+                            text: <>Precise code graph configuration</>,
                         },
                     ]}
                     description={`Rules that control data retention${
                         indexingEnabled ? ' and auto-indexing' : ''
-                    } behavior for precise code intelligence.`}
+                    } behavior for precise code graph.`}
                     className="mb-3"
                 />
                 {authenticatedUser?.siteAdmin && <PolicyListActions history={history} />}
