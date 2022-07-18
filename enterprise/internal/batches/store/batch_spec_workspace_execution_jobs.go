@@ -9,6 +9,7 @@ import (
 	"github.com/opentracing/opentracing-go/log"
 
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -155,7 +156,15 @@ func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts 
 	defer endObservation(1, observation.Args{})
 
 	q := getDeleteBatchSpecWorkspaceExecutionJobsQuery(&opts)
-	return s.Store.Exec(ctx, q)
+	deleted, err := basestore.ScanInts(s.Query(ctx, q))
+	if err != nil {
+		return err
+	}
+	numIds := len(opts.IDs) + len(opts.WorkspaceIDs)
+	if len(deleted) != numIds {
+		return errors.Newf("wrong number of jobs deleted: %d instead of %d", len(deleted), numIds)
+	}
+	return nil
 }
 
 func getDeleteBatchSpecWorkspaceExecutionJobsQuery(opts *DeleteBatchSpecWorkspaceExecutionJobsOpts) *sqlf.Query {
