@@ -6,11 +6,9 @@ import (
 
 	"github.com/urfave/cli/v2"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -83,7 +81,12 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 		}
 
 		if !skipUpgradeValidationFlag.Get(cmd) {
-			if err := validateUpgrade(ctx, r, version.Version()); err != nil {
+			db, err := extractDatabase(ctx, r)
+			if err != nil {
+				return err
+			}
+
+			if err := upgradestore.New(db).ValidateUpgrade(ctx, "frontend", version.Version()); err != nil {
 				return err
 			}
 		}
@@ -111,20 +114,4 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			skipUpgradeValidationFlag,
 		},
 	}
-}
-
-func validateUpgrade(ctx context.Context, r Runner, version string) error {
-	store, err := r.Store(ctx, "frontend")
-	if err != nil {
-		return err
-	}
-
-	// NOTE: this is a dynamic type check as embedding basestore.ShareableStore
-	// into the store interface causes a cyclic import in db connection packages.
-	shareableStore, ok := store.(basestore.ShareableStore)
-	if !ok {
-		return errors.New("store does not support direct database handle access")
-	}
-
-	return upgradestore.NewWith(shareableStore.Handle()).ValidateUpgrade(ctx, "frontend", version)
 }
