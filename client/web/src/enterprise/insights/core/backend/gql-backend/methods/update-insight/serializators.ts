@@ -18,9 +18,9 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
     const repositories = insight.repositories
     const [unit, value] = getStepInterval(insight.step)
     const filters: InsightViewFiltersInput = {
-        includeRepoRegex: insight.filters.includeRepoRegexp,
-        excludeRepoRegex: insight.filters.excludeRepoRegexp,
-        searchContexts: insight.filters.context ? [insight.filters.context] : [],
+        includeRepoRegex: insight.filters.includeRepoRegex,
+        excludeRepoRegex: insight.filters.excludeRepoRegex,
+        searchContexts: insight.filters.searchContexts ? [insight.filters.searchContexts] : [],
     }
 
     const seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesCount, insight.seriesDisplayOptions)
@@ -66,9 +66,9 @@ export function getCaptureGroupInsightUpdateInput(
         },
         viewControls: {
             filters: {
-                includeRepoRegex: filters.includeRepoRegexp,
-                excludeRepoRegex: filters.excludeRepoRegexp,
-                searchContexts: insight.filters.context ? [filters.context] : [],
+                includeRepoRegex: filters.includeRepoRegex,
+                excludeRepoRegex: filters.excludeRepoRegex,
+                searchContexts: insight.filters.searchContexts ? [filters.searchContexts] : [],
             },
             seriesDisplayOptions: _seriesDisplayOptions,
         },
@@ -79,9 +79,9 @@ export function getComputeInsightUpdateInput(insight: MinimalComputeInsightData)
     const { repositories, filters, groupBy } = insight
 
     const serializedFilters: InsightViewFiltersInput = {
-        includeRepoRegex: filters.includeRepoRegexp,
-        excludeRepoRegex: filters.excludeRepoRegexp,
-        searchContexts: filters.context ? [filters.context] : [],
+        includeRepoRegex: filters.includeRepoRegex,
+        excludeRepoRegex: filters.excludeRepoRegex,
+        searchContexts: filters.searchContexts ? [filters.searchContexts] : [],
     }
 
     return {

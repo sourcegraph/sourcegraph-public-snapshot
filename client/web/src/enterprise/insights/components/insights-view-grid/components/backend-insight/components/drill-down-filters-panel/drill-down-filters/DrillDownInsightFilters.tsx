@@ -35,9 +35,9 @@ export enum FilterSectionVisualMode {
 }
 
 export interface DrillDownFiltersFormValues {
-    context: string
-    includeRepoRegexp: string
-    excludeRepoRegexp: string
+    searchContexts: string
+    includeRepoRegex: string
+    excludeRepoRegex: string
     seriesDisplayOptions: {
         limit: string
         sortOptions: {
@@ -98,19 +98,19 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     const client = useApolloClient()
 
     const contexts = useField({
-        name: 'context',
+        name: 'searchContexts',
         formApi: formAPI,
         validators: { async: useMemo(() => createSearchContextValidator(client), [client]) },
     })
 
     const includeRegex = useField({
-        name: 'includeRepoRegexp',
+        name: 'includeRepoRegex',
         formApi: formAPI,
         validators: { sync: validRegexp },
     })
 
     const excludeRegex = useField({
-        name: 'excludeRepoRegexp',
+        name: 'excludeRepoRegex',
         formApi: formAPI,
         validators: { sync: validRegexp },
     })
@@ -344,9 +344,9 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
 }
 
 export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
-    const { excludeRepoRegexp, includeRepoRegexp, context } = filters
+    const { excludeRepoRegex, includeRepoRegex, searchContexts } = filters
 
-    return [excludeRepoRegexp, includeRepoRegexp, context].some(hasActiveUnaryFilter)
+    return [excludeRepoRegex, includeRepoRegex, searchContexts].some(hasActiveUnaryFilter)
 }
 
 const hasActiveUnaryFilter = (filter: string): boolean => filter.trim() !== ''

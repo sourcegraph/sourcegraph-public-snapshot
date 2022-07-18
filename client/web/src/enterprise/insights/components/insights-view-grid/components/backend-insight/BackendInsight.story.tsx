@@ -45,9 +45,9 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
     filters: {
-        excludeRepoRegexp: '',
-        includeRepoRegexp: '',
-        context: '',
+        excludeRepoRegex: '',
+        includeRepoRegex: '',
+        searchContexts: '',
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {
@@ -260,9 +260,9 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     ],
     step: { weeks: 2 },
     filters: {
-        excludeRepoRegexp: '',
-        includeRepoRegexp: '',
-        context: '',
+        excludeRepoRegex: '',
+        includeRepoRegex: '',
+        searchContexts: '',
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {
@@ -290,9 +290,9 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     ],
     step: { weeks: 2 },
     filters: {
-        excludeRepoRegexp: '',
-        includeRepoRegexp: '',
-        context: '',
+        excludeRepoRegex: '',
+        includeRepoRegex: '',
+        searchContexts: '',
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {
@@ -317,9 +317,9 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     repositories: [],
     query: '',
     filters: {
-        excludeRepoRegexp: '',
-        includeRepoRegexp: '',
-        context: '',
+        excludeRepoRegex: '',
+        includeRepoRegex: '',
+        searchContexts: '',
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {

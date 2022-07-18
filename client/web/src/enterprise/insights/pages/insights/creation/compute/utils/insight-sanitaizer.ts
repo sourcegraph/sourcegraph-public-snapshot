@@ -16,9 +16,9 @@ export const getSanitizedComputeInsight = (values: CreateComputeInsightFormField
     isFrozen: false,
     dashboardReferenceCount: 0,
     filters: {
-        excludeRepoRegexp: '',
-        includeRepoRegexp: '',
-        context: '',
+        excludeRepoRegex: '',
+        includeRepoRegex: '',
+        searchContexts: '',
         seriesDisplayOptions: {
             limit: `${MAX_NUMBER_OF_SERIES}`,
             sortOptions: {

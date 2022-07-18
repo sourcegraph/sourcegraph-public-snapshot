@@ -74,9 +74,9 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     query,
                     step,
                     filters: {
-                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                        context: appliedFilters.searchContexts?.[0] ?? '',
+                        includeRepoRegex: appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegex: appliedFilters.excludeRepoRegex ?? '',
+                        searchContexts: appliedFilters.searchContexts?.[0] ?? '',
                         seriesDisplayOptions,
                     },
                     appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
@@ -110,9 +110,9 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     repositories,
                     series,
                     filters: {
-                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                        context: appliedFilters.searchContexts?.[0] ?? '',
+                        includeRepoRegex: appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegex: appliedFilters.excludeRepoRegex ?? '',
+                        searchContexts: appliedFilters.searchContexts?.[0] ?? '',
                         seriesDisplayOptions,
                     },
                 } as ComputeInsight
@@ -126,9 +126,9 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 series,
                 step,
                 filters: {
-                    includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
-                    excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
-                    context: appliedFilters.searchContexts?.[0] ?? '',
+                    includeRepoRegex: appliedFilters.includeRepoRegex ?? '',
+                    excludeRepoRegex: appliedFilters.excludeRepoRegex ?? '',
+                    searchContexts: appliedFilters.searchContexts?.[0] ?? '',
                     seriesDisplayOptions,
                 },
             }

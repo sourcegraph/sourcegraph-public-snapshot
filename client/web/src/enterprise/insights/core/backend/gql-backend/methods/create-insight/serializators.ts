@@ -58,8 +58,8 @@ export function getCaptureGroupInsightCreateInput(
                 insight.seriesDisplayOptions ||
                 parseSeriesDisplayOptions(insight.seriesCount, insight.appliedSeriesDisplayOptions),
             filters: {
-                excludeRepoRegex: insight.filters.excludeRepoRegexp,
-                includeRepoRegex: insight.filters.includeRepoRegexp,
+                excludeRepoRegex: insight.filters.excludeRepoRegex,
+                includeRepoRegex: insight.filters.includeRepoRegex,
             },
         },
     }

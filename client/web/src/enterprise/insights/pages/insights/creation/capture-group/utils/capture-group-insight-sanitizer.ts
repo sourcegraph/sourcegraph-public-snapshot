@@ -17,9 +17,9 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         step: { [values.step]: +values.stepValue },
         repositories: values.allRepos ? [] : getSanitizedRepositories(values.repositories),
         filters: {
-            includeRepoRegexp: '',
-            excludeRepoRegexp: '',
-            context: '',
+            includeRepoRegex: '',
+            excludeRepoRegex: '',
+            searchContexts: '',
             seriesDisplayOptions: {
                 limit: `${MAX_NUMBER_OF_SERIES}`,
                 sortOptions: {

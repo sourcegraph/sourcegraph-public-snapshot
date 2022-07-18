@@ -24,9 +24,9 @@ const defaultStory: Meta = {
 export default defaultStory
 
 const filters = {
-    excludeRepoRegexp: '',
-    includeRepoRegexp: '',
-    context: '',
+    excludeRepoRegex: '',
+    includeRepoRegex: '',
+    searchContexts: '',
     seriesDisplayOptions: {
         limit: '20',
         sortOptions: {

@@ -66,7 +66,7 @@ interface GenerateLinkInput {
 
 export function generateLinkURL(input: GenerateLinkInput): string {
     const { query, point, previousPoint, filters, repositories } = input
-    const { includeRepoRegexp = '', excludeRepoRegexp = '', context } = filters ?? {}
+    const { includeRepoRegex = '', excludeRepoRegex = '', searchContexts } = filters ?? {}
 
     const date = Date.parse(point.dateTime)
 
@@ -76,11 +76,11 @@ export function generateLinkURL(input: GenerateLinkInput): string {
     const after = previousPoint ? formatISO(Date.parse(previousPoint.dateTime)) : ''
     const before = formatISO(date)
 
-    const includeRepoFilter = includeRepoRegexp ? `repo:${includeRepoRegexp}` : ''
-    const excludeRepoFilter = excludeRepoRegexp ? `-repo:${excludeRepoRegexp}` : ''
+    const includeRepoFilter = includeRepoRegex ? `repo:${includeRepoRegex}` : ''
+    const excludeRepoFilter = excludeRepoRegex ? `-repo:${excludeRepoRegex}` : ''
 
     const scopeRepoFilters = repositories.length > 0 ? `repo:^(${repositories.map(escapeRegExp).join('|')})$` : ''
-    const contextFilter = context ? `context:${context}` : ''
+    const contextFilter = searchContexts ? `context:${searchContexts}` : ''
     const repoFilter = `${includeRepoFilter} ${excludeRepoFilter}`
     const afterFilter = after ? `after:${after}` : ''
     const beforeFilter = `before:${before}`

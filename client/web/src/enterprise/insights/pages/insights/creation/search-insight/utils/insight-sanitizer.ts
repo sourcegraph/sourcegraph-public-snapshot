@@ -19,9 +19,9 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             step: { [rawInsight.step]: +rawInsight.stepValue },
             dashboards: [],
             filters: {
-                excludeRepoRegexp: '',
-                includeRepoRegexp: '',
-                context: '',
+                excludeRepoRegex: '',
+                includeRepoRegex: '',
+                searchContexts: '',
                 seriesDisplayOptions: {
                     limit: `${MAX_NUMBER_OF_SERIES}`,
                     sortOptions: {
@@ -43,9 +43,9 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
         step: { [rawInsight.step]: +rawInsight.stepValue },
         dashboards: [],
         filters: {
-            excludeRepoRegexp: '',
-            includeRepoRegexp: '',
-            context: '',
+            excludeRepoRegex: '',
+            includeRepoRegex: '',
+            searchContexts: '',
             seriesDisplayOptions: {
                 limit: `${MAX_NUMBER_OF_SERIES}`,
                 sortOptions: {

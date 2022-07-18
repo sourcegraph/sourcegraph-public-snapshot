@@ -92,9 +92,9 @@ describe('Backend insight drill down filters', () => {
 
         await driver.page.click('button[aria-label="Filters"]')
 
-        // fill in the excludeRepoRegexp filter
+        // fill in the excludeRepoRegex filter
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
-        await driver.page.type('[name="excludeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
+        await driver.page.type('[name="excludeRepoRegex"]', 'github.com/sourcegraph/sourcegraph')
 
         // fill in the search context filter regexp
         await driver.page.click('button[aria-label="search context filter section"]')
@@ -202,7 +202,7 @@ describe('Backend insight drill down filters', () => {
         await driver.page.click('button[aria-label="Active filters"]')
         await driver.page.waitForSelector('[role="dialog"][aria-label="Drill-down filters panel"]')
 
-        await driver.page.type('[name="includeRepoRegexp"]', 'github.com/sourcegraph/sourcegraph')
+        await driver.page.type('[name="includeRepoRegex"]', 'github.com/sourcegraph/sourcegraph')
 
         // Wait until async validation of the search context field is passed
         await delay(500)

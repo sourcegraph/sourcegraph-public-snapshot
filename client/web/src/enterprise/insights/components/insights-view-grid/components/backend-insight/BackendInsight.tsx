@@ -83,9 +83,9 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
     const filterInput: InsightViewFiltersInput = {
-        includeRepoRegex: debouncedFilters.includeRepoRegexp,
-        excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
-        searchContexts: [debouncedFilters.context],
+        includeRepoRegex: debouncedFilters.includeRepoRegex,
+        excludeRepoRegex: debouncedFilters.excludeRepoRegex,
+        searchContexts: [debouncedFilters.searchContexts],
     }
     const seriesDisplayOptions: SeriesDisplayOptionsInput = {
         limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),

@@ -32,9 +32,9 @@ export enum InsightContentType {
 }
 
 export interface InsightFilters {
-    includeRepoRegexp: string
-    excludeRepoRegexp: string
-    context: string
+    includeRepoRegex: string
+    excludeRepoRegex: string
+    searchContexts: string
     repositories?: string[]
     seriesDisplayOptions: {
         limit: string

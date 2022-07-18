@@ -79,9 +79,9 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
     const filterInput: InsightViewFiltersInput = {
-        includeRepoRegex: debouncedFilters.includeRepoRegexp,
-        excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
-        searchContexts: [debouncedFilters.context],
+        includeRepoRegex: debouncedFilters.includeRepoRegex,
+        excludeRepoRegex: debouncedFilters.excludeRepoRegex,
+        searchContexts: [debouncedFilters.searchContexts],
     }
     const displayInput: SeriesDisplayOptionsInput = {
         limit: insight.seriesDisplayOptions?.limit,
