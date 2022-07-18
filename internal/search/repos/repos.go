@@ -386,7 +386,7 @@ func (r *Resolver) normalizeRepoRefs(
 			// commit ID. We should consider building []gitdomain.Ref here
 			// instead of just []string because we have the exact commit hashes,
 			// so we could avoid resolving later.
-			revs = append(revs, "HEAD")
+			revs = append(revs, rev.RevSpec)
 		case rev.RevSpec != "":
 			trimmedRev := strings.TrimPrefix(rev.RevSpec, "^")
 			_, err := r.gitserver.ResolveRevision(ctx, repo.Name, trimmedRev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
