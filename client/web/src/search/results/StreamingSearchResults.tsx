@@ -22,7 +22,6 @@ import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/sr
 import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -87,7 +86,6 @@ export const StreamingSearchResults: React.FunctionComponent<
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     // Log view event on first load
     useEffect(

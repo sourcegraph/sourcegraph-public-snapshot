@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .strip {
     display: none;
 
@@ -9,6 +11,10 @@
         position: sticky;
         top: 0.5rem;
         height: min-content;
+
+        @media (--md-breakpoint-down) {
+            display: none;
+        }
     }
 }
 

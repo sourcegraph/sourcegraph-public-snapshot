@@ -47,13 +47,18 @@
 
     :global(.core-workflow-improvements-enabled) .container--with-sidebar-hidden & {
         display: none;
+
+        @media (--md-breakpoint-down) {
+            &--show-mobile {
+                display: block;
+            }
+        }
     }
 
     @media (--md-breakpoint-down) {
         display: none;
 
-        &--show-mobile,
-        :global(.core-workflow-improvements-enabled) &--show-mobile {
+        &--show-mobile {
             display: block;
         }
     }
