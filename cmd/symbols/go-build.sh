@@ -17,10 +17,12 @@ echo "--- docker symbols build"
 # Required due to use of RUN --mount=type=cache in Dockerfile.
 export DOCKER_BUILDKIT=1
 
+docker pull sourcegraph/symbols:insiders || true
 docker build -f cmd/symbols/Dockerfile -t symbols-build "$(pwd)" \
   --target=symbols-build \
   --progress=plain \
   --build-arg VERSION \
-  --build-arg PKG="${PKG:-github.com/sourcegraph/sourcegraph/cmd/symbols}"
+  --build-arg PKG="${PKG:-github.com/sourcegraph/sourcegraph/cmd/symbols}" \
+  --cache-from sourcegraph/symbols:insiders
 
 docker cp "$(docker create --rm symbols-build)":/symbols "$OUTPUT/symbols"
