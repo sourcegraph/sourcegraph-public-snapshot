@@ -104,7 +104,7 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         <div className={styles.dividerVertical} />
                         <div>
                             <small>
-                                <em>{result.description}</em>
+                                <em>{result.description.length > 500 ? (result.description.slice(0, 500) + ' ...') : result.description}</em>
                             </small>
                         </div>
                     </>
