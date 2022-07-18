@@ -869,8 +869,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 export function updateBrowserHistoryIfNecessary(
     history: H.History,
     location: H.Location,
-    newSearchParameters: URLSearchParams,
-    replace: boolean = false
+    newSearchParameters: URLSearchParams
 ): void {
     const currentSearchParameters = [...new URLSearchParams(location.search).entries()]
 
@@ -884,16 +883,10 @@ export function updateBrowserHistoryIfNecessary(
         currentSearchParameters.some(([key, value]) => newSearchParameters.get(key) !== value)
 
     if (needsUpdate) {
-        const entry = {
+        history.push({
             ...location,
             search: formatSearchParameters(newSearchParameters),
-        }
-
-        if (replace) {
-            history.replace(entry)
-        } else {
-            history.push(entry)
-        }
+        })
     }
 }
 

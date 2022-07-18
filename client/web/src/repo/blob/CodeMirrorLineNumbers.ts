@@ -71,9 +71,7 @@ const selectedLines = StateField.define<SelectedLineRange>({
  * NOTE: Dragging to select on the gutter won't automatically scroll the
  * document.
  */
-export function selectableLineNumbers(config: {
-    onSelection: (range: SelectedLineRange, event: MouseEvent) => void
-}): Extension {
+export function selectableLineNumbers(config: { onSelection: (range: SelectedLineRange) => void }): Extension {
     let dragging = false
 
     return [
@@ -91,7 +89,7 @@ export function selectableLineNumbers(config: {
 
                     dragging = true
 
-                    function onmouseup(event: MouseEvent): void {
+                    function onmouseup(): void {
                         dragging = false
                         window.removeEventListener('mouseup', onmouseup)
 
@@ -109,7 +107,7 @@ export function selectableLineNumbers(config: {
                                 range = { ...range }
                             }
                         }
-                        config.onSelection(range, event)
+                        config.onSelection(range)
                     }
                     window.addEventListener('mouseup', onmouseup)
                     return true

@@ -51,15 +51,9 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
     const locationRef = useRef(location)
     locationRef.current = location
 
-    const onSelection = useCallback((range: SelectedLineRange, event: MouseEvent) => {
+    const onSelection = useCallback((range: SelectedLineRange) => {
         const parameters = new URLSearchParams(locationRef.current.search)
         let query: string | undefined
-        // If the shift key is pressed and the URL currently contains a position
-        // then we are going to replace the history entry instead of adding a
-        // new one. This avoids two history entries for the common operation of
-        // selecting the start line first and then selecting the end line via
-        // shift+click
-        const replace = event.shiftKey
 
         if (range?.line !== range?.endLine && range?.endLine) {
             query = toPositionOrRangeQueryParameter({
@@ -75,8 +69,7 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         updateBrowserHistoryIfNecessary(
             historyRef.current,
             locationRef.current,
-            addLineRangeQueryParameter(parameters, query),
-            replace
+            addLineRangeQueryParameter(parameters, query)
         )
     }, [])
 
