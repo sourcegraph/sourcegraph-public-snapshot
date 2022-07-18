@@ -126,7 +126,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     label: 'Complex searches',
                     minPerItem: 5,
                     description:
-                        'Without Sourcegraph, these searches would require complex scripting. They often answer specific and valuable questions such as finding occurrences of log4j at a specific version globally.',
+                        'Without Sourcegraph, these searches would require complex scripting. They often answer specific and valuable questions such as finding occurrences of Log4j at a specific version globally.',
                     percentage: 3,
                     value: totalCount,
                 },
