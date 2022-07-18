@@ -204,7 +204,7 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 	var lookupImage = func(node *yaml.RNode) error {
 		image := node.Field("image")
 		if image == nil {
-			return errors.Newf("couldn't find image for container %s within %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
+			return errors.Newf("couldn't find image for container %s: %w", node.GetName(), ErrNoImage{r.GetKind(), r.GetName()})
 		}
 		originalImage, err := image.Value.String()
 		if err != nil {
@@ -212,7 +212,8 @@ func findImage(r *yaml.RNode, credential credentials.Credentials, pinTag string)
 		}
 		updatedImage, err := getUpdatedSourcegraphImage(originalImage, credential, pinTag)
 		if err != nil {
-			return err
+			std.Out.WriteWarningf("could not get updated image for %s: %s", originalImage, err)
+			return nil
 		}
 
 		std.Out.Verbosef("found image %s for container %s in file %s+%s\n Replaced with %s", originalImage, node.GetName(), r.GetKind(), r.GetName(), updatedImage)
@@ -280,6 +281,8 @@ func parseImgString(rawImg string) (*ImageReference, error) {
 
 // getUpdatedSourcegraphImage retrieves the pinned version of originalImage if it is a
 // DeploySourcegraphDockerImage, and errors if the image is unknown.
+//
+// Callers should not treat the returned error as fatal.
 func getUpdatedSourcegraphImage(originalImage string, creds credentials.Credentials, pinTag string) (newImage string, err error) {
 	str := strings.Split(originalImage, "/")
 	imageName := str[len(str)-1]
@@ -395,16 +398,17 @@ func (i *imageRepository) fetchAuthToken(registryName string) (string, error) {
 }
 
 func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *imageRepository, err error) {
-	repo = &imageRepository{name: ref.Name, imageRef: ref}
+	// TODO(@bobheadxi) Figure out what is going on here and simplify - we set the
+	// imageRef, call a function that does something to imageRepository, and then reset
+	// imageRef later using values from ref?
+	repo = &imageRepository{
+		name:     ref.Name,
+		imageRef: ref,
+	}
 	repo.authToken, err = repo.fetchAuthToken(ref.Registry)
 	if err != nil {
 		return nil, nil
 	}
-	tags, err := repo.fetchAllTags()
-	if err != nil {
-		return nil, err
-	}
-
 	repo.imageRef = &ImageReference{
 		Registry: ref.Registry,
 		Name:     ref.Name,
@@ -412,12 +416,17 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 		Tag:      ref.Tag,
 	}
 
+	// Determine the target tag
 	var targetTag string
-	isDevTag := pinTag == ""
-	if isDevTag {
-		targetTag, err = findLatestTag(tags)
+	useMainTag := pinTag == ""
+	if useMainTag {
+		tags, err := repo.fetchAllTags()
 		if err != nil {
-			std.Out.Verbose("findLatestTag: " + err.Error())
+			return nil, err
+		}
+		targetTag, err = findLatestMainTag(tags)
+		if err != nil {
+			std.Out.Verbose("findLatestMainTag: " + err.Error())
 		}
 	} else {
 		targetTag = pinTag
@@ -429,7 +438,7 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	// for release build, we use semver tags and they are immutable, so no update is needed if the current tag is the same as target tag
 	// for dev builds, if the current tag is the same as the latest tag, also no update is needed
 	// for mutable tags (neither release nor dev tag, e.g. `insiders`), we always need to fetch the latest digest.
-	if (isReleaseTag || isDevTag) && isAlreadyLatest {
+	if (isReleaseTag || useMainTag) && isAlreadyLatest {
 		return repo, ErrNoUpdateNeeded
 	}
 	repo.imageRef.Tag = targetTag
@@ -443,45 +452,48 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 	return repo, nil
 }
 
-type SgImageTag struct {
-	buildNum  int
-	date      string
-	shortSHA1 string
+// ParsedMainBranchImageTag is a structured representation of a parsed tag created by
+// images.ParsedMainBranchImageTag.
+type ParsedMainBranchImageTag struct {
+	Build       int
+	Date        string
+	ShortCommit string
 }
 
-// ParseTag creates SgImageTag structs for strings that follow MainBranchTagPublishFormat
-func ParseTag(t string) (*SgImageTag, error) {
-	s := SgImageTag{}
+// ParseMainBranchImageTag creates MainTag structs for tags created by
+// images.MainBranchImageTag.
+func ParseMainBranchImageTag(t string) (*ParsedMainBranchImageTag, error) {
+	s := ParsedMainBranchImageTag{}
 	t = strings.TrimSpace(t)
 	var err error
 	n := strings.Split(t, "_")
 	if len(n) != 3 {
 		return nil, errors.Newf("unable to convert tag: %s", t)
 	}
-	s.buildNum, err = strconv.Atoi(n[0])
+	s.Build, err = strconv.Atoi(n[0])
 	if err != nil {
 		return nil, errors.Newf("unable to convert tag: %v", err)
 	}
 
-	s.date = n[1]
-	s.shortSHA1 = n[2]
+	s.Date = n[1]
+	s.ShortCommit = n[2]
 	return &s, nil
 }
 
-// Assume we use 'sourcegraph' tag format of :[build_number]_[date]_[short SHA1]
-func findLatestTag(tags []string) (string, error) {
+// Assume we use 'sourcegraph' tag format of ':[build_number]_[date]_[short SHA1]'
+func findLatestMainTag(tags []string) (string, error) {
 	maxBuildID := 0
 	targetTag := ""
 
 	var errs error
 	for _, tag := range tags {
-		stag, err := ParseTag(tag)
+		stag, err := ParseMainBranchImageTag(tag)
 		if err != nil {
 			errs = errors.Append(errs, err)
 			continue
 		}
-		if stag.buildNum > maxBuildID {
-			maxBuildID = stag.buildNum
+		if stag.Build > maxBuildID {
+			maxBuildID = stag.Build
 			targetTag = tag
 		}
 	}

@@ -615,6 +615,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 					Repositories:      series.RepositoryScope.Repositories,
 					StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
 					StepIntervalValue: int(series.TimeScope.StepInterval.Value),
+					GroupBy:           lowercaseGroupBy(series.GroupBy),
 				})
 				if err != nil {
 					return nil, errors.Wrap(err, "UpdateFrontendSeries")
@@ -1017,12 +1018,10 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	var groupBy *string
+	groupBy := lowercaseGroupBy(series.GroupBy)
 	var nextRecordingAfter time.Time
 	var oldestHistoricalAt time.Time
 	if series.GroupBy != nil {
-		temp := strings.ToLower(*series.GroupBy)
-		groupBy = &temp
 		// We want to disable interval recording for compute types.
 		// December 31, 9999 is the maximum possible date in postgres.
 		nextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
@@ -1317,4 +1316,12 @@ func minInt(a, b int32) int32 {
 		return a
 	}
 	return b
+}
+
+func lowercaseGroupBy(groupBy *string) *string {
+	if groupBy != nil {
+		temp := strings.ToLower(*groupBy)
+		return &temp
+	}
+	return groupBy
 }

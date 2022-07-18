@@ -5,6 +5,17 @@ import { EditorState, EditorStateConfig, Extension, StateEffect } from '@codemir
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
+if (process.env.INTEGRATION_TESTS) {
+    // Expose findFromDOM on the global object to be able to get the real input
+    // value in integration tests
+    // Typecast "as any" is used to avoid TypeScript complaining about window
+    // not having this property. We decided that it's fine to use this in a test
+    // context
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+    ;(window as any).CodeMirrorFindFromDOM = (element: HTMLElement): ReturnType<typeof EditorView['findFromDOM']> =>
+        EditorView.findFromDOM(element)
+}
+
 /**
  * Hook for rendering and updating a CodeMirror instance.
  */

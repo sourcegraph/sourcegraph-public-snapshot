@@ -170,10 +170,9 @@ exports[`ActionItem run command 2`] = `
 exports[`ActionItem run command with error 1`] = `
 <DocumentFragment>
   <button
-    aria-describedby="radix-8"
     aria-label="d"
     class="test-action-item"
-    data-state="delayed-open"
+    data-state="closed"
     type="button"
   >
     <img
@@ -188,10 +187,9 @@ exports[`ActionItem run command with error 1`] = `
 exports[`ActionItem run command with error with showInlineError 1`] = `
 <DocumentFragment>
   <button
-    aria-describedby="radix-9"
     aria-label="Error: x"
     class="test-action-item"
-    data-state="delayed-open"
+    data-state="closed"
     type="button"
   >
     <img
@@ -206,9 +204,8 @@ exports[`ActionItem run command with error with showInlineError 1`] = `
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 <DocumentFragment>
   <span
-    aria-describedby="radix-7"
     class="tooltipWrapper"
-    data-state="delayed-open"
+    data-state="closed"
   >
     <div
       class="tooltipTriggerContainer"
@@ -247,19 +244,42 @@ exports[`ActionItem run command with showLoadingSpinnerDuringExecution 1`] = `
 
 exports[`ActionItem run command with showLoadingSpinnerDuringExecution 2`] = `
 <DocumentFragment>
-  <button
-    aria-describedby="radix-7"
-    aria-label="d"
-    class="test-action-item"
-    data-state="delayed-open"
-    type="button"
+  <span
+    class="tooltipWrapper"
+    data-state="closed"
   >
-    <img
-      alt="d"
-      src="u"
-    />
-     g: t 
-  </button>
+    <div
+      class="tooltipTriggerContainer"
+    >
+      <div
+        class="tooltipTriggerDisabledOverlay"
+        tabindex="0"
+      />
+      <button
+        aria-label="d"
+        class="test-action-item actionItemLoading"
+        disabled=""
+        type="button"
+      >
+        <img
+          alt="d"
+          src="u"
+        />
+         g: t 
+        <div
+          class="loader"
+          data-testid="action-item-spinner"
+        >
+          <div
+            aria-label="Loading"
+            aria-live="polite"
+            class="mdi-icon loadingSpinner"
+            role="img"
+          />
+        </div>
+      </button>
+    </div>
+  </span>
 </DocumentFragment>
 `;
 

@@ -1,6 +1,0 @@
-[
-  {
-    "Description": "URL to filters",
-    "Query": "repo:^github\\.com/sourcegraph/sourcegraph$ rev:main file:^lib/README\\.md$"
-  }
-]

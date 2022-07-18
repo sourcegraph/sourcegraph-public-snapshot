@@ -15,6 +15,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/go-diff/diff"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
@@ -86,6 +88,111 @@ func TestParseShortLog(t *testing.T) {
 	}
 }
 
+func TestDiffWithSubRepoFiltering(t *testing.T) {
+	ctx := context.Background()
+	ctx = actor.WithActor(ctx, &actor.Actor{
+		UID: 1,
+	})
+	db := database.NewMockDB()
+
+	ClientMocks.LocalGitserver = true
+	defer ResetClientMocks()
+
+	cmds := getGitCommandsWithFileLists([]string{"file0"}, []string{"file1", "file1.1"}, []string{"file2"}, []string{"file3", "file3.3"})
+	checker := getTestSubRepoPermsChecker("file1.1", "file2")
+	testCases := []struct {
+		label               string
+		extraGitCommands    []string
+		expectedDiffFiles   []string
+		expectedFileStat    *diff.Stat
+		rangeOverAllCommits bool
+	}{
+		{
+			label:               "adding files",
+			expectedDiffFiles:   []string{"file1", "file3", "file3.3"},
+			expectedFileStat:    &diff.Stat{Added: 3},
+			rangeOverAllCommits: true,
+		},
+		{
+			label: "changing filename",
+			extraGitCommands: []string{
+				"mv file1.1 file_can_access",
+				"git add file_can_access",
+				makeGitCommit("rename", 7),
+			},
+			expectedDiffFiles: []string{"file_can_access"},
+			expectedFileStat:  &diff.Stat{Added: 1},
+		},
+		{
+			label: "file modified",
+			extraGitCommands: []string{
+				"echo new_file_content > file2",
+				"echo more_new_file_content > file1",
+				"git add file2",
+				"git add file1",
+				makeGitCommit("edit_files", 7),
+			},
+			expectedDiffFiles: []string{"file1"}, // file2 is updated but user doesn't have access
+			expectedFileStat:  &diff.Stat{Changed: 1},
+		},
+		{
+			label: "diff for commit w/ no access returns empty result",
+			extraGitCommands: []string{
+				"echo new_file_content > file2",
+				"git add file2",
+				makeGitCommit("no_access", 7),
+			},
+			expectedDiffFiles: []string{},
+			expectedFileStat:  &diff.Stat{},
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.label, func(t *testing.T) {
+			repo := MakeGitRepository(t, append(cmds, tc.extraGitCommands...)...)
+			c := NewClient(db)
+			commits, err := c.Commits(ctx, repo, CommitsOptions{}, nil)
+			if err != nil {
+				t.Fatalf("err fetching commits: %s", err)
+			}
+			baseCommit := commits[1]
+			headCommit := commits[0]
+			if tc.rangeOverAllCommits {
+				baseCommit = commits[len(commits)-1]
+			}
+
+			iter, err := c.Diff(ctx, DiffOptions{Base: string(baseCommit.ID), Head: string(headCommit.ID), Repo: repo}, checker)
+			if err != nil {
+				t.Fatalf("error fetching diff: %s", err)
+			}
+			defer iter.Close()
+
+			stat := &diff.Stat{}
+			fileNames := make([]string, 0, 3)
+			for {
+				file, err := iter.Next()
+				if err == io.EOF {
+					break
+				} else if err != nil {
+					t.Error(err)
+				}
+
+				fileNames = append(fileNames, file.NewName)
+
+				fs := file.Stat()
+				stat.Added += fs.Added
+				stat.Changed += fs.Changed
+				stat.Deleted += fs.Deleted
+			}
+			if diff := cmp.Diff(fileNames, tc.expectedDiffFiles); diff != "" {
+				t.Fatal(diff)
+			}
+			if diff := cmp.Diff(stat, tc.expectedFileStat); diff != "" {
+				t.Fatal(diff)
+			}
+		})
+	}
+}
+
 func TestDiff(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewMockDB()
@@ -97,7 +204,7 @@ func TestDiff(t *testing.T) {
 			".foo",
 		} {
 			t.Run("invalid base: "+input, func(t *testing.T) {
-				i, err := NewClient(db).Diff(ctx, DiffOptions{Base: input})
+				i, err := NewClient(db).Diff(ctx, DiffOptions{Base: input}, nil)
 				if i != nil {
 					t.Errorf("unexpected non-nil iterator: %+v", i)
 				}
@@ -125,7 +232,7 @@ func TestDiff(t *testing.T) {
 					return nil, nil
 				}
 				t.Cleanup(ResetMocks)
-				_, _ = c.Diff(ctx, tc.opts)
+				_, _ = c.Diff(ctx, tc.opts, nil)
 			})
 		}
 	})
@@ -137,7 +244,7 @@ func TestDiff(t *testing.T) {
 		}
 		t.Cleanup(ResetMocks)
 
-		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
+		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
 		if i != nil {
 			t.Errorf("unexpected non-nil iterator: %+v", i)
 		}
@@ -218,7 +325,7 @@ index 9bd8209..d2acfa9 100644
 		}
 		t.Cleanup(ResetMocks)
 
-		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"})
+		i, err := c.Diff(ctx, DiffOptions{Base: "foo", Head: "bar"}, nil)
 		if i == nil {
 			t.Error("unexpected nil iterator")
 		}
@@ -1621,6 +1728,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 		"git add file3",
 		"GIT_COMMITTER_NAME=c GIT_COMMITTER_EMAIL=c@c.com GIT_COMMITTER_DATE=2006-01-02T15:04:07Z git commit -m commit3 --author='a <a@a.com>' --date 2006-01-02T15:04:07Z",
 	}
+	repo := MakeGitRepository(t, gitCommands...)
 
 	tests := map[string]struct {
 		wantCommits   []*gitdomain.Commit
@@ -1628,9 +1736,16 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 		wantTotal     uint
 		noAccessPaths []string
 	}{
-		"if no read perms on file should filter out commit": {
-			wantTotal: 1,
+		"if no read perms on at least one file in the commit should filter out commit": {
+			wantTotal: 2,
 			wantCommits: []*gitdomain.Commit{
+				{
+					ID:        "b96d097108fa49e339ca88bc97ab07f833e62131",
+					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:06Z")},
+					Committer: &gitdomain.Signature{Name: "c", Email: "c@c.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:07Z")},
+					Message:   "commit2",
+					Parents:   []api.CommitID{"d38233a79e037d2ab8170b0d0bc0aa438473e6da"},
+				},
 				{
 					ID:        "d38233a79e037d2ab8170b0d0bc0aa438473e6da",
 					Author:    gitdomain.Signature{Name: "a", Email: "a@a.com", Date: MustParseTime(time.RFC3339, "2006-01-02T15:04:05Z")},
@@ -1667,7 +1782,6 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 
 	for label, test := range tests {
 		t.Run(label, func(t *testing.T) {
-			repo := MakeGitRepository(t, gitCommands...)
 			checker := getTestSubRepoPermsChecker(test.noAccessPaths...)
 			commits, err := NewClient(database.NewMockDB()).Commits(ctx, repo, test.opt, checker)
 			if err != nil {
@@ -1679,7 +1793,7 @@ func TestCommits_SubRepoPerms(t *testing.T) {
 				t.Errorf("%s: got %d commits, want %d", label, len(commits), len(test.wantCommits))
 			}
 
-			checkCommits(t, label, commits, test.wantCommits)
+			checkCommits(t, commits, test.wantCommits)
 		})
 	}
 }
@@ -2299,10 +2413,10 @@ func testCommits(ctx context.Context, label string, repo api.RepoName, opt Commi
 	if len(commits) != len(wantCommits) {
 		t.Errorf("%s: got %d commits, want %d", label, len(commits), len(wantCommits))
 	}
-	checkCommits(t, label, commits, wantCommits)
+	checkCommits(t, commits, wantCommits)
 }
 
-func checkCommits(t *testing.T, label string, commits, wantCommits []*gitdomain.Commit) {
+func checkCommits(t *testing.T, commits, wantCommits []*gitdomain.Commit) {
 	t.Helper()
 	for i := 0; i < len(commits) || i < len(wantCommits); i++ {
 		var gotC, wantC *gitdomain.Commit
@@ -2312,8 +2426,8 @@ func checkCommits(t *testing.T, label string, commits, wantCommits []*gitdomain.
 		if i < len(wantCommits) {
 			wantC = wantCommits[i]
 		}
-		if !CommitsEqual(gotC, wantC) {
-			t.Errorf("%s: got commit %d == %+v, want %+v", label, i, gotC, wantC)
+		if diff := cmp.Diff(gotC, wantC); diff != "" {
+			t.Fatal(diff)
 		}
 	}
 }
@@ -2333,6 +2447,25 @@ func getTestSubRepoPermsChecker(noAccessPaths ...string) authz.SubRepoPermission
 		return authz.Read, nil
 	})
 	return checker
+}
+
+func getGitCommandsWithFileLists(filenamesPerCommit ...[]string) []string {
+	cmds := make([]string, 0, len(filenamesPerCommit)*3)
+	for i, filenames := range filenamesPerCommit {
+		for _, fn := range filenames {
+			cmds = append(cmds,
+				fmt.Sprintf("touch %s", fn),
+				fmt.Sprintf("echo my_content_%d > %s", i, fn),
+				fmt.Sprintf("git add %s", fn))
+		}
+		cmds = append(cmds,
+			fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m commit%d --author='a <a@a.com>' --date 2006-01-02T15:04:0%dZ", i, i, i))
+	}
+	return cmds
+}
+
+func makeGitCommit(commitMessage string, seconds int) string {
+	return fmt.Sprintf("GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05=%dZ git commit -m %s --author='a <a@a.com>' --date 2006-01-02T15:04:0%dZ", seconds, commitMessage, seconds)
 }
 
 func getGitCommandsWithFiles(fileName1, fileName2 string) []string {

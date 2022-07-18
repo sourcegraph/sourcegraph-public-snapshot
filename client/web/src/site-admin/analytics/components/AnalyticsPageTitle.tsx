@@ -4,7 +4,7 @@ import { mdiChartLineVariant } from '@mdi/js'
 
 import { Badge, H1, Icon } from '@sourcegraph/wildcard'
 
-export const AnalyticsPageTitle: React.FunctionComponent = ({ children }) => (
+export const AnalyticsPageTitle: React.FunctionComponent<React.PropsWithChildren<{}>> = ({ children }) => (
     <div className="d-flex flex-column justify-content-between align-items-start">
         <Badge variant="merged">Experimental</Badge>
 

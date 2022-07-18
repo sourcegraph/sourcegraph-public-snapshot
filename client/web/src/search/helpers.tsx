@@ -48,7 +48,7 @@ export function submitSearch({
         },
         { source }
     )
-    history.push(path, { ...history.location.state, query })
+    history.push(path, { ...(typeof history.location.state === 'object' ? history.location.state : null), query })
     if (activation) {
         activation.update({ DidSearch: true })
     }

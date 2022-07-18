@@ -19,8 +19,8 @@ import {
     Position,
     PageSelector,
     H3,
-    Tooltip,
     Icon,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'

@@ -28,6 +28,12 @@ func TestWithDefaults(t *testing.T) {
 			defaults: []query.Parameter{},
 		},
 		{
+			name:     "no defaults with patterntype",
+			input:    "repo:myrepo testquery patterntype:standard",
+			want:     "repo:myrepo patterntype:standard testquery",
+			defaults: []query.Parameter{},
+		},
+		{
 			name:  "default archived",
 			input: "repo:myrepo testquery fork:no",
 			want:  "archived:yes repo:myrepo fork:no testquery",
@@ -50,6 +56,28 @@ func TestWithDefaults(t *testing.T) {
 			}, {
 				Field:      query.FieldFork,
 				Value:      string(query.No),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}},
+		},
+		{
+			name:  "default patterntype",
+			input: "repo:myrepo testquery",
+			want:  "patterntype:literal repo:myrepo testquery",
+			defaults: []query.Parameter{{
+				Field:      query.FieldPatternType,
+				Value:      "literal",
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}},
+		},
+		{
+			name:  "default patterntype does not override",
+			input: "patterntype:standard repo:myrepo testquery",
+			want:  "patterntype:standard repo:myrepo testquery",
+			defaults: []query.Parameter{{
+				Field:      query.FieldPatternType,
+				Value:      "literal",
 				Negated:    false,
 				Annotation: query.Annotation{},
 			}},
@@ -216,6 +244,11 @@ func TestDefaults(t *testing.T) {
 				Value:      string(query.No),
 				Negated:    false,
 				Annotation: query.Annotation{},
+			}, {
+				Field:      query.FieldPatternType,
+				Value:      "literal",
+				Negated:    false,
+				Annotation: query.Annotation{},
 			}},
 		},
 		{
@@ -229,6 +262,11 @@ func TestDefaults(t *testing.T) {
 			}, {
 				Field:      query.FieldArchived,
 				Value:      string(query.Yes),
+				Negated:    false,
+				Annotation: query.Annotation{},
+			}, {
+				Field:      query.FieldPatternType,
+				Value:      "literal",
 				Negated:    false,
 				Annotation: query.Annotation{},
 			}},

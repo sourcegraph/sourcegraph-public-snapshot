@@ -51,10 +51,37 @@ const (
 	sgmLog = "sgm.log"
 )
 
-// EnableGCAuto is a temporary flag that allows us to control whether or not
-// `git gc --auto` is invoked during janitorial activities. This flag will
-// likely evolve into some form of site config value in the future.
-var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
+const (
+	// gitGCModeGitAutoGC is when we rely on git running auto gc.
+	gitGCModeGitAutoGC int = 1
+	// gitGCModeJanitorAutoGC is when during janitor jobs we run git gc --auto.
+	gitGCModeJanitorAutoGC = 2
+	// gitGCModeMaintenance is when during janitor jobs we run sg maintenance.
+	gitGCModeMaintenance = 3
+)
+
+// gitGCMode describes which mode we should be running git gc.
+var gitGCMode = func() int {
+	// EnableGCAuto is a temporary flag that allows us to control whether or not
+	// `git gc --auto` is invoked during janitorial activities. This flag will
+	// likely evolve into some form of site config value in the future.
+	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
+
+	// sg maintenance and git gc must not be enabled at the same time. However, both
+	// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
+	// SRC_ENABLE_SG_MAINTENANCE.
+	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
+
+	if enableGCAuto && !enableSGMaintenance {
+		return gitGCModeJanitorAutoGC
+	}
+
+	if enableSGMaintenance && !enableGCAuto {
+		return gitGCModeMaintenance
+	}
+
+	return gitGCModeGitAutoGC
+}()
 
 // The limit of 50 mirrors Git's gc_auto_pack_limit
 var autoPackLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "the maximum number of pack files we tolerate before we trigger a repack"))
@@ -79,11 +106,6 @@ var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, 
 // We mention this ENV variable in the header message of the sgmLog files. Make
 // sure that changes here are reflected in sgmLogHeader, too.
 var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum number of times we retry sg maintenance before triggering a reclone."))
-
-// sg maintenance and git gc must not be enabled at the same time. However, both
-// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
-// SRC_ENABLE_SG_MAINTENANCE.
-var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
 // The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
 var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
@@ -132,13 +154,14 @@ const reposStatsName = "repos-stats.json"
 // 2. Remove corrupt repos.
 // 3. Remove stale lock files.
 // 4. Ensure correct git attributes
-// 5. Scrub remote URLs
-// 6. Perform garbage collection
-// 7. Re-clone repos after a while. (simulate git gc)
-// 8. Remove repos based on disk pressure.
-// 9. Perform sg-maintenance
-// 10. Git prune
-// 11. Only during first run: Set sizes of repos which don't have it in a database.
+// 5. Ensure gc.auto=0 or unset depending on gitGCMode
+// 6. Scrub remote URLs
+// 7. Perform garbage collection
+// 8. Re-clone repos after a while. (simulate git gc)
+// 9. Remove repos based on disk pressure.
+// 10. Perform sg-maintenance
+// 11. Git prune
+// 12. Only during first run: Set sizes of repos which don't have it in a database.
 func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
@@ -241,6 +264,10 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 
 	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
 		return false, setGitAttributes(dir)
+	}
+
+	ensureAutoGC := func(dir GitDir) (done bool, err error) {
+		return false, gitSetAutoGC(dir)
 	}
 
 	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
@@ -391,9 +418,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
 		// disk. We no longer need it so we can scrub it.
 		{"scrub remote URL", scrubRemoteURL},
+		// Enable or disable background garbage collection depending on
+		// gitGCMode. The purpose is to avoid repository corruption which can
+		// happen if several git-gc operations are running at the same time.
+		// We only disable if sg is managing gc.
+		{"auto gc config", ensureAutoGC},
 	}
 
-	if enableGCAuto && !enableSGMaintenance {
+	if gitGCMode == gitGCModeJanitorAutoGC {
 		// Runs a number of housekeeping tasks within the current repository, such as
 		// compressing file revisions (to reduce disk space and increase performance),
 		// removing unreachable objects which may have been created from prior
@@ -402,7 +434,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		cleanups = append(cleanups, cleanupFn{"garbage collect", performGC})
 	}
 
-	if enableSGMaintenance && !enableGCAuto {
+	if gitGCMode == gitGCModeMaintenance {
 		// Run tasks to optimize Git repository data, speeding up other Git commands and
 		// reducing storage requirements for the repository. Note: "garbage collect" and
 		// "sg maintenance" must not be enabled at the same time.
@@ -1229,6 +1261,26 @@ func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
 		count++
 	}
 	return count > limit, nil
+}
+
+// gitSetAutoGC will set the value of gc.auto. If GC is managed by Sourcegraph
+// the value will be 0 (disabled), otherwise if managed by git we will unset
+// it to rely on default (on) or global config.
+//
+// The purpose is to avoid repository corruption which can happen if several
+// git-gc operations are running at the same time.
+func gitSetAutoGC(dir GitDir) error {
+	switch gitGCMode {
+	case gitGCModeGitAutoGC:
+		return gitConfigUnset(dir, "gc.auto")
+
+	case gitGCModeJanitorAutoGC, gitGCModeMaintenance:
+		return gitConfigSet(dir, "gc.auto", "0")
+
+	default:
+		// should not happen
+		panic(fmt.Sprintf("non exhaustive switch for gitGCMode: %d", gitGCMode))
+	}
 }
 
 func gitConfigGet(dir GitDir, key string) (string, error) {

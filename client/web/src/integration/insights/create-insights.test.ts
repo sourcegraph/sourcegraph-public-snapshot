@@ -171,6 +171,7 @@ describe('Code insight create insight page', () => {
                             },
                             dashboardReferenceCount: 0,
                             dashboards: { nodes: [] },
+                            seriesCount: 2,
                             presentation: {
                                 __typename: 'LineChartInsightViewPresentation',
                                 title: 'Test insight title',
@@ -204,6 +205,7 @@ describe('Code insight create insight page', () => {
                                     },
                                     isCalculated: false,
                                     generatedFromCaptureGroups: false,
+                                    groupBy: null,
                                     __typename: 'SearchInsightDataSeriesDefinition',
                                 },
                                 {
@@ -220,6 +222,7 @@ describe('Code insight create insight page', () => {
                                     },
                                     isCalculated: false,
                                     generatedFromCaptureGroups: false,
+                                    groupBy: null,
                                     __typename: 'SearchInsightDataSeriesDefinition',
                                 },
                             ],

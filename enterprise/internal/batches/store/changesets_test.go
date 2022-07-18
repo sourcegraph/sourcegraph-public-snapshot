@@ -11,6 +11,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/keegancsmith/sqlf"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -27,7 +29,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitlab"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
@@ -58,11 +59,11 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	otherRepo := ct.TestRepo(t, es, extsvc.KindGitHub)
 	gitlabRepo := ct.TestRepo(t, es, extsvc.KindGitLab)
+	deletedRepo := ct.TestRepo(t, es, extsvc.KindBitbucketCloud)
 
-	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo); err != nil {
+	if err := rs.Create(ctx, repo, otherRepo, gitlabRepo, deletedRepo); err != nil {
 		t.Fatal(err)
 	}
-	deletedRepo := otherRepo.With(typestest.Opt.RepoDeletedAt(clock.Now()))
 	if err := rs.Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
@@ -692,6 +693,47 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			if len(have) != 0 {
 				t.Fatalf("have %d changesets. want 0", len(have))
 			}
+		})
+
+		t.Run("RepoIDs", func(t *testing.T) {
+			// Insert two changesets temporarily that are attached to other repos.
+			createRepoChangeset := func(repo *types.Repo, baseChangeset *btypes.Changeset) *btypes.Changeset {
+				t.Helper()
+
+				c := baseChangeset.Clone()
+				c.RepoID = repo.ID
+				require.NoError(t, s.CreateChangeset(ctx, c))
+				t.Cleanup(func() { s.DeleteChangeset(ctx, c.ID) })
+
+				return c
+			}
+
+			otherChangeset := createRepoChangeset(otherRepo, changesets[1])
+			gitlabChangeset := createRepoChangeset(gitlabRepo, changesets[1])
+
+			t.Run("single repo", func(t *testing.T) {
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+					RepoIDs: []api.RepoID{repo.ID},
+				})
+				assert.NoError(t, err)
+				assert.ElementsMatch(t, changesets, have)
+			})
+
+			t.Run("multiple repos", func(t *testing.T) {
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+					RepoIDs: []api.RepoID{otherRepo.ID, gitlabRepo.ID},
+				})
+				assert.NoError(t, err)
+				assert.ElementsMatch(t, []*btypes.Changeset{otherChangeset, gitlabChangeset}, have)
+			})
+
+			t.Run("repo without changesets", func(t *testing.T) {
+				have, _, err := s.ListChangesets(ctx, ListChangesetsOpts{
+					RepoIDs: []api.RepoID{deletedRepo.ID},
+				})
+				assert.NoError(t, err)
+				assert.ElementsMatch(t, []*btypes.Changeset{}, have)
+			})
 		})
 
 		statePublished := btypes.ChangesetPublicationStatePublished

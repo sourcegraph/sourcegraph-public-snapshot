@@ -20,6 +20,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
@@ -168,6 +169,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     const themeProps = useThemeProps()
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     const breadcrumbProps = useBreadcrumbs()
 
@@ -206,7 +208,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         <div
             className={classNames(
                 styles.layout,
-                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
+                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME,
+                coreWorkflowImprovementsEnabled && 'core-workflow-improvements-enabled'
             )}
         >
             <KeyboardShortcutsHelp

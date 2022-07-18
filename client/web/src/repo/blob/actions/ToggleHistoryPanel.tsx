@@ -97,14 +97,20 @@ export class ToggleHistoryPanel extends React.PureComponent<
         }
         return (
             <Tooltip content={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
-                <RepoHeaderActionButtonLink
-                    aria-label={visible ? 'Hide' : 'Show'}
-                    className="btn-icon"
-                    file={false}
-                    onSelect={this.onClick}
-                >
-                    <Icon aria-hidden={true} svgPath={mdiHistory} />
-                </RepoHeaderActionButtonLink>
+                {/**
+                 * This <RepoHeaderActionButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+                 * break its underlying <ButtonLink>'s onClick handler and it will no longer prevent the default page reload (with no href).
+                 */}
+                <span>
+                    <RepoHeaderActionButtonLink
+                        aria-label={visible ? 'Hide' : 'Show'}
+                        className="btn-icon"
+                        file={false}
+                        onSelect={this.onClick}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiHistory} />
+                    </RepoHeaderActionButtonLink>
+                </span>
             </Tooltip>
         )
     }

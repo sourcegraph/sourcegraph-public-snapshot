@@ -3,7 +3,7 @@ import * as React from 'react'
 import { mdiMessageTextOutline, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
@@ -23,7 +23,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SavedSearchListPage.module.scss'
 
-interface NodeProps extends RouteComponentProps<{}, {}, { description?: string }>, SearchPatternTypeProps {
+interface NodeProps extends RouteComponentProps, SearchPatternTypeProps {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
     linkRef: React.MutableRefObject<HTMLAnchorElement | null> | null
@@ -126,7 +126,7 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}, {}, { description?: string }>, NamespaceProps {}
+interface Props extends RouteComponentProps, NamespaceProps {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
@@ -188,6 +188,7 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
     savedSearchesOrError,
     ...props
 }) => {
+    const location = useLocation<{ description?: string }>()
     const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
     const callbackReference = useCallbackRef<HTMLAnchorElement>(null, ref => ref?.focus())
 
@@ -210,7 +211,7 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
                 {namespaceSavedSearches.map(search => (
                     <SavedSearchNode
                         key={search.id}
-                        linkRef={props.location.state?.description === search.description ? callbackReference : null}
+                        linkRef={location.state?.description === search.description ? callbackReference : null}
                         {...props}
                         patternType={searchPatternType}
                         savedSearch={search}

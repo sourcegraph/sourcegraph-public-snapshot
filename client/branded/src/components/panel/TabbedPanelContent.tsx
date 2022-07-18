@@ -60,7 +60,7 @@ export interface PanelViewWithComponent extends PanelViewData {
     /**
      * The React element to render in the panel view.
      */
-    reactElement?: React.ReactFragment
+    reactElement?: React.ReactNode
 
     // Should the content of the panel be put inside a wrapper container with padding or not.
     noWrapper?: boolean
@@ -75,7 +75,7 @@ export interface PanelViewWithComponent extends PanelViewData {
 interface TabbedPanelItem {
     id: string
 
-    label: React.ReactFragment
+    label: React.ReactNode
     /**
      * Controls the relative order of panel items. The items are laid out from highest priority (at the beginning)
      * to lowest priority (at the end). The default is 0.
