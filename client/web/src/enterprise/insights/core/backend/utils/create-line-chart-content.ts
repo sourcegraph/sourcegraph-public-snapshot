@@ -6,10 +6,13 @@ import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 import { Series } from '../../../../../charts'
 import { InsightDataSeries, SearchPatternType } from '../../../../../graphql-operations'
 import { PageRoutes } from '../../../../../routes.constants'
-import { BackendInsight, InsightFilters, InsightType, SearchBasedInsightSeries } from '../../types'
+import { DATA_SERIES_COLORS } from '../../../constants'
+import { BackendInsight, InsightFilters, SearchBasedInsightSeries } from '../../types'
 import { BackendInsightDatum, SeriesChartContent } from '../code-insights-backend-types'
-import { DATA_SERIES_COLORS_LIST } from '../gql-backend/methods/get-backend-insight-data/deserializators'
 
+import { getParsedSeriesMetadata } from './parse-series-metadata'
+
+export const DATA_SERIES_COLORS_LIST = Object.values(DATA_SERIES_COLORS)
 type SeriesDefinition = Record<string, SearchBasedInsightSeries>
 
 /**
@@ -20,7 +23,7 @@ export function createLineChartContent(
     insight: BackendInsight,
     seriesData: InsightDataSeries[]
 ): SeriesChartContent<BackendInsightDatum> {
-    const seriesDefinition = getParsedDataSeriesMetadata(insight, seriesData)
+    const seriesDefinition = getParsedSeriesMetadata(insight, seriesData)
     const seriesDefinitionMap: SeriesDefinition = Object.fromEntries<SearchBasedInsightSeries>(
         seriesDefinition.map(definition => [definition.id, definition])
     )
@@ -45,27 +48,6 @@ export function createLineChartContent(
             getXValue: datum => datum.dateTime,
             getLinkURL: datum => datum.link,
         })),
-    }
-}
-
-function getParsedDataSeriesMetadata(
-    insight: BackendInsight,
-    seriesData: InsightDataSeries[]
-): SearchBasedInsightSeries[] {
-    switch (insight.type) {
-        case InsightType.SearchBased:
-            return insight.series
-
-        case InsightType.CaptureGroup: {
-            const { query } = insight
-
-            return seriesData.map((generatedSeries, index) => ({
-                id: generatedSeries.seriesId,
-                name: generatedSeries.label,
-                query,
-                stroke: DATA_SERIES_COLORS_LIST[index % DATA_SERIES_COLORS_LIST.length],
-            }))
-        }
     }
 }
 
