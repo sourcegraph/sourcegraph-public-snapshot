@@ -93,7 +93,7 @@ func NewClient(db database.DB) *ClientImplementor {
 			return map[string]string{}
 		},
 		db:          db,
-		HTTPClient:  defaultDoer,
+		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
@@ -101,6 +101,44 @@ func NewClient(db database.DB) *ClientImplementor {
 		UserAgent:  filepath.Base(os.Args[0]),
 		operations: getOperations(),
 	}
+}
+
+type GitoliteLister struct {
+	addrs func() []string
+	cli   httpcli.Doer
+}
+
+func NewGitoliteLister(cli httpcli.Doer) *GitoliteLister {
+	return &GitoliteLister{
+		cli: cli,
+		addrs: func() []string {
+			return conf.Get().ServiceConnections().GitServers
+		},
+	}
+}
+
+func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
+	addrs := c.addrs()
+	if len(addrs) == 0 {
+		panic("unexpected state: no gitserver addresses")
+	}
+	// The gitserver calls the shared Gitolite server in response to this request, so
+	// we need to only call a single gitserver (or else we'd get duplicate results).
+	addr := addrForKey(gitoliteHost, addrs)
+
+	req, err := http.NewRequest("GET", "http://"+addr+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.cli.Do(req.WithContext(ctx))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+
+	err = json.NewDecoder(resp.Body).Decode(&list)
+	return list, err
 }
 
 func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
@@ -113,7 +151,7 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 			// nothing needs to be pinned for the tests
 			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
 		},
-		HTTPClient:  cli,
+		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
@@ -127,7 +165,7 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 // ClientImplementor is a gitserver client.
 type ClientImplementor struct {
 	// HTTP client to use
-	HTTPClient httpcli.Doer
+	httpClient httpcli.Doer
 
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
@@ -213,9 +251,6 @@ type Client interface {
 
 	// ListCloned lists all cloned repositories
 	ListCloned(context.Context) ([]string, error)
-
-	// ListGitolite lists Gitolite repositories.
-	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
 
 	// ListRefs returns a list of all refs in the repository.
 	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
@@ -333,6 +368,7 @@ func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 // addrForKey returns the gitserver address to use for the given string key,
 // which is hashed for sharding purposes.
 func (c *ClientImplementor) addrForKey(key string) string {
+	// TODO: Move zero check into addrForKey and remove this method
 	addrs := c.Addrs()
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
@@ -895,25 +931,6 @@ func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 }
 
-func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
-	// The gitserver calls the shared Gitolite server in response to this request, so
-	// we need to only call a single gitserver (or else we'd get duplicate results).
-	addr := c.addrForKey(gitoliteHost)
-	req, err := http.NewRequest("GET", "http://"+addr+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&list)
-	return list, err
-}
-
 func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 	var (
 		wg    sync.WaitGroup
@@ -956,7 +973,7 @@ func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr strin
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
+	resp, err := c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -1268,7 +1285,7 @@ func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -1383,7 +1400,7 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	return c.HTTPClient.Do(req)
+	return c.httpClient.Do(req)
 }
 
 func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
