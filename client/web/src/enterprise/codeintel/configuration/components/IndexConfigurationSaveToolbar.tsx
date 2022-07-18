@@ -25,7 +25,7 @@ export const IndexConfigurationSaveToolbar: React.FunctionComponent<
             <LoadingSpinner className="mt-2 ml-2" />
         ) : (
             inferEnabled && (
-                <Button type="button" title="Infer index configuration from HEAD" variant="link" onClick={onInfer}>
+                <Button type="button" aria-live="polite" variant="link" onClick={onInfer}>
                     Infer index configuration from HEAD
                 </Button>
             )

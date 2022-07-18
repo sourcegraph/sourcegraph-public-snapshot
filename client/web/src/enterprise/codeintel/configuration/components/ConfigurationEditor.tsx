@@ -49,7 +49,21 @@ export const ConfigurationEditor: FunctionComponent<React.PropsWithChildren<Conf
 
     const [dirty, setDirty] = useState<boolean>()
     const [editor, setEditor] = useState<editor.ICodeEditor>()
-    const infer = useCallback(() => editor?.setValue(inferredConfiguration), [editor, inferredConfiguration])
+    const infer = useCallback(() => {
+        const model = editor?.getModel()
+
+        if (!editor || !model) {
+            return
+        }
+
+        screenReaderAnnounce('Inferred index configuration from HEAD')
+        editor.setValue(inferredConfiguration)
+        editor.focus()
+        editor.setPosition({
+            lineNumber: model.getLineCount(),
+            column: model.getLineContent(model.getLineCount()).length + 1,
+        })
+    }, [editor, inferredConfiguration])
 
     const customToolbar = useMemo<{
         saveToolbar: FunctionComponent<SaveToolbarProps & IndexConfigurationSaveToolbarProps>
