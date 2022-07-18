@@ -3,10 +3,13 @@ package cliutil
 import (
 	"context"
 	"fmt"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 	"github.com/sourcegraph/sourcegraph/internal/version/upgradestore"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -36,6 +39,12 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 	skipUpgradeValidationFlag := &cli.BoolFlag{
 		Name:  "skip-upgrade-validation",
 		Usage: "Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.",
+		// NOTE: version 0.0.0+dev (the development version) effectively skips this check as well
+		Value: development,
+	}
+	skipOutOfBandMigrationValidationFlag := &cli.BoolFlag{
+		Name:  "skip-oobmigration-validation",
+		Usage: "Do not attempt to validate the progress of out-of-band migrationsi.",
 		// NOTE: version 0.0.0+dev (the development version) effectively skips this check as well
 		Value: development,
 	}
@@ -80,13 +89,25 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			return err
 		}
 
+		db, err := extractDatabase(ctx, r)
+		if err != nil {
+			return err
+		}
 		if !skipUpgradeValidationFlag.Get(cmd) {
-			db, err := extractDatabase(ctx, r)
-			if err != nil {
+			if err := upgradestore.New(db).ValidateUpgrade(ctx, "frontend", version.Version()); err != nil {
 				return err
 			}
-
-			if err := upgradestore.New(db).ValidateUpgrade(ctx, "frontend", version.Version()); err != nil {
+		}
+		if !skipOutOfBandMigrationValidationFlag.Get(cmd) {
+			if err := oobmigration.ValidateOutOfBandMigrationRunner(
+				ctx,
+				db,
+				oobmigration.NewRunnerWithDB(
+					db,
+					time.Second,
+					&observation.TestContext,
+				),
+			); err != nil {
 				return err
 			}
 		}
@@ -112,6 +133,7 @@ func Up(commandName string, factory RunnerFactory, outFactory OutputFactory, dev
 			noopPrivilegedFlag,
 			ignoreSingleDirtyLogFlag,
 			skipUpgradeValidationFlag,
+			skipOutOfBandMigrationValidationFlag,
 		},
 	}
 }
