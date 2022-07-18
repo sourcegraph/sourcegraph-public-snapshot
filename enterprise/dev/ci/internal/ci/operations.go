@@ -227,6 +227,8 @@ func buildWebAppWithSentrySourcemaps(version string) operations.Operation {
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", ""),
 			bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
+			bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
+			bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
 			bk.Env("RELEASE_CANDIDATE_VERSION", version),
 		)
 	}
