@@ -16,20 +16,17 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-// gitoliteLister allows us to list Gitlolite repos. In practice, we ask
-// gitserver to talk to gitolite because it holds the ssh keys required for
-// authentication.
-type gitoliteLister interface {
-	ListRepos(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error)
-}
-
 // A GitoliteSource yields repositories from a single Gitolite connection configured
 // in Sourcegraph via the external services configuration.
 type GitoliteSource struct {
 	svc     *types.ExternalService
 	conn    *schema.GitoliteConnection
-	lister  gitoliteLister
 	exclude excludeFunc
+
+	// gitoliteLister allows us to list Gitlolite repos. In practice, we ask
+	// gitserver to talk to gitolite because it holds the ssh keys required for
+	// authentication.
+	lister *gitserver.GitoliteLister
 }
 
 // NewGitoliteSource returns a new GitoliteSource from the given external service.
