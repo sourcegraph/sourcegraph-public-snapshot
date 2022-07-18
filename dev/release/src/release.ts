@@ -51,7 +51,7 @@ export type StepID =
     | 'release:stage'
     | 'release:add-to-batch-change'
     | 'release:finalize'
-    | 'release:close'
+    | 'release:announce'
     // util
     | 'util:clear-cache'
     // testing
@@ -690,8 +690,8 @@ Batch change: ${batchChangeURL}`,
         },
     },
     {
-        id: 'release:close',
-        description: 'Mark a release as closed',
+        id: 'release:announce',
+        description: 'Announce a release as live',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release } = await releaseVersions(config)

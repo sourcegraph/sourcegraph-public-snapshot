@@ -246,25 +246,6 @@ export async function ensureTrackingIssues({
             parentIssue = { ...issue }
         }
         created.push({ ...issue })
-
-        // close previous iterations of this issue
-        const previous = await queryIssues(octokit, template.titleSuffix, template.labels)
-        for (const previousIssue of previous) {
-            if (previousIssue.number === issue.number) {
-                // don't close self
-                continue
-            }
-
-            if (dryRun) {
-                console.log(`dryRun enabled, skipping closure of #${previousIssue.number} '${previousIssue.title}'`)
-                continue
-            }
-            const comment = await commentOnIssue(octokit, previousIssue, `Superseded by #${issue.number}`)
-            console.log(
-                `Closing #${previousIssue.number} '${previousIssue.title}' - commented with an update: ${comment}`
-            )
-            await closeIssue(octokit, previousIssue)
-        }
     }
     return created
 }
