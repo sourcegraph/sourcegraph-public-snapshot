@@ -21,7 +21,7 @@ type Options struct {
 	PrivilegedMode PrivilegedMode
 
 	// PrivilegedHash is a user-supplied string indicating a deterministic hash of the set of
-	// privileged migraitons that should be no-op'd. This value is only checked when running
+	// privileged migrations that should be no-op'd. This value is only checked when running
 	// up-direction migrations with a privileged mode of `NoopPrivilegedMigrations`.
 	PrivilegedHash string
 
