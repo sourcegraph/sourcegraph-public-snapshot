@@ -110,7 +110,7 @@ export interface LayoutProps
 
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
-    onCreateNotebook: (blocks: BlockInput[]) => void
+    onCreateNotebookFromNotepad: (blocks: BlockInput[]) => void
 
     globbing: boolean
     isSourcegraphDotCom: boolean
@@ -297,7 +297,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             />
             <GlobalDebug {...props} />
             {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
-                <NotepadContainer onCreateNotebook={props.onCreateNotebook} />
+                <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
             )}
         </div>
     )

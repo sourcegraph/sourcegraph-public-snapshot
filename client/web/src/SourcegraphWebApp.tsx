@@ -417,7 +417,9 @@ export class SourcegraphWebApp extends React.Component<
                                                                         }
                                                                         globbing={this.state.globbing}
                                                                         streamSearch={aggregateStreamingSearch}
-                                                                        onCreateNotebook={this.onCreateNotebook}
+                                                                        onCreateNotebookFromNotepad={
+                                                                            this.onCreateNotebook
+                                                                        }
                                                                     />
                                                                 </CodeHostScopeProvider>
                                                             )}
