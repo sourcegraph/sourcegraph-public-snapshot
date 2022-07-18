@@ -32,6 +32,9 @@ func addFeedbackFlags(commands []*cli.Command) {
 		// if the command is an ancestor command, there's no need to add the feedback
 		// flag to the command, we bail out early here.
 		if command.Action == nil {
+			if len(command.Subcommands) != 0 {
+				addFeedbackFlags(command.Subcommands)
+			}
 			continue
 		}
 
