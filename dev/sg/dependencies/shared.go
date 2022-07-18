@@ -219,21 +219,25 @@ func categoryAdditionalSGConfiguration() category {
 					if err != nil {
 						return err
 					}
+					// sgHome needs to have appropriate permissions
+					if err := os.Chmod(sgHome, os.ModePerm); err != nil {
+						return errors.Wrap(err, "failed to chmod sg home")
+					}
 
 					shell := usershell.ShellType(ctx)
 					if shell == "" {
 						return errors.New("failed to detect shell type")
 					}
+
+					// Generate the completion script itself
 					autocompleteScript := usershell.AutocompleteScripts[shell]
 					autocompletePath := usershell.AutocompleteScriptPath(sgHome, shell)
-
-					cio.Verbosef("Writing autocomplete script to %s", autocompletePath)
-					if err := usershell.Run(ctx,
-						"echo", run.Arg(autocompleteScript), ">", autocompletePath,
-					).Wait(); err != nil {
-						return err
+					_ = os.Remove(autocompletePath) // forcibly remove old version first
+					if err := os.WriteFile(autocompletePath, []byte(autocompleteScript), os.ModePerm); err != nil {
+						return errors.Wrap(err, "generatng autocomplete script")
 					}
 
+					// Add the completion script to shell
 					shellConfig := usershell.ShellConfigPath(ctx)
 					if shellConfig == "" {
 						return errors.New("Failed to detect shell config path")
