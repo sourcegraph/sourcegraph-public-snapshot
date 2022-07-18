@@ -58,14 +58,14 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // deleted when the insight is scrolled out of view
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
-    const [enablePolling] = useFeatureFlag('insight-polling-enabled', false)
+    const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
-    const { isVisible, wasEverVisible } = useVisibility(insightCardReference)
+    const { isVisible } = useVisibility(insightCardReference)
 
     // Use deep copy check in case if a setting subject has re-created copy of
     // the insight config with same structure and values. To avoid insight data
@@ -98,8 +98,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
-            // TODO: Fix problem with offscreen pooling see https://github.com/sourcegraph/sourcegraph/issues/38425
-            skip: !wasEverVisible,
+            skip: !isVisible,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
                 const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
