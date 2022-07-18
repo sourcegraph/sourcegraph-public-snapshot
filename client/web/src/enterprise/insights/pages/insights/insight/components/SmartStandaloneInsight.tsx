@@ -2,7 +2,7 @@ import { FunctionComponent } from 'react'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
-import { Insight, isBackendInsight, isComputeInsight } from '../../../../core'
+import { Insight, isBackendInsight } from '../../../../core'
 
 import { StandaloneBackendInsight } from './standalone-backend-insight/StandaloneBackendInsight'
 import { StandaloneRuntimeInsight } from './standalone-runtime-insight/StandaloneRuntimeInsight'
@@ -17,10 +17,6 @@ export const SmartStandaloneInsight: FunctionComponent<SmartStandaloneInsightPro
 
     if (isBackendInsight(insight)) {
         return <StandaloneBackendInsight insight={insight} telemetryService={telemetryService} className={className} />
-    }
-
-    if (isComputeInsight(insight)) {
-        return null
     }
 
     // Search based extension and lang stats insight are handled by built-in fetchers

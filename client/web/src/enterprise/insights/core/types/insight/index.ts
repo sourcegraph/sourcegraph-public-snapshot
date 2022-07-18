@@ -25,7 +25,7 @@ export type Insight = SearchBasedInsight | LangStatsInsight | CaptureGroupInsigh
 /**
  * Backend insights - insights that have all data series points already in gql API.
  */
-export type BackendInsight = SearchBasedInsight | CaptureGroupInsight
+export type BackendInsight = SearchBasedInsight | CaptureGroupInsight | ComputeInsight
 
 /**
  * Extension insights - insights that are processed in FE runtime via search API.
