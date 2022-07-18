@@ -6,6 +6,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { AuthenticatedUser } from '../../../../../auth'
+import { useExperimentalFeatures } from '../../../../../stores'
 
 import { InsightCreationPageType } from './InsightCreationPage'
 
@@ -28,6 +29,7 @@ export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<Cre
     const { telemetryService } = props
 
     const match = useRouteMatch()
+    const { codeInsightsCompute } = useExperimentalFeatures()
 
     return (
         <Switch>
@@ -68,15 +70,17 @@ export const CreationRoutes: React.FunctionComponent<React.PropsWithChildren<Cre
                 )}
             />
 
-            <Route
-                path={`${match.url}/group-results`}
-                render={() => (
-                    <InsightCreationLazyPage
-                        mode={InsightCreationPageType.Compute}
-                        telemetryService={telemetryService}
-                    />
-                )}
-            />
+            {codeInsightsCompute && (
+                <Route
+                    path={`${match.url}/group-results`}
+                    render={() => (
+                        <InsightCreationLazyPage
+                            mode={InsightCreationPageType.Compute}
+                            telemetryService={telemetryService}
+                        />
+                    )}
+                />
+            )}
         </Switch>
     )
 }

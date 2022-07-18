@@ -154,9 +154,7 @@ export const JetBrainsSearchBox: React.FunctionComponent<React.PropsWithChildren
                         submitSearch={props.submitSearchOnToggle}
                         navbarSearchQuery={queryState.query}
                         className={styles.searchBoxToggles}
-                        showCopyQueryButton={props.showCopyQueryButton}
                         structuralSearchDisabled={props.structuralSearchDisabled}
-                        selectedSearchContextSpec={props.selectedSearchContextSpec}
                         clearSearch={clearSearch}
                     />
                 </div>

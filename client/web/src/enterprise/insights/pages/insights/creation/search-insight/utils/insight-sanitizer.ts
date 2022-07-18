@@ -1,5 +1,7 @@
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
 import { getSanitizedRepositories, getSanitizedSeries } from '../../../../../components'
 import { MinimalSearchBasedInsightData, InsightExecutionType, InsightType } from '../../../../../core'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { CreateInsightFormFields } from '../types'
 
 /**
@@ -20,7 +22,15 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
                 excludeRepoRegexp: '',
                 includeRepoRegexp: '',
                 context: '',
+                seriesDisplayOptions: {
+                    limit: `${MAX_NUMBER_OF_SERIES}`,
+                    sortOptions: {
+                        direction: SeriesSortDirection.DESC,
+                        mode: SeriesSortMode.RESULT_COUNT,
+                    },
+                },
             },
+            seriesCount: 0,
         }
     }
 
@@ -36,6 +46,14 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             excludeRepoRegexp: '',
             includeRepoRegexp: '',
             context: '',
+            seriesDisplayOptions: {
+                limit: `${MAX_NUMBER_OF_SERIES}`,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
+            },
         },
+        seriesCount: 0,
     }
 }

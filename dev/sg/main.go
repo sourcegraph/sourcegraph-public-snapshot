@@ -152,11 +152,12 @@ var sg = &cli.App{
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
 
 		// Initialize context
-		cmd.Context = background.Context(cmd.Context)
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
 		}
+		cmd.Context = background.Context(cmd.Context)
+		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// Set up analytics and hooks for each command.
 		if !disableAnalytics {

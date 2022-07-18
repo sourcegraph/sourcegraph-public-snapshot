@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/usagestats"
+	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -208,6 +209,43 @@ func (r *Resolver) BatchChange(ctx context.Context, args *graphqlbackend.BatchCh
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
+func (r *Resolver) ResolveWorkspacesForBatchSpec(ctx context.Context, args *graphqlbackend.ResolveWorkspacesForBatchSpecArgs) ([]graphqlbackend.ResolvedBatchSpecWorkspaceResolver, error) {
+	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
+		return nil, err
+	}
+
+	// Parse the batch spec.
+	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(args.BatchSpec), batcheslib.ParseBatchSpecOptions{
+		AllowTransformChanges:  true,
+		AllowConditionalExec:   true,
+		AllowArrayEnvironments: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	// Verify the user is authenticated.
+	act := actor.FromContext(ctx)
+	if !act.IsAuthenticated() {
+		return nil, backend.ErrNotAuthenticated
+	}
+
+	// Run the resolution.
+	resolver := service.NewWorkspaceResolver(r.store)
+	workspaces, err := resolver.ResolveWorkspacesForBatchSpec(ctx, evaluatableSpec)
+	if err != nil {
+		return nil, err
+	}
+
+	// Transform the result into resolvers.
+	resolvers := make([]graphqlbackend.ResolvedBatchSpecWorkspaceResolver, 0, len(workspaces))
+	for _, w := range workspaces {
+		resolvers = append(resolvers, &resolvedBatchSpecWorkspaceResolver{store: r.store, workspace: w})
+	}
+
+	return resolvers, nil
+}
+
 func (r *Resolver) batchSpecByID(ctx context.Context, id graphql.ID) (graphqlbackend.BatchSpecResolver, error) {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
@@ -289,7 +327,7 @@ func (r *Resolver) batchChangesCredentialByID(ctx context.Context, id graphql.ID
 func (r *Resolver) batchChangesUserCredentialByID(ctx context.Context, id int64) (batchChangesCredentialResolver, error) {
 	cred, err := r.store.UserCredentials().GetByID(ctx, id)
 	if err != nil {
-		if errcode.IsNotFound(err) {
+		if err == store.ErrNoResults {
 			return nil, nil
 		}
 		return nil, err

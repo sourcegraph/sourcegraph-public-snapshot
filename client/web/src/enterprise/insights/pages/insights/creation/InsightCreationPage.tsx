@@ -5,6 +5,7 @@ import { useHistory } from 'react-router'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { LoadingSpinner, useObservable } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../../../../stores'
 import { CodeInsightsBackendContext, CreationInsightInput } from '../../../core'
 import { useQueryParameters } from '../../../hooks'
 
@@ -36,6 +37,8 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
 
     const { dashboardId } = useQueryParameters(['dashboardId'])
     const dashboard = useObservable(useMemo(() => getDashboardById({ dashboardId }), [getDashboardById, dashboardId]))
+
+    const { codeInsightsCompute } = useExperimentalFeatures()
 
     if (dashboard === undefined) {
         return <LoadingSpinner inline={false} />
@@ -84,7 +87,7 @@ export const InsightCreationPage: FC<InsightCreationPageProps> = props => {
         )
     }
 
-    if (mode === InsightCreationPageType.Compute) {
+    if (codeInsightsCompute && mode === InsightCreationPageType.Compute) {
         return (
             <ComputeInsightCreationPage
                 telemetryService={telemetryService}

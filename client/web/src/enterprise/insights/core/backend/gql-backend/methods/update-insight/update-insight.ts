@@ -1,7 +1,7 @@
 import { ApolloClient } from '@apollo/client'
 import { ApolloCache } from '@apollo/client/cache'
 import { MutationUpdaterFunction } from '@apollo/client/core/types'
-import { from, Observable, throwError } from 'rxjs'
+import { from, Observable } from 'rxjs'
 
 import {
     UpdateLangStatsInsightResult,
@@ -16,6 +16,7 @@ import { UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL } from '../../gql/UpdateLineChartS
 
 import {
     getCaptureGroupInsightUpdateInput,
+    getComputeInsightUpdateInput,
     getLangStatsInsightUpdateInput,
     getSearchInsightUpdateInput,
 } from './serializators'
@@ -52,7 +53,13 @@ export const updateInsight = (
         }
 
         case InsightType.Compute: {
-            return throwError(new Error('update mutation for the compute-powered insight is not implemented yet'))
+            return from(
+                client.mutate<UpdateLineChartSearchInsightResult, UpdateLineChartSearchInsightVariables>({
+                    mutation: UPDATE_LINE_CHART_SEARCH_INSIGHT_GQL,
+                    variables: { input: getComputeInsightUpdateInput(nextInsightData), id: insightId },
+                    update,
+                })
+            )
         }
 
         case InsightType.LangStats: {
