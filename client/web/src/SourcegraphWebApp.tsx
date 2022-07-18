@@ -86,7 +86,6 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps } from './routes'
 import { PageRoutes } from './routes.constants'
 import { parseSearchURL } from './search'
-import { NotepadContainer } from './search/Notepad'
 import { SearchResultsCacheProvider } from './search/results/SearchResultsCacheProvider'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
@@ -418,11 +417,13 @@ export class SourcegraphWebApp extends React.Component<
                                                                         }
                                                                         globbing={this.state.globbing}
                                                                         streamSearch={aggregateStreamingSearch}
+                                                                        onCreateNotebookFromNotepad={
+                                                                            this.onCreateNotebook
+                                                                        }
                                                                     />
                                                                 </CodeHostScopeProvider>
                                                             )}
                                                         />
-                                                        <NotepadContainer onCreateNotebook={this.onCreateNotebook} />
                                                     </CompatRouter>
                                                 </Router>
                                             </ScrollManager>
