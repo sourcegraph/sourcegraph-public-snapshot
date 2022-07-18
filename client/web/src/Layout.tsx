@@ -131,7 +131,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
     const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
-    console.log(props.location.pathname, PageRoutes.Notebooks, isSearchNotebookListPage)
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
