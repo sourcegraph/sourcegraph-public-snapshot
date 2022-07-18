@@ -786,7 +786,7 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			return
 
 		}
-		q.Logger.Info("repositoryQuery matched", log.String("query", fmt.Sprintf("%v", q)), log.Int("total", res.TotalCount), log.Int("page", len(res.Repos)))
+		q.Logger.Info("repositoryQuery matched", log.String("query", q.String()), log.Int("total", res.TotalCount), log.Int("page", len(res.Repos)))
 		for i := range res.Repos {
 			results <- &githubResult{repo: &res.Repos[i]}
 		}
@@ -949,7 +949,7 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 			return err
 		}
 
-		s.logger.Debug("github sync: GetReposByNameWithOwner", log.String("repos", fmt.Sprintf("%v", batch)))
+		s.logger.Debug("github sync: GetReposByNameWithOwner", log.Strings("repos", batch))
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 		}
