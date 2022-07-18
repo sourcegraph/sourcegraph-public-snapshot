@@ -41,7 +41,7 @@ docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/grafana}" . \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
   --build-arg VERSION \
-  --cach-from sourcegraph/grafana:insiders
+  --cache-from sourcegraph/grafana:insiders
 
 # cd out of $BUILDDIR for cleanup
 popd
