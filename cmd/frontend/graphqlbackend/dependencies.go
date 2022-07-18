@@ -26,4 +26,7 @@ type LockfileIndexConnectionResolver interface {
 type LockfileIndexResolver interface {
 	ID() graphql.ID
 	Lockfile() string
+	Repository() *RepositoryResolver
+	Commit() *GitCommitResolver
+	Fidelity() string
 }
