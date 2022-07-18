@@ -1,11 +1,15 @@
 package dependencies
 
 import (
+	"bytes"
 	"context"
+	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/grafana/regexp"
 	"github.com/sourcegraph/run"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/check"
@@ -273,6 +277,8 @@ func categoryAdditionalSGConfiguration() category {
 	}
 }
 
+var gcloudSourceRegexp = regexp.MustCompile(`(Source \[)(?P<path>[^\]]*)(\] in your profile)`)
+
 func dependencyGcloud() *dependency {
 	return &dependency{
 		Name: "gcloud",
@@ -288,11 +294,49 @@ func dependencyGcloud() *dependency {
 			}
 
 			if err := check.InPath("gcloud")(ctx); err != nil {
+				var pathsToSource []string
+
 				// This is the official interactive installer: https://cloud.google.com/sdk/docs/downloads-interactive
-				if err := run.Cmd(ctx, "curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
+				if err := usershell.Command(ctx,
+					"curl https://sdk.cloud.google.com | bash -s -- --disable-prompts").
 					Input(cio.Input).
-					Run().StreamLines(cio.Write); err != nil {
+					Run().
+					Map(func(_ context.Context, line []byte, dst io.Writer) (int, error) {
+						// Listen for gcloud telling us to source paths
+						if matches := gcloudSourceRegexp.FindSubmatch(line); len(matches) > 0 {
+							shouldSource := matches[gcloudSourceRegexp.SubexpIndex("path")]
+							if len(shouldSource) > 0 {
+								pathsToSource = append(pathsToSource, string(shouldSource))
+							}
+						}
+						// Pass through to underlying writer
+						return dst.Write(line)
+					}).
+					StreamLines(cio.Write); err != nil {
 					return err
+				}
+
+				// If gcloud tells us to source some stuff, try to do it
+				if len(pathsToSource) > 0 {
+					shellConfig := usershell.ShellConfigPath(ctx)
+					if shellConfig == "" {
+						return errors.New("Failed to detect shell config path")
+					}
+					conf, err := os.ReadFile(shellConfig)
+					if err != nil {
+						return err
+					}
+					for _, p := range pathsToSource {
+						if !bytes.Contains(conf, []byte(p)) {
+							source := fmt.Sprintf("source %s", p)
+							cio.Verbosef("Adding %q to %s", source, shellConfig)
+							if err := usershell.Run(ctx,
+								"echo", run.Arg(source), ">>", shellConfig,
+							).Wait(); err != nil {
+								return errors.Wrapf(err, "adding %q", source)
+							}
+						}
+					}
 				}
 			}
 
@@ -302,35 +346,5 @@ func dependencyGcloud() *dependency {
 
 			return run.Cmd(ctx, "gcloud auth configure-docker").Run().Wait()
 		},
-	}
-}
-
-func opLoginFix() check.FixAction[CheckArgs] {
-	return func(ctx context.Context, cio check.IO, args CheckArgs) error {
-		if cio.Input == nil {
-			return errors.New("interactive input required")
-		}
-
-		key, err := cio.Output.PromptPasswordf(cio.Input, "Enter secret key:")
-		if err != nil {
-			return err
-		}
-
-		email, err := cio.Output.PromptPasswordf(cio.Input, "Enter account email:")
-		if err != nil {
-			return err
-		}
-
-		password, err := cio.Output.PromptPasswordf(cio.Input, "Enter account password:")
-		if err != nil {
-			return err
-		}
-
-		return usershell.Command(ctx,
-			"op account add --signin --address team-sourcegraph.1password.com --email", email).
-			Env(map[string]string{"OP_SECRET_KEY": key}).
-			Input(strings.NewReader(password)).
-			Run().
-			StreamLines(cio.Verbose)
 	}
 }
