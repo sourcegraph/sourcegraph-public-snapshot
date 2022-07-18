@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/encryption"
@@ -227,12 +228,13 @@ func addChangeset(t *testing.T, ctx context.Context, s *store.Store, c *btypes.C
 
 func pruneUserCredentials(t *testing.T, db database.DB, key encryption.Key) {
 	t.Helper()
-	creds, _, err := db.UserCredentials(key).List(context.Background(), database.UserCredentialsListOpts{})
+	ctx := actor.WithInternalActor(context.Background())
+	creds, _, err := db.UserCredentials(key).List(ctx, database.UserCredentialsListOpts{})
 	if err != nil {
 		t.Fatal(err)
 	}
 	for _, c := range creds {
-		if err := db.UserCredentials(key).Delete(context.Background(), c.ID); err != nil {
+		if err := db.UserCredentials(key).Delete(ctx, c.ID); err != nil {
 			t.Fatal(err)
 		}
 	}

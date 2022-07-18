@@ -12,12 +12,14 @@ import { CodeInsightsPage } from '../../../components'
 import {
     CodeInsightsBackendContext,
     isCaptureGroupInsight,
+    isComputeInsight,
     isLangStatsInsight,
     isSearchBasedInsight,
 } from '../../../core'
 import { useUiFeatures } from '../../../hooks'
 
 import { EditCaptureGroupInsight } from './components/EditCaptureGroupInsight'
+import { EditComputeInsight } from './components/EditComputeInsight'
 import { EditLangStatsInsight } from './components/EditLangStatsInsight'
 import { EditSearchBasedInsight } from './components/EditSearchInsight'
 import { useEditPageHandlers } from './hooks/use-edit-page-handlers'
@@ -107,6 +109,16 @@ export const EditInsightPage: React.FunctionComponent<React.PropsWithChildren<Ed
 
             {isLangStatsInsight(insight) && (
                 <EditLangStatsInsight
+                    licensed={licensed}
+                    isEditAvailable={editPermission?.available}
+                    insight={insight}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancel}
+                />
+            )}
+
+            {isComputeInsight(insight) && (
+                <EditComputeInsight
                     licensed={licensed}
                     isEditAvailable={editPermission?.available}
                     insight={insight}

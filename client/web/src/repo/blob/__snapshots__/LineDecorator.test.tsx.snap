@@ -12,7 +12,6 @@ exports[`LineDecorator renders multiple attachments 1`] = `
     <span
       class="lineDecorationAttachment"
       data-line-decoration-attachment="true"
-      data-state="closed"
       rel="noreferrer noopener"
     >
       <span
@@ -24,7 +23,6 @@ exports[`LineDecorator renders multiple attachments 1`] = `
     <span
       class="lineDecorationAttachment"
       data-line-decoration-attachment="true"
-      data-state="closed"
       rel="noreferrer noopener"
     >
       <span
@@ -49,7 +47,6 @@ exports[`LineDecorator renders one attachment 1`] = `
     <span
       class="lineDecorationAttachment"
       data-line-decoration-attachment="true"
-      data-state="closed"
       rel="noreferrer noopener"
     >
       <span

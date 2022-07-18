@@ -455,9 +455,9 @@ func createAndFillImageRepository(ref *ImageReference, pinTag string) (repo *ima
 // ParsedMainBranchImageTag is a structured representation of a parsed tag created by
 // images.ParsedMainBranchImageTag.
 type ParsedMainBranchImageTag struct {
-	buildNum  int
-	date      string
-	shortSHA1 string
+	Build       int
+	Date        string
+	ShortCommit string
 }
 
 // ParseMainBranchImageTag creates MainTag structs for tags created by
@@ -470,13 +470,13 @@ func ParseMainBranchImageTag(t string) (*ParsedMainBranchImageTag, error) {
 	if len(n) != 3 {
 		return nil, errors.Newf("unable to convert tag: %s", t)
 	}
-	s.buildNum, err = strconv.Atoi(n[0])
+	s.Build, err = strconv.Atoi(n[0])
 	if err != nil {
 		return nil, errors.Newf("unable to convert tag: %v", err)
 	}
 
-	s.date = n[1]
-	s.shortSHA1 = n[2]
+	s.Date = n[1]
+	s.ShortCommit = n[2]
 	return &s, nil
 }
 
@@ -492,8 +492,8 @@ func findLatestMainTag(tags []string) (string, error) {
 			errs = errors.Append(errs, err)
 			continue
 		}
-		if stag.buildNum > maxBuildID {
-			maxBuildID = stag.buildNum
+		if stag.Build > maxBuildID {
+			maxBuildID = stag.Build
 			targetTag = tag
 		}
 	}
