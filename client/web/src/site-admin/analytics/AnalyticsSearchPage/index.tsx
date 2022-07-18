@@ -15,7 +15,7 @@ import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
-import { StandardDatum, buildStandardDatum } from '../utils'
+import { StandardDatum } from '../utils'
 
 import { SEARCH_STATISTICS } from './queries'
 
@@ -42,11 +42,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 id: 'searches',
                 name: eventAggregation === 'count' ? 'Searches' : 'Users searched',
                 color: 'var(--cyan)',
-                data: buildStandardDatum(
-                    searches.nodes.map(node => ({
+                data: searches.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -56,11 +56,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 id: 'resultClicks',
                 name: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
                 color: 'var(--purple)',
-                data: buildStandardDatum(
-                    resultClicks.nodes.map(node => ({
+                data: resultClicks.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -70,11 +70,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 id: 'fileViews',
                 name: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
                 color: 'var(--orange)',
-                data: buildStandardDatum(
-                    fileViews.nodes.map(node => ({
+                data: fileViews.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -116,6 +116,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
 
         const totalCount = searches.summary.totalCount + fileViews.summary.totalCount
         return {
+            page: 'Search',
             label: 'Searches &<br/>file views',
             color: 'var(--blue)',
             description:
@@ -124,7 +125,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
             items: [
                 {
                     label: 'Complex searches',
-                    minPerItem: 5,
+                    minPerItem: 120,
                     description:
                         'Without Sourcegraph, these searches would require complex scripting. They often answer specific and valuable questions such as finding occurrences of log4j at a specific version globally.',
                     percentage: 3,
@@ -140,7 +141,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 },
                 {
                     label: 'Core workflow',
-                    minPerItem: 5,
+                    minPerItem: 0.5,
                     description:
                         'Common code search use cases are made more efficient through Sourcegraph’s advanced query language and features like syntax aware search patterns and the ability to search code, diffs, and commit messages at any revision.',
                     percentage: 75,
@@ -167,7 +168,10 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     <HorizontalSelect<AnalyticsDateRange>
                         value={dateRange}
                         label="Date&nbsp;range"
-                        onChange={setDateRange}
+                        onChange={value => {
+                            setDateRange(value)
+                            eventLogger.log(`AdminAnalyticsSearchDateRange${value}Selected`)
+                        }}
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -189,7 +193,12 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                         <div className="d-flex justify-content-end align-items-stretch mb-2">
                             <ToggleSelect<typeof eventAggregation>
                                 selected={eventAggregation}
-                                onChange={setEventAggregation}
+                                onChange={value => {
+                                    setEventAggregation(value)
+                                    eventLogger.log(
+                                        `AdminAnalyticsSearchAgg${value === 'count' ? 'Totals' : 'Uniques'}Clicked`
+                                    )
+                                }}
                                 items={[
                                     {
                                         tooltip: 'total # of actions triggered',
