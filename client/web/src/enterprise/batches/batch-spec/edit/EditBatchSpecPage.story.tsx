@@ -197,7 +197,7 @@ const NO_EXECUTORS_MOCKS = new WildcardMockLink([
     ...UNSTARTED_CONNECTION_MOCKS,
 ])
 
-export const ExecutorsNotActive: Story = () => (
+export const InvalidBatchSpec: Story = () => (
     <WebStory>
         {props => (
             <MockedTestProvider link={NO_EXECUTORS_MOCKS}>
@@ -214,4 +214,4 @@ export const ExecutorsNotActive: Story = () => (
     </WebStory>
 )
 
-ExecutorsNotActive.storyName = 'executors not active'
+InvalidBatchSpec.storyName = 'invalid batch spec'
