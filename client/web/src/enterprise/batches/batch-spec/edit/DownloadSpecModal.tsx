@@ -81,9 +81,9 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
             </div>
         </div>
         <div className="d-flex justify-content-between">
-            {/* <Button className="p-0" onClick={() => setDownloadSpecModalDismissed(true)} variant="link">
+            <Button className="p-0" onClick={() => setDownloadSpecModalDismissed(true)} variant="link">
                 Don't show this again
-            </Button> */}
+            </Button>
             <div className="ml-auto">
                 <Button
                     className="mr-2"
