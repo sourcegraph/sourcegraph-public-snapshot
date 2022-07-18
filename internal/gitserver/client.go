@@ -326,17 +326,6 @@ func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 	return RendezvousAddrForRepo(repo, addrs)
 }
 
-// addrForKey returns the gitserver address to use for the given string key,
-// which is hashed for sharding purposes.
-func (c *ClientImplementor) addrForKey(key string) string {
-	// TODO: Move zero check into addrForKey and remove this method
-	addrs := c.Addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
-	}
-	return addrForKey(key, addrs)
-}
-
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
 	Name: "src_gitserver_addr_for_repo_invoked",
 	Help: "Number of times gitserver.AddrForRepo was invoked",
