@@ -65,10 +65,16 @@ func (c Command) Merge(other Command) Command {
 	merged.ContinueWatchOnExit = other.ContinueWatchOnExit || merged.ContinueWatchOnExit
 
 	for k, v := range other.Env {
+		if merged.Env == nil {
+			merged.Env = make(map[string]string)
+		}
 		merged.Env[k] = v
 	}
 
 	for k, v := range other.ExternalSecrets {
+		if merged.ExternalSecrets == nil {
+			merged.ExternalSecrets = make(map[string]secrets.ExternalSecret)
+		}
 		merged.ExternalSecrets[k] = v
 	}
 
