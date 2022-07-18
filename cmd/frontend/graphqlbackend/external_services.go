@@ -111,7 +111,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	res := &externalServiceResolver{logger: log.Scoped("AddExternalService", ""), db: r.db, externalService: externalService}
+	res := &externalServiceResolver{logger: r.logger.Scoped("AddExternalService", ""), db: r.db, externalService: externalService}
 	if err = backend.SyncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
@@ -175,7 +175,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	res := &externalServiceResolver{logger: log.Scoped("UpdateExternalService", ""), db: r.db, externalService: es}
+	res := &externalServiceResolver{logger: r.logger.Scoped("UpdateExternalService", ""), db: r.db, externalService: es}
 
 	if oldConfig != es.Config {
 		err = backend.SyncExternalService(ctx, es, syncExternalServiceTimeout, r.repoupdaterClient)
