@@ -516,7 +516,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	}{
 		{
 			rev:           "",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
+			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
 			wantUnindexed: []*search.RepositoryRevisions{},
 		},
 		{

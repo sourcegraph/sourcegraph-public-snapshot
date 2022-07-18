@@ -116,7 +116,7 @@ func TestRevisionValidation(t *testing.T) {
 			repoFilters: []string{"repoFoo"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []string{"HEAD"},
+				Revs: []string{""},
 			}},
 			wantMissingRepoRevisions: []RepoRevSpecs{},
 			wantErr:                  nil,

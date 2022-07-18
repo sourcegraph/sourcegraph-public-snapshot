@@ -59,30 +59,31 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	reporev = reporev.Copy()
 	indexed := reporev.Revs[:0]
 
-	for _, rev := range reporev.Revs {
+	for _, inputRev := range reporev.Revs {
 		found := false
+		rev := inputRev
 		if rev == "" {
 			rev = "HEAD"
 		}
 
 		for _, branch := range repo.Branches {
 			if branch.Name == rev {
-				branches = append(branches, branch.Name)
+				branches = append(branches, inputRev)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
-				branches = append(branches, branch.Name)
+				branches = append(branches, inputRev)
 				found = true
 				break
 			}
 		}
 
 		if found {
-			indexed = append(indexed, rev)
+			indexed = append(indexed, inputRev)
 		} else {
-			unindexed = append(unindexed, rev)
+			unindexed = append(unindexed, inputRev)
 		}
 	}
 
