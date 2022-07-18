@@ -36,7 +36,7 @@ func NewGitoliteSource(db database.DB, svc *types.ExternalService, cf *httpcli.F
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
 
-	gioliteDoer, err := cf.Doer(
+	gitoliteDoer, err := cf.Doer(
 		httpcli.NewMaxIdleConnsPerHostOpt(500),
 		// The provided httpcli.Factory is one used for external services - however,
 		// GitoliteSource asks gitserver to communicate to gitolite instead, so we
@@ -56,7 +56,7 @@ func NewGitoliteSource(db database.DB, svc *types.ExternalService, cf *httpcli.F
 		return nil, err
 	}
 
-	lister := gitserver.NewGitoliteLister(gioliteDoer)
+	lister := gitserver.NewGitoliteLister(gitoliteDoer)
 
 	return &GitoliteSource{
 		svc:     svc,
