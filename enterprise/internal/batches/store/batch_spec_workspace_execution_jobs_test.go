@@ -618,7 +618,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 				jobIDs[i] = j.ID
 			}
 
-			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs); err != nil {
+			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs}); err != nil {
 				t.Fatal(err)
 			}
 
@@ -659,7 +659,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 
 			jobIDs = append(jobIDs, 999, 888, 777)
 
-			err = s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, jobIDs)
+			err = s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{IDs: jobIDs})
 			if err == nil {
 				t.Fatal("error is nil")
 			}
@@ -667,6 +667,45 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			want := fmt.Sprintf("wrong number of jobs deleted: %d instead of %d", len(workspaces), len(workspaces)+3)
 			if err.Error() != want {
 				t.Fatalf("wrong error message. want=%q, have=%q", want, err.Error())
+			}
+
+			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				IDs: jobIDs,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := len(jobs), 0; have != want {
+				t.Fatalf("wrong number of jobs still exists. want=%d, have=%d", want, have)
+			}
+		})
+
+		t.Run("by workspace IDs", func(t *testing.T) {
+			workspaces := createWorkspaces(t, ctx, s)
+			ids := workspacesIDs(t, workspaces)
+
+			err := s.CreateBatchSpecWorkspaceExecutionJobsForWorkspaces(ctx, ids)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			jobs, err := s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
+				BatchSpecWorkspaceIDs: ids,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if have, want := len(jobs), len(workspaces); have != want {
+				t.Fatalf("wrong number of jobs created. want=%d, have=%d", want, have)
+			}
+
+			jobIDs := make([]int64, len(jobs))
+			for i, j := range jobs {
+				jobIDs[i] = j.ID
+			}
+
+			if err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{WorkspaceIDs: ids}); err != nil {
+				t.Fatal(err)
 			}
 
 			jobs, err = s.ListBatchSpecWorkspaceExecutionJobs(ctx, ListBatchSpecWorkspaceExecutionJobsOpts{
