@@ -14,7 +14,7 @@ import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
 
-const REPO_DESC_LENGTH = 500
+const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
 export interface RepoSearchResultProps {
     result: RepositoryMatch
@@ -107,8 +107,8 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         <div>
                             <small>
                                 <em>
-                                    {result.description.length > REPO_DESC_LENGTH
-                                        ? result.description.slice(0, REPO_DESC_LENGTH) + ' ...'
+                                    {result.description.length > REPO_DESCRIPTION_CHAR_LIMIT
+                                        ? result.description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
                                         : result.description}
                                 </em>
                             </small>
