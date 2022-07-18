@@ -139,13 +139,16 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 		return ranges[i].Start.Offset < ranges[j].Start.Offset
 	})
 
-	var chunks []rangeChunk
+	// guestimate size to minimize allocations. This assumes ~2 matches per
+	// chunk. Additionally, since allocations are doubled on realloc, this
+	// should only realloc once for small ranges.
+	chunks := make([]rangeChunk, 0, len(ranges)/2)
 	for i, rr := range ranges {
 		if i == 0 {
 			// First iteration, there are no chunks, so create a new one
 			chunks = append(chunks, rangeChunk{
 				cover:  rr,
-				ranges: []protocol.Range{rr},
+				ranges: ranges[:1],
 			})
 			continue
 		}
@@ -153,7 +156,7 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 		lastChunk := &chunks[len(chunks)-1] // pointer for mutability
 		if int(lastChunk.cover.End.Line)+interChunkLines >= int(rr.Start.Line) {
 			// The current range overlaps with the current chunk, so merge them
-			lastChunk.ranges = append(lastChunk.ranges, rr)
+			lastChunk.ranges = ranges[i-len(lastChunk.ranges) : i+1]
 
 			// Expand the chunk coverRange if needed
 			if rr.End.Offset > lastChunk.cover.End.Offset {
@@ -163,7 +166,7 @@ func chunkRanges(ranges []protocol.Range, interChunkLines int) []rangeChunk {
 			// No overlap, so create a new chunk
 			chunks = append(chunks, rangeChunk{
 				cover:  rr,
-				ranges: []protocol.Range{rr},
+				ranges: ranges[i : i+1],
 			})
 		}
 	}
@@ -184,6 +187,9 @@ func chunksToMatches(buf []byte, chunks []rangeChunk) []protocol.ChunkMatch {
 		}
 
 		chunkMatches = append(chunkMatches, protocol.ChunkMatch{
+			// NOTE: we must copy the content here because the reference
+			// must not outlive the backing mmap, which may be cleaned
+			// up before the match is serialized for the network.
 			Content: string(buf[firstLineStart:lastLineEnd]),
 			ContentStart: protocol.Location{
 				Offset: firstLineStart,
@@ -418,18 +424,18 @@ func structuralSearch(ctx context.Context, inputType comby.Input, paths filePatt
 
 	switch combyInput := inputType.(type) {
 	case comby.Tar:
-		return runCombyWithStreaming(ctx, args, combyInput, sender)
+		return runCombyAgainstTar(ctx, args, combyInput, sender)
 	case comby.ZipPath:
-		return runCombyWithCollection(ctx, args, combyInput, sender)
+		return runCombyAgainstZip(ctx, args, combyInput, sender)
 	}
 
 	return errors.New("comby input must be either -tar or -zip for structural search")
 }
 
-// runCombyWithStreaming runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
+// runCombyAgainstTar runs comby with the flags `-tar` and `-chunk-matches 0`. `-chunk-matches 0` instructs comby to return
 // chunks as part of matches that it finds. Data is streamed into stdin from the channel on tarInput and out from stdout
 // to the result stream.
-func runCombyWithStreaming(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) (err error) {
+func runCombyAgainstTar(ctx context.Context, args comby.Args, tarInput comby.Tar, sender matchSender) (err error) {
 	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
@@ -479,16 +485,22 @@ func runCombyWithStreaming(ctx context.Context, args comby.Args, tarInput comby.
 		}
 	}()
 
-	return comby.StartAndWaitForCompletion(cmd)
+	err = comby.StartAndWaitForCompletion(cmd)
+	if ctx.Err() != nil {
+		// context has been canceled, ignore any "process killed" errors from the subprocess
+		return nil
+	}
+	return err
 }
 
-// runCombyWithCollection runs comby with the flag `-zip`. It collects all matches that comby finds in the zip file, then
-// attempts to convert each of those to a protocol.FileMatch, sending it to the result stream if successful.
-func runCombyWithCollection(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
-	combyMatches, err := comby.Matches(ctx, args)
+// runCombyAgainstZip runs comby with the flag `-zip`. It reads matches from comby's stdout as they are returned and
+// attempts to convert each to a protocol.FileMatch, sending it to the result stream if successful.
+func runCombyAgainstZip(ctx context.Context, args comby.Args, zipPath comby.ZipPath, sender matchSender) (err error) {
+	cmd, stdin, stdout, err := comby.SetupCmdWithPipes(ctx, args)
 	if err != nil {
 		return err
 	}
+	stdin.Close() // don't need to write to stdin when using `-zip`
 
 	zipReader, err := zip.OpenReader(string(zipPath))
 	if err != nil {
@@ -496,16 +508,39 @@ func runCombyWithCollection(ctx context.Context, args comby.Args, zipPath comby.
 	}
 	defer zipReader.Close()
 
-	for _, combyMatch := range combyMatches {
-		fm, err := toFileMatch(&zipReader.Reader, combyMatch)
-		if err != nil {
-			log.NamedError("error converting comby match to FileMatch, skipping", err)
-			continue
-		}
-		sender.Send(fm)
-	}
+	wg := sync.WaitGroup{}
+	defer wg.Wait()
 
-	return nil
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		defer stdout.Close()
+
+		scanner := bufio.NewScanner(stdout)
+		// increase the scanner buffer size for potentially long lines
+		scanner.Buffer(make([]byte, 100), 10*bufio.MaxScanTokenSize)
+
+		for scanner.Scan() {
+			b := scanner.Bytes()
+			if err := scanner.Err(); err != nil {
+				// warn on scanner errors and skip
+				log.NamedError("comby error: skipping scanner error line", err)
+				break
+			}
+
+			cfm := comby.ToFileMatch(b)
+			if cfm != nil {
+				fm, err := toFileMatch(&zipReader.Reader, cfm.(*comby.FileMatch))
+				if err != nil {
+					log.NamedError("error converting comby match to FileMatch, skipping", err)
+					continue
+				}
+				sender.Send(fm)
+			}
+		}
+	}()
+
+	return comby.StartAndWaitForCompletion(cmd)
 }
 
 var metricRequestTotalStructuralSearch = promauto.NewCounterVec(prometheus.CounterOpts{

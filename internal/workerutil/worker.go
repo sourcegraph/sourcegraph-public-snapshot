@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/internal/trace/policy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -282,9 +283,9 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 	}
 
 	// Create context and span based on the root context
-	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.rootCtx, true), w.options.Name)
+	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(policy.WithShouldTrace(w.rootCtx, true), w.options.Name)
 	handleCtx, cancel := context.WithCancel(workerCtxWithSpan)
-	processLog := w.options.Metrics.logger.WithTrace(log.TraceContext{TraceID: trace.IDFromSpan(workerSpan)})
+	processLog := trace.Logger(workerCtxWithSpan, w.options.Metrics.logger)
 
 	// Register the record as running so it is included in heartbeat updates.
 	if !w.runningIDSet.Add(record.RecordID(), cancel) {

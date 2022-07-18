@@ -2,6 +2,7 @@ package compute
 
 import (
 	"context"
+	"encoding/json"
 	"os"
 	"testing"
 
@@ -80,7 +81,15 @@ func TestRun(t *testing.T) {
 		if err != nil {
 			return err.Error()
 		}
-		return res.(*Text).Value
+
+		switch r := res.(type) {
+		case *Text:
+			return r.Value
+		case *TextExtra:
+			result, _ := json.Marshal(r)
+			return string(result)
+		}
+		return "Error, unrecognized result type returned"
 	}
 
 	autogold.Want(
@@ -117,4 +126,9 @@ func TestRun(t *testing.T) {
 		"substitute language",
 		"OCaml\n").
 		Equal(t, test(`content:output((.|\n)* -> $lang)`, fileMatch("anything")))
+
+	autogold.Want(
+		"use output.extra",
+		`{"value":"OCaml\n","kind":"output","repositoryID":0,"repository":"my/awesome/repo"}`).
+		Equal(t, test(`content:output.extra((.|\n)* -> $lang)`, fileMatch("anything")))
 }

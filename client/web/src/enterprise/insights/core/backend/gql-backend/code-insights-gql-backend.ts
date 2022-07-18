@@ -37,6 +37,7 @@ import {
     UiFeaturesConfig,
     DashboardCreateResult,
     InsightPreviewSettings,
+    BackendInsightDatum,
 } from '../code-insights-backend-types'
 import { getRepositorySuggestions } from '../core/api/get-repository-suggestions'
 import { getResolvedSearchRepositories } from '../core/api/get-resolved-search-repositories'
@@ -70,7 +71,12 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         // we need to use here insightViews query to fetch all available insights
         if (dashboardId === ALL_INSIGHTS_DASHBOARD.id) {
             return fromObservableQuery(
-                this.apolloClient.watchQuery<GetInsightsResult>({ query: GET_INSIGHTS_GQL })
+                this.apolloClient.watchQuery<GetInsightsResult>({
+                    query: GET_INSIGHTS_GQL,
+                    // Prevent unnecessary network request after mutation over dashboard or insights within
+                    // current dashboard
+                    nextFetchPolicy: 'cache-first',
+                })
             ).pipe(map(({ data }) => data.insightViews.nodes.map(createInsightView)))
         }
 
@@ -248,8 +254,9 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
         input: GetLangStatsInsightContentInput
     ): Promise<CategoricalChartContent<any>> => getLangStatsInsightContent(input).then(data => data.content)
 
-    public getInsightPreviewContent = (input: InsightPreviewSettings): Promise<SeriesChartContent<any>> =>
-        getInsightsPreview(this.apolloClient, input)
+    public getInsightPreviewContent = (
+        input: InsightPreviewSettings
+    ): Promise<SeriesChartContent<BackendInsightDatum>> => getInsightsPreview(this.apolloClient, input)
 
     // Repositories API
     public getRepositorySuggestions = getRepositorySuggestions

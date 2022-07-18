@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiHistory } from '@mdi/js'
 import * as H from 'history'
-import HistoryIcon from 'mdi-react/HistoryIcon'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
@@ -13,7 +13,7 @@ import {
     toViewStateHash,
 } from '@sourcegraph/common'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { DeprecatedTooltipController, Icon } from '@sourcegraph/wildcard'
+import { DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -90,21 +90,28 @@ export class ToggleHistoryPanel extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    <Icon as={HistoryIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiHistory} />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
                 </RepoHeaderActionButtonLink>
             )
         }
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                onSelect={this.onClick}
-                data-tooltip={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
-                aria-label={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}
-            >
-                <Icon as={HistoryIcon} aria-hidden={true} />
-            </RepoHeaderActionButtonLink>
+            <Tooltip content={`${visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)`}>
+                {/**
+                 * This <RepoHeaderActionButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+                 * break its underlying <ButtonLink>'s onClick handler and it will no longer prevent the default page reload (with no href).
+                 */}
+                <span>
+                    <RepoHeaderActionButtonLink
+                        aria-label={visible ? 'Hide' : 'Show'}
+                        className="btn-icon"
+                        file={false}
+                        onSelect={this.onClick}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiHistory} />
+                    </RepoHeaderActionButtonLink>
+                </span>
+            </Tooltip>
         )
     }
 

@@ -1,13 +1,13 @@
 import * as React from 'react'
 
+import { mdiLink } from '@mdi/js'
 import * as H from 'history'
-import LinkIcon from 'mdi-react/LinkIcon'
 import { fromEvent, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { isInputElement } from '@sourcegraph/shared/src/util/dom'
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { replaceRevisionInURL } from '../../util/url'
 import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
@@ -68,23 +68,24 @@ export class GoToPermalinkAction extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} to={this.permalinkURL} onSelect={this.onClick.bind(this)}>
-                    <Icon as={LinkIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiLink} />
                     <span>Permalink (with full Git commit SHA)</span>
                 </RepoHeaderActionButtonLink>
             )
         }
 
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                to={this.permalinkURL}
-                onSelect={this.onClick.bind(this)}
-                data-tooltip="Permalink (with full Git commit SHA)"
-                aria-label="Permalink (with full Git commit SHA)"
-            >
-                <Icon as={LinkIcon} aria-hidden={true} />
-            </RepoHeaderActionButtonLink>
+            <Tooltip content="Permalink (with full Git commit SHA)">
+                <RepoHeaderActionButtonLink
+                    aria-label="Permalink"
+                    className="btn-icon"
+                    file={false}
+                    to={this.permalinkURL}
+                    onSelect={this.onClick.bind(this)}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiLink} />
+                </RepoHeaderActionButtonLink>
+            </Tooltip>
         )
     }
 

@@ -1,11 +1,15 @@
 import {
+    Maybe,
     SeriesDisplayOptionsInput,
     SeriesSortDirection,
     SeriesSortMode,
 } from '../../../../../../../../../graphql-operations'
 import { DEFAULT_SERIES_DISPLAY_OPTIONS } from '../../../../../../../core'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../../core/types/insight/common'
 import { Validator } from '../../../../../../form/hooks/useField'
+
+import { DrillDownFiltersFormValues } from './DrillDownInsightFilters'
 
 export const validRegexp: Validator<string> = (value = '') => {
     if (value.trim() === '') {
@@ -34,20 +38,23 @@ export function getSerializedRepositoriesFilter(filter: InsightRepositoriesFilte
     return `${includeString} ${excludeString}`.trim()
 }
 
-export const getSortPreview = (seriesDisplayOptions: SeriesDisplayOptionsInputRequired): string => {
-    const {
-        sortOptions: { mode, direction },
-        limit,
-    } = seriesDisplayOptions
-    const ascending = direction === SeriesSortDirection.ASC
+export const getSortPreview = (seriesDisplayOptions: {
+    limit: string
+    sortOptions: { direction: string; mode: string }
+}): string => {
+    const { sortOptions, limit } = seriesDisplayOptions
+
+    const ascending = sortOptions.direction === SeriesSortDirection.ASC
+    const mode = sortOptions.mode
     let sortBy
 
     switch (mode) {
-        case SeriesSortMode.LEXICOGRAPHICAL:
-            sortBy = ascending ? 'A-Z' : 'Z-A'
-            break
+        case undefined:
         case SeriesSortMode.RESULT_COUNT:
             sortBy = `by result count ${ascending ? 'low to high' : 'high to low'}`
+            break
+        case SeriesSortMode.LEXICOGRAPHICAL:
+            sortBy = ascending ? 'A-Z' : 'Z-A'
             break
         case SeriesSortMode.DATE_ADDED:
             sortBy = `by date ${ascending ? 'newest to oldest' : 'oldest to newest'}`
@@ -71,15 +78,21 @@ export function getSerializedSearchContextFilter(
     return withContextPrefix ? `context:${filterValue}` : filterValue
 }
 
-// To simplify logic on the front end we ensure that a value is always proved
+/**
+ * Returns a SeriesDisplayOptionsInput object with default values
+ *
+ * @param seriesCount The total series available for this insight. Used to set the max limit value
+ * @param options series display options
+ */
 export const parseSeriesDisplayOptions = (
-    options?: SeriesDisplayOptions | SeriesDisplayOptionsInput
+    seriesCount: number,
+    options?: SeriesDisplayOptions | SeriesDisplayOptionsInput | DrillDownFiltersFormValues['seriesDisplayOptions']
 ): SeriesDisplayOptionsInputRequired => {
     if (!options) {
-        return DEFAULT_SERIES_DISPLAY_OPTIONS
+        return { ...DEFAULT_SERIES_DISPLAY_OPTIONS, limit: Math.min(seriesCount, MAX_NUMBER_OF_SERIES) }
     }
 
-    const limit = options.limit || DEFAULT_SERIES_DISPLAY_OPTIONS.limit
+    const limit = Math.min(parseSeriesLimit(options?.limit) || seriesCount, seriesCount)
     const sortOptions = options.sortOptions || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions
 
     return {
@@ -89,4 +102,16 @@ export const parseSeriesDisplayOptions = (
             direction: sortOptions.direction || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions.direction,
         },
     }
+}
+
+export const parseSeriesLimit = (limit: string | Maybe<number> | undefined): number | undefined => {
+    if (typeof limit === 'number') {
+        return Math.min(limit, MAX_NUMBER_OF_SERIES)
+    }
+
+    if (!limit || limit.length === 0) {
+        return
+    }
+
+    return Math.min(parseInt(limit, 10), MAX_NUMBER_OF_SERIES)
 }

@@ -1,22 +1,27 @@
-import React, { useMemo } from 'react'
+import { FC, useMemo } from 'react'
 
-import { SubmissionErrors } from '../../../../components/form/hooks/useForm'
+import {
+    SubmissionErrors,
+    createDefaultEditSeries,
+    CodeInsightsCreationActions,
+    CodeInsightCreationMode,
+    FORM_ERROR,
+} from '../../../../components'
 import { MinimalSearchBasedInsightData, SearchBasedInsight } from '../../../../core'
 import { CreateInsightFormFields, InsightStep } from '../../creation/search-insight'
-import { createDefaultEditSeries } from '../../creation/search-insight/components/search-insight-creation-content/hooks/use-editable-series'
-import { SearchInsightCreationContent } from '../../creation/search-insight/components/search-insight-creation-content/SearchInsightCreationContent'
+import { SearchInsightCreationContent } from '../../creation/search-insight/components/SearchInsightCreationContent'
 import { getSanitizedSearchInsight } from '../../creation/search-insight/utils/insight-sanitizer'
 
 interface EditSearchBasedInsightProps {
+    licensed: boolean
+    isEditAvailable: boolean | undefined
     insight: SearchBasedInsight
     onSubmit: (insight: MinimalSearchBasedInsightData) => SubmissionErrors | Promise<SubmissionErrors> | void
     onCancel: () => void
 }
 
-export const EditSearchBasedInsight: React.FunctionComponent<
-    React.PropsWithChildren<EditSearchBasedInsightProps>
-> = props => {
-    const { insight, onSubmit, onCancel } = props
+export const EditSearchBasedInsight: FC<EditSearchBasedInsightProps> = props => {
+    const { insight, licensed, isEditAvailable, onSubmit, onCancel } = props
 
     const insightFormValues = useMemo<CreateInsightFormFields>(
         () => ({
@@ -36,18 +41,30 @@ export const EditSearchBasedInsight: React.FunctionComponent<
         return onSubmit({
             ...sanitizedInsight,
             filters: insight.filters,
+            seriesDisplayOptions: insight.seriesDisplayOptions,
+            seriesCount: insight.seriesCount,
         })
     }
 
     return (
         <SearchInsightCreationContent
-            mode="edit"
+            touched={true}
             initialValue={insightFormValues}
             dataTestId="search-insight-edit-page-content"
             className="pb-5"
             onSubmit={handleSubmit}
-            onCancel={onCancel}
-            insight={insight}
-        />
+        >
+            {form => (
+                <CodeInsightsCreationActions
+                    mode={CodeInsightCreationMode.Edit}
+                    licensed={licensed}
+                    available={isEditAvailable}
+                    submitting={form.submitting}
+                    errors={form.submitErrors?.[FORM_ERROR]}
+                    clear={form.isFormClearActive}
+                    onCancel={onCancel}
+                />
+            )}
+        </SearchInsightCreationContent>
     )
 }

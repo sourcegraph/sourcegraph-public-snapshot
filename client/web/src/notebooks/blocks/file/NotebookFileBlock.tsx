@@ -1,12 +1,9 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
+import { EditorView } from '@codemirror/view'
+import { mdiOpenInNew, mdiFileDocument, mdiCheck, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CheckIcon from 'mdi-react/CheckIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
-import * as Monaco from 'monaco-editor'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -27,12 +24,12 @@ import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeI
 import { LoadingSpinner, useObservable, Icon, Alert } from '@sourcegraph/wildcard'
 
 import { BlockProps, FileBlock, FileBlockInput } from '../..'
+import { focusEditor } from '../../codemirror-utils'
 import { parseFileBlockInput } from '../../serialize'
 import { BlockMenuAction } from '../menu/NotebookBlockMenu'
 import { useCommonBlockMenuActions } from '../menu/useCommonBlockMenuActions'
 import { NotebookBlock } from '../NotebookBlock'
 import { RepoFileSymbolLink } from '../RepoFileSymbolLink'
-import { focusLastPositionInMonacoEditor } from '../useFocusMonacoEditorOnMount'
 import { useModifierKeyLabel } from '../useModifierKeyLabel'
 
 import { NotebookFileBlockInputs } from './NotebookFileBlockInputs'
@@ -44,8 +41,8 @@ interface NotebookFileBlockProps
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         ThemeProps {
-    sourcegraphSearchLanguageId: string
     isSourcegraphDotCom: boolean
+    globbing: boolean
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
 
@@ -66,7 +63,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
         onBlockInputChange,
         ...props
     }) => {
-        const [editor, setEditor] = useState<Monaco.editor.IStandaloneCodeEditor>()
+        const [editor, setEditor] = useState<EditorView | undefined>()
         const [showInputs, setShowInputs] = useState(input.repositoryName.length === 0 && input.filePath.length === 0)
         const [fileQueryInput, setFileQueryInput] = useState(input.initialQueryInput ?? '')
         const debouncedSetFileQueryInput = useMemo(() => debounce(setFileQueryInput, 300), [setFileQueryInput])
@@ -91,7 +88,11 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
             [input.filePath, input.repositoryName, input.revision, onFileSelected]
         )
 
-        const focusInput = useCallback(() => focusLastPositionInMonacoEditor(editor), [editor])
+        const focusInput = useCallback(() => {
+            if (editor) {
+                focusEditor(editor)
+            }
+        }, [editor])
 
         const hideInputs = useCallback(() => setShowInputs(false), [setShowInputs])
 
@@ -118,7 +119,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
                     url: fileURL,
                 },
             ],
@@ -130,7 +131,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={showInputs ? mdiCheck : mdiPencil} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -198,13 +199,11 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {showInputs && (
                     <NotebookFileBlockInputs
                         id={id}
-                        editor={editor}
-                        setEditor={setEditor}
+                        onEditorCreated={setEditor}
                         lineRange={input.lineRange}
                         onLineRangeChange={onLineRangeChange}
                         queryInput={fileQueryInput}
-                        setQueryInput={setFileQueryInput}
-                        debouncedSetQueryInput={debouncedSetFileQueryInput}
+                        setQueryInput={debouncedSetFileQueryInput}
                         onRunBlock={hideInputs}
                         onFileSelected={onFileSelected}
                         {...props}
@@ -250,7 +249,7 @@ const NotebookFileBlockHeader: React.FunctionComponent<
     const repoAtRevisionURL = getRepositoryUrl(repositoryName, [revision])
     return (
         <>
-            <Icon aria-hidden={true} as={FileDocumentIcon} />
+            <Icon aria-hidden={true} svgPath={mdiFileDocument} />
             <div className={styles.separator} />
             <RepoFileSymbolLink
                 repoName={repositoryName}

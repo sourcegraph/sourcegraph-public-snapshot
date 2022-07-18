@@ -203,8 +203,8 @@ Test coverage from integration tests is tracked in [Codecov](https://codecov.io/
 
 To run integration tests for the web app:
 
-1. Run `yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
-    - Alternatively, `yarn build-web` will only build a bundle once.
+1. Run `INTEGRATION_TESTS=true yarn watch-web` in the repository root in a separate terminal to watch files and build a JavaScript bundle. You can also launch it as the VS Code task "Watch web app".
+    - Alternatively, `INTEGRATION_TESTS=true yarn build-web` will only build a bundle once.
 1. If you need to test Enterprise features such as Batch Changes, set `ENTERPRISE=1` when building.
 1. Run `yarn test-integration` in the repository root to run the tests.
 
@@ -421,14 +421,14 @@ If, for whatever reason, we have to ignore some elements from an accessibility a
 
 We run Lighthouse performance tests through [Lighthouse CI](https://github.com/GoogleChrome/lighthouse-ci). These tests are relatively hands-off and run a series of Lighthouse audits against a deployed server. The flow for running these tests is:
 
-
 #### Running the tests locally
+
 1. Create a production bundle that can be served locally. `NODE_ENV=production WEBPACK_SERVE_INDEX=true yarn workspace @sourcegraph/web build`
 2. Run the Lighthouse CI tests. `yarn test-lighthouse`. This will automatically serve the production bundle and start running audits through Puppeteer. Note: It's possible to provide different URLs or config through editing `lighthouserc.js` or by providing CLI flags to this command.
 
 #### Running the tests in CI
-The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
 
+The CI flow is quite similar to the local flow, the main difference is that we provide some additional flags to Lighthouse. We provide a specific URL for each parallel step, and we add some additional config to support reporting results back to GitHub PRs as status checks.
 
 ### Bundlesize
 
@@ -442,3 +442,42 @@ If `Bundlesize` fails, it is likely because one of the generated bundles has gon
 2. That you are not using dependencies that are potentially too large to be suitable for our application. Tip: Use [Bundlephobia](https://bundlephobia.com) to help find the size of an npm dependency.
 
 If none of the above is applicable, we might need to consider adjusting our limits. Please start a discussion with @sourcegraph/frontend-devs before doing this!
+
+### Assessing flaky client steps
+
+The breakdown of known client flakes by type with resolution tips:
+
+#### Visual regression flakes
+
+_Problem:_ Percy’s pixel sensitivity is too high, and we cannot relax it further which means that SVG rendering can be flaky.
+_Solution:_ Snapshot these pages in Chromatic or hide flaky elements from Percy using the `.percy-hide` class name.
+
+_Problem:_ UI depends on the date and time, which are not appropriately mocked.
+_Solution:_ Mock the date and time properly in your integration test or Storybook story.
+
+_Problem:_ Mocks are not configured correctly, resulting in flaky error messages in UI.
+_Solution:_ Double-check mocks required for rendering the snapshotted UI.
+
+_Problem:_ The screenshot is taken without waiting for the UI to settle down. E.g., a snapshot taken after clicking an input element doesn’t wait for the focus state on it.
+_Solution:_ Wait for the UI to settle using tools provided by Puppeteer.
+
+#### Integration test flakes caused by test logic
+
+_Problem:_ `Error: GraphQL query "XXX" has no configured mock response. Make sure the call to overrideGraphQL() includes a result for the "XXX" query.` This error can be flaky because some GraphQL mocks are not required for an integration test to pass because the request with a missing mock can be processed by our test driver _after_ the test already passed. In that case, it won't cause the test to fail.
+_Solution:_  All GraphQL requests happening on tested pages should have GraphQL mocks to avoid such flakes.
+
+_Problem examples:_
+
+1. `Navigation timeout of 30000 ms exceeded.`
+2. `TimeoutError: waiting for selector '.theme.theme-dark' failed: timeout 30000ms exceeded`
+
+_Solution:_ These should be disabled immediately and fixed later by owning teams.
+
+#### Percy outages
+
+_Problem:_ Percy API outages result into
+
+1. HTTP requests to upload screenshots fail with internal server errors.
+2. HTTP requests to upload screenshots fail with errors about duplicated snapshot names. `[percy] Error: The name of each snapshot must be unique, and this name already exists in the build`
+
+_Solution:_ Wait for the Percy infrastructure to come back to life and restart the build. 🥲

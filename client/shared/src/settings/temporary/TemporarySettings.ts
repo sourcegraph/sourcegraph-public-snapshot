@@ -15,8 +15,6 @@ export interface TemporarySettingsSchema {
     'search.collapsedSidebarSections': { [key in SectionID]?: boolean }
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
-    'search.onboarding.tourCancelled': boolean
-    'search.contexts.ctaDismissed': boolean
     'search.notepad.enabled': boolean
     'search.notepad.ctaSeen': boolean
     'search.notebooks.gettingStartedTabSeen': boolean
@@ -29,16 +27,13 @@ export interface TemporarySettingsSchema {
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
     'homepage.userInvites.tab': number
-    'integrations.vscode.lastDetectionTimestamp': number
-    'integrations.jetbrains.lastDetectionTimestamp': number
-    'cta.browserExtensionAlertDismissed': boolean
-    'cta.ideExtensionAlertDismissed': boolean
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
     'batches.downloadSpecModalDismissed': boolean
     'codeintel.badge.used': boolean
     'codeintel.referencePanel.redesign.ctaDismissed': boolean
     'codeintel.referencePanel.redesign.enabled': boolean
     'onboarding.quickStartTour': TourListState
+    'coreWorkflowImprovements.enabled': boolean
 }
 
 /**

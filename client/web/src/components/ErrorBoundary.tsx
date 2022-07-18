@@ -7,7 +7,7 @@ import ReloadIcon from 'mdi-react/ReloadIcon'
 import { asError } from '@sourcegraph/common'
 import { Button, Code, Text } from '@sourcegraph/wildcard'
 
-import { DatadogClient, isWebpackChunkError } from '../monitoring'
+import { isWebpackChunkError } from '../monitoring'
 
 import { HeroPage } from './HeroPage'
 
@@ -45,7 +45,7 @@ interface State {
  * Components should handle their own errors (and must not rely on this error boundary). This error
  * boundary is a last resort in case of an unexpected error.
  */
-export class ErrorBoundary extends React.PureComponent<Props, State> {
+export class ErrorBoundary extends React.PureComponent<React.PropsWithChildren<Props>, State> {
     public state: State = {}
 
     public static getDerivedStateFromError(error: any): Pick<State, 'error'> {
@@ -61,8 +61,6 @@ export class ErrorBoundary extends React.PureComponent<Props, State> {
                 Sentry.captureException(error)
             })
         }
-
-        DatadogClient.addError(error, { errorInfo, originalException: error })
     }
 
     public componentDidUpdate(previousProps: Props): void {

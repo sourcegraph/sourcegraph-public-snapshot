@@ -40,12 +40,6 @@ public class ThemeUtil {
         return theme;
     }
 
-    @NotNull
-    public static String getPanelBackgroundColorHexString() {
-        //noinspection ConstantConditions - UIUtil.getPanelBackground() can't be null, so our return value can't be null.
-        return getHexString(UIUtil.getPanelBackground());
-    }
-
     public static boolean isDarkTheme() {
         return getBrightnessFromColor(UIUtil.getPanelBackground()) < 128;
     }

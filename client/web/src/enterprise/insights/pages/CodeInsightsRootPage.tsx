@@ -1,6 +1,6 @@
 import React, { useEffect, Suspense } from 'react'
 
-import PlusIcon from 'mdi-react/PlusIcon'
+import { mdiPlus } from '@mdi/js'
 import { matchPath, useHistory } from 'react-router'
 import { useLocation } from 'react-router-dom'
 
@@ -21,7 +21,7 @@ import {
 } from '@sourcegraph/wildcard'
 
 import { CodeInsightsIcon } from '../../../insights/Icons'
-import { CodeInsightsPage } from '../components/code-insights-page/CodeInsightsPage'
+import { CodeInsightsPage } from '../components'
 import { ALL_INSIGHTS_DASHBOARD } from '../core'
 
 import { DashboardsContentPage } from './dashboards/dashboard-page/DashboardsContentPage'
@@ -95,9 +95,9 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                             to="/insights/add-dashboard"
                             variant="secondary"
                             className="mr-2"
-                            aria-label="add dashboard button"
+                            data-testid="add-dashboard-button"
                         >
-                            <Icon aria-hidden={true} as={PlusIcon} /> Add dashboard
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add dashboard
                         </Button>
                         <Button
                             as={Link}
@@ -105,7 +105,7 @@ export const CodeInsightsRootPage: React.FunctionComponent<
                             variant="primary"
                             onClick={() => telemetryService.log('InsightAddMoreClick')}
                         >
-                            <Icon aria-hidden={true} as={PlusIcon} /> Create insight
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create insight
                         </Button>
                     </>
                 }

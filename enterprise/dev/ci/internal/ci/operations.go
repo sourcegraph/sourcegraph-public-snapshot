@@ -313,6 +313,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		withYarnCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("INTEGRATION_TESTS", "true"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
@@ -385,11 +386,16 @@ func addGoTests(pipeline *bk.Pipeline) {
 	buildGoTests(func(description, testSuffix string) {
 		pipeline.AddStep(
 			fmt.Sprintf(":go: Test (%s)", description),
+			// Max DB connections is set to 200: https://github.com/sourcegraph/infrastructure/blob/main/docker-images/buildkite-agent-stateless/postgresql.conf
+			// Because we run tests concurrently, the following must hold to avoid connection issues:
+			//
+			//   GOMAXPROCS * TESTDB_MAXOPENCONNS < 200
+			//
+			// We aim a bit below the threshold to be safe.
+			bk.Env("GOMAXPROCS", "10"),
+			bk.Env("TESTDB_MAXOPENCONNS", "15"),
 			bk.AnnotatedCmd("./dev/ci/go-test.sh "+testSuffix, bk.AnnotatedCmdOpts{
 				Annotations: &bk.AnnotationOpts{},
-				TestReports: &bk.TestReportOpts{
-					TestSuiteKeyVariableName: "BUILDKITE_ANALYTICS_BACKEND_TEST_SUITE_API_KEY",
-				},
 			}),
 			bk.Cmd("./dev/ci/codecov.sh -c -F go"),
 		)
@@ -552,7 +558,13 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
-			bk.Skip("Disabled because flaky"),
+			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
+				ChannelName: "code-intel-buildkite",
+				Conditions: bk.SlackStepNotifyPayloadConditions{
+					Failed: true,
+				},
+			}),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -561,7 +573,8 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
-			bk.ArtifactPaths("./*.log"))
+			bk.ArtifactPaths("./*.log"),
+			bk.SoftFail(1))
 	}
 }
 

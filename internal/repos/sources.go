@@ -61,8 +61,8 @@ func NewSource(ctx context.Context, db database.DB, svc *types.ExternalService, 
 		return NewAWSCodeCommitSource(svc, cf)
 	case extsvc.KindPerforce:
 		return NewPerforceSource(svc)
-	case extsvc.KindGoModules:
-		return NewGoModulesSource(svc, cf)
+	case extsvc.KindGoPackages:
+		return NewGoPackagesSource(svc, cf)
 	case extsvc.KindJVMPackages:
 		// JVM doesn't need a client factory because we use coursier.
 		return NewJVMPackagesSource(svc)

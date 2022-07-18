@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/inconshreveable/log15"
@@ -117,15 +118,15 @@ const maxWindowsPerRepo = 25
 // This method will absorb any errors that occur during execution and skip any remaining windows.
 // If this repository already has some commits indexed, only commits made more recently than the previous index will be added.
 func (i *CommitIndexer) indexRepository(name string, id api.RepoID) error {
-	windowsProccssed := 0
+	windowsProcessed := 0
 	additionalWindows := true
 	// It is important that the window size stays consistent during processing
 	// so that it can correctly determine the time the repository has been indexed though
 	windowDuration := conf.Get().InsightsCommitIndexerWindowDuration
-	for additionalWindows && windowsProccssed < maxWindowsPerRepo {
+	for additionalWindows && windowsProcessed < maxWindowsPerRepo {
 		var err error
 		additionalWindows, err = i.indexNextWindow(name, id, windowDuration)
-		windowsProccssed++
+		windowsProcessed++
 		if err != nil {
 			log15.Error(err.Error())
 			return nil
@@ -197,6 +198,31 @@ func (i *CommitIndexer) indexNextWindow(name string, id api.RepoID, windowDurati
 	return moreWindows, nil
 }
 
+const (
+	emptyRepoErrMessagePrefix = `git command [git log --format=format:%H%x00%aN%x00%aE%x00%at%x00%cN%x00%cE%x00%ct%x00%B%x00%P%x00`
+	emptyRepoErrMessageSuffix = ` --date-order] failed (output: ""): exit status 128`
+)
+
+func generateEmptyRepoErrorMessage(after time.Time, until *time.Time) string {
+	fullEmptyRepoErrMessage := emptyRepoErrMessagePrefix + " --after=" + after.Format(time.RFC3339)
+	if until != nil {
+		fullEmptyRepoErrMessage += " --before=" + until.Format(time.RFC3339Nano)
+	}
+	return fullEmptyRepoErrMessage + emptyRepoErrMessageSuffix
+}
+
+func isCommitEmptyRepoError(err error, after time.Time, until *time.Time) bool {
+	emptyRepoErrMessage := generateEmptyRepoErrorMessage(after, until)
+	unwrappedErr := err
+	for unwrappedErr != nil {
+		if strings.Contains(err.Error(), emptyRepoErrMessage) {
+			return true
+		}
+		unwrappedErr = errors.Unwrap(unwrappedErr)
+	}
+	return false
+}
+
 // getCommits fetches the commits from the remote gitserver for a repository after a certain time.
 func getCommits(ctx context.Context, db database.DB, name api.RepoName, after time.Time, until *time.Time, operation *observation.Operation) (_ []*gitdomain.Commit, err error) {
 	ctx, _, endObservation := operation.With(ctx, &err, observation.Args{})
@@ -207,7 +233,16 @@ func getCommits(ctx context.Context, db database.DB, name api.RepoName, after ti
 		before = until.Format(time.RFC3339)
 	}
 
-	return gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
+	commits, err := gitserver.NewClient(db).Commits(ctx, name, gitserver.CommitsOptions{N: 0, DateOrder: true, NoEnsureRevision: true, After: after.Format(time.RFC3339), Before: before}, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		if isCommitEmptyRepoError(err, after, until) {
+			log15.Info("insights-job.background.CommitIndexer.getCommits: empty repo - updating success metadata", "repository", name)
+			err = nil
+		} else {
+			return nil, err
+		}
+	}
+	return commits, err
 }
 
 // getMetadata gets the index metadata for a repository. The metadata will be generated if it doesn't already exist, such as

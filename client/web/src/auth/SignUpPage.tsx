@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
-import { Redirect, useLocation } from 'react-router-dom'
+import { Navigate, useLocation } from 'react-router-dom-v5-compat'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -53,11 +53,11 @@ export const SignUpPage: React.FunctionComponent<React.PropsWithChildren<SignUpP
     }, [invitedBy, authenticatedUser, context.allowSignup])
 
     if (authenticatedUser) {
-        return <Redirect to={returnTo} />
+        return <Navigate to={returnTo} replace={true} />
     }
 
     if (!context.allowSignup) {
-        return <Redirect to="/sign-in" />
+        return <Navigate to="/sign-in" replace={true} />
     }
 
     let newUserFromEmailInvitation = false

@@ -5,8 +5,9 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { useDeepMemo } from '@sourcegraph/wildcard'
 
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
-import { SeriesBasedChartTypes, SeriesChart } from '../../../../../components'
 import {
+    SeriesBasedChartTypes,
+    SeriesChart,
     getSanitizedRepositories,
     useLivePreview,
     StateStatus,
@@ -18,16 +19,14 @@ import {
     LivePreviewBanner,
     LivePreviewLegend,
     SERIES_MOCK_CHART,
-} from '../../../../../components/creation-ui-kit'
-import { CodeInsightsBackendContext, SeriesChartContent } from '../../../../../core'
+} from '../../../../../components'
+import { DATA_SERIES_COLORS } from '../../../../../constants'
+import { CodeInsightsBackendContext, SearchBasedInsightSeries, SeriesChartContent } from '../../../../../core'
 import { CodeInsightTrackType, useCodeInsightViewPings } from '../../../../../pings'
-import { DATA_SERIES_COLORS, EditableDataSeries } from '../../../../insights/creation/search-insight'
 
-const createExampleDataSeries = (query: string): EditableDataSeries[] => [
+const createExampleDataSeries = (query: string): SearchBasedInsightSeries[] => [
     {
         query,
-        valid: true,
-        edit: false,
         id: '1',
         name: 'TODOs',
         stroke: DATA_SERIES_COLORS.ORANGE,

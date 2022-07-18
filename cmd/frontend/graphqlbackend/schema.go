@@ -52,3 +52,7 @@ var orgSchema string
 // notebooksSchema is the Notebooks raw graqhql schema.
 //go:embed notebooks.graphql
 var notebooksSchema string
+
+// dependenciesSchema is the dependencies raw graqhql schema.
+//go:embed dependencies.graphql
+var dependenciesSchema string

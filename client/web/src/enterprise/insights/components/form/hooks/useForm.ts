@@ -15,7 +15,7 @@ import {
 import { debounce, DebouncedFunc, isFunction } from 'lodash'
 import { noop } from 'rxjs'
 
-import { useDistinctValue } from '../../../hooks/use-distinct-value'
+import { useDistinctValue } from '../../../hooks'
 
 // Special key for the submit error store.
 export const FORM_ERROR = 'useForm/submissionErrors'
@@ -106,7 +106,7 @@ export interface FormAPI<FormValues> {
     /**
      * Mark to understand was there an attempt by user to submit the form?
      * Used in useField hook to trigger appearance of error message if
-     * user tried submit the form.
+     * user tried to submit the form.
      */
     submitted: boolean
 
@@ -303,10 +303,11 @@ export function useForm<FormValues extends object>(props: UseFormProps<FormValue
                     submitResult && setSubmitErrors(submitResult)
                 }
             } else {
+                const formElement = formElementReference.current ?? (event.target as Element)
                 // Hack to focus first invalid input on submit, since we are not using
                 // native behavior in order to avoid poor UX of native validation focus on error
                 // we have to find and focus invalid input by ourselves
-                formElementReference.current?.querySelector<HTMLInputElement>(':invalid:not(fieldset)')?.focus()
+                formElement.querySelector<HTMLInputElement>(':invalid:not(fieldset)')?.focus()
             }
         },
     }

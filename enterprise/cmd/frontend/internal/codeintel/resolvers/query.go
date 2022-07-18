@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sync"
 
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -64,6 +65,7 @@ type queryResolver struct {
 	path                string
 	uploads             []store.Dump
 	uploadCache         map[int]store.Dump
+	uploadCacheMutex    sync.RWMutex
 	operations          *operations
 	checker             authz.SubRepoPermissionChecker
 

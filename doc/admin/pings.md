@@ -127,6 +127,20 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - Total number of views of the create code monitor page without a pre-populated trigger query
   - Total number of views of the manage code monitor page
   - Total number of clicks on the code monitor email search link
+  - Total number of clicks on example monitors
+  - Total number of views of the getting started page
+  - Total number of submissions of the create code monitor form
+  - Total number of submissions of the manage code monitor form
+  - Total number of deletions from the manage code monitor form
+  - Total number of views of the logs page
+  - Current number of Slack, webhook, and email actions enabled
+  - Current number of unique users with Slack, webhook, and email actions enabled
+  - Total number of Slack, webhook, and email actions triggered
+  - Total number of Slack, webhook, and email action triggers that errored
+  - Total number of unique users that have had Slack, webhook, and email actions triggered
+  - Total number of search executions
+  - Total number of search executions that errored
+  - 50th and 90th percentile runtimes for search executions
 - Notebooks usage data
   - Total number of views of the notebook page
   - Total number of views of the notebooks list page
@@ -149,27 +163,6 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
     - Count of users who installed the extension
     - Count of users who uninstalled the extension 
   - Aggregate count of current daily redirects from extension to Sourcegraph instance
-
-
-
-- CTA usage data
-  - Browser extension
-    - Total number of users who viewed the "install browser extension" CTA on the file page
-    - Total number of users who clicked the "install browser extension" CTA on the file page
-    - Total number of users who viewed the "install browser extension" CTA on the search page
-    - Total number of users who clicked the "install browser extension" CTA on the search page
-    - Total number of views of the "install browser extension" CTA on the file page
-    - Total number of clicks on the "install browser extension" CTA on the file page
-    - Total number of views of the "install browser extension" CTA on the search page
-    - Total number of clicks on the "install browser extension" CTA on the search page
-
-- CTA usage data
-  - Browser extension
-    - Number of users who viewed / clicked the "install browser extension" CTA on the file / search pages today
-    - Number of views / clicks on the "install browser extension" CTA on the file / search pages today
-  - IDE extension
-    - Number of users who viewed / clicked the "install IDE extension" CTA on the file / search pages today
-    - Number of views / clicks on the "install IDE extension" CTA on the file / search pages today
 
 ## CIDR Range for Sourcegraph
 

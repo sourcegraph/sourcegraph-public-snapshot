@@ -1,0 +1,19 @@
+[
+  {
+    "value": "a b c d e f",
+    "negated": false,
+    "labels": [
+      "Literal"
+    ],
+    "range": {
+      "start": {
+        "line": 0,
+        "column": 0
+      },
+      "end": {
+        "line": 0,
+        "column": 1
+      }
+    }
+  }
+]

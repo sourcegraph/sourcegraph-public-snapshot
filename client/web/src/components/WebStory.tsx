@@ -9,17 +9,24 @@ import { MockedStoryProvider, MockedStoryProviderProps, usePrependStyles, useThe
 // Add root Tooltip for Storybook
 import { DeprecatedTooltip, WildcardThemeContext } from '@sourcegraph/wildcard'
 
+import { SourcegraphContext } from '../jscontext'
 import { setExperimentalFeaturesForTesting } from '../stores/experimentalFeatures'
 
 import { BreadcrumbSetters, BreadcrumbsProps, useBreadcrumbs } from './Breadcrumbs'
 
 import webStyles from '../SourcegraphWebApp.scss'
 
-export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
+// With `StoryStoreV7` stories are isolated and window value is not shared between them.
+// Global variables should be updated for every story individually.
+if (!window.context) {
+    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
+}
+
+export interface WebStoryProps
+    extends Omit<MemoryRouterProps, 'children'>,
+        Pick<MockedStoryProviderProps, 'mocks' | 'useStrictMocking'> {
     children: React.FunctionComponent<
-        React.PropsWithChildren<
-            ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
-        >
+        ThemeProps & BreadcrumbSetters & BreadcrumbsProps & TelemetryProps & RouteComponentProps<any>
     >
 }
 
@@ -27,7 +34,7 @@ export interface WebStoryProps extends MemoryRouterProps, Pick<MockedStoryProvid
  * Wrapper component for webapp Storybook stories that provides light theme and react-router props.
  * Takes a render function as children that gets called with the props.
  */
-export const WebStory: React.FunctionComponent<React.PropsWithChildren<WebStoryProps>> = ({
+export const WebStory: React.FunctionComponent<WebStoryProps> = ({
     children,
     mocks,
     useStrictMocking,

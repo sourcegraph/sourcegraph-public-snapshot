@@ -42,6 +42,7 @@ Available comamndsets in `sg.config.yaml`:
 * oss
 * oss-web-standalone
 * oss-web-standalone-prod
+* otel
 * web-standalone
 * web-standalone-prod
 
@@ -101,11 +102,13 @@ Available commands in `sg.config.yaml`:
 * oss-symbols
 * oss-web
 * oss-worker
+* otel-collector
 * postgres_exporter
 * prometheus
 * redis-postgres
 * repo-updater
 * searcher
+* server
 * storybook
 * symbols
 * syntax-highlighter
@@ -176,10 +179,6 @@ $ sg ci build --force --commit my-commit main-dry-run
 $ sg ci build --help
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg ci preview
 
 Preview the pipeline that would be run against the currently checked out branch.
@@ -187,6 +186,7 @@ Preview the pipeline that would be run against the currently checked out branch.
 
 Flags:
 
+* `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg ci status
@@ -197,8 +197,9 @@ Get the status of the CI run associated with the currently checked out branch.
 Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
-* `--build="<value>"`: Override branch detection with a specific build `number`
+* `--build, -n="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 * `--view, -v`: Open build page in browser
 * `--wait, -w`: Wait by blocking until the build is finished
 
@@ -233,6 +234,7 @@ Flags:
 
 * `--commit, -c="<value>"`: `commit` from the current branch to build (defaults to current commit)
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 
 ### sg ci logs
 
@@ -250,11 +252,12 @@ From there, you can start exploring logs with the Grafana explore panel.
 Flags:
 
 * `--branch, -b="<value>"`: Branch `name` of build to target (defaults to current branch)
-* `--build="<value>"`: Override branch detection with a specific build `number`
+* `--build, -n="<value>"`: Override branch detection with a specific build `number`
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--job, -j="<value>"`: ID or name of the job to export logs for
 * `--out, -o="<value>"`: Output `format`: one of [terminal|simple|json], or a URL pointing to a Loki instance, such as http://127.0.0.1:3100 (default: terminal)
 * `--overwrite-state="<value>"`: `state` to overwrite the job state metadata
+* `--pipeline, -p="<value>"`: Select a custom Buildkite `pipeline` in the Sourcegraph org (default: sourcegraph)
 * `--state, -s="<value>"`: Job `state` to export logs for (provide an empty value for all states) (default: failed)
 
 ### sg ci docs
@@ -340,7 +343,7 @@ $ sg lint --help
 
 Flags:
 
-* `--annotations`: Write helpful output to annotations directory
+* `--annotations`: Write helpful output to ./annotations directory
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--fix, -f`: Try to fix any lint issues
 
@@ -452,10 +455,6 @@ $ sg db reset-redis
 $ sg db add-user -name=foo
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg db reset-pg
 
 Drops, recreates and migrates the specified Sourcegraph database.
@@ -511,10 +510,6 @@ $ sg migration add --db codeintel 'add missing index'
 $ sg migration squash
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg migration add
 
 Add a new migration file.
@@ -567,7 +562,9 @@ Flags:
 * `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration upto
 
@@ -588,8 +585,9 @@ Flags:
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration undo
 
@@ -630,8 +628,9 @@ Flags:
 * `--db="<value>"`: The target `schema` to modify.
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
+* `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
 * `--target="<value>"`: The migration to apply. Comma-separated values are accepted.
-* `--unprivileged-only`: Do not apply privileged migrations.
+* `--unprivileged-only`: Refuse to apply privileged migrations.
 
 ### sg migration validate
 
@@ -646,7 +645,7 @@ Available schemas:
 
 Flags:
 
-* `--db="<value>"`: The target `schema(s)` to modify. Comma-separated values are accepted. Supply "all" to migrate all schemas. (default: [all])
+* `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg migration describe
@@ -778,6 +777,33 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `-f="<value>"`: The output filepath
 
+## sg insights
+
+Tools to interact with Code Insights data.
+
+
+### sg insights decode-id
+
+Decodes an encoded insight ID found on the frontend into a view unique_id.
+
+Run 'sg insights decode-id' to decode 1+ frontend IDs which can then be used for SQL queries
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
+### sg insights series-ids
+
+Gets all insight series ID from the base64 encoded frontend ID.
+
+Run 'sg insights series-ids' to decode a frontend ID and find all related series IDs
+
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+
 ## sg doctor
 
 DEPRECATED - Run checks to test whether system is in correct state to run Sourcegraph.
@@ -799,10 +825,6 @@ $ sg secret list
 # ease of use
 $ sg secret reset buildkite
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg secret reset
 
@@ -852,10 +874,6 @@ $ sg teammate time thorsten ball
 # Open their handbook bio
 $ sg teammate handbook asdine
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg teammate time
 
@@ -924,10 +942,6 @@ $ sg adr view 420
 # Create a new ADR!
 $ sg adr create my ADR title
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg adr list
 
@@ -1003,10 +1017,6 @@ Commands used by operations teams to perform common tasks.
 Supports internal deploy-sourcegraph repos (non-customer facing)
 
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg ops update-images
 
 Updates images in given directory to latest published image.
@@ -1021,17 +1031,33 @@ Flags:
 * `--cr-password="<value>"`: `password` or access token for the container registry
 * `--cr-username="<value>"`: `username` for the container registry
 * `--feedback`: provide feedback about this command by opening up a Github discussion
-* `--kind="<value>"`: the `kind` of deployment (one of 'k8s', 'helm') (default: k8s)
-* `--pin-tag="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. 3.36.2, insiders)
+* `--kind, -k="<value>"`: the `kind` of deployment (one of 'k8s', 'helm', 'compose') (default: k8s)
+* `--pin-tag, -t="<value>"`: pin all images to a specific sourcegraph `tag` (e.g. '3.36.2', 'insiders') (default: latest main branch tag)
+
+### sg ops inspect-tag
+
+Inspect main branch tag details from a image or tag.
+
+```sh
+# Inspect a full image
+$ sg ops inspect-tag index.docker.io/sourcegraph/cadvisor:159625_2022-07-11_225c8ae162cc@sha256:foobar
+
+# Inspect just the tag
+$ sg ops inspect-tag 159625_2022-07-11_225c8ae162cc
+
+# Get the build number
+$ sg ops inspect-tag -p build 159625_2022-07-11_225c8ae162cc
+```
+
+Flags:
+
+* `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--property, -p="<value>"`: only output a specific `property` (one of: 'build', 'date', 'commit')
 
 ## sg analytics
 
 Manage analytics collected by sg.
 
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg analytics submit
 

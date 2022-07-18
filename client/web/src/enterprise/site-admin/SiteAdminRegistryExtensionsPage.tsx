@@ -1,7 +1,7 @@
 import * as React from 'react'
 
+import { mdiPlus } from '@mdi/js'
 import * as H from 'history'
-import AddIcon from 'mdi-react/AddIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operators'
@@ -194,7 +194,7 @@ export class SiteAdminRegistryExtensionsPage extends React.PureComponent<Props> 
                             View extensions
                         </Button>
                         <Button to="/extensions/registry/new" variant="primary" as={Link}>
-                            <Icon aria-hidden={true} as={AddIcon} /> Publish new extension
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Publish new extension
                         </Button>
                     </div>
                 </div>

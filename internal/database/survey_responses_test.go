@@ -43,16 +43,20 @@ func TestSurveyResponses_Create_Count(t *testing.T) {
 	}
 
 	fakeResponse, fakeEmail := "lorem ipsum", "email@email.email"
-	_, err = SurveyResponses(db).Create(ctx, &user.ID, nil, 9, &fakeResponse, nil)
+
+	// Basic submission including use cases
+	_, err = SurveyResponses(db).Create(ctx, &user.ID, nil, 9, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = SurveyResponses(db).Create(ctx, &user.ID, &fakeEmail, 8, nil, &fakeResponse)
+	// Advanced submission with email and additional data
+	_, err = SurveyResponses(db).Create(ctx, &user.ID, &fakeEmail, 8, &fakeResponse, &fakeResponse)
 	if err != nil {
 		t.Fatal(err)
 	}
 
+	// Basic submission with email but no user ID
 	_, err = SurveyResponses(db).Create(ctx, nil, &fakeEmail, 8, nil, nil)
 	if err != nil {
 		t.Fatal(err)

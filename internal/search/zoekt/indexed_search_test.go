@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
+	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -119,21 +120,22 @@ func TestIndexedSearch(t *testing.T) {
 						Branches:     []string{"HEAD"},
 						Version:      "1",
 						FileName:     "baz.go",
-						LineMatches: []zoekt.LineMatch{
-							{
-								Line: []byte("I'm like 1.5+ hours into writing this test :'("),
-								LineFragments: []zoekt.LineFragmentMatch{
-									{LineOffset: 0, MatchLength: 5},
-								},
-							},
-							{
-								Line: []byte("I'm ready for the rain to stop."),
-								LineFragments: []zoekt.LineFragmentMatch{
-									{LineOffset: 0, MatchLength: 5},
-									{LineOffset: 5, MatchLength: 10},
-								},
-							},
-						},
+						ChunkMatches: []zoekt.ChunkMatch{{
+							Content: []byte("I'm like 1.5+ hours into writing this test :'("),
+							Ranges: []zoekt.Range{{
+								Start: zoekt.Location{0, 1, 1},
+								End:   zoekt.Location{5, 1, 6},
+							}},
+						}, {
+							Content: []byte("I'm ready for the rain to stop."),
+							Ranges: []zoekt.Range{{
+								Start: zoekt.Location{0, 1, 1},
+								End:   zoekt.Location{5, 1, 6},
+							}, {
+								Start: zoekt.Location{5, 1, 6},
+								End:   zoekt.Location{15, 1, 16},
+							}},
+						}},
 					},
 					{
 						Repository:   "foo/foobar",
@@ -141,27 +143,28 @@ func TestIndexedSearch(t *testing.T) {
 						Branches:     []string{"HEAD"},
 						Version:      "2",
 						FileName:     "baz.go",
-						LineMatches: []zoekt.LineMatch{
-							{
-								Line: []byte("s/rain/pain"),
-								LineFragments: []zoekt.LineFragmentMatch{
-									{LineOffset: 0, MatchLength: 5},
-									{LineOffset: 5, MatchLength: 2},
-								},
-							},
-						},
+						ChunkMatches: []zoekt.ChunkMatch{{
+							Content: []byte("s/rain/pain"),
+							Ranges: []zoekt.Range{{
+								Start: zoekt.Location{0, 1, 1},
+								End:   zoekt.Location{5, 1, 6},
+							}, {
+								Start: zoekt.Location{5, 1, 6},
+								End:   zoekt.Location{7, 1, 8},
+							}},
+						}},
 					},
 				},
 				since: func(time.Time) time.Duration { return 0 },
 			},
 			wantMatchCount: 5,
 			wantMatchKeys: []result.Key{
-				{Repo: "foo/bar", Commit: "1", Path: "baz.go"},
-				{Repo: "foo/foobar", Commit: "2", Path: "baz.go"},
+				{Repo: "foo/bar", Rev: "HEAD", Commit: "1", Path: "baz.go"},
+				{Repo: "foo/foobar", Rev: "HEAD", Commit: "2", Path: "baz.go"},
 			},
 			wantMatchInputRevs: []string{
-				"",
-				"",
+				"HEAD",
+				"HEAD",
 			},
 			wantErr: false,
 		},
@@ -286,6 +289,7 @@ func TestIndexedSearch(t *testing.T) {
 
 			indexed, unindexed, err := PartitionRepos(
 				context.Background(),
+				logtest.Scoped(t),
 				tt.args.repos,
 				zoekt,
 				search.TextRequest,
@@ -356,9 +360,9 @@ func mkStatusMap(m map[string]search.RepoStatus) search.RepoStatusMap {
 
 func TestZoektIndexedRepos(t *testing.T) {
 	repos := makeRepositoryRevisions(
-		"foo/indexed-one@",
-		"foo/indexed-two@",
-		"foo/indexed-three@",
+		"foo/indexed-one@HEAD",
+		"foo/indexed-two@HEAD",
+		"foo/indexed-three@HEAD",
 		"foo/partially-indexed@HEAD:bad-rev",
 		"foo/unindexed-one",
 		"foo/unindexed-two",
@@ -488,9 +492,7 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
 			Repo: types.MinimalRepo{ID: api.RepoID(1), Name: "test/repo"},
-			Revs: []search.RevisionSpecifier{
-				{RevSpec: revSpec},
-			},
+			Revs: []string{revSpec},
 		}
 	}
 	zoektRepos := map[uint32]*zoekt.MinimalRepoListEntry{
@@ -585,31 +587,36 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 		Repository: "foo",
 		Language:   "go",
 		Version:    "deadbeef",
-		LineMatches: []zoekt.LineMatch{{
+		ChunkMatches: []zoekt.ChunkMatch{{
 			// Skips missing symbol info (shouldn't happen in practice).
-			Line:          []byte(""),
-			LineNumber:    5,
-			LineFragments: []zoekt.LineFragmentMatch{{}},
+			Content:      []byte(""),
+			ContentStart: zoekt.Location{LineNumber: 5, Column: 1},
+			Ranges: []zoekt.Range{{
+				Start: zoekt.Location{LineNumber: 5, Column: 8},
+			}},
 		}, {
-			Line:       []byte("symbol a symbol b"),
-			LineNumber: 10,
-			LineFragments: []zoekt.LineFragmentMatch{{
-				SymbolInfo: symbolInfo("a"),
+			Content:      []byte("symbol a symbol b"),
+			ContentStart: zoekt.Location{LineNumber: 10, Column: 1},
+			Ranges: []zoekt.Range{{
+				Start: zoekt.Location{LineNumber: 10, Column: 8},
 			}, {
-				SymbolInfo: symbolInfo("b"),
+				Start: zoekt.Location{LineNumber: 10, Column: 18},
 			}},
+			SymbolInfo: []*zoekt.Symbol{symbolInfo("a"), symbolInfo("b")},
 		}, {
-			Line:       []byte("symbol c"),
-			LineNumber: 15,
-			LineFragments: []zoekt.LineFragmentMatch{{
-				SymbolInfo: symbolInfo("c"),
+			Content:      []byte("symbol c"),
+			ContentStart: zoekt.Location{LineNumber: 15, Column: 1},
+			Ranges: []zoekt.Range{{
+				Start: zoekt.Location{LineNumber: 15, Column: 8},
 			}},
+			SymbolInfo: []*zoekt.Symbol{symbolInfo("c")},
 		}, {
-			Line:       []byte(`bar() { var regex = /.*\//; function baz() { }  } `),
-			LineNumber: 20,
-			LineFragments: []zoekt.LineFragmentMatch{{
-				SymbolInfo: symbolInfo("baz"),
+			Content:      []byte(`bar() { var regex = /.*\//; function baz() { }  } `),
+			ContentStart: zoekt.Location{LineNumber: 20, Column: 1},
+			Ranges: []zoekt.Range{{
+				Start: zoekt.Location{LineNumber: 20, Column: 38},
 			}},
+			SymbolInfo: []*zoekt.Symbol{symbolInfo("baz")},
 		}},
 	}
 
@@ -626,7 +633,7 @@ func TestZoektFileMatchToSymbolResults(t *testing.T) {
 	}, {
 		Name:      "b",
 		Line:      10,
-		Character: 3,
+		Character: 17,
 	}, {
 		Name:      "c",
 		Line:      15,
@@ -773,10 +780,14 @@ func TestContextWithoutDeadline_cancel(t *testing.T) {
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoName, revs := search.ParseRepositoryRevisions(repospec)
+		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
+		revs := make([]string, 0, len(revSpecs))
+		for _, revSpec := range revSpecs {
+			revs = append(revs, revSpec.RevSpec)
+		}
 		if len(revs) == 0 {
-			// treat empty list as preferring master
-			revs = []search.RevisionSpecifier{{RevSpec: ""}}
+			// treat empty list as HEAD
+			revs = []string{"HEAD"}
 		}
 		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
 	}
@@ -817,23 +828,18 @@ func TestZoektFileMatchToMultilineMatches(t *testing.T) {
 		output result.ChunkMatches
 	}{{
 		input: &zoekt.FileMatch{
-			LineMatches: []zoekt.LineMatch{{
-				Line:       []byte("testing 1 2 3"),
-				LineNumber: 1,
-				LineStart:  0,
-				LineEnd:    len("testing 1 2 3"),
-				LineFragments: []zoekt.LineFragmentMatch{{
-					LineOffset:  8,
-					Offset:      8,
-					MatchLength: 1,
+			ChunkMatches: []zoekt.ChunkMatch{{
+				Content:      []byte("testing 1 2 3"),
+				ContentStart: zoekt.Location{ByteOffset: 0, LineNumber: 1, Column: 1},
+				Ranges: []zoekt.Range{{
+					Start: zoekt.Location{8, 1, 9},
+					End:   zoekt.Location{9, 1, 10},
 				}, {
-					LineOffset:  10,
-					Offset:      10,
-					MatchLength: 1,
+					Start: zoekt.Location{10, 1, 11},
+					End:   zoekt.Location{11, 1, 12},
 				}, {
-					LineOffset:  12,
-					Offset:      12,
-					MatchLength: 1,
+					Start: zoekt.Location{12, 1, 13},
+					End:   zoekt.Location{13, 1, 14},
 				}},
 			}},
 		},

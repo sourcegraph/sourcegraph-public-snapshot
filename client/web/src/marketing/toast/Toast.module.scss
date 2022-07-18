@@ -1,0 +1,51 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.toast {
+    position: fixed;
+    right: 2rem;
+    bottom: 2rem;
+    z-index: 100; /* Overlay repository/blob contents and search results */
+    display: flex;
+    align-items: flex-start;
+    border-radius: 0.25rem;
+    border: 1px solid var(--border-color);
+    width: 32.5rem;
+
+    @media (--xs-breakpoint-down) {
+        right: 0;
+        width: 100%;
+    }
+}
+
+.contents {
+    flex: 1 1 auto;
+    margin: 0 0.5rem;
+    display: flex;
+    flex-direction: column;
+    max-width: 400px;
+}
+
+.contents-cta {
+    margin-top: 1rem;
+}
+
+.toast-body {
+    padding-top: 0.688rem;
+    width: 100%;
+}
+
+.close-button-wrap {
+    margin-bottom: 0.688rem;
+}
+
+svg.close-button-icon {
+    fill: var(--icon-color);
+    height: 0.875rem;
+    width: 0.875rem;
+}
+
+.footer {
+    width: 100%;
+    padding: 0.75rem;
+    border-top: 1px solid var(--border-color);
+}

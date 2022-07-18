@@ -60,7 +60,7 @@ func TestReadDir_SubRepoFiltering(t *testing.T) {
 
 	db := database.NewMockDB()
 	client := gitserver.NewClient(db)
-	files, err := client.ReadDir(ctx, db, checker, repo, commitID, "", false)
+	files, err := client.ReadDir(ctx, checker, repo, commitID, "", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -140,7 +140,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		client := gitserver.NewClient(db)
 
 		// dir1 should contain one entry: file1.
-		dir1Entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
+		dir1Entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir1", false)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -161,7 +161,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir2 should not exist
-		_, err = client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir2", false)
+		_, err = client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.first, "dir2", false)
 		if !os.IsNotExist(err) {
 			t.Errorf("%s: fs1.ReadDir(dir2): should not exist: %s", label, err)
 			continue
@@ -225,7 +225,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// root should have 2 entries: dir1 and file 2.
-		rootEntries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, ".", false)
+		rootEntries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.second, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs2.ReadDir(.): %s", label, err)
 			continue
@@ -242,7 +242,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// dir1 should still only contain one entry: file1.
-		dir1Entries, err = client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.second, "dir1", false)
+		dir1Entries, err = client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.second, "dir1", false)
 		if err != nil {
 			t.Errorf("%s: fs1.ReadDir(dir1): %s", label, err)
 			continue
@@ -256,7 +256,7 @@ func TestRepository_FileSystem(t *testing.T) {
 		}
 
 		// rootEntries should be empty for third commit
-		rootEntries, err = client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, test.third, ".", false)
+		rootEntries, err = client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, test.third, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs3.ReadDir(.): %s", label, err)
 			continue
@@ -311,7 +311,7 @@ func TestRepository_FileSystem_quoteChars(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
+		entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue
@@ -407,7 +407,7 @@ func TestRepository_FileSystem_gitSubmodules(t *testing.T) {
 			continue
 		}
 		checkSubmoduleFileInfo(label+" (Stat)", submod)
-		entries, err := client.ReadDir(ctx, db, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
+		entries, err := client.ReadDir(ctx, authz.DefaultSubRepoPermsChecker, test.repo, commitID, ".", false)
 		if err != nil {
 			t.Errorf("%s: fs.ReadDir(.): %s", label, err)
 			continue

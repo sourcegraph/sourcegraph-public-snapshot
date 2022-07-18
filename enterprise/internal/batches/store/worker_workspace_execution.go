@@ -19,9 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
-	"github.com/sourcegraph/sourcegraph/lib/batches/execution"
 	"github.com/sourcegraph/sourcegraph/lib/batches/execution/cache"
-	"github.com/sourcegraph/sourcegraph/lib/batches/git"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -251,18 +249,6 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 		}
 	}
 
-	// Convert step result to execution result:
-	changes, err := git.ChangesInDiff([]byte(latestStepResult.Value.Diff))
-	if err != nil {
-		return false, errors.Wrap(err, "parsing cached step diff")
-	}
-	execResult := execution.Result{
-		Outputs:      latestStepResult.Value.Outputs,
-		Diff:         latestStepResult.Value.Diff,
-		ChangedFiles: &changes,
-		Path:         workspace.Path,
-	}
-
 	rawSpecs, err := cache.ChangesetSpecsFromCache(
 		batchSpec.Spec,
 		batcheslib.Repository{
@@ -272,7 +258,8 @@ func (s *batchSpecWorkspaceExecutionWorkerStore) MarkComplete(ctx context.Contex
 			BaseRev:     workspace.Commit,
 			FileMatches: workspace.FileMatches,
 		},
-		execResult,
+		latestStepResult.Value,
+		workspace.Path,
 	)
 	if err != nil {
 		return false, errors.Wrap(err, "failed to build changeset specs from cache")

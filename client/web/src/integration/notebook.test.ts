@@ -319,9 +319,10 @@ describe('Search Notebook', () => {
         expect(renderedMarkdownText?.trim()).toEqual('Replaced text')
 
         // Edit and run new query block
-        await driver.page.click(`${newQueryBlockSelector} .monaco-editor`)
+        const inputSelector = `${newQueryBlockSelector} [data-testid="notebook-query-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${newQueryBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'repo:test query',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -353,9 +354,10 @@ describe('Search Notebook', () => {
         const fileBlockSelector = blockSelector(blockIds[2])
 
         // Edit new file block
-        await driver.page.click(`${fileBlockSelector} .monaco-editor`)
+        const inputSelector = `${fileBlockSelector} [data-testid="notebook-file-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${fileBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'client/web/file.tsx',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -601,9 +603,10 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         const symbolBlockSelector = blockSelector(blockIds[2])
 
         // Edit new symbol block
-        await driver.page.click(`${symbolBlockSelector} .monaco-editor`)
+        const inputSelector = `${symbolBlockSelector} [data-testid="notebook-symbol-block-input"]`
+        await driver.page.click(inputSelector)
         await driver.replaceText({
-            selector: `${symbolBlockSelector} .monaco-editor`,
+            selector: inputSelector,
             newText: 'func',
             selectMethod: 'keyboard',
             enterTextMethod: 'paste',
@@ -734,6 +737,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.goto(driver.sourcegraphBaseUrl + '/notebooks/n1')
         await driver.page.waitForSelector('[data-block-id]', { visible: true })
         // The first "Title 1" heading should be highlighted
+        await driver.page.waitForSelector('[data-id="title-1-id-1"][aria-current="true"]')
         expect(await getHighlightedOutlineHeading()).toEqual('title-1-id-1')
 
         // Click on "Title 2" link in the outline
@@ -743,6 +747,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
 
         // The "Title 2" heading in the outline should be highlighted
+        await driver.page.waitForSelector('[data-id="title-2-id-1"][aria-current="true"]')
         expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
     })
 
@@ -765,6 +770,7 @@ https://sourcegraph.test:3443/github.com/sourcegraph/sourcegraph@branch/-/blob/c
         await driver.page.waitForSelector('h1#title-2-id-1', { visible: true })
 
         // The "Title 2" heading in the outline should be highlighted
+        await driver.page.waitForSelector('[data-id="title-2-id-1"][aria-current="true"]')
         expect(await getHighlightedOutlineHeading()).toEqual('title-2-id-1')
     })
 

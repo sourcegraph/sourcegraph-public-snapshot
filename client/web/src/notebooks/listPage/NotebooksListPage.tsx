@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
 import { Redirect, useHistory, useLocation } from 'react-router'
 import { Observable } from 'rxjs'
 import { catchError, startWith, switchMap } from 'rxjs/operators'
@@ -10,7 +10,7 @@ import { catchError, startWith, switchMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { PageHeader, Link, Button, useEventObservable, Alert } from '@sourcegraph/wildcard'
+import { PageHeader, Button, useEventObservable, Alert, ButtonLink } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { FilteredConnectionFilter } from '../../components/FilteredConnection'
@@ -259,7 +259,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                     className="mb-3"
                 >
                     <PageHeader.Heading as="h2" styleAs="h1">
-                        <PageHeader.Breadcrumb icon={BookOutlineIcon}>Notebooks</PageHeader.Breadcrumb>
+                        <PageHeader.Breadcrumb icon={mdiBookOutline}>Notebooks</PageHeader.Breadcrumb>
                     </PageHeader.Heading>
                 </PageHeader>
                 {isErrorLike(importState) && (
@@ -271,10 +271,10 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                     <div className="nav nav-tabs">
                         {tabs.map(({ tab, title, isActive, logEventName }) => (
                             <div className="nav-item" key={tab}>
-                                <Link
+                                <ButtonLink
                                     to=""
                                     role="button"
-                                    onClick={event => {
+                                    onSelect={event => {
                                         event.preventDefault()
                                         onSelectTab(tab, `SearchNotebooks${logEventName}TabClick`)
                                     }}
@@ -283,7 +283,7 @@ export const NotebooksListPage: React.FunctionComponent<React.PropsWithChildren<
                                     <span className="text-content" data-tab-content={title}>
                                         {title}
                                     </span>
-                                </Link>
+                                </ButtonLink>
                             </div>
                         ))}
                     </div>

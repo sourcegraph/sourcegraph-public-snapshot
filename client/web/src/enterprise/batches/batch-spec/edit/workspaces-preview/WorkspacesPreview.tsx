@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiMagnify, mdiAlert } from '@mdi/js'
 import classNames from 'classnames'
-import SearchIcon from 'mdi-react/SearchIcon'
-import WarningIcon from 'mdi-react/WarningIcon'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, H4 } from '@sourcegraph/wildcard'
+import { Button, useAccordion, useStopwatch, Icon, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -134,21 +133,32 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         }
     }, [isWorkspacesPreviewInProgress, start, stop])
 
-    const ctaButton = isWorkspacesPreviewInProgress ? (
-        <Button className="mt-2 mb-2" variant="secondary" onClick={cancel}>
-            Cancel
-        </Button>
-    ) : (
-        <Button
-            className="mt-2 mb-2"
-            variant="success"
-            disabled={!!isPreviewDisabled}
-            data-tooltip={typeof isPreviewDisabled === 'string' ? isPreviewDisabled : undefined}
-            onClick={() => preview(debouncedCode)}
-        >
-            <Icon aria-hidden={true} className="mr-1" as={SearchIcon} />
-            {error ? 'Retry preview' : 'Preview workspaces'}
-        </Button>
+    // We use the same `<Button />` and just swap props so that we keep the same element
+    // hierarchy when the preview is in progress as when it is not. We do this in order to
+    // maintain focus on the button between state changes.
+    const ctaButton = useMemo(
+        () => (
+            <Tooltip
+                content={
+                    !isWorkspacesPreviewInProgress && typeof isPreviewDisabled === 'string'
+                        ? isPreviewDisabled
+                        : undefined
+                }
+            >
+                <Button
+                    variant={isWorkspacesPreviewInProgress ? 'secondary' : 'success'}
+                    onClick={isWorkspacesPreviewInProgress ? cancel : () => preview(debouncedCode)}
+                    // The "Cancel" button is always enabled while the preview is in progress
+                    disabled={!isWorkspacesPreviewInProgress && !!isPreviewDisabled}
+                >
+                    {!isWorkspacesPreviewInProgress && (
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiMagnify} />
+                    )}
+                    {isWorkspacesPreviewInProgress ? 'Cancel' : error ? 'Retry preview' : 'Preview workspaces'}
+                </Button>
+            </Tooltip>
+        ),
+        [isWorkspacesPreviewInProgress, isPreviewDisabled, cancel, preview, debouncedCode, error]
     )
 
     const [exampleReference, exampleOpen, setExampleOpen, exampleStyle] = useAccordion()
@@ -172,22 +182,26 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         <H4 className={styles.instruction}>Finish editing your batch spec, then manually preview repositories.</H4>
     ) : (
         <>
-            <H4 className={styles.instruction}>
-                {hasPreviewed ? 'Modify your' : 'Add an'} <span className="text-monospace">on:</span> statement to
-                preview repositories.
+            <H4 className={classNames(styles.instruction, styles.exampleOnStatement)}>
+                {hasPreviewed ? 'Modify your' : 'Add an'}
+                <span className="text-monospace mx-1">on:</span> statement to preview repositories.
                 {!hasPreviewed && (
-                    <Button
-                        className={styles.toggleExampleButton}
-                        display="inline"
-                        onClick={() => setExampleOpen(!exampleOpen)}
-                    >
-                        {exampleOpen ? 'Close example' : 'See example'}
-                    </Button>
+                    <div className={styles.toggleExampleButtonContainer}>
+                        <Button className={styles.toggleExampleButton} onClick={() => setExampleOpen(!exampleOpen)}>
+                            {exampleOpen ? 'Close example' : 'See example'}
+                        </Button>
+                    </div>
                 )}
             </H4>
             <animated.div style={exampleStyle} className={styles.onExample}>
                 <div ref={exampleReference} className="pt-2 pb-3">
-                    <CodeSnippet className="w-100 m-0" code={ON_STATEMENT} language="yaml" withCopyButton={true} />
+                    {/* Hide the copy button while the example is closed so that it's not focusable. */}
+                    <CodeSnippet
+                        className="w-100 m-0"
+                        code={ON_STATEMENT}
+                        language="yaml"
+                        withCopyButton={exampleOpen}
+                    />
                 </div>
             </animated.div>
         </>
@@ -214,19 +228,20 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
     }, [shouldShowConnection, showCached, cachedWorkspacesPreview, connection])
 
     return (
-        <div className="d-flex flex-column align-items-center w-100 h-100">
+        <div className={styles.container}>
             <WorkspacesListHeader>
                 <span>Workspaces {isReadOnly ? '' : 'preview '}</span>
                 {(isServerStale || resolutionState === 'CANCELED' || !hasPreviewed) &&
                     shouldShowConnection &&
                     !isWorkspacesPreviewInProgress &&
                     !isReadOnly && (
-                        <Icon
-                            className={classNames('text-muted ml-1', styles.warningIcon)}
-                            data-tooltip="The workspaces previewed below may not be up-to-date."
-                            as={WarningIcon}
-                            aria-label="The workspaces previewed below may not be up-to-date."
-                        />
+                        <Tooltip content="The workspaces previewed below may not be up-to-date.">
+                            <Icon
+                                aria-label="The workspaces previewed below may not be up-to-date."
+                                className={classNames('text-muted ml-1', styles.warningIcon)}
+                                svgPath={mdiAlert}
+                            />
+                        </Tooltip>
                     )}
                 {totalCount}
             </WorkspacesListHeader>
@@ -234,7 +249,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">
                     {error && <ErrorAlert error={error} className="w-100 mb-0" />}
-                    <div className={styles.iconContainer}>
+                    <div className={styles.iconContainer} aria-hidden={true}>
                         <PreviewLoadingSpinner
                             className={classNames({ [styles.hidden]: !isWorkspacesPreviewInProgress })}
                         />
@@ -285,8 +300,8 @@ const CTAInstruction: React.FunctionComponent<React.PropsWithChildren<{ active: 
     // that if text is forced to wrap, it isn't cut off.
     const style = useSpring({ height: active ? '3rem' : '0rem', opacity: active ? 1 : 0 })
     return (
-        <animated.h4 className={classNames(styles.instruction, styles.waitingText)} style={style}>
-            {children}
-        </animated.h4>
+        <animated.div style={style}>
+            <H4 className={classNames(styles.instruction, styles.waitingText)}>{children}</H4>
+        </animated.div>
     )
 }

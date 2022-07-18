@@ -1,10 +1,10 @@
 import React, { useMemo } from 'react'
 
+import { mdiFileDownload } from '@mdi/js'
 import { kebabCase } from 'lodash'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Link, Button, Icon, Text } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchChangeFields } from '../../graphql-operations'
@@ -29,7 +29,7 @@ export interface BatchSpecProps extends ThemeProps {
     className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<React.PropsWithChildren<BatchSpecProps>> = ({
+export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
     originalInput,
     isLightTheme,
     className,
@@ -63,7 +63,7 @@ interface BatchSpecDownloadLinkProps extends BatchSpecProps, Pick<BatchChangeFie
 export const BatchSpecDownloadLink: React.FunctionComponent<
     React.PropsWithChildren<BatchSpecDownloadLinkProps>
 > = React.memo(function BatchSpecDownloadLink({ children, className, name, originalInput, asButton }) {
-    return asButton ? (
+    const component = asButton ? (
         <Button
             variant="primary"
             as="a"
@@ -72,7 +72,6 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             target="_blank"
             rel="noopener noreferrer"
             className={className}
-            data-tooltip={`Download ${getFileName(name)}`}
         >
             {children}
         </Button>
@@ -81,28 +80,22 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             download={getFileName(name)}
             to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
             className={className}
-            data-tooltip={`Download ${getFileName(name)}`}
         >
             {children}
         </Link>
     )
+
+    return <Tooltip content={`Download ${getFileName(name)}`}>{component}</Tooltip>
 })
 
 // TODO: Consider merging this component with BatchSpecDownloadLink
 export const BatchSpecDownloadButton: React.FunctionComponent<
-    React.PropsWithChildren<BatchSpecProps & Pick<BatchChangeFields, 'name'>>
+    BatchSpecProps & Pick<BatchChangeFields, 'name'>
 > = React.memo(function BatchSpecDownloadButton(props) {
     return (
-        <Button
-            className="text-right text-nowrap"
-            {...props}
-            variant="secondary"
-            outline={true}
-            as={BatchSpecDownloadLink}
-            asButton={false}
-        >
-            <Icon aria-hidden={true} as={FileDownloadIcon} /> Download YAML
-        </Button>
+        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
+            <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
+        </BatchSpecDownloadLink>
     )
 })
 

@@ -148,6 +148,7 @@ func TestCodeMonitorStoreSlackWebhooks(t *testing.T) {
 		uid2 := insertTestUser(ctx, t, db, "u2", false)
 		ctx2 := actor.WithActor(ctx, actor.FromUser(uid2))
 		fixtures := s.insertTestMonitor(ctx1, t)
+		_ = s.insertTestMonitor(ctx2, t)
 
 		wa, err := s.CreateSlackWebhookAction(ctx1, fixtures.monitor.ID, true, true, "https://true.com")
 		require.NoError(t, err)

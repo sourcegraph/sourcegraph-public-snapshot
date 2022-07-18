@@ -12,15 +12,23 @@ import org.jetbrains.annotations.Nullable;
     name = "Config",
     storages = {@Storage("sourcegraph.xml")})
 public class SourcegraphProjectService implements PersistentStateComponent<SourcegraphProjectService> {
+    @Nullable
     public String url;
+    @Nullable
+    public String accessToken;
+    @Nullable
     public String defaultBranch;
+    @Nullable
     public String remoteUrlReplacements;
+    @Nullable
+    public Boolean isGlobbingEnabled; // This needs to be a Boolean rather than a primitive: we need the "null" state
+    @Nullable
     public String lastSearchQuery;
     public boolean lastSearchCaseSensitive;
+    @Nullable
     public String lastSearchPatternType;
+    @Nullable
     public String lastSearchContextSpec;
-    public boolean isGlobbingEnabled;
-    public String accessToken;
 
     @NotNull
     public static SourcegraphProjectService getInstance(@NotNull Project project) {
@@ -30,6 +38,11 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     @Nullable
     public String getSourcegraphUrl() {
         return url;
+    }
+
+    @Nullable
+    public String getAccessToken() {
+        return accessToken;
     }
 
     @Nullable
@@ -43,21 +56,17 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     }
 
     @Nullable
+    public Boolean isGlobbingEnabled() {
+        return this.isGlobbingEnabled;
+    }
+
+    @Nullable
     public Search getLastSearch() {
         if (lastSearchQuery == null) {
             return null;
         } else {
             return new Search(lastSearchQuery, lastSearchCaseSensitive, lastSearchPatternType, lastSearchContextSpec);
         }
-    }
-
-    public boolean isGlobbingEnabled() {
-        return this.isGlobbingEnabled;
-    }
-
-    @Nullable
-    public String getAccessToken() {
-        return accessToken;
     }
 
     @Nullable
@@ -69,13 +78,13 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     @Override
     public void loadState(@NotNull SourcegraphProjectService settings) {
         this.url = settings.url;
+        this.accessToken = settings.accessToken;
         this.defaultBranch = settings.defaultBranch;
         this.remoteUrlReplacements = settings.remoteUrlReplacements;
+        this.isGlobbingEnabled = settings.isGlobbingEnabled;
         this.lastSearchQuery = settings.lastSearchQuery != null ? settings.lastSearchQuery : "";
         this.lastSearchCaseSensitive = settings.lastSearchCaseSensitive;
         this.lastSearchPatternType = settings.lastSearchPatternType != null ? settings.lastSearchPatternType : "literal";
         this.lastSearchContextSpec = settings.lastSearchContextSpec != null ? settings.lastSearchContextSpec : "global";
-        this.isGlobbingEnabled = settings.isGlobbingEnabled;
-        this.accessToken = settings.accessToken;
     }
 }

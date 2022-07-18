@@ -106,7 +106,6 @@ export const SlackWebhookAction: React.FunctionComponent<React.PropsWithChildren
                     Send Slack message to channel <ProductStatusBadge className="ml-1 mb-1" status="beta" />{' '}
                 </div>
             }
-            label="Send Slack message to channel"
             subtitle="Post to a specified Slack channel. Requires webhook configuration."
             idName="slack-webhook"
             disabled={disabled}

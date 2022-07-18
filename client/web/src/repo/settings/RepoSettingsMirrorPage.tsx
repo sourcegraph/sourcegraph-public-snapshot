@@ -1,8 +1,8 @@
 import * as React from 'react'
 
+import { mdiLock } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import LockIcon from 'mdi-react/LockIcon'
 import { RouteComponentProps } from 'react-router'
 import { interval, Subject, Subscription } from 'rxjs'
 import { catchError, switchMap, tap } from 'rxjs/operators'
@@ -66,9 +66,9 @@ class UpdateMirrorRepositoryActionContainer extends React.PureComponent<UpdateMi
     }
 
     public render(): JSX.Element | null {
-        let title: React.ReactFragment
-        let description: React.ReactFragment
-        let buttonLabel: React.ReactFragment
+        let title: React.ReactNode
+        let description: React.ReactNode
+        let buttonLabel: React.ReactNode
         let buttonDisabled = false
         let info: React.ReactNode
         if (this.props.repo.mirrorInfo.cloneInProgress) {
@@ -325,7 +325,7 @@ export class RepoSettingsMirrorPage extends React.PureComponent<
                                     {' '}
                                     Remote repository URL{' '}
                                     <small className="text-info">
-                                        <Icon as={LockIcon} aria-hidden={true} /> Only visible to site admins
+                                        <Icon aria-hidden={true} svgPath={mdiLock} /> Only visible to site admins
                                     </small>
                                 </>
                             }

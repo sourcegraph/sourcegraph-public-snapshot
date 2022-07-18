@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/background"
-
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/licensing"
 
 	"github.com/grafana/regexp"
@@ -393,8 +392,17 @@ func (s *searchInsightDataSeriesDefinitionResolver) TimeScope(ctx context.Contex
 
 	return &insightTimeScopeUnionResolver{resolver: intervalResolver}, nil
 }
+
 func (s *searchInsightDataSeriesDefinitionResolver) GeneratedFromCaptureGroups() (bool, error) {
 	return s.series.GeneratedFromCaptureGroups, nil
+}
+
+func (s *searchInsightDataSeriesDefinitionResolver) GroupBy() (*string, error) {
+	if s.series.GroupBy != nil {
+		groupBy := strings.ToUpper(*s.series.GroupBy)
+		return &groupBy, nil
+	}
+	return s.series.GroupBy, nil
 }
 
 type insightIntervalTimeScopeResolver struct {
@@ -502,7 +510,7 @@ func (r *Resolver) CreateLineChartSearchInsight(ctx context.Context, args *graph
 
 	var scoped []types.InsightSeries
 	for _, series := range args.Input.DataSeries {
-		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, view, series)
+		c, err := createAndAttachSeries(ctx, insightTx, r.backfiller, r.insightEnqueuer, view, series)
 		if err != nil {
 			return nil, errors.Wrap(err, "createAndAttachSeries")
 		}
@@ -593,7 +601,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 
 	for _, series := range args.Input.DataSeries {
 		if series.SeriesId == nil {
-			_, err = createAndAttachSeries(ctx, tx, r.backfiller, view, series)
+			_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
 			if err != nil {
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
@@ -607,6 +615,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 					Repositories:      series.RepositoryScope.Repositories,
 					StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
 					StepIntervalValue: int(series.TimeScope.StepInterval.Value),
+					GroupBy:           lowercaseGroupBy(series.GroupBy),
 				})
 				if err != nil {
 					return nil, errors.Wrap(err, "UpdateFrontendSeries")
@@ -616,7 +625,7 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 				if err != nil {
 					return nil, errors.Wrap(err, "RemoveViewSeries")
 				}
-				_, err = createAndAttachSeries(ctx, tx, r.backfiller, view, series)
+				_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
 				if err != nil {
 					return nil, errors.Wrap(err, "createAndAttachSeries")
 				}
@@ -1000,13 +1009,23 @@ func validateUserDashboardPermissions(ctx context.Context, store store.Dashboard
 	return nil
 }
 
-func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
+func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBackfiller *background.ScopedBackfiller, insightEnqueuer *background.InsightEnqueuer, view types.InsightView, series graphqlbackend.LineChartSearchInsightDataSeriesInput) (*types.InsightSeries, error) {
 	var seriesToAdd, matchingSeries types.InsightSeries
 	var foundSeries bool
 	var err error
 	var dynamic bool
 	if series.GeneratedFromCaptureGroups != nil {
 		dynamic = *series.GeneratedFromCaptureGroups
+	}
+
+	groupBy := lowercaseGroupBy(series.GroupBy)
+	var nextRecordingAfter time.Time
+	var oldestHistoricalAt time.Time
+	if series.GroupBy != nil {
+		// We want to disable interval recording for compute types.
+		// December 31, 9999 is the maximum possible date in postgres.
+		nextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
+		oldestHistoricalAt = time.Now()
 	}
 
 	// Don't try to match on non-global series, since they are always replaced
@@ -1016,6 +1035,7 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			StepIntervalUnit:          series.TimeScope.StepInterval.Unit,
 			StepIntervalValue:         int(series.TimeScope.StepInterval.Value),
 			GenerateFromCaptureGroups: dynamic,
+			GroupBy:                   groupBy,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "FindMatchingSeries")
@@ -1036,13 +1056,25 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 			SampleIntervalValue:        int(series.TimeScope.StepInterval.Value),
 			GeneratedFromCaptureGroups: dynamic,
 			JustInTime:                 len(repos) > 0 && !deprecateJustInTime,
-			// JustInTime:       false,
-			GenerationMethod: searchGenerationMethod(series),
+			GenerationMethod:           searchGenerationMethod(series),
+			GroupBy:                    groupBy,
+			NextRecordingAfter:         nextRecordingAfter,
+			OldestHistoricalAt:         oldestHistoricalAt,
 		})
 		if err != nil {
 			return nil, errors.Wrap(err, "CreateSeries")
 		}
-		if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
+		if groupBy != nil {
+			if err := insightEnqueuer.EnqueueSingle(ctx, seriesToAdd, store.SnapshotMode, tx.StampSnapshot); err != nil {
+				return nil, errors.Wrap(err, "GroupBy.EnqueueSingle")
+			}
+			// We stamp backfill even without queueing up a backfill because we only want a single
+			// point in time.
+			_, err = tx.StampBackfill(ctx, seriesToAdd)
+			if err != nil {
+				return nil, errors.Wrap(err, "GroupBy.StampBackfill")
+			}
+		} else if len(seriesToAdd.Repositories) > 0 && deprecateJustInTime {
 			err := scopedBackfiller.ScopedBackfill(ctx, []types.InsightSeries{seriesToAdd})
 			if err != nil {
 				return nil, errors.Wrap(err, "ScopedBackfill")
@@ -1072,6 +1104,9 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 
 func searchGenerationMethod(series graphqlbackend.LineChartSearchInsightDataSeriesInput) types.GenerationMethod {
 	if series.GeneratedFromCaptureGroups != nil && *series.GeneratedFromCaptureGroups {
+		if series.GroupBy != nil {
+			return types.MappingCompute
+		}
 		return types.SearchCompute
 	}
 	return types.Search
@@ -1281,4 +1316,12 @@ func minInt(a, b int32) int32 {
 		return a
 	}
 	return b
+}
+
+func lowercaseGroupBy(groupBy *string) *string {
+	if groupBy != nil {
+		temp := strings.ToLower(*groupBy)
+		return &temp
+	}
+	return groupBy
 }

@@ -24,7 +24,6 @@ import { accessTokenSetting, updateAccessTokenSetting } from './settings/accessT
 import { endpointRequestHeadersSetting, endpointSetting, updateEndpointSetting } from './settings/endpointSetting'
 import { invalidateContextOnSettingsChange } from './settings/invalidation'
 import { LocalStorageService, SELECTED_SEARCH_CONTEXT_SPEC_KEY } from './settings/LocalStorageService'
-import { recommendSourcegraph } from './settings/recommendations'
 import { watchUninstall } from './settings/uninstall'
 import { createVSCEStateMachine, VSCEQueryState } from './state'
 import { focusSearchPanel, registerWebviews } from './webview/commands'
@@ -119,6 +118,8 @@ export function activate(context: vscode.ExtensionContext): void {
     initializeCodeSharingCommands(context, eventSourceType, localStorageService)
     // Watch for uninstall to log uninstall event
     watchUninstall(eventSourceType, localStorageService)
-    // Add Sourcegraph to workspace recommendations
-    recommendSourcegraph(localStorageService).catch(() => {})
+
+    // Add Sourcegraph to workspace recommendations (disabled for now as it was reported to violate
+    // VS Code's UX guidelines for notifications: https://code.visualstudio.com/api/ux-guidelines/notifications)
+    // recommendSourcegraph(localStorageService).catch(() => {})
 }

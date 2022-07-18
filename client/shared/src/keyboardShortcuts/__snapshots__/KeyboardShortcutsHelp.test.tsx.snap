@@ -48,7 +48,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
               >
                 <svg
                   aria-hidden="true"
-                  class="iconInline"
+                  class="mdi-icon iconInline"
                   fill="currentColor"
                   height="24"
                   role="img"

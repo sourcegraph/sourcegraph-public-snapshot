@@ -148,6 +148,13 @@ An example use of `Skip`:
  }
 ```
 
+> NOTE: If it's hard to make sure that the flake is fixed, another approach is to monitor the step wihout breaking the build, see [How to allow a CI step to fail without breaking the build and still receive a notification](../../how-to/ci_soft_failure_and_still_notify.md).
+
+
+##### Assessing flaky client steps
+
+See more information on how to assess flaky client steps [here](../../how-to/testing.md#assessing-flaky-client-steps).
+
 ##### Flaky infrastructure
 
 If the [build or test infrastructure itself is flaky](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#build-pipeline-support), then [open an issue with the `team/devx` label](https://github.com/sourcegraph/sourcegraph/issues/new?labels=team/devx) and notify the [Developer Experience team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/enablement/dev-experience#contact).

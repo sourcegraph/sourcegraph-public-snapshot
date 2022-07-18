@@ -283,15 +283,15 @@ func TestIndexLockfiles(t *testing.T) {
 	})
 
 	// Return archive dependencies for repos `foo` and `bar`
-	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]*lockfiles.Result, error) {
+	lockfilesService.ListDependenciesFunc.SetDefaultHook(func(ctx context.Context, repoName api.RepoName, rev string) ([]lockfiles.Result, error) {
 		if repoName != "github.com/example/foo" && repoName != "github.com/example/bar" {
-			return []*lockfiles.Result{}, nil
+			return []lockfiles.Result{}, nil
 		}
 
-		mavenPackages := []reposource.PackageDependency{
-			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
-			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
-			&reposource.MavenDependency{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
+		mavenPackages := []reposource.VersionedPackage{
+			&reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{GroupID: "g1", ArtifactID: "a1"}, Version: fmt.Sprintf("1-%s-%s", repoName, rev)},
+			&reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{GroupID: "g2", ArtifactID: "a2"}, Version: fmt.Sprintf("2-%s-%s", repoName, rev)},
+			&reposource.MavenVersionedPackage{MavenModule: &reposource.MavenModule{GroupID: "g3", ArtifactID: "a3"}, Version: fmt.Sprintf("3-%s-%s", repoName, rev)},
 		}
 
 		graph1 := &lockfiles.DependencyGraph{}
@@ -299,14 +299,14 @@ func TestIndexLockfiles(t *testing.T) {
 
 		switch rev {
 		case "deadbeef1":
-			return []*lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: graph1}}, nil
+			return []lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: graph1}}, nil
 		case "deadbeef2":
-			return []*lockfiles.Result{
+			return []lockfiles.Result{
 				{Lockfile: "pom.xml", Deps: mavenPackages, Graph: graph2},
 				{Lockfile: "pom2.xml", Deps: mavenPackages, Graph: nil},
 			}, nil
 		default:
-			return []*lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: nil}}, nil
+			return []lockfiles.Result{{Lockfile: "pom.xml", Deps: mavenPackages, Graph: nil}}, nil
 		}
 	})
 
@@ -316,7 +316,7 @@ func TestIndexLockfiles(t *testing.T) {
 		for _, dependencyRepo := range dependencyRepos {
 			// repo is even + commit is odd, or
 			// repo is odd + commit is even
-			if endsWithEvenDigit(dependencyRepo.Name) != endsWithEvenDigit(dependencyRepo.Version) {
+			if endsWithEvenDigit(string(dependencyRepo.Name)) != endsWithEvenDigit(dependencyRepo.Version) {
 				continue
 			}
 
@@ -346,7 +346,7 @@ func TestIndexLockfiles(t *testing.T) {
 		t.Fatalf("unexpected error querying dependencies: %s", err)
 	}
 
-	// Assert `store.UpsertLockfileDependencies` was called
+	// Assert `store.UpsertLockfileGraph` was called
 	mockassert.CalledN(t, mockStore.UpsertLockfileGraphFunc, 7)
 	mockassert.CalledOnceWith(t, mockStore.UpsertLockfileGraphFunc, mockassert.Values(mockassert.Skip, "github.com/example/foo", "deadbeef1", "pom.xml", mockassert.Skip))
 	// deadbeef2 has 2 results

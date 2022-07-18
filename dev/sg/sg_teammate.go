@@ -18,7 +18,7 @@ import (
 )
 
 func getTeamResolver(ctx context.Context) (team.TeammateResolver, error) {
-	slackClient, err := slack.NewClient(ctx)
+	slackClient, err := slack.NewClient(ctx, std.Out)
 	if err != nil {
 		return nil, errors.Newf("slack.NewClient: %w", err)
 	}

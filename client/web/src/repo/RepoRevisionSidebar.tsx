@@ -1,9 +1,8 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiChevronDoubleRight, mdiChevronDoubleLeft } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import ChevronDoubleLeftIcon from 'mdi-react/ChevronDoubleLeftIcon'
-import ChevronDoubleRightIcon from 'mdi-react/ChevronDoubleRightIcon'
 
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -21,6 +20,7 @@ import {
     Tabs,
     Icon,
     Panel,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import settingsSchemaJSON from '../../../../schema/settings.schema.json'
@@ -76,15 +76,19 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
 
     if (!isVisible) {
         return (
-            <Button
-                variant="icon"
-                className={classNames('position-absolute border-top border-bottom border-right mt-4', styles.toggle)}
-                onClick={() => handleSidebarToggle(true)}
-                data-tooltip="Show sidebar"
-                aria-label="Show sidebar"
-            >
-                <Icon as={ChevronDoubleRightIcon} aria-hidden={true} />
-            </Button>
+            <Tooltip content="Show sidebar">
+                <Button
+                    aria-label="Show sidebar"
+                    variant="icon"
+                    className={classNames(
+                        'position-absolute border-top border-bottom border-right mt-4',
+                        styles.toggle
+                    )}
+                    onClick={() => handleSidebarToggle(true)}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiChevronDoubleRight} />
+                </Button>
+            </Tooltip>
         )
     }
 
@@ -98,23 +102,26 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
                     isSourcegraphDotCom={props.isSourcegraphDotCom}
                 />
                 <Tabs
-                    className="w-100 test-repo-revision-sidebar pr-3 h-25 flex-grow-1"
+                    className="w-100 test-repo-revision-sidebar pr-3 h-25 d-flex flex-column flex-grow-1"
                     defaultIndex={persistedTabIndex}
                     onChange={setPersistedTabIndex}
                     lazy={true}
                 >
                     <TabList
                         actions={
-                            <Button
-                                onClick={() => handleSidebarToggle(false)}
-                                className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
-                                title="Hide sidebar"
-                                data-tooltip="Hide sidebar"
-                                data-placement="right"
-                                aria-label="Hide sidebar"
-                            >
-                                <Icon className={styles.closeIcon} as={ChevronDoubleLeftIcon} aria-hidden={true} />
-                            </Button>
+                            <Tooltip content="Hide sidebar" placement="right">
+                                <Button
+                                    aria-label="Hide sidebar"
+                                    onClick={() => handleSidebarToggle(false)}
+                                    className="bg-transparent border-0 ml-auto p-1 position-relative focus-behaviour"
+                                >
+                                    <Icon
+                                        className={styles.closeIcon}
+                                        aria-hidden={true}
+                                        svgPath={mdiChevronDoubleLeft}
+                                    />
+                                </Button>
+                            </Tooltip>
                         }
                     >
                         <Tab data-tab-content="files">

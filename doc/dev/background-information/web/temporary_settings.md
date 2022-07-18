@@ -152,7 +152,7 @@ In order to make it easier to write test against temporary settings, you can use
 ```typescript
 it('mocks saved temporary settings', () => {
     render(
-        <MockTemporarySettings settings={{ 'search.contexts.ctaDismissed': false }}>
+        <MockTemporarySettings settings={{ 'search.notepad.enabled': false }}>
             <MyComponent />
         </MockTemporarySettings>
     )

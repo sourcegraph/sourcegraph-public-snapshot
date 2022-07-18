@@ -31,6 +31,16 @@ func BenchmarkSearchRegex_large_fixed(b *testing.B) {
 	})
 }
 
+func BenchmarkSearchRegex_rare_fixed(b *testing.B) {
+	benchSearchRegex(b, &protocol.Request{
+		Repo:   "github.com/golang/go",
+		Commit: "0ebaca6ba27534add5930a95acffa9acff182e2b",
+		PatternInfo: protocol.PatternInfo{
+			Pattern: "REBOOT_CMD",
+		},
+	})
+}
+
 func BenchmarkSearchRegex_large_fixed_casesensitive(b *testing.B) {
 	benchSearchRegex(b, &protocol.Request{
 		Repo:   "github.com/golang/go",

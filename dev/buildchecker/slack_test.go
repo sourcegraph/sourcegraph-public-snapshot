@@ -39,8 +39,6 @@ func TestWeeklySummary(t *testing.T) {
 • Total incident duration: *150ns*
 
 For a more detailed breakdown, view the dashboards in <https://sourcegraph.grafana.net/d/iBBWbxFnk/buildkite?orgId=1&from=now-7d&to=now|Grafana>.
-
-For a high-level overview, view the dashboards at <https://app.okayhq.com/dashboards/3856903d-33ea-4d60-9719-68fec0eb4313/build-stats-kpis|OkayHQ>.
 `)
 	want.Equal(t, got)
 }

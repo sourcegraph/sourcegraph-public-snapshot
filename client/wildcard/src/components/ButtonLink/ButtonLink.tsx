@@ -10,16 +10,13 @@ import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
 import { Button, ButtonProps } from '../Button'
 import { Link, AnchorLink } from '../Link'
 
-const isSelectKeyPress = (event: React.KeyboardEvent): boolean => {
-    event.preventDefault()
-    return (
-        (event.key === Key.Enter || event.key === ' ') &&
-        !event.ctrlKey &&
-        !event.shiftKey &&
-        !event.metaKey &&
-        !event.altKey
-    )
-}
+const isSelectKeyPress = (event: React.KeyboardEvent): boolean =>
+    (event.key === Key.Enter || event.key === ' ') &&
+    !event.ctrlKey &&
+    !event.shiftKey &&
+    !event.metaKey &&
+    !event.altKey
+
 export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
     Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'onSelect'> & {
         /** The link destination URL. */
@@ -29,9 +26,6 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
          * Called when the user clicks or presses enter on this element.
          */
         onSelect?: (event: React.MouseEvent<HTMLElement> | React.KeyboardEvent<HTMLElement>) => void
-
-        /** A tooltip to display when the user hovers or focuses this element. */
-        ['data-tooltip']?: string
 
         /**
          * If given, the element is treated as a toggle with the boolean indicating its state.
@@ -57,14 +51,13 @@ export type ButtonLinkProps = Omit<ButtonProps, 'as' | 'onSelect'> &
  *
  * It is keyboard accessible: unlike `<Link>` or `<a>`, pressing the enter key triggers it.
  */
-export const ButtonLink = React.forwardRef((props, reference) => {
+export const ButtonLink = React.forwardRef(function ButtonLink(props, reference) {
     const {
         className,
         to,
         disabled,
         disabledClassName,
         pressed,
-        'data-tooltip': tooltip,
         onSelect,
         children,
         id,
@@ -82,6 +75,8 @@ export const ButtonLink = React.forwardRef((props, reference) => {
             return
         }
 
+        // Override the original key press and trigger the click event
+        event.preventDefault()
         buttonReference.current?.click()
     }
 
@@ -99,8 +94,6 @@ export const ButtonLink = React.forwardRef((props, reference) => {
     const commonProps = {
         // `.disabled` will only be selected if the `.btn` class is applied as well
         className: classNames(className, disabled && ['disabled', disabledClassName]),
-        'data-tooltip': tooltip,
-        'aria-label': tooltip,
         role: typeof pressed === 'boolean' ? 'button' : undefined,
         'aria-pressed': pressed,
         tabIndex: isDefined(tabIndex) ? tabIndex : disabled ? -1 : 0,
@@ -134,5 +127,3 @@ export const ButtonLink = React.forwardRef((props, reference) => {
         </Button>
     )
 }) as ForwardReferenceComponent<typeof AnchorLink, ButtonLinkProps>
-
-ButtonLink.displayName = 'ButtonLink'

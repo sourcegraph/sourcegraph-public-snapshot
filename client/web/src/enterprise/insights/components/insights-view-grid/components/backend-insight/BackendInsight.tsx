@@ -17,12 +17,11 @@ import {
 } from '../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../insights/utils/use-series-toggle'
 import { BackendInsight, BackendInsightData, CodeInsightsBackendContext, InsightFilters } from '../../../../core'
-import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { createBackendInsightData } from '../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { insightPollingInterval } from '../../../../core/backend/gql-backend/utils/insight-polling'
-import { SeriesDisplayOptionsInputRequired } from '../../../../core/types/insight/common'
 import { getTrackingTypeByInsightType, useCodeInsightViewPings } from '../../../../pings'
-import { FORM_ERROR, SubmissionErrors } from '../../../form/hooks/useForm'
+import { FORM_ERROR, SubmissionErrors } from '../../../form'
 import { InsightCard, InsightCardBanner, InsightCardHeader, InsightCardLoading } from '../../../views'
 import { useVisibility } from '../../hooks/use-insight-data'
 import { InsightContextMenu } from '../insight-context-menu/InsightContextMenu'
@@ -34,7 +33,7 @@ import {
     DrillDownInsightCreationFormValues,
     BackendInsightChart,
 } from './components'
-import { parseSeriesDisplayOptions } from './components/drill-down-filters-panel/drill-down-filters/utils'
+import { parseSeriesLimit } from './components/drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './BackendInsight.module.scss'
 
@@ -59,14 +58,14 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // deleted when the insight is scrolled out of view
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
-    const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
+    const [enablePolling] = useFeatureFlag('insight-polling-enabled', false)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
-    const { wasEverVisible } = useVisibility(insightCardReference)
+    const { isVisible, wasEverVisible } = useVisibility(insightCardReference)
 
     // Use deep copy check in case if a setting subject has re-created copy of
     // the insight config with same structure and values. To avoid insight data
@@ -76,12 +75,10 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // Original insight filters values that are stored in setting subject with insight
     // configuration object, They are updated  whenever the user clicks update/save button
     const [originalInsightFilters, setOriginalInsightFilters] = useState(cachedInsight.filters)
-    const [originalSeriesDisplayOptions] = useState(cachedInsight.seriesDisplayOptions)
 
     // Live valid filters from filter form. They are updated whenever the user is changing
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
-    const [seriesDisplayOptions, setSeriesDisplayOptions] = useState(originalSeriesDisplayOptions)
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
@@ -90,36 +87,39 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         excludeRepoRegex: debouncedFilters.excludeRepoRegexp,
         searchContexts: [debouncedFilters.context],
     }
-    const displayInput: SeriesDisplayOptionsInput = {
-        limit: seriesDisplayOptions?.limit,
-        sortOptions: seriesDisplayOptions?.sortOptions,
+    const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+        limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
+        sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
     const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
-            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions: displayInput },
+            variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
             pollInterval: pollingInterval,
+            // TODO: Fix problem with offscreen pooling see https://github.com/sourcegraph/sourcegraph/issues/38425
             skip: !wasEverVisible,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
-                const parsedData = createBackendInsightData(insight, data.insightViews.nodes[0])
+                const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
                 if (!parsedData.isFetchingHistoricalData) {
                     stopPolling()
                 }
                 seriesToggleState.setSelectedSeriesIds([])
                 setInsightData(parsedData)
             },
+            onError: () => stopPolling(),
         }
     )
 
-    const handleFilterSave = async (
-        filters: InsightFilters,
-        displayOptions: SeriesDisplayOptionsInput
-    ): Promise<SubmissionErrors> => {
+    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
         try {
-            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions: displayOptions }
+            const seriesDisplayOptions: SeriesDisplayOptionsInput = {
+                limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
+                sortOptions: filters.seriesDisplayOptions.sortOptions,
+            }
+            const insightWithNewFilters = { ...insight, filters, seriesDisplayOptions }
 
             await updateInsight({ insightId: insight.id, nextInsightData: insightWithNewFilters }).toPromise()
 
@@ -148,7 +148,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 ...insight,
                 title: insightName,
                 filters,
-                seriesDisplayOptions,
             }
 
             await createInsight({
@@ -158,7 +157,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
 
             telemetryService.log('CodeInsightsSearchBasedFilterInsightCreation')
             setOriginalInsightFilters(filters)
-            setSeriesDisplayOptions(originalSeriesDisplayOptions)
             setIsFiltersOpen(false)
         } catch (error) {
             return { [FORM_ERROR]: asError(error) }
@@ -173,11 +171,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     })
 
     const shareableUrl = `${window.location.origin}/insights/insight/${insight.id}`
-
-    const handleSeriesDisplayOptionsChange = (options: SeriesDisplayOptionsInputRequired): void => {
-        setSeriesDisplayOptions(options)
-        seriesToggleState.setSelectedSeriesIds([])
-    }
 
     return (
         <InsightCard
@@ -195,7 +188,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                     </Link>
                 }
             >
-                {wasEverVisible && (
+                {isVisible && (
                     <>
                         <DrillDownFiltersPopover
                             isOpen={isFiltersOpen}
@@ -207,10 +200,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}
                             onVisibilityChange={setIsFiltersOpen}
-                            originalSeriesDisplayOptions={parseSeriesDisplayOptions(
-                                insight.defaultSeriesDisplayOptions
-                            )}
-                            onSeriesDisplayOptionsChange={handleSeriesDisplayOptionsChange}
                         />
                         <InsightContextMenu
                             insight={insight}
@@ -227,7 +216,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                 <InsightCardBanner>Resizing</InsightCardBanner>
             ) : error ? (
                 <BackendInsightErrorAlert error={error} />
-            ) : loading || !wasEverVisible || !insightData ? (
+            ) : loading || !isVisible || !insightData ? (
                 <InsightCardLoading>Loading code insight</InsightCardLoading>
             ) : (
                 <BackendInsightChart
@@ -241,7 +230,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
             {
                 // Passing children props explicitly to render any top-level content like
                 // resize-handler from the react-grid-layout library
-                wasEverVisible && otherProps.children
+                isVisible && otherProps.children
             }
         </InsightCard>
     )

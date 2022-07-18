@@ -260,7 +260,7 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
-func DependeciesSearchEnabled() bool {
+func DependenciesSearchEnabled() bool {
 	val := ExperimentalFeatures().DependenciesSearch
 	if val == "" {
 		return true

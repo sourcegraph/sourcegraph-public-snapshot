@@ -36,21 +36,21 @@ type Result struct {
 	Lockfile string
 
 	// Deps is the flat list of all dependencies found in Lockfile.
-	Deps []reposource.PackageDependency
+	Deps []reposource.VersionedPackage
 	// Graph is the dependency graph found in the Lockfile. If no graph could
 	// be built (`package.json` without `yarn.lock` doesn't allow building a
 	// fully-resolved dependency graph).
 	Graph *DependencyGraph
 }
 
-func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (results []*Result, err error) {
+func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev string) (results []Result, err error) {
 	ctx, _, endObservation := s.operations.listDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("rev", rev),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	err = s.StreamDependencies(ctx, repo, rev, func(r *Result) error {
+	err = s.StreamDependencies(ctx, repo, rev, func(r Result) error {
 		results = append(results, r)
 		return nil
 	})
@@ -58,7 +58,7 @@ func (s *Service) ListDependencies(ctx context.Context, repo api.RepoName, rev s
 	return results, err
 }
 
-func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(*Result) error) (err error) {
+func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev string, cb func(Result) error) (err error) {
 	ctx, _, endObservation := s.operations.streamDependencies.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repo", string(repo)),
 		log.String("rev", rev),
@@ -119,11 +119,11 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 			return errors.Wrapf(err, "failed to parse %q", f.Name)
 		}
 
-		result := &Result{Lockfile: f.Name, Graph: graph}
+		result := Result{Lockfile: f.Name, Graph: graph}
 
 		set := make(map[string]struct{})
 		for _, d := range ds {
-			k := d.PackageManagerSyntax()
+			k := d.VersionedPackageSyntax()
 			if _, ok := set[k]; !ok {
 				set[k] = struct{}{}
 				result.Deps = append(result.Deps, d)
@@ -136,7 +136,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 	return nil
 }
 
-func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, *DependencyGraph, error) {
+func parseZipLockfile(f *zip.File) ([]reposource.VersionedPackage, *DependencyGraph, error) {
 	r, err := f.Open()
 	if err != nil {
 		return nil, nil, err
@@ -151,7 +151,7 @@ func parseZipLockfile(f *zip.File) ([]reposource.PackageDependency, *DependencyG
 	return deps, graph, nil
 }
 
-func parse(file string, r io.Reader) ([]reposource.PackageDependency, *DependencyGraph, error) {
+func parse(file string, r io.Reader) ([]reposource.VersionedPackage, *DependencyGraph, error) {
 	parser, ok := parsers[path.Base(file)]
 	if !ok {
 		return nil, nil, ErrUnsupported

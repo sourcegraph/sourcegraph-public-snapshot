@@ -1,11 +1,11 @@
 import * as React from 'react'
 
-import WrapIcon from 'mdi-react/WrapIcon'
+import { mdiWrap, mdiWrapDisabled } from '@mdi/js'
 import { fromEvent, Subject, Subscription } from 'rxjs'
 import { filter } from 'rxjs/operators'
 
 import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
-import { DeprecatedTooltipController, Icon } from '@sourcegraph/wildcard'
+import { DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
 import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
@@ -76,22 +76,33 @@ export class ToggleLineWrap extends React.PureComponent<
         if (this.props.actionType === 'dropdown') {
             return (
                 <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
-                    <Icon as={this.state.value ? WrapDisabledIcon : WrapIcon} aria-hidden={true} />
+                    <Icon
+                        as={this.state.value ? WrapDisabledIcon : undefined}
+                        svgPath={!this.state.value ? mdiWrap : undefined}
+                        aria-hidden={true}
+                    />
                     <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
                 </RepoHeaderActionButtonLink>
             )
         }
 
         return (
-            <RepoHeaderActionButtonLink
-                className="btn-icon"
-                file={false}
-                onSelect={this.onClick}
-                data-tooltip={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
-                aria-label={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}
-            >
-                <Icon as={this.state.value ? WrapDisabledIcon : WrapIcon} aria-hidden={true} />
-            </RepoHeaderActionButtonLink>
+            <Tooltip content={`${this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)`}>
+                {/**
+                 * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+                 * break its onClick handler and it will no longer prevent the default page reload (with no href).
+                 */}
+                <span>
+                    <RepoHeaderActionButtonLink
+                        aria-label={this.state.value ? 'Disable' : 'Enable'}
+                        className="btn-icon"
+                        file={false}
+                        onSelect={this.onClick}
+                    >
+                        <Icon svgPath={this.state.value ? mdiWrapDisabled : mdiWrap} aria-hidden={true} />
+                    </RepoHeaderActionButtonLink>
+                </span>
+            </Tooltip>
         )
     }
 

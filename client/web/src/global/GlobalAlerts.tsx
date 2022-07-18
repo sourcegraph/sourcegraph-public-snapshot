@@ -109,7 +109,7 @@ export const GlobalAlerts: React.FunctionComponent<Props> = ({
                 >
                     <div>
                         <strong>Warning!</strong> This build uses data from the proxied API:{' '}
-                        <Link target="__blank" to={process.env.SOURCEGRAPH_API_URL}>
+                        <Link className={styles.proxyLink} target="__blank" to={process.env.SOURCEGRAPH_API_URL}>
                             {process.env.SOURCEGRAPH_API_URL}
                         </Link>
                     </div>

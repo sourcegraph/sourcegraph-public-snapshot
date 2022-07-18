@@ -20,13 +20,12 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"golang.org/x/sync/semaphore"
 	"golang.org/x/time/rate"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -38,17 +37,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log/logtest"
-
-	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 type Test struct {
-	Name                             string
-	Request                          *http.Request
-	ExpectedCode                     int
-	ExpectedBody                     string
-	ExpectedTrailers                 http.Header
-	EnableGitServerCommandExecFilter bool
+	Name             string
+	Request          *http.Request
+	ExpectedCode     int
+	ExpectedBody     string
+	ExpectedTrailers http.Header
 }
 
 func TestRequest(t *testing.T) {
@@ -117,36 +113,16 @@ func TestRequest(t *testing.T) {
 			},
 		},
 		{
-			Name:         "EmptyBody",
-			Request:      httptest.NewRequest("POST", "/exec", nil),
-			ExpectedCode: http.StatusBadRequest,
-			ExpectedBody: `EOF`,
-		},
-		{
 			Name:         "EmptyInput",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
-		},
-		{
-			Name:                             "EmptyInput/EnableGitServerCommandExecFilter",
-			Request:                          httptest.NewRequest("POST", "/exec", strings.NewReader("{}")),
-			ExpectedCode:                     http.StatusBadRequest,
-			ExpectedBody:                     "invalid command",
-			EnableGitServerCommandExecFilter: true,
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "invalid command",
 		},
 		{
 			Name:         "BadCommand",
 			Request:      httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
-			ExpectedCode: http.StatusNotFound,
-			ExpectedBody: `{"cloneInProgress":false}`,
-		},
-		{
-			Name:                             "BadCommand/EnableGitServerCommandExecFilter",
-			Request:                          httptest.NewRequest("POST", "/exec", strings.NewReader(`{"repo":"github.com/sourcegraph/sourcegraph", "args": ["invalid-command"]}`)),
-			ExpectedCode:                     http.StatusBadRequest,
-			ExpectedBody:                     "invalid command",
-			EnableGitServerCommandExecFilter: true,
+			ExpectedCode: http.StatusBadRequest,
+			ExpectedBody: "invalid command",
 		},
 	}
 
@@ -192,14 +168,6 @@ func TestRequest(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.Name, func(t *testing.T) {
-			conf.Mock(&conf.Unified{
-				SiteConfiguration: schema.SiteConfiguration{
-					ExperimentalFeatures: &schema.ExperimentalFeatures{
-						EnableGitServerCommandExecFilter: test.EnableGitServerCommandExecFilter,
-					},
-				},
-			})
-
 			w := httptest.ResponseRecorder{Body: new(bytes.Buffer)}
 			h.ServeHTTP(&w, test.Request)
 
@@ -1562,7 +1530,7 @@ func mustEncodeJSONResponse(value any) string {
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }

@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiChevronDown } from '@mdi/js'
 import VisuallyHidden from '@reach/visually-hidden'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
 
 import {
     ProductStatusBadge,
@@ -15,6 +15,8 @@ import {
     MenuDivider,
     H4,
     Text,
+    Tooltip,
+    Icon,
 } from '@sourcegraph/wildcard'
 
 import styles from './DropdownButton.module.scss'
@@ -132,18 +134,19 @@ export const DropdownButton: React.FunctionComponent<React.PropsWithChildren<Pro
             {renderedElement}
             <Menu>
                 <ButtonGroup>
-                    <Button
-                        className="text-nowrap"
-                        onClick={onTriggerAction}
-                        disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
-                        data-tooltip={tooltip}
-                        variant="primary"
-                    >
-                        {label}
-                    </Button>
+                    <Tooltip content={tooltip}>
+                        <Button
+                            className="text-nowrap"
+                            onClick={onTriggerAction}
+                            disabled={isDisabled || actions.length === 0 || selectedAction === undefined}
+                            variant="primary"
+                        >
+                            {label}
+                        </Button>
+                    </Tooltip>
                     {actions.length > 1 && (
                         <MenuButton variant="primary" className={styles.dropdownButton}>
-                            <ChevronDownIcon />
+                            <Icon svgPath={mdiChevronDown} inline={false} aria-hidden={true} />
                             <VisuallyHidden>Actions</VisuallyHidden>
                         </MenuButton>
                     )}

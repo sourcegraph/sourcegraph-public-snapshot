@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
+import { mdiOpenInNew } from '@mdi/js'
 
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader, ButtonLink, Icon, Text } from '@sourcegraph/wildcard'
@@ -37,7 +37,7 @@ export const ProductResearchPage: React.FunctionComponent<React.PropsWithChildre
                     of our product!
                 </Text>
                 <ButtonLink to={signUpForm.href} target="_blank" rel="noopener noreferrer" variant="primary">
-                    Sign up now <Icon as={OpenInNewIcon} aria-hidden={true} />
+                    Sign up now <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                 </ButtonLink>
             </Container>
         </>

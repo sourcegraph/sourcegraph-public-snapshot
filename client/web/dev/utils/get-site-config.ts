@@ -1,6 +1,6 @@
 import fs from 'fs'
 
-import { parse } from '@sqs/jsonc-parser'
+import { parse } from 'jsonc-parser'
 import lodash from 'lodash'
 
 import { SourcegraphContext } from '../../src/jscontext'

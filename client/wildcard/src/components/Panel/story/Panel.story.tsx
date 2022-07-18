@@ -11,7 +11,7 @@ import { panels } from '@sourcegraph/branded/src/components/panel/TabbedPanelCon
 import { EmptyPanelView } from '@sourcegraph/branded/src/components/panel/views/EmptyPanelView'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
-import { H1, H2 } from '../..'
+import { H1, H2, Tooltip } from '../..'
 import { Button } from '../../Button'
 import { Grid } from '../../Grid'
 import { Icon } from '../../Icon'
@@ -114,7 +114,9 @@ export const Simple: Story = () => {
     )
 }
 
-export const WithChildren: Story = props => {
+// props must be undefined somewhere, and Storybook docs addon causes Storybook to crash.
+// Setting a default parameter is a workaround to this issue
+export const WithChildren: Story = (props = {}) => {
     const [tabIndex, setTabIndex] = React.useState(0)
     const activeTab = panels[tabIndex]
 
@@ -138,16 +140,16 @@ export const WithChildren: Story = props => {
                         ))}
                     </TabList>
                     <div className="align-items-center d-flex mr-2">
-                        <Button
-                            onClick={closePanel}
-                            className={classNames('ml-2')}
-                            title="Close panel"
-                            data-tooltip="Close panel"
-                            data-placement="left"
-                            variant="icon"
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiClose} />
-                        </Button>
+                        <Tooltip content="Close panel" placement="left">
+                            <Button
+                                onClick={closePanel}
+                                className={classNames('ml-2')}
+                                title="Close panel"
+                                variant="icon"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                            </Button>
+                        </Tooltip>
                     </div>
                 </div>
                 <TabPanels>

@@ -349,7 +349,7 @@ export const ExtensionRegistry: React.FunctionComponent<React.PropsWithChildren<
                                     name="query"
                                     value={query}
                                     onChange={onQueryChangeEvent}
-                                    autoFocus={true}
+                                    autoFocus={false}
                                     autoComplete="off"
                                     autoCorrect="off"
                                     autoCapitalize="off"

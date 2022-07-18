@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/go-langserver/pkg/lsp"
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -14,12 +15,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 )
 
-func NewResolver(db database.DB) gql.ComputeResolver {
-	return &Resolver{db: db}
+func NewResolver(logger log.Logger, db database.DB) gql.ComputeResolver {
+	return &Resolver{logger: logger, db: db}
 }
 
 type Resolver struct {
-	db database.DB
+	logger log.Logger
+	db     database.DB
 }
 
 type computeMatchContextResolver struct {
@@ -218,7 +220,7 @@ func toResultResolverList(ctx context.Context, cmd compute.Command, matches []re
 
 // NewBatchComputeImplementer is a function that abstracts away the need to have a
 // handle on (*schemaResolver) Compute.
-func NewBatchComputeImplementer(ctx context.Context, db database.DB, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
+func NewBatchComputeImplementer(ctx context.Context, logger log.Logger, db database.DB, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
 	computeQuery, err := compute.Parse(args.Query)
 	if err != nil {
 		return nil, err
@@ -231,7 +233,7 @@ func NewBatchComputeImplementer(ctx context.Context, db database.DB, args *gql.C
 	log15.Debug("compute", "search", searchQuery)
 
 	patternType := "regexp"
-	job, err := gql.NewBatchSearchImplementer(ctx, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
+	job, err := gql.NewBatchSearchImplementer(ctx, logger, db, &gql.SearchArgs{Query: searchQuery, PatternType: &patternType})
 	if err != nil {
 		return nil, err
 	}
@@ -244,5 +246,5 @@ func NewBatchComputeImplementer(ctx context.Context, db database.DB, args *gql.C
 }
 
 func (r *Resolver) Compute(ctx context.Context, args *gql.ComputeArgs) ([]gql.ComputeResultResolver, error) {
-	return NewBatchComputeImplementer(ctx, r.db, args)
+	return NewBatchComputeImplementer(ctx, r.logger, r.db, args)
 }

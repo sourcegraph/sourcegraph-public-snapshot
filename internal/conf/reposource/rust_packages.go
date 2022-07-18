@@ -7,73 +7,77 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type RustDependency struct {
-	Name    string
+type RustVersionedPackage struct {
+	Name    PackageName
 	Version string
 }
 
-func NewRustDependency(name, version string) *RustDependency {
-	return &RustDependency{
+func NewRustVersionedPackage(name PackageName, version string) *RustVersionedPackage {
+	return &RustVersionedPackage{
 		Name:    name,
 		Version: version,
 	}
 }
 
-// ParseRustDependency parses a string in a '<name>(@version>)?' format into an
-// RustDependency.
-func ParseRustDependency(dependency string) (*RustDependency, error) {
-	var dep RustDependency
+// ParseRustVersionedPackage parses a string in a '<name>(@version>)?' format into an
+// RustVersionedPackage.
+func ParseRustVersionedPackage(dependency string) (*RustVersionedPackage, error) {
+	var dep RustVersionedPackage
 	if i := strings.LastIndex(dependency, "@"); i == -1 {
-		dep.Name = dependency
+		dep.Name = PackageName(dependency)
 	} else {
-		dep.Name = strings.TrimSpace(dependency[:i])
+		dep.Name = PackageName(strings.TrimSpace(dependency[:i]))
 		dep.Version = strings.TrimSpace(dependency[i+1:])
 	}
 	return &dep, nil
 }
 
-// ParseRustDependencyFromRepoName is a convenience function to parse a repo name in a
-// 'crates/<name>(@<version>)?' format into a RustDependency.
-func ParseRustDependencyFromRepoName(name string) (*RustDependency, error) {
-	dependency := strings.TrimPrefix(name, "crates/")
+func ParseRustPackageFromName(name PackageName) (*RustVersionedPackage, error) {
+	return ParseRustVersionedPackage(string(name))
+}
+
+// ParseRustPackageFromRepoName is a convenience function to parse a repo name in a
+// 'crates/<name>(@<version>)?' format into a RustVersionedPackage.
+func ParseRustPackageFromRepoName(name api.RepoName) (*RustVersionedPackage, error) {
+	dependency := strings.TrimPrefix(string(name), "crates/")
 	if len(dependency) == len(name) {
 		return nil, errors.Newf("invalid Rust dependency repo name, missing crates/ prefix '%s'", name)
 	}
-	return ParseRustDependency(dependency)
+	return ParseRustVersionedPackage(dependency)
 }
 
-func (p *RustDependency) Scheme() string {
+func (p *RustVersionedPackage) Scheme() string {
 	return "rust-analyzer"
 }
 
-func (p *RustDependency) PackageSyntax() string {
+func (p *RustVersionedPackage) PackageSyntax() PackageName {
 	return p.Name
 }
 
-func (p *RustDependency) PackageManagerSyntax() string {
+func (p *RustVersionedPackage) VersionedPackageSyntax() string {
 	if p.Version == "" {
-		return p.Name
+		return string(p.Name)
 	}
-	return p.Name + "@" + p.Version
+	return string(p.Name) + "@" + p.Version
 }
 
-func (p *RustDependency) PackageVersion() string {
+func (p *RustVersionedPackage) PackageVersion() string {
 	return p.Version
 }
 
-func (p *RustDependency) Description() string { return "" }
+func (p *RustVersionedPackage) Description() string { return "" }
 
-func (p *RustDependency) RepoName() api.RepoName {
+func (p *RustVersionedPackage) RepoName() api.RepoName {
 	return api.RepoName("crates/" + p.Name)
 }
 
-func (p *RustDependency) GitTagFromVersion() string {
+func (p *RustVersionedPackage) GitTagFromVersion() string {
 	version := strings.TrimPrefix(p.Version, "v")
 	return "v" + version
 }
 
-func (p *RustDependency) Less(other PackageDependency) bool {
-	o := other.(*RustDependency)
+func (p *RustVersionedPackage) Less(other VersionedPackage) bool {
+	o := other.(*RustVersionedPackage)
 
 	if p.Name == o.Name {
 		// TODO: validate once we add a dependency source for vcs syncer.

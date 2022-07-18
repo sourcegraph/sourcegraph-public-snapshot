@@ -1,8 +1,8 @@
 import React, { useMemo } from 'react'
 
+import { mdiProgressClock } from '@mdi/js'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
-import ProgressClockIcon from 'mdi-react/ProgressClockIcon'
 import { Redirect, Route, RouteComponentProps, Switch } from 'react-router'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
@@ -154,6 +154,7 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
         <div className={layoutStyles.pageContainer}>
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader
+                    className={styles.header}
                     namespace={{
                         to: `${batchChange.namespace.url}/batch-changes`,
                         text: batchChange.namespace.namespaceName,
@@ -168,28 +169,26 @@ const MemoizedExecuteBatchSpecContent: React.FunctionComponent<
                         </>
                     }
                 />
-                <div className="d-flex align-items-center mb-1">
-                    {batchSpec.source === BatchSpecSource.REMOTE ? (
-                        <BatchSpecStateBadge state={batchSpec.state} className="mr-2" />
-                    ) : (
-                        <Badge
-                            className="mr-2"
-                            variant="secondary"
-                            tooltip="This batch spec was executed with src-cli."
-                        >
-                            LOCAL
-                        </Badge>
-                    )}
+                <div className={styles.statsBar}>
+                    <div className={styles.stateBadge}>
+                        {batchSpec.source === BatchSpecSource.REMOTE ? (
+                            <BatchSpecStateBadge state={batchSpec.state} />
+                        ) : (
+                            <Badge variant="secondary" tooltip="This batch spec was executed with src-cli.">
+                                LOCAL
+                            </Badge>
+                        )}
+                    </div>
                     {batchSpec.startedAt && (
                         <ExecutionStat>
-                            <Icon aria-label="Duration" as={ProgressClockIcon} className={styles.durationIcon} />
+                            <Icon aria-label="Duration" className={styles.durationIcon} svgPath={mdiProgressClock} />
                             <Duration start={batchSpec.startedAt} end={batchSpec.finishedAt ?? undefined} />
                         </ExecutionStat>
                     )}
                     {workspaceResolution && <ExecutionStatsBar {...workspaceResolution.workspaces.stats} />}
                 </div>
 
-                <ActionButtons className="ml-2 flex-shrink-0">
+                <ActionButtons className="flex-shrink-0">
                     <ActionsMenu />
                 </ActionButtons>
             </div>

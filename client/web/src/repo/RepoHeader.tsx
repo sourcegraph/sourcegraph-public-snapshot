@@ -1,9 +1,9 @@
 import React, { useState, useMemo, useEffect } from 'react'
 
+import { mdiDotsVertical } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { noop } from 'lodash'
-import DotsVerticalIcon from 'mdi-react/DotsVerticalIcon'
 
 import { ErrorLike } from '@sourcegraph/common'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
@@ -252,7 +252,7 @@ export const RepoHeader: React.FunctionComponent<React.PropsWithChildren<Props>>
                         <li className="nav-item">
                             <Menu>
                                 <RepoHeaderActionDropdownToggle aria-label="Repository actions">
-                                    <Icon as={DotsVerticalIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiDotsVertical} />
                                 </RepoHeaderActionDropdownToggle>
                                 <MenuList position={Position.bottomEnd}>
                                     {rightActions.map((a, index) => (

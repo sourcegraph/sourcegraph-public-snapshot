@@ -23,8 +23,6 @@ export function isModifierKeyPressed(isMetaKey: boolean, isCtrlKey: boolean, isM
     return (isMacPlatform && isMetaKey) || (!isMacPlatform && isCtrlKey)
 }
 
-export const isMonacoEditorDescendant = (element: HTMLElement): boolean => element.closest('.monaco-editor') !== null
-
 export function useNotebookEventHandlers({
     notebook,
     selectedBlockId,
@@ -81,16 +79,34 @@ export function useNotebookEventHandlers({
 
             if (!selectedBlockId && event.key === 'ArrowDown') {
                 setSelectedBlockId(notebook.getFirstBlockId())
-            } else if (
-                event.key === 'Escape' &&
-                !isMonacoEditorDescendant(target) &&
-                target.tagName.toLowerCase() !== 'input'
-            ) {
+            } else if (event.key === 'Escape' && !isInputElement(target)) {
                 setSelectedBlockId(null)
             }
 
             if (!selectedBlockId) {
                 return
+            }
+
+            // Focus on the last `menuitem` of the prev block when using `Shift + Tab`
+            // while focusing on selected block element
+            if (
+                document.activeElement ===
+                    document.querySelector<HTMLDivElement>(`[data-block-id="${selectedBlockId}"] .block`) &&
+                event.shiftKey &&
+                event.key === 'Tab'
+            ) {
+                const previousBlockId = notebook.getPreviousBlockId(selectedBlockId)
+
+                if (previousBlockId) {
+                    event.preventDefault()
+
+                    focusBlock(previousBlockId)
+
+                    const menuItems = document.querySelectorAll<HTMLAnchorElement>(
+                        `[data-block-id="${previousBlockId}"] .block-menu [role="menuitem"]`
+                    )
+                    menuItems[menuItems.length - 1]?.focus()
+                }
             }
 
             const isModifierKeyDown = isModifierKeyPressed(event.metaKey, event.ctrlKey, isMacPlatform)

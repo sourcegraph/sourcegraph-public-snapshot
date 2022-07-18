@@ -45,4 +45,9 @@ var (
 		Help:    "Time spent waiting on rate-limiter to sync permissions",
 		Buckets: []float64{0.1, 0.2, 0.5, 1, 2, 5, 10, 30, 60, 120},
 	}, []string{"type", "success"})
+
+	metricsConcurrentSyncs = promauto.NewGaugeVec(prometheus.GaugeOpts{
+		Name: "src_repoupdater_perms_syncer_concurrent_syncs",
+		Help: "The number of concurrent permissions syncs",
+	}, []string{"type"})
 )

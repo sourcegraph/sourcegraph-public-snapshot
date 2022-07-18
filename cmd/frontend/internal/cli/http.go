@@ -28,6 +28,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/deviceid"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	tracepkg "github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -61,6 +62,7 @@ func newExternalHTTPHandler(
 	// origins, to avoid CSRF attacks. See session.CookieMiddlewareWithCSRFSafety for details.
 	apiHandler = session.CookieMiddlewareWithCSRFSafety(db, apiHandler, corsAllowHeader, isTrustedOrigin) // API accepts cookies with special header
 	apiHandler = internalhttpapi.AccessTokenAuthMiddleware(db, apiHandler)                                // API accepts access tokens
+	apiHandler = requestclient.HTTPMiddleware(apiHandler)
 	apiHandler = gziphandler.GzipHandler(apiHandler)
 	if envvar.SourcegraphDotComMode() {
 		apiHandler = deviceid.Middleware(apiHandler)
@@ -82,6 +84,7 @@ func newExternalHTTPHandler(
 	appHandler = authMiddlewares.App(appHandler)                           // 🚨 SECURITY: auth middleware
 	appHandler = session.CookieMiddleware(db, appHandler)                  // app accepts cookies
 	appHandler = internalhttpapi.AccessTokenAuthMiddleware(db, appHandler) // app accepts access tokens
+	appHandler = requestclient.HTTPMiddleware(appHandler)
 	if envvar.SourcegraphDotComMode() {
 		appHandler = deviceid.Middleware(appHandler)
 	}
@@ -127,7 +130,7 @@ func healthCheckMiddleware(next http.Handler) http.Handler {
 
 // newInternalHTTPHandler creates and returns the HTTP handler for the internal API (accessible to
 // other internal services).
-func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher) http.Handler {
+func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntelUploadHandler enterprise.NewCodeIntelUploadHandler, newComputeStreamHandler enterprise.NewComputeStreamHandler, rateLimitWatcher graphqlbackend.LimitWatcher, healthCheckHandler http.Handler) http.Handler {
 	internalMux := http.NewServeMux()
 	internalMux.Handle("/.internal/", gziphandler.GzipHandler(
 		actor.HTTPMiddleware(
@@ -139,6 +142,7 @@ func newInternalHTTPHandler(schema *graphql.Schema, db database.DB, newCodeIntel
 					newCodeIntelUploadHandler,
 					newComputeStreamHandler,
 					rateLimitWatcher,
+					healthCheckHandler,
 				),
 			),
 		),
@@ -165,7 +169,7 @@ const (
 	// crossOriginPolicyAPI describes that the middleware should handle cross origin requests as a
 	// public API. That is, cross-origin requests are allowed from any domain but
 	// cookie/session-based authentication is only allowed if the origin is in the configured
-	/// allow-list of origins. Otherwise, only access token authentication is permitted.
+	// allow-list of origins. Otherwise, only access token authentication is permitted.
 	//
 	// This is to be used for all /.api routes, such as our GraphQL and search streaming APIs as we
 	// want third-party websites (such as e.g. github1s.com, or internal tools for on-prem

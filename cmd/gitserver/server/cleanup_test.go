@@ -71,7 +71,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
-insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
+insert into repo(id, name, fork) values (1, 'a', false), (2, 'b/d', false), (3, 'c', false);
 update gitserver_repos set shard_id = 1;
 update gitserver_repos set repo_size_bytes = 228 where repo_id = 3;
 `); err != nil {
@@ -1002,7 +1002,7 @@ func makeFakeRepo(d string, sizeBytes int) error {
 	return nil
 }
 
-func TestMaybeCorruptStderrRe(t *testing.T) {
+func TestStdErrIndicatesCorruption(t *testing.T) {
 	bad := []string{
 		"error: packfile .git/objects/pack/pack-a.pack does not match index",
 		"error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda\n",
@@ -1011,6 +1011,8 @@ error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		`unrelated
 error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		"\n\nerror: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda",
+		"fatal: commit-graph requires overflow generation data but has none\n",
+		"\rResolving deltas: 100% (21750/21750), completed with 565 local objects.\nfatal: commit-graph requires overflow generation data but has none\nerror: https://github.com/sgtest/megarepo did not send all necessary objects\n\n\": exit status 1",
 	}
 	good := []string{
 		"",
@@ -1019,12 +1021,12 @@ error: Could not read d24d09b8bc5d1ea2c3aa24455f4578db6aa3afda`,
 		"error: object 45043b3ff0440f4d7937f8c68f8fb2881759edef is a tree, not a commit",
 	}
 	for _, stderr := range bad {
-		if !maybeCorruptStderrRe.MatchString(stderr) {
+		if !stdErrIndicatesCorruption(stderr) {
 			t.Errorf("should contain corrupt line:\n%s", stderr)
 		}
 	}
 	for _, stderr := range good {
-		if maybeCorruptStderrRe.MatchString(stderr) {
+		if stdErrIndicatesCorruption(stderr) {
 			t.Errorf("should not contain corrupt line:\n%s", stderr)
 		}
 	}
@@ -1345,10 +1347,10 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// inserting info about repos to DB. Repo with ID = 1 already has its size
 	if _, err := db.Exec(`
-insert into repo(id, name)
-values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
-       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
-       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
+insert into repo(id, name, fork)
+values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket', false),
+       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux', false),
+       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions', false);
 update gitserver_repos set shard_id = 1;
 update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 `); err != nil {
@@ -1365,8 +1367,8 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		if repo.RepoSizeBytes == 0 {
 			t.Fatal("repo_size_bytes is not updated")
 		}
-		if i == 1 && repo.RepoSizeBytes != 228 {
-			t.Fatal("existing repo_size_bytes has been updated")
+		if i == 1 && repo.RepoSizeBytes == 228 {
+			t.Fatal("existing repo_size_bytes has not been updated")
 		}
 		if repo.ShardID != "1" {
 			t.Fatal("shard_id has been corrupted")

@@ -271,6 +271,7 @@ func (op *Operation) WithErrorsAndLogger(ctx context.Context, root *error, args 
 // of an operation. This method returns a modified context, a function that will add a log field
 // to the active trace, and a function to be deferred until the end of the operation.
 func (op *Operation) With(ctx context.Context, err *error, args Args) (context.Context, TraceLogger, FinishFunc) {
+	parentTraceContext := trace.Context(ctx)
 	start := time.Now()
 	tr, ctx := op.startTrace(ctx)
 
@@ -287,7 +288,11 @@ func (op *Operation) With(ctx context.Context, err *error, args Args) (context.C
 	logger := op.Logger.With(toLogFields(args.LogFields)...)
 
 	if traceContext := trace.Context(ctx); traceContext != nil {
-		event.AddField("traceID", traceContext.TraceID)
+		event.AddField("trace.trace_id", traceContext.TraceID)
+		event.AddField("trace.span_id", traceContext.SpanID)
+		if parentTraceContext != nil {
+			event.AddField("trace.parent_id", parentTraceContext.SpanID)
+		}
 		logger = logger.WithTrace(*traceContext)
 	}
 
