@@ -2,9 +2,12 @@ package cliutil
 
 import (
 	"context"
+	"time"
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -13,6 +16,11 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		Name:  "db",
 		Usage: "The target `schema(s)` to validate. Comma-separated values are accepted. Supply \"all\" to validate all schemas.",
 		Value: cli.NewStringSlice("all"),
+	}
+	skipOutOfBandMigrationsFlag := &cli.BoolFlag{
+		Name:  "skip-out-of-band-migrations",
+		Usage: "Do not attempt to validate out-of-band migration status.",
+		Value: false,
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
@@ -33,6 +41,15 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		}
 
 		out.WriteLine(output.Emoji(output.EmojiSuccess, "schema okay!"))
+
+		if !skipOutOfBandMigrationsFlag.Get(cmd) {
+			if err := validateOutOfBandMigrations(ctx, r); err != nil {
+				return err
+			}
+
+			out.WriteLine(output.Emoji(output.EmojiSuccess, "oobmigrations okay!"))
+		}
+
 		return nil
 	})
 
@@ -43,6 +60,21 @@ func Validate(commandName string, factory RunnerFactory, outFactory OutputFactor
 		Action:      action,
 		Flags: []cli.Flag{
 			schemaNamesFlag,
+			skipOutOfBandMigrationsFlag,
 		},
 	}
+}
+
+func validateOutOfBandMigrations(ctx context.Context, r Runner) error {
+	db, err := extractDatabase(ctx, r)
+	if err != nil {
+		return err
+	}
+	runner := oobmigration.NewRunnerWithDB(db, time.Second, &observation.TestContext)
+
+	if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, runner); err != nil {
+		return err
+	}
+
+	return nil
 }

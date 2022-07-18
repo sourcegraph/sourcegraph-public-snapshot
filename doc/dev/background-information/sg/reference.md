@@ -659,6 +659,7 @@ Flags:
 
 * `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
 ### sg migration describe
 
