@@ -401,13 +401,12 @@ func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID 
 
 // ListRetryBatchSpecWorkspacesOpts options to determine which btypes.BatchSpecWorkspace to retrieve for retrying.
 type ListRetryBatchSpecWorkspacesOpts struct {
-	LimitOpts
 	BatchSpecID      int64
 	IncludeCompleted bool
 }
 
 // ListRetryBatchSpecWorkspaces lists all btypes.BatchSpecWorkspace to retry.
-func (s *Store) ListRetryBatchSpecWorkspaces(ctx context.Context, opts ListRetryBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, next int64, err error) {
+func (s *Store) ListRetryBatchSpecWorkspaces(ctx context.Context, opts ListRetryBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, err error) {
 	ctx, _, endObservation := s.operations.listRetryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -425,12 +424,7 @@ func (s *Store) ListRetryBatchSpecWorkspaces(ctx context.Context, opts ListRetry
 		return nil
 	})
 
-	if opts.Limit != 0 && len(cs) == opts.DBLimit() {
-		next = cs[len(cs)-1].ID
-		cs = cs[:len(cs)-1]
-	}
-
-	return cs, next, err
+	return cs, err
 }
 
 func getListRetryBatchSpecWorkspacesQuery(opts *ListRetryBatchSpecWorkspacesOpts) *sqlf.Query {
