@@ -1,4 +1,4 @@
-import React, { Ref, useContext, useEffect, useRef, useState } from 'react'
+import React, { Ref, useContext, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -59,7 +59,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
-    const [isPolling, setIsPolling] = useState(false)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
@@ -109,49 +108,21 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     )
 
     const isFetchingHistoricalData = insightData?.isFetchingHistoricalData
+    const isPolling = useRef(false)
 
-    useEffect(() => {
-        // polling is disabled ignore all
-        if (!enablePolling) {
-            return
-        }
-
-        // No insight data yet nothing to do
-        if (isFetchingHistoricalData === undefined) {
-            return
-        }
-
-        // api error so stop polling if we are
-        if (error) {
-            setIsPolling(false)
-            stopPolling()
-            return
-        }
-
+    // polling is disabled ignore all
+    if (enablePolling) {
         // not on the screen so stop polling if we are - multiple stop calls are safe
-        if (!isVisible) {
-            setIsPolling(false)
+        if (error || !isVisible) {
+            isPolling.current = false
             stopPolling()
-            return
-        }
-
-        // we should start polling but multiple calls to startPolling reset the timer so
-        // make sure we aren't already polling.
-        if (isFetchingHistoricalData && !isPolling) {
-            setIsPolling(true)
+        } else if (isFetchingHistoricalData && !isPolling.current) {
+            // we should start polling but multiple calls to startPolling reset the timer so
+            // make sure we aren't already polling.
+            isPolling.current = true
             startPolling(pollingInterval)
-            return
         }
-    }, [
-        enablePolling,
-        error,
-        isFetchingHistoricalData,
-        isPolling,
-        isVisible,
-        pollingInterval,
-        startPolling,
-        stopPolling,
-    ])
+    }
 
     async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
         try {
