@@ -1,4 +1,4 @@
-import React, { Ref, useContext, useRef, useState } from 'react'
+import React, { Ref, useContext, useEffect, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { useMergeRefs } from 'use-callback-ref'
@@ -59,13 +59,14 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
     const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
+    const [isPolling, setIsPolling] = useState(false)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
-    const { isVisible } = useVisibility(insightCardReference)
+    const { wasEverVisible, isVisible } = useVisibility(insightCardReference)
 
     // Use deep copy check in case if a setting subject has re-created copy of
     // the insight config with same structure and values. To avoid insight data
@@ -92,27 +93,51 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
-    const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
+    const { error, loading, stopPolling, startPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
-            pollInterval: pollingInterval,
-            skip: !isVisible,
+            skip: !wasEverVisible,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
                 const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
-                if (!parsedData.isFetchingHistoricalData) {
-                    stopPolling()
-                }
                 seriesToggleState.setSelectedSeriesIds([])
                 setInsightData(parsedData)
             },
-            onError: () => stopPolling(),
         }
     )
 
-    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
+    useEffect(() => {
+        // No insight data yet nothing to do
+        if (!insightData) {
+            return
+        }
+
+        // api error so stop polling if we are
+        if (error) {
+            setIsPolling(false)
+            stopPolling()
+            return
+        }
+
+        // not on the screen so stop polling if we are - multiple stop calls are safe
+        if (!isVisible) {
+            setIsPolling(false)
+            stopPolling()
+            return
+        }
+
+        // we should start polling but multiple calls to startPolling reset the timer so
+        // make sure we aren't already polling.
+        if (insightData.isFetchingHistoricalData && !isPolling) {
+            setIsPolling(true)
+            startPolling(pollingInterval)
+            return
+        }
+    }, [error, insightData, isPolling, isVisible, pollingInterval, startPolling, stopPolling])
+
+    async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
         try {
             const seriesDisplayOptions: SeriesDisplayOptionsInput = {
                 limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),
