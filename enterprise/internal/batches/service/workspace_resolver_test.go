@@ -22,13 +22,13 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	streamapi "github.com/sourcegraph/sourcegraph/internal/search/streaming/api"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/internal/vcs/util"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -125,7 +125,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 				return nil, errors.Newf("unknown commit: %s", commit)
 			}
 			if hasBatchIgnore {
-				return &util.FileInfo{Name_: ".batchignore", Mode_: 0}, nil
+				return &fileutil.FileInfo{Name_: ".batchignore", Mode_: 0}, nil
 			}
 			return nil, os.ErrNotExist
 		})
@@ -402,14 +402,12 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 			},
 		)
 
-		// We want both workspaces, but only one of them has steps that need to run
-		ws0 := buildRepoWorkspace(rs[0], "", "", []string{})
-		// ws0.Steps = conditionalSteps
-		// ws0.SkippedSteps = []int32{0}
 		ws1 := buildRepoWorkspace(rs[1], "", "", []string{})
-		// ws1.Steps = conditionalSteps
 
-		want := []*RepoWorkspace{ws0, ws1}
+		// ws0 has no steps to run, so it is excluded.
+		// TODO: Later we might want to add an additional flag to the workspace
+		// to indicate this in the UI.
+		want := []*RepoWorkspace{ws1}
 		resolveWorkspacesAndCompare(t, s, gs, u, map[string][]streamhttp.EventMatch{}, batchSpec, want)
 	})
 }

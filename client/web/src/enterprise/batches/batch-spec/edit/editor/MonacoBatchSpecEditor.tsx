@@ -30,6 +30,7 @@ export interface Props extends ThemeProps {
     value: string | undefined
     onChange?: (newValue: string) => void
     readOnly?: boolean | undefined
+    autoFocus?: boolean
 }
 
 interface State {}
@@ -86,6 +87,7 @@ export class MonacoBatchSpecEditor extends React.PureComponent<Props, State> {
                 isLightTheme={this.props.isLightTheme}
                 value={this.props.value}
                 editorWillMount={this.editorWillMount}
+                autoFocus={this.props.autoFocus}
                 options={{
                     lineNumbers: 'on',
                     minimap: { enabled: false },

@@ -1,7 +1,6 @@
 import React, { useState, useCallback } from 'react'
 
-import InformationIcon from 'mdi-react/InformationIcon'
-import KeyIcon from 'mdi-react/KeyIcon'
+import { mdiKey, mdiInformation } from '@mdi/js'
 
 import { Button, CardFooter, Link, Icon, Code, H3 } from '@sourcegraph/wildcard'
 
@@ -47,7 +46,8 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
                 <>
                     <CardFooter className="d-flex align-items-center justify-content-between flex-wrap">
                         <Button className="mr-4 my-1" onClick={toggleShowLicenseKey} variant="primary">
-                            <Icon aria-hidden={true} as={KeyIcon} /> {showLicenseKey ? 'Hide' : 'Reveal'} license key
+                            <Icon aria-hidden={true} svgPath={mdiKey} /> {showLicenseKey ? 'Hide' : 'Reveal'} license
+                            key
                         </Button>
                         <div className="flex-fill" />
                         <div className="my-1" />
@@ -59,7 +59,7 @@ export const UserProductSubscriptionStatus: React.FunctionComponent<React.PropsW
                                 <>
                                     <CopyableText text={licenseKey} className="d-block" />
                                     <small className="mt-2 d-flex align-items-center">
-                                        <Icon aria-hidden={true} className="mr-1" as={InformationIcon} />{' '}
+                                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiInformation} />{' '}
                                         <span>
                                             Use this license key as the <Code weight="bold">licenseKey</Code> property
                                             value in Sourcegraph site configuration.

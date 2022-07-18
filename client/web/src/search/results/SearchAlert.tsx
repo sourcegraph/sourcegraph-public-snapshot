@@ -23,7 +23,7 @@ export const SearchAlert: React.FunctionComponent<React.PropsWithChildren<Search
     searchContextSpec,
     children,
 }) => (
-    <Alert className="my-2 mr-3" data-testid="alert-container" variant="info">
+    <Alert className="my-2" data-testid="alert-container" variant="info">
         <H3>{alert.title}</H3>
 
         {alert.description && <Markdown className="mb-3" dangerousInnerHTML={renderMarkdown(alert.description)} />}

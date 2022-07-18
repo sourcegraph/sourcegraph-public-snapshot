@@ -74,6 +74,16 @@ type OutputOpts struct {
 	Verbose bool
 }
 
+type MarkdownStyleOpts func(style *glamouransi.StyleConfig)
+
+var MarkdownNoMargin MarkdownStyleOpts = func(style *glamouransi.StyleConfig) {
+	z := uint(0)
+	style.CodeBlock.Margin = &z
+	style.Document.Margin = &z
+	style.Document.BlockPrefix = ""
+	style.Document.BlockSuffix = ""
+}
+
 // newOutputPlatformQuirks provides a way for conditionally compiled code to
 // hook into NewOutput to perform any required setup.
 var newOutputPlatformQuirks func(o *Output) error
@@ -249,17 +259,18 @@ func (o *Output) PromptPassword(input io.Reader, prompt FancyLine) (string, erro
 	return t.ReadPassword(promptText.String())
 }
 
-// WriteMarkdown renders Markdown nicely, unless color is disabled.
-func (o *Output) WriteMarkdown(str string) error {
-	return o.writeMarkdown(str, false)
+func MarkdownIndent(n uint) MarkdownStyleOpts {
+	return func(style *glamouransi.StyleConfig) {
+		style.Document.Indent = &n
+	}
 }
 
 // WriteCode renders the given code snippet as Markdown, unless color is disabled.
 func (o *Output) WriteCode(languageName, str string) error {
-	return o.writeMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), true)
+	return o.WriteMarkdown(fmt.Sprintf("```%s\n%s\n```", languageName, str), MarkdownNoMargin)
 }
 
-func (o *Output) writeMarkdown(str string, noMargin bool) error {
+func (o *Output) WriteMarkdown(str string, opts ...MarkdownStyleOpts) error {
 	if !o.caps.Color {
 		o.Write(str)
 		return nil
@@ -272,12 +283,8 @@ func (o *Output) writeMarkdown(str string, noMargin bool) error {
 		style = glamour.LightStyleConfig
 	}
 
-	if noMargin {
-		z := uint(0)
-		style.CodeBlock.Margin = &z
-		style.Document.Margin = &z
-		style.Document.BlockPrefix = ""
-		style.Document.BlockSuffix = ""
+	for _, opt := range opts {
+		opt(&style)
 	}
 
 	r, err := glamour.NewTermRenderer(

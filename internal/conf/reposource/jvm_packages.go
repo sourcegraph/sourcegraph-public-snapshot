@@ -30,8 +30,8 @@ func (m *MavenModule) CoursierSyntax() string {
 	return fmt.Sprintf("%s:%s", m.GroupID, m.ArtifactID)
 }
 
-func (m *MavenModule) PackageSyntax() string {
-	return m.CoursierSyntax()
+func (m *MavenModule) PackageSyntax() PackageName {
+	return PackageName(m.CoursierSyntax())
 }
 
 func (m *MavenModule) SortText() string {
@@ -64,19 +64,19 @@ func (m *MavenModule) CloneURL() string {
 }
 
 // See [NOTE: Dependency-terminology]
-type MavenDependency struct {
+type MavenVersionedPackage struct {
 	*MavenModule
 	Version string
 }
 
-func (d *MavenDependency) Equal(o *MavenDependency) bool {
+func (d *MavenVersionedPackage) Equal(o *MavenVersionedPackage) bool {
 	return d == o || (d != nil && o != nil &&
 		d.MavenModule.Equal(o.MavenModule) &&
 		d.Version == o.Version)
 }
 
-func (d *MavenDependency) Less(other PackageDependency) bool {
-	o := other.(*MavenDependency)
+func (d *MavenVersionedPackage) Less(other VersionedPackage) bool {
+	o := other.(*MavenVersionedPackage)
 
 	if d.MavenModule.Equal(o.MavenModule) {
 		return versionGreaterThan(d.Version, o.Version)
@@ -86,37 +86,37 @@ func (d *MavenDependency) Less(other PackageDependency) bool {
 	return d.SortText() > o.SortText()
 }
 
-func (d *MavenDependency) PackageManagerSyntax() string {
+func (d *MavenVersionedPackage) VersionedPackageSyntax() string {
 	return fmt.Sprintf("%s:%s", d.PackageSyntax(), d.Version)
 }
 
-func (d *MavenDependency) String() string {
-	return d.PackageManagerSyntax()
+func (d *MavenVersionedPackage) String() string {
+	return d.VersionedPackageSyntax()
 }
 
-func (d *MavenDependency) PackageVersion() string {
+func (d *MavenVersionedPackage) PackageVersion() string {
 	return d.Version
 }
 
-func (d *MavenDependency) Scheme() string {
+func (d *MavenVersionedPackage) Scheme() string {
 	return "semanticdb"
 }
 
-func (d *MavenDependency) GitTagFromVersion() string {
+func (d *MavenVersionedPackage) GitTagFromVersion() string {
 	return "v" + d.Version
 }
 
-func (d *MavenDependency) LsifJavaDependencies() []string {
+func (d *MavenVersionedPackage) LsifJavaDependencies() []string {
 	if d.IsJDK() {
 		return []string{}
 	}
-	return []string{d.PackageManagerSyntax()}
+	return []string{d.VersionedPackageSyntax()}
 }
 
-// ParseMavenDependency parses a dependency string in the Coursier format
-// (colon seperated group ID, artifact ID and an optional version) into a MavenDependency.
-func ParseMavenDependency(dependency string) (*MavenDependency, error) {
-	dep := &MavenDependency{MavenModule: &MavenModule{}}
+// ParseMavenVersionedPackage parses a dependency string in the Coursier format
+// (colon seperated group ID, artifact ID and an optional version) into a MavenVersionedPackage.
+func ParseMavenVersionedPackage(dependency string) (*MavenVersionedPackage, error) {
+	dep := &MavenVersionedPackage{MavenModule: &MavenModule{}}
 
 	switch ps := strings.Split(dependency, ":"); len(ps) {
 	case 3:
@@ -132,19 +132,18 @@ func ParseMavenDependency(dependency string) (*MavenDependency, error) {
 	return dep, nil
 }
 
-// ParseMavenDependencyFromRepoName is a convenience function to parse a repo name in a
-// 'maven/<name>' format into a MavenDependency.
-func ParseMavenDependencyFromRepoName(name string) (*MavenDependency, error) {
+func ParseMavenPackageFromRepoName(name api.RepoName) (*MavenVersionedPackage, error) {
+	return ParseMavenPackageFromName(PackageName(strings.ReplaceAll(strings.TrimPrefix(string(name), "maven/"), "/", ":")))
+}
+
+// ParseMavenPackageFromRepoName is a convenience function to parse a repo name in a
+// 'maven/<name>' format into a MavenVersionedPackage.
+func ParseMavenPackageFromName(name PackageName) (*MavenVersionedPackage, error) {
 	if name == "jdk" {
-		return &MavenDependency{MavenModule: jdkModule()}, nil
+		return &MavenVersionedPackage{MavenModule: jdkModule()}, nil
 	}
 
-	dep := strings.ReplaceAll(strings.TrimPrefix(name, "maven/"), "/", ":")
-	if len(dep) == len(name) {
-		return nil, errors.New("invalid maven dependency repo name, missing maven/ prefix")
-	}
-
-	return ParseMavenDependency(dep)
+	return ParseMavenVersionedPackage(string(name))
 }
 
 // jdkModule returns the module for the Java standard library (JDK). This module

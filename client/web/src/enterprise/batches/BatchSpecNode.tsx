@@ -1,19 +1,21 @@
 import React, { useCallback, useState } from 'react'
 
+import {
+    mdiCheckCircle,
+    mdiTimerSand,
+    mdiCancel,
+    mdiAlertCircle,
+    mdiChevronDown,
+    mdiChevronRight,
+    mdiStar,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { parseISO } from 'date-fns'
 import { upperFirst } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import CancelIcon from 'mdi-react/CancelIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import StarIcon from 'mdi-react/StarIcon'
-import TimerSandIcon from 'mdi-react/TimerSandIcon'
 
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Icon, H3, H4 } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H3, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
@@ -48,7 +50,7 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                 aria-label={isExpanded ? 'Collapse section' : 'Expand section'}
                 onClick={toggleIsExpanded}
             >
-                <Icon aria-hidden={true} as={isExpanded ? ChevronDownIcon : ChevronRightIcon} />
+                <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} />
             </Button>
             <div className="d-flex flex-column justify-content-center align-items-center px-2 pb-1">
                 <StateIcon state={node.state} />
@@ -56,18 +58,19 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
             </div>
             <div className="px-2 pb-1">
                 <H3 className="pr-2">
-                    {currentSpecID === node.id && (
-                        <>
-                            <Icon
-                                className="text-warning"
-                                data-tooltip="Currently applied spec"
-                                aria-label="Currently applied spec"
-                                as={StarIcon}
-                            />{' '}
-                        </>
-                    )}
                     {currentSpecID && (
                         <Link to={`${node.namespace.url}/batch-changes/${node.description.name}/executions/${node.id}`}>
+                            {currentSpecID === node.id && (
+                                <>
+                                    <Tooltip content="Currently applied spec">
+                                        <Icon
+                                            aria-label="Currently applied spec"
+                                            className="text-warning"
+                                            svgPath={mdiStar}
+                                        />
+                                    </Tooltip>{' '}
+                                </>
+                            )}
                             Executed by <strong>{node.creator?.username}</strong>{' '}
                             <Timestamp date={node.createdAt} now={now} />
                         </Link>
@@ -118,7 +121,7 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
                 <Icon
                     aria-hidden={true}
                     className={classNames(styles.nodeStateIcon, 'text-success mb-1')}
-                    as={CheckCircleIcon}
+                    svgPath={mdiCheckCircle}
                 />
             )
 
@@ -128,7 +131,7 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
                 <Icon
                     aria-hidden={true}
                     className={classNames(styles.nodeStateIcon, 'text-muted mb-1')}
-                    as={TimerSandIcon}
+                    svgPath={mdiTimerSand}
                 />
             )
 
@@ -138,7 +141,7 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
                 <Icon
                     aria-hidden={true}
                     className={classNames(styles.nodeStateIcon, 'text-muted mb-1')}
-                    as={CancelIcon}
+                    svgPath={mdiCancel}
                 />
             )
 
@@ -148,7 +151,7 @@ const StateIcon: React.FunctionComponent<React.PropsWithChildren<{ state: BatchS
                 <Icon
                     aria-hidden={true}
                     className={classNames(styles.nodeStateIcon, 'text-danger mb-1')}
-                    as={AlertCircleIcon}
+                    svgPath={mdiAlertCircle}
                 />
             )
     }

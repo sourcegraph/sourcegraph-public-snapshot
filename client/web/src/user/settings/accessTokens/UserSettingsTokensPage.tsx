@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useMemo } from 'react'
 
-import AddIcon from 'mdi-react/AddIcon'
+import { mdiPlus } from '@mdi/js'
 import { RouteComponentProps } from 'react-router'
 import { Observable, Subject } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -87,7 +87,7 @@ export const UserSettingsTokensPage: React.FunctionComponent<React.PropsWithChil
                 actions={
                     !siteAdminViewingOtherUser && (
                         <Button to={`${match.url}/new`} variant="primary" as={Link}>
-                            <Icon role="img" as={AddIcon} aria-hidden={true} /> Generate new token
+                            <Icon role="img" aria-hidden={true} svgPath={mdiPlus} /> Generate new token
                         </Button>
                     )
                 }

@@ -1,10 +1,10 @@
 import React, { useState } from 'react'
 
+import { mdiInformationOutline } from '@mdi/js'
 import classNames from 'classnames'
-import InfoCircleOutlineIcon from 'mdi-react/InfoCircleOutlineIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
-import { Button, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     useRequestedLanguageSupportQuery as defaultUseRequestedLanguageSupportQuery,
@@ -53,10 +53,15 @@ export const RequestLink: React.FunctionComponent<React.PropsWithChildren<Reques
         data.languages.includes(language) || requested ? (
             <span className="text-muted">
                 Received your request{' '}
-                <InfoCircleOutlineIcon
-                    size={16}
-                    data-tooltip="Requests are documented and contribute to our precise support roadmap"
-                />
+                <Tooltip content="Requests are documented and contribute to our precise support roadmap">
+                    <Icon
+                        aria-label="Requests are documented and contribute to our precise support roadmap"
+                        svgPath={mdiInformationOutline}
+                        inline={false}
+                        height={16}
+                        width={16}
+                    />
+                </Tooltip>
             </span>
         ) : (
             <Button variant="link" className={classNames('m-0 p-0', styles.languageRequest)} onClick={requestSupport}>

@@ -4,7 +4,7 @@ import { Combobox, ComboboxInput, ComboboxPopover } from '@reach/combobox'
 
 import { FlexTextArea } from '@sourcegraph/wildcard'
 
-import { getSanitizedRepositories } from '../../creation-ui-kit'
+import { getSanitizedRepositories } from '../../creation-ui'
 
 import { SuggestionsPanel } from './components/suggestion-panel/SuggestionPanel'
 import { useRepoSuggestions } from './hooks/use-repo-suggestions'

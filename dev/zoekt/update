@@ -4,27 +4,40 @@ set -e
 
 export GO111MODULE=on
 
-# Disable proxy since it can cache the value of master
-export GOPROXY="${GOPROXY:-direct}"
-
 # Can specify a SHA pushed to our fork instead of master
 version="${1:-master}"
 
 upstream=github.com/google/zoekt
 fork=github.com/sourcegraph/zoekt
+forkname=sourcegraph/zoekt
+
+response="$(mktemp)"
+trap 'rm -f "$response"' EXIT
+
+curl --silent --fail "https://api.github.com/repos/${forkname}/commits?per_page=1&sha=${version}" >"${response}"
+newsha="$(jq -r '.[0].sha[:12]' <"${response}")"
+newts="$(jq -r '.[0].commit.committer.date | fromdate | strftime("%Y%m%d%H%M%S")' <"${response}")"
+module="${fork}@v0.0.0-${newts}-${newsha}"
 
 oldsha="$(go mod edit -print | grep "$fork" | grep -o '[a-f0-9]*$')"
-module="$(go get "${fork}@${version}" 2>&1 | grep -E -o ${fork}'@v0.0.0-[0-9a-z-]+')"
-newsha="$(echo "$module" | grep -o '[a-f0-9]*$')"
 
 echo "https://github.com/sourcegraph/zoekt/compare/$oldsha...$newsha"
-echo "git log --pretty=format:'- https://github.com/sourcegraph/zoekt/commit/%h %s' $oldsha...$newsha | sed 's/ (#[0-9]*)//g'"
-echo "git log --pretty=format:'- %h %s' $oldsha...$newsha | sed 's/ (#[0-9]*)//g'"
 
+curl --silent --fail "https://api.github.com/repos/sourcegraph/zoekt/compare/$oldsha...$newsha" >"${response}"
+
+echo
+jq -r '.commits[] | "- https://github.com/sourcegraph/zoekt/commit/" + .sha[:10] + " " + (.commit.message | split("\n")[0])' <"${response}" |
+    sed 's/ (#[0-9]*)//g'
+
+echo
+jq -r '.commits[] | "- " + .sha[:10] + " " + (.commit.message | split("\n")[0])' <"${response}" |
+    sed 's/ (#[0-9]*)//g'
+
+echo
 go mod edit "-replace=${upstream}=${module}"
 go mod download ${upstream}
 go mod tidy
 
 echo "Ensure we update go.sum by actually compiling some code which depends on zoekt."
 echo "We do this by running 'go test' without actually running any tests."
-go test -run '^$' github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend
+go test -run '^$' github.com/sourcegraph/sourcegraph/internal/search/zoekt

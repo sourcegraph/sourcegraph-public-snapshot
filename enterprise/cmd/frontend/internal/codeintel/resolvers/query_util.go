@@ -73,10 +73,7 @@ func (r *queryResolver) definitionUploads(ctx context.Context, orderedMonikers [
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
 	}
 
-	for i := range uploads {
-		r.uploadCache[uploads[i].ID] = uploads[i]
-	}
-
+	r.updateUploadCache(uploads)
 	return filterUploadsWithCommits(ctx, r.cachedCommitChecker, uploads)
 }
 
@@ -167,7 +164,12 @@ func (r *queryResolver) adjustLocations(ctx context.Context, locations []lsifsto
 		a = actor.FromContext(ctx)
 	}
 	for _, location := range locations {
-		adjustedLocation, err := r.adjustLocation(ctx, r.uploadCache[location.DumpID], location)
+		upload, ok := r.uploadFromCache(location.DumpID)
+		if !ok {
+			continue
+		}
+
+		adjustedLocation, err := r.adjustLocation(ctx, upload, location)
 		if err != nil {
 			return nil, err
 		}
@@ -220,6 +222,23 @@ func (r *queryResolver) adjustRange(ctx context.Context, repositoryID int, commi
 	}
 
 	return commit, rn, false, nil
+}
+
+func (r *queryResolver) uploadFromCache(id int) (store.Dump, bool) {
+	r.uploadCacheMutex.RLock()
+	defer r.uploadCacheMutex.RUnlock()
+
+	upload, ok := r.uploadCache[id]
+	return upload, ok
+}
+
+func (r *queryResolver) updateUploadCache(uploads []store.Dump) {
+	r.uploadCacheMutex.Lock()
+	defer r.uploadCacheMutex.Unlock()
+
+	for i := range uploads {
+		r.uploadCache[uploads[i].ID] = uploads[i]
+	}
 }
 
 // filterUploadsWithCommits removes the uploads for commits which are unknown to gitserver from the given

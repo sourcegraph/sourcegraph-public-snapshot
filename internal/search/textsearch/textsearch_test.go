@@ -5,12 +5,14 @@ import (
 	"crypto/md5"
 	"encoding/binary"
 	"fmt"
-	"reflect"
 	"sort"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/require"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -94,6 +96,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 
 	matches, common, err := RunRepoSubsetTextSearch(
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		repoRevs,
 		q,
@@ -123,6 +126,7 @@ func TestRepoSubsetTextSearch(t *testing.T) {
 	// that should be checked earlier.
 	_, _, err = RunRepoSubsetTextSearch(
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		makeRepositoryRevisions("foo/no-rev@dev"),
 		q,
@@ -193,6 +197,7 @@ func TestSearchFilesInReposStream(t *testing.T) {
 
 	matches, _, err := RunRepoSubsetTextSearch(
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		makeRepositoryRevisions("foo/one", "foo/two", "foo/three"),
 		q,
@@ -264,13 +269,11 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		Pattern:        "foo",
 	}
 
-	repos := makeRepositoryRevisions("foo@master:mybranch:*refs/heads/")
-	repos[0].ListRefs = func(context.Context, api.RepoName) ([]gitdomain.Ref, error) {
-		return []gitdomain.Ref{{Name: "refs/heads/branch3"}, {Name: "refs/heads/branch4"}}, nil
-	}
+	repos := makeRepositoryRevisions("foo@master:mybranch:branch3:branch4")
 
 	matches, _, err := RunRepoSubsetTextSearch(
 		context.Background(),
+		logtest.Scoped(t),
 		patternInfo,
 		repos,
 		q,
@@ -295,18 +298,20 @@ func TestSearchFilesInRepos_multipleRevsPerRepo(t *testing.T) {
 		{Repo: "foo", Commit: "master", Path: "main.go"},
 		{Repo: "foo", Commit: "mybranch", Path: "main.go"},
 	}
-	if !reflect.DeepEqual(matchKeys, wantResultKeys) {
-		t.Errorf("got %v, want %v", matchKeys, wantResultKeys)
-	}
+	require.Equal(t, wantResultKeys, matchKeys)
 }
 
 func makeRepositoryRevisions(repos ...string) []*search.RepositoryRevisions {
 	r := make([]*search.RepositoryRevisions, len(repos))
 	for i, repospec := range repos {
-		repoName, revs := search.ParseRepositoryRevisions(repospec)
+		repoName, revSpecs := search.ParseRepositoryRevisions(repospec)
+		revs := make([]string, 0, len(revSpecs))
+		for _, revSpec := range revSpecs {
+			revs = append(revs, revSpec.RevSpec)
+		}
 		if len(revs) == 0 {
-			// treat empty list as preferring master
-			revs = []search.RevisionSpecifier{{RevSpec: ""}}
+			// treat empty list as HEAD
+			revs = []string{""}
 		}
 		r[i] = &search.RepositoryRevisions{Repo: mkRepos(repoName)[0], Revs: revs}
 	}
@@ -332,6 +337,7 @@ func mkRepos(names ...string) []types.MinimalRepo {
 // RunRepoSubsetTextSearch is a convenience function that simulates the RepoSubsetTextSearch job.
 func RunRepoSubsetTextSearch(
 	ctx context.Context,
+	logger log.Logger,
 	patternInfo *search.TextPatternInfo,
 	repos []*search.RepositoryRevisions,
 	q query.Q,
@@ -350,6 +356,7 @@ func RunRepoSubsetTextSearch(
 
 	indexed, unindexed, err := zoektutil.PartitionRepos(
 		context.Background(),
+		logger,
 		repos,
 		zoekt,
 		search.TextRequest,
@@ -395,7 +402,10 @@ func RunRepoSubsetTextSearch(
 
 		// Run literal and regexp searches on indexed repositories.
 		g.Go(func() error {
-			_, err := zoektJob.Run(ctx, job.RuntimeClients{Zoekt: zoekt}, agg)
+			_, err := zoektJob.Run(ctx, job.RuntimeClients{
+				Logger: logger,
+				Zoekt:  zoekt,
+			}, agg)
 			return err
 		})
 	}
@@ -409,7 +419,11 @@ func RunRepoSubsetTextSearch(
 			UseFullDeadline: searcherArgs.UseFullDeadline,
 		}
 
-		_, err := searcherJob.Run(ctx, job.RuntimeClients{SearcherURLs: searcherURLs, Zoekt: zoekt}, agg)
+		_, err := searcherJob.Run(ctx, job.RuntimeClients{
+			Logger:       logger,
+			SearcherURLs: searcherURLs,
+			Zoekt:        zoekt,
+		}, agg)
 		return err
 	})
 

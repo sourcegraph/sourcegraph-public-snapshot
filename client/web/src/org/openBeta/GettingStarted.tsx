@@ -1,14 +1,13 @@
 import React, { ReactNode, useEffect } from 'react'
 
 import { gql, useQuery } from '@apollo/client'
+import { mdiCheckCircle, mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 import { RouteComponentProps } from 'react-router'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { Link, LoadingSpinner, PageHeader, Badge, H3 } from '@sourcegraph/wildcard'
+import { Link, LoadingSpinner, PageHeader, Badge, H3, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { MarketingBlock } from '../../components/MarketingBlock'
 import { PageTitle } from '../../components/PageTitle'
@@ -151,7 +150,16 @@ const Step: React.FunctionComponent<
     <li className={styles.entryItem}>
         <LinkableContainer to={to} onClick={onClick}>
             <div className={styles.iconContainer}>
-                {complete && <CheckCircleIcon className="text-success" size={14} />}
+                {complete && (
+                    <Icon
+                        className="text-success"
+                        svgPath={mdiCheckCircle}
+                        inline={false}
+                        aria-label="Success"
+                        height={14}
+                        width={14}
+                    />
+                )}
                 {!complete && <div className={styles.emptyCircle} />}
             </div>
             <H3
@@ -164,7 +172,7 @@ const Step: React.FunctionComponent<
             </H3>
             {to && (
                 <div className={styles.linkContainer}>
-                    <ArrowRightIcon />
+                    <Icon svgPath={mdiArrowRight} inline={false} aria-hidden={true} />
                 </div>
             )}
         </LinkableContainer>
@@ -364,25 +372,23 @@ export const OpenBetaGetStartedPage: React.FunctionComponent<React.PropsWithChil
                             <div className="d-flex  flex-0 justify-content-center align-items-center mb-3 flex-wrap">
                                 <div className={styles.membersList}>
                                     <div className={styles.avatarContainer}>
-                                        <UserAvatar
-                                            size={36}
-                                            className={styles.avatar}
-                                            user={authenticatedUser}
-                                            data-tooltip={authenticatedUser.displayName || authenticatedUser.username}
-                                        />
+                                        <Tooltip content={authenticatedUser.displayName || authenticatedUser.username}>
+                                            <UserAvatar size={36} className={styles.avatar} user={authenticatedUser} />
+                                        </Tooltip>
                                     </div>
                                     {otherMembers.length > 0 && (
                                         <div className={styles.avatarContainer}>
                                             <div className={classNames(styles.avatarEllipse)} />
                                             <div className={classNames(styles.avatarContainer, styles.secondAvatar)}>
-                                                <UserAvatar
-                                                    size={36}
-                                                    className={styles.avatar}
-                                                    user={otherMembers[0]}
-                                                    data-tooltip={
-                                                        otherMembers[0].displayName || otherMembers[0].username
-                                                    }
-                                                />
+                                                <Tooltip
+                                                    content={otherMembers[0].displayName || otherMembers[0].username}
+                                                >
+                                                    <UserAvatar
+                                                        size={36}
+                                                        className={styles.avatar}
+                                                        user={otherMembers[0]}
+                                                    />
+                                                </Tooltip>
                                             </div>
                                         </div>
                                     )}

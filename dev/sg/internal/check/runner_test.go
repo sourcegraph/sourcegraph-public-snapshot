@@ -217,6 +217,8 @@ func TestRunnerInteractive(t *testing.T) {
 	})
 
 	t.Run("auto fix", func(t *testing.T) {
+		t.Skip("flaky test: https://github.com/sourcegraph/sourcegraph/issues/37853")
+
 		inputs := []string{
 			"4", // fixable
 			"3", // go back

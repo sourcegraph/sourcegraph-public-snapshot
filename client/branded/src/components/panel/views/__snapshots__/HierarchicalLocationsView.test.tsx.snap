@@ -29,9 +29,11 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >
@@ -44,6 +46,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -56,7 +59,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -72,7 +75,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -89,7 +92,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                   data-testid="result-container-header"
                 >
                   <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                    class="titleInner"
                   >
                     <a
                       class="anchorLink"
@@ -114,70 +117,77 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <small>
-                  1 match
-                </small>
+                <span
+                  class="d-flex align-items-center"
+                >
+                  <small>
+                    1 match
+                  </small>
+                </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
                 <div>
                   <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
+                    class="fileMatchChildren"
+                    data-testid="file-match-children"
                   >
-                    <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
-                    >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                    <div>
+                      <div
+                        class="test-file-match-children-item-wrapper itemCodeWrapper"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <div
+                          class="test-file-match-children-item item itemClickable"
+                          data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                          data-testid="file-match-children-item"
+                          role="link"
+                          tabindex="0"
+                        >
+                          <code
+                            class="code codeExcerpt"
+                            data-testid="code-excerpt"
+                          >
+                            <table>
+                              <tbody>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="1"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="2"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="3"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </code>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -211,6 +221,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
           data-testid="hierarchical-locations-view-list"
         >
           <button
+            aria-label="File path file1.txt"
             class="list-group-item list-group-item-action locationButton active"
             data-testid="hierarchical-locations-view-button"
             type="button"
@@ -239,6 +250,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             </span>
           </button>
           <button
+            aria-label="File path file2.txt"
             class="list-group-item list-group-item-action locationButton"
             data-testid="hierarchical-locations-view-button"
             type="button"
@@ -290,9 +302,11 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >
@@ -305,6 +319,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -317,7 +332,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -333,7 +348,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -350,7 +365,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                   data-testid="result-container-header"
                 >
                   <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                    class="titleInner"
                   >
                     <a
                       class="anchorLink"
@@ -377,94 +392,99 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <small>
-                  2 matches
-                </small>
+                <span
+                  class="d-flex align-items-center"
+                >
+                  <small>
+                    2 matches
+                  </small>
+                </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
                 <div>
                   <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
+                    class="fileMatchChildren"
+                    data-testid="file-match-children"
                   >
-                    <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
-                    >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                    <div>
+                      <div
+                        class="test-file-match-children-item-wrapper itemCodeWrapper"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                4
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                5
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <div
+                          class="test-file-match-children-item item itemClickable"
+                          data-href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
+                          data-testid="file-match-children-item"
+                          role="link"
+                          tabindex="0"
+                        >
+                          <code
+                            class="code codeExcerpt"
+                            data-testid="code-excerpt"
+                          >
+                            <table>
+                              <tbody>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="1"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="2"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="3"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="4"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="5"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </code>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -507,9 +527,11 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
             type="button"
           >
             <svg
-              class="mdi-icon "
+              aria-label="Close"
+              class="mdi-icon"
               fill="currentColor"
               height="16"
+              role="img"
               viewBox="0 0 24 24"
               width="16"
             >
@@ -522,6 +544,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -534,7 +557,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
               >
                 <svg
                   aria-label="content result"
-                  class="mdi-icon iconInline flex-shrink-0"
+                  class="mdi-icon mdi-icon iconInline flex-shrink-0"
                   fill="currentColor"
                   height="24"
                   role="img"
@@ -550,7 +573,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 />
                 <svg
                   aria-label="github.com"
-                  class="iconInline text-muted flex-shrink-0"
+                  class="mdi-icon iconInline text-muted flex-shrink-0 mr-1"
                   data-state="closed"
                   fill="currentColor"
                   height="24"
@@ -567,7 +590,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                   data-testid="result-container-header"
                 >
                   <div
-                    class="ml-1 flex-shrink-past-contents text-truncate"
+                    class="titleInner"
                   >
                     <a
                       class="anchorLink"
@@ -592,70 +615,77 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                     class="ml-2 headerDescription"
                   />
                 </div>
-                <small>
-                  1 match
-                </small>
+                <span
+                  class="d-flex align-items-center"
+                >
+                  <small>
+                    1 match
+                  </small>
+                </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
                 <div>
                   <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
+                    class="fileMatchChildren"
+                    data-testid="file-match-children"
                   >
-                    <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
-                    >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                    <div>
+                      <div
+                        class="test-file-match-children-item-wrapper itemCodeWrapper"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <div
+                          class="test-file-match-children-item item itemClickable"
+                          data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                          data-testid="file-match-children-item"
+                          role="link"
+                          tabindex="0"
+                        >
+                          <code
+                            class="code codeExcerpt"
+                            data-testid="code-excerpt"
+                          >
+                            <table>
+                              <tbody>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="1"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="2"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="3"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </code>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -673,7 +703,8 @@ exports[`<HierarchicalLocationsView /> shows a spinner before any locations emis
 <DocumentFragment>
   <div
     aria-label="Loading"
-    class="iconInline loadingSpinner m-1 test-loading-spinner"
+    aria-live="polite"
+    class="mdi-icon iconInline loadingSpinner m-1 test-loading-spinner"
     role="img"
   />
 </DocumentFragment>
@@ -683,7 +714,8 @@ exports[`<HierarchicalLocationsView /> shows a spinner if locations emits empty 
 <DocumentFragment>
   <div
     aria-label="Loading"
-    class="iconInline loadingSpinner m-1 test-loading-spinner"
+    aria-live="polite"
+    class="mdi-icon iconInline loadingSpinner m-1 test-loading-spinner"
     role="img"
   />
 </DocumentFragment>

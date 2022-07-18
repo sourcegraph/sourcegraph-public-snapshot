@@ -1,7 +1,7 @@
 import React from 'react'
 
+import { mdiArrowRight } from '@mdi/js'
 import classNames from 'classnames'
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Link, Icon, H3 } from '@sourcegraph/wildcard'
@@ -80,7 +80,7 @@ export const SelfHostedCta: React.FunctionComponent<React.PropsWithChildren<Self
                         {...linkProps}
                     >
                         Speak to an engineer
-                        <Icon className="ml-2" as={ArrowRightIcon} aria-hidden={true} />
+                        <Icon className="ml-2" aria-hidden={true} svgPath={mdiArrowRight} />
                     </Link>
                 </div>
             </MarketingBlock>

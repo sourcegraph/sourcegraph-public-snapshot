@@ -9,8 +9,8 @@ import (
 	"github.com/RoaringBitmap/roaring"
 	"github.com/google/zoekt"
 	zoektquery "github.com/google/zoekt/query"
-	"github.com/inconshreveable/log15"
-	"github.com/opentracing/opentracing-go/log"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 	"go.uber.org/atomic"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -43,7 +43,7 @@ type IndexedRepoRevs struct {
 // add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
-func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []search.RevisionSpecifier {
+func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []string {
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
@@ -51,48 +51,39 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return reporev.Revs
 	}
 
-	if !reporev.OnlyExplicit() {
-		// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
-		// search on it.
-		//
-		// TODO we could only process the explicit revs and return the non
-		// explicit ones as unindexed.
-		return reporev.Revs
-	}
-
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
-	var unindexed []search.RevisionSpecifier
+	var unindexed []string
 
 	branches := make([]string, 0, len(reporev.Revs))
 	reporev = reporev.Copy()
 	indexed := reporev.Revs[:0]
 
-	for _, rev := range reporev.Revs {
+	for _, inputRev := range reporev.Revs {
 		found := false
-		revSpec := rev.RevSpec
-		if revSpec == "" {
-			revSpec = "HEAD"
+		rev := inputRev
+		if rev == "" {
+			rev = "HEAD"
 		}
 
 		for _, branch := range repo.Branches {
-			if branch.Name == revSpec {
-				branches = append(branches, branch.Name)
+			if branch.Name == rev {
+				branches = append(branches, inputRev)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
-			if len(revSpec) >= 4 && strings.HasPrefix(branch.Version, revSpec) {
-				branches = append(branches, branch.Name)
+			if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
+				branches = append(branches, inputRev)
 				found = true
 				break
 			}
 		}
 
 		if found {
-			indexed = append(indexed, rev)
+			indexed = append(indexed, inputRev)
 		} else {
-			unindexed = append(unindexed, rev)
+			unindexed = append(unindexed, inputRev)
 		}
 	}
 
@@ -115,13 +106,13 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 // getRepoInputRev returns the repo and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, inputRevs []string) {
-	repoRev := rb.RepoRevs[api.RepoID(file.RepositoryID)]
+	repoRev, ok := rb.RepoRevs[api.RepoID(file.RepositoryID)]
 
 	// We search zoekt by repo ID. It is possible that the name has come out
 	// of sync, so the above lookup will fail. We fallback to linking the rev
 	// hash in that case. We intend to restucture this code to avoid this, but
 	// this is the fix to avoid potential nil panics.
-	if repoRev == nil {
+	if !ok {
 		repo := types.MinimalRepo{
 			ID:   api.RepoID(file.RepositoryID),
 			Name: api.RepoName(file.Repository),
@@ -137,7 +128,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 	for _, rev := range repoRev.Revs {
 		// We rely on the Sourcegraph implementation that the HEAD branch is
 		// indexed as "HEAD" rather than resolving the symref.
-		revBranchName := rev.RevSpec
+		revBranchName := rev
 		if revBranchName == "" {
 			revBranchName = "HEAD" // empty string in Sourcegraph means HEAD
 		}
@@ -150,13 +141,13 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 			}
 		}
 		if found {
-			inputRevs = append(inputRevs, rev.RevSpec)
+			inputRevs = append(inputRevs, rev)
 			continue
 		}
 
 		// Check if rev is an abbrev commit SHA
-		if len(rev.RevSpec) >= 4 && strings.HasPrefix(file.Version, rev.RevSpec) {
-			inputRevs = append(inputRevs, rev.RevSpec)
+		if len(rev) >= 4 && strings.HasPrefix(file.Version, rev) {
+			inputRevs = append(inputRevs, rev)
 			continue
 		}
 	}
@@ -172,6 +163,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 
 func PartitionRepos(
 	ctx context.Context,
+	logger log.Logger,
 	repos []*search.RepositoryRevisions,
 	zoektStreamer zoekt.Streamer,
 	typ search.IndexedRequestType,
@@ -212,20 +204,20 @@ func PartitionRepos(
 				return nil, nil, errors.New("index:only failed since indexed search is not available yet")
 			}
 
-			log15.Warn("zoektIndexedRepos failed", "error", err)
+			logger.Warn("zoektIndexedRepos failed", log.Error(err))
 		}
 
 		return nil, repos, ctx.Err()
 	}
 
-	tr.LogFields(log.Int("all_indexed_set.size", len(list.Minimal)))
+	tr.LogFields(otlog.Int("all_indexed_set.size", len(list.Minimal)))
 
 	// Split based on indexed vs unindexed
 	indexed, unindexed = zoektIndexedRepos(list.Minimal, repos, filter)
 
 	tr.LogFields(
-		log.Int("indexed.size", len(indexed.RepoRevs)),
-		log.Int("unindexed.size", len(unindexed)),
+		otlog.Int("indexed.size", len(indexed.RepoRevs)),
+		otlog.Int("unindexed.size", len(unindexed)),
 	)
 
 	// Disable unindexed search
@@ -401,8 +393,7 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 }
 
 func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches {
-	hms := make(result.ChunkMatches, 0, len(file.LineMatches))
-
+	cms := make(result.ChunkMatches, 0, len(file.ChunkMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -427,7 +418,7 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 			})
 		}
 
-		hms = append(hms, result.ChunkMatch{
+		cms = append(cms, result.ChunkMatch{
 			Content: string(l.Line),
 			// zoekt line numbers are 1-based rather than 0-based so subtract 1
 			ContentStart: result.Location{
@@ -439,7 +430,39 @@ func zoektFileMatchToMultilineMatches(file *zoekt.FileMatch) result.ChunkMatches
 		})
 	}
 
-	return hms
+	for _, cm := range file.ChunkMatches {
+		if cm.FileName {
+			continue
+		}
+
+		ranges := make([]result.Range, 0, len(cm.Ranges))
+		for _, r := range cm.Ranges {
+			ranges = append(ranges, result.Range{
+				Start: result.Location{
+					Offset: int(r.Start.ByteOffset),
+					Line:   int(r.Start.LineNumber) - 1,
+					Column: int(r.Start.Column) - 1,
+				},
+				End: result.Location{
+					Offset: int(r.End.ByteOffset),
+					Line:   int(r.End.LineNumber) - 1,
+					Column: int(r.End.Column) - 1,
+				},
+			})
+		}
+
+		cms = append(cms, result.ChunkMatch{
+			Content: string(cm.Content),
+			ContentStart: result.Location{
+				Offset: int(cm.ContentStart.ByteOffset),
+				Line:   int(cm.ContentStart.LineNumber) - 1,
+				Column: int(cm.ContentStart.Column) - 1,
+			},
+			Ranges: ranges,
+		})
+	}
+
+	return cms
 }
 
 func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, file *zoekt.FileMatch) []*result.SymbolMatch {
@@ -450,7 +473,7 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 		InputRev: &inputRev,
 	}
 
-	symbols := make([]*result.SymbolMatch, 0, len(file.LineMatches))
+	symbols := make([]*result.SymbolMatch, 0, len(file.ChunkMatches))
 	for _, l := range file.LineMatches {
 		if l.FileName {
 			continue
@@ -471,6 +494,32 @@ func zoektFileMatchToSymbolResults(repoName types.MinimalRepo, inputRev string, 
 				m.SymbolInfo.ParentKind,
 				file.Language,
 				string(l.Line),
+				false,
+			))
+		}
+	}
+
+	for _, cm := range file.ChunkMatches {
+		if cm.FileName || len(cm.SymbolInfo) == 0 {
+			continue
+		}
+
+		for i, r := range cm.Ranges {
+			si := cm.SymbolInfo[i]
+			if si == nil {
+				continue
+			}
+
+			symbols = append(symbols, result.NewSymbolMatch(
+				newFile,
+				int(r.Start.LineNumber),
+				int(r.Start.Column)-1,
+				si.Sym,
+				si.Kind,
+				si.Parent,
+				si.ParentKind,
+				file.Language,
+				"", // Unused when column is set
 				false,
 			))
 		}
@@ -567,20 +616,32 @@ func (*RepoSubsetTextSearchJob) Name() string {
 	return "ZoektRepoSubsetTextSearchJob"
 }
 
-func (z *RepoSubsetTextSearchJob) Tags() []log.Field {
-	tags := []log.Field{
-		trace.Stringer("query", z.Query),
-		log.String("type", string(z.Typ)),
-		log.Int32("fileMatchLimit", z.FileMatchLimit),
-		trace.Stringer("select", z.Select),
+func (z *RepoSubsetTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Int32("fileMatchLimit", z.FileMatchLimit),
+			trace.Stringer("select", z.Select),
+		)
+		// z.Repos is nil for un-indexed search
+		if z.Repos != nil {
+			res = append(res,
+				otlog.Int("numRepoRevs", len(z.Repos.RepoRevs)),
+				otlog.Int("numBranchRepos", len(z.Repos.branchRepos)),
+			)
+		}
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", z.Query),
+			otlog.String("type", string(z.Typ)),
+		)
 	}
-	// z.Repos is nil for un-indexed search
-	if z.Repos != nil {
-		tags = append(tags, log.Int("numRepoRevs", len(z.Repos.RepoRevs)))
-		tags = append(tags, log.Int("numBranchRepos", len(z.Repos.branchRepos)))
-	}
-	return tags
+	return res
 }
+
+func (*RepoSubsetTextSearchJob) Children() []job.Describer         { return nil }
+func (j *RepoSubsetTextSearchJob) MapChildren(job.MapFunc) job.Job { return j }
 
 type GlobalTextSearchJob struct {
 	GlobalZoektQuery *GlobalZoektQuery
@@ -592,7 +653,7 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, t)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.DB, t.RepoOpts)
+	userPrivateRepos := searchrepos.PrivateReposForActor(ctx, clients.Logger, clients.DB, t.RepoOpts)
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
@@ -603,14 +664,25 @@ func (*GlobalTextSearchJob) Name() string {
 	return "ZoektGlobalTextSearchJob"
 }
 
-func (t *GlobalTextSearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", t.GlobalZoektQuery.Query),
-		trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
-		log.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
-		log.String("type", string(t.ZoektArgs.Typ)),
-		log.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
-		trace.Stringer("select", t.ZoektArgs.Select),
-		trace.Stringer("repoOpts", &t.RepoOpts),
+func (t *GlobalTextSearchJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			otlog.Int32("fileMatchLimit", t.ZoektArgs.FileMatchLimit),
+			trace.Stringer("select", t.ZoektArgs.Select),
+			trace.Printf("repoScope", "%q", t.GlobalZoektQuery.RepoScope),
+			otlog.Bool("includePrivate", t.GlobalZoektQuery.IncludePrivate),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", t.GlobalZoektQuery.Query),
+			otlog.String("type", string(t.ZoektArgs.Typ)),
+			trace.Scoped("repoOpts", t.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
+
+func (t *GlobalTextSearchJob) Children() []job.Describer       { return nil }
+func (t *GlobalTextSearchJob) MapChildren(job.MapFunc) job.Job { return t }

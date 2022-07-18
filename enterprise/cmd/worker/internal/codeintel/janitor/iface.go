@@ -16,15 +16,11 @@ type DBStore interface {
 	Done(err error) error
 
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
-	HardDeleteUploadByID(ctx context.Context, ids ...int) error
 	GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error)
 	SelectRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) ([]int, error)
 	CommitsVisibleToUpload(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error)
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) error
-	SoftDeleteExpiredUploads(ctx context.Context) (int, error)
 	DirtyRepositories(ctx context.Context) (map[int]int, error)
-	DeleteUploadsStuckUploading(ctx context.Context, uploadedBefore time.Time) (int, error)
-	DeleteOldAuditLogs(ctx context.Context, maxAge time.Duration, now time.Time) (int, error)
 }
 
 type DBStoreShim struct {

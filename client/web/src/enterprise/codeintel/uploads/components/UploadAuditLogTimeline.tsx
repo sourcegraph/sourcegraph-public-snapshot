@@ -1,7 +1,6 @@
 import { FunctionComponent, ReactNode } from 'react'
 
-import DatabaseEditIcon from 'mdi-react/DatabaseEditIcon'
-import DatabasePlusIcon from 'mdi-react/DatabasePlusIcon'
+import { mdiDatabasePlus, mdiDatabaseEdit } from '@mdi/js'
 
 import { Container, Icon } from '@sourcegraph/wildcard'
 
@@ -21,9 +20,9 @@ export const UploadAuditLogTimeline: FunctionComponent<React.PropsWithChildren<U
         (log): TimelineStage => ({
             icon:
                 log.operation === AuditLogOperation.CREATE ? (
-                    <Icon as={DatabasePlusIcon} aria-label="Success" />
+                    <Icon aria-label="Success" svgPath={mdiDatabasePlus} />
                 ) : (
-                    <Icon as={DatabaseEditIcon} aria-label="Warn" />
+                    <Icon aria-label="Warn" svgPath={mdiDatabaseEdit} />
                 ),
             text: stageText(log),
             className: log.operation === AuditLogOperation.CREATE ? 'bg-success' : 'bg-warning',

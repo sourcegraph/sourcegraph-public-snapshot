@@ -1,8 +1,8 @@
 import { FunctionComponent, useEffect, useMemo, useState } from 'react'
 
+import { mdiDelete } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import TrashIcon from 'mdi-react/TrashIcon'
 
 import { Button, Icon, Input } from '@sourcegraph/wildcard'
 
@@ -16,6 +16,7 @@ export interface ReposMatchingPatternProps {
     setPattern: (value: string) => void
     onDelete: () => void
     disabled: boolean
+    autoFocus?: boolean
 }
 
 export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<ReposMatchingPatternProps>> = ({
@@ -24,6 +25,7 @@ export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<Rep
     setPattern,
     onDelete,
     disabled,
+    autoFocus,
 }) => {
     const [localPattern, setLocalPattern] = useState('')
     useEffect(() => setLocalPattern(pattern), [pattern])
@@ -41,6 +43,7 @@ export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<Rep
                         setLocalPattern(value)
                         debouncedSetPattern(value)
                     }}
+                    autoFocus={autoFocus}
                     disabled={disabled}
                     required={true}
                     label={`Repository pattern #${index + 1}`}
@@ -55,7 +58,7 @@ export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<Rep
                     className="p-0"
                     disabled={disabled}
                 >
-                    <Icon className="text-danger" aria-hidden={true} as={TrashIcon} />
+                    <Icon className="text-danger" aria-hidden={true} svgPath={mdiDelete} />
                 </Button>
             </span>
         </>

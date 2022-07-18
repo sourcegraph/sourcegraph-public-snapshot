@@ -19,15 +19,16 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.StandardCharsets;
+import java.util.function.Consumer;
 
 public class GraphQlLogger {
     private static final Logger logger = Logger.getInstance(GraphQlLogger.class);
 
-    public static void logInstallEvent(Project project) {
+    public static void logInstallEvent(Project project, Consumer<Boolean> callback) {
         String anonymousUserId = ConfigUtil.getAnonymousUserId();
         if (anonymousUserId != null) {
             Event event = new Event("IDEInstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
-            logEvent(project, event);
+            logEvent(project, event, (responseStatusCode) -> callback.accept(responseStatusCode == 200));
         }
     }
 
@@ -35,17 +36,15 @@ public class GraphQlLogger {
         String anonymousUserId = ConfigUtil.getAnonymousUserId();
         if (anonymousUserId != null) {
             Event event = new Event("IDEUninstalled", anonymousUserId, ConfigUtil.getSourcegraphUrl(project), null, null);
-            logEvent(project, event);
+            logEvent(project, event, null);
         }
     }
 
     // This could be exposed later as public, but currently, we don't use it externally.
-    private static void logEvent(Project project, @NotNull Event event) {
+    private static void logEvent(Project project, @NotNull Event event, @Nullable Consumer<Integer> callback) {
+        String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
+        String accessToken = ConfigUtil.getAccessToken(project);
         new Thread(() -> {
-            String instanceUrl = ConfigUtil.getSourcegraphUrl(project);
-
-            String accessToken = ConfigUtil.getAccessToken(project);
-
             String query = "" +
                 "mutation LogEvents($events: [Event!]) {" +
                 "    logEvents(events: $events) { " +
@@ -59,18 +58,22 @@ public class GraphQlLogger {
             variables.add("events", events);
 
             try {
-                callGraphQLService(instanceUrl, accessToken, query, variables);
+                int responseStatusCode = callGraphQLService(instanceUrl, accessToken, query, variables);
+                if (callback != null) {
+                    callback.accept(responseStatusCode);
+                }
             } catch (IOException e) {
                 logger.info(e);
             }
         }).start();
     }
 
-    private static void callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws IOException {
+    private static int callGraphQLService(@NotNull String instanceUrl, @Nullable String accessToken, @NotNull String query, @NotNull JsonObject variables) throws IOException {
         HttpPost request = createRequest(instanceUrl, accessToken, query, variables);
         try (CloseableHttpClient client = HttpClientBuilder.create().build()) {
             CloseableHttpResponse response = client.execute(request);
             response.close();
+            return response.getStatusLine().getStatusCode();
         }
     }
 

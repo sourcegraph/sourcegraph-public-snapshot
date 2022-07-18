@@ -14,7 +14,7 @@ type UploadsResolver struct {
 	dbStore DBStore
 	opts    store.GetUploadsOptions
 	once    sync.Once
-	//
+
 	Uploads    []store.Upload
 	TotalCount int
 	NextOffset *int

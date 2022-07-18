@@ -1,9 +1,13 @@
 import { asError } from '@sourcegraph/common'
-import { GraphQLResult, GRAPHQL_URI } from '@sourcegraph/http-client'
+import { GRAPHQL_URI, GraphQLResult } from '@sourcegraph/http-client'
 
 import { getAccessToken, getInstanceURL } from '..'
 
-export const requestGraphQL = async <R, V = object>(request: string, variables: V): Promise<GraphQLResult<R>> => {
+export const requestGraphQL = async <R, V = object>(
+    request: string,
+    variables: V,
+    abortSignal?: AbortSignal
+): Promise<GraphQLResult<R>> => {
     const instanceURL = getInstanceURL()
     const accessToken = getAccessToken()
 
@@ -17,19 +21,26 @@ export const requestGraphQL = async <R, V = object>(request: string, variables: 
         headers.set('Authorization', `token ${accessToken}`)
     }
 
+    let response: Response | null = null
     try {
         const url = new URL(apiURL, instanceURL).href
-        const response = await fetch(url, {
+        response = await fetch(url, {
             body: JSON.stringify({
                 query: request,
                 variables,
             }),
             method: 'POST',
             headers,
+            signal: abortSignal,
         })
-        // eslint-disable-next-line @typescript-eslint/return-await
-        return response.json() as Promise<GraphQLResult<any>>
     } catch (error) {
+        console.log('Error requesting GraphQL', error, response)
         throw asError(error)
     }
+
+    if (!response || !response.ok) {
+        throw new Error(`GraphQL request failed: ${response.status} ${response.statusText}`)
+    }
+
+    return (await response.json()) as GraphQLResult<R>
 }

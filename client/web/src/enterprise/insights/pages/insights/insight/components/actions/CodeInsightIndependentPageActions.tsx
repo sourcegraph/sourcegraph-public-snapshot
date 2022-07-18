@@ -1,10 +1,10 @@
 import { FunctionComponent, useRef, useState } from 'react'
 
-import LinkVariantIcon from 'mdi-react/LinkVariantIcon'
+import { mdiLinkVariant } from '@mdi/js'
 import { useHistory } from 'react-router'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ConfirmDeleteModal } from '../../../../../components/modals/ConfirmDeleteModal'
 import { Insight } from '../../../../../core'
@@ -46,14 +46,11 @@ export const CodeInsightIndependentPageActions: FunctionComponent<Props> = props
 
     return (
         <div className={styles.container}>
-            <Button
-                variant="secondary"
-                ref={copyLinkButtonReference}
-                data-tooltip={isCopied ? 'Copied!' : undefined}
-                onClick={handleCopyLinkClick}
-            >
-                <Icon aria-hidden={true} as={LinkVariantIcon} /> Copy link
-            </Button>
+            <Tooltip content={isCopied ? 'Copied!' : undefined}>
+                <Button variant="secondary" ref={copyLinkButtonReference} onClick={handleCopyLinkClick}>
+                    <Icon aria-hidden={true} svgPath={mdiLinkVariant} /> Copy link
+                </Button>
+            </Tooltip>
             <Button variant="danger" onClick={handleDeleteClick}>
                 Delete
             </Button>

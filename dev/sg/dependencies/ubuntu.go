@@ -128,56 +128,7 @@ var Ubuntu = []category{
 		},
 	},
 	categoryCloneRepositories(),
-	{
-		Name:      "Programming languages & tooling",
-		DependsOn: []string{depsCloneRepo, depsBaseUtilities},
-		Enabled:   enableOnlyInSourcegraphRepo(),
-		Checks: []*check.Check[CheckArgs]{
-			{
-				Name:  "go",
-				Check: checkGoVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "golang", "https://github.com/kennyp/asdf-golang.git"); err != nil {
-						return err
-					}
-					return root.Run(usershell.Command(ctx, "asdf install golang")).StreamLines(cio.Verbose)
-				},
-			},
-			{
-				Name:  "yarn",
-				Check: checkYarnVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "yarn", ""); err != nil {
-						return err
-					}
-					return root.Run(usershell.Command(ctx, "asdf install yarn")).StreamLines(cio.Verbose)
-				},
-			},
-			{
-				Name:  "node",
-				Check: checkNodeVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "nodejs", "https://github.com/asdf-vm/asdf-nodejs.git"); err != nil {
-						return err
-					}
-					return cmdFixes(
-						`grep -s "legacy_version_file = yes" ~/.asdfrc >/dev/null || echo 'legacy_version_file = yes' >> ~/.asdfrc`,
-						"asdf install nodejs",
-					)(ctx, cio, args)
-				},
-			},
-			{
-				Name:  "rust",
-				Check: checkRustVersion,
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					if err := forceASDFPluginAdd(ctx, "rust", "https://github.com/asdf-community/asdf-rust.git"); err != nil {
-						return err
-					}
-					return root.Run(usershell.Command(ctx, "asdf install rust")).StreamLines(cio.Verbose)
-				},
-			},
-		},
-	},
+	categoryProgrammingLanguagesAndTools(),
 	{
 		Name:      "Postgres database",
 		DependsOn: []string{depsBaseUtilities},
@@ -287,26 +238,6 @@ YOU NEED TO RESTART 'sg setup' AFTER RUNNING THIS COMMAND!`,
 		Enabled:   enableForTeammatesOnly(),
 		Checks: []*dependency{
 			dependencyGcloud(),
-			{
-				Name:  "1password",
-				Check: checkAction(check1password()),
-				Fix: func(ctx context.Context, cio check.IO, args CheckArgs) error {
-					// Convoluted directions from https://developer.1password.com/docs/cli/get-started/#install
-					if err := cmdFixes(
-						"curl -sS https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/keyrings/1password-archive-keyring.gpg",
-						`echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/1password-archive-keyring.gpg] https://downloads.1password.com/linux/debian/$(dpkg --print-architecture) stable main" |  sudo tee /etc/apt/sources.list.d/1password.list`,
-						`sudo mkdir -p /etc/debsig/policies/AC2D62742012EA22/`,
-						`curl -sS https://downloads.1password.com/linux/debian/debsig/1password.pol | sudo tee /etc/debsig/policies/AC2D62742012EA22/1password.pol`,
-						`sudo mkdir -p /usr/share/debsig/keyrings/AC2D62742012EA22`,
-						`curl -ss https://downloads.1password.com/linux/keys/1password.asc | sudo gpg --dearmor --output /usr/share/debsig/keyrings/ac2d62742012ea22/debsig.gpg`,
-						`sudo apt update && sudo apt install 1password-cli`,
-					)(ctx, cio, args); err != nil {
-						return err
-					}
-
-					return opLoginFix()(ctx, cio, args)
-				},
-			},
 		},
 	},
 }

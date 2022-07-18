@@ -65,6 +65,10 @@
         border: none;
         box-shadow: none;
     }
+
+    :global(.cm-editor) {
+        flex: 1;
+    }
 }
 
 .editor {

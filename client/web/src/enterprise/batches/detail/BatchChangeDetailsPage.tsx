@@ -110,15 +110,6 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                 </Alert>
             )}
             <PageHeader
-                path={[
-                    {
-                        icon: BatchChangesIcon,
-                        to: '/batch-changes',
-                        ariaLabel: 'Batch changes',
-                    },
-                    { to: `${batchChange.namespace.url}/batch-changes`, text: batchChange.namespace.namespaceName },
-                    { text: batchChange.name },
-                ]}
                 byline={
                     <BatchChangeInfoByline
                         createdAt={batchChange.createdAt}
@@ -139,7 +130,15 @@ export const BatchChangeDetailsPage: React.FunctionComponent<
                     />
                 }
                 className="test-batch-change-details-page mb-3"
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={BatchChangesIcon} to="/batch-changes" aria-label="Batch Changes" />
+                    <PageHeader.Breadcrumb to={`${batchChange.namespace.url}/batch-changes`}>
+                        {batchChange.namespace.namespaceName}
+                    </PageHeader.Breadcrumb>
+                    <PageHeader.Breadcrumb>{batchChange.name}</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <BulkOperationsAlerts location={location} bulkOperations={batchChange.activeBulkOperations} />
             <SupersedingBatchSpecAlert spec={batchChange.currentSpec.supersedingBatchSpec} />
             <ActiveExecutionNotice

@@ -4,17 +4,19 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 // HandleAbandonedUpload removes upload records which have not left the uploading state within the given TTL.
 func (j *janitor) HandleAbandonedUpload(ctx context.Context) error {
-	count, err := j.dbStore.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-ConfigInst.UploadTimeout))
+	count, err := j.uploadSvc.DeleteUploadsStuckUploading(ctx, time.Now().UTC().Add(-ConfigInst.UploadTimeout))
 	if err != nil {
 		return errors.Wrap(err, "dbstore.DeleteUploadsStuckUploading")
 	}
 	if count > 0 {
-		// log.Debug("Deleted abandoned upload records", "count", count)
+		j.logger.Debug("Deleted abandoned upload records", log.Int("count", count))
 		j.metrics.numUploadRecordsRemoved.Add(float64(count))
 	}
 

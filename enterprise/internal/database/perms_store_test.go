@@ -891,7 +891,7 @@ func testPermsStore_TouchRepoPermissions(db database.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		// Touch the permissions in an hour late
+		// Touch the permissions to an hour later
 		now += 3600
 		if err := s.TouchRepoPermissions(context.Background(), 1); err != nil {
 			t.Fatal(err)
@@ -909,7 +909,60 @@ func testPermsStore_TouchRepoPermissions(db database.DB) func(*testing.T) {
 
 		// Both times should be updated to "now"
 		if rp.UpdatedAt.Unix() != now || rp.SyncedAt.Unix() != now {
-			t.Fatal("UpdatedAt or SyncedAt was not updated but supposed to")
+			t.Fatal("UpdatedAt or SyncedAt was not updated but was supposed to be")
+		}
+	}
+}
+
+func testPermsStore_TouchUserPermissions(db database.DB) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+
+		logger := logtest.Scoped(t)
+		now := timeutil.Now().Unix()
+		s := perms(logger, db, func() time.Time {
+			return time.Unix(atomic.LoadInt64(&now), 0)
+		})
+		t.Cleanup(func() {
+			cleanupPermsTables(t, s)
+		})
+
+		// Touch is an upsert
+		if err := s.TouchUserPermissions(ctx, 1); err != nil {
+			t.Fatal(err)
+		}
+
+		// Set up some permissions
+		up := &authz.UserPermissions{
+			UserID: 1,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+			IDs:    toMapset(2),
+		}
+		if err := s.SetUserPermissions(ctx, up); err != nil {
+			t.Fatal(err)
+		}
+
+		// Touch the permissions to an hour later
+		now += 3600
+		if err := s.TouchUserPermissions(ctx, 1); err != nil {
+			t.Fatal(err)
+		}
+
+		// Permissions bits shouldn't be affected
+		up = &authz.UserPermissions{
+			UserID: 1,
+			Perm:   authz.Read,
+			Type:   authz.PermRepos,
+		}
+		if err := s.LoadUserPermissions(ctx, up); err != nil {
+			t.Fatal(err)
+		}
+		equal(t, "up.IDs", []int{2}, mapsetToArray(up.IDs))
+
+		// Both times should be updated to "now"
+		if up.UpdatedAt.Unix() != now || up.SyncedAt.Unix() != now {
+			t.Fatal("UpdatedAt or SyncedAt was not updated but was supposed to be")
 		}
 	}
 }
@@ -2406,19 +2459,21 @@ func testPermsStore_GetUserIDsByExternalAccounts(db database.DB) func(*testing.T
 
 		// Set up test users and external accounts
 		extSQL := `
-INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at)
-	VALUES(%s, %s, %s, %s, %s, %s, %s, %s)
+INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`), // ID=3
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),  // ID=1
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),    // ID=2
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`),  // ID=3
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('denise')`), // ID=4
 
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil), // ID=1
-			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil),          // ID=2
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil),     // ID=3
-			sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLab, "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock(), nil), // ID=4
-			sqlf.Sprintf(extSQL, 3, "github", "https://github.com/", "cindy_github", "cindy_github_client_id", clock(), clock(), clock()),      // ID=5, deleted
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil, nil),          // ID=2
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil, nil),     // ID=3
+			sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLab, "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock(), nil, nil), // ID=4
+			sqlf.Sprintf(extSQL, 3, "github", "https://github.com/", "cindy_github", "cindy_github_client_id", clock(), clock(), clock(), nil),      // ID=5, deleted
+			sqlf.Sprintf(extSQL, 4, "github", "https://github.com/", "denise_github", "denise_github_client_id", clock(), clock(), nil, clock()),    // ID=6, expired
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2449,7 +2504,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 		accounts = &extsvc.Accounts{
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
-			AccountIDs:  []string{"cindy_github"},
+			AccountIDs:  []string{"cindy_github", "denise_github"},
 		}
 		userIDs, err = s.GetUserIDsByExternalAccounts(ctx, accounts)
 		require.Nil(t, err)

@@ -1,11 +1,6 @@
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CursorPointerIcon from 'mdi-react/CursorPointerIcon'
-import MagnifyIcon from 'mdi-react/MagnifyIcon'
-import NotebookIcon from 'mdi-react/NotebookIcon'
-import PuzzleOutlineIcon from 'mdi-react/PuzzleOutlineIcon'
-import ShieldSearchIcon from 'mdi-react/ShieldSearchIcon'
+import { mdiCheckCircle, mdiMagnify, mdiPuzzleOutline, mdiShieldSearch, mdiNotebook, mdiCursorPointer } from '@mdi/js'
 
-import { Code } from '@sourcegraph/wildcard'
+import { Code, Icon } from '@sourcegraph/wildcard'
 
 import { TourLanguage, TourTaskType } from '../components/Tour/types'
 
@@ -276,7 +271,16 @@ export const visitorsTasksWithNotebook: TourTaskType[] = [
 
 export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
     title: 'All done!',
-    icon: <CheckCircleIcon size="2.3rem" className="text-success" />,
+    icon: (
+        <Icon
+            className="text-success"
+            svgPath={mdiCheckCircle}
+            inline={false}
+            aria-hidden={true}
+            height="2.3rem"
+            width="2.3rem"
+        />
+    ),
     steps: [
         {
             id: 'InstallOrSignUp',
@@ -301,7 +305,7 @@ export const visitorsTasksWithNotebookExtraTask: TourTaskType = {
 export const authenticatedTasks: TourTaskType[] = [
     {
         title: 'Reuse existing code',
-        icon: <MagnifyIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiMagnify} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'ReuseExistingCode',
@@ -337,7 +341,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Install an IDE extension',
-        icon: <PuzzleOutlineIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiPuzzleOutline} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'InstallIDEExtension',
@@ -352,7 +356,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Find and fix vulnerabilities',
-        icon: <ShieldSearchIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiShieldSearch} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'WatchVideo',
@@ -393,7 +397,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Respond to incidents',
-        icon: <NotebookIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiNotebook} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'Notebook',
@@ -407,7 +411,7 @@ export const authenticatedTasks: TourTaskType[] = [
     },
     {
         title: 'Understand a new codebase',
-        icon: <CursorPointerIcon size="2.3rem" />,
+        icon: <Icon svgPath={mdiCursorPointer} inline={false} aria-hidden={true} height="2.3rem" width="2.3rem" />,
         steps: [
             {
                 id: 'PowerCodeNav',
@@ -448,7 +452,16 @@ export const authenticatedTasks: TourTaskType[] = [
  */
 export const authenticatedExtraTask: TourTaskType = {
     title: 'All done!',
-    icon: <CheckCircleIcon size="2.3rem" className="text-success" />,
+    icon: (
+        <Icon
+            className="text-success"
+            svgPath={mdiCheckCircle}
+            inline={false}
+            aria-hidden={true}
+            height="2.3rem"
+            width="2.3rem"
+        />
+    ),
     steps: [
         {
             id: 'RestartTour',

@@ -10,8 +10,9 @@ import {
     QueryState,
     SearchPatternType,
 } from '@sourcegraph/search'
-import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
-import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
+import type { TelemetryService } from '@sourcegraph/shared/out/src/telemetry/telemetryService'
+import type { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import type { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import {
     aggregateStreamingSearch,
     LATEST_VERSION,
@@ -23,15 +24,16 @@ import { fetchStreamSuggestions } from '@sourcegraph/shared/src/search/suggestio
 import { EMPTY_SETTINGS_CASCADE, SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { useObservable, WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import { getAuthenticatedUser } from '../sourcegraph-api-access/api-gateway'
 import { initializeSourcegraphSettings } from '../sourcegraphSettings'
-import { EventLogger } from '../telemetry/EventLogger'
 
+import { GlobalKeyboardListeners } from './GlobalKeyboardListeners'
 import { JetBrainsSearchBox } from './input/JetBrainsSearchBox'
 import { saveLastSearch } from './js-to-java-bridge'
 import { SearchResultList } from './results/SearchResultList'
 import { StatusBar } from './StatusBar'
 import { Search } from './types'
+
+import { getInstanceURL } from '.'
 
 import styles from './App.module.scss'
 
@@ -44,12 +46,12 @@ interface Props {
     onPreviewClear: () => Promise<void>
     onOpen: (match: SearchMatch, lineOrSymbolMatchIndex?: number) => Promise<void>
     initialSearch: Search | null
-    initialAuthenticatedUser: AuthenticatedUser | null
-    telemetryService: EventLogger
+    authenticatedUser: AuthenticatedUser | null
+    telemetryService: TelemetryService
 }
 
 function fetchStreamSuggestionsWithStaticUrl(query: string): Observable<SearchMatch[]> {
-    return fetchStreamSuggestions(query, 'https://sourcegraph.com/.api')
+    return fetchStreamSuggestions(query, getInstanceURL() + '.api')
 }
 
 export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -61,11 +63,10 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     onPreviewClear,
     onOpen,
     initialSearch,
-    initialAuthenticatedUser,
+    authenticatedUser,
     telemetryService,
 }: Props) => {
-    const [authState, setAuthState] = useState<'initial' | 'validating' | 'success' | 'failure'>('initial')
-    const [authenticatedUser, setAuthenticatedUser] = useState<AuthenticatedUser | null>(initialAuthenticatedUser)
+    const authState = authenticatedUser !== null ? 'success' : 'failure'
 
     const requestGraphQL = useCallback<PlatformContext['requestGraphQL']>(
         args =>
@@ -85,22 +86,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     const settingsCascade: SettingsCascadeOrError =
         useObservable(useMemo(() => initializeSourcegraphSettings(requestGraphQL).settings, [requestGraphQL])) ||
         EMPTY_SETTINGS_CASCADE
-
-    useEffect(() => {
-        setAuthState('validating')
-        getAuthenticatedUser(instanceURL, accessToken)
-            .then(authenticatedUser => {
-                setAuthState(authenticatedUser ? 'success' : 'failure')
-                if (accessToken) {
-                    console.warn(`No authenticated user with access token “${accessToken || ''}”`)
-                }
-                setAuthenticatedUser(authenticatedUser)
-            })
-            .catch(() => {
-                setAuthState('failure')
-                console.warn(`Failed to validate authentication with access token “${accessToken || ''}”`)
-            })
-    }, [instanceURL, accessToken])
 
     const platformContext = {
         requestGraphQL,
@@ -169,8 +154,9 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                     caseSensitive: nextSearch.caseSensitive,
                     patternType: nextSearch.patternType,
                     trace: undefined,
-                    sourcegraphURL: 'https://sourcegraph.com/.api',
+                    sourcegraphURL: instanceURL + '.api',
                     decorationContextLines: 0,
+                    displayLimit: 200,
                 }
             ).subscribe(searchResults => {
                 setMatches(searchResults.results)
@@ -182,7 +168,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             saveLastSearch(nextSearch)
             telemetryService.log('IDESearchSubmitted')
         },
-        [lastSearch, userQueryState.query, telemetryService]
+        [lastSearch, userQueryState.query, telemetryService, instanceURL]
     )
 
     const [didInitialSubmit, setDidInitialSubmit] = useState(false)
@@ -191,6 +177,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
             return
         }
         setDidInitialSubmit(true)
+
         if (initialSearch !== null) {
             onSubmit({
                 caseSensitive: initialSearch.caseSensitive,
@@ -222,6 +209,7 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
 
     return (
         <WildcardThemeContext.Provider value={{ isBranded: true }}>
+            <GlobalKeyboardListeners />
             {/* eslint-disable-next-line jsx-a11y/no-static-element-interactions */}
             <div className={styles.root} onMouseDown={preventAll}>
                 <div className={styles.searchBoxContainer}>
@@ -239,8 +227,6 @@ export const App: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
                             patternType={lastSearch.patternType}
                             setPatternType={patternType => onSubmit({ patternType })}
                             isSourcegraphDotCom={isSourcegraphDotCom}
-                            hasUserAddedExternalServices={false}
-                            hasUserAddedRepositories={true} // Used for search context CTA, which we won't show here.
                             structuralSearchDisabled={false}
                             queryState={userQueryState}
                             onChange={setUserQueryState}

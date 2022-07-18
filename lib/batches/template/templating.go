@@ -111,13 +111,13 @@ type StepContext struct {
 	Outputs map[string]any
 	// Step is the result of the current step. Empty when evaluating the "run" field
 	// but filled when evaluating the "outputs" field.
-	Step execution.StepResult
+	Step execution.AfterStepResult
 	// Steps contains the path in which the steps are being executed and the
 	// changes made by all steps that were executed up until the current step.
 	Steps StepsContext
 	// PreviousStep is the result of the previous step. Empty when there is no
 	// previous step.
-	PreviousStep execution.StepResult
+	PreviousStep execution.AfterStepResult
 	// Repository is the Sourcegraph repository in which the steps are executed.
 	Repository Repository
 }
@@ -125,7 +125,7 @@ type StepContext struct {
 // ToFuncMap returns a template.FuncMap to access fields on the StepContext in a
 // text/template.
 func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
-	newStepResult := func(res *execution.StepResult) map[string]any {
+	newStepResult := func(res *execution.AfterStepResult) map[string]any {
 		m := map[string]any{
 			"modified_files": "",
 			"added_files":    "",
@@ -138,10 +138,10 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			return m
 		}
 
-		m["modified_files"] = res.ModifiedFiles()
-		m["added_files"] = res.AddedFiles()
-		m["deleted_files"] = res.DeletedFiles()
-		m["renamed_files"] = res.RenamedFiles()
+		m["modified_files"] = res.ChangedFiles.Modified
+		m["added_files"] = res.ChangedFiles.Added
+		m["deleted_files"] = res.ChangedFiles.Deleted
+		m["renamed_files"] = res.ChangedFiles.Renamed
 		m["stdout"] = res.Stdout
 		m["stderr"] = res.Stderr
 
@@ -156,7 +156,7 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 			return newStepResult(&stepCtx.Step)
 		},
 		"steps": func() map[string]any {
-			res := newStepResult(&execution.StepResult{Files: stepCtx.Steps.Changes})
+			res := newStepResult(&execution.AfterStepResult{ChangedFiles: stepCtx.Steps.Changes})
 			res["path"] = stepCtx.Steps.Path
 			return res
 		},
@@ -181,7 +181,7 @@ func (stepCtx *StepContext) ToFuncMap() template.FuncMap {
 
 type StepsContext struct {
 	// Changes that have been made by executing all steps.
-	Changes *git.Changes
+	Changes git.Changes
 	// Path is the relative-to-root directory in which the steps have been
 	// executed. Default is "". No leading "/".
 	Path string
@@ -225,15 +225,11 @@ func (tmplCtx *ChangesetTemplateContext) ToFuncMap() template.FuncMap {
 			return tmplCtx.Outputs
 		},
 		"steps": func() map[string]any {
-			// Wrap the *StepChanges in a execution.StepResult so we can use nil-safe
-			// methods.
-			res := execution.StepResult{Files: tmplCtx.Steps.Changes}
-
 			return map[string]any{
-				"modified_files": res.ModifiedFiles(),
-				"added_files":    res.AddedFiles(),
-				"deleted_files":  res.DeletedFiles(),
-				"renamed_files":  res.RenamedFiles(),
+				"modified_files": tmplCtx.Steps.Changes.Modified,
+				"added_files":    tmplCtx.Steps.Changes.Added,
+				"deleted_files":  tmplCtx.Steps.Changes.Deleted,
+				"renamed_files":  tmplCtx.Steps.Changes.Renamed,
 				"path":           tmplCtx.Steps.Path,
 			}
 		},

@@ -118,7 +118,7 @@
           }
         },
         "showOnboardingTour": {
-          "description": "Enables the onboarding tour.",
+          "description": "REMOVED.",
           "type": "boolean",
           "default": true,
           "!go": {
@@ -144,7 +144,7 @@
         "showEnterpriseHomePanels": {
           "description": "Enabled the homepage panels in the Enterprise homepage",
           "type": "boolean",
-          "default": true,
+          "default": false,
           "!go": {
             "pointer": true
           }
@@ -303,7 +303,7 @@
         "editor": {
           "description": "Specifies which (code) editor to use for query and text input",
           "type": "string",
-          "default": "monaco",
+          "default": "codemirror6",
           "enum": ["monaco", "codemirror6"],
           "!go": {
             "pointer": true
@@ -319,6 +319,22 @@
         },
         "enableExtensionsDecorationsColumnView": {
           "description": "If extension supports column view show its decorations in a separate column in the blob view.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "codeInsightsCompute": {
+          "description": "Enables Compute powered Code Insights",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
+        "enableCodeMirrorFileView": {
+          "description": "Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.",
           "type": "boolean",
           "default": false,
           "!go": {

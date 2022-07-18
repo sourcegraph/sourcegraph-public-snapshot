@@ -12,6 +12,7 @@ import (
 	"github.com/google/zoekt"
 	"github.com/google/zoekt/web"
 	"github.com/graph-gophers/graphql-go"
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -110,7 +111,7 @@ func TestSearch(t *testing.T) {
 			db.ExternalServicesFunc.SetDefaultReturn(ext)
 			db.PhabricatorFunc.SetDefaultReturn(phabricator)
 
-			sr := &schemaResolver{db: db}
+			sr := newSchemaResolver(db)
 			schema, err := graphql.ParseSchema(mainSchema, sr, graphql.Tracer(&prometheusTracer{}))
 			if err != nil {
 				t.Fatal(err)
@@ -338,7 +339,8 @@ func BenchmarkSearchResults(b *testing.B) {
 			b.Fatal(err)
 		}
 		resolver := &searchResolver{
-			db: db,
+			db:     db,
+			logger: logtest.Scoped(b),
 			SearchInputs: &run.SearchInputs{
 				Plan:         plan,
 				Query:        plan.ToQ(),
@@ -393,12 +395,8 @@ func generateZoektMatches(count int) []zoekt.FileMatch {
 			RepositoryID: uint32(i),
 			Repository:   repoName, // Important: this needs to match a name in `repos`
 			Branches:     []string{"master"},
-			LineMatches: []zoekt.LineMatch{
-				{
-					Line: nil,
-				},
-			},
-			Checksum: []byte{0, 1, 2},
+			ChunkMatches: make([]zoekt.ChunkMatch, 1),
+			Checksum:     []byte{0, 1, 2},
 		})
 	}
 	return zoektFileMatches

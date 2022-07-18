@@ -13,11 +13,6 @@ interface Migration {
 
 const migrations: Migration[] = [
     {
-        localStorageKey: 'has-cancelled-onboarding-tour',
-        temporarySettingsKey: 'search.onboarding.tourCancelled',
-        type: 'boolean',
-    },
-    {
         localStorageKey: 'days-active-count',
         temporarySettingsKey: 'user.daysActiveCount',
         type: 'number',
@@ -35,16 +30,6 @@ const migrations: Migration[] = [
     {
         localStorageKey: 'finished-welcome-flow',
         temporarySettingsKey: 'signup.finishedWelcomeFlow',
-        type: 'boolean',
-    },
-    {
-        localStorageKey: 'hasDismissedBrowserExtensionAlert',
-        temporarySettingsKey: 'cta.browserExtensionAlertDismissed',
-        type: 'boolean',
-    },
-    {
-        localStorageKey: 'hasDismissedIdeExtensionAlert',
-        temporarySettingsKey: 'cta.ideExtensionAlertDismissed',
         type: 'boolean',
     },
     {

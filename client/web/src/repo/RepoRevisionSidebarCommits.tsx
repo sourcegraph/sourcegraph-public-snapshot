@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { useCallback } from 'react'
 
+import { mdiFile } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
-import FileIcon from 'mdi-react/FileIcon'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -51,7 +51,7 @@ const CommitNode: React.FunctionComponent<React.PropsWithChildren<CommitNodeProp
                     className={classNames(styles.fileIcon, 'ml-2')}
                     title="View current file at this commit"
                 >
-                    <Icon as={FileIcon} aria-hidden={true} />
+                    <Icon aria-hidden={true} svgPath={mdiFile} />
                 </Link>
             }
         />

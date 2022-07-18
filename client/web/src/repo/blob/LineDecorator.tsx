@@ -12,6 +12,7 @@ import {
 } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './LineDecorator.module.scss'
 
@@ -102,7 +103,7 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                     innerPortalNode.id = portalID
                     innerPortalNode.dataset.testid = 'line-decoration'
                     innerPortalNode.dataset.lineDecorationAttachmentPortal = 'true'
-                    codeCell?.append(innerPortalNode)
+                    codeCell?.insertBefore(innerPortalNode, codeCell?.querySelector('.bottom-spacer'))
                     setPortalNode(innerPortalNode)
                 } else {
                     // code view ref passed `null`, so element is leaving DOM
@@ -139,29 +140,32 @@ export const LineDecorator = React.memo<LineDecoratorProps>(
                 const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
 
                 return (
-                    <LinkOrSpan
+                    <Tooltip
+                        content={attachment.hoverMessage}
                         // Key by content, use index to remove possibility of duplicate keys
                         key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
-                        className={styles.lineDecorationAttachment}
-                        data-line-decoration-attachment={true}
-                        to={attachment.linkURL}
-                        data-tooltip={attachment.hoverMessage}
-                        // Use target to open external URLs
-                        target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
-                        // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                        rel="noreferrer noopener"
                     >
-                        <span
-                            className={styles.contents}
-                            data-line-decoration-attachment-content={true}
-                            // eslint-disable-next-line react/forbid-dom-props
-                            style={{
-                                color: style.color,
-                                backgroundColor: style.backgroundColor,
-                            }}
-                            data-contents={attachment.contentText || ''}
-                        />
-                    </LinkOrSpan>
+                        <LinkOrSpan
+                            className={styles.lineDecorationAttachment}
+                            data-line-decoration-attachment={true}
+                            to={attachment.linkURL}
+                            // Use target to open external URLs
+                            target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
+                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                            rel="noreferrer noopener"
+                        >
+                            <span
+                                className={styles.contents}
+                                data-line-decoration-attachment-content={true}
+                                // eslint-disable-next-line react/forbid-dom-props
+                                style={{
+                                    color: style.color,
+                                    backgroundColor: style.backgroundColor,
+                                }}
+                                data-contents={attachment.contentText || ''}
+                            />
+                        </LinkOrSpan>
+                    </Tooltip>
                 )
             }),
             portalNode

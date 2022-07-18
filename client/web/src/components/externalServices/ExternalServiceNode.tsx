@@ -1,13 +1,11 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiAccount, mdiCog, mdiDelete } from '@mdi/js'
 import * as H from 'history'
-import AccountIcon from 'mdi-react/AccountIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, isErrorLike } from '@sourcegraph/common'
-import { Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ListExternalServiceFields } from '../../graphql-operations'
 import { refreshSiteFlags } from '../../site/backend'
@@ -53,34 +51,36 @@ export const ExternalServiceNode: React.FunctionComponent<React.PropsWithChildre
                 <div>
                     {node.namespace && (
                         <>
-                            <Icon as={AccountIcon} aria-hidden={true} />
+                            <Icon aria-hidden={true} svgPath={mdiAccount} />
                             <Link to={node.namespace.url}>{node.namespace.namespaceName}</Link>{' '}
                         </>
                     )}
                     {node.displayName}
                 </div>
                 <div>
-                    <Button
-                        className="test-edit-external-service-button"
-                        to={`${routingPrefix}/external-services/${node.id}`}
-                        data-tooltip="External service settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon as={SettingsIcon} aria-hidden={true} /> Edit
-                    </Button>{' '}
-                    <Button
-                        className="test-delete-external-service-button"
-                        onClick={onDelete}
-                        disabled={isDeleting === true}
-                        data-tooltip="Delete external service"
-                        aria-label="Delete external service"
-                        variant="danger"
-                        size="sm"
-                    >
-                        <Icon as={DeleteIcon} aria-hidden={true} />
-                    </Button>
+                    <Tooltip content="External service settings">
+                        <Button
+                            className="test-edit-external-service-button"
+                            to={`${routingPrefix}/external-services/${node.id}`}
+                            variant="secondary"
+                            size="sm"
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Edit
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Delete external service">
+                        <Button
+                            aria-label="Delete"
+                            className="test-delete-external-service-button"
+                            onClick={onDelete}
+                            disabled={isDeleting === true}
+                            variant="danger"
+                            size="sm"
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
+                        </Button>
+                    </Tooltip>
                 </div>
             </div>
             {isErrorLike(isDeleting) && <ErrorAlert className="mt-2" error={isDeleting} />}

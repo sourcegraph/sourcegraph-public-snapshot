@@ -1,7 +1,7 @@
 import React, { CSSProperties, useCallback, useState } from 'react'
 
+import { mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import CloseIcon from 'mdi-react/CloseIcon'
 
 import { isErrorLike, sanitizeClass } from '@sourcegraph/common'
 // eslint-disable-next-line no-restricted-imports
@@ -176,7 +176,7 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                             hoverOrError === LOADING && hoverOverlayStyle.closeButtonLoading
                         )}
                     >
-                        <CloseIcon className={iconClassName} />
+                        <Icon className={iconClassName} svgPath={mdiClose} inline={false} aria-label="Close" />
                     </button>
                 )}
                 <HoverOverlayContents
@@ -216,7 +216,8 @@ export const HoverOverlay: React.FunctionComponent<React.PropsWithChildren<Hover
                                         className={classNames(
                                             hoverOverlayStyle.action,
                                             actionItemClassName,
-                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`
+                                            `test-tooltip-${sanitizeClass(action.action.title || 'untitled')}`,
+                                            index !== 0 && 'ml-1'
                                         )}
                                         iconClassName={iconClassName}
                                         pressedClassName={actionItemPressedClassName}

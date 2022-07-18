@@ -1,3 +1,8 @@
+/**
+ * Disabled due to violation of the VS Code's UX guidelines for notifications
+ * To be revaluated in the future
+ */
+
 import * as vscode from 'vscode'
 
 import { DISMISS_WORKSPACERECS_CTA_KEY, LocalStorageService } from './LocalStorageService'

@@ -1,7 +1,7 @@
 import fs from 'fs'
 import path from 'path'
 
-import { parse } from '@sqs/jsonc-parser'
+import { parse } from 'jsonc-parser'
 
 import { ROOT_PATH, MONACO_EDITOR_PATH } from '@sourcegraph/build-config'
 

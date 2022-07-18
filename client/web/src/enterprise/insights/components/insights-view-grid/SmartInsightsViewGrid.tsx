@@ -1,4 +1,4 @@
-import React, { memo, useCallback, useEffect, useState } from 'react'
+import React, { memo, useCallback, useLayoutEffect, useState } from 'react'
 
 import { isEqual } from 'lodash'
 import { Layout, Layouts } from 'react-grid-layout'
@@ -32,7 +32,7 @@ export const SmartInsightsViewGrid: React.FunctionComponent<React.PropsWithChild
         const [layouts, setLayouts] = useState<Layouts>({})
         const [resizingView, setResizeView] = useState<Layout | null>(null)
 
-        useEffect(() => {
+        useLayoutEffect(() => {
             setLayouts(insightLayoutGenerator(insights))
         }, [insights])
 

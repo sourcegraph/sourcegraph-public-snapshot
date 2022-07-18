@@ -149,12 +149,16 @@ export class ExternalAccountNode extends React.PureComponent<ExternalAccountNode
                         </small>
                     </div>
                     <div className="text-nowrap">
-                        {this.props.node.accountData && (
+                        {/*
+                         * Issue: This JSX tag's 'children' prop expects a single child of type 'ReactNode', but multiple children were provided
+                         * It seems that v18 requires explicit boolean value
+                         */}
+                        {!!this.props.node.accountData && (
                             <Button onClick={this.toggleShowData} variant="secondary">
                                 {this.state.showData ? 'Hide' : 'Show'} data
                             </Button>
                         )}{' '}
-                        {this.props.node.refreshURL && (
+                        {!!this.props.node.refreshURL && (
                             <Button href={this.props.node.refreshURL} variant="secondary" as="a">
                                 Refresh
                             </Button>

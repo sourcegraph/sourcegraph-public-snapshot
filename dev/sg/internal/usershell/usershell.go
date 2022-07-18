@@ -8,8 +8,6 @@ import (
 	"strings"
 )
 
-type key struct{}
-
 type Shell string
 
 const (
@@ -18,6 +16,9 @@ const (
 	FishShell Shell = "fish"
 )
 
+// key is used to store userShell in context.
+type key struct{}
+
 // userShell stores which shell and which configuration file a user is using.
 type userShell struct {
 	shell           Shell
@@ -25,22 +26,26 @@ type userShell struct {
 	shellConfigPath string
 }
 
+// fromContext retrieves userShell from context, and may panic if not set, intentionally
+// so - unset means usershell.Context must have not been called (a detection failure
+// scenario should be handled from the error provided by usershell.Context)
+func fromContext(ctx context.Context) userShell {
+	return ctx.Value(key{}).(userShell)
+}
+
 // ShellPath returns the path to the shell used by the current unix user.
 func ShellPath(ctx context.Context) string {
-	v := ctx.Value(key{}).(userShell)
-	return v.shellPath
+	return fromContext(ctx).shellPath
 }
 
 // ShellPath returns the path to the shell configuration (bashrc...) used by the current unix user.
 func ShellConfigPath(ctx context.Context) string {
-	v := ctx.Value(key{}).(userShell)
-	return v.shellConfigPath
+	return fromContext(ctx).shellConfigPath
 }
 
 // Shell returns the current shell type used by the current unix user.
 func ShellType(ctx context.Context) Shell {
-	v := ctx.Value(key{}).(userShell)
-	return v.shell
+	return fromContext(ctx).shell
 }
 
 // IsSupportedShell returns true if the given shell is supported by sg-cli

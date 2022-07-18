@@ -1,5 +1,5 @@
+import { mdiArrowRight } from '@mdi/js'
 import { DecoratorFn, Meta } from '@storybook/react'
-import ArrowRightIcon from 'mdi-react/ArrowRightIcon'
 
 import { Link, Icon, H3 } from '@sourcegraph/wildcard'
 
@@ -23,7 +23,7 @@ export const Basic = (): JSX.Element => (
         <div>
             <Link to="https://sourcegraph.com/search">
                 Speak to an engineer
-                <Icon className="ml-2" as={ArrowRightIcon} aria-hidden={true} />
+                <Icon className="ml-2" aria-hidden={true} svgPath={mdiArrowRight} />
             </Link>
         </div>
     </MarketingBlock>

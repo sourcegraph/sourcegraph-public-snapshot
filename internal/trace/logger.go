@@ -17,7 +17,7 @@ func Logger(ctx context.Context, l log.Logger) log.Logger {
 		if t.family != "" {
 			l = l.Scoped(t.family, "trace family")
 		}
-		if tc := ContextFromSpan(t.span); tc != nil {
+		if tc := Context(ctx); tc != nil {
 			l = l.WithTrace(*tc)
 		}
 	}

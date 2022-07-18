@@ -5,9 +5,9 @@ import {
     FormattingOptions,
     parse,
     ParseError,
-    ParseErrorCode,
     format as jsoncFormat,
-} from '@sqs/jsonc-parser'
+    printParseErrorCode,
+} from 'jsonc-parser'
 
 import { asError, createAggregateError, ErrorLike } from '../errors'
 
@@ -35,8 +35,10 @@ function parseJSON(input: string): any {
         throw createAggregateError(
             errors.map(error => ({
                 ...error,
-                code: ParseErrorCode[error.error],
-                message: `parse error (code: ${error.error}, offset: ${error.offset}, length: ${error.length})`,
+                code: error.error,
+                message: `parse error (code: ${error.error}, error: ${printParseErrorCode(error.error)}, offset: ${
+                    error.offset
+                }, length: ${error.length})`,
             }))
         )
     }

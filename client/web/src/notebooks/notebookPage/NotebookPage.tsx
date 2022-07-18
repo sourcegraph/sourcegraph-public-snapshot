@@ -1,10 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
+import { mdiClose, mdiCheckCircle, mdiBookOutline } from '@mdi/js'
 import classNames from 'classnames'
-import BookOutlineIcon from 'mdi-react/BookOutlineIcon'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
 import { RouteComponentProps } from 'react-router'
+import { useStickyBox } from 'react-sticky-box'
 import { Observable } from 'rxjs'
 import { catchError, delay, startWith, switchMap } from 'rxjs/operators'
 
@@ -201,10 +200,19 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
         [latestNotebook, notepadCTASeen, notepadEnabled]
     )
 
+    const stickyBox = useStickyBox()
+
     return (
         <div className={classNames('w-100', styles.searchNotebookPage)}>
             <PageTitle title={notebookTitle || 'Notebook'} />
-            <div className={styles.sideColumn} ref={outlineContainerElement} />
+            <div className={styles.sideColumn}>
+                <div
+                    ref={element => {
+                        outlineContainerElement.current = element
+                        stickyBox(element)
+                    }}
+                />
+            </div>
             <div className={styles.centerColumn}>
                 <div className={styles.content}>
                     {isErrorLike(notebookOrError) && (
@@ -246,7 +254,7 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                             >
                                 <PageHeader.Heading as="h2" styleAs="h1">
                                     <PageHeader.Breadcrumb
-                                        icon={BookOutlineIcon}
+                                        icon={mdiBookOutline}
                                         to="/notebooks"
                                         aria-label="Notebooks"
                                     />
@@ -279,7 +287,9 @@ export const NotebookPage: React.FunctionComponent<React.PropsWithChildren<Noteb
                                     )}
                                     {isNotebookLoaded(latestNotebook) && (
                                         <>
-                                            <CheckCircleIcon
+                                            <Icon
+                                                aria-hidden={true}
+                                                svgPath={mdiCheckCircle}
                                                 className={classNames('text-success m-1', styles.autoSaveIndicator)}
                                             />
                                             <span>
@@ -351,7 +361,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
     const isLightTheme = useTheme().enhancedThemePreference === ThemePreference.Light
 
     return (
-        <MarketingBlock wrapperClassName={styles.notepadCta}>
+        <MarketingBlock wrapperClassName={classNames(styles.notepadCta, 'd-none d-md-block')}>
             <aside className={styles.notepadCtaContent}>
                 <Button
                     aria-label="Hide"
@@ -360,7 +370,7 @@ const NotepadCTA: React.FunctionComponent<React.PropsWithChildren<NotepadCTAProp
                     size="sm"
                     className={styles.notepadCtaCloseButton}
                 >
-                    <Icon aria-hidden={true} as={CloseIcon} />
+                    <Icon aria-hidden={true} svgPath={mdiClose} />
                 </Button>
                 <img
                     className="flex-shrink-0 mr-3"

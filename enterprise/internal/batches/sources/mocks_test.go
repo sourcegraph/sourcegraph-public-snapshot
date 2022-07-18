@@ -1293,6 +1293,1557 @@ func (c ChangesetSourceWithAuthenticatorFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
+// MockForkableChangesetSource is a mock implementation of the
+// ForkableChangesetSource interface (from the package
+// github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources)
+// used for unit testing.
+type MockForkableChangesetSource struct {
+	// CloseChangesetFunc is an instance of a mock function object
+	// controlling the behavior of the method CloseChangeset.
+	CloseChangesetFunc *ForkableChangesetSourceCloseChangesetFunc
+	// CreateChangesetFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateChangeset.
+	CreateChangesetFunc *ForkableChangesetSourceCreateChangesetFunc
+	// CreateCommentFunc is an instance of a mock function object
+	// controlling the behavior of the method CreateComment.
+	CreateCommentFunc *ForkableChangesetSourceCreateCommentFunc
+	// GetNamespaceForkFunc is an instance of a mock function object
+	// controlling the behavior of the method GetNamespaceFork.
+	GetNamespaceForkFunc *ForkableChangesetSourceGetNamespaceForkFunc
+	// GetUserForkFunc is an instance of a mock function object controlling
+	// the behavior of the method GetUserFork.
+	GetUserForkFunc *ForkableChangesetSourceGetUserForkFunc
+	// GitserverPushConfigFunc is an instance of a mock function object
+	// controlling the behavior of the method GitserverPushConfig.
+	GitserverPushConfigFunc *ForkableChangesetSourceGitserverPushConfigFunc
+	// LoadChangesetFunc is an instance of a mock function object
+	// controlling the behavior of the method LoadChangeset.
+	LoadChangesetFunc *ForkableChangesetSourceLoadChangesetFunc
+	// MergeChangesetFunc is an instance of a mock function object
+	// controlling the behavior of the method MergeChangeset.
+	MergeChangesetFunc *ForkableChangesetSourceMergeChangesetFunc
+	// ReopenChangesetFunc is an instance of a mock function object
+	// controlling the behavior of the method ReopenChangeset.
+	ReopenChangesetFunc *ForkableChangesetSourceReopenChangesetFunc
+	// UpdateChangesetFunc is an instance of a mock function object
+	// controlling the behavior of the method UpdateChangeset.
+	UpdateChangesetFunc *ForkableChangesetSourceUpdateChangesetFunc
+	// ValidateAuthenticatorFunc is an instance of a mock function object
+	// controlling the behavior of the method ValidateAuthenticator.
+	ValidateAuthenticatorFunc *ForkableChangesetSourceValidateAuthenticatorFunc
+	// WithAuthenticatorFunc is an instance of a mock function object
+	// controlling the behavior of the method WithAuthenticator.
+	WithAuthenticatorFunc *ForkableChangesetSourceWithAuthenticatorFunc
+}
+
+// NewMockForkableChangesetSource creates a new mock of the
+// ForkableChangesetSource interface. All methods return zero values for all
+// results, unless overwritten.
+func NewMockForkableChangesetSource() *MockForkableChangesetSource {
+	return &MockForkableChangesetSource{
+		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) (r0 error) {
+				return
+			},
+		},
+		CreateChangesetFunc: &ForkableChangesetSourceCreateChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) (r0 bool, r1 error) {
+				return
+			},
+		},
+		CreateCommentFunc: &ForkableChangesetSourceCreateCommentFunc{
+			defaultHook: func(context.Context, *Changeset, string) (r0 error) {
+				return
+			},
+		},
+		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
+			defaultHook: func(context.Context, *types.Repo, string) (r0 *types.Repo, r1 error) {
+				return
+			},
+		},
+		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
+			defaultHook: func(context.Context, *types.Repo) (r0 *types.Repo, r1 error) {
+				return
+			},
+		},
+		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
+			defaultHook: func(context.Context, database.ExternalServiceStore, *types.Repo) (r0 *protocol.PushConfig, r1 error) {
+				return
+			},
+		},
+		LoadChangesetFunc: &ForkableChangesetSourceLoadChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) (r0 error) {
+				return
+			},
+		},
+		MergeChangesetFunc: &ForkableChangesetSourceMergeChangesetFunc{
+			defaultHook: func(context.Context, *Changeset, bool) (r0 error) {
+				return
+			},
+		},
+		ReopenChangesetFunc: &ForkableChangesetSourceReopenChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) (r0 error) {
+				return
+			},
+		},
+		UpdateChangesetFunc: &ForkableChangesetSourceUpdateChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) (r0 error) {
+				return
+			},
+		},
+		ValidateAuthenticatorFunc: &ForkableChangesetSourceValidateAuthenticatorFunc{
+			defaultHook: func(context.Context) (r0 error) {
+				return
+			},
+		},
+		WithAuthenticatorFunc: &ForkableChangesetSourceWithAuthenticatorFunc{
+			defaultHook: func(auth.Authenticator) (r0 ChangesetSource, r1 error) {
+				return
+			},
+		},
+	}
+}
+
+// NewStrictMockForkableChangesetSource creates a new mock of the
+// ForkableChangesetSource interface. All methods panic on invocation,
+// unless overwritten.
+func NewStrictMockForkableChangesetSource() *MockForkableChangesetSource {
+	return &MockForkableChangesetSource{
+		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) error {
+				panic("unexpected invocation of MockForkableChangesetSource.CloseChangeset")
+			},
+		},
+		CreateChangesetFunc: &ForkableChangesetSourceCreateChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) (bool, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.CreateChangeset")
+			},
+		},
+		CreateCommentFunc: &ForkableChangesetSourceCreateCommentFunc{
+			defaultHook: func(context.Context, *Changeset, string) error {
+				panic("unexpected invocation of MockForkableChangesetSource.CreateComment")
+			},
+		},
+		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
+			defaultHook: func(context.Context, *types.Repo, string) (*types.Repo, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.GetNamespaceFork")
+			},
+		},
+		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
+			defaultHook: func(context.Context, *types.Repo) (*types.Repo, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.GetUserFork")
+			},
+		},
+		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
+			defaultHook: func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.GitserverPushConfig")
+			},
+		},
+		LoadChangesetFunc: &ForkableChangesetSourceLoadChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) error {
+				panic("unexpected invocation of MockForkableChangesetSource.LoadChangeset")
+			},
+		},
+		MergeChangesetFunc: &ForkableChangesetSourceMergeChangesetFunc{
+			defaultHook: func(context.Context, *Changeset, bool) error {
+				panic("unexpected invocation of MockForkableChangesetSource.MergeChangeset")
+			},
+		},
+		ReopenChangesetFunc: &ForkableChangesetSourceReopenChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) error {
+				panic("unexpected invocation of MockForkableChangesetSource.ReopenChangeset")
+			},
+		},
+		UpdateChangesetFunc: &ForkableChangesetSourceUpdateChangesetFunc{
+			defaultHook: func(context.Context, *Changeset) error {
+				panic("unexpected invocation of MockForkableChangesetSource.UpdateChangeset")
+			},
+		},
+		ValidateAuthenticatorFunc: &ForkableChangesetSourceValidateAuthenticatorFunc{
+			defaultHook: func(context.Context) error {
+				panic("unexpected invocation of MockForkableChangesetSource.ValidateAuthenticator")
+			},
+		},
+		WithAuthenticatorFunc: &ForkableChangesetSourceWithAuthenticatorFunc{
+			defaultHook: func(auth.Authenticator) (ChangesetSource, error) {
+				panic("unexpected invocation of MockForkableChangesetSource.WithAuthenticator")
+			},
+		},
+	}
+}
+
+// NewMockForkableChangesetSourceFrom creates a new mock of the
+// MockForkableChangesetSource interface. All methods delegate to the given
+// implementation, unless overwritten.
+func NewMockForkableChangesetSourceFrom(i ForkableChangesetSource) *MockForkableChangesetSource {
+	return &MockForkableChangesetSource{
+		CloseChangesetFunc: &ForkableChangesetSourceCloseChangesetFunc{
+			defaultHook: i.CloseChangeset,
+		},
+		CreateChangesetFunc: &ForkableChangesetSourceCreateChangesetFunc{
+			defaultHook: i.CreateChangeset,
+		},
+		CreateCommentFunc: &ForkableChangesetSourceCreateCommentFunc{
+			defaultHook: i.CreateComment,
+		},
+		GetNamespaceForkFunc: &ForkableChangesetSourceGetNamespaceForkFunc{
+			defaultHook: i.GetNamespaceFork,
+		},
+		GetUserForkFunc: &ForkableChangesetSourceGetUserForkFunc{
+			defaultHook: i.GetUserFork,
+		},
+		GitserverPushConfigFunc: &ForkableChangesetSourceGitserverPushConfigFunc{
+			defaultHook: i.GitserverPushConfig,
+		},
+		LoadChangesetFunc: &ForkableChangesetSourceLoadChangesetFunc{
+			defaultHook: i.LoadChangeset,
+		},
+		MergeChangesetFunc: &ForkableChangesetSourceMergeChangesetFunc{
+			defaultHook: i.MergeChangeset,
+		},
+		ReopenChangesetFunc: &ForkableChangesetSourceReopenChangesetFunc{
+			defaultHook: i.ReopenChangeset,
+		},
+		UpdateChangesetFunc: &ForkableChangesetSourceUpdateChangesetFunc{
+			defaultHook: i.UpdateChangeset,
+		},
+		ValidateAuthenticatorFunc: &ForkableChangesetSourceValidateAuthenticatorFunc{
+			defaultHook: i.ValidateAuthenticator,
+		},
+		WithAuthenticatorFunc: &ForkableChangesetSourceWithAuthenticatorFunc{
+			defaultHook: i.WithAuthenticator,
+		},
+	}
+}
+
+// ForkableChangesetSourceCloseChangesetFunc describes the behavior when the
+// CloseChangeset method of the parent MockForkableChangesetSource instance
+// is invoked.
+type ForkableChangesetSourceCloseChangesetFunc struct {
+	defaultHook func(context.Context, *Changeset) error
+	hooks       []func(context.Context, *Changeset) error
+	history     []ForkableChangesetSourceCloseChangesetFuncCall
+	mutex       sync.Mutex
+}
+
+// CloseChangeset delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) CloseChangeset(v0 context.Context, v1 *Changeset) error {
+	r0 := m.CloseChangesetFunc.nextHook()(v0, v1)
+	m.CloseChangesetFunc.appendCall(ForkableChangesetSourceCloseChangesetFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CloseChangeset
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceCloseChangesetFunc) SetDefaultHook(hook func(context.Context, *Changeset) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CloseChangeset method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceCloseChangesetFunc) PushHook(hook func(context.Context, *Changeset) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceCloseChangesetFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *Changeset) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceCloseChangesetFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *Changeset) error {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceCloseChangesetFunc) nextHook() func(context.Context, *Changeset) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceCloseChangesetFunc) appendCall(r0 ForkableChangesetSourceCloseChangesetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceCloseChangesetFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceCloseChangesetFunc) History() []ForkableChangesetSourceCloseChangesetFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceCloseChangesetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceCloseChangesetFuncCall is an object that describes
+// an invocation of method CloseChangeset on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceCloseChangesetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *Changeset
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceCloseChangesetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceCloseChangesetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ForkableChangesetSourceCreateChangesetFunc describes the behavior when
+// the CreateChangeset method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceCreateChangesetFunc struct {
+	defaultHook func(context.Context, *Changeset) (bool, error)
+	hooks       []func(context.Context, *Changeset) (bool, error)
+	history     []ForkableChangesetSourceCreateChangesetFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateChangeset delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) CreateChangeset(v0 context.Context, v1 *Changeset) (bool, error) {
+	r0, r1 := m.CreateChangesetFunc.nextHook()(v0, v1)
+	m.CreateChangesetFunc.appendCall(ForkableChangesetSourceCreateChangesetFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the CreateChangeset
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceCreateChangesetFunc) SetDefaultHook(hook func(context.Context, *Changeset) (bool, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateChangeset method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceCreateChangesetFunc) PushHook(hook func(context.Context, *Changeset) (bool, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceCreateChangesetFunc) SetDefaultReturn(r0 bool, r1 error) {
+	f.SetDefaultHook(func(context.Context, *Changeset) (bool, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceCreateChangesetFunc) PushReturn(r0 bool, r1 error) {
+	f.PushHook(func(context.Context, *Changeset) (bool, error) {
+		return r0, r1
+	})
+}
+
+func (f *ForkableChangesetSourceCreateChangesetFunc) nextHook() func(context.Context, *Changeset) (bool, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceCreateChangesetFunc) appendCall(r0 ForkableChangesetSourceCreateChangesetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceCreateChangesetFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceCreateChangesetFunc) History() []ForkableChangesetSourceCreateChangesetFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceCreateChangesetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceCreateChangesetFuncCall is an object that
+// describes an invocation of method CreateChangeset on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceCreateChangesetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *Changeset
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 bool
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceCreateChangesetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceCreateChangesetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ForkableChangesetSourceCreateCommentFunc describes the behavior when the
+// CreateComment method of the parent MockForkableChangesetSource instance
+// is invoked.
+type ForkableChangesetSourceCreateCommentFunc struct {
+	defaultHook func(context.Context, *Changeset, string) error
+	hooks       []func(context.Context, *Changeset, string) error
+	history     []ForkableChangesetSourceCreateCommentFuncCall
+	mutex       sync.Mutex
+}
+
+// CreateComment delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) CreateComment(v0 context.Context, v1 *Changeset, v2 string) error {
+	r0 := m.CreateCommentFunc.nextHook()(v0, v1, v2)
+	m.CreateCommentFunc.appendCall(ForkableChangesetSourceCreateCommentFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the CreateComment method
+// of the parent MockForkableChangesetSource instance is invoked and the
+// hook queue is empty.
+func (f *ForkableChangesetSourceCreateCommentFunc) SetDefaultHook(hook func(context.Context, *Changeset, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// CreateComment method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceCreateCommentFunc) PushHook(hook func(context.Context, *Changeset, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceCreateCommentFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *Changeset, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceCreateCommentFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *Changeset, string) error {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceCreateCommentFunc) nextHook() func(context.Context, *Changeset, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceCreateCommentFunc) appendCall(r0 ForkableChangesetSourceCreateCommentFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceCreateCommentFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceCreateCommentFunc) History() []ForkableChangesetSourceCreateCommentFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceCreateCommentFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceCreateCommentFuncCall is an object that describes
+// an invocation of method CreateComment on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceCreateCommentFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *Changeset
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceCreateCommentFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceCreateCommentFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ForkableChangesetSourceGetNamespaceForkFunc describes the behavior when
+// the GetNamespaceFork method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceGetNamespaceForkFunc struct {
+	defaultHook func(context.Context, *types.Repo, string) (*types.Repo, error)
+	hooks       []func(context.Context, *types.Repo, string) (*types.Repo, error)
+	history     []ForkableChangesetSourceGetNamespaceForkFuncCall
+	mutex       sync.Mutex
+}
+
+// GetNamespaceFork delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) GetNamespaceFork(v0 context.Context, v1 *types.Repo, v2 string) (*types.Repo, error) {
+	r0, r1 := m.GetNamespaceForkFunc.nextHook()(v0, v1, v2)
+	m.GetNamespaceForkFunc.appendCall(ForkableChangesetSourceGetNamespaceForkFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetNamespaceFork
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo, string) (*types.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetNamespaceFork method of the parent MockForkableChangesetSource
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushHook(hook func(context.Context, *types.Repo, string) (*types.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo, string) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, *types.Repo, string) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) nextHook() func(context.Context, *types.Repo, string) (*types.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) appendCall(r0 ForkableChangesetSourceGetNamespaceForkFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceGetNamespaceForkFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceGetNamespaceForkFunc) History() []ForkableChangesetSourceGetNamespaceForkFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceGetNamespaceForkFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceGetNamespaceForkFuncCall is an object that
+// describes an invocation of method GetNamespaceFork on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceGetNamespaceForkFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Repo
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceGetNamespaceForkFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceGetNamespaceForkFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ForkableChangesetSourceGetUserForkFunc describes the behavior when the
+// GetUserFork method of the parent MockForkableChangesetSource instance is
+// invoked.
+type ForkableChangesetSourceGetUserForkFunc struct {
+	defaultHook func(context.Context, *types.Repo) (*types.Repo, error)
+	hooks       []func(context.Context, *types.Repo) (*types.Repo, error)
+	history     []ForkableChangesetSourceGetUserForkFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUserFork delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) GetUserFork(v0 context.Context, v1 *types.Repo) (*types.Repo, error) {
+	r0, r1 := m.GetUserForkFunc.nextHook()(v0, v1)
+	m.GetUserForkFunc.appendCall(ForkableChangesetSourceGetUserForkFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetUserFork method
+// of the parent MockForkableChangesetSource instance is invoked and the
+// hook queue is empty.
+func (f *ForkableChangesetSourceGetUserForkFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUserFork method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceGetUserForkFunc) PushHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceGetUserForkFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceGetUserForkFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, *types.Repo) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *ForkableChangesetSourceGetUserForkFunc) nextHook() func(context.Context, *types.Repo) (*types.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceGetUserForkFunc) appendCall(r0 ForkableChangesetSourceGetUserForkFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ForkableChangesetSourceGetUserForkFuncCall
+// objects describing the invocations of this function.
+func (f *ForkableChangesetSourceGetUserForkFunc) History() []ForkableChangesetSourceGetUserForkFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceGetUserForkFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceGetUserForkFuncCall is an object that describes an
+// invocation of method GetUserFork on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceGetUserForkFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Repo
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceGetUserForkFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceGetUserForkFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ForkableChangesetSourceGitserverPushConfigFunc describes the behavior
+// when the GitserverPushConfig method of the parent
+// MockForkableChangesetSource instance is invoked.
+type ForkableChangesetSourceGitserverPushConfigFunc struct {
+	defaultHook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
+	hooks       []func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)
+	history     []ForkableChangesetSourceGitserverPushConfigFuncCall
+	mutex       sync.Mutex
+}
+
+// GitserverPushConfig delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) GitserverPushConfig(v0 context.Context, v1 database.ExternalServiceStore, v2 *types.Repo) (*protocol.PushConfig, error) {
+	r0, r1 := m.GitserverPushConfigFunc.nextHook()(v0, v1, v2)
+	m.GitserverPushConfigFunc.appendCall(ForkableChangesetSourceGitserverPushConfigFuncCall{v0, v1, v2, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GitserverPushConfig
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultHook(hook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GitserverPushConfig method of the parent MockForkableChangesetSource
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushHook(hook func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) SetDefaultReturn(r0 *protocol.PushConfig, r1 error) {
+	f.SetDefaultHook(func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) PushReturn(r0 *protocol.PushConfig, r1 error) {
+	f.PushHook(func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+		return r0, r1
+	})
+}
+
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) nextHook() func(context.Context, database.ExternalServiceStore, *types.Repo) (*protocol.PushConfig, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) appendCall(r0 ForkableChangesetSourceGitserverPushConfigFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceGitserverPushConfigFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceGitserverPushConfigFunc) History() []ForkableChangesetSourceGitserverPushConfigFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceGitserverPushConfigFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceGitserverPushConfigFuncCall is an object that
+// describes an invocation of method GitserverPushConfig on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceGitserverPushConfigFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 database.ExternalServiceStore
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 *types.Repo
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *protocol.PushConfig
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceGitserverPushConfigFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceGitserverPushConfigFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// ForkableChangesetSourceLoadChangesetFunc describes the behavior when the
+// LoadChangeset method of the parent MockForkableChangesetSource instance
+// is invoked.
+type ForkableChangesetSourceLoadChangesetFunc struct {
+	defaultHook func(context.Context, *Changeset) error
+	hooks       []func(context.Context, *Changeset) error
+	history     []ForkableChangesetSourceLoadChangesetFuncCall
+	mutex       sync.Mutex
+}
+
+// LoadChangeset delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) LoadChangeset(v0 context.Context, v1 *Changeset) error {
+	r0 := m.LoadChangesetFunc.nextHook()(v0, v1)
+	m.LoadChangesetFunc.appendCall(ForkableChangesetSourceLoadChangesetFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the LoadChangeset method
+// of the parent MockForkableChangesetSource instance is invoked and the
+// hook queue is empty.
+func (f *ForkableChangesetSourceLoadChangesetFunc) SetDefaultHook(hook func(context.Context, *Changeset) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// LoadChangeset method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceLoadChangesetFunc) PushHook(hook func(context.Context, *Changeset) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceLoadChangesetFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *Changeset) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceLoadChangesetFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *Changeset) error {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceLoadChangesetFunc) nextHook() func(context.Context, *Changeset) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceLoadChangesetFunc) appendCall(r0 ForkableChangesetSourceLoadChangesetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceLoadChangesetFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceLoadChangesetFunc) History() []ForkableChangesetSourceLoadChangesetFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceLoadChangesetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceLoadChangesetFuncCall is an object that describes
+// an invocation of method LoadChangeset on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceLoadChangesetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *Changeset
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceLoadChangesetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceLoadChangesetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ForkableChangesetSourceMergeChangesetFunc describes the behavior when the
+// MergeChangeset method of the parent MockForkableChangesetSource instance
+// is invoked.
+type ForkableChangesetSourceMergeChangesetFunc struct {
+	defaultHook func(context.Context, *Changeset, bool) error
+	hooks       []func(context.Context, *Changeset, bool) error
+	history     []ForkableChangesetSourceMergeChangesetFuncCall
+	mutex       sync.Mutex
+}
+
+// MergeChangeset delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) MergeChangeset(v0 context.Context, v1 *Changeset, v2 bool) error {
+	r0 := m.MergeChangesetFunc.nextHook()(v0, v1, v2)
+	m.MergeChangesetFunc.appendCall(ForkableChangesetSourceMergeChangesetFuncCall{v0, v1, v2, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the MergeChangeset
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceMergeChangesetFunc) SetDefaultHook(hook func(context.Context, *Changeset, bool) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// MergeChangeset method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceMergeChangesetFunc) PushHook(hook func(context.Context, *Changeset, bool) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceMergeChangesetFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *Changeset, bool) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceMergeChangesetFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *Changeset, bool) error {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceMergeChangesetFunc) nextHook() func(context.Context, *Changeset, bool) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceMergeChangesetFunc) appendCall(r0 ForkableChangesetSourceMergeChangesetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceMergeChangesetFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceMergeChangesetFunc) History() []ForkableChangesetSourceMergeChangesetFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceMergeChangesetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceMergeChangesetFuncCall is an object that describes
+// an invocation of method MergeChangeset on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceMergeChangesetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *Changeset
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 bool
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceMergeChangesetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceMergeChangesetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ForkableChangesetSourceReopenChangesetFunc describes the behavior when
+// the ReopenChangeset method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceReopenChangesetFunc struct {
+	defaultHook func(context.Context, *Changeset) error
+	hooks       []func(context.Context, *Changeset) error
+	history     []ForkableChangesetSourceReopenChangesetFuncCall
+	mutex       sync.Mutex
+}
+
+// ReopenChangeset delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) ReopenChangeset(v0 context.Context, v1 *Changeset) error {
+	r0 := m.ReopenChangesetFunc.nextHook()(v0, v1)
+	m.ReopenChangesetFunc.appendCall(ForkableChangesetSourceReopenChangesetFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the ReopenChangeset
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceReopenChangesetFunc) SetDefaultHook(hook func(context.Context, *Changeset) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ReopenChangeset method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceReopenChangesetFunc) PushHook(hook func(context.Context, *Changeset) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceReopenChangesetFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *Changeset) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceReopenChangesetFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *Changeset) error {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceReopenChangesetFunc) nextHook() func(context.Context, *Changeset) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceReopenChangesetFunc) appendCall(r0 ForkableChangesetSourceReopenChangesetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceReopenChangesetFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceReopenChangesetFunc) History() []ForkableChangesetSourceReopenChangesetFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceReopenChangesetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceReopenChangesetFuncCall is an object that
+// describes an invocation of method ReopenChangeset on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceReopenChangesetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *Changeset
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceReopenChangesetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceReopenChangesetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ForkableChangesetSourceUpdateChangesetFunc describes the behavior when
+// the UpdateChangeset method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceUpdateChangesetFunc struct {
+	defaultHook func(context.Context, *Changeset) error
+	hooks       []func(context.Context, *Changeset) error
+	history     []ForkableChangesetSourceUpdateChangesetFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateChangeset delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) UpdateChangeset(v0 context.Context, v1 *Changeset) error {
+	r0 := m.UpdateChangesetFunc.nextHook()(v0, v1)
+	m.UpdateChangesetFunc.appendCall(ForkableChangesetSourceUpdateChangesetFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the UpdateChangeset
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceUpdateChangesetFunc) SetDefaultHook(hook func(context.Context, *Changeset) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateChangeset method of the parent MockForkableChangesetSource instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *ForkableChangesetSourceUpdateChangesetFunc) PushHook(hook func(context.Context, *Changeset) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceUpdateChangesetFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, *Changeset) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceUpdateChangesetFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, *Changeset) error {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceUpdateChangesetFunc) nextHook() func(context.Context, *Changeset) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceUpdateChangesetFunc) appendCall(r0 ForkableChangesetSourceUpdateChangesetFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceUpdateChangesetFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceUpdateChangesetFunc) History() []ForkableChangesetSourceUpdateChangesetFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceUpdateChangesetFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceUpdateChangesetFuncCall is an object that
+// describes an invocation of method UpdateChangeset on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceUpdateChangesetFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *Changeset
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceUpdateChangesetFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceUpdateChangesetFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ForkableChangesetSourceValidateAuthenticatorFunc describes the behavior
+// when the ValidateAuthenticator method of the parent
+// MockForkableChangesetSource instance is invoked.
+type ForkableChangesetSourceValidateAuthenticatorFunc struct {
+	defaultHook func(context.Context) error
+	hooks       []func(context.Context) error
+	history     []ForkableChangesetSourceValidateAuthenticatorFuncCall
+	mutex       sync.Mutex
+}
+
+// ValidateAuthenticator delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) ValidateAuthenticator(v0 context.Context) error {
+	r0 := m.ValidateAuthenticatorFunc.nextHook()(v0)
+	m.ValidateAuthenticatorFunc.appendCall(ForkableChangesetSourceValidateAuthenticatorFuncCall{v0, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// ValidateAuthenticator method of the parent MockForkableChangesetSource
+// instance is invoked and the hook queue is empty.
+func (f *ForkableChangesetSourceValidateAuthenticatorFunc) SetDefaultHook(hook func(context.Context) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ValidateAuthenticator method of the parent MockForkableChangesetSource
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ForkableChangesetSourceValidateAuthenticatorFunc) PushHook(hook func(context.Context) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceValidateAuthenticatorFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceValidateAuthenticatorFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context) error {
+		return r0
+	})
+}
+
+func (f *ForkableChangesetSourceValidateAuthenticatorFunc) nextHook() func(context.Context) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceValidateAuthenticatorFunc) appendCall(r0 ForkableChangesetSourceValidateAuthenticatorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceValidateAuthenticatorFuncCall objects describing
+// the invocations of this function.
+func (f *ForkableChangesetSourceValidateAuthenticatorFunc) History() []ForkableChangesetSourceValidateAuthenticatorFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceValidateAuthenticatorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceValidateAuthenticatorFuncCall is an object that
+// describes an invocation of method ValidateAuthenticator on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceValidateAuthenticatorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceValidateAuthenticatorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceValidateAuthenticatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// ForkableChangesetSourceWithAuthenticatorFunc describes the behavior when
+// the WithAuthenticator method of the parent MockForkableChangesetSource
+// instance is invoked.
+type ForkableChangesetSourceWithAuthenticatorFunc struct {
+	defaultHook func(auth.Authenticator) (ChangesetSource, error)
+	hooks       []func(auth.Authenticator) (ChangesetSource, error)
+	history     []ForkableChangesetSourceWithAuthenticatorFuncCall
+	mutex       sync.Mutex
+}
+
+// WithAuthenticator delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockForkableChangesetSource) WithAuthenticator(v0 auth.Authenticator) (ChangesetSource, error) {
+	r0, r1 := m.WithAuthenticatorFunc.nextHook()(v0)
+	m.WithAuthenticatorFunc.appendCall(ForkableChangesetSourceWithAuthenticatorFuncCall{v0, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the WithAuthenticator
+// method of the parent MockForkableChangesetSource instance is invoked and
+// the hook queue is empty.
+func (f *ForkableChangesetSourceWithAuthenticatorFunc) SetDefaultHook(hook func(auth.Authenticator) (ChangesetSource, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// WithAuthenticator method of the parent MockForkableChangesetSource
+// instance invokes the hook at the front of the queue and discards it.
+// After the queue is empty, the default hook function is invoked for any
+// future action.
+func (f *ForkableChangesetSourceWithAuthenticatorFunc) PushHook(hook func(auth.Authenticator) (ChangesetSource, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ForkableChangesetSourceWithAuthenticatorFunc) SetDefaultReturn(r0 ChangesetSource, r1 error) {
+	f.SetDefaultHook(func(auth.Authenticator) (ChangesetSource, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ForkableChangesetSourceWithAuthenticatorFunc) PushReturn(r0 ChangesetSource, r1 error) {
+	f.PushHook(func(auth.Authenticator) (ChangesetSource, error) {
+		return r0, r1
+	})
+}
+
+func (f *ForkableChangesetSourceWithAuthenticatorFunc) nextHook() func(auth.Authenticator) (ChangesetSource, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ForkableChangesetSourceWithAuthenticatorFunc) appendCall(r0 ForkableChangesetSourceWithAuthenticatorFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// ForkableChangesetSourceWithAuthenticatorFuncCall objects describing the
+// invocations of this function.
+func (f *ForkableChangesetSourceWithAuthenticatorFunc) History() []ForkableChangesetSourceWithAuthenticatorFuncCall {
+	f.mutex.Lock()
+	history := make([]ForkableChangesetSourceWithAuthenticatorFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ForkableChangesetSourceWithAuthenticatorFuncCall is an object that
+// describes an invocation of method WithAuthenticator on an instance of
+// MockForkableChangesetSource.
+type ForkableChangesetSourceWithAuthenticatorFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 auth.Authenticator
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ChangesetSource
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ForkableChangesetSourceWithAuthenticatorFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ForkableChangesetSourceWithAuthenticatorFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // MockSourcerStore is a mock implementation of the SourcerStore interface
 // (from the package
 // github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources)

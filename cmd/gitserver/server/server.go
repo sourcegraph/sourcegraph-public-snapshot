@@ -36,8 +36,8 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -53,6 +53,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -254,9 +255,6 @@ type Server struct {
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
 
-	// Used for setRepoSizes function to run only during the first run of janitor
-	setRepoSizesOnce sync.Once
-
 	// GlobalBatchLogSemaphore is a semaphore shared between all requests to ensure that a
 	// maximum number of Git subprocesses are active for all /batch-log requests combined.
 	GlobalBatchLogSemaphore *semaphore.Weighted
@@ -362,11 +360,23 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", trace.WithRouteName("archive", s.handleArchive))
-	mux.HandleFunc("/exec", trace.WithRouteName("exec", s.handleExec))
+	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("archive.accesslog", "archive endpoint access log"),
+		conf.DefaultClient(),
+		s.handleArchive,
+	)))
+	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		conf.DefaultClient(),
+		s.handleExec,
+	)))
 	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
 	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
-	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", s.handleP4Exec))
+	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("p4-exec.accesslog", "p4-exec endpoint access log"),
+		conf.DefaultClient(),
+		s.handleP4Exec,
+	)))
 	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
@@ -381,9 +391,13 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	mux.HandleFunc("/git/", trace.WithRouteName("git", func(rw http.ResponseWriter, r *http.Request) {
-		http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
-	}))
+	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
+		conf.DefaultClient(),
+		func(rw http.ResponseWriter, r *http.Request) {
+			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
+		},
+	)))
 
 	// Migration to hexagonal architecture starting here:
 
@@ -403,7 +417,12 @@ func (s *Server) Handler() http.Handler {
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
-	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", handleGetObject(getObjectFunc)))
+	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object",
+		accesslog.HTTPMiddleware(
+			s.Logger.Scoped("commands/get-object.accesslog", "commands/get-object endpoint access log"),
+			conf.DefaultClient(),
+			handleGetObject(getObjectFunc),
+		)))
 
 	return mux
 }
@@ -860,6 +879,7 @@ func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
 // unconditional; we debounce them based on the provided
 // interval, to avoid spam.
 func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleRepoUpdate", "synchronous http handler for repo updates")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -889,7 +909,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		// the implementation details of cloneRepo.
 		_, err := s.cloneRepo(ctx, req.Repo, &cloneOptions{Block: true, CloneFromShard: req.CloneFromShard})
 		if err != nil {
-			s.Logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
+			logger.Warn("error cloning repo", log.String("repo", string(req.Repo)), log.Error(err))
 			resp.Error = err.Error()
 		}
 	} else {
@@ -915,7 +935,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.LastChanged = &lastChanged
 		}
 		if statusErr != nil {
-			s.Logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
+			logger.Error("failed to get status of repo", log.String("repo", string(req.Repo)), log.Error(statusErr))
 			// report this error in-band, but still produce a valid response with the
 			// other information.
 			resp.Error = statusErr.Error()
@@ -936,12 +956,20 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 	var (
+		logger    = s.Logger.Scoped("handleArchive", "http handler for repo archive")
 		q         = r.URL.Query()
 		treeish   = q.Get("treeish")
 		repo      = q.Get("repo")
 		format    = q.Get("format")
 		pathspecs = q["path"]
 	)
+
+	// Log which which actor is accessing the repo.
+	accesslog.Record(r.Context(), repo, map[string]string{
+		"treeish": treeish,
+		"format":  format,
+		"path":    strings.Join(pathspecs, ","),
+	})
 
 	if err := checkSpecArgSafety(treeish); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -951,7 +979,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 
 	if repo == "" || format == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		s.Logger.Error("gitserver.archive", log.String("error", "empty repo or format"))
+		logger.Error("gitserver.archive", log.String("error", "empty repo or format"))
 		return
 	}
 
@@ -985,6 +1013,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
+	logger := s.Logger.Scoped("handleSearch", "http handler for search")
 	tr, ctx := trace.New(r.Context(), "search", "")
 	defer tr.Finish()
 
@@ -1026,7 +1055,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 	// Run the search
 	limitHit, searchErr := s.search(ctx, &args, matchesBuf)
 	if writeErr := eventWriter.Event("done", protocol.NewSearchEventDone(limitHit, searchErr)); writeErr != nil {
-		s.Logger.Error("failed to send done event", log.Error(writeErr))
+		logger.Error("failed to send done event", log.Error(writeErr))
 	}
 	tr.LogFields(otlog.Bool("limit_hit", limitHit))
 	tr.SetError(searchErr)
@@ -1057,7 +1086,7 @@ func (s *Server) handleSearch(w http.ResponseWriter, r *http.Request) {
 			_ = ev.Send()
 		}
 		if traceLogs {
-			s.Logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
+			logger.Debug("TRACE gitserver search", log.Object("ev.Fields", mapToLoggerField(ev.Fields())...))
 		}
 	}
 }
@@ -1357,6 +1386,19 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Log which which actor is accessing the repo.
+	args := req.Args
+	cmd := ""
+	if len(req.Args) > 0 {
+		cmd = req.Args[0]
+		args = args[1:]
+	}
+	accesslog.Record(r.Context(), string(req.Repo), map[string]string{
+		"cmd":  cmd,
+		"args": strings.Join(args, " "),
+	})
+
 	s.exec(w, r, &req)
 }
 
@@ -1377,15 +1419,11 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(s.Logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-
 		s.Logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr), log.Strings("req.Args", req.Args))
 
-		// Temporary feature flag to disable this feature in case their are any regressions.
-		if conf.ExperimentalFeatures().EnableGitServerCommandExecFilter {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("invalid command"))
-			return
-		}
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("invalid command"))
+		return
 	}
 
 	ctx := r.Context()
@@ -1621,6 +1659,16 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]), http.StatusBadRequest)
 		return
 	}
+
+	// Log which actor is accessing p4-exec.
+	//
+	// p4-exec is currently only used for fetching user based permissions information
+	// so, we don't have a repo name.
+	accesslog.Record(r.Context(), "<no-repo>", map[string]string{
+		"p4user": req.P4User,
+		"p4port": req.P4Port,
+		"args":   strings.Join(req.Args, " "),
+	})
 
 	// Make sure credentials are valid before heavier operation
 	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
@@ -2063,6 +2111,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 		return err
 	}
 
+	// Set gc.auto depending on gitGCMode.
+	if err := gitSetAutoGC(tmp); err != nil {
+		return err
+	}
+
 	if overwrite {
 		// remove the current repo by putting it into our temporary directory
 		err := fileutil.RenameAndSync(dstPath, filepath.Join(filepath.Dir(tmpPath), "old"))
@@ -2394,7 +2447,6 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 
 	err = syncer.Fetch(ctx, remoteURL, dir)
 	if err != nil {
-		s.Logger.Error("Failed to fetch", log.String("repo", string(repo)), log.Error(err))
 		return errors.Wrap(err, "failed to fetch")
 	}
 

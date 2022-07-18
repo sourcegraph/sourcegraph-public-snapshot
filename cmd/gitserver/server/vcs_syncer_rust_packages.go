@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io/fs"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/crates"
 
 	"github.com/sourcegraph/log"
@@ -17,8 +18,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func assertRustParsesPlaceholder() *reposource.RustDependency {
-	placeholder, err := reposource.ParseRustDependency("sourcegraph.com/placeholder@0.0.0")
+func assertRustParsesPlaceholder() *reposource.RustVersionedPackage {
+	placeholder, err := reposource.ParseRustVersionedPackage("sourcegraph.com/placeholder@0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
@@ -33,7 +34,7 @@ func NewRustPackagesSyncer(
 ) VCSSyncer {
 	placeholder := assertRustParsesPlaceholder()
 
-	return &vcsDependenciesSyncer{
+	return &vcsPackagesSyncer{
 		logger:      log.Scoped("RustPackagesSyncer", "sync Rust packages"),
 		typ:         "rust_packages",
 		scheme:      dependencies.RustPackagesScheme,
@@ -44,33 +45,29 @@ func NewRustPackagesSyncer(
 	}
 }
 
-// pythonPackagesSyncer implements dependenciesSource
+// pythonPackagesSyncer implements packagesSource
 type rustDependencySource struct {
 	client *crates.Client
 }
 
-func (rustDependencySource) ParseDependency(dep string) (reposource.PackageDependency, error) {
-	return reposource.ParseRustDependency(dep)
+func (rustDependencySource) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseRustVersionedPackage(string(name) + "@" + version)
 }
 
-func (rustDependencySource) ParseDependencyFromRepoName(repoName string) (reposource.PackageDependency, error) {
-	return reposource.ParseRustDependencyFromRepoName(repoName)
+func (rustDependencySource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseRustVersionedPackage(dep)
 }
 
-func (s *rustDependencySource) Get(ctx context.Context, name, version string) (reposource.PackageDependency, error) {
-	dep := reposource.NewRustDependency(name, version)
+func (rustDependencySource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return reposource.ParseRustPackageFromName(name)
 
-	// Check if crate exists or not. Crates returns a struct detailing the errors if it cannot be found.
-	metaURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s", dep.PackageSyntax(), dep.PackageVersion())
-	if _, err := s.client.Get(ctx, metaURL); err != nil {
-		return nil, errors.Wrapf(err, "failed to fetch crate metadata for %s with URL %s", dep.PackageManagerSyntax(), metaURL)
-	}
-
-	return dep, nil
+}
+func (rustDependencySource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
+	return reposource.ParseRustPackageFromRepoName(repoName)
 }
 
-func (s *rustDependencySource) Download(ctx context.Context, dir string, dep reposource.PackageDependency) error {
-	packageURL := fmt.Sprintf("https://crates.io/api/v1/crates/%s/%s/%s", dep.PackageSyntax(), dep.PackageVersion(), "download")
+func (s *rustDependencySource) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	packageURL := fmt.Sprintf("https://static.crates.io/crates/%s/%s-%s.crate", dep.PackageSyntax(), dep.PackageSyntax(), dep.PackageVersion())
 
 	pkg, err := s.client.Get(ctx, packageURL)
 	if err != nil {
@@ -91,7 +88,8 @@ func (s *rustDependencySource) Download(ctx context.Context, dir string, dep rep
 func unpackRustPackage(pkg []byte, workDir string) error {
 	r := bytes.NewReader(pkg)
 	opts := unpack.Opts{
-		SkipInvalid: true,
+		SkipInvalid:    true,
+		SkipDuplicates: true,
 		Filter: func(path string, file fs.FileInfo) bool {
 			size := file.Size()
 

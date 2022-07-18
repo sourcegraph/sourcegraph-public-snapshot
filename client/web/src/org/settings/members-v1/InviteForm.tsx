@@ -1,9 +1,7 @@
 import React, { useCallback, useState } from 'react'
 
+import { mdiPlus, mdiEmailOpenOutline, mdiClose } from '@mdi/js'
 import classNames from 'classnames'
-import AddIcon from 'mdi-react/AddIcon'
-import CloseIcon from 'mdi-react/CloseIcon'
-import EmailOpenOutlineIcon from 'mdi-react/EmailOpenOutlineIcon'
 import { map } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
@@ -11,7 +9,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
-import { LoadingSpinner, Button, Link, Alert, Icon, Input, Text, Code } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, Input, Text, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { requestGraphQL } from '../../../backend/graphql'
@@ -122,45 +120,52 @@ export const InviteForm: React.FunctionComponent<React.PropsWithChildren<Props>>
                     />
                     <div className="d-block d-md-inline mb-sm-2">
                         {viewerCanAddUserToOrganization && (
-                            <Button
-                                type="submit"
-                                disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                className="mr-2"
-                                data-tooltip="Add immediately without sending invitation (site admins only)"
-                                variant="primary"
-                            >
-                                {loading === 'addUserToOrganization' ? (
-                                    <LoadingSpinner />
-                                ) : (
-                                    <Icon as={AddIcon} aria-hidden={true} />
-                                )}{' '}
-                                Add member
-                            </Button>
+                            <Tooltip content="Add immediately without sending invitation (site admins only)">
+                                <Button
+                                    type="submit"
+                                    disabled={
+                                        loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'
+                                    }
+                                    className="mr-2"
+                                    variant="primary"
+                                >
+                                    {loading === 'addUserToOrganization' ? (
+                                        <LoadingSpinner />
+                                    ) : (
+                                        <Icon aria-hidden={true} svgPath={mdiPlus} />
+                                    )}{' '}
+                                    Add member
+                                </Button>
+                            </Tooltip>
                         )}
                         {(emailInvitesEnabled || !viewerCanAddUserToOrganization) && (
-                            <Button
-                                type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
-                                disabled={loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'}
-                                variant={viewerCanAddUserToOrganization ? 'secondary' : 'primary'}
-                                data-tooltip={
+                            <Tooltip
+                                content={
                                     emailInvitesEnabled
                                         ? 'Send invitation email with link to join this organization'
                                         : 'Generate invitation link to manually send to user'
                                 }
-                                aria-label="Send or Generate Invitation link"
-                                onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
                             >
-                                {loading === 'inviteUserToOrganization' ? (
-                                    <LoadingSpinner />
-                                ) : (
-                                    <Icon as={EmailOpenOutlineIcon} aria-hidden={true} />
-                                )}{' '}
-                                {emailInvitesEnabled
-                                    ? viewerCanAddUserToOrganization
-                                        ? 'Send invitation to join'
-                                        : 'Send invitation'
-                                    : 'Generate invitation link'}
-                            </Button>
+                                <Button
+                                    type={viewerCanAddUserToOrganization ? 'button' : 'submit'}
+                                    disabled={
+                                        loading === 'addUserToOrganization' || loading === 'inviteUserToOrganization'
+                                    }
+                                    variant={viewerCanAddUserToOrganization ? 'secondary' : 'primary'}
+                                    onClick={viewerCanAddUserToOrganization ? onInviteClick : undefined}
+                                >
+                                    {loading === 'inviteUserToOrganization' ? (
+                                        <LoadingSpinner />
+                                    ) : (
+                                        <Icon aria-hidden={true} svgPath={mdiEmailOpenOutline} />
+                                    )}{' '}
+                                    {emailInvitesEnabled
+                                        ? viewerCanAddUserToOrganization
+                                            ? 'Send invitation to join'
+                                            : 'Send invitation'
+                                        : 'Generate invitation link'}
+                                </Button>
+                            </Tooltip>
                         )}
                     </div>
                 </Form>
@@ -275,7 +280,7 @@ const InvitedNotification: React.FunctionComponent<React.PropsWithChildren<Invit
             <CopyableText label="Invitation URL" text={invitationURL} size={40} className="mt-2" />
         </div>
         <Button variant="icon" title="Dismiss" onClick={onDismiss}>
-            <Icon as={CloseIcon} aria-hidden={true} />
+            <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>
 )

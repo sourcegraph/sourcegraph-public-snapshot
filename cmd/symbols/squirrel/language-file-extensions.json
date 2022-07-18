@@ -334,6 +334,12 @@
   "sql": [
     "sql"
   ],
+  "starlark": [
+    "bzl",
+    "bazel",
+    "BUILD",
+    "WORKSPACE"
+  ],
   "stylus": [
     "styl"
   ],

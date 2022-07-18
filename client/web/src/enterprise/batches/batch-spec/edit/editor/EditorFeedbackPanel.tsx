@@ -1,8 +1,8 @@
 import React from 'react'
 
+import { mdiAlertCircle } from '@mdi/js'
 import classNames from 'classnames'
 import { compact } from 'lodash'
-import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
 import { Icon, H4 } from '@sourcegraph/wildcard'
@@ -28,7 +28,7 @@ export const EditorFeedbackPanel: React.FunctionComponent<React.PropsWithChildre
     return (
         <div className={classNames(styles.panel, 'rounded border bg-1 p-2 w-100 mt-2')}>
             <H4 className="text-danger text-uppercase">
-                <Icon aria-hidden={true} className="text-danger" as={AlertCircleIcon} /> {errorHeading}
+                <Icon aria-hidden={true} className="text-danger" svgPath={mdiAlertCircle} /> {errorHeading}
             </H4>
             {compactedErrors.map(error => (
                 <ErrorMessage className="text-monospace" error={error} key={String(error)} />

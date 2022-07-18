@@ -102,7 +102,6 @@ export const repositoryInsertText = (
         // depsPredicateMatches[1] contains either `deps`, `dependencies`, `revdeps` or `dependents` based on the matched value.
         return `${depsPredicateMatches[1]}(${insertText})`
     }
-
     return insertText
 }
 

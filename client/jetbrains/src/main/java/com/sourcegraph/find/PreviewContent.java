@@ -10,7 +10,6 @@ import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
-import com.intellij.testFramework.LightVirtualFile;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +18,7 @@ import java.awt.*;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.Base64;
@@ -31,6 +31,7 @@ public class PreviewContent {
     private final String resultType;
     private final String fileName;
     private final String repoUrl;
+    private final String commit;
     private final String path;
     private final String content;
     private final String symbolName;
@@ -47,6 +48,7 @@ public class PreviewContent {
                           @Nullable String resultType,
                           @Nullable String fileName,
                           @NotNull String repoUrl,
+                          @Nullable String commit,
                           @Nullable String path,
                           @Nullable String content,
                           @Nullable String symbolName,
@@ -62,6 +64,7 @@ public class PreviewContent {
         this.resultType = resultType;
         this.fileName = fileName;
         this.repoUrl = repoUrl;
+        this.commit = commit;
         this.path = path;
         this.symbolName = symbolName;
         this.symbolContainerName = symbolContainerName;
@@ -87,6 +90,7 @@ public class PreviewContent {
             isNotNull(json, "resultType") ? json.get("resultType").getAsString() : null,
             isNotNull(json, "fileName") ? json.get("fileName").getAsString() : null,
             json.get("repoUrl").getAsString(),
+            isNotNull(json, "commit") ? json.get("commit").getAsString() : null,
             isNotNull(json, "path") ? json.get("path").getAsString() : null,
             isNotNull(json, "content") ? json.get("content").getAsString() : null,
             isNotNull(json, "symbolName") ? json.get("symbolName").getAsString() : null,
@@ -122,6 +126,11 @@ public class PreviewContent {
     }
 
     @Nullable
+    public String getCommit() {
+        return commit;
+    }
+
+    @Nullable
     public String getPath() {
         return path;
     }
@@ -133,7 +142,7 @@ public class PreviewContent {
 
     @Nullable
     public String getSymbolName() {
-        return symbolName;
+        return convertBase64ToString(symbolName);
     }
 
     @Nullable
@@ -162,7 +171,9 @@ public class PreviewContent {
     @NotNull
     public VirtualFile getVirtualFile() {
         if (virtualFile == null) {
-            virtualFile = new LightVirtualFile(fileName != null ? fileName : "", content != null ? Objects.requireNonNull(getContent()) : "");
+            assert fileName != null; // We should always have a non-null file name and content when we call getVirtualFile()
+            assert content != null;
+            virtualFile = new SourcegraphVirtualFile(fileName, Objects.requireNonNull(getContent()), getRepoUrl(), getCommit(), getPath());
         }
         return virtualFile;
     }
@@ -173,7 +184,7 @@ public class PreviewContent {
             return null;
         }
         byte[] decodedBytes = Base64.getDecoder().decode(base64String);
-        return new String(decodedBytes);
+        return new String(decodedBytes, StandardCharsets.UTF_8);
     }
 
     @Override
@@ -207,7 +218,7 @@ public class PreviewContent {
     }
 
     private void openInEditor() {
-        assert fileName != null;
+        assert fileName != null; // We should always have a non-null file name when we call openInEditor()
         // Open file in editor
         virtualFile = getVirtualFile();
         OpenFileDescriptor openFileDescriptor = new OpenFileDescriptor(project, virtualFile, 0);

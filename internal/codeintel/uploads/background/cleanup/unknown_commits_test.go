@@ -9,6 +9,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -108,13 +110,14 @@ func testUnknownCommitsJanitor(t *testing.T, resolveRevisionFunc func(commit str
 	dbStore.TransactFunc.SetDefaultReturn(dbStore, nil)
 	dbStore.DoneFunc.SetDefaultHook(func(err error) error { return err })
 
-	lsifStore := NewMockLSIFStore()
 	uploadSvc := NewMockUploadService()
-	uploadSvc.StaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
+	uploadSvc.GetStaleSourcedCommitsFunc.SetDefaultReturn(testSourcedCommits, nil)
+	autoIndexingSvc := NewMockAutoIndexingService()
 	janitor := newJanitor(
 		dbStore,
-		lsifStore,
 		uploadSvc,
+		autoIndexingSvc,
+		logtest.Scoped(t),
 		newMetrics(&observation.TestContext),
 	)
 

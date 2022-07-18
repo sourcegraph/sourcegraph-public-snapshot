@@ -22,6 +22,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -50,10 +51,37 @@ const (
 	sgmLog = "sgm.log"
 )
 
-// EnableGCAuto is a temporary flag that allows us to control whether or not
-// `git gc --auto` is invoked during janitorial activities. This flag will
-// likely evolve into some form of site config value in the future.
-var enableGCAuto, _ = strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
+const (
+	// gitGCModeGitAutoGC is when we rely on git running auto gc.
+	gitGCModeGitAutoGC int = 1
+	// gitGCModeJanitorAutoGC is when during janitor jobs we run git gc --auto.
+	gitGCModeJanitorAutoGC = 2
+	// gitGCModeMaintenance is when during janitor jobs we run sg maintenance.
+	gitGCModeMaintenance = 3
+)
+
+// gitGCMode describes which mode we should be running git gc.
+var gitGCMode = func() int {
+	// EnableGCAuto is a temporary flag that allows us to control whether or not
+	// `git gc --auto` is invoked during janitorial activities. This flag will
+	// likely evolve into some form of site config value in the future.
+	enableGCAuto, _ := strconv.ParseBool(env.Get("SRC_ENABLE_GC_AUTO", "false", "Use git-gc during janitorial cleanup phases"))
+
+	// sg maintenance and git gc must not be enabled at the same time. However, both
+	// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
+	// SRC_ENABLE_SG_MAINTENANCE.
+	enableSGMaintenance, _ := strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
+
+	if enableGCAuto && !enableSGMaintenance {
+		return gitGCModeJanitorAutoGC
+	}
+
+	if enableSGMaintenance && !enableGCAuto {
+		return gitGCModeMaintenance
+	}
+
+	return gitGCModeGitAutoGC
+}()
 
 // The limit of 50 mirrors Git's gc_auto_pack_limit
 var autoPackLimit, _ = strconv.Atoi(env.Get("SRC_GIT_AUTO_PACK_LIMIT", "50", "the maximum number of pack files we tolerate before we trigger a repack"))
@@ -78,11 +106,6 @@ var sgmLogExpire = env.MustGetDuration("SRC_GIT_LOG_FILE_EXPIRY", 24*time.Hour, 
 // We mention this ENV variable in the header message of the sgmLog files. Make
 // sure that changes here are reflected in sgmLogHeader, too.
 var sgmRetries, _ = strconv.Atoi(env.Get("SRC_SGM_RETRIES", "-1", "the maximum number of times we retry sg maintenance before triggering a reclone."))
-
-// sg maintenance and git gc must not be enabled at the same time. However, both
-// might be disabled at the same time, hence we need both SRC_ENABLE_GC_AUTO and
-// SRC_ENABLE_SG_MAINTENANCE.
-var enableSGMaintenance, _ = strconv.ParseBool(env.Get("SRC_ENABLE_SG_MAINTENANCE", "true", "Use sg maintenance during janitorial cleanup phases"))
 
 // The limit of repos cloned on the wrong shard to delete in one janitor run - value <=0 disables delete.
 var wrongShardReposDeleteLimit, _ = strconv.Atoi(env.Get("SRC_WRONG_SHARD_DELETE_LIMIT", "10", "the maximum number of repos not assigned to this shard we delete in one run"))
@@ -131,13 +154,14 @@ const reposStatsName = "repos-stats.json"
 // 2. Remove corrupt repos.
 // 3. Remove stale lock files.
 // 4. Ensure correct git attributes
-// 5. Scrub remote URLs
-// 6. Perform garbage collection
-// 7. Re-clone repos after a while. (simulate git gc)
-// 8. Remove repos based on disk pressure.
-// 9. Perform sg-maintenance
-// 10. Git prune
-// 11. Only during first run: Set sizes of repos which don't have it in a database.
+// 5. Ensure gc.auto=0 or unset depending on gitGCMode
+// 6. Scrub remote URLs
+// 7. Perform garbage collection
+// 8. Re-clone repos after a while. (simulate git gc)
+// 9. Remove repos based on disk pressure.
+// 10. Perform sg-maintenance
+// 11. Git prune
+// 12. Only during first run: Set sizes of repos which don't have it in a database.
 func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	janitorRunning.Set(1)
 	janitorStart := time.Now()
@@ -240,6 +264,10 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 
 	ensureGitAttributes := func(dir GitDir) (done bool, err error) {
 		return false, setGitAttributes(dir)
+	}
+
+	ensureAutoGC := func(dir GitDir) (done bool, err error) {
+		return false, gitSetAutoGC(dir)
 	}
 
 	scrubRemoteURL := func(dir GitDir) (done bool, err error) {
@@ -390,9 +418,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		// 2021-03-01 (tomas,keegan) we used to store an authenticated remote URL on
 		// disk. We no longer need it so we can scrub it.
 		{"scrub remote URL", scrubRemoteURL},
+		// Enable or disable background garbage collection depending on
+		// gitGCMode. The purpose is to avoid repository corruption which can
+		// happen if several git-gc operations are running at the same time.
+		// We only disable if sg is managing gc.
+		{"auto gc config", ensureAutoGC},
 	}
 
-	if enableGCAuto && !enableSGMaintenance {
+	if gitGCMode == gitGCModeJanitorAutoGC {
 		// Runs a number of housekeeping tasks within the current repository, such as
 		// compressing file revisions (to reduce disk space and increase performance),
 		// removing unreachable objects which may have been created from prior
@@ -401,7 +434,7 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		cleanups = append(cleanups, cleanupFn{"garbage collect", performGC})
 	}
 
-	if enableSGMaintenance && !enableGCAuto {
+	if gitGCMode == gitGCModeMaintenance {
 		// Run tasks to optimize Git repository data, speeding up other Git commands and
 		// reducing storage requirements for the repository. Note: "garbage collect" and
 		// "sg maintenance" must not be enabled at the same time.
@@ -462,12 +495,10 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 
 	// Repo sizes are set only once during the first janitor run.
 	// There is no need for a second run because all repo sizes will be set until this moment
-	s.setRepoSizesOnce.Do(func() {
-		err = s.setRepoSizes(context.Background(), repoToSize)
-		if err != nil {
-			cleanupLogger.Error("setting repo sizes", log.Error(err))
-		}
-	})
+	err = s.setRepoSizes(context.Background(), repoToSize)
+	if err != nil {
+		cleanupLogger.Error("setting repo sizes", log.Error(err))
+	}
 
 	if s.DiskSizer == nil {
 		s.DiskSizer = &StatDiskSizer{}
@@ -481,40 +512,41 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 }
 
-// setRepoSizes uses calculated sizes of repos to update database entries of repos with repo_size_bytes = NULL
+// setRepoSizes uses calculated sizes of repos to update database entries of repos with actual sizes
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
 	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
 
-	if len(repoToSize) == 0 {
+	reposNumber := len(repoToSize)
+	if reposNumber == 0 {
 		logger.Info("file system walk didn't yield any directory sizes")
 		return nil
 	}
 
 	logger.Info("directory sizes calculated during file system walk",
-		log.Int("repoToSize", len(repoToSize)))
+		log.Int("repoToSize", reposNumber))
 
-	db := s.DB
-	gitserverRepos := db.GitserverRepos()
-	// getting all the repos without size
-	reposWithoutSize, err := gitserverRepos.ListReposWithoutSize(ctx)
+	// repos number is limited in order not to overwhelm the database with massive batch updates
+	// of every single row of `gitserver_repos` table. This will lead to eventual consistency of
+	// repo sizes in the database, but this is totally acceptable.
+	if reposNumber > 10000 {
+		reposNumber = 10000
+	}
+
+	// getting repo IDs for given repo names
+	foundRepos, err := s.fetchRepos(ctx, repoToSize, reposNumber)
 	if err != nil {
 		return err
 	}
-	if len(reposWithoutSize) == 0 {
-		logger.Info("all repos in the DB have their sizes")
-		return nil
-	}
 
-	// preparing a mapping of repoID to its size which should be inserted
 	reposToUpdate := make(map[api.RepoID]int64)
-	for repoName, repoID := range reposWithoutSize {
-		if size, exists := repoToSize[repoName]; exists {
-			reposToUpdate[repoID] = size
+	for _, repo := range foundRepos {
+		if size, exists := repoToSize[repo.Name]; exists {
+			reposToUpdate[repo.ID] = size
 		}
 	}
 
 	// updating repos
-	err = gitserverRepos.UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	err = s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
 	if err != nil {
 		return err
 	}
@@ -522,6 +554,30 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 		log.Int("reposToUpdate", len(reposToUpdate)))
 
 	return nil
+}
+
+// fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
+func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]*types.Repo, error) {
+	reposToUpdateNames := make([]string, count)
+	idx := 0
+	// random nature of map traversal yields a different subset of repos every time this function is called
+	for repoName := range repoToSize {
+		if idx >= count {
+			break
+		}
+		reposToUpdateNames[idx] = string(repoName)
+		idx++
+	}
+
+	foundRepos, err := s.DB.Repos().List(ctx, database.ReposListOptions{
+		Names:          reposToUpdateNames,
+		LimitOffset:    &database.LimitOffset{Limit: count},
+		IncludeBlocked: true,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return foundRepos, nil
 }
 
 // DiskSizer gets information about disk size and free space.
@@ -908,17 +964,11 @@ func getRecloneTime(dir GitDir) (time.Time, error) {
 	return time.Unix(sec, 0), nil
 }
 
-// maybeCorruptStderrRe matches stderr lines from git which indicate there
-// might be repository corruption.
-//
-// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
-// context.
-var maybeCorruptStderrRe = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
-
 func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
-	if !maybeCorruptStderrRe.MatchString(stderr) {
+	if !stdErrIndicatesCorruption(stderr) {
 		return
 	}
+
 	logger := log.Scoped("checkMaybeCorruptRepo", "check if repo is corrupt").With(log.String("repo", string(repo)))
 
 	logger.Warn("marking repo for re-cloning due to stderr output indicating repo corruption", log.String("stderr", stderr))
@@ -930,6 +980,28 @@ func checkMaybeCorruptRepo(repo api.RepoName, dir GitDir, stderr string) {
 		logger.Error("failed to set maybeCorruptRepo config", log.Error(err))
 	}
 }
+
+// stdErrIndicatesCorruption returns true if the provided stderr output from a git command indicates
+// that there might be repository corruption.
+func stdErrIndicatesCorruption(stderr string) bool {
+	return objectOrPackFileCorruptionRegex.MatchString(stderr) || commitGraphCorruptionRegex.MatchString(stderr)
+}
+
+var (
+	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
+	// that a repository's packfiles or commit objects might be corrupted.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/6676 for more
+	// context.
+	objectOrPackFileCorruptionRegex = lazyregexp.NewPOSIX(`^error: (Could not read|packfile) `)
+
+	// objectOrPackFileCorruptionRegex matches stderr lines from git which indicate that
+	// git's supplemental commit-graph might be corrupted.
+	//
+	// See https://github.com/sourcegraph/sourcegraph/issues/37872 for more
+	// context.
+	commitGraphCorruptionRegex = lazyregexp.NewPOSIX(`^fatal: commit-graph requires overflow generation data but has none`)
+)
 
 // gitIsNonBareBestEffort returns true if the repository is not a bare
 // repo. If we fail to check or the repository is bare we return false.
@@ -1189,6 +1261,26 @@ func tooManyPackfiles(dir GitDir, limit int) (bool, error) {
 		count++
 	}
 	return count > limit, nil
+}
+
+// gitSetAutoGC will set the value of gc.auto. If GC is managed by Sourcegraph
+// the value will be 0 (disabled), otherwise if managed by git we will unset
+// it to rely on default (on) or global config.
+//
+// The purpose is to avoid repository corruption which can happen if several
+// git-gc operations are running at the same time.
+func gitSetAutoGC(dir GitDir) error {
+	switch gitGCMode {
+	case gitGCModeGitAutoGC:
+		return gitConfigUnset(dir, "gc.auto")
+
+	case gitGCModeJanitorAutoGC, gitGCModeMaintenance:
+		return gitConfigSet(dir, "gc.auto", "0")
+
+	default:
+		// should not happen
+		panic(fmt.Sprintf("non exhaustive switch for gitGCMode: %d", gitGCMode))
+	}
 }
 
 func gitConfigGet(dir GitDir, key string) (string, error) {

@@ -1486,8 +1486,7 @@ describe('getMonacoTokens()', () => {
     })
 
     test('highlight repo:dependencies predicate', () => {
-        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:dependencies(.*)')))).toMatchInlineSnapshot(
-            `
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:dependencies(.*)')))).toMatchInlineSnapshot(`
             [
               {
                 "startIndex": 0,
@@ -1518,7 +1517,85 @@ describe('getMonacoTokens()', () => {
                 "scopes": "metaPredicateParenthesis"
               }
             ]
-        `
-        )
+        `)
+    })
+
+    test('highlight repo:has.description predicate', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('repo:has.description(.*)')))).toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "field"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaFilterSeparator"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 8,
+                "scopes": "metaPredicateDot"
+              },
+              {
+                "startIndex": 9,
+                "scopes": "metaPredicateNameAccess"
+              },
+              {
+                "startIndex": 20,
+                "scopes": "metaPredicateParenthesis"
+              },
+              {
+                "startIndex": 21,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 22,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 23,
+                "scopes": "metaPredicateParenthesis"
+              }
+            ]
+        `)
+    })
+
+    test('highlight regex delimited pattern for standard search', () => {
+        expect(getMonacoTokens(toSuccess(scanSearchQuery('/f.*/ x', false, SearchPatternType.standard))))
+            .toMatchInlineSnapshot(`
+            [
+              {
+                "startIndex": 0,
+                "scopes": "metaRegexpDelimited"
+              },
+              {
+                "startIndex": 1,
+                "scopes": "identifier"
+              },
+              {
+                "startIndex": 2,
+                "scopes": "metaRegexpCharacterSet"
+              },
+              {
+                "startIndex": 3,
+                "scopes": "metaRegexpRangeQuantifier"
+              },
+              {
+                "startIndex": 4,
+                "scopes": "metaRegexpDelimited"
+              },
+              {
+                "startIndex": 5,
+                "scopes": "whitespace"
+              },
+              {
+                "startIndex": 6,
+                "scopes": "identifier"
+              }
+            ]
+        `)
     })
 })
