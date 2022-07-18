@@ -8,6 +8,7 @@ import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
+import { useExperimentalFeatures } from '../../../../../../stores'
 import { CodeInsightsPage } from '../../../../components'
 
 import {
@@ -28,6 +29,7 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
 
     const history = useHistory()
     const { search } = useLocation()
+    const { codeInsightsCompute } = useExperimentalFeatures()
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
@@ -85,10 +87,12 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
                     handleCreate={handleCaptureGroupInsightClick}
                 />
 
-                <ComputeInsightCard
-                    data-testid="create-compute-insights"
-                    handleCreate={handleCreateComputeInsightClick}
-                />
+                {codeInsightsCompute && (
+                    <ComputeInsightCard
+                        data-testid="create-compute-insights"
+                        handleCreate={handleCreateComputeInsightClick}
+                    />
+                )}
 
                 <LangStatsInsightCard
                     data-testid="create-lang-usage-insight"
