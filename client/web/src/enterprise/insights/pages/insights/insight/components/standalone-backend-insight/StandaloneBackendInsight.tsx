@@ -12,7 +12,6 @@ import { useFeatureFlag } from '../../../../../../../featureFlags/useFeatureFlag
 import {
     GetInsightViewResult,
     GetInsightViewVariables,
-    InsightViewFiltersInput,
     SeriesDisplayOptionsInput,
 } from '../../../../../../../graphql-operations'
 import { useSeriesToggle } from '../../../../../../../insights/utils/use-series-toggle'
@@ -76,13 +75,8 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     // filter value in filters fields.
     const [filters, setFilters] = useState<InsightFilters>(originalInsightFilters)
     const [filterVisualMode, setFilterVisualMode] = useState<FilterSectionVisualMode>(FilterSectionVisualMode.Preview)
-    const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
+    const { seriesDisplayOptions, ...filterInput } = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const filterInput: InsightViewFiltersInput = {
-        includeRepoRegex: debouncedFilters.includeRepoRegex,
-        excludeRepoRegex: debouncedFilters.excludeRepoRegex,
-        searchContexts: debouncedFilters.searchContexts,
-    }
     const displayInput: SeriesDisplayOptionsInput = {
         limit: insight.seriesDisplayOptions?.limit,
         sortOptions: insight.seriesDisplayOptions?.sortOptions,

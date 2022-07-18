@@ -64,7 +64,6 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
             if (isCaptureGroupInsight) {
                 // It's safe because capture group insight always has only 1 data series
                 const { query } = insight.dataSeriesDefinitions[0] ?? {}
-                const { appliedFilters } = insight
 
                 return {
                     ...baseInsight,
@@ -74,9 +73,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     query,
                     step,
                     filters: {
-                        includeRepoRegex: appliedFilters.includeRepoRegex,
-                        excludeRepoRegex: appliedFilters.excludeRepoRegex,
-                        searchContexts: appliedFilters.searchContexts,
+                        ...appliedFilters,
                         seriesDisplayOptions,
                     },
                     appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
@@ -110,9 +107,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     repositories,
                     series,
                     filters: {
-                        includeRepoRegex: appliedFilters.includeRepoRegex,
-                        excludeRepoRegex: appliedFilters.excludeRepoRegex,
-                        searchContexts: appliedFilters.searchContexts,
+                        ...appliedFilters,
                         seriesDisplayOptions,
                     },
                 }
@@ -128,9 +123,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 series,
                 step,
                 filters: {
-                    includeRepoRegex: appliedFilters.includeRepoRegex,
-                    excludeRepoRegex: appliedFilters.excludeRepoRegex,
-                    searchContexts: appliedFilters.searchContexts,
+                    ...appliedFilters,
                     seriesDisplayOptions,
                 },
             }

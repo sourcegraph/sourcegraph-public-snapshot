@@ -240,7 +240,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         className={styles.input}
                         status={getFilterInputStatus(contexts)}
                         {...contexts.input}
-                        value={contexts.input.value ? contexts.input.value[0] : ''}
+                        value={contexts.input.value ? contexts.input.value[0] : undefined}
                     />
                 </FilterCollapseSection>
 
