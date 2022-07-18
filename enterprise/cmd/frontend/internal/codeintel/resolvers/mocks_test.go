@@ -42,9 +42,6 @@ type MockDBStore struct {
 	// object controlling the behavior of the method
 	// CreateConfigurationPolicy.
 	CreateConfigurationPolicyFunc *DBStoreCreateConfigurationPolicyFunc
-	// DefinitionDumpsFunc is an instance of a mock function object
-	// controlling the behavior of the method DefinitionDumps.
-	DefinitionDumpsFunc *DBStoreDefinitionDumpsFunc
 	// DeleteConfigurationPolicyByIDFunc is an instance of a mock function
 	// object controlling the behavior of the method
 	// DeleteConfigurationPolicyByID.
@@ -168,11 +165,6 @@ func NewMockDBStore() *MockDBStore {
 		},
 		CreateConfigurationPolicyFunc: &DBStoreCreateConfigurationPolicyFunc{
 			defaultHook: func(context.Context, dbstore.ConfigurationPolicy) (r0 dbstore.ConfigurationPolicy, r1 error) {
-				return
-			},
-		},
-		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []dbstore.Dump, r1 error) {
 				return
 			},
 		},
@@ -358,11 +350,6 @@ func NewStrictMockDBStore() *MockDBStore {
 				panic("unexpected invocation of MockDBStore.CreateConfigurationPolicy")
 			},
 		},
-		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-				panic("unexpected invocation of MockDBStore.DefinitionDumps")
-			},
-		},
 		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
 			defaultHook: func(context.Context, int) error {
 				panic("unexpected invocation of MockDBStore.DeleteConfigurationPolicyByID")
@@ -538,9 +525,6 @@ func NewMockDBStoreFrom(i DBStore) *MockDBStore {
 		},
 		CreateConfigurationPolicyFunc: &DBStoreCreateConfigurationPolicyFunc{
 			defaultHook: i.CreateConfigurationPolicy,
-		},
-		DefinitionDumpsFunc: &DBStoreDefinitionDumpsFunc{
-			defaultHook: i.DefinitionDumps,
 		},
 		DeleteConfigurationPolicyByIDFunc: &DBStoreDeleteConfigurationPolicyByIDFunc{
 			defaultHook: i.DeleteConfigurationPolicyByID,
@@ -979,114 +963,6 @@ func (c DBStoreCreateConfigurationPolicyFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBStoreCreateConfigurationPolicyFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// DBStoreDefinitionDumpsFunc describes the behavior when the
-// DefinitionDumps method of the parent MockDBStore instance is invoked.
-type DBStoreDefinitionDumpsFunc struct {
-	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error)
-	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error)
-	history     []DBStoreDefinitionDumpsFuncCall
-	mutex       sync.Mutex
-}
-
-// DefinitionDumps delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockDBStore) DefinitionDumps(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-	r0, r1 := m.DefinitionDumpsFunc.nextHook()(v0, v1)
-	m.DefinitionDumpsFunc.appendCall(DBStoreDefinitionDumpsFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the DefinitionDumps
-// method of the parent MockDBStore instance is invoked and the hook queue
-// is empty.
-func (f *DBStoreDefinitionDumpsFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// DefinitionDumps method of the parent MockDBStore instance invokes the
-// hook at the front of the queue and discards it. After the queue is empty,
-// the default hook function is invoked for any future action.
-func (f *DBStoreDefinitionDumpsFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *DBStoreDefinitionDumpsFunc) SetDefaultReturn(r0 []dbstore.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *DBStoreDefinitionDumpsFunc) PushReturn(r0 []dbstore.Dump, r1 error) {
-	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-		return r0, r1
-	})
-}
-
-func (f *DBStoreDefinitionDumpsFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]dbstore.Dump, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *DBStoreDefinitionDumpsFunc) appendCall(r0 DBStoreDefinitionDumpsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of DBStoreDefinitionDumpsFuncCall objects
-// describing the invocations of this function.
-func (f *DBStoreDefinitionDumpsFunc) History() []DBStoreDefinitionDumpsFuncCall {
-	f.mutex.Lock()
-	history := make([]DBStoreDefinitionDumpsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// DBStoreDefinitionDumpsFuncCall is an object that describes an invocation
-// of method DefinitionDumps on an instance of MockDBStore.
-type DBStoreDefinitionDumpsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []precise.QualifiedMonikerData
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []dbstore.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c DBStoreDefinitionDumpsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c DBStoreDefinitionDumpsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -10757,6 +10633,13 @@ func (c RepoUpdaterClientEnqueueRepoUpdateFuncCall) Results() []interface{} {
 // github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers)
 // used for unit testing.
 type MockSymbolsResolver struct {
+	// GetUploadsWithDefinitionsForMonikersFunc is an instance of a mock
+	// function object controlling the behavior of the method
+	// GetUploadsWithDefinitionsForMonikers.
+	GetUploadsWithDefinitionsForMonikersFunc *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc
+	// ImplementationsFunc is an instance of a mock function object
+	// controlling the behavior of the method Implementations.
+	ImplementationsFunc *SymbolsResolverImplementationsFunc
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
 	ReferencesFunc *SymbolsResolverReferencesFunc
@@ -10781,8 +10664,18 @@ type MockSymbolsResolver struct {
 // overwritten.
 func NewMockSymbolsResolver() *MockSymbolsResolver {
 	return &MockSymbolsResolver{
+		GetUploadsWithDefinitionsForMonikersFunc: &SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared.Dump, r1 error) {
+				return
+			},
+		},
+		ImplementationsFunc: &SymbolsResolverImplementationsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs) (r0 []shared.UploadLocation, r1 string, r2 error) {
+				return
+			},
+		},
 		ReferencesFunc: &SymbolsResolverReferencesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, []shared.Dump) (r0 []shared.UploadLocation, r1 string, r2 error) {
+			defaultHook: func(context.Context, shared.RequestArgs) (r0 []shared.UploadLocation, r1 string, r2 error) {
 				return
 			},
 		},
@@ -10813,8 +10706,18 @@ func NewMockSymbolsResolver() *MockSymbolsResolver {
 // interface. All methods panic on invocation, unless overwritten.
 func NewStrictMockSymbolsResolver() *MockSymbolsResolver {
 	return &MockSymbolsResolver{
+		GetUploadsWithDefinitionsForMonikersFunc: &SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error) {
+				panic("unexpected invocation of MockSymbolsResolver.GetUploadsWithDefinitionsForMonikers")
+			},
+		},
+		ImplementationsFunc: &SymbolsResolverImplementationsFunc{
+			defaultHook: func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
+				panic("unexpected invocation of MockSymbolsResolver.Implementations")
+			},
+		},
 		ReferencesFunc: &SymbolsResolverReferencesFunc{
-			defaultHook: func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error) {
+			defaultHook: func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
 				panic("unexpected invocation of MockSymbolsResolver.References")
 			},
 		},
@@ -10846,6 +10749,12 @@ func NewStrictMockSymbolsResolver() *MockSymbolsResolver {
 // overwritten.
 func NewMockSymbolsResolverFrom(i SymbolsResolver) *MockSymbolsResolver {
 	return &MockSymbolsResolver{
+		GetUploadsWithDefinitionsForMonikersFunc: &SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc{
+			defaultHook: i.GetUploadsWithDefinitionsForMonikers,
+		},
+		ImplementationsFunc: &SymbolsResolverImplementationsFunc{
+			defaultHook: i.Implementations,
+		},
 		ReferencesFunc: &SymbolsResolverReferencesFunc{
 			defaultHook: i.References,
 		},
@@ -10864,27 +10773,254 @@ func NewMockSymbolsResolverFrom(i SymbolsResolver) *MockSymbolsResolver {
 	}
 }
 
+// SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc describes the
+// behavior when the GetUploadsWithDefinitionsForMonikers method of the
+// parent MockSymbolsResolver instance is invoked.
+type SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc struct {
+	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error)
+	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error)
+	history     []SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall
+	mutex       sync.Mutex
+}
+
+// GetUploadsWithDefinitionsForMonikers delegates to the next hook function
+// in the queue and stores the parameter and result values of this
+// invocation.
+func (m *MockSymbolsResolver) GetUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared.Dump, error) {
+	r0, r1 := m.GetUploadsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
+	m.GetUploadsWithDefinitionsForMonikersFunc.appendCall(SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetUploadsWithDefinitionsForMonikers method of the parent
+// MockSymbolsResolver instance is invoked and the hook queue is empty.
+func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetUploadsWithDefinitionsForMonikers method of the parent
+// MockSymbolsResolver instance invokes the hook at the front of the queue
+// and discards it. After the queue is empty, the default hook function is
+// invoked for any future action.
+func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
+	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared.Dump, r1 error) {
+	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error) {
+		return r0, r1
+	})
+}
+
+func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) appendCall(r0 SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of
+// SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall objects
+// describing the invocations of this function.
+func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) History() []SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall is an object
+// that describes an invocation of method
+// GetUploadsWithDefinitionsForMonikers on an instance of
+// MockSymbolsResolver.
+type SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 []precise.QualifiedMonikerData
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.Dump
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// SymbolsResolverImplementationsFunc describes the behavior when the
+// Implementations method of the parent MockSymbolsResolver instance is
+// invoked.
+type SymbolsResolverImplementationsFunc struct {
+	defaultHook func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error)
+	hooks       []func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error)
+	history     []SymbolsResolverImplementationsFuncCall
+	mutex       sync.Mutex
+}
+
+// Implementations delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSymbolsResolver) Implementations(v0 context.Context, v1 shared.RequestArgs) ([]shared.UploadLocation, string, error) {
+	r0, r1, r2 := m.ImplementationsFunc.nextHook()(v0, v1)
+	m.ImplementationsFunc.appendCall(SymbolsResolverImplementationsFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the Implementations
+// method of the parent MockSymbolsResolver instance is invoked and the hook
+// queue is empty.
+func (f *SymbolsResolverImplementationsFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Implementations method of the parent MockSymbolsResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SymbolsResolverImplementationsFunc) PushHook(hook func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverImplementationsFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverImplementationsFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
+	f.PushHook(func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *SymbolsResolverImplementationsFunc) nextHook() func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverImplementationsFunc) appendCall(r0 SymbolsResolverImplementationsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SymbolsResolverImplementationsFuncCall
+// objects describing the invocations of this function.
+func (f *SymbolsResolverImplementationsFunc) History() []SymbolsResolverImplementationsFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverImplementationsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverImplementationsFuncCall is an object that describes an
+// invocation of method Implementations on an instance of
+// MockSymbolsResolver.
+type SymbolsResolverImplementationsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 shared.RequestArgs
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.UploadLocation
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 string
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverImplementationsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverImplementationsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
 // SymbolsResolverReferencesFunc describes the behavior when the References
 // method of the parent MockSymbolsResolver instance is invoked.
 type SymbolsResolverReferencesFunc struct {
-	defaultHook func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error)
-	hooks       []func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error)
+	defaultHook func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error)
+	hooks       []func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error)
 	history     []SymbolsResolverReferencesFuncCall
 	mutex       sync.Mutex
 }
 
 // References delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockSymbolsResolver) References(v0 context.Context, v1 shared.RequestArgs, v2 []shared.Dump) ([]shared.UploadLocation, string, error) {
-	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1, v2)
-	m.ReferencesFunc.appendCall(SymbolsResolverReferencesFuncCall{v0, v1, v2, r0, r1, r2})
+func (m *MockSymbolsResolver) References(v0 context.Context, v1 shared.RequestArgs) ([]shared.UploadLocation, string, error) {
+	r0, r1, r2 := m.ReferencesFunc.nextHook()(v0, v1)
+	m.ReferencesFunc.appendCall(SymbolsResolverReferencesFuncCall{v0, v1, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the References method of
 // the parent MockSymbolsResolver instance is invoked and the hook queue is
 // empty.
-func (f *SymbolsResolverReferencesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error)) {
+func (f *SymbolsResolverReferencesFunc) SetDefaultHook(hook func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error)) {
 	f.defaultHook = hook
 }
 
@@ -10892,7 +11028,7 @@ func (f *SymbolsResolverReferencesFunc) SetDefaultHook(hook func(context.Context
 // References method of the parent MockSymbolsResolver instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *SymbolsResolverReferencesFunc) PushHook(hook func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error)) {
+func (f *SymbolsResolverReferencesFunc) PushHook(hook func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -10901,19 +11037,19 @@ func (f *SymbolsResolverReferencesFunc) PushHook(hook func(context.Context, shar
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *SymbolsResolverReferencesFunc) SetDefaultReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
-	f.SetDefaultHook(func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error) {
+	f.SetDefaultHook(func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *SymbolsResolverReferencesFunc) PushReturn(r0 []shared.UploadLocation, r1 string, r2 error) {
-	f.PushHook(func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error) {
+	f.PushHook(func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *SymbolsResolverReferencesFunc) nextHook() func(context.Context, shared.RequestArgs, []shared.Dump) ([]shared.UploadLocation, string, error) {
+func (f *SymbolsResolverReferencesFunc) nextHook() func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -10952,9 +11088,6 @@ type SymbolsResolverReferencesFuncCall struct {
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 shared.RequestArgs
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 []shared.Dump
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []shared.UploadLocation
@@ -10969,7 +11102,7 @@ type SymbolsResolverReferencesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c SymbolsResolverReferencesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1}
 }
 
 // Results returns an interface slice containing the results of this

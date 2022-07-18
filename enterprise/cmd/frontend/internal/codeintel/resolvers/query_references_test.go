@@ -158,13 +158,14 @@ func TestReferencesRemote(t *testing.T) {
 	mockPositionAdjuster := noopPositionAdjuster()
 	mockSymbolsResolver := NewMockSymbolsResolver()
 
-	definitionUploads := []dbstore.Dump{
+	dumps := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	mockDBStore.DefinitionDumpsFunc.PushReturn(definitionUploads, nil)
+	definitionUploads := storeDumpToSymbolDump(dumps)
+	mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
 
 	referenceUploads := []dbstore.Dump{
 		{ID: 250, Commit: "deadbeef1", Root: "sub1/"},
@@ -277,7 +278,7 @@ func TestReferencesRemote(t *testing.T) {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 
-	if history := mockDBStore.DefinitionDumpsFunc.History(); len(history) != 1 {
+	if history := mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
 		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 	} else {
 		expectedMonikers := []precise.QualifiedMonikerData{
@@ -329,13 +330,14 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 	mockPositionAdjuster := noopPositionAdjuster()
 	mockSymbolsResolver := NewMockSymbolsResolver()
 
-	definitionUploads := []dbstore.Dump{
+	definitionDumps := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	mockDBStore.DefinitionDumpsFunc.PushReturn(definitionUploads, nil)
+	definitionUploads := storeDumpToSymbolDump(definitionDumps)
+	mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.PushReturn(definitionUploads, nil)
 
 	referenceUploads := []dbstore.Dump{
 		{ID: 250, Commit: "deadbeef1", Root: "sub1/"},
@@ -459,7 +461,7 @@ func TestReferencesRemoteWithSubRepoPermissions(t *testing.T) {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 
-	if history := mockDBStore.DefinitionDumpsFunc.History(); len(history) != 1 {
+	if history := mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
 		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 	} else {
 		expectedMonikers := []precise.QualifiedMonikerData{

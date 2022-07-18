@@ -85,13 +85,14 @@ func TestHoverRemote(t *testing.T) {
 	}
 	mockLSIFStore.HoverFunc.PushReturn("doctext", remoteRange, true, nil)
 
-	remoteUploads := []dbstore.Dump{
+	dumps := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	mockDBStore.DefinitionDumpsFunc.PushReturn(remoteUploads, nil)
+	remoteUploads := storeDumpToSymbolDump(dumps)
+	mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.PushReturn(remoteUploads, nil)
 
 	monikers := []precise.MonikerData{
 		{Kind: "import", Scheme: "tsc", Identifier: "padLeft", PackageInformationID: "51"},

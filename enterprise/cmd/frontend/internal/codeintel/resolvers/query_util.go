@@ -68,10 +68,12 @@ func (r *queryResolver) adjustUpload(ctx context.Context, line, character int, u
 // definitionUploads returns the set of uploads that provide any of the given monikers. This method will
 // not return uploads for commits which are unknown to gitserver.
 func (r *queryResolver) definitionUploads(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]store.Dump, error) {
-	uploads, err := r.dbStore.DefinitionDumps(ctx, orderedMonikers)
+	// uploads, err := r.dbStore.DefinitionDumps(ctx, orderedMonikers)
+	u, err := r.symbolsResolver.GetUploadsWithDefinitionsForMonikers(ctx, orderedMonikers)
 	if err != nil {
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
 	}
+	uploads := symbolDumpToStoreDump(u)
 
 	r.updateUploadCache(uploads)
 	return filterUploadsWithCommits(ctx, r.cachedCommitChecker, uploads)

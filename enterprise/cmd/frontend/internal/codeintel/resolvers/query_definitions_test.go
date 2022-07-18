@@ -9,8 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
@@ -143,14 +145,16 @@ func TestDefinitionsRemote(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
-	remoteUploads := []dbstore.Dump{
+	dumps := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	mockDBStore.DefinitionDumpsFunc.PushReturn(remoteUploads, nil)
+	remoteUploads := storeDumpToSymbolDump(dumps)
+	mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.PushReturn(remoteUploads, nil)
 
 	// upload #150's commit no longer exists; all others do
 	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
@@ -205,25 +209,26 @@ func TestDefinitionsRemote(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
-		nil,
+		mockSymbolsResolver,
 	)
 	adjustedLocations, err := resolver.Definitions(context.Background(), 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	expectedLocations := []AdjustedLocation{
-		{Dump: remoteUploads[0], Path: "sub2/a.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange1},
-		{Dump: remoteUploads[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange2},
-		{Dump: remoteUploads[0], Path: "sub2/a.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange3},
-		{Dump: remoteUploads[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange4},
-		{Dump: remoteUploads[0], Path: "sub2/c.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange5},
+	xLocations := []AdjustedLocation{
+		{Dump: dumps[0], Path: "sub2/a.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange1},
+		{Dump: dumps[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange2},
+		{Dump: dumps[0], Path: "sub2/a.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange3},
+		{Dump: dumps[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange4},
+		{Dump: dumps[0], Path: "sub2/c.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange5},
 	}
+	expectedLocations := uploadLocationsToAdjustedLocations(xLocations)
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 
-	if history := mockDBStore.DefinitionDumpsFunc.History(); len(history) != 1 {
+	if history := mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
 		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 	} else {
 		expectedMonikers := []precise.QualifiedMonikerData{
@@ -257,14 +262,16 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
+	mockSymbolsResolver := NewMockSymbolsResolver()
 
-	remoteUploads := []dbstore.Dump{
+	dumps := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	mockDBStore.DefinitionDumpsFunc.PushReturn(remoteUploads, nil)
+	remoteUploads := storeDumpToSymbolDump(dumps)
+	mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.PushReturn(remoteUploads, nil)
 
 	// upload #150's commit no longer exists; all others do
 	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
@@ -334,7 +341,7 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 		newOperations(&observation.TestContext),
 		checker,
 		50,
-		nil,
+		mockSymbolsResolver,
 	)
 
 	ctx := context.Background()
@@ -344,14 +351,14 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	}
 
 	expectedLocations := []AdjustedLocation{
-		{Dump: remoteUploads[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange2},
-		{Dump: remoteUploads[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange4},
+		{Dump: dumps[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange2},
+		{Dump: dumps[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange4},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 
-	if history := mockDBStore.DefinitionDumpsFunc.History(); len(history) != 1 {
+	if history := mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
 		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 	} else {
 		expectedMonikers := []precise.QualifiedMonikerData{
@@ -378,4 +385,76 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 			t.Errorf("unexpected ids (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func uploadLocationsToAdjustedLocations(location []AdjustedLocation) []shared.UploadLocation {
+	uploadLocation := make([]shared.UploadLocation, 0, len(location))
+	for _, loc := range location {
+		dump := shared.Dump{
+			ID:                loc.Dump.ID,
+			Commit:            loc.Dump.Commit,
+			Root:              loc.Dump.Root,
+			VisibleAtTip:      loc.Dump.VisibleAtTip,
+			UploadedAt:        loc.Dump.UploadedAt,
+			State:             loc.Dump.State,
+			FailureMessage:    loc.Dump.FailureMessage,
+			StartedAt:         loc.Dump.StartedAt,
+			FinishedAt:        loc.Dump.FinishedAt,
+			ProcessAfter:      loc.Dump.ProcessAfter,
+			NumResets:         loc.Dump.NumResets,
+			NumFailures:       loc.Dump.NumFailures,
+			RepositoryID:      loc.Dump.RepositoryID,
+			RepositoryName:    loc.Dump.RepositoryName,
+			Indexer:           loc.Dump.Indexer,
+			IndexerVersion:    loc.Dump.IndexerVersion,
+			AssociatedIndexID: loc.Dump.AssociatedIndexID,
+		}
+
+		targetRange := shared.Range{
+			Start: shared.Position{
+				Line:      loc.AdjustedRange.Start.Line,
+				Character: loc.AdjustedRange.Start.Character,
+			},
+			End: shared.Position{
+				Line:      loc.AdjustedRange.End.Line,
+				Character: loc.AdjustedRange.End.Character,
+			},
+		}
+
+		uploadLocation = append(uploadLocation, shared.UploadLocation{
+			Dump:         dump,
+			Path:         loc.Path,
+			TargetCommit: loc.AdjustedCommit,
+			TargetRange:  targetRange,
+		})
+	}
+
+	return uploadLocation
+}
+
+func storeDumpToSymbolDump(storeDumps []store.Dump) []shared.Dump {
+	dumps := make([]shared.Dump, 0, len(storeDumps))
+	for _, d := range storeDumps {
+		dumps = append(dumps, shared.Dump{
+			ID:                d.ID,
+			Commit:            d.Commit,
+			Root:              d.Root,
+			VisibleAtTip:      d.VisibleAtTip,
+			UploadedAt:        d.UploadedAt,
+			State:             d.State,
+			FailureMessage:    d.FailureMessage,
+			StartedAt:         d.StartedAt,
+			FinishedAt:        d.FinishedAt,
+			ProcessAfter:      d.ProcessAfter,
+			NumResets:         d.NumResets,
+			NumFailures:       d.NumFailures,
+			RepositoryID:      d.RepositoryID,
+			RepositoryName:    d.RepositoryName,
+			Indexer:           d.Indexer,
+			IndexerVersion:    d.IndexerVersion,
+			AssociatedIndexID: d.AssociatedIndexID,
+		})
+	}
+
+	return dumps
 }

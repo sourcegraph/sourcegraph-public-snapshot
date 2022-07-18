@@ -40,7 +40,6 @@ type DBStore interface {
 	GetDumpsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error)
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]dbstore.Dump, error)
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitdomain.CommitGraph) ([]dbstore.Dump, error)
-	DefinitionDumps(ctx context.Context, monikers []precise.QualifiedMonikerData) (_ []dbstore.Dump, err error)
 	ReferenceIDs(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ dbstore.PackageReferenceScanner, _ int, err error)
 	HasRepository(ctx context.Context, repositoryID int) (bool, error)
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
@@ -99,7 +98,11 @@ type SymbolsResolver interface {
 	SetLocalCommitCache(gitserverClient symbolsShared.GitserverClient)
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
 
-	References(ctx context.Context, args symbolsShared.RequestArgs, uploads []symbolsShared.Dump) (_ []symbolsShared.UploadLocation, _ string, err error)
+	References(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
+	Implementations(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
+
+	// temporarily needed until we move all the methods to the new resolver
+	GetUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]symbolsShared.Dump, error)
 }
 
 type GitTreeTranslator interface {

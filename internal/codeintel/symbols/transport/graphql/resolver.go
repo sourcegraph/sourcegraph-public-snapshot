@@ -29,8 +29,11 @@ type Resolver interface {
 	SetLocalCommitCache(client shared.GitserverClient)
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
 
-	References(ctx context.Context, args shared.RequestArgs, uploads []shared.Dump) (_ []shared.UploadLocation, _ string, err error)
-	Implementations(ctx context.Context, args shared.RequestArgs, uploads []shared.Dump) (_ []shared.UploadLocation, _ string, err error)
+	References(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error)
+	Implementations(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error)
+
+	// temporarily needed until we move all the methods to the new resolver
+	GetUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]shared.Dump, error)
 }
 
 type resolver struct {
@@ -98,7 +101,7 @@ func (r *resolver) Symbol(ctx context.Context, args struct{}) (_ any, err error)
 	return nil, errors.New("unimplemented: Symbol")
 }
 
-func (r *resolver) References(ctx context.Context, args shared.RequestArgs, uploads []shared.Dump) (_ []shared.UploadLocation, _ string, err error) {
+func (r *resolver) References(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error) {
 	return nil, "", nil
 }
 
@@ -108,7 +111,7 @@ const slowImplementationsRequestThreshold = time.Second
 const DefinitionsLimit = 100
 
 // Implementations returns the list of source locations that define the symbol at the given position.
-func (r *resolver) Implementations(ctx context.Context, args shared.RequestArgs, uploads []shared.Dump) (_ []shared.UploadLocation, _ string, err error) {
+func (r *resolver) Implementations(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.references, slowImplementationsRequestThreshold, observation.Args{
 		LogFields: []log.Field{
 			log.Int("repositoryID", args.RepositoryID),
@@ -188,7 +191,7 @@ func (r *resolver) Implementations(ctx context.Context, args shared.RequestArgs,
 	// there are no more local results. We'll continue to request additional locations until we fill an
 	// entire page or there are no more local results remaining, just as we did above.
 	if cursor.Phase == "dependencies" {
-		uploads, err := r.getUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedImplementationMonikers)
+		uploads, err := r.GetUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedImplementationMonikers)
 		if err != nil {
 			return nil, "", err
 		}
@@ -521,9 +524,9 @@ func (r *resolver) getPageRemoteLocations(
 	return filtered, hasAnotherPage, nil
 }
 
-// getUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
+// GetUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
 // This method will not return uploads for commits which are unknown to gitserver.
-func (r *resolver) getUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]shared.Dump, error) {
+func (r *resolver) GetUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]shared.Dump, error) {
 	uploads, err := r.svc.GetUploadsWithDefinitionsForMonikers(ctx, orderedMonikers)
 	if err != nil {
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")

@@ -21,5 +21,5 @@ type GitserverClient interface {
 }
 
 type SymbolService interface {
-	References(ctx context.Context, args sharedSymbols.RequestArgs, uploads []shared.Dump) (_ []sharedSymbols.UploadLocation, _ string, err error)
+	References(ctx context.Context, args sharedSymbols.RequestArgs) (_ []sharedSymbols.UploadLocation, _ string, err error)
 }

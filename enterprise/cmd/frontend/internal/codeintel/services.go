@@ -76,9 +76,9 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 
 	// Initialize services
 	lsif := database.NewDBWith(observationContext.Logger, codeIntelDB)
-	uploadSvc := uploads.GetService(db, lsif, gitserverClient)
 
-	// TODO: Remove uploadSvc from symbols instantiation.
+	// TODO: Metrics being instantiated twice! Why?
+	uploadSvc := uploads.GetService(db, lsif, gitserverClient)
 	symbolSvc := symbols.GetService(db, lsif, uploadSvc)
 	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
 
