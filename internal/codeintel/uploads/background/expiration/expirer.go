@@ -3,6 +3,8 @@ package expiration
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -10,6 +12,7 @@ type expirer struct {
 	dbStore       DBStore
 	metrics       *metrics
 	policyMatcher PolicyMatcher
+	logger        log.Logger
 }
 
 var (

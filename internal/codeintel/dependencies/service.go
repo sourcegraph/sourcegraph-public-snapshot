@@ -6,10 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
@@ -30,6 +31,7 @@ type Service struct {
 	syncer             Syncer
 	syncerSemaphore    *semaphore.Weighted
 	operations         *operations
+	logger             sglog.Logger
 }
 
 func newService(
@@ -49,6 +51,7 @@ func newService(
 		syncer:             syncer,
 		syncerSemaphore:    syncerSemaphore,
 		operations:         newOperations(observationContext),
+		logger:             observationContext.Logger,
 	}
 }
 
@@ -291,7 +294,7 @@ func (s *Service) sync(ctx context.Context, repos []api.RepoName) error {
 			defer s.syncerSemaphore.Release(1)
 
 			if err := s.syncer.Sync(ctx, repo); err != nil {
-				log15.Warn("Failed to sync dependency repo", "repo", repo, "error", err)
+				s.logger.Warn("Failed to sync dependency repo", sglog.String("repo", string(repo)), sglog.Error(err))
 			}
 
 			return nil
