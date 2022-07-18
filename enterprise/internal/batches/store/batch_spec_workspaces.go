@@ -457,7 +457,7 @@ FROM batch_spec_workspaces
 		 INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
 		 INNER JOIN batch_spec_workspace_execution_jobs
 					on batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id
-WHERE %s;
+WHERE %s
 `
 
 func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) error {
