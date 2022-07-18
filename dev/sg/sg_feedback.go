@@ -39,7 +39,7 @@ func addFeedbackFlags(commands []*cli.Command) {
 				return action(ctx)
 			}
 		}
-		
+
 		addFeedbackFlags(command.Subcommands)
 	}
 }
