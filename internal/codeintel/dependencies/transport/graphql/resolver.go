@@ -3,27 +3,30 @@ package graphql
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type Resolver interface {
-	LockfileIndexes(ctx context.Context, args *graphqlbackend.ListLockfileIndexesArgs) (graphqlbackend.LockfileIndexConnectionResolver, error)
-}
-
 type resolver struct {
-	svc *dependencies.Service
-	db  database.DB
+	svc    *dependencies.Service
+	db     database.DB
+	logger log.Logger
 }
 
-func New(db database.DB) Resolver {
+func New(db database.DB, logger log.Logger) graphqlbackend.DependenciesResolver {
 	return &resolver{
-		svc: livedependencies.GetService(db, livedependencies.NewSyncer()),
-		db:  db,
+		svc:    livedependencies.GetService(db, livedependencies.NewSyncer()),
+		db:     db,
+		logger: logger,
 	}
 }
 
@@ -38,19 +41,39 @@ func (r *resolver) LockfileIndexes(ctx context.Context, args *graphqlbackend.Lis
 		return nil, err
 	}
 
-	opts := dependencies.ListLockfileIndexesOpts{
+	lockfileIndexes, totalCount, err := r.svc.ListLockfileIndexes(ctx, dependencies.ListLockfileIndexesOpts{
 		After: p.after,
 		Limit: p.limit,
-	}
-
-	lockfileIndexes, totalCount, err := r.svc.ListLockfileIndexes(ctx, opts)
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	resolvers := make([]*LockfileIndexResolver, 0, len(lockfileIndexes))
-	for _, executor := range lockfileIndexes {
-		resolvers = append(resolvers, NewExecutorResolver(executor))
+	repoIDs := make([]api.RepoID, len(lockfileIndexes))
+	for i, li := range lockfileIndexes {
+		repoIDs[i] = api.RepoID(li.RepositoryID)
+	}
+
+	repos, err := backend.NewRepos(r.logger, r.db).List(ctx, database.ReposListOptions{IDs: repoIDs})
+	if err != nil {
+		return nil, err
+	}
+
+	reposByID := make(map[api.RepoID]*types.Repo, len(repos))
+	for _, repo := range repos {
+		reposByID[repo.ID] = repo
+	}
+
+	resolvers := make([]graphqlbackend.LockfileIndexResolver, 0, len(lockfileIndexes))
+	for _, li := range lockfileIndexes {
+		repo, ok := reposByID[api.RepoID(li.RepositoryID)]
+		if !ok {
+			return nil, errors.Newf("repository with ID %d not found", li.RepositoryID)
+		}
+
+		repoResolver := graphqlbackend.NewRepositoryResolver(r.db, repo)
+		commit := graphqlbackend.NewGitCommitResolver(r.db, repoResolver, api.CommitID(li.Commit), nil)
+		resolvers = append(resolvers, NewLockfileIndexResolver(li, repoResolver, commit))
 	}
 
 	nextOffset := graphqlutil.NextOffset(p.after, len(lockfileIndexes), totalCount)
