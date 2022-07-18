@@ -54,8 +54,10 @@ echo "${OUTPUT_FILE}"
 echo "${CODEINTEL_OUTPUT_FILE}"
 echo "${CODEINSIGHTS_OUTPUT_FILE}"
 
+docker pull sourcegraph/postgres_exporter:insiders || true
 docker build -f ./Dockerfile -t "${IMAGE:-sourcegraph/postgres_exporter}" "${OUTPUT}" \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
-  --build-arg VERSION
+  --build-arg VERSION \
+  --cache-from sourcegraph/postgres_exporter:insiders

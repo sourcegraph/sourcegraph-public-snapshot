@@ -103,7 +103,7 @@ echo "--- jaeger-all-in-one binary"
 cmd/server/jaeger.sh
 
 echo "--- docker build"
-docker pull sourcegraph/server:insiders
+docker pull sourcegraph/server:insiders || true
 docker build -f cmd/server/Dockerfile -t "$IMAGE" "$OUTPUT" \
   --progress=plain \
   --build-arg COMMIT_SHA \

@@ -49,11 +49,13 @@ if [[ "$CACHE" == "true" ]]; then
 fi
 
 # shellcheck disable=SC2086
+docker pull sourcegraph/prometheus:insiders || true
 docker build ${BUILD_CACHE} -t "${IMAGE:-sourcegraph/prometheus}" . \
   --progress=plain \
   --build-arg COMMIT_SHA \
   --build-arg DATE \
-  --build-arg VERSION
+  --build-arg VERSION \
+  --cache-from sourcegraph/prometheus:insiders
 
 # cd out of $BUILDDIR for cleanup
 popd
