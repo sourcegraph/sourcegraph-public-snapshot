@@ -158,7 +158,7 @@ const sidebarRoutes: CodeIntelSideBarGroups = [
 ]
 
 /**
- * Renders pages related to repository code navigation.
+ * Renders pages related to repository code graph.
  */
 export const RepositoryCodeIntelArea: React.FunctionComponent<
     React.PropsWithChildren<RepositoryCodeIntelAreaPageProps>

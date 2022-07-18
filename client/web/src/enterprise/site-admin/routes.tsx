@@ -105,23 +105,6 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
             batchChangesEnabled && batchChangesWebhookLogsEnabled,
     },
 
-    //     {
-    //     // Allow unauthenticated viewers to view the "new subscription" page to price out a subscription (instead
-    //     // of just dumping them on a sign-in page).
-    //     path: EnterprisePageRoutes.SubscriptionsNew,
-    //     exact: true,
-    //     render: lazyComponent(
-    //         () => import('./user/productSubscriptions/NewProductSubscriptionPageOrRedirectUser'),
-    //         'NewProductSubscriptionPageOrRedirectUser'
-    //     ),
-    // },
-    // {
-    //     // Redirect from old /user/subscriptions/new -> /subscriptions/new.
-    //     path: EnterprisePageRoutes.OldSubscriptionsNew,
-    //     exact: true,
-    //     render: () => <Redirect to="/subscriptions/new" />,
-    // },
-
     // Code graph upload routes
     {
         path: '/code-intelligence',
