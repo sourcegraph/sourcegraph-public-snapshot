@@ -22,7 +22,7 @@ To be interactively instructed through the manual process, re-run the migrator w
 Add the optional flag `--noop-privileged` when [running the migrator](manual_database_migrations.md) against your Postgres instance. When the migration runner encounters an unapplied privileged migration, it will initially halt with an error message similar to the following.
 
 ```
-❌ failed to run migration for schema "frontend": refusing to apply a privileged migration: apply the following SQL and re-run with the added flag `-privileged-hash=vp6EzmVmJfHgfchaShhJPUCq5v4=` to continue.
+❌ failed to run migration for schema "frontend": refusing to apply a privileged migration: apply the following SQL and re-run with the added flag `--privileged-hash=vp6EzmVmJfHgfchaShhJPUCq5v4=` to continue.
 ```
 
 ```sql
