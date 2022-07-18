@@ -21,7 +21,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             filters: {
                 excludeRepoRegex: '',
                 includeRepoRegex: '',
-                searchContexts: '',
+                searchContexts: [''],
                 seriesDisplayOptions: {
                     limit: `${MAX_NUMBER_OF_SERIES}`,
                     sortOptions: {
@@ -45,7 +45,7 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
         filters: {
             excludeRepoRegex: '',
             includeRepoRegex: '',
-            searchContexts: '',
+            searchContexts: [''],
             seriesDisplayOptions: {
                 limit: `${MAX_NUMBER_OF_SERIES}`,
                 sortOptions: {

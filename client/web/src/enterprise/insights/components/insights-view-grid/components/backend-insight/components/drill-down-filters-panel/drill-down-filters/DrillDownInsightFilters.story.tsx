@@ -85,7 +85,7 @@ const CONTEXTS_GQL_MOCKS: MockedResponse<GetSearchContextsResult> = {
 const ORIGINAL_FILTERS: InsightFilters = {
     includeRepoRegex: '',
     excludeRepoRegex: '',
-    searchContexts: '',
+    searchContexts: [''],
     seriesDisplayOptions: {
         limit: '20',
         sortOptions: {
@@ -98,7 +98,7 @@ const ORIGINAL_FILTERS: InsightFilters = {
 const FILTERS: InsightFilters = {
     includeRepoRegex: 'hello world loooong loooooooooooooong repo filter regular expressssssion',
     excludeRepoRegex: 'hello world loooong loooooooooooooong repo filter regular expressssssion',
-    searchContexts: '',
+    searchContexts: [''],
     seriesDisplayOptions: {
         limit: '20',
         sortOptions: {

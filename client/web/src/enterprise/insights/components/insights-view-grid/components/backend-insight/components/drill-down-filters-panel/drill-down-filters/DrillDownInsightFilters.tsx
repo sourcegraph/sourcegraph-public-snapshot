@@ -35,7 +35,7 @@ export enum FilterSectionVisualMode {
 }
 
 export interface DrillDownFiltersFormValues {
-    searchContexts: string
+    searchContexts: InsightViewNode['appliedFilters']['searchContexts']
     includeRepoRegex: InsightViewNode['appliedFilters']['includeRepoRegex']
     excludeRepoRegex: InsightViewNode['appliedFilters']['excludeRepoRegex']
     seriesDisplayOptions: {
@@ -133,7 +133,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
     }
 
     const handleClear = (): void => {
-        contexts.input.onChange('')
+        contexts.input.onChange([''])
         includeRegex.input.onChange('')
         excludeRegex.input.onChange('')
         seriesDisplayOptionsField.input.onChange(originalValues.seriesDisplayOptions)
@@ -240,6 +240,7 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                         className={styles.input}
                         status={getFilterInputStatus(contexts)}
                         {...contexts.input}
+                        value={contexts.input.value ? contexts.input.value[0] : ''}
                     />
                 </FilterCollapseSection>
 
@@ -351,7 +352,17 @@ export function hasActiveFilters(filters: DrillDownFiltersFormValues): boolean {
     return [excludeRepoRegex, includeRepoRegex, searchContexts].some(hasActiveUnaryFilter)
 }
 
-const hasActiveUnaryFilter = (filter: string | null): boolean => !!filter && filter.trim() !== ''
+const hasActiveUnaryFilter = (filter: string[] | string | null): boolean => {
+    if (!filter) {
+        return false
+    }
+
+    if (typeof filter === 'string') {
+        return filter.trim() !== ''
+    }
+
+    return filter.some(value => value.trim() !== '')
+}
 
 interface SubmitButtonTextProps {
     submitting: boolean

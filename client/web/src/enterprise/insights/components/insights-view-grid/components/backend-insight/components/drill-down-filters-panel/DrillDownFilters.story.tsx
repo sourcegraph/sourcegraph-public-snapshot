@@ -19,7 +19,7 @@ export const DrillDownPopover: Story = () => {
     const initialFiltersValue: InsightFilters = {
         excludeRepoRegex: 'EXCLUDE',
         includeRepoRegex: '',
-        searchContexts: '',
+        searchContexts: [''],
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {

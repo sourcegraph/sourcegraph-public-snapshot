@@ -67,13 +67,13 @@ export const getSortPreview = (seriesDisplayOptions: {
     return `Sorted ${sortBy}, limit ${limit} series`
 }
 
-type InsightContextsFilter = string
+type InsightContextsFilter = string[] | null
 
 export function getSerializedSearchContextFilter(
     filter: InsightContextsFilter,
     withContextPrefix: boolean = true
 ): string {
-    const filterValue = filter !== '' ? filter : 'global (default)'
+    const filterValue = filter && filter[0] !== '' ? filter[0] : 'global (default)'
 
     return withContextPrefix ? `context:${filterValue}` : filterValue
 }

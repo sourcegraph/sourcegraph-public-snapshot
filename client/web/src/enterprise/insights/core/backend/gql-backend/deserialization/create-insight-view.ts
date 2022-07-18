@@ -74,9 +74,9 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     query,
                     step,
                     filters: {
-                        includeRepoRegex: appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegex: appliedFilters.excludeRepoRegex ?? '',
-                        searchContexts: appliedFilters.searchContexts?.[0] ?? '',
+                        includeRepoRegex: appliedFilters.includeRepoRegex,
+                        excludeRepoRegex: appliedFilters.excludeRepoRegex,
+                        searchContexts: appliedFilters.searchContexts,
                         seriesDisplayOptions,
                     },
                     appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
@@ -102,7 +102,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 // It's safe because capture group insight always has only 1 data series
                 const { groupBy } = insight.dataSeriesDefinitions[0] ?? {}
 
-                return {
+                const computeInsight: ComputeInsight = {
                     ...baseInsight,
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.Compute,
@@ -110,12 +110,14 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     repositories,
                     series,
                     filters: {
-                        includeRepoRegex: appliedFilters.includeRepoRegex ?? '',
-                        excludeRepoRegex: appliedFilters.excludeRepoRegex ?? '',
-                        searchContexts: appliedFilters.searchContexts?.[0] ?? '',
+                        includeRepoRegex: appliedFilters.includeRepoRegex,
+                        excludeRepoRegex: appliedFilters.excludeRepoRegex,
+                        searchContexts: appliedFilters.searchContexts,
                         seriesDisplayOptions,
                     },
-                } as ComputeInsight
+                }
+
+                return computeInsight
             }
 
             return {
@@ -126,9 +128,9 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                 series,
                 step,
                 filters: {
-                    includeRepoRegex: appliedFilters.includeRepoRegex ?? '',
-                    excludeRepoRegex: appliedFilters.excludeRepoRegex ?? '',
-                    searchContexts: appliedFilters.searchContexts?.[0] ?? '',
+                    includeRepoRegex: appliedFilters.includeRepoRegex,
+                    excludeRepoRegex: appliedFilters.excludeRepoRegex,
+                    searchContexts: appliedFilters.searchContexts,
                     seriesDisplayOptions,
                 },
             }

@@ -16,14 +16,14 @@ const GET_CONTEXT_BY_NAME = gql`
 `
 
 export const createSearchContextValidator = (client: ApolloClient<unknown>) => async (
-    value: string | undefined
+    value: string[] | undefined | null
 ): Promise<string | void> => {
     if (!value) {
         return
     }
 
     try {
-        const sanitizedValue = value.trim()
+        const sanitizedValue = value[0].trim()
         const { data, error } = await client.query<GetSearchContextByNameResult>({
             query: GET_CONTEXT_BY_NAME,
             variables: { query: sanitizedValue },

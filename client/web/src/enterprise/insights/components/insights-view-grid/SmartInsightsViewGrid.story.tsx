@@ -26,7 +26,7 @@ export default defaultStory
 const filters = {
     excludeRepoRegex: '',
     includeRepoRegex: '',
-    searchContexts: '',
+    searchContexts: [''],
     seriesDisplayOptions: {
         limit: '20',
         sortOptions: {

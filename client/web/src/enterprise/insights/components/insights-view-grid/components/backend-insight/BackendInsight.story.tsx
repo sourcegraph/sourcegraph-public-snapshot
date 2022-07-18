@@ -47,7 +47,7 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     filters: {
         excludeRepoRegex: '',
         includeRepoRegex: '',
-        searchContexts: '',
+        searchContexts: [''],
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {
@@ -262,7 +262,7 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     filters: {
         excludeRepoRegex: '',
         includeRepoRegex: '',
-        searchContexts: '',
+        searchContexts: [''],
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {
@@ -292,7 +292,7 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
     filters: {
         excludeRepoRegex: '',
         includeRepoRegex: '',
-        searchContexts: '',
+        searchContexts: [''],
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {
@@ -319,7 +319,7 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     filters: {
         excludeRepoRegex: '',
         includeRepoRegex: '',
-        searchContexts: '',
+        searchContexts: [''],
         seriesDisplayOptions: {
             limit: '20',
             sortOptions: {

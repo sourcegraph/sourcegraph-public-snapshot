@@ -81,7 +81,7 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
     const filterInput: InsightViewFiltersInput = {
         includeRepoRegex: debouncedFilters.includeRepoRegex,
         excludeRepoRegex: debouncedFilters.excludeRepoRegex,
-        searchContexts: [debouncedFilters.searchContexts],
+        searchContexts: debouncedFilters.searchContexts,
     }
     const displayInput: SeriesDisplayOptionsInput = {
         limit: insight.seriesDisplayOptions?.limit,

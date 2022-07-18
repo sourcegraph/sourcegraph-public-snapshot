@@ -10,7 +10,6 @@ import { Link, useDebounce, useDeepMemo } from '@sourcegraph/wildcard'
 
 import { useFeatureFlag } from '../../../../../../featureFlags/useFeatureFlag'
 import {
-    InsightViewFiltersInput,
     SeriesDisplayOptionsInput,
     GetInsightViewResult,
     GetInsightViewVariables,
@@ -82,14 +81,10 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     const [isFiltersOpen, setIsFiltersOpen] = useState(false)
     const debouncedFilters = useDebounce(useDeepMemo<InsightFilters>(filters), 500)
 
-    const filterInput: InsightViewFiltersInput = {
-        includeRepoRegex: debouncedFilters.includeRepoRegex,
-        excludeRepoRegex: debouncedFilters.excludeRepoRegex,
-        searchContexts: [debouncedFilters.searchContexts],
-    }
+    const { seriesDisplayOptions: seriesFilters, ...filterInput } = debouncedFilters
     const seriesDisplayOptions: SeriesDisplayOptionsInput = {
-        limit: parseSeriesLimit(debouncedFilters.seriesDisplayOptions.limit),
-        sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
+        limit: parseSeriesLimit(seriesFilters.limit),
+        sortOptions: seriesFilters.sortOptions,
     }
 
     const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(

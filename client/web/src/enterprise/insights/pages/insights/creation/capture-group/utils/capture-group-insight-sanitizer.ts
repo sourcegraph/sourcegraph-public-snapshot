@@ -19,7 +19,7 @@ export function getSanitizedCaptureGroupInsight(values: CaptureGroupFormFields):
         filters: {
             includeRepoRegex: '',
             excludeRepoRegex: '',
-            searchContexts: '',
+            searchContexts: [''],
             seriesDisplayOptions: {
                 limit: `${MAX_NUMBER_OF_SERIES}`,
                 sortOptions: {

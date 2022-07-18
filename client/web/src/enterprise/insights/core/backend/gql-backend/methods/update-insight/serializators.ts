@@ -1,5 +1,4 @@
 import {
-    InsightViewFiltersInput,
     LineChartSearchInsightDataSeriesInput,
     TimeIntervalStepUnit,
     UpdateLineChartSearchInsightInput,
@@ -17,11 +16,6 @@ import { getStepInterval } from '../../utils/get-step-interval'
 export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightData): UpdateLineChartSearchInsightInput {
     const repositories = insight.repositories
     const [unit, value] = getStepInterval(insight.step)
-    const filters: InsightViewFiltersInput = {
-        includeRepoRegex: insight.filters.includeRepoRegex,
-        excludeRepoRegex: insight.filters.excludeRepoRegex,
-        searchContexts: insight.filters.searchContexts ? [insight.filters.searchContexts] : [],
-    }
 
     const seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesCount, insight.seriesDisplayOptions)
 
@@ -39,7 +33,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
         presentationOptions: {
             title: insight.title,
         },
-        viewControls: { filters, seriesDisplayOptions },
+        viewControls: { filters: insight.filters, seriesDisplayOptions },
     }
 }
 
@@ -65,11 +59,7 @@ export function getCaptureGroupInsightUpdateInput(
             title,
         },
         viewControls: {
-            filters: {
-                includeRepoRegex: filters.includeRepoRegex,
-                excludeRepoRegex: filters.excludeRepoRegex,
-                searchContexts: insight.filters.searchContexts ? [filters.searchContexts] : [],
-            },
+            filters,
             seriesDisplayOptions: _seriesDisplayOptions,
         },
     }
@@ -77,12 +67,6 @@ export function getCaptureGroupInsightUpdateInput(
 
 export function getComputeInsightUpdateInput(insight: MinimalComputeInsightData): UpdateLineChartSearchInsightInput {
     const { repositories, filters, groupBy } = insight
-
-    const serializedFilters: InsightViewFiltersInput = {
-        includeRepoRegex: filters.includeRepoRegex,
-        excludeRepoRegex: filters.excludeRepoRegex,
-        searchContexts: filters.searchContexts ? [filters.searchContexts] : [],
-    }
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -102,7 +86,7 @@ export function getComputeInsightUpdateInput(insight: MinimalComputeInsightData)
             title: insight.title,
         },
         // TODO: update when sorting all insights are supported
-        viewControls: { filters: serializedFilters, seriesDisplayOptions: {} },
+        viewControls: { filters, seriesDisplayOptions: {} },
     }
 }
 
