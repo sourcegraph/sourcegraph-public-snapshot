@@ -437,7 +437,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		require.NoError(t, err)
 
 		t.Run("All", func(t *testing.T) {
-			have, _, err := s.ListRetryBatchSpecWorkspaces(ctx, ListRetryBatchSpecWorkspacesOpts{
+			have, err := s.ListRetryBatchSpecWorkspaces(ctx, ListRetryBatchSpecWorkspacesOpts{
 				BatchSpecID:      9999,
 				IncludeCompleted: true,
 			})
@@ -446,7 +446,7 @@ func testStoreBatchSpecWorkspaces(t *testing.T, ctx context.Context, s *Store, c
 		})
 
 		t.Run("Uncompleted", func(t *testing.T) {
-			have, _, err := s.ListRetryBatchSpecWorkspaces(ctx, ListRetryBatchSpecWorkspacesOpts{
+			have, err := s.ListRetryBatchSpecWorkspaces(ctx, ListRetryBatchSpecWorkspacesOpts{
 				BatchSpecID: 9999,
 			})
 			require.NoError(t, err)

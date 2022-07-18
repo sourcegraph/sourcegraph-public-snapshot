@@ -1482,7 +1482,7 @@ func (s *Service) RetryBatchSpecExecution(ctx context.Context, opts RetryBatchSp
 		return errors.New("batch spec already applied")
 	}
 
-	workspaces, _, err := tx.ListRetryBatchSpecWorkspaces(ctx, store.ListRetryBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID, IncludeCompleted: opts.IncludeCompleted})
+	workspaces, err := tx.ListRetryBatchSpecWorkspaces(ctx, store.ListRetryBatchSpecWorkspacesOpts{BatchSpecID: batchSpec.ID, IncludeCompleted: opts.IncludeCompleted})
 	if err != nil {
 		return errors.Wrap(err, "loading batch spec workspace execution jobs")
 	}
