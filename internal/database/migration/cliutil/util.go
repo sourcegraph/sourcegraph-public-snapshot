@@ -7,8 +7,13 @@ import (
 
 	"github.com/urfave/cli/v2"
 
+	"github.com/sourcegraph/log"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
@@ -106,4 +111,22 @@ func getPivilegedModeFromFlags(cmd *cli.Context, out *output.Output, unprivilege
 	}
 
 	return runner.ApplyPrivilegedMigrations, nil
+}
+
+func extractDatabase(ctx context.Context, r Runner) (database.DB, error) {
+	store, err := r.Store(ctx, "frontend")
+	if err != nil {
+		return nil, err
+	}
+
+	// NOTE: The migration runner package cannot import basestore without
+	// creating a cyclic import in db connection packages. Hence, we cannot
+	// embed basestore.ShareableStore here and must "backdoor" extract the
+	// database connection.
+	shareableStore, ok := basestore.Raw(store)
+	if !ok {
+		return nil, errors.New("store does not support direct database handle access")
+	}
+
+	return database.NewDB(log.Scoped("migrator", ""), shareableStore), nil
 }

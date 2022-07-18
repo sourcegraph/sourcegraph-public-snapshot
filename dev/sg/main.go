@@ -39,7 +39,8 @@ func main() {
 		if std.Out == nil {
 			std.Out = std.NewOutput(os.Stdout, false)
 		}
-		std.Out.WriteFailuref(err.Error())
+		// Do not treat error message as a format string
+		std.Out.WriteFailuref("%s", err.Error())
 		os.Exit(1)
 	}
 }
@@ -283,7 +284,8 @@ var sg = &cli.App{
 		// Render error
 		errMsg := err.Error()
 		if errMsg != "" {
-			std.Out.WriteFailuref(errMsg)
+			// Do not treat error message as a format string
+			std.Out.WriteFailuref("%s", errMsg)
 		}
 
 		// Determine exit code
