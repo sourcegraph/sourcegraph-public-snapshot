@@ -10,17 +10,12 @@ import { BatchSpecDownloadLink, getFileName } from '../../BatchSpec'
 
 import styles from './DownloadSpecModal.module.scss'
 
-// TODO: Several lines have been commented out to disable the "Don't show this again"
-// functionality for "Download spec for src-cli" modal.
-// See https://github.com/sourcegraph/sourcegraph/issues/37360.
-// Uncomment all of these lines to restore it.
-
 export interface DownloadSpecModalProps {
     name: string
     originalInput: string
     isLightTheme: boolean
     setIsDownloadSpecModalOpen: (condition: boolean) => void
-    // setDownloadSpecModalDismissed: (condition: boolean) => void
+    setDownloadSpecModalDismissed: (condition: boolean) => void
 }
 
 export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<DownloadSpecModalProps>> = ({
@@ -28,7 +23,7 @@ export const DownloadSpecModal: React.FunctionComponent<React.PropsWithChildren<
     originalInput,
     isLightTheme,
     setIsDownloadSpecModalOpen,
-    // setDownloadSpecModalDismissed,
+    setDownloadSpecModalDismissed,
 }) => (
     <Modal
         onDismiss={() => {
