@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-set -euxo pipefail
+set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 
 echo "--- (enterprise) pre-build frontend"
