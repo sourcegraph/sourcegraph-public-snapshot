@@ -129,6 +129,17 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
     },
 
+    // Lockfile indexes & dependency search routes
+    {
+        path: '/code-intelligence/lockfiles',
+        render: lazyComponent(
+            () => import('../codeintel/lockfiles/pages/CodeIntelLockfilesPage'),
+            'CodeIntelLockfilesPage'
+        ),
+        exact: true,
+        condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
+    },
+
     // Code intelligence configuration
     {
         path: '/code-intelligence/configuration',
