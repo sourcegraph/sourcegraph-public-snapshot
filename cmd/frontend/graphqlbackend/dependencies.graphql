@@ -36,7 +36,6 @@ type LockfileIndexConnection {
     pageInfo: PageInfo!
 }
 
-
 """
 Fidelity of a lockfile index.
 """
