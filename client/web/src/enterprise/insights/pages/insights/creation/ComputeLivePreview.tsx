@@ -117,12 +117,8 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
 
                 {state.status === StateStatus.Data && (
                     <LegendList className="mt-3">
-                        {state.data.series.map(series => (
-                            <LegendItem
-                                key={series.id}
-                                color={getComputeSeriesColor(series)}
-                                name={getComputeSeriesName(series)}
-                            />
+                        {mapSeriesToCompute(state.data.series).map(series => (
+                            <LegendItem key={series.name} color={series.fill} name={series.name} />
                         ))}
                     </LegendList>
                 )}
@@ -132,7 +128,10 @@ export const ComputeLivePreview: React.FunctionComponent<ComputeLivePreviewProps
 }
 
 const mapSeriesToCompute = (series: Series<BackendInsightDatum>[]): LanguageUsageDatum[] => {
-    const seriesGroups = groupBy(series, series => series.name)
+    const seriesGroups = groupBy(
+        series.filter(series => series.name),
+        series => series.name
+    )
 
     // Group series result by seres name and sum up series value with the same name
     return Object.keys(seriesGroups).map(key =>

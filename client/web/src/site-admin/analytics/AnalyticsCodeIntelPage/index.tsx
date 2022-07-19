@@ -111,10 +111,10 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
         const calculatorProps = {
             page: 'CodeIntel',
-            label: 'Intel Events',
+            label: 'Intel events',
             color: 'var(--purple)',
             description:
-                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this caculation down into use cases and types of code intel to be able to independantly value important product capabilities.',
+                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code intel to be able to independently value product capabilities.',
             value: totalEvents,
             items: [
                 {
@@ -122,7 +122,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     minPerItem: 0.5,
                     value: inAppEvents.summary.totalCount,
                     description:
-                        'In app code navigation supports developers finding the impact of a change by listing references and finding definitions to reference.',
+                        'In app code navigation supports developers finding the impact of a change or code to reuse by listing references and finding definitions.',
                 },
                 {
                     label: 'Code intel on code hosts <br/> via the browser extension',
@@ -163,8 +163,6 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     }
 
     const repos = data?.site.analytics.repos
-    const browserExtensionInstalls =
-        data?.site.analytics.codeIntel.browserExtensionInstalls.summary.totalRegisteredUsers || 0
 
     return (
         <>
@@ -229,11 +227,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     <div className={classNames(styles.border, 'mb-3')} />
                     <ul className="mb-3 pl-3">
                         <Text as="li">
-                            <b>{browserExtensionInstalls}</b> {browserExtensionInstalls === 1 ? 'user' : 'users'} have
-                            installed the browser extension.{' '}
+                            Promote installation of the{' '}
                             <AnchorLink to="/help/integration/browser_extension" target="_blank">
-                                Promote installation of the browser extesion to increase value.
-                            </AnchorLink>
+                                browser extension
+                            </AnchorLink>{' '}
+                            to add code intelligence to your code hosts.
                         </Text>
                         {repos && (
                             <Text as="li">

@@ -98,6 +98,7 @@ The store relies on a jobs table _specific to your worker_ to exist with the fol
 | `last_heartbeat_at` | timestamp with time zone | Updated periodically to ensure that the handler didn't die processing the job |
 | `execution_logs`    | json[]                   | A list of log entries from the most recent processing attempt |
 | `worker_hostname`   | text                     | Hostname of the worker that picked up the job |
+| `cancel`            | boolean                  | Set to true to cancel an in-flight job |
 
 The target jobs table may have additional columns as the store only selects and updates records. Again, inserting/enqueueing job records is a task that is **not** handled by the worker, thus columns with non-null constraints are safe to add here as well.
 
@@ -133,6 +134,12 @@ To handle this case, register a [resetter]() instance to periodically run in the
 
 This behavior can be controlled by setting the `StalledMaxAge` and `MaxNumResets` options on the database-backed store instance, which control the maximum grace period setting a record to _processing_ and locking it and number of times a record can be reset (to avoid poison messages from indefinitely crashing workers), respectively. Once a record hits the maximum number of resets, the resetter will move it from state _processing_ to _failed_ with a canned failure message.
 
+### Cancelation
+
+Cancelation of jobs in the database-backend store can be achieved in two ways:
+1. By removing the job record from the database. The worker will eventually notice that the record doesn't exist anymore and will stop execution.
+1. By setting `cancel` to `TRUE` on the record. If `CancelInterval` is set on the worker store, it will check for records to be canceled. These will ultimately end up in state `'canceled'`. This can be used to keep the record while still being able to cancel workloads.
+
 ## Adding a new worker
 
 This guide will show you how to add a new database-backed worker instance.
@@ -159,6 +166,7 @@ CREATE TABLE example_jobs (
   last_heartbeat_at timestamp with time zone,
   execution_logs    json[],
   worker_hostname   text not null default '',
+  cancel            boolean not null default false
 
   repository_id integer not null
 );
@@ -199,6 +207,7 @@ type ExampleJob struct {
 	LastHeartbeatAt time.Time
 	ExecutionLogs   []workerutil.ExecutionLogEntry
 	WorkerHostname  string
+  Cancel          bool
 
 	RepositoryID   int
 	RepositoryName string
@@ -217,6 +226,7 @@ var exampleJobColumns = []*sqlf.Query{
 	sqlf.Sprintf("example_jobs.last_heartbeat_at"),
 	sqlf.Sprintf("example_jobs.execution_logs"),
 	sqlf.Sprintf("example_jobs.worker_hostname"),
+	sqlf.Sprintf("example_jobs.cancel"),
 	sqlf.Sprintf("example_jobs.repository_id"),
 	sqlf.Sprintf("example_jobs.repository_name"),
 }
@@ -256,6 +266,7 @@ func scanFirstExampleJob(rows *sql.Rows, queryErr error) (_ workerutil.Record, e
 			&job.LastHeartbeatAt,
 			pq.Array(&executionLogs),
 			&job.WorkerHostname,
+			&job.Cancel,
 			&job.RepositoryID,
 			&job.RepositoryName,
 		); err != nil {
@@ -303,6 +314,7 @@ func makeStore(db dbutil.DB) store.Store {
 		MaxNumResets:      5,
 		HeartbeatInterval: time.Second,
 		StalledMaxAge:     time.Second * 5,
+    CancelInterval:    time.Second,
 	})
 }
 ```

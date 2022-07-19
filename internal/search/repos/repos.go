@@ -10,12 +10,9 @@ import (
 
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
-	otlog "github.com/opentracing/opentracing-go/log"
-	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
@@ -944,45 +941,6 @@ func (e MissingLockfileIndexing) Error() string {
 
 	fmt.Fprintf(&out, "%s", strings.Join(revs, ","))
 	return out.String()
-}
-
-// Get all private repos for the the current actor. On sourcegraph.com, those are
-// only the repos directly added by the user. Otherwise it's all repos the user has
-// access to on all connected code hosts / external services.
-func PrivateReposForActor(ctx context.Context, logger log.Logger, db database.DB, repoOptions search.RepoOptions) []types.MinimalRepo {
-	tr, ctx := trace.New(ctx, "PrivateReposForActor", "")
-	defer tr.Finish()
-
-	userID := int32(0)
-	if envvar.SourcegraphDotComMode() {
-		if a := actor.FromContext(ctx); a.IsAuthenticated() {
-			userID = a.UID
-		} else {
-			tr.LazyPrintf("skipping private repo resolution for unauthed user")
-			return nil
-		}
-	}
-	tr.LogFields(otlog.Int32("userID", userID))
-
-	// TODO: We should use repos.Resolve here. However, the logic for
-	// UserID is different to repos.Resolve, so we need to work out how
-	// best to address that first.
-	userPrivateRepos, err := db.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
-		UserID:         userID, // Zero valued when not in sourcegraph.com mode
-		OnlyPrivate:    true,
-		LimitOffset:    &database.LimitOffset{Limit: limits.SearchLimits(conf.Get()).MaxRepos + 1},
-		OnlyForks:      repoOptions.OnlyForks,
-		NoForks:        repoOptions.NoForks,
-		OnlyArchived:   repoOptions.OnlyArchived,
-		NoArchived:     repoOptions.NoArchived,
-		ExcludePattern: query.UnionRegExps(repoOptions.MinusRepoFilters),
-	})
-
-	if err != nil {
-		logger.Error("doResults: failed to list user private repos", log.Error(err), log.Int32("user-id", userID))
-		tr.LazyPrintf("error resolving user private repos: %v", err)
-	}
-	return userPrivateRepos
 }
 
 type RepoRevSpecs struct {

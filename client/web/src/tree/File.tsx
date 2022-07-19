@@ -2,7 +2,9 @@
 import * as React from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
+import { FileDecoration } from 'sourcegraph'
 
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon } from '@sourcegraph/wildcard'
 
 import {
@@ -16,10 +18,13 @@ import {
     TreeRow,
 } from './components'
 import { FileDecorator } from './FileDecorator'
-import { TreeLayerProps } from './TreeLayer'
-import { maxEntries, treePadding } from './util'
+import { maxEntries, TreeEntryInfo, treePadding } from './util'
 
-interface FileProps extends TreeLayerProps {
+interface FileProps extends ThemeProps {
+    fileDecorations?: FileDecoration[]
+    entryInfo: TreeEntryInfo
+    depth: number
+    index: number
     className?: string
     maxEntries: number
     handleTreeClick: () => void

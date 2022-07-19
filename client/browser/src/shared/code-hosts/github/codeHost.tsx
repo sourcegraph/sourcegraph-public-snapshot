@@ -235,7 +235,7 @@ const genericCodeViewResolver: ViewResolver<CodeView> = {
     },
     resolveView: (element: HTMLElement): CodeView | null => {
         if (element.querySelector('article.markdown-body')) {
-            // This code view is rendered markdown, we shouldn't add code intelligence
+            // This code view is rendered markdown, we shouldn't add code navigation
             return null
         }
 

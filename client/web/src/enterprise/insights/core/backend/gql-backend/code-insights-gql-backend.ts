@@ -18,7 +18,7 @@ import {
 import { fromObservableQuery } from '@sourcegraph/http-client'
 
 import { ALL_INSIGHTS_DASHBOARD } from '../../constants'
-import { Insight, InsightDashboard, InsightsDashboardOwner } from '../../types'
+import { Insight, InsightDashboard, InsightsDashboardOwner, isComputeInsight } from '../../types'
 import { CodeInsightsBackend } from '../code-insights-backend'
 import {
     AccessibleInsightInfo,
@@ -64,8 +64,8 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
     constructor(private apolloClient: ApolloClient<object>) {}
 
     // Insights
-    public getInsights = (input: { dashboardId: string }): Observable<Insight[]> => {
-        const { dashboardId } = input
+    public getInsights = (input: { dashboardId: string; withCompute: boolean }): Observable<Insight[]> => {
+        const { dashboardId, withCompute } = input
 
         // Handle virtual dashboard that doesn't exist in BE gql API and cause of that
         // we need to use here insightViews query to fetch all available insights
@@ -77,7 +77,10 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
                     // current dashboard
                     nextFetchPolicy: 'cache-first',
                 })
-            ).pipe(map(({ data }) => data.insightViews.nodes.map(createInsightView)))
+            ).pipe(
+                map(({ data }) => data.insightViews.nodes.map(createInsightView)),
+                map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
+            )
         }
 
         // Get all insights from the user-created dashboard
@@ -91,7 +94,8 @@ export class CodeInsightsGqlBackend implements CodeInsightsBackend {
             })
         ).pipe(
             map(({ data }) => data.insightsDashboards.nodes[0]),
-            map(dashboard => dashboard.views?.nodes.map(createInsightView) ?? [])
+            map(dashboard => dashboard.views?.nodes.map(createInsightView) ?? []),
+            map(insights => (withCompute ? insights : insights.filter(insight => !isComputeInsight(insight))))
         )
     }
 

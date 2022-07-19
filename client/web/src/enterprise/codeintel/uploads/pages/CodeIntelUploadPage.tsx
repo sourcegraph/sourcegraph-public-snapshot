@@ -181,7 +181,7 @@ export const CodeIntelUploadPage: FunctionComponent<React.PropsWithChildren<Code
         <ErrorAlert prefix="Error deleting LSIF upload" error={deletionOrError} />
     ) : (
         <div className="site-admin-lsif-upload-page w-100">
-            <PageTitle title="Precise code intelligence uploads" />
+            <PageTitle title="Code graph data uploads" />
             {isErrorLike(uploadOrError) ? (
                 <ErrorAlert prefix="Error loading LSIF upload" error={uploadOrError} />
             ) : !uploadOrError ? (

@@ -31,7 +31,7 @@ func SetupRoutes(executorStore executor.Store, queueOptionsMap []QueueOptions, r
 			"markErrored":             h.handleMarkErrored,
 			"markFailed":              h.handleMarkFailed,
 			"heartbeat":               h.handleHeartbeat,
-			"canceled":                h.handleCanceled,
+			"canceledJobs":            h.handleCanceledJobs,
 		}
 		for path, handler := range routes {
 			subRouter.Path(fmt.Sprintf("/%s", path)).Methods("POST").HandlerFunc(handler)
@@ -137,12 +137,12 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /{queueName}/canceled
-func (h *handler) handleCanceled(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.CanceledRequest
+// POST /{queueName}/canceledJobs
+func (h *handler) handleCanceledJobs(w http.ResponseWriter, r *http.Request) {
+	var payload apiclient.CanceledJobsRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, any, error) {
-		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName)
+		canceledIDs, err := h.canceled(r.Context(), payload.ExecutorName, payload.KnownJobIDs)
 		return http.StatusOK, canceledIDs, err
 	})
 }
