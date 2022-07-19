@@ -8,18 +8,26 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/zoekt"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -499,5 +507,129 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	}
 	if !reflect.DeepEqual(resolved.RepoRevs, wantRepositoryRevisions) {
 		t.Errorf("got repository revisions %+v, want %+v", resolved.RepoRevs, wantRepositoryRevisions)
+	}
+}
+
+func TestRepoHasFileContent(t *testing.T) {
+	repoA := types.MinimalRepo{ID: 1, Name: "example.com/1"}
+	repoB := types.MinimalRepo{ID: 2, Name: "example.com/2"}
+	repoC := types.MinimalRepo{ID: 3, Name: "example.com/3"}
+	repoD := types.MinimalRepo{ID: 4, Name: "example.com/4"}
+
+	mkHead := func(repo types.MinimalRepo) *search.RepositoryRevisions {
+		return &search.RepositoryRevisions{
+			Repo: repo,
+			Revs: []string{""},
+		}
+	}
+
+	repos := database.NewMockRepoStore()
+	repos.ListMinimalReposFunc.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+		return []types.MinimalRepo{repoA, repoB, repoC, repoD}, nil
+	})
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	corpus := map[string]map[string]map[string]struct{}{
+		string(repoA.Name): {
+			"pathA": {
+				"lineA": {},
+				"line1": {},
+				"line2": {},
+			},
+		},
+		string(repoB.Name): {
+			"pathB": {
+				"lineB": {},
+				"line1": {},
+				"line2": {},
+			},
+		},
+		string(repoC.Name): {
+			"pathC": {
+				"lineC": {},
+				"line1": {},
+				"line2": {},
+			},
+		},
+		string(repoD.Name): {
+			"pathD": {
+				"lineD": {},
+				"line1": {},
+				"line2": {},
+			},
+		},
+	}
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
+		if r, ok := corpus[string(repo)]; ok {
+			for path, lines := range r {
+				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
+					for line := range lines {
+						if p.Pattern == line || p.Pattern == "" {
+							onMatches([]*protocol.FileMatch{{}})
+						}
+					}
+				}
+			}
+		}
+		return false, nil
+	}
+
+	// Only repos A and B are indexed
+	mockZoekt := &searchbackend.FakeSearcher{
+		Repos: []*zoekt.RepoListEntry{{
+			Repository: zoekt.Repository{
+				ID:   uint32(repoA.ID),
+				Name: string(repoA.Name),
+			},
+		}, {
+			Repository: zoekt.Repository{
+				ID:   uint32(repoB.ID),
+				Name: string(repoB.Name),
+			},
+		}},
+	}
+
+	cases := []struct {
+		name     string
+		filters  []query.RepoHasFileContentArgs
+		expected []*search.RepositoryRevisions
+	}{{
+		name:    "no filters",
+		filters: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoA),
+			mkHead(repoB),
+			mkHead(repoC),
+			mkHead(repoD),
+		},
+	}, {
+		name: "bad path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path: "bad path",
+		}},
+		expected: []*search.RepositoryRevisions{},
+	}, {
+		name: "one path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path: "pathB",
+		}},
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoB),
+		},
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res := NewResolver(logtest.Scoped(t), db, endpoint.Static("test"), mockZoekt)
+			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
+				RepoFilters:    []string{".*"},
+				HasFileContent: tc.filters,
+			})
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expected, resolved.RepoRevs)
+		})
 	}
 }
