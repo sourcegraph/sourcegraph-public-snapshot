@@ -57,7 +57,7 @@ func TestBulkProcessor(t *testing.T) {
 			tx:      bstore,
 			sourcer: stesting.NewFakeSourcer(nil, fake),
 		}
-		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN")}
+		job := &types.ChangesetJob{JobType: types.ChangesetJobType("UNKNOWN"), UserID: user.ID}
 		err := bp.Process(ctx, job)
 		if err == nil || err.Error() != `invalid job type "UNKNOWN"` {
 			t.Fatalf("unexpected error returned %s", err)

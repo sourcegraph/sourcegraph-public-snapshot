@@ -583,6 +583,7 @@ describe('Batches', () => {
         // TODO: SSBC has to go through accessibility audits before this can pass.
         it.skip('is styled correctly', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes/create')
+            await driver.page.waitForSelector('[data-testid="batch-spec-yaml-file"]')
             await percySnapshotWithVariants(driver.page, 'Create batch change')
             await accessibilityAudit(driver.page)
         })

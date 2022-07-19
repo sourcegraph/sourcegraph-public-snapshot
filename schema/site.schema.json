@@ -1090,10 +1090,13 @@
               "pattern": "^https?://"
             }
           }
+        },
+        "gitserver.accessLogs": {
+          "description": "Enable gitserver access logging.",
+          "type": "boolean",
+          "default": false
         }
-      },
-      "examples": [{ "sentry": { "dsn": "https://mykey@sentry.io/myproject" } }],
-      "group": "Misc."
+      }
     },
     "externalURL": {
       "description": "The externally accessible URL for Sourcegraph (i.e., what you type into your browser). Previously called `appURL`. Only root URLs are allowed.",

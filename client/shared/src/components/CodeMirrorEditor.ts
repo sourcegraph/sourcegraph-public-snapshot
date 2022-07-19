@@ -1,9 +1,21 @@
-import { useEffect, useState } from 'react'
+/* eslint-disable jsdoc/check-indentation */
+import { useEffect, useMemo, useState } from 'react'
 
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
-import { EditorState, EditorStateConfig, Extension, StateEffect } from '@codemirror/state'
+import { Compartment, EditorState, EditorStateConfig, Extension, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
+
+if (process.env.INTEGRATION_TESTS) {
+    // Expose findFromDOM on the global object to be able to get the real input
+    // value in integration tests
+    // Typecast "as any" is used to avoid TypeScript complaining about window
+    // not having this property. We decided that it's fine to use this in a test
+    // context
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access,@typescript-eslint/no-explicit-any
+    ;(window as any).CodeMirrorFindFromDOM = (element: HTMLElement): ReturnType<typeof EditorView['findFromDOM']> =>
+        EditorView.findFromDOM(element)
+}
 
 /**
  * Hook for rendering and updating a CodeMirror instance.
@@ -58,6 +70,49 @@ export function useCodeMirror(
     }, [extensions])
 
     return view
+}
+
+/**
+ * Helper hook for extensions that depend on on some input props.
+ * With this hook the extension is isolated in a compartment so it can be
+ * updated without reconfiguring the whole editor.
+ *
+ * Use `useMemo` to compute the extension from some input and `useEffect` to
+ * update it:
+ *
+ * const extension = useMemo(() => EditorView.darkTheme(isLightTheme === false), [isLightTheme])
+ * const [compartment, updateCompartment] = useCompartment(extension)
+ * const editor = useCodeMirror(..., ..., compartment)
+ *
+ * useEffect(() => {
+ *   if (editor) {
+ *     updateCompartment(extension)
+ *  }
+ *}, [editor, extension])
+ *
+ * @param initialExtension - the extension to use when creating the editor
+ *
+ * @returns A compartmentalized extension and a function to update the
+ * compartment
+ */
+export function useCompartment(
+    initialExtension: Extension
+): [Extension, (editor: EditorView, extension: Extension) => void] {
+    return useMemo(() => {
+        const compartment = new Compartment()
+        return [
+            compartment.of(initialExtension),
+            (editor, extension: Extension) => {
+                // This check avoids an unnecessary update when the editor is
+                // first created
+                if (initialExtension !== extension) {
+                    editor.dispatch({ effects: compartment.reconfigure(extension) })
+                }
+            },
+        ]
+        // initialExtension is intentionally ignored in subsequent renders
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [])
 }
 
 /**

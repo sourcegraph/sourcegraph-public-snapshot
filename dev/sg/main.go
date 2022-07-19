@@ -39,7 +39,8 @@ func main() {
 		if std.Out == nil {
 			std.Out = std.NewOutput(os.Stdout, false)
 		}
-		std.Out.WriteFailuref(err.Error())
+		// Do not treat error message as a format string
+		std.Out.WriteFailuref("%s", err.Error())
 		os.Exit(1)
 	}
 }
@@ -129,9 +130,14 @@ var sg = &cli.App{
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
+		// Add feedback flag to all commands and subcommands - we add this here, before
+		// we exit in bashCompletionsMode, so that '--feedback' is available via
+		// autocompletions.
+		addFeedbackFlags(cmd.App.Commands)
+
+		// All other setup pertains to running commands - to keep completions fast,
+		// we skip all other setup when in bashCompletions mode.
 		if bashCompletionsMode {
-			// All other setup pertains to running commands - to keep completions fast,
-			// we skip all other setup.
 			return nil
 		}
 
@@ -147,11 +153,12 @@ var sg = &cli.App{
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
 
 		// Initialize context
-		cmd.Context = background.Context(cmd.Context)
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
 		}
+		cmd.Context = background.Context(cmd.Context, verbose)
+		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// Set up analytics and hooks for each command.
 		if !disableAnalytics {
@@ -184,9 +191,6 @@ var sg = &cli.App{
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
 
-		// Add feedback subcommand to all commands and subcommands
-		addFeedbackFlags(cmd.App.Commands)
-
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {
 			return errors.Newf("--config must not be empty")
@@ -215,7 +219,7 @@ var sg = &cli.App{
 				if err != nil {
 					out.WriteWarningf("update check: %s", err)
 				}
-			}, verbose)
+			})
 		}
 
 		// Call registered hooks last
@@ -280,7 +284,8 @@ var sg = &cli.App{
 		// Render error
 		errMsg := err.Error()
 		if errMsg != "" {
-			std.Out.WriteFailuref(errMsg)
+			// Do not treat error message as a format string
+			std.Out.WriteFailuref("%s", errMsg)
 		}
 
 		// Determine exit code

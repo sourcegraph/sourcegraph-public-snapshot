@@ -16,6 +16,7 @@ export interface ReposMatchingPatternProps {
     setPattern: (value: string) => void
     onDelete: () => void
     disabled: boolean
+    autoFocus?: boolean
 }
 
 export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<ReposMatchingPatternProps>> = ({
@@ -24,6 +25,7 @@ export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<Rep
     setPattern,
     onDelete,
     disabled,
+    autoFocus,
 }) => {
     const [localPattern, setLocalPattern] = useState('')
     useEffect(() => setLocalPattern(pattern), [pattern])
@@ -41,6 +43,7 @@ export const ReposMatchingPattern: FunctionComponent<React.PropsWithChildren<Rep
                         setLocalPattern(value)
                         debouncedSetPattern(value)
                     }}
+                    autoFocus={autoFocus}
                     disabled={disabled}
                     required={true}
                     label={`Repository pattern #${index + 1}`}

@@ -395,7 +395,7 @@ require (
 	go.mongodb.org/mongo-driver v1.8.3 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.8.0 // indirect
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.8.0 // indirect
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.8.0
 	go.opentelemetry.io/proto/otlp v0.18.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
@@ -403,7 +403,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.46.2
+	google.golang.org/grpc v1.46.2 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
@@ -421,7 +421,7 @@ require (
 // or intentional forks.
 replace (
 	// We maintain our own fork of Zoekt. Update with ./dev/zoekt/update
-	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220712060734-f7f68fd7f337
+	github.com/google/zoekt => github.com/sourcegraph/zoekt v0.0.0-20220719111241-09ac1ff91e8c
 	// We use a fork of Alertmanager to allow prom-wrapper to better manipulate Alertmanager configuration.
 	// See https://docs.sourcegraph.com/dev/background-information/observability/prometheus
 	github.com/prometheus/alertmanager => github.com/sourcegraph/alertmanager v0.21.1-0.20211110092431-863f5b1ee51b

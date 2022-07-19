@@ -276,7 +276,7 @@ export const withActivation = <P extends ActivationProps>(
         private updateCompletionStatus = (update: Partial<ActivationCompletionStatus>): void =>
             this.updates.next(update)
 
-        public render(): React.ReactFragment | null {
+        public render(): React.ReactNode {
             const steps = this.steps()
             const activationProps: ActivationProps = {
                 activation: steps && {

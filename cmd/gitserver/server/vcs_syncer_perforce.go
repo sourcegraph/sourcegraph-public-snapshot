@@ -83,7 +83,7 @@ func (s *PerforceDepotSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.U
 }
 
 // Fetch tries to fetch updates of a Perforce depot as a Git repository.
-func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
+func (s *PerforceDepotSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, _ string) error {
 	username, password, host, depot, err := decomposePerforceRemoteURL(remoteURL)
 	if err != nil {
 		return errors.Wrap(err, "decompose")

@@ -27,12 +27,12 @@ describe('getDiagnostics()', () => {
             expect(parseAndDiagnose('case:maybe', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: Invalid filter value, expected one of: yes, no.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 5
+                    "severity": "error",
+                    "message": "Invalid filter value, expected one of: yes, no.",
+                    "range": {
+                      "start": 0,
+                      "end": 10
+                    }
                   }
                 ]
             `)
@@ -58,12 +58,12 @@ describe('getDiagnostics()', () => {
             expect(parseAndDiagnose('meatadata file: ', SearchPatternType.regexp)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 4,
-                    "message": "Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g., file:\\" a term\\".",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 11,
-                    "endColumn": 15
+                    "severity": "warning",
+                    "message": "This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`file:\\" a term\\"\`.",
+                    "range": {
+                      "start": 10,
+                      "end": 15
+                    }
                   }
                 ]
             `)
@@ -73,12 +73,12 @@ describe('getDiagnostics()', () => {
             expect(parseAndDiagnose('meatadata type: ', SearchPatternType.regexp)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: Invalid filter value, expected one of: diff, commit, symbol, repo, path, file.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 11,
-                    "endColumn": 15
+                    "severity": "error",
+                    "message": "Invalid filter value, expected one of: diff, commit, symbol, repo, path, file.",
+                    "range": {
+                      "start": 10,
+                      "end": 15
+                    }
                   }
                 ]
             `)
@@ -90,24 +90,56 @@ describe('getDiagnostics()', () => {
             expect(parseAndDiagnose('author:me', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 7
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 0,
+                      "end": 9
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 0,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 0,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
             expect(parseAndDiagnose('author:me test', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 7
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 0,
+                      "end": 9
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 0,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 0,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
@@ -116,36 +148,100 @@ describe('getDiagnostics()', () => {
             ).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 7
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 0,
+                      "end": 9
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 0,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 0,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 11,
-                    "endColumn": 17
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 10,
+                      "end": 26
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 10,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 10,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 28,
-                    "endColumn": 33
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 27,
+                      "end": 44
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 27,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 27,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 46,
-                    "endColumn": 53
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 45,
+                      "end": 57
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 45,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 45,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
@@ -153,28 +249,76 @@ describe('getDiagnostics()', () => {
                 .toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 6
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 0,
+                      "end": 15
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 0,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 0,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 17,
-                    "endColumn": 22
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 16,
+                      "end": 33
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 16,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 16,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: this filter requires \`type:commit\` or \`type:diff\` in the query",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 35,
-                    "endColumn": 36
+                    "severity": "error",
+                    "message": "This filter requires \`type:commit\` or \`type:diff\` in the query",
+                    "range": {
+                      "start": 34,
+                      "end": 40
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"type:commit\\"",
+                        "change": {
+                          "from": 34,
+                          "insert": "type:commit "
+                        }
+                      },
+                      {
+                        "label": "Add \\"type:diff\\"",
+                        "change": {
+                          "from": 34,
+                          "insert": "type:diff "
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
@@ -204,24 +348,48 @@ describe('getDiagnostics()', () => {
             expect(parseAndDiagnose('rev:main test', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 4
+                    "severity": "error",
+                    "message": "Query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
+                    "range": {
+                      "start": 0,
+                      "end": 8
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"repo:\\"",
+                        "change": {
+                          "from": 8,
+                          "insert": " repo:"
+                        },
+                        "selection": {
+                          "anchor": 14
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
             expect(parseAndDiagnose('revision:main test', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 9
+                    "severity": "error",
+                    "message": "Query contains \`rev:\` without \`repo:\`. Add a \`repo:\` filter.",
+                    "range": {
+                      "start": 0,
+                      "end": 13
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"repo:\\"",
+                        "change": {
+                          "from": 13,
+                          "insert": " repo:"
+                        },
+                        "selection": {
+                          "anchor": 19
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
@@ -231,40 +399,104 @@ describe('getDiagnostics()', () => {
             expect(parseAndDiagnose('rev:main repo:test@dev test', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: You have specified both \`@\` and \`rev:\` for a repo filter and I don\`t know how to interpret this. Remove either \`@\` or \`rev:\`",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 10,
-                    "endColumn": 14
+                    "severity": "error",
+                    "message": "You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
+                    "range": {
+                      "start": 9,
+                      "end": 22
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove @<rev>",
+                        "change": {
+                          "from": 18,
+                          "to": 22
+                        }
+                      },
+                      {
+                        "label": "Remove \\"rev:\\" filter",
+                        "change": {
+                          "from": 0,
+                          "to": 8
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: You have specified both \`@\` and \`rev:\` for a repo filter and I don\`t know how to interpret this. Remove either \`@\` or \`rev:\`",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 4
+                    "severity": "error",
+                    "message": "You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
+                    "range": {
+                      "start": 0,
+                      "end": 8
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove @<rev>",
+                        "change": {
+                          "from": 18,
+                          "to": 22
+                        }
+                      },
+                      {
+                        "label": "Remove \\"rev:\\" filter",
+                        "change": {
+                          "from": 0,
+                          "to": 8
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
             expect(parseAndDiagnose('rev:main r:test@dev test', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: You have specified both \`@\` and \`rev:\` for a repo filter and I don\`t know how to interpret this. Remove either \`@\` or \`rev:\`",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 10,
-                    "endColumn": 11
+                    "severity": "error",
+                    "message": "You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
+                    "range": {
+                      "start": 9,
+                      "end": 19
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove @<rev>",
+                        "change": {
+                          "from": 15,
+                          "to": 19
+                        }
+                      },
+                      {
+                        "label": "Remove \\"rev:\\" filter",
+                        "change": {
+                          "from": 0,
+                          "to": 8
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: You have specified both \`@\` and \`rev:\` for a repo filter and I don\`t know how to interpret this. Remove either \`@\` or \`rev:\`",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 4
+                    "severity": "error",
+                    "message": "You have specified both \`@<rev>\` and \`rev:\` for a repo filter and I don't know how to interpret this. Remove either \`@<rev>\` or \`rev:\`",
+                    "range": {
+                      "start": 0,
+                      "end": 8
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove @<rev>",
+                        "change": {
+                          "from": 15,
+                          "to": 19
+                        }
+                      },
+                      {
+                        "label": "Remove \\"rev:\\" filter",
+                        "change": {
+                          "from": 0,
+                          "to": 8
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
@@ -274,48 +506,80 @@ describe('getDiagnostics()', () => {
             expect(parseAndDiagnose('rev:main repo: test', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 4,
-                    "message": "Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g., repo:\\" a term\\".",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 10,
-                    "endColumn": 14
+                    "severity": "warning",
+                    "message": "This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`repo:\\" a term\\"\`.",
+                    "range": {
+                      "start": 9,
+                      "end": 14
+                    }
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 10,
-                    "endColumn": 14
+                    "severity": "error",
+                    "message": "Query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "range": {
+                      "start": 9,
+                      "end": 14
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"repo:\\" value",
+                        "selection": {
+                          "anchor": 14
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 4
+                    "severity": "error",
+                    "message": "Query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "range": {
+                      "start": 0,
+                      "end": 8
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"repo:\\" value",
+                        "selection": {
+                          "anchor": 14
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
             expect(parseAndDiagnose('rev:main repo:', SearchPatternType.literal)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 10,
-                    "endColumn": 14
+                    "severity": "error",
+                    "message": "Query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "range": {
+                      "start": 9,
+                      "end": 14
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"repo:\\" value",
+                        "selection": {
+                          "anchor": 14
+                        }
+                      }
+                    ]
                   },
                   {
-                    "severity": 8,
-                    "message": "Error: query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 4
+                    "severity": "error",
+                    "message": "Query contains \`rev:\` with an empty \`repo:\` filter. Add a non-empty \`repo:\` filter.",
+                    "range": {
+                      "start": 0,
+                      "end": 8
+                    },
+                    "actions": [
+                      {
+                        "label": "Add \\"repo:\\" value",
+                        "selection": {
+                          "anchor": 14
+                        }
+                      }
+                    ]
                   }
                 ]
             `)
@@ -326,12 +590,12 @@ describe('getDiagnostics()', () => {
                 .toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 4,
-                    "message": "Warning: This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g., repo:\\" a term\\".",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 20,
-                    "endColumn": 24
+                    "severity": "warning",
+                    "message": "This filter is empty. Remove the space between the filter and value or quote the value to include the space. E.g. \`repo:\\" a term\\"\`.",
+                    "range": {
+                      "start": 19,
+                      "end": 24
+                    }
                   }
                 ]
             `)
@@ -343,12 +607,12 @@ describe('getDiagnostics()', () => {
             expect(parseAndDiagnose('type:symbol test', SearchPatternType.structural)).toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 5
+                    "severity": "error",
+                    "message": "Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
+                    "range": {
+                      "start": 0,
+                      "end": 11
+                    }
                   }
                 ]
             `)
@@ -356,12 +620,12 @@ describe('getDiagnostics()', () => {
                 .toMatchInlineSnapshot(`
                 [
                   {
-                    "severity": 8,
-                    "message": "Error: Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
-                    "startLineNumber": 1,
-                    "endLineNumber": 1,
-                    "startColumn": 1,
-                    "endColumn": 5
+                    "severity": "error",
+                    "message": "Structural search syntax only applies to searching file contents and is not compatible with \`type:\`. Remove this filter or switch to a different search type.",
+                    "range": {
+                      "start": 0,
+                      "end": 11
+                    }
                   }
                 ]
             `)

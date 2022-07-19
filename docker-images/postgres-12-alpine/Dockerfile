@@ -2,7 +2,7 @@
 # Please review the changes in /usr/local/share/postgresql/postgresql.conf.sample
 # If there is any change, you should ping @team/delivery
 # And Delivery will make sure changes are reflected in our deploy repository
-FROM postgres:12.7-alpine@sha256:b815f145ef6311e24e4bc4d165dad61b2d8e4587c96cea2944297419c5c93054
+FROM postgres:12.11-alpine@sha256:41eb5461276b12ff88cb38a82f7d939f2acb0dfddcedb93d1f4d69418c51cc5d
 
 ARG PING_UID=99
 ARG POSTGRES_UID=999

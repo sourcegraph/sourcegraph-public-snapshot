@@ -14,3 +14,5 @@ export enum NoResultsSectionID {
     COMMON_PROBLEMS = 'common-problems',
     VIDEOS = 'videos',
 }
+
+export type SidebarTabID = 'filters'

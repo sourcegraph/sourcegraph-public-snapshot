@@ -136,6 +136,7 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                     : 'Workspace in hidden repository'}
                 {workspace.__typename === 'VisibleBatchSpecWorkspace' && (
                     <Link to={workspace.repository.url} target="_blank" rel="noopener noreferrer">
+                        <VisuallyHidden>Go to repository</VisuallyHidden>
                         <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                     </Link>
                 )}
@@ -359,7 +360,7 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
     const [isExpanded, setIsExpanded] = useState(true)
     const [areChangesExpanded, setAreChangesExpanded] = useState(true)
 
-    // TODO: This should not happen. When the workspace is visibile, the changeset spec should be visible as well.
+    // TODO: This should not happen. When the workspace is visible, the changeset spec should be visible as well.
     if (node.__typename === 'HiddenChangesetSpec') {
         return (
             <Card>
@@ -383,12 +384,14 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
             >
                 <Icon aria-hidden={true} svgPath={isExpanded ? mdiChevronDown : mdiChevronRight} className="mr-1" />
                 <div className={styles.collapseHeader}>
-                    <H4 className="mb-0 d-inline-block mr-2">
-                        <H3 className={styles.result}>Result</H3>
+                    <Heading as="h4" styleAs="h3" className="mb-0 d-inline-block mr-2">
+                        <span className={styles.result}>Result</span>
                         {node.description.published !== null && (
-                            <Badge className="text-uppercase">{publishBadgeLabel(node.description.published)}</Badge>
+                            <Badge className="text-uppercase ml-2">
+                                {publishBadgeLabel(node.description.published)}
+                            </Badge>
                         )}{' '}
-                    </H4>
+                    </Heading>
                     <Icon aria-hidden={true} className="text-muted mr-1 flex-shrink-0" svgPath={mdiSourceBranch} />
                     <span className={classNames('text-monospace text-muted', styles.changesetSpecBranch)}>
                         {node.description.headRef}
@@ -403,12 +406,18 @@ const ChangesetSpecNode: React.FunctionComponent<React.PropsWithChildren<Changes
             <CollapsePanel>
                 <Card className={classNames('mt-2', styles.resultCard)}>
                     <CardBody>
-                        <H3>Changeset template</H3>
-                        <H4>{node.description.title}</H4>
+                        <Heading as="h5" styleAs="h3" className={styles.changesetTemplateHeader}>
+                            Changeset template
+                        </Heading>
+                        <Heading as="h6" styleAs="h4">
+                            {node.description.title}
+                        </Heading>
                         <Text className="mb-0">{node.description.body}</Text>
-                        <Text>
-                            <strong>Published:</strong> <PublishedValue published={node.description.published} />
-                        </Text>
+                        {node.description.published && (
+                            <Text>
+                                <strong>Published:</strong> {String(node.description.published)}
+                            </Text>
+                        )}
                         <Collapse isOpen={areChangesExpanded} onOpenChange={setAreChangesExpanded} openByDefault={true}>
                             <CollapseHeader as={Button} className="w-100 p-0 m-0 border-0 d-flex align-items-center">
                                 <Icon
@@ -446,18 +455,6 @@ function publishBadgeLabel(state: Scalars['PublishedValue']): string {
         case true:
             return 'will publish'
     }
-}
-
-const PublishedValue: React.FunctionComponent<
-    React.PropsWithChildren<{ published: Scalars['PublishedValue'] | null }>
-> = ({ published }) => {
-    if (published === null) {
-        return <i>select from UI when applying</i>
-    }
-    if (published === 'draft') {
-        return <>draft</>
-    }
-    return <>{String(published)}</>
 }
 
 interface WorkspaceStepProps extends ThemeProps {
@@ -514,7 +511,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 <div className={classNames(styles.collapseHeader, step.skipped && 'text-muted')}>
                     <StepStateIcon step={step} />
                     <H3 className={styles.stepNumber}>Step {step.number}</H3>
-                    <span className={classNames('text-monospace text-muted', styles.stepCommand)}>{step.run}</span>
+                    <Code className={classNames('text-muted', styles.stepCommand)}>{step.run}</Code>
                 </div>
                 {step.diffStat && <DiffStat className={styles.stepDiffStat} {...step.diffStat} expandedCounts={true} />}
                 {step.startedAt && (

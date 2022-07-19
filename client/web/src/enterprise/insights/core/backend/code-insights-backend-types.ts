@@ -10,6 +10,7 @@ import {
     LangStatsInsight,
     InsightsDashboardOwner,
     SearchBasedInsight,
+    ComputeInsight,
 } from '../types'
 import { InsightContentType } from '../types/insight/common'
 
@@ -71,14 +72,15 @@ export interface FindInsightByNameInput {
 }
 
 export type MinimalSearchBasedInsightData = Omit<SearchBasedInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
-
 export type MinimalCaptureGroupInsightData = Omit<CaptureGroupInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 export type MinimalLangStatsInsightData = Omit<LangStatsInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
+export type MinimalComputeInsightData = Omit<ComputeInsight, 'id' | 'dashboardReferenceCount' | 'isFrozen'>
 
 export type CreationInsightInput =
     | MinimalSearchBasedInsightData
     | MinimalCaptureGroupInsightData
     | MinimalLangStatsInsightData
+    | MinimalComputeInsightData
 
 export interface InsightCreateInput {
     insight: CreationInsightInput
@@ -127,7 +129,7 @@ export interface BackendInsightDatum {
 }
 
 export interface BackendInsightData {
-    content: SeriesChartContent<any>
+    data: InsightContent<any>
     isFetchingHistoricalData: boolean
 }
 

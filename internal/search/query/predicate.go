@@ -45,6 +45,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
 		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
+		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
 }
 
@@ -342,7 +343,7 @@ func (f *RepoHasDescriptionPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 
-/* repo:contains.content(pattern) */
+/* file:contains.content(pattern) */
 
 type FileContainsContentPredicate struct {
 	Pattern string
@@ -377,6 +378,26 @@ func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
 	return BuildPlan(nodes), nil
+}
+
+/* file:has.owner(pattern) */
+
+type FileHasOwnerPredicate struct {
+	Owner string
+}
+
+func (f *FileHasOwnerPredicate) ParseParams(params string) error {
+	if params == "" {
+		return errors.Errorf("file:has.owner argument should not be empty")
+	}
+	f.Owner = params
+	return nil
+}
+
+func (f FileHasOwnerPredicate) Field() string { return FieldFile }
+func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
+func (f *FileHasOwnerPredicate) Plan(parent Basic) (Plan, error) {
+	return nil, nil
 }
 
 // nonPredicateRepos returns the repo nodes in a query that aren't predicates,

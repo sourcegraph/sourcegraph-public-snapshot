@@ -67,7 +67,7 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (worker goroutine.WaitableBackgroundRoutine, canceler goroutine.BackgroundRoutine) {
+func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (worker goroutine.WaitableBackgroundRoutine) {
 	queueStore := apiclient.New(options.ClientOptions, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
 
@@ -85,25 +85,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 
 	ctx := context.Background()
 
-	w := workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
-	canceler = goroutine.NewPeriodicGoroutine(
-		ctx,
-		canceledJobsPollInterval,
-		goroutine.NewHandlerWithErrorMessage("executor.worker.pollCanceled", func(ctx context.Context) error {
-			canceled, err := queueStore.Canceled(ctx, options.QueueName)
-			if err != nil {
-				return err
-			}
-
-			for _, id := range canceled {
-				w.Cancel(id)
-			}
-
-			return nil
-		}),
-	)
-
-	return w, canceler
+	return workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

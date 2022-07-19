@@ -56,7 +56,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 		// TODO if our store was more flexible we could cache just based on
 		// indexed and p.Commit and avoid the need of running diff for each
 		// search.
-		out, err := s.GitOutput(ctx, p.Repo, "diff", "-z", "--name-status", "--no-renames", string(indexed), string(p.Commit))
+		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
 		if err != nil {
 			return nil, false, err
 		}

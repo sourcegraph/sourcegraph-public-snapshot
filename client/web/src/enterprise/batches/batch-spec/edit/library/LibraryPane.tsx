@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react'
 import { mdiChevronDoubleLeft, mdiChevronDoubleRight, mdiOpenInNew } from '@mdi/js'
 import { animated, useSpring } from 'react-spring'
 
-import { Button, useLocalStorage, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
+import { Button, useLocalStorage, H3, H4, Icon, Link, Text, VIEWPORT_XL } from '@sourcegraph/wildcard'
 
 import { Scalars } from '../../../../../graphql-operations'
 import { insertNameIntoLibraryItem } from '../../yaml-util'
@@ -122,9 +122,11 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
             ) : null}
             <animated.div style={containerStyle} className="d-none d-md-flex flex-column mr-3">
                 <div className={styles.header}>
-                    <animated.h4 className="m-0" style={headerStyle}>
-                        Library
-                    </animated.h4>
+                    <animated.div style={headerStyle}>
+                        <H4 as={H3} className="m-0">
+                            Library
+                        </H4>
+                    </animated.div>
                     <div className={styles.collapseButton}>
                         <Button
                             className="p-0"

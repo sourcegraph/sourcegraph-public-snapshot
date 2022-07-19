@@ -29,8 +29,4 @@ public class SourcegraphJBCefBrowser extends JBCefBrowser {
             }
         });
     }
-
-    public void focus() {
-        this.getCefBrowser().setFocus(true);
-    }
 }

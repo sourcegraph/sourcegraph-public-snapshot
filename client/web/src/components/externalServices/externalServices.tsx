@@ -59,7 +59,7 @@ export interface AddExternalServiceOptions {
     /**
      * Instructions that will appear on the add / edit page
      */
-    instructions?: JSX.Element | string
+    instructions?: React.ReactNode | string
 
     /**
      * The JSON schema of the external service configuration
@@ -119,15 +119,15 @@ const editorActionComments = {
     //    (https://docs.sourcegraph.com/admin/repo/permissions#sudo-access-token).`,
 }
 
-const Field = (props: { children: React.ReactChildren | string | string[] }): JSX.Element => (
+const Field: React.FunctionComponent<{ children: React.ReactNode | string | string[] }> = props => (
     <Code className="hljs-type">{props.children}</Code>
 )
 
-const Value = (props: { children: React.ReactChildren | string | string[] }): JSX.Element => (
+const Value: React.FunctionComponent<{ children: React.ReactNode | string | string[] }> = props => (
     <Code className="hljs-attr">{props.children}</Code>
 )
 
-const githubInstructions = (isEnterprise: boolean): JSX.Element => (
+const githubInstructions = (isEnterprise: boolean): React.ReactNode => (
     <div>
         <ol>
             {isEnterprise && (
