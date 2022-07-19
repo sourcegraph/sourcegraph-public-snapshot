@@ -1,0 +1,35 @@
+.tag {
+    font-size: 0.75rem;
+    padding: 0.0625rem 0.25rem;
+    border-radius: var(--border-radius);
+    color: var(--white);
+    background-color: #000;
+}
+
+.class-tag {
+    background-color: #6b47d6;
+}
+
+.function-tag {
+    background-color: #6b1515;
+}
+
+.field-tag {
+    background-color: #b8e3e8;
+}
+
+.module-tag {
+    background-color: #f59f00;
+}
+
+.package-tag {
+    background-color: #fbd999;
+}
+
+.method-tag {
+    background-color: #37b24d;
+}
+
+.struct-tag {
+    background-color: #845ef7;
+}
