@@ -356,12 +356,12 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		var multi error
 
 		// config.lock should be held for a very short amount of time.
-		if err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
+		if _, err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// packed-refs can be held for quite a while, so we are conservative
 		// with the age.
-		if err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
+		if _, err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
@@ -374,7 +374,8 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 				return nil
 			}
 
-			return removeFileOlderThan(path, time.Hour)
+			_, err := removeFileOlderThan(path, time.Hour)
+			return err
 		}); err != nil {
 			multi = errors.Append(multi, err)
 		}
@@ -383,14 +384,20 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		// call for a 5GB bare repository takes less than 1 min. The lock is only held
 		// during a short period during this time. A 1-hour grace period is very
 		// conservative.
-		if err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
+		if _, err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 
 		// gc.pid is set by git gc and our sg maintenance script. 24 hours is twice the
 		// time git gc uses internally.
-		if err := removeFileOlderThan(gitDir.Path(gcLockFile), time.Hour*24); err != nil {
+		gcPIDMaxAge := 24 * time.Hour
+		if foundStale, err := removeFileOlderThan(gitDir.Path(gcLockFile), gcPIDMaxAge); err != nil {
 			multi = errors.Append(multi, err)
+		} else if foundStale {
+			cleanupLogger.Warn(
+				"removeStaleLocks found a stale gc.pid lockfile and removed it. This should not happen and points to a problem with garbage collection. Monitor the repo for possible corruption and verify if this error reoccurs",
+				log.String("path", string(gitDir)),
+				log.Duration("age", gcPIDMaxAge))
 		}
 
 		return false, multi
@@ -1406,19 +1413,20 @@ func wrapCmdError(cmd *exec.Cmd, err error) error {
 }
 
 // removeFileOlderThan removes path if its mtime is older than maxAge. If the
-// file is missing, no error is returned.
-func removeFileOlderThan(path string, maxAge time.Duration) error {
+// file is missing, no error is returned. The first argument indicates whether a
+// stale file was present.
+func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
 	fi, err := os.Stat(filepath.Clean(path))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return false, nil
 		}
-		return err
+		return false, nil
 	}
 
 	age := time.Since(fi.ModTime())
 	if age < maxAge {
-		return nil
+		return false, nil
 	}
 
 	logger := log.Scoped("removeFileOlderThan", "removes path if its mtime is older than maxAge.")
@@ -1426,7 +1434,7 @@ func removeFileOlderThan(path string, maxAge time.Duration) error {
 	logger.Debug("removing stale lock file", log.String("path", path), log.Duration("age", age))
 	err = os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {
-		return err
+		return true, err
 	}
-	return nil
+	return true, nil
 }
