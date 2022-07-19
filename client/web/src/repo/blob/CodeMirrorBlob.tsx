@@ -4,16 +4,23 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Extension } from '@codemirror/state'
+import { Extension, StateEffect, StateField, Text } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import {
+    editorHeight,
+    replaceValue,
+    useCodeMirror,
+    useCompartment,
+} from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfChanged } from './Blob'
-import { selectLines, selectableLineNumbers, SelectedLineRange } from './CodeMirrorLineNumbers'
+import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
+import { JsonDocument, Occurrence, SyntaxKind } from '../../lsif/lsif-typed'
+import { HighlightRange, highlightRanges } from './codemirror/highlight'
 
 const staticExtensions: Extension = [
     EditorView.editable.of(false),
@@ -40,12 +47,12 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
 }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
-    const dynamicExtensions = useMemo(
+    const settings = useMemo(
         () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
         [wrapCode, isLightTheme]
     )
 
-    const [compartment, updateCompartment] = useCompartment(dynamicExtensions)
+    const [settingsCompartment, updateSettingsCompartment] = useCompartment(settings)
 
     const history = useHistory()
     const location = useLocation()
@@ -80,18 +87,36 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
         )
     }, [])
 
-    const extensions = useMemo(() => [staticExtensions, compartment, selectableLineNumbers({ onSelection })], [
-        compartment,
-        onSelection,
-    ])
+    const extensions = useMemo(
+        () => [
+            staticExtensions,
+            settingsCompartment,
+            selectableLineNumbers({ onSelection }),
+            syntaxHighlight(blobInfo.lsif),
+        ],
+        [settingsCompartment, onSelection]
+    )
 
-    const editor = useCodeMirror(container, blobInfo.content, extensions)
+    const editor = useCodeMirror(container, blobInfo.content, extensions, { updateValueOnChange: false })
 
     useEffect(() => {
         if (editor) {
-            updateCompartment(editor, dynamicExtensions)
+            updateSettingsCompartment(editor, settings)
         }
-    }, [editor, updateCompartment, dynamicExtensions])
+    }, [editor, updateSettingsCompartment, settings])
+
+    // We don't want to trigger the transaction on the first render. Maybe there
+    // is a better way to do this.
+    const initialRender = useRef(true)
+    useEffect(() => {
+        if (editor && !initialRender.current) {
+            editor.dispatch({
+                changes: replaceValue(editor, blobInfo.content),
+                effects: setSCIPData.of(blobInfo.lsif),
+            })
+        }
+        initialRender.current = false
+    }, [editor, blobInfo])
 
     // Update selected lines when URL changes
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
@@ -109,4 +134,59 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
     }, [editor, position, blobInfo])
 
     return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
+}
+
+const setSCIPData = StateEffect.define<string>()
+
+/**
+ * Helper extension to convert SCIP-encoded highlighting information to the
+ * format expected by our syntax highlighting extenions. The SCIP data should be
+ * set/updated via the `setSCIPData` effect.
+ */
+function syntaxHighlight(initialSCIPJSON: string): Extension {
+    function parseAndSortRanges(doc: Text, json: string): HighlightRange[] {
+        const ranges: HighlightRange[] = []
+
+        for (const occurence of (JSON.parse(json) as JsonDocument).occurrences ?? []) {
+            let {
+                range: [startLine, startColumn, endLine, endColumn],
+            } = occurence
+
+            // If the range is in the same line, an occurence has only 3 fields
+            if (endColumn === undefined) {
+                endColumn = endLine
+                endLine = startLine
+            }
+
+            const start = doc.line(startLine + 1)
+            const end = startLine === endLine ? start : doc.line(endLine + 1)
+
+            ranges.push([
+                start.from + startColumn,
+                end.from + endColumn,
+                `hl-typed-${SyntaxKind[occurence.syntaxKind]}`,
+            ])
+        }
+
+        return ranges.sort((a, b) => (a[0] === b[0] ? a[1] - b[1] : a[0] - b[0]))
+    }
+
+    return StateField.define<HighlightRange[]>({
+        create: state => parseAndSortRanges(state.doc, initialSCIPJSON),
+
+        update(value, transaction) {
+            let newSCIPData = ''
+
+            for (const effect of transaction.effects) {
+                if (effect.is(setSCIPData)) {
+                    newSCIPData = effect.value
+                    break
+                }
+            }
+
+            return newSCIPData ? parseAndSortRanges(transaction.newDoc, newSCIPData) : value
+        },
+
+        provide: field => highlightRanges.from(field),
+    })
 }

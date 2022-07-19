@@ -2,7 +2,7 @@
 // but it doesn't make sense to do so right now.
 
 export interface JsonDocument {
-    occurrences: JsonOccurrence[]
+    occurrences?: JsonOccurrence[]
 }
 
 export interface JsonOccurrence {
