@@ -182,7 +182,7 @@ func (c *client) Cached(f func() any) (wrapped func() any) {
 }
 
 // notifyWatchers runs all the callbacks registered via client.Watch() whenever
-// the configuration has changed.
+// the configuration has changed. It does not block on individual sends.
 func (c *client) notifyWatchers() {
 	c.watchersMu.Lock()
 	defer c.watchersMu.Unlock()
