@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.42.0
+
+### Changed
+
+- Starting with Sourcegraph 3.42, src-cli will be resolving workspaces for Batch Changes server-side which is significantly faster and reduces network utilization.
+
 ## 3.41.1
 
 ### Added
