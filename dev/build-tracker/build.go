@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"sync"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -46,7 +47,7 @@ func (b *Build) AvatarURL() string {
 	if b.Creator == nil {
 		return ""
 	}
-	return b.Creator.AvatarURL
+	return fmt.Sprintf("%s.jpg", b.Creator.AvatarURL)
 }
 
 func (b *Build) PipelineName() string {

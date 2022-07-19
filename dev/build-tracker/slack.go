@@ -28,10 +28,13 @@ func NewSlackClient(logger log.Logger, token string) *SlackClient {
 
 func (c *SlackClient) sendNotification(build *Build) error {
 	c.logger.Debug("creating slack json", log.Int("buildNumber", *build.Number))
-	blocks := createMessageBlocks(c.logger, build)
+	blocks, err := createMessageBlocks(c.logger, build)
+	if err != nil {
+		return err
+	}
 
 	c.logger.Debug("sending notification", log.Int("buildNumber", *build.Number), log.String("channel", c.Channel))
-	_, _, err := c.PostMessage(c.Channel, slack.MsgOptionBlocks(blocks...))
+	_, _, err = c.PostMessage(c.Channel, slack.MsgOptionBlocks(blocks...))
 	if err != nil {
 		c.logger.Error("failed to post message", log.Int("buildNumber", *build.Number), log.Error(err))
 		return err
@@ -111,16 +114,16 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 	return base.String()
 }
 
-func createMessageBlocks(logger log.Logger, build *Build) []slack.Block {
-	failed := make([]*slack.TextBlockObject, 0)
+func createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error) {
+	failedStepsMarkdown := "The following steps have failed"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
-			failed = append(failed, &slack.TextBlockObject{
-				Type:  slack.PlainTextType,
-				Text:  *j.Name,
-				Emoji: true,
-			})
+			failedStepsMarkdown += fmt.Sprintf("* %s\n", *j.Name)
 		}
+	}
+
+	if build.Number == nil {
+		return nil, fmt.Errorf("cannot create message blocks for nil Build Number")
 	}
 
 	blocks := []slack.Block{
@@ -131,8 +134,8 @@ func createMessageBlocks(logger log.Logger, build *Build) []slack.Block {
 			Type: slack.MBTDivider,
 		},
 		slack.NewSectionBlock(
-			&slack.TextBlockObject{Type: slack.MarkdownType, Text: "The following steps have failed"},
-			failed,
+			&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedStepsMarkdown, Emoji: true},
+			nil,
 			nil,
 		),
 		&slack.DividerBlock{
@@ -146,7 +149,7 @@ func createMessageBlocks(logger log.Logger, build *Build) []slack.Block {
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Commit*\n`%s`", *build.Commit)},
 			},
 			slack.NewAccessory(
-				slack.NewImageBlockElement(fmt.Sprintf("%s.jpg", build.AvatarURL()), "avatar"),
+				slack.NewImageBlockElement(fmt.Sprintf("%s", build.AvatarURL()), "avatar"),
 			),
 		),
 		&slack.DividerBlock{
@@ -176,5 +179,5 @@ func createMessageBlocks(logger log.Logger, build *Build) []slack.Block {
 		),
 	}
 
-	return blocks
+	return blocks, nil
 }
