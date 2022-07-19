@@ -301,7 +301,11 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                         {entryInfo.isDirectory ? (
                             <>
                                 <Directory
-                                    {...this.props}
+                                    fileDecorations={this.props.fileDecorations}
+                                    entryInfo={this.props.entryInfo}
+                                    depth={this.props.depth}
+                                    index={this.props.index}
+                                    isLightTheme={this.props.isLightTheme}
                                     maxEntries={maxEntries}
                                     loading={treeOrError === LOADING}
                                     handleTreeClick={this.handleTreeClick}
@@ -341,14 +345,17 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             </>
                         ) : (
                             <File
-                                {...this.props}
+                                fileDecorations={this.props.fileDecorations}
+                                entryInfo={this.props.entryInfo}
+                                depth={this.props.depth}
+                                index={this.props.index}
+                                isLightTheme={this.props.isLightTheme}
                                 maxEntries={maxEntries}
                                 handleTreeClick={this.handleTreeClick}
                                 noopRowClick={this.noopRowClick}
                                 linkRowClick={this.linkRowClick}
                                 isActive={isActive}
                                 isSelected={isSelected}
-                                isExpanded={this.props.isExpanded}
                             />
                         )}
                     </tbody>
