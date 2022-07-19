@@ -631,7 +631,7 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    user_id integer
+    user_id integer NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
