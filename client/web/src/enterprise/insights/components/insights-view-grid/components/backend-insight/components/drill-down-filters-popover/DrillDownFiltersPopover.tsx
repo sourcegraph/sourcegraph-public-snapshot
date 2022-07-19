@@ -5,7 +5,7 @@ import classNames from 'classnames'
 
 import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
-import { Insight, InsightFilters } from '../../../../../../core'
+import { InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
@@ -24,7 +24,6 @@ interface DrillDownFiltersPopoverProps {
     initialFiltersValue: InsightFilters
     originalFiltersValue: InsightFilters
     anchor: React.RefObject<HTMLElement>
-    insight: Insight
     onFilterChange: (filters: InsightFilters) => void
     onFilterSave: (filters: InsightFilters) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
@@ -51,7 +50,6 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
     const {
         isOpen,
         anchor,
-        insight,
         initialFiltersValue,
         originalFiltersValue,
         onVisibilityChange,
@@ -113,7 +111,6 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                         initialValues={initialFiltersValue}
                         originalValues={originalFiltersValue}
                         visualMode={FilterSectionVisualMode.CollapseSections}
-                        seriesCount={insight.seriesCount}
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}

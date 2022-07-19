@@ -206,7 +206,6 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
                             anchor={insightCardReference}
                             initialFiltersValue={filters}
                             originalFiltersValue={originalInsightFilters}
-                            insight={insight}
                             onFilterChange={setFilters}
                             onFilterSave={handleFilterSave}
                             onInsightCreate={handleInsightFilterCreation}

@@ -47,7 +47,6 @@ export const EditCaptureGroupInsight: React.FunctionComponent<
             ...sanitizedInsight,
             filters: insight.filters,
             seriesDisplayOptions: insight.seriesDisplayOptions,
-            seriesCount: insight.seriesCount,
         })
     }
 
