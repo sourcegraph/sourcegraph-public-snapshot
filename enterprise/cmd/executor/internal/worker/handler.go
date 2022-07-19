@@ -108,10 +108,10 @@ func (h *handler) Handle(ctx context.Context, logger log.Logger, record workerut
 		if !h.options.KeepWorkspaces {
 			handle := commandLogger.Log("teardown.fs", nil)
 
-			handle.Write([]byte(fmt.Sprintf("Removing %s\n", workspaceRoot)))
+			fmt.Fprintf(handle, "Removing %s\n", workspaceRoot)
 
 			if rmErr := os.RemoveAll(workspaceRoot); rmErr != nil {
-				handle.Write([]byte(fmt.Sprintf("Operation failed: %s\n", rmErr.Error())))
+				fmt.Fprintf(handle, "Operation failed: %s\n", rmErr.Error())
 			}
 
 			// We always finish this with exit code 0 even if it errored, because workspace
@@ -281,7 +281,7 @@ func writeFiles(workspaceFileContentsByPath map[string][]byte, logger command.Lo
 			return err
 		}
 
-		handle.Write([]byte(fmt.Sprintf("Wrote %s\n", path)))
+		fmt.Fprintf(handle, "Wrote %s\n", path)
 	}
 
 	return nil

@@ -121,15 +121,15 @@ type firecrackerRunner struct {
 var _ Runner = &firecrackerRunner{}
 
 func (r *firecrackerRunner) Setup(ctx context.Context) error {
-	return setupFirecracker(ctx, defaultRunner, r.logger, r.name, r.dir, r.options, r.operations)
+	return setupFirecracker(ctx, r.logger, r.name, r.dir, r.options, r.operations)
 }
 
 func (r *firecrackerRunner) Teardown(ctx context.Context) error {
-	return teardownFirecracker(ctx, defaultRunner, r.logger, r.name, r.operations)
+	return teardownFirecracker(ctx, r.logger, r.name, r.operations)
 }
 
 func (r *firecrackerRunner) Run(ctx context.Context, command CommandSpec) error {
-	return runCommand(ctx, formatFirecrackerCommand(command, r.name, r.options), r.logger)
+	return execFirecracker(ctx, r.name, formatFirecrackerCommand(command, r.name, r.options), r.logger)
 }
 
 type runnerWrapper struct{}
