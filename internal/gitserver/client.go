@@ -206,7 +206,7 @@ type Client interface {
 	GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
 
 	// GetObject fetches git object data in the supplied repo
-	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
 	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 	// contains a commit past a specified date.
