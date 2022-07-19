@@ -31,8 +31,8 @@ public class NotificationActivity implements StartupActivity.DumbAware {
         if (lastNotifiedPluginVersion == null || lastNotifiedPluginVersion.compareTo(latestReleaseMilestoneVersion) < 0) {
             notifyAboutUpdate(project);
         } else {
-            String url = ConfigUtil.getSourcegraphUrl(project);
-            if (!ConfigUtil.isUrlNotificationDismissed() && (url.length() == 0 || url.startsWith("https://sourcegraph.com"))) {
+            String url = ConfigUtil.getEnterpriseUrl(project);
+            if (!ConfigUtil.isUrlNotificationDismissed() && (url.length() == 0 || url.startsWith(ConfigUtil.DOTCOM_URL))) {
                 notifyAboutSourcegraphUrl();
             }
         }
