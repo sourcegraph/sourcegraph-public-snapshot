@@ -71,13 +71,13 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 		for _, branch := range repo.Branches {
 			if branch.Name == rev {
-				branches = append(branches, inputRev)
+				branches = append(branches, branch.Name)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
 			if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
-				branches = append(branches, inputRev)
+				branches = append(branches, branch.Name)
 				found = true
 				break
 			}
