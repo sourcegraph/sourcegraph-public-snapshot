@@ -66,14 +66,13 @@ public class NotificationActivity implements StartupActivity.DumbAware {
     private void notifyAboutUpdate(@NotNull Project project) {
         // Display notification
         KeyboardShortcut altSShortcut = new KeyboardShortcut(KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.ALT_DOWN_MASK), null);
-        String altEnterShortcutText = KeymapUtil.getShortcutText(altSShortcut);
+        String altSShortcutText = KeymapUtil.getShortcutText(altSShortcut);
         Notification notification = new Notification("Sourcegraph plugin updates", "Sourcegraph",
-            "Access the new plugin and try out code search with the shortcut " + altEnterShortcutText + "! Learn more about the plugin’s functionality in our blog post.", NotificationType.INFORMATION);
-        AnAction setUrlAction = new DumbAwareAction("Open Sourcegraph (" + altEnterShortcutText + ")") {
+            "Access the new plugin and try out code search with the shortcut " + altSShortcutText + "! Learn more about the plugin’s functionality in our blog post.", NotificationType.INFORMATION);
+        AnAction openAction = new DumbAwareAction("Open Sourcegraph (" + altSShortcutText + ")") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                FindService service = project.getService(FindService.class);
-                service.showPopup();
+                project.getService(FindService.class).showPopup();
                 notification.expire();
             }
         };
@@ -96,7 +95,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
             }
         };
         notification.setIcon(Icons.SourcegraphLogo);
-        notification.addAction(setUrlAction);
+        notification.addAction(openAction);
         notification.addAction(learnMoreAction);
         Notifications.Bus.notify(notification);
 

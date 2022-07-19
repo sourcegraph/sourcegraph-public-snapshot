@@ -148,8 +148,8 @@ public class PreviewPanel extends JBPanelWithEmptyText implements Disposable {
     }
 
     class SimpleEditorFileAction extends DumbAwareAction {
-        FileActionBase action;
-        Editor editor;
+        final FileActionBase action;
+        final Editor editor;
 
         SimpleEditorFileAction(String text, FileActionBase action, Editor editor) {
             super(text, text, Icons.SourcegraphLogo);
