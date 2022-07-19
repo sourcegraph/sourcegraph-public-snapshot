@@ -1309,9 +1309,3 @@ func lowercaseGroupBy(groupBy *string) *string {
 	}
 	return groupBy
 }
-
-// in resolver:
-// fetch all relevant insights from db (using `GetAll` and the Repo arg)
-// for each insight query, append repo and revision, call query.TabulationDecoder (we can make our own RepoTabulationDecoder too)
-// group series to line matches
-// return information in useful format

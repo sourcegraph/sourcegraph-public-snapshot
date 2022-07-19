@@ -209,6 +209,11 @@ extend type Query {
     Generate an ephemeral set of time series for a code insight, generally for the purposes of live preview.
     """
     searchInsightPreview(input: SearchInsightPreviewInput!): [SearchInsightLivePreviewSeries!]!
+
+    """
+    Return all related insights for a file visible to the authenticated user.
+    """
+    getRelatedInsightsInline()
 }
 
 extend type Mutation {
