@@ -2,12 +2,13 @@ package conf
 
 import (
 	"context"
-	"log"
 	"math/rand"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -205,8 +206,8 @@ type continuousUpdateOptions struct {
 	// contact the frontend for configuration) start up before the frontend.
 	delayBeforeUnreachableLog time.Duration
 
-	log                 func(format string, v ...any) // log.Printf equivalent
-	sleepBetweenUpdates func()                        // sleep between updates
+	logger              log.Logger
+	sleepBetweenUpdates func() // sleep between updates
 }
 
 // continuouslyUpdate runs (*client).fetchAndUpdate in an infinite loop, with error logging and
@@ -223,7 +224,7 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 			// database in most cases, to avoid log spam when running sourcegraph/server for the
 			// first time.
 			delayBeforeUnreachableLog: 15 * time.Second,
-			log:                       log.Printf,
+			logger:                    log.Scoped("conf.client", "configuration client"),
 			sleepBetweenUpdates: func() {
 				jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
 				time.Sleep(jitter)
@@ -247,27 +248,32 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 
 	// Make an initial fetch an update - this is likely to error, so just discard the
 	// error on this initial attempt.
-	_ = c.fetchAndUpdate()
+	_ = c.fetchAndUpdate(opts.logger)
 
 	start := time.Now()
 	for {
+		logger := opts.logger
+
 		// signalDoneReading, if set, indicates that we were prompted to update because
 		// the source has been updated.
 		var signalDoneReading chan struct{}
 		select {
 		case signalDoneReading = <-c.sourceUpdates:
 			// Config was changed at source, so let's check now
+			logger = logger.With(log.String("triggered_by", "sourceUpdates"))
 		case <-waitForSleep():
 			// File possibly changed at source, so check now.
+			logger = logger.With(log.String("triggered_by", "waitForSleep"))
 		}
 
-		err := c.fetchAndUpdate()
+		logger.Debug("checking for updates")
+		err := c.fetchAndUpdate(logger)
 		if err != nil {
 			// Suppress log messages for errors caused by the frontend being unreachable until we've
 			// given the frontend enough time to initialize (in case other services start up before
 			// the frontend), to reduce log spam.
 			if time.Since(start) > opts.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
-				opts.log("received error during background config update, err: %s", err)
+				opts.logger.Error("received error during background config update", log.Error(err))
 			}
 		} else {
 			// We successfully fetched the config, we reset the timer to give
@@ -283,9 +289,9 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 	}
 }
 
-func (c *client) fetchAndUpdate() error {
-	ctx := context.Background()
+func (c *client) fetchAndUpdate(logger log.Logger) error {
 	var (
+		ctx       = context.Background()
 		newConfig conftypes.RawUnified
 		err       error
 	)
@@ -304,7 +310,11 @@ func (c *client) fetchAndUpdate() error {
 	}
 
 	if configChange.Changed {
+		logger.Info("config changed, notifying watchers",
+			log.Int("watchers", len(c.watchers)))
 		c.notifyWatchers()
+	} else {
+		logger.Debug("no config changes detected")
 	}
 
 	return nil

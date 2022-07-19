@@ -21,7 +21,6 @@ type ConfigurationSource interface {
 // Server provides access and manages modifications to the site configuration.
 type Server struct {
 	Source ConfigurationSource
-
 	// sourceWrites signals when our app writes to the configuration source. The
 	// received channel should be closed when server.Raw() would return the new
 	// configuration that has been written to disk.
@@ -30,7 +29,7 @@ type Server struct {
 	needRestartMu sync.RWMutex
 	needRestart   bool
 
-	once sync.Once
+	startOnce sync.Once
 }
 
 // NewServer returns a new Server instance that mangages the site config file
@@ -117,7 +116,7 @@ func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, r
 
 // Start initializes the server instance.
 func (s *Server) Start() {
-	s.once.Do(func() {
+	s.startOnce.Do(func() {
 		// We prepare to watch for config updates in order to mark the config server as
 		// needing a restart (or not). This must be in a goroutine, since Watch must
 		// happen after conf initialization (which may have not happened yet)
