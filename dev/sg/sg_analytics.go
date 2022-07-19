@@ -10,7 +10,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/lib/output"
@@ -25,45 +24,15 @@ var analyticsCommand = &cli.Command{
 			Name:        "submit",
 			ArgsUsage:   " ",
 			Usage:       "Make sg better by submitting all analytics stored locally!",
-			Description: "Uses HONEYCOMB_API_TOKEN, or fetches a token from gcloud.",
+			Description: "Requires HONEYCOMB_API_TOKEN or OTEL_EXPORTER_OTLP_ENDPOINT to be set.",
 			Action: func(cmd *cli.Context) error {
 				honeyToken := os.Getenv("HONEYCOMB_API_TOKEN")
-				if honeyToken == "" {
-					store, err := secrets.FromContext(cmd.Context)
-					if err != nil {
-						return err
-					}
-
-					pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Fetching Honeycomb API token..."))
-
-					var errs error
-					for _, secret := range []secrets.ExternalSecret{
-						{
-							Provider: secrets.ExternalProviderGCloud,
-							Project:  "sourcegraph-dev",
-							Name:     "CI_OKAYHQ_TOKEN",
-						},
-					} {
-						pending.Updatef("Trying to get the secret from %s", string(secret.Provider))
-						honeyToken, err = store.GetExternal(cmd.Context, secret)
-						if err != nil {
-							pending.Writef("Didn't get the secret we wanted from %s", string(secret.Provider))
-							errs = errors.Append(errs, err)
-							continue // try the next provider
-						}
-						if honeyToken != "" {
-							pending.Updatef("Got our secret from %s", string(secret.Provider))
-							break // done!
-						}
-					}
-
-					// If we've tried all providers and still don't have the token, we
-					// return the error.
-					if honeyToken == "" {
-						pending.Destroy()
-						return errors.Wrap(errs, "failed to get OkayHQ token")
-					}
-					pending.Complete(output.Line(output.EmojiSuccess, output.StyleSuccess, "Secret retrieved"))
+				if honeyToken == "" && os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" {
+					// we leave OTEL_EXPORTER_OTLP_ENDPOINT configuration a bit of a
+					// hidden thing, most users will want to just send to Honeycomb
+					//
+					// TODO: follow up with fetching secrets from somewhere
+					return errors.New("HONEYCOMB_API_TOKEN not set")
 				}
 
 				pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Hang tight! We're submitting your analytics"))
