@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -93,7 +92,7 @@ func NewClient(db database.DB) *ClientImplementor {
 			return map[string]string{}
 		},
 		db:          db,
-		HTTPClient:  defaultDoer,
+		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
@@ -113,7 +112,7 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 			// nothing needs to be pinned for the tests
 			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
 		},
-		HTTPClient:  cli,
+		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for UserAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
@@ -126,11 +125,15 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 
 // ClientImplementor is a gitserver client.
 type ClientImplementor struct {
-	// HTTP client to use
-	HTTPClient httpcli.Doer
-
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
+
+	// UserAgent is a string identifying who the client is. It will be logged in
+	// the telemetry in gitserver.
+	UserAgent string
+
+	// HTTP client to use
+	httpClient httpcli.Doer
 
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
@@ -144,10 +147,6 @@ type ClientImplementor struct {
 	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
 	// and sync the pinned map.
 	pinned func() map[string]string
-
-	// UserAgent is a string identifying who the client is. It will be logged in
-	// the telemetry in gitserver.
-	UserAgent string
 
 	// db is a connection to the database
 	db database.DB
@@ -209,9 +208,6 @@ type Client interface {
 
 	// ListCloned lists all cloned repositories
 	ListCloned(context.Context) ([]string, error)
-
-	// ListGitolite lists Gitolite repositories.
-	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
 
 	// ListRefs returns a list of all refs in the repository.
 	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
@@ -324,16 +320,6 @@ func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 		return addr
 	}
 	return RendezvousAddrForRepo(repo, addrs)
-}
-
-// addrForKey returns the gitserver address to use for the given string key,
-// which is hashed for sharding purposes.
-func (c *ClientImplementor) addrForKey(key string) string {
-	addrs := c.Addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
-	}
-	return addrForKey(key, addrs)
 }
 
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -891,25 +877,6 @@ func (c *ClientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 	}
 }
 
-func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
-	// The gitserver calls the shared Gitolite server in response to this request, so
-	// we need to only call a single gitserver (or else we'd get duplicate results).
-	addr := c.addrForKey(gitoliteHost)
-	req, err := http.NewRequest("GET", "http://"+addr+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&list)
-	return list, err
-}
-
 func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
 	var (
 		wg    sync.WaitGroup
@@ -952,7 +919,7 @@ func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr strin
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
+	resp, err := c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
@@ -1264,7 +1231,7 @@ func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -1379,7 +1346,7 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	return c.HTTPClient.Do(req)
+	return c.httpClient.Do(req)
 }
 
 func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
