@@ -472,26 +472,6 @@ func (r *Resolver) ApplyBatchChange(ctx context.Context, args *graphqlbackend.Ap
 	return &batchChangeResolver{store: r.store, batchChange: batchChange}, nil
 }
 
-func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
-	var errs error
-
-	if in != nil && *in != nil {
-		for _, state := range *in {
-			id, err := unmarshalChangesetSpecID(state.ChangesetSpec)
-			if err != nil {
-				return err
-			}
-
-			if err := opts.Add(id, state.PublicationState); err != nil {
-				errs = errors.Append(errs, err)
-			}
-		}
-
-	}
-
-	return errs
-}
-
 func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlbackend.ApplyBatchChangeArgs, opts service.ApplyBatchChangeOpts) (*btypes.BatchChange, error) {
 	if err := enterprise.BatchChangesEnabledForUser(ctx, r.store.DatabaseDB()); err != nil {
 		return nil, err
@@ -533,6 +513,26 @@ func (r *Resolver) applyOrCreateBatchChange(ctx context.Context, args *graphqlba
 	}
 
 	return batchChange, nil
+}
+
+func addPublicationStatesToOptions(in *[]graphqlbackend.ChangesetSpecPublicationStateInput, opts *service.UiPublicationStates) error {
+	var errs error
+
+	if in != nil && *in != nil {
+		for _, state := range *in {
+			id, err := unmarshalChangesetSpecID(state.ChangesetSpec)
+			if err != nil {
+				return err
+			}
+
+			if err := opts.Add(id, state.PublicationState); err != nil {
+				errs = errors.Append(errs, err)
+			}
+		}
+
+	}
+
+	return errs
 }
 
 func (r *Resolver) CreateBatchSpec(ctx context.Context, args *graphqlbackend.CreateBatchSpecArgs) (graphqlbackend.BatchSpecResolver, error) {
