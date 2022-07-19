@@ -1979,7 +1979,7 @@
           "Name": "user_id",
           "Index": 18,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
