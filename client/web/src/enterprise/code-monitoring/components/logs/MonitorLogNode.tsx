@@ -1,11 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
-<<<<<<< HEAD
-import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew } from '@mdi/js'
-import { VisuallyHidden } from '@reach/visually-hidden'
-=======
 import { mdiAlertCircle, mdiCheckBold, mdiOpenInNew, mdiChevronDown, mdiChevronRight } from '@mdi/js'
->>>>>>> origin/main
+import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
 
 import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
@@ -53,21 +49,6 @@ export const MonitorLogNode: React.FunctionComponent<
             <div className="d-flex align-items-center">
                 <Button
                     onClick={toggleExpanded}
-<<<<<<< HEAD
-                    className="btn-icon text-left pl-0 pr-2 border-0 d-flex align-items-center"
-                >
-                    {expanded ? (
-                        <Icon
-                            as={ChevronDownIcon}
-                            className={classNames('mr-2 flex-shrink-0', styles.chevronIcon)}
-                            aria-label="Collapse code monitor."
-                        />
-                    ) : (
-                        <Icon
-                            as={ChevronRightIcon}
-                            className={classNames('mr-2 flex-shrink-0', styles.chevronIcon)}
-                            aria-label="Expand code monitor."
-=======
                     className="btn-icon text-left pl-0 border-0 d-flex align-items-center flex-1"
                 >
                     {expanded ? (
@@ -83,7 +64,6 @@ export const MonitorLogNode: React.FunctionComponent<
                             svgPath={mdiChevronRight}
                             inline={false}
                             aria-label="Expand code monitor"
->>>>>>> origin/main
                         />
                     )}
                     {hasError ? (
