@@ -19,6 +19,13 @@
 }
 
 .sticky-box {
+    :global(.core-workflow-improvements-enabled) & {
+        background-color: var(--sidebar-bg);
+        border: 1px solid var(--sidebar-border-color);
+        padding: 0.75rem;
+        border-radius: var(--border-radius);
+    }
+
     @media (--md-breakpoint-down) {
         // Sidebar shouldn't be sticky in smaller screens
         position: static !important;
@@ -31,5 +38,21 @@
 
     @media (--xs-breakpoint-down) {
         display: block;
+    }
+}
+
+.header {
+    display: none;
+
+    :global(.core-workflow-improvements-enabled) & {
+        display: flex;
+        justify-content: flex-end;
+        margin: -0.25rem -0.75rem 0.75rem -0.75rem;
+        padding: 0 0.75rem 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--sidebar-border-color);
+
+        @media (--md-breakpoint-down) {
+            display: none;
+        }
     }
 }

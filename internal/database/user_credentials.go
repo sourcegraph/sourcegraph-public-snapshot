@@ -203,7 +203,7 @@ func (s *userCredentialsStore) Create(ctx context.Context, scope UserCredentialS
 // Update updates a user credential in the database. If the credential cannot be found,
 // an error is returned.
 func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCredential) error {
-	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	authz, err := userCredentialsAuthzQueryConds(ctx)
 	if err != nil {
 		return err
 	}
@@ -237,7 +237,7 @@ func (s *userCredentialsStore) Update(ctx context.Context, credential *UserCrede
 // soft delete with user credentials: once deleted, the relevant records are
 // _gone_, so that we don't hold any sensitive data unexpectedly. 💀
 func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
-	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	authz, err := userCredentialsAuthzQueryConds(ctx)
 	if err != nil {
 		return err
 	}
@@ -260,7 +260,7 @@ func (s *userCredentialsStore) Delete(ctx context.Context, id int64) error {
 // GetByID returns the user credential matching the given ID, or
 // UserCredentialNotFoundErr if no such credential exists.
 func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCredential, error) {
-	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	authz, err := userCredentialsAuthzQueryConds(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -286,7 +286,7 @@ func (s *userCredentialsStore) GetByID(ctx context.Context, id int64) (*UserCred
 // GetByScope returns the user credential matching the given scope, or
 // UserCredentialNotFoundErr if no such credential exists.
 func (s *userCredentialsStore) GetByScope(ctx context.Context, scope UserCredentialScope) (*UserCredential, error) {
-	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	authz, err := userCredentialsAuthzQueryConds(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -344,7 +344,7 @@ func (opts *UserCredentialsListOpts) sql() *sqlf.Query {
 
 // List returns all user credentials matching the given options.
 func (s *userCredentialsStore) List(ctx context.Context, opts UserCredentialsListOpts) ([]*UserCredential, int, error) {
-	authz, err := userCredentialsAuthzQueryConds(ctx, NewDBWith(s.logger, s))
+	authz, err := userCredentialsAuthzQueryConds(ctx)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -565,21 +565,17 @@ func userCredentialsAuthzScope(ctx context.Context, db DB, scope UserCredentialS
 	return nil
 }
 
-func userCredentialsAuthzQueryConds(ctx context.Context, db DB) (*sqlf.Query, error) {
+func userCredentialsAuthzQueryConds(ctx context.Context) (*sqlf.Query, error) {
 	a := actor.FromContext(ctx)
 	if a.IsInternal() {
 		return sqlf.Sprintf("(TRUE)"), nil
 	}
 
-	user, err := db.Users().GetByCurrentAuthUser(ctx)
-	if err != nil {
-		return nil, errors.Wrap(err, "getting auth user from context")
-	}
 	return sqlf.Sprintf(
 		userCredentialsAuthzQueryCondsFmtstr,
-		user.ID,
+		a.UID,
 		!conf.Get().AuthzEnforceForSiteAdmins,
-		user.ID,
+		a.UID,
 	), nil
 }
 

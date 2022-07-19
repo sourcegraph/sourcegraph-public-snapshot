@@ -94,12 +94,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 				continue
 			}
 
-			revSpecs, err := repoAllRevs.ExpandedRevSpecs(ctx, clients.DB)
-			if err != nil {
-				return err
-			}
-
-			for _, rev := range revSpecs {
+			for _, rev := range repoAllRevs.Revs {
 				rev := rev // capture rev
 				limitCtx, limitDone, err := textSearchLimiter.Acquire(ctx)
 				if err != nil {
@@ -116,7 +111,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
 					}
 					// non-diff search reports timeout through err, so pass false for timedOut
-					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []search.RevisionSpecifier{{RevSpec: rev}}, repoLimitHit, false, err)
+					status, limitHit, err := search.HandleRepoSearchResult(repo.ID, []string{rev}, repoLimitHit, false, err)
 					stream.Send(streaming.SearchEvent{
 						Stats: streaming.Stats{
 							Status:     status,
