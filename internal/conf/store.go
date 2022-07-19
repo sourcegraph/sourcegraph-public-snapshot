@@ -32,6 +32,9 @@ type store struct {
 // effectual. Without a shared store, the client will asynchronously poll
 // for updates from the database, and we have no way to know when it's done,
 // since the state served from the GraphQL API is the one in the server store.
+//
+// TODO(@bobheadxi): We can remove this by ensuring the default client is always up to
+// date using Server.sourceWrites
 var defaultStore = newStore()
 
 // newStore returns a new configuration store.

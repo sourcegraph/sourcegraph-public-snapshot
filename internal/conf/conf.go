@@ -173,6 +173,10 @@ func InitConfigurationServerFrontendOnly(source ConfigurationSource) *Server {
 	// and instead only relies on the DB.
 	DefaultClient().passthrough = source
 
+	// Notify the default client of updates to the source to ensure updates
+	// propagate quickly.
+	DefaultClient().sourceUpdates = server.sourceWrites
+
 	go DefaultClient().continuouslyUpdate(nil)
 	close(configurationServerFrontendOnlyInitialized)
 

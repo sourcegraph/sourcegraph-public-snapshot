@@ -38,7 +38,7 @@ func TestClient_continuouslyUpdate(t *testing.T) {
 			log: func(format string, v ...any) {
 				logMessages = append(logMessages, fmt.Sprintf(format, v...))
 			},
-			sleep: func() {
+			sleepBetweenUpdates: func() {
 				switch sleeps {
 				case 0:
 					if len(logMessages) > 0 {

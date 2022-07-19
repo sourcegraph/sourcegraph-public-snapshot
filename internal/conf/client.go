@@ -20,6 +20,12 @@ type client struct {
 	passthrough ConfigurationSource
 	watchersMu  sync.Mutex
 	watchers    []chan struct{}
+
+	// sourceUpdates receives events that indicate the configuration source has been
+	// updated. It should prompt the client to update the store, and the received channel
+	// should be closed when future queries to the client returns the most up to date
+	// configuration.
+	sourceUpdates <-chan chan struct{}
 }
 
 var _ conftypes.UnifiedQuerier = &client{}
@@ -199,8 +205,8 @@ type continuousUpdateOptions struct {
 	// contact the frontend for configuration) start up before the frontend.
 	delayBeforeUnreachableLog time.Duration
 
-	log   func(format string, v ...any) // log.Printf equivalent
-	sleep func()                        // sleep between updates
+	log                 func(format string, v ...any) // log.Printf equivalent
+	sleepBetweenUpdates func()                        // sleep between updates
 }
 
 // continuouslyUpdate runs (*client).fetchAndUpdate in an infinite loop, with error logging and
@@ -209,16 +215,16 @@ type continuousUpdateOptions struct {
 // The optOnlySetByTests parameter is ONLY customized by tests. All callers in main code should pass
 // nil (so that the same defaults are used).
 func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) {
-	opt := optOnlySetByTests
-	if opt == nil {
+	opts := optOnlySetByTests
+	if opts == nil {
 		// Apply defaults.
-		opt = &continuousUpdateOptions{
+		opts = &continuousUpdateOptions{
 			// This needs to be long enough to allow the frontend to fully migrate the PostgreSQL
 			// database in most cases, to avoid log spam when running sourcegraph/server for the
 			// first time.
 			delayBeforeUnreachableLog: 15 * time.Second,
 			log:                       log.Printf,
-			sleep: func() {
+			sleepBetweenUpdates: func() {
 				jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
 				time.Sleep(jitter)
 			},
@@ -230,15 +236,38 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 		return errors.As(err, &e) && e.Op == "dial"
 	}
 
+	waitForSleep := func() <-chan struct{} {
+		c := make(chan struct{}, 1)
+		go func() {
+			opts.sleepBetweenUpdates()
+			close(c)
+		}()
+		return c
+	}
+
+	// Make an initial fetch an update - this is likely to error, so just discard the
+	// error on this initial attempt.
+	_ = c.fetchAndUpdate()
+
 	start := time.Now()
 	for {
+		// signalDoneReading, if set, indicates that we were prompted to update because
+		// the source has been updated.
+		var signalDoneReading chan struct{}
+		select {
+		case signalDoneReading = <-c.sourceUpdates:
+			// Config was changed at source, so let's check now
+		case <-waitForSleep():
+			// File possibly changed at source, so check now.
+		}
+
 		err := c.fetchAndUpdate()
 		if err != nil {
 			// Suppress log messages for errors caused by the frontend being unreachable until we've
 			// given the frontend enough time to initialize (in case other services start up before
 			// the frontend), to reduce log spam.
-			if time.Since(start) > opt.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
-				opt.log("received error during background config update, err: %s", err)
+			if time.Since(start) > opts.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
+				opts.log("received error during background config update, err: %s", err)
 			}
 		} else {
 			// We successfully fetched the config, we reset the timer to give
@@ -246,7 +275,11 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 			start = time.Now()
 		}
 
-		opt.sleep()
+		// Indicate that we are done reading, if we were prompted to update by the updates
+		// channel
+		if signalDoneReading != nil {
+			close(signalDoneReading)
+		}
 	}
 }
 

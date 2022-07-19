@@ -2,10 +2,7 @@ package conf
 
 import (
 	"context"
-	"log"
-	"math/rand"
 	"sync"
-	"time"
 
 	"github.com/sourcegraph/jsonx"
 
@@ -25,15 +22,20 @@ type ConfigurationSource interface {
 type Server struct {
 	Source ConfigurationSource
 
+	// store is a shared read-only reference - we never write to the store.
+	//
+	// TODO(@bobheadxi) we might be able to follow up with a factor to remove store, since
+	// it is the same instance as is used in DefaultClient(). Updates are made in a timely
+	// manner to the configWrites channel.
 	store *store
+
+	// sourceWrites signals when our app writes to the configuration source. The
+	// received channel should be closed when server.Raw() would return the new
+	// configuration that has been written to disk.
+	sourceWrites chan chan struct{}
 
 	needRestartMu sync.RWMutex
 	needRestart   bool
-
-	// fileWrite signals when our app writes to the configuration file. The
-	// secondary channel is closed when server.Raw() would return the new
-	// configuration that has been written to disk.
-	fileWrite chan chan struct{}
 
 	once sync.Once
 }
@@ -43,11 +45,10 @@ type Server struct {
 //
 // The server must be started with Start() before it can handle requests.
 func NewServer(source ConfigurationSource) *Server {
-	fileWrite := make(chan chan struct{}, 1)
 	return &Server{
-		Source:    source,
-		store:     defaultStore,
-		fileWrite: fileWrite,
+		Source:       source,
+		store:        defaultStore,
+		sourceWrites: make(chan chan struct{}, 1),
 	}
 }
 
@@ -56,8 +57,7 @@ func (s *Server) Raw() conftypes.RawUnified {
 	return s.store.Raw()
 }
 
-// Write writes the JSON config file to the config file's path. If the JSON configuration is
-// invalid, an error is returned.
+// Write validates and writes input to the server's source.
 func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
 	// Parse the configuration so that we can diff it (this also validates it
 	// is proper JSON).
@@ -75,7 +75,10 @@ func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
 	// we would return to the caller earlier than server.Raw() would return the
 	// new configuration.
 	doneReading := make(chan struct{}, 1)
-	s.fileWrite <- doneReading
+	// Notify that we've written an update
+	s.sourceWrites <- doneReading
+	// Get notified that the update has been read (it gets closed) - don't write
+	// until this is done.
 	<-doneReading
 
 	return nil
@@ -127,63 +130,31 @@ func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, r
 // Start initializes the server instance.
 func (s *Server) Start() {
 	s.once.Do(func() {
-		go s.watchSource()
+		// We prepare to watch for config updates in order to mark the config server as
+		// needing a restart (or not). This must be in a goroutine, since Watch must
+		// happen after conf initialization (which may have not happened yet)
+		go func() {
+			initialUpdate := true
+			oldConfig := DefaultClient().Get()
+			DefaultClient().Watch(func() {
+				// Don't indicate restarts if this is the first update (initial configuration
+				// after service startup).
+				if initialUpdate {
+					initialUpdate = false
+					return
+				}
+
+				// Update global "needs restart" state.
+				newConfig := DefaultClient().Get()
+				if NeedRestartToApply(oldConfig, newConfig) {
+					s.markNeedServerRestart()
+				}
+
+				// Update old value
+				oldConfig = newConfig
+			})
+		}()
 	})
-}
-
-// watchSource reloads the configuration from the source at least every five seconds or whenever
-// server.Write() is called.
-func (s *Server) watchSource() {
-	ctx := context.Background()
-	for {
-		err := s.updateFromSource(ctx)
-		if err != nil {
-			log.Printf("failed to read configuration: %s. Fix your Sourcegraph configuration to resolve this error. Visit https://docs.sourcegraph.com/ to learn more.", err)
-		}
-
-		jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
-
-		var signalDoneReading chan struct{}
-		select {
-		case signalDoneReading = <-s.fileWrite:
-			// File was changed on FS, so check now.
-		case <-time.After(jitter):
-			// File possibly changed on FS, so check now.
-		}
-
-		if signalDoneReading != nil {
-			close(signalDoneReading)
-		}
-	}
-}
-
-func (s *Server) updateFromSource(ctx context.Context) error {
-	rawConfig, err := s.Source.Read(ctx)
-	if err != nil {
-		return errors.Wrap(err, "unable to read configuration")
-	}
-
-	configChange, err := s.store.MaybeUpdate(rawConfig)
-	if err != nil {
-		return err
-	}
-
-	// Don't need to restart if the configuration hasn't changed.
-	if !configChange.Changed {
-		return nil
-	}
-
-	// Don't restart if the configuration was empty before (this only occurs during initialization).
-	if configChange.Old == nil {
-		return nil
-	}
-
-	// Update global "needs restart" state.
-	if NeedRestartToApply(configChange.Old, configChange.New) {
-		s.markNeedServerRestart()
-	}
-
-	return nil
 }
 
 // NeedServerRestart tells if the server needs to restart for pending configuration
