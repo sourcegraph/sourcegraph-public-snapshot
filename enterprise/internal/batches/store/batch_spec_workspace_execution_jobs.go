@@ -158,6 +158,9 @@ func (s *Store) DeleteBatchSpecWorkspaceExecutionJobs(ctx context.Context, opts 
 	if len(opts.IDs) == 0 && len(opts.WorkspaceIDs) == 0 {
 		return errors.New("invalid options: would delete all jobs")
 	}
+	if len(opts.IDs) > 0 && len(opts.WorkspaceIDs) > 0 {
+		return errors.New("invalid options: multiple options not supported")
+	}
 
 	q := getDeleteBatchSpecWorkspaceExecutionJobsQuery(&opts)
 	deleted, err := basestore.ScanInts(s.Query(ctx, q))

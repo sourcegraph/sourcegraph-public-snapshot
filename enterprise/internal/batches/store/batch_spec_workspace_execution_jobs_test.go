@@ -724,6 +724,14 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 			err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{})
 			assert.Equal(t, "invalid options: would delete all jobs", err.Error())
 		})
+
+		t.Run("too many options", func(t *testing.T) {
+			err := s.DeleteBatchSpecWorkspaceExecutionJobs(ctx, DeleteBatchSpecWorkspaceExecutionJobsOpts{
+				IDs:          []int64{1, 2},
+				WorkspaceIDs: []int64{3, 4},
+			})
+			assert.Equal(t, "invalid options: multiple options not supported", err.Error())
+		})
 	})
 }
 
