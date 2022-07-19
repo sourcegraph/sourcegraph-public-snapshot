@@ -767,8 +767,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
             const { previous: release } = await releaseVersions(config)
             // close previous previous tracking issue
             await closeTrackingIssue(release)
-
-        }
+        },
     },
     {
         id: 'util:clear-cache',
