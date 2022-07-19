@@ -1,5 +1,5 @@
 /**
- * The specification used to provide search-based code intelligence for a
+ * The specification used to provide search-based code navigation for a
  * particular language. This includes things like file extensions, comment
  * patterns and delimiters, and logic for filtering out obviously wrong
  * search results for definitions.
