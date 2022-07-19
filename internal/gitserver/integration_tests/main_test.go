@@ -137,14 +137,6 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 	return repo
 }
 
-func MustParseTime(layout, value string) time.Time {
-	tm, err := time.Parse(layout, value)
-	if err != nil {
-		panic(err.Error())
-	}
-	return tm
-}
-
 func AppleTime(t string) string {
 	ti, _ := time.Parse(time.RFC3339, t)
 	return ti.Local().Format("200601021504.05")
