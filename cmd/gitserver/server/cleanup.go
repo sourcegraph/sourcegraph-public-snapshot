@@ -1116,7 +1116,7 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 
 	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
 
-	err = lockRepoForGC(dir)
+	err, unlock := lockRepoForGC(dir)
 	if err != nil {
 		logger.Debug(
 			"could not lock repository for sg maintenance. There is probably another git gc operation running.",
@@ -1125,7 +1125,7 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 		)
 		return nil
 	}
-	defer removeGCLockFile(dir)
+	defer unlock()
 
 	b, err := cmd.CombinedOutput()
 	if err != nil {
@@ -1142,11 +1142,11 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 
 const gcLockFile = "gc.pid"
 
-func lockRepoForGC(dir GitDir) error {
+func lockRepoForGC(dir GitDir) (error, func() error) {
 	// Setting permissions to 644 to mirror the permissions that git gc sets for gc.pid.
 	f, err := os.OpenFile(dir.Path(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
-		return err
+		return err, nil
 	}
 
 	// We cut the hostname to 256 bytes, just like git gc does. See HOST_NAME_MAX in
@@ -1162,11 +1162,9 @@ func lockRepoForGC(dir GitDir) error {
 		err = err1
 	}
 
-	return err
-}
-
-func removeGCLockFile(dir GitDir) error {
-	return os.Remove(dir.Path(gcLockFile))
+	return err, func() error {
+		return os.Remove(dir.Path(gcLockFile))
+	}
 }
 
 // We run git-prune only if there are enough loose objects. This approach is

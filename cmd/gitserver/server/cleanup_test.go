@@ -1537,7 +1537,7 @@ func TestGitGCRespectsLock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := lockRepoForGC(dir)
+	err, unlock := lockRepoForGC(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1557,7 +1557,7 @@ func TestGitGCRespectsLock(t *testing.T) {
 		t.Fatal("git gc should have complained about an existing lockfile")
 	}
 
-	err = removeGCLockFile(dir)
+	err = unlock()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1580,7 +1580,7 @@ func TestSGMaintenanceRespectsLock(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	err := lockRepoForGC(dir)
+	err, _ := lockRepoForGC(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
