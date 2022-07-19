@@ -67,7 +67,7 @@ func Wait(ctx context.Context, out *std.Output) {
 	if count == 0 {
 		return // no jobs registered
 	}
-	ctx, span := analytics.StartSpan(ctx, "background_wait",
+	ctx, span := analytics.StartSpan(ctx, "background_wait", "",
 		trace.WithAttributes(attribute.Int("jobs", int(count))))
 	defer span.End()
 

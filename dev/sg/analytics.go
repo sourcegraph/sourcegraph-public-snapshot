@@ -37,9 +37,8 @@ func addAnalyticsHooks(commandPath []string, commands []*cli.Command) {
 		wrappedAction := command.Action
 		command.Action = func(cmd *cli.Context) (actionErr error) {
 			var span *analytics.Span
-			cmd.Context, span = analytics.StartSpan(cmd.Context, fullCommand,
+			cmd.Context, span = analytics.StartSpan(cmd.Context, fullCommand, "action",
 				trace.WithAttributes(
-					attribute.Bool("action_span", true),
 					attribute.StringSlice("flags", cmd.FlagNames()),
 					attribute.Int("args", cmd.NArg()),
 				))

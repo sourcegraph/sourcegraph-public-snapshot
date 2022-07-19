@@ -79,7 +79,7 @@ func Reset() error {
 }
 
 // Load retrieves all persisted events.
-func Load() (spans []*tracepb.ResourceSpans, err error) {
+func Load() (spans []*tracepb.ResourceSpans, errs error) {
 	p, err := spansPath()
 	if err != nil {
 		return nil, err
@@ -95,11 +95,10 @@ func Load() (spans []*tracepb.ResourceSpans, err error) {
 	for scanner.Scan() {
 		var req coltracepb.ExportTraceServiceRequest
 		if err := protojson.Unmarshal(scanner.Bytes(), &req); err != nil {
-			println(err.Error())
+			errs = errors.Append(errs, err)
 			continue // drop malformed data
 		}
 
-		spans = append(spans, req.GetResourceSpans()...)
 		for _, s := range req.GetResourceSpans() {
 			if !isValidVersion(s) {
 				continue

@@ -111,15 +111,16 @@ func (c *otlpDiskClient) UploadTraces(ctx context.Context, protoSpans []*tracepb
 	c.uploadMux.Lock()
 	defer c.uploadMux.Unlock()
 
+	// Create a request we can marshal
 	req := coltracepb.ExportTraceServiceRequest{
 		ResourceSpans: protoSpans,
 	}
 	b, err := protojson.Marshal(&req)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "protojson.Marshal")
 	}
 	if _, err := c.f.Write(append(b, '\n')); err != nil {
-		return err
+		return errors.Wrap(err, "Write")
 	}
 	return c.f.Sync()
 }

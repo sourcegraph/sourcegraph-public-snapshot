@@ -623,8 +623,5 @@ func (r *Runner[Args]) startSpan(ctx context.Context, spanName string, opts ...t
 	if r.AnalyticsCategory == "" {
 		return ctx, analytics.NoOpSpan()
 	}
-	return analytics.StartSpan(ctx, spanName,
-		append(opts, trace.WithAttributes(
-			attribute.String("check_runner", r.AnalyticsCategory),
-		))...)
+	return analytics.StartSpan(ctx, spanName, r.AnalyticsCategory, opts...)
 }

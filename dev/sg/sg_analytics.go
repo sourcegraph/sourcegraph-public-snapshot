@@ -25,9 +25,8 @@ var analyticsCommand = &cli.Command{
 			Name:        "submit",
 			ArgsUsage:   " ",
 			Usage:       "Make sg better by submitting all analytics stored locally!",
-			Description: "Uses HONEYCOMB_API_TOKEN, or fetches a token from gcloud or 1password.",
+			Description: "Uses HONEYCOMB_API_TOKEN, or fetches a token from gcloud.",
 			Action: func(cmd *cli.Context) error {
-				// TODO
 				honeyToken := os.Getenv("HONEYCOMB_API_TOKEN")
 				if honeyToken == "" {
 					store, err := secrets.FromContext(cmd.Context)
@@ -35,19 +34,13 @@ var analyticsCommand = &cli.Command{
 						return err
 					}
 
-					pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Fetching a secret"))
+					pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Fetching Honeycomb API token..."))
 
 					var errs error
 					for _, secret := range []secrets.ExternalSecret{
 						{
-							Provider: secrets.ExternalProvider1Pass,
-							Project:  "Shared",
-							Name:     "ttdgfcufz3jggx3d57g6rwodwi",
-							Field:    "credential",
-						},
-						{
 							Provider: secrets.ExternalProviderGCloud,
-							Project:  "sourcegraph-ci",
+							Project:  "sourcegraph-dev",
 							Name:     "CI_OKAYHQ_TOKEN",
 						},
 					} {
@@ -105,7 +98,7 @@ var analyticsCommand = &cli.Command{
 			Action: func(cmd *cli.Context) error {
 				spans, err := analytics.Load()
 				if err != nil {
-					std.Out.WriteSuccessf("No analytics found: %s", err.Error())
+					std.Out.Writef("No analytics found: %s", err.Error())
 					return nil
 				}
 				if len(spans) == 0 {
@@ -114,15 +107,12 @@ var analyticsCommand = &cli.Command{
 				}
 
 				var out strings.Builder
-				out.WriteString(fmt.Sprintf("%d spans found:\n", len(spans)))
-
 				for _, span := range spans {
 					if cmd.Bool("raw") {
 						b, _ := json.MarshalIndent(span, "", "  ")
 						out.WriteString(fmt.Sprintf("\n```json\n%s\n```", string(b)))
 						out.WriteString("\n")
 					} else {
-
 						for _, ss := range span.GetScopeSpans() {
 							for _, s := range ss.GetSpans() {
 								var events []string

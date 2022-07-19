@@ -282,7 +282,7 @@ func (c *cmdRunner) waitForInstallation(ctx context.Context, cmdNames map[string
 	installationStart := time.Now()
 	installationSpans := make(map[string]*analytics.Span, len(cmdNames))
 	for name := range cmdNames {
-		_, installationSpans[name] = analytics.StartSpan(ctx, fmt.Sprintf("install %s", name))
+		_, installationSpans[name] = analytics.StartSpan(ctx, fmt.Sprintf("install %s", name), "install_command")
 	}
 	interrupt.Register(func() {
 		for _, span := range installationSpans {

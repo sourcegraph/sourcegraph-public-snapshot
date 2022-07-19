@@ -11,7 +11,6 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	"go.opentelemetry.io/otel/trace"
 	tracepb "go.opentelemetry.io/proto/otlp/trace/v1"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -49,9 +48,7 @@ func WithContext(ctx context.Context, sgVersion string) (context.Context, error)
 
 	// Create a root span for an execution of sg for all spans to be grouped under
 	var rootSpan *Span
-	ctx, rootSpan = StartSpan(ctx, "sg", trace.WithAttributes(
-		attribute.Bool("root_span", true),
-	))
+	ctx, rootSpan = StartSpan(ctx, "sg", "root")
 
 	return context.WithValue(ctx, spansStoreKey{}, &spansStore{
 		rootSpan: rootSpan.Span,
