@@ -1,6 +1,8 @@
 import React from 'react'
 
-import { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
+import { cloneDeep } from 'lodash'
+
+import { TreeEntryFields, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 
 import { TreeRootProps } from './TreeRoot'
 
@@ -94,7 +96,7 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
 }
 
-interface ComparisonTreeRootProps extends Omit<TreeRootProps, 'sizeKey'> {}
+interface ComparisonTreeRootProps extends Omit<TreeRootProps, 'sizeKey'> { }
 
 export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRootProps): boolean {
     return (
@@ -105,4 +107,27 @@ export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRo
         a.isExpanded === b.isExpanded &&
         a.location === b.location
     )
+}
+
+export function prependGoUpOnce(tree: TreeFields, goUpPath: string, goUpUrl: string): TreeFields {
+    if (!tree.isRoot) {
+        const firstEntryPath = tree.entries?.[0].path ?? null
+        if (firstEntryPath !== goUpPath) {
+            const newTree = cloneDeep(tree)
+            newTree.entries = [
+                {
+                    name: '..',
+                    path: goUpPath,
+                    isDirectory: false,
+                    url: goUpUrl,
+                    isSingleChild: !tree.entries.length,
+                    submodule: null,
+                },
+                ...tree.entries,
+            ]
+            return newTree
+        }
+    }
+
+    return tree
 }

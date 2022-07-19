@@ -27,11 +27,18 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../backend/features'
 import { requestGraphQL } from '../backend/graphql'
+import { dirname } from '../util/path'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
 import { TreeNode } from './Tree'
-import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
+import {
+    hasSingleChild,
+    compareTreeProps,
+    singleChildEntriesToGitTree,
+    SingleChildGitTree,
+    prependGoUpOnce,
+} from './util'
 
 const maxEntries = 2500
 
@@ -110,6 +117,15 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.subscriptions.add(
             treeOrErrors.subscribe(
                 treeOrError => {
+                    // Append '..'
+                    if (treeOrError && treeOrError !== LOADING && !isErrorLike(treeOrError)) {
+                        treeOrError = prependGoUpOnce(
+                            treeOrError,
+                            dirname(this.props.parentPath ?? ''),
+                            dirname(treeOrError.url)
+                        )
+                    }
+
                     // clear file decorations before latest file decorations come
                     this.setState({ treeOrError, fileDecorationsByPath: {} })
                 },
