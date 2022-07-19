@@ -1,9 +1,11 @@
 import React from 'react'
 
+import { useLocation } from 'react-router'
+
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { LayoutRouteComponentProps } from '../routes'
-import { useLocation } from 'react-router'
+
 import { parseSearchURLQuery } from '.'
 
 const SearchPage = lazyComponent(() => import('./home/SearchPage'), 'SearchPage')
