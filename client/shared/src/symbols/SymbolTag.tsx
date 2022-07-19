@@ -1,6 +1,7 @@
 import * as React from 'react'
 
 import classNames from 'classnames'
+import { upperFirst } from 'lodash'
 
 import { SymbolKind } from '../graphql-operations'
 
@@ -72,7 +73,7 @@ interface SymbolTagProps {
 }
 
 function getSymbolIconClassName(kind: SymbolKind): string | undefined {
-    return (styles as Record<string, string>)[`${kind.toLowerCase()}Tag`]
+    return (styles as Record<string, string>)[`tagKind${upperFirst(kind.toLowerCase())}`]
 }
 
 export const SymbolTag: React.FunctionComponent<React.PropsWithChildren<SymbolTagProps>> = ({ kind, className }) => (

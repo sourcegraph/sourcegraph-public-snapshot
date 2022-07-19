@@ -2,34 +2,49 @@
     font-size: 0.75rem;
     padding: 0.0625rem 0.25rem;
     border-radius: var(--border-radius);
-    color: var(--white);
-    background-color: #000000;
-}
+    font-weight: 500;
+    color: var(--gray-01);
 
-.class-tag {
-    background-color: #6b47d6;
-}
+    :global(.theme-dark) & {
+        color: var(--black);
+    }
 
-.function-tag {
-    background-color: #6b1515;
-}
+    $oc-level: 5;
+    $symbol-kinds: (
+        'array': 'red',
+        'boolean': 'red',
+        'class': 'orange',
+        'constant': 'indigo',
+        'constructor': 'violet',
+        'enum': 'blue',
+        'enummember': 'blue',
+        'event': 'red',
+        'field': 'blue',
+        'file': 'gray',
+        'function': 'violet',
+        'interface': 'green',
+        'key': 'yellow',
+        'method': 'violet',
+        'module': 'grape',
+        'namespace': 'grape',
+        'null': 'red',
+        'number': 'violet',
+        'object': 'orange',
+        'operator': 'gray',
+        'package': 'yellow',
+        'property': 'gray',
+        'string': 'orange',
+        'struct': 'orange',
+        'typeparameter': 'blue',
+        'variable': 'blue',
+    );
 
-.field-tag {
-    background-color: #b8e3e8;
-}
+    // Default for unknown symbols
+    background-color: var(--oc-gray-#{$oc-level});
 
-.module-tag {
-    background-color: #f59f00;
-}
-
-.package-tag {
-    background-color: #fbd999;
-}
-
-.method-tag {
-    background-color: #37b24d;
-}
-
-.struct-tag {
-    background-color: #845ef7;
+    @each $kind, $oc-color in $symbol-kinds {
+        &--kind-#{$kind} {
+            background-color: var(--oc-#{$oc-color}-#{$oc-level});
+        }
+    }
 }
