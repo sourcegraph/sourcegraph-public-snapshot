@@ -182,6 +182,15 @@ public class ConfigUtil {
         return url.endsWith("/") ? url : url + "/";
     }
 
+    public static boolean didAuthenticationFailLastTime() {
+        Boolean failedLastTime = getApplicationLevelConfig().getAuthenticationFailedLastTime();
+        return failedLastTime != null ? failedLastTime : true;
+    }
+
+    public static void setAuthenticationFailedLastTime(boolean value) {
+        SourcegraphApplicationService.getInstance().authenticationFailedLastTime = value;
+    }
+
     public static String getLastUpdateNotificationPluginVersion() {
         return SourcegraphApplicationService.getInstance().getLastUpdateNotificationPluginVersion();
     }
