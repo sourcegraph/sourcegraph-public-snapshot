@@ -191,6 +191,86 @@ fn close_row(s: &mut String) {
     s.push_str("</div></td></tr>");
 }
 
+pub struct JSONGenerator<'a> {
+    syntax_set: &'a SyntaxSet,
+    parse_state: ParseState,
+    position_stack: Vec<(Scope, usize)>,
+    stack: ScopeStack,
+    data: Vec<(usize, usize, Scope)>,
+    style: ClassStyle,
+    code: &'a str,
+    max_line_len: Option<usize>,
+}
+
+impl<'a> JSONGenerator<'a> {
+    pub fn new(
+        ss: &'a SyntaxSet,
+        sr: &SyntaxReference,
+        code: &'a str,
+        max_line_len: Option<usize>,
+        style: ClassStyle,
+    ) -> Self {
+        JSONGenerator {
+            code,
+            syntax_set: ss,
+            parse_state: ParseState::new(sr),
+            stack: ScopeStack::new(),
+            data: vec![],
+            position_stack: vec![],
+            style,
+            max_line_len,
+        }
+    }
+
+    // generate takes ownership of self so that it can't be re-used
+    pub fn generate(mut self) -> Vec<(usize, usize, Scope)> {
+        let mut file_offset = 0;
+        for (i, line) in LinesWithEndings::from(self.code).enumerate() {
+            if self.max_line_len.map_or(false, |n| line.len() > n) {
+                // TODO
+            } else {
+                self.write_data_for_tokens(line, file_offset);
+            }
+            file_offset += line.len()
+        }
+        self.data
+    }
+
+    // write_spans_for_tokens creates spans for the list of tokens passed to it.
+    // It modifies the stack of the ClassedTableGenerator, adding any scopes
+    // that are unclosed at the end of the line.
+    //
+    // This is modified from highlight::tokens_to_classed_spans
+    fn write_data_for_tokens(&mut self, line: &str, file_offset: usize) {
+        let parsed_line = self.parse_state.parse_line(line, self.syntax_set);
+
+        for &(i, ref op) in parsed_line.as_slice() {
+            let mut stack = self.stack.clone();
+            stack.apply_with_hook(op, |basic_op, _| match basic_op {
+                BasicScopeStackOp::Push(scope) => {
+                    self.open_scope(&scope, file_offset + i);
+                }
+                BasicScopeStackOp::Pop => {
+                    self.close_scope(file_offset + i);
+                }
+            });
+            self.stack = stack;
+        }
+    }
+
+    fn open_scope(&mut self, scope: &Scope, start: usize) {
+        self.position_stack.push((*scope, start))
+    }
+
+    fn close_scope(&mut self, end: usize) {
+        let entry = self.position_stack.pop();
+        match entry {
+            Some((scope, start)) => self.data.push((start, end, scope)),
+            None => ()
+        }
+    }
+}
+
 use std::fmt;
 
 /// Wrapper struct which will emit the HTML-escaped version of the contained

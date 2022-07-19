@@ -94,7 +94,7 @@ var (
 
 type response struct {
 	// Successful response fields.
-	Data      string `json:"data"`
+	Data      [][]interface{} `json:"data"`
 	Plaintext bool   `json:"plaintext"`
 
 	// Error response fields.
@@ -221,8 +221,9 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 		}
 		return nil, errors.Wrap(err, c.syntectServer)
 	}
+	res, err := json.Marshal(r.Data)
 	return &Response{
-		Data:      r.Data,
+		Data:      string(res),
 		Plaintext: r.Plaintext,
 	}, nil
 }

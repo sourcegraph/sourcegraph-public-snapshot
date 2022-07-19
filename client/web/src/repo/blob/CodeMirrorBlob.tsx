@@ -4,8 +4,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Extension } from '@codemirror/state'
-import { EditorView } from '@codemirror/view'
+import { Extension, RangeSetBuilder } from '@codemirror/state'
+import { Decoration, EditorView } from '@codemirror/view'
 import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
@@ -34,8 +34,27 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
     const dynamicExtensions = useMemo(
-        () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
-        [wrapCode, isLightTheme]
+        () => [
+            wrapCode ? EditorView.lineWrapping : [],
+            EditorView.darkTheme.of(isLightTheme === false),
+            EditorView.decorations.of(view => {
+                const builder = new RangeSetBuilder<Decoration>()
+                for (const [start, end, cls] of blobInfo.data as [number, number, string][]) {
+                    builder.add(
+                        start,
+                        end,
+                        Decoration.mark({
+                            class: cls
+                                .split('.')
+                                .map(cls => `hl-${cls}`)
+                                .join(' '),
+                        })
+                    )
+                }
+                return builder.finish()
+            }),
+        ],
+        [wrapCode, isLightTheme, blobInfo]
     )
 
     const [compartment, updateCompartment] = useCompartment(dynamicExtensions)

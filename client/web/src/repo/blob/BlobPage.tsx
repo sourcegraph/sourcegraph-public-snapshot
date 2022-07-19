@@ -156,15 +156,21 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         if (blob === null) {
                             return blob
                         }
+                        console.log(blob)
 
                         // Replace html with lsif generated HTML, if available
                         if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
                             blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
                         }
 
-                        const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
+                        const blobInfo: BlobInfo & {
+                            richHTML: string
+                            aborted: boolean
+                            data: [number, number, string][]
+                        } = {
                             content: blob.content,
-                            html: blob.highlight.html,
+                            //html: blob.highlight.html,
+                            data: JSON.parse(blob.highlight.html).sort((a, b) => a[0] - b[0]),
                             repoName,
                             revision,
                             commitID,
