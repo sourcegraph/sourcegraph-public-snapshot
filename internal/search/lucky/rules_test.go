@@ -36,6 +36,7 @@ func Test_unquotePatterns(t *testing.T) {
 	cases := []string{
 		`"monitor"`,
 		`repo:^github\.com/sourcegraph/sourcegraph$ "monitor" "*Monitor"`,
+		`content:"not quoted"`,
 	}
 
 	for _, c := range cases {

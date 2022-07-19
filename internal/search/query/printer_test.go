@@ -25,8 +25,10 @@ func TestStringHuman(t *testing.T) {
 	autogold.Want("10", "repo:foo file:bar").Equal(t, test("repo:foo file:bar"))
 	autogold.Want("11", "((repo:foo OR repo:bar) OR ((repo:baz OR repo:qux) AND (a OR b)))").Equal(t, test("(repo:foo or repo:bar) or (repo:baz or repo:qux) (a or b)"))
 	autogold.Want("12", "((repo:foo OR repo:bar file:a) OR ((repo:baz OR repo:qux file:b) AND a AND b))").Equal(t, test("(repo:foo or repo:bar file:a) or (repo:baz or repo:qux and file:b) a and b"))
-	autogold.Want("13", "repo:foo ((NOT b) AND (NOT c) AND a)").Equal(t, test("repo:foo a -content:b -content:c"))
-	autogold.Want("14", "-repo:modspeed -file:pogspeed ((NOT Phoenicians) AND Arizonan)").Equal(t, test("-repo:modspeed -file:pogspeed Arizonan -content:Phoenicians"))
+	autogold.Want("13", "repo:foo ((NOT b) AND (NOT c) AND a)").Equal(t, test("repo:foo (not b) (not c) a"))
+	autogold.Want("14", "repo:foo (-content:b AND -content:c AND a)").Equal(t, test("repo:foo a -content:b -content:c"))
+	autogold.Want("15", "-repo:modspeed -file:pogspeed (Arizonan AND (NOT Phoenicians))").Equal(t, test("-repo:modspeed -file:pogspeed Arizonan not Phoenicians"))
+	autogold.Want("16", "r:alias").Equal(t, test("r:alias"))
 
 	test = func(input string) string {
 		q, _ := ParseRegexp(input)

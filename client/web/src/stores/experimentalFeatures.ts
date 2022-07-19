@@ -17,6 +17,7 @@ const defaultSettings: SettingsExperimentalFeatures = {
     showComputeComponent: false,
     codeMonitoringWebHooks: true,
     showCodeMonitoringLogs: true,
+    codeInsightsCompute: false,
 }
 
 export const useExperimentalFeatures = create<SettingsExperimentalFeatures>(() => ({}))

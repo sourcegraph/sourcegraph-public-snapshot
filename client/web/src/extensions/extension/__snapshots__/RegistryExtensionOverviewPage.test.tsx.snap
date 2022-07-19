@@ -45,7 +45,9 @@ exports[`RegistryExtensionOverviewPage renders 1`] = `
         >
           Publisher
         </h2>
-        <small>
+        <small
+          data-state="closed"
+        >
           x
         </small>
       </div>
@@ -224,7 +226,9 @@ exports[`RegistryExtensionOverviewPage renders with no tags 1`] = `
         >
           Publisher
         </h2>
-        <small>
+        <small
+          data-state="closed"
+        >
           x
         </small>
       </div>

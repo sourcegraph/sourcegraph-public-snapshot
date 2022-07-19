@@ -176,7 +176,6 @@ func queryRepoState(_ context.Context, repoNames []string, uploads []uploadMeta)
 	for _, upload := range uploads {
 		uploadIDs = append(uploadIDs, upload.id)
 	}
-	sort.Strings(uploadIDs)
 
 	var payload struct{ Data map[string]jsonUploadResult }
 	if err := internal.GraphQLClient().GraphQL(internal.SourcegraphAccessToken, makeRepoStateQuery(repoNames, uploadIDs), nil, &payload); err != nil {

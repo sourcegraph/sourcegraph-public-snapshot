@@ -8,12 +8,12 @@ import (
 )
 
 type LockfileIndexConnectionResolver struct {
-	resolvers  []*LockfileIndexResolver
+	resolvers  []graphqlbackend.LockfileIndexResolver
 	totalCount int
 	nextOffset *int
 }
 
-func NewLockfileIndexConnectionConnection(resolvers []*LockfileIndexResolver, totalCount int, nextOffset *int) *LockfileIndexConnectionResolver {
+func NewLockfileIndexConnectionConnection(resolvers []graphqlbackend.LockfileIndexResolver, totalCount int, nextOffset *int) *LockfileIndexConnectionResolver {
 	return &LockfileIndexConnectionResolver{
 		resolvers:  resolvers,
 		totalCount: totalCount,
@@ -21,12 +21,8 @@ func NewLockfileIndexConnectionConnection(resolvers []*LockfileIndexResolver, to
 	}
 }
 
-func (r *LockfileIndexConnectionResolver) Nodes(ctx context.Context) (resolvers []graphqlbackend.LockfileIndexResolver) {
-	resolvers = make([]graphqlbackend.LockfileIndexResolver, len(r.resolvers))
-	for i, r := range r.resolvers {
-		resolvers[i] = r
-	}
-	return resolvers
+func (r *LockfileIndexConnectionResolver) Nodes(ctx context.Context) []graphqlbackend.LockfileIndexResolver {
+	return r.resolvers
 }
 
 func (r *LockfileIndexConnectionResolver) TotalCount(ctx context.Context) int32 {

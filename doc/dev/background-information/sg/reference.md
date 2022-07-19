@@ -179,10 +179,6 @@ $ sg ci build --force --commit my-commit main-dry-run
 $ sg ci build --help
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg ci preview
 
 Preview the pipeline that would be run against the currently checked out branch.
@@ -459,10 +455,6 @@ $ sg db reset-redis
 $ sg db add-user -name=foo
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg db reset-pg
 
 Drops, recreates and migrates the specified Sourcegraph database.
@@ -518,10 +510,6 @@ $ sg migration add --db codeintel 'add missing index'
 $ sg migration squash
 ```
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg migration add
 
 Add a new migration file.
@@ -575,6 +563,8 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
+* `--skip-oobmigration-validation`: Do not attempt to validate the progress of out-of-band migrations.
 * `--skip-upgrade-validation`: Do not attempt to compare the previous instance version with the target instance version for upgrade compatibility. Please refer to https://docs.sourcegraph.com/admin/updates#update-policy for our instance upgrade compatibility policy.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -598,6 +588,7 @@ Flags:
 * `--feedback`: provide feedback about this command by opening up a Github discussion
 * `--ignore-single-dirty-log`: Ignore a previously failed attempt if it will be immediately retried by this operation.
 * `--noop-privileged`: Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.
+* `--privileged-hash="<value>"`: Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.
 * `--target="<value>"`: The `migration` to apply. Comma-separated values are accepted.
 * `--unprivileged-only`: Refuse to apply privileged migrations.
 
@@ -659,6 +650,7 @@ Flags:
 
 * `--db="<value>"`: The target `schema(s)` to validate. Comma-separated values are accepted. Supply "all" to validate all schemas. (default: [all])
 * `--feedback`: provide feedback about this command by opening up a Github discussion
+* `--skip-out-of-band-migrations`: Do not attempt to validate out-of-band migration status.
 
 ### sg migration describe
 
@@ -794,10 +786,6 @@ Flags:
 Tools to interact with Code Insights data.
 
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg insights decode-id
 
 Decodes an encoded insight ID found on the frontend into a view unique_id.
@@ -841,10 +829,6 @@ $ sg secret list
 # ease of use
 $ sg secret reset buildkite
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg secret reset
 
@@ -894,10 +878,6 @@ $ sg teammate time thorsten ball
 # Open their handbook bio
 $ sg teammate handbook asdine
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg teammate time
 
@@ -966,10 +946,6 @@ $ sg adr view 420
 # Create a new ADR!
 $ sg adr create my ADR title
 ```
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg adr list
 
@@ -1045,10 +1021,6 @@ Commands used by operations teams to perform common tasks.
 Supports internal deploy-sourcegraph repos (non-customer facing)
 
 
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
-
 ### sg ops update-images
 
 Updates images in given directory to latest published image.
@@ -1090,10 +1062,6 @@ Flags:
 
 Manage analytics collected by sg.
 
-
-Flags:
-
-* `--feedback`: provide feedback about this command by opening up a Github discussion
 
 ### sg analytics submit
 
