@@ -18,8 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
-type dependenciesJob struct {
-}
+type dependenciesJob struct{}
 
 func NewDependenciesJob() job.Job {
 	return &dependenciesJob{}
