@@ -65,9 +65,9 @@ env:
     ]
   OVERRIDE_AUTH_SECRET: sSsNGlI8fBDftBz0LDQNXEnP6lrWdt9g0fK6hoFvGQ
   # Settings/config
-  SITE_CONFIG_FILE: ./dev/site-config.json
+  # SITE_CONFIG_FILE: ./dev/site-config.json
   SITE_CONFIG_ALLOW_EDITS: true
-  GLOBAL_SETTINGS_FILE: ./dev/global-settings.json
+  # GLOBAL_SETTINGS_FILE: ./dev/global-settings.json
   GLOBAL_SETTINGS_ALLOW_EDITS: true
 
   # Point codeintel to the `frontend` database in development

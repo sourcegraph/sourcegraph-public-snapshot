@@ -126,9 +126,9 @@ func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, r
 
 // Start initializes the server instance.
 func (s *Server) Start() {
-	s.once.Do(func() {
-		go s.watchSource()
-	})
+	// s.once.Do(func() {
+	// 	go s.watchSource()
+	// })
 }
 
 // watchSource reloads the configuration from the source at least every five seconds or whenever
@@ -163,7 +163,9 @@ func (s *Server) updateFromSource(ctx context.Context) error {
 		return errors.Wrap(err, "unable to read configuration")
 	}
 
+	println("updateFromSource")
 	configChange, err := s.store.MaybeUpdate(rawConfig)
+	println("updateFromSource DONE")
 	if err != nil {
 		return err
 	}

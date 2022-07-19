@@ -1,6 +1,9 @@
 package conftypes
 
-import "reflect"
+import (
+	"fmt"
+	"reflect"
+)
 
 // ServiceConnections represents configuration about how the deployment
 // internally connects to services. These are settings that need to be
@@ -34,5 +37,6 @@ type RawUnified struct {
 
 // Equal tells if the two configurations are equal or not.
 func (r RawUnified) Equal(other RawUnified) bool {
+	fmt.Printf("r.Site == other.Site = %v\n", r.Site == other.Site)
 	return r.Site == other.Site && reflect.DeepEqual(r.ServiceConnections, other.ServiceConnections)
 }

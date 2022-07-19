@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -105,7 +106,12 @@ func (s *store) MaybeUpdate(rawConfig conftypes.RawUnified) (updateResult, error
 	if rawConfig.Site == "" {
 		return result, errors.New("invalid site configuration (empty string)")
 	}
+	diff := cmp.Diff(s.raw.Site, rawConfig.Site)
+	if diff != "" {
+		fmt.Printf("cfg diff\n%s\n---%v\n", diff, s.raw.Equal(rawConfig))
+	}
 	if s.raw.Equal(rawConfig) {
+		println("nothing")
 		return result, nil
 	}
 
@@ -113,6 +119,7 @@ func (s *store) MaybeUpdate(rawConfig conftypes.RawUnified) (updateResult, error
 
 	newConfig, err := ParseConfig(rawConfig)
 	if err != nil {
+		println("when parising rawConfig")
 		return result, errors.Wrap(err, "when parsing rawConfig during update")
 	}
 

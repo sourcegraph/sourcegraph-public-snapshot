@@ -187,6 +187,10 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	conf.MustValidateDefaults()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
+	go conf.Watch(func() {
+		println("🧨🧨🧨🧨🧨🧨🧨🧨🧨🧨🧨🧨")
+	})
+
 	// now we can init the keyring, as it depends on site config
 	if err := keyring.Init(ctx); err != nil {
 		return errors.Wrap(err, "failed to initialize encryption keyring")

@@ -153,6 +153,7 @@ func (c *client) Watch(f func()) {
 		for {
 			<-notify
 			f()
+			println("WATCH INVOKED 🧑‍🚒")
 		}
 	}()
 }
@@ -174,10 +175,15 @@ func (c *client) Cached(f func() any) (wrapped func() any) {
 	}
 }
 
+func (c *client) NotifyWatchers() {
+	c.notifyWatchers()
+}
+
 // notifyWatchers runs all the callbacks registered via client.Watch() whenever
 // the configuration has changed.
 func (c *client) notifyWatchers() {
 	c.watchersMu.Lock()
+	println("watchers count", len(c.watchers))
 	defer c.watchersMu.Unlock()
 	for _, watcher := range c.watchers {
 		// Perform a non-blocking send.
@@ -265,12 +271,16 @@ func (c *client) fetchAndUpdate() error {
 		return errors.Wrap(err, "unable to fetch new configuration")
 	}
 
+	println("fetch and update")
 	configChange, err := c.store.MaybeUpdate(newConfig)
+	println("after maybe update")
 	if err != nil {
+		println("config change went wrong")
 		return errors.Wrap(err, "unable to update new configuration")
 	}
 
 	if configChange.Changed {
+		println("config change detected")
 		c.notifyWatchers()
 	}
 
