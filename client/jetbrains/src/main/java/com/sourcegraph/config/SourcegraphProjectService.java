@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
     storages = {@Storage("sourcegraph.xml")})
 public class SourcegraphProjectService implements PersistentStateComponent<SourcegraphProjectService> {
     @Nullable
+    public String instanceType;
+    @Nullable
     public String url;
     @Nullable
     public String accessToken;
@@ -33,6 +35,11 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
     @NotNull
     public static SourcegraphProjectService getInstance(@NotNull Project project) {
         return project.getService(SourcegraphProjectService.class);
+    }
+
+    @Nullable
+    public String getInstanceType() {
+        return instanceType;
     }
 
     @Nullable
@@ -77,6 +84,7 @@ public class SourcegraphProjectService implements PersistentStateComponent<Sourc
 
     @Override
     public void loadState(@NotNull SourcegraphProjectService settings) {
+        this.instanceType = settings.instanceType;
         this.url = settings.url;
         this.accessToken = settings.accessToken;
         this.defaultBranch = settings.defaultBranch;
