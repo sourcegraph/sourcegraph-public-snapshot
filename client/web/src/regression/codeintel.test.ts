@@ -110,7 +110,8 @@ describe('Code intelligence regression test suite', () => {
             }
         })
 
-        test('File sidebar, multiple levels of directories', async () => {
+        // Re-enabling tracked in https://github.com/sourcegraph/sourcegraph/issues/39000
+        test.skip('File sidebar, multiple levels of directories', async () => {
             await driver.page.goto(
                 config.sourcegraphBaseUrl +
                     '/github.com/sourcegraph/sourcegraph@c543dfd3936019befe94b881ade89e637d1a3dc3'
