@@ -127,7 +127,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>Whether new user signup is allowed (true/false)</li>
                 <li>Whether a repository has ever been added (true/false)</li>
                 <li>Whether a code search has ever been executed (true/false)</li>
-                <li>Whether code graph has ever been used (true/false)</li>
+                <li>Whether code navigation has ever been used (true/false)</li>
                 <li>Aggregate counts of current daily, weekly, and monthly users</li>
                 <li>
                     Aggregate counts of current daily, weekly, and monthly users, by:
