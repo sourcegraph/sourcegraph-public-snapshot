@@ -61,7 +61,7 @@ func TestDiffSearch(t *testing.T) {
 	}
 	require.Equal(t, expectedHighlights, highlights)
 
-	formatted, ranges := FormatDiff(fileDiffs, highlights.Diff, nil)
+	formatted, ranges := FormatDiff(fileDiffs, highlights.Diff)
 	expectedFormatted := `web/src/integration/helpers.ts web/src/integration/helpers.ts
 @@ -7,3 +7,3 @@ import { createDriverForTest, Driver } from '../../../shared/src/testing/driver'
  import express from 'express'

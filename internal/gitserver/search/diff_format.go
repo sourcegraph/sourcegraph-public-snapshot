@@ -6,7 +6,6 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/go-diff/diff"
-	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
@@ -18,23 +17,13 @@ const (
 	maxFiles          = 5
 )
 
-func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff, filterFunc func(string) (bool, error)) (string, result.Ranges) {
+func FormatDiff(rawDiff []*diff.FileDiff, highlights map[int]MatchedFileDiff) (string, result.Ranges) {
 	var buf strings.Builder
 	var loc result.Location
 	var ranges result.Ranges
-	logger := log.Scoped("FormatDiff", "formatter for raw diffs")
 
 	fileCount := 0
 	for fileIdx, fileDiff := range rawDiff {
-		if filterFunc != nil {
-			if isAllowed, err := filterFunc(fileDiff.NewName); err != nil {
-				logger.Error("error filtering files in raw diff", log.Error(err))
-				continue
-			} else if !isAllowed {
-				continue
-			}
-		}
-
 		fdh, ok := highlights[fileIdx]
 		if !ok && len(highlights) > 0 {
 			continue

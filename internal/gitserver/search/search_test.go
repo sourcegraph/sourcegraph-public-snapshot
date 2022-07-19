@@ -387,7 +387,7 @@ index 0000000000..7e54670557
 	require.NoError(t, err)
 	require.True(t, mergedResult.Satisfies())
 
-	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff, nil)
+	formatted, ranges := FormatDiff(parsedDiff, highlights.Diff)
 	expectedFormatted := `/dev/null internal/compute/match.go
 @@ -0,0 +6,6 @@ 
 +
@@ -432,7 +432,8 @@ index 0000000000..7e54670557
 	require.Equal(t, expectedRanges, ranges)
 
 	// check formatting w/ sub-repo perms filtering
-	formattedWithFiltering, ranges := FormatDiff(parsedDiff, highlights.Diff, setupSubRepoFilterFunc())
+	filteredDiff := filterRawDiff(parsedDiff, setupSubRepoFilterFunc())
+	formattedWithFiltering, ranges := FormatDiff(filteredDiff, highlights.Diff)
 	expectedFormatted = `/dev/null internal/compute/match.go
 @@ -0,0 +6,6 @@ 
 +

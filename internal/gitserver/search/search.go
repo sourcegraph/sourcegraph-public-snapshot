@@ -8,8 +8,8 @@ import (
 	"os/exec"
 	"strings"
 
+	"github.com/sourcegraph/go-diff/diff"
 	"github.com/sourcegraph/log"
-
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -396,7 +396,8 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filte
 		if err != nil {
 			return nil, err
 		}
-		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff, filterFunc)
+		rawDiff = filterRawDiff(rawDiff, filterFunc)
+		diff.Content, diff.MatchedRanges = FormatDiff(rawDiff, hc.Diff)
 	}
 
 	return &protocol.CommitMatch{
@@ -421,4 +422,24 @@ func CreateCommitMatch(lc *LazyCommit, hc MatchedCommit, includeDiff bool, filte
 		Diff:          diff,
 		ModifiedFiles: lc.ModifiedFiles(),
 	}, nil
+}
+
+func filterRawDiff(rawDiff []*diff.FileDiff, filterFunc func(string) (bool, error)) []*diff.FileDiff {
+	logger := log.Scoped("filterRawDiff", "sub-repo filtering for raw diffs")
+	if filterFunc == nil {
+		return rawDiff
+	}
+	filtered := make([]*diff.FileDiff, 0, len(rawDiff))
+	for _, fileDiff := range rawDiff {
+		if filterFunc != nil {
+			if isAllowed, err := filterFunc(fileDiff.NewName); err != nil {
+				logger.Error("error filtering files in raw diff", log.Error(err))
+				continue
+			} else if !isAllowed {
+				continue
+			}
+		}
+		filtered = append(filtered, fileDiff)
+	}
+	return filtered
 }
