@@ -95,75 +95,88 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-// it's safe to silently ignore this error because there's no problem that needs to be fixed
-// if the version is already synced.
-var errVersionAlreadySynced = errors.New("version already synced")
-
-func (s *vcsPackagesSyncer) lazySyncRequestedVersion(ctx context.Context, dir GitDir, name reposource.PackageName, existingVersions []string, requestedVersion string) error {
-	for _, existingVersion := range existingVersions {
-		if existingVersion == requestedVersion {
-			return errVersionAlreadySynced
-		}
-	}
-	dep, err := s.source.ParseVersionedPackageFromNameAndVersion(name, requestedVersion)
-	if err != nil {
-		return err
-	}
-	err = s.gitPushDependencyTag(ctx, string(dir), dep)
-	if err != nil {
-		return err
-	}
-	// silently ignore errors
-	_, err = s.svc.UpsertDependencyRepos(ctx, []dependencies.Repo{
-		{
-			ID:      0,
-			Scheme:  dep.Scheme(),
-			Name:    dep.PackageSyntax(),
-			Version: dep.PackageVersion(),
-		},
-	})
-	return err
-}
-
 func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) (err error) {
-	var dep reposource.Package
-	dep, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
+	var pkg reposource.Package
+	pkg, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
 	if err != nil {
 		return err
 	}
+	name := pkg.PackageSyntax()
 
-	depName := dep.PackageSyntax()
-
-	var versions []string
-	versions, err = s.versions(ctx, depName)
+	versions, err := s.versions(ctx, name)
 	if err != nil {
 		return err
 	}
 
 	if revspec != "" {
-		// Optionally try to resolve the version of the user-provided revspec (formatted as `"v${VERSION}^0"`).
-		// This logic lives inside `vcsPackagesSyncer` meaning this repo must be a package repo where all
-		// the git tags are created by our npm/crates/pypi/maven integrations (no human commits/branches/tags).
-		// Package repos only create git tags using the format `"v${VERSION}"`.
-		//
-		// Unlike other versions, we silently ignore all errors from resolving requestedVersion because it could
-		// be any random user-provided string, with no guarantee that it's a valid version string that resolves
-		// to an existing dependency version.
-		//
-		// We assume the revspec is formatted as `"v${VERSION}^0"` but it could be any random string or
-		// a git commit SHA. It should be harmless if the string is invalid, worst case the resolution fails
-		// and we silently ignore the error.
-		requestedVersion := strings.TrimSuffix(strings.TrimPrefix(revspec, "v"), "^0")
-		err = s.lazySyncRequestedVersion(ctx, dir, depName, versions, requestedVersion)
-		if err == nil {
-			versions = append(versions, requestedVersion)
-		} // else silently ignore error, see comment above why.
+		return s.fetchRevspec(ctx, name, dir, versions, revspec)
 	}
 
+	return s.fetchVersions(ctx, name, dir, versions)
+}
+
+// fetchRevspec fetches the given revspec if it's not contained in
+// existingVersions. If download and upserting the new version into database
+// succeeds, it calls s.fetchVersions with the newly-added version and the old
+// ones, to possibly update the "latest" tag.
+func (s *vcsPackagesSyncer) fetchRevspec(ctx context.Context, name reposource.PackageName, dir GitDir, existingVersions []string, revspec string) error {
+	// Optionally try to resolve the version of the user-provided revspec (formatted as `"v${VERSION}^0"`).
+	// This logic lives inside `vcsPackagesSyncer` meaning this repo must be a package repo where all
+	// the git tags are created by our npm/crates/pypi/maven integrations (no human commits/branches/tags).
+	// Package repos only create git tags using the format `"v${VERSION}"`.
+	//
+	// Unlike other versions, we silently ignore all errors from resolving requestedVersion because it could
+	// be any random user-provided string, with no guarantee that it's a valid version string that resolves
+	// to an existing dependency version.
+	//
+	// We assume the revspec is formatted as `"v${VERSION}^0"` but it could be any random string or
+	// a git commit SHA. It should be harmless if the string is invalid, worst case the resolution fails
+	// and we silently ignore the error.
+	requestedVersion := strings.TrimSuffix(strings.TrimPrefix(revspec, "v"), "^0")
+
+	for _, existingVersion := range existingVersions {
+		if existingVersion == requestedVersion {
+			return nil
+		}
+	}
+
+	dep, err := s.source.ParseVersionedPackageFromNameAndVersion(name, requestedVersion)
+	if err != nil {
+		// Invalid version. Silently ignore error, see comment above why.
+		return nil
+	}
+	err = s.gitPushDependencyTag(ctx, string(dir), dep)
+	if err != nil {
+		// Package could not be downloaded. Silently ignore error, see comment above why.
+		return nil
+	}
+
+	_, err = s.svc.UpsertDependencyRepos(ctx, []dependencies.Repo{
+		{
+			Scheme:  dep.Scheme(),
+			Name:    dep.PackageSyntax(),
+			Version: dep.PackageVersion(),
+		},
+	})
+	if err != nil {
+		// We don't want to ignore when writing to the database failed, since
+		// we've already downloaded the package successfully.
+		return err
+	}
+
+	existingVersions = append(existingVersions, requestedVersion)
+
+	return s.fetchVersions(ctx, name, dir, existingVersions)
+}
+
+// fetchVersions checks whether the given versions are all valid version
+// specifiers, then checks whether they've already been downloaded and, if not,
+// downloads them.
+func (s *vcsPackagesSyncer) fetchVersions(ctx context.Context, name reposource.PackageName, dir GitDir, versions []string) error {
 	var errs errors.MultiError
 	cloneable := make([]reposource.VersionedPackage, 0, len(versions))
 	for _, version := range versions {
-		if d, err := s.source.ParseVersionedPackageFromNameAndVersion(depName, version); err != nil {
+		if d, err := s.source.ParseVersionedPackageFromNameAndVersion(name, version); err != nil {
 			errs = errors.Append(errs, err)
 		} else {
 			cloneable = append(cloneable, d)
