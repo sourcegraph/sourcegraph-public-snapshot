@@ -7,7 +7,7 @@ import { SymbolKind } from '../graphql-operations'
 
 import styles from './SymbolTag.module.scss'
 
-const getSymbolTag = (kind: SymbolKind): string => {
+export const getSymbolTag = (kind: SymbolKind): string => {
     switch (kind) {
         case 'FILE':
             return 'file'
