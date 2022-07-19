@@ -9,16 +9,17 @@ import (
 // FeatureFlags represent features that are only available on certain
 // Sourcegraph versions and we therefore have to detect at runtime.
 type FeatureFlags struct {
-	AllowArrayEnvironments   bool
-	IncludeAutoAuthorDetails bool
-	UseGzipCompression       bool
-	AllowTransformChanges    bool
-	AllowWorkspaces          bool
-	BatchChanges             bool
-	AllowConditionalExec     bool
-	AllowOptionalPublished   bool
-	ServerSideBatchChanges   bool
-	BitbucketCloud           bool
+	AllowArrayEnvironments        bool
+	IncludeAutoAuthorDetails      bool
+	UseGzipCompression            bool
+	AllowTransformChanges         bool
+	AllowWorkspaces               bool
+	BatchChanges                  bool
+	AllowConditionalExec          bool
+	AllowOptionalPublished        bool
+	ServerSideBatchChanges        bool
+	BitbucketCloud                bool
+	ServerSideWorkspaceResolution bool
 }
 
 func (ff *FeatureFlags) SetFromVersion(version string) error {
@@ -44,6 +45,7 @@ func (ff *FeatureFlags) SetFromVersion(version string) error {
 		{&ff.AllowOptionalPublished, ">= 3.30.0-0", "2021-06-21"},
 		{&ff.ServerSideBatchChanges, ">= 3.37.0-0", "2022-02-08"},
 		{&ff.BitbucketCloud, ">= 3.40.0-0", "2022-04-20"},
+		{&ff.ServerSideWorkspaceResolution, ">= 3.42.0-0", "2022-07-19"},
 	} {
 		value, err := api.CheckSourcegraphVersion(version, feature.constraint, feature.minDate)
 		if err != nil {

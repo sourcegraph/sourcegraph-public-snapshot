@@ -16,7 +16,6 @@ import (
 type RepoWorkspace struct {
 	Repo               *graphql.Repository
 	Path               string
-	Steps              []batcheslib.Step
 	OnlyFetchWorkspace bool
 }
 
@@ -151,7 +150,6 @@ func findWorkspaces(
 			workspaces = append(workspaces, RepoWorkspace{
 				Repo:               workspace.Repo,
 				Path:               path,
-				Steps:              steps,
 				OnlyFetchWorkspace: fetchWorkspace,
 			})
 		}

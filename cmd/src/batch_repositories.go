@@ -90,8 +90,7 @@ Examples:
 			return err
 		}
 
-		final := []*graphql.Repository{}
-		finalMax := 0
+		repoCount := 0
 		for _, on := range spec.On {
 			repos, _, err := svc.ResolveRepositoriesOn(ctx, &on)
 			if err != nil {
@@ -104,11 +103,7 @@ Examples:
 					max = len(repo.Name)
 				}
 
-				final = append(final, repo)
-			}
-
-			if max > finalMax {
-				finalMax = max
+				repoCount++
 			}
 
 			if err := execTemplate(queryTmpl, batchRepositoryTemplateInput{
@@ -123,7 +118,7 @@ Examples:
 		}
 
 		return execTemplate(totalTmpl, batchRepositoryTemplateInput{
-			RepoCount: len(final),
+			RepoCount: repoCount,
 		})
 	}
 

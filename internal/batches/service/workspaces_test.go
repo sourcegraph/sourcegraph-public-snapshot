@@ -34,9 +34,9 @@ func TestFindWorkspaces(t *testing.T) {
 			spec:          &batcheslib.BatchSpec{Steps: steps},
 			finderResults: finderResults{},
 			wantWorkspaces: []RepoWorkspace{
-				{Repo: repos[0], Steps: steps, Path: ""},
-				{Repo: repos[1], Steps: steps, Path: ""},
-				{Repo: repos[2], Steps: steps, Path: ""},
+				{Repo: repos[0], Path: ""},
+				{Repo: repos[1], Path: ""},
+				{Repo: repos[2], Path: ""},
 			},
 		},
 
@@ -49,9 +49,9 @@ func TestFindWorkspaces(t *testing.T) {
 			},
 			finderResults: finderResults{},
 			wantWorkspaces: []RepoWorkspace{
-				{Repo: repos[0], Steps: steps, Path: ""},
-				{Repo: repos[1], Steps: steps, Path: ""},
-				{Repo: repos[2], Steps: steps, Path: ""},
+				{Repo: repos[0], Path: ""},
+				{Repo: repos[1], Path: ""},
+				{Repo: repos[2], Path: ""},
 			},
 		},
 
@@ -67,7 +67,7 @@ func TestFindWorkspaces(t *testing.T) {
 				repos[2]: []string{},
 			},
 			wantWorkspaces: []RepoWorkspace{
-				{Repo: repos[1], Steps: steps, Path: ""},
+				{Repo: repos[1], Path: ""},
 			},
 		},
 
@@ -83,13 +83,13 @@ func TestFindWorkspaces(t *testing.T) {
 				repos[2]: {"a/b", "a/b/c", "d/e/f"},
 			},
 			wantWorkspaces: []RepoWorkspace{
-				{Repo: repos[0], Steps: steps, Path: "a/b"},
-				{Repo: repos[0], Steps: steps, Path: "a/b/c"},
-				{Repo: repos[0], Steps: steps, Path: "d/e/f"},
-				{Repo: repos[1], Steps: steps, Path: ""},
-				{Repo: repos[2], Steps: steps, Path: "a/b"},
-				{Repo: repos[2], Steps: steps, Path: "a/b/c"},
-				{Repo: repos[2], Steps: steps, Path: "d/e/f"},
+				{Repo: repos[0], Path: "a/b"},
+				{Repo: repos[0], Path: "a/b/c"},
+				{Repo: repos[0], Path: "d/e/f"},
+				{Repo: repos[1], Path: ""},
+				{Repo: repos[2], Path: "a/b"},
+				{Repo: repos[2], Path: "a/b/c"},
+				{Repo: repos[2], Path: "d/e/f"},
 			},
 		},
 
@@ -109,13 +109,13 @@ func TestFindWorkspaces(t *testing.T) {
 				repos[2]: {"a/b", "a/b/c", "d/e/f"},
 			},
 			wantWorkspaces: []RepoWorkspace{
-				{Repo: repos[0], Steps: steps, Path: "a/b", OnlyFetchWorkspace: true},
-				{Repo: repos[0], Steps: steps, Path: "a/b/c", OnlyFetchWorkspace: true},
-				{Repo: repos[0], Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
-				{Repo: repos[1], Steps: steps, Path: ""},
-				{Repo: repos[2], Steps: steps, Path: "a/b", OnlyFetchWorkspace: true},
-				{Repo: repos[2], Steps: steps, Path: "a/b/c", OnlyFetchWorkspace: true},
-				{Repo: repos[2], Steps: steps, Path: "d/e/f", OnlyFetchWorkspace: true},
+				{Repo: repos[0], Path: "a/b", OnlyFetchWorkspace: true},
+				{Repo: repos[0], Path: "a/b/c", OnlyFetchWorkspace: true},
+				{Repo: repos[0], Path: "d/e/f", OnlyFetchWorkspace: true},
+				{Repo: repos[1], Path: ""},
+				{Repo: repos[2], Path: "a/b", OnlyFetchWorkspace: true},
+				{Repo: repos[2], Path: "a/b/c", OnlyFetchWorkspace: true},
+				{Repo: repos[2], Path: "d/e/f", OnlyFetchWorkspace: true},
 			},
 		},
 		"workspace configuration without 'in' matches all": {
@@ -132,8 +132,8 @@ func TestFindWorkspaces(t *testing.T) {
 				repos[2]: {"a/b"},
 			},
 			wantWorkspaces: []RepoWorkspace{
-				{Repo: repos[0], Steps: steps, Path: "a/b"},
-				{Repo: repos[2], Steps: steps, Path: "a/b"},
+				{Repo: repos[0], Path: "a/b"},
+				{Repo: repos[2], Path: "a/b"},
 			},
 		},
 	}

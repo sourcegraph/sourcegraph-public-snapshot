@@ -1,6 +1,7 @@
 package servegit
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"html/template"
@@ -104,7 +105,7 @@ func (s *Serve) handler() http.Handler {
 		Dir: func(name string) string {
 			return filepath.Join(s.Root, filepath.FromSlash(name))
 		},
-		Trace: func(svc, repo, protocol string) func(error) {
+		Trace: func(ctx context.Context, svc, repo, protocol string) func(error) {
 			start := time.Now()
 			return func(err error) {
 				s.Debug.Printf("git service svc=%s protocol=%s repo=%s duration=%v", svc, protocol, repo, time.Since(start))
