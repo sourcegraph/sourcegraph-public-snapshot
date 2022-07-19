@@ -139,9 +139,9 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     <div className="mb-2">
                         <strong>Your license only allows for 5 changesets per batch change</strong>
                     </div>
-                    You are running a free version of batch changes. It is fully functional, however it will only
-                    generate 5 changesets per batch change. If you would like to learn more about our pricing, contact
-                    us.
+                    You can execute this batch spec and see how it operates, but if more than 5 changesets are
+                    generated, you won't be able to apply the batch change and actually publish the changesets to the
+                    code host.
                 </LicenseAlert>
                 {error && <ErrorAlert error={error} />}
                 <NamespaceSelector
