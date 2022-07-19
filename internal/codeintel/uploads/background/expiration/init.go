@@ -16,7 +16,8 @@ func NewExpirer(uploadSvc UploadService, policySvc PolicyService, policyMatcher 
 		policyMatcher: policyMatcher,
 		metrics:       metrics,
 		logger: log.Scoped("NewExpirer", "").With(
-			log.String("dbStore", fmt.Sprintf("%v", store)),
+			log.String("uploadSvc", fmt.Sprintf("%v", uploadSvc)),
+			log.String("policySvc", fmt.Sprintf("%v", policySvc)),
 			log.String("policyMatcher", fmt.Sprintf("%v", policyMatcher)),
 			log.String("metrics", fmt.Sprintf("%v", metrics)),
 		),
