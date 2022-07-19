@@ -58,14 +58,14 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // deleted when the insight is scrolled out of view
     const seriesToggleState = useSeriesToggle()
     const [insightData, setInsightData] = useState<BackendInsightData | undefined>()
-    const [enablePolling] = useFeatureFlag('insight-polling-enabled', false)
+    const [enablePolling] = useFeatureFlag('insight-polling-enabled', true)
     const pollingInterval = enablePolling ? insightPollingInterval(insight) : 0
 
     // Visual line chart settings
     const [zeroYAxisMin, setZeroYAxisMin] = useState(false)
     const insightCardReference = useRef<HTMLDivElement>(null)
     const mergedInsightCardReference = useMergeRefs([insightCardReference, innerRef])
-    const { isVisible, wasEverVisible } = useVisibility(insightCardReference)
+    const { wasEverVisible, isVisible } = useVisibility(insightCardReference)
 
     // Use deep copy check in case if a setting subject has re-created copy of
     // the insight config with same structure and values. To avoid insight data
@@ -92,28 +92,39 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
         sortOptions: debouncedFilters.seriesDisplayOptions.sortOptions,
     }
 
-    const { error, loading, stopPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
+    const { error, loading, stopPolling, startPolling } = useQuery<GetInsightViewResult, GetInsightViewVariables>(
         GET_INSIGHT_VIEW_GQL,
         {
             variables: { id: insight.id, filters: filterInput, seriesDisplayOptions },
             fetchPolicy: 'cache-and-network',
-            pollInterval: pollingInterval,
-            // TODO: Fix problem with offscreen pooling see https://github.com/sourcegraph/sourcegraph/issues/38425
             skip: !wasEverVisible,
             context: { concurrentRequests: { key: 'GET_INSIGHT_VIEW' } },
             onCompleted: data => {
                 const parsedData = createBackendInsightData({ ...insight, filters }, data.insightViews.nodes[0])
-                if (!parsedData.isFetchingHistoricalData) {
-                    stopPolling()
-                }
                 seriesToggleState.setSelectedSeriesIds([])
                 setInsightData(parsedData)
             },
-            onError: () => stopPolling(),
         }
     )
 
-    const handleFilterSave = async (filters: InsightFilters): Promise<SubmissionErrors> => {
+    const isFetchingHistoricalData = insightData?.isFetchingHistoricalData
+    const isPolling = useRef(false)
+
+    // polling is disabled ignore all
+    if (enablePolling) {
+        // not on the screen so stop polling if we are - multiple stop calls are safe
+        if (error || !isVisible) {
+            isPolling.current = false
+            stopPolling()
+        } else if (isFetchingHistoricalData && !isPolling.current) {
+            // we should start polling but multiple calls to startPolling reset the timer so
+            // make sure we aren't already polling.
+            isPolling.current = true
+            startPolling(pollingInterval)
+        }
+    }
+
+    async function handleFilterSave(filters: InsightFilters): Promise<SubmissionErrors> {
         try {
             const seriesDisplayOptions: SeriesDisplayOptionsInput = {
                 limit: parseSeriesLimit(filters.seriesDisplayOptions.limit),

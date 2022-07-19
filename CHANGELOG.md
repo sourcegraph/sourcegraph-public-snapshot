@@ -54,6 +54,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed regression of mismatched `From` address when render emails. [#38589](https://github.com/sourcegraph/sourcegraph/pull/38589)
 - Fixed a bug with GitHub code hosts using `"repositoryQuery":{"public"}` where it wasn't respecting exclude archived. [#38839](https://github.com/sourcegraph/sourcegraph/pull/38839)
 - Fixed a bug with GitHub code hosts using `repositoryQuery` with custom queries, where it could potentially stall out searching for repos. [#38839](https://github.com/sourcegraph/sourcegraph/pull/38839)
+- Fixed an issue in Code Insights were duplicate points were sometimes being returned when displaying series data. [#38903](https://github.com/sourcegraph/sourcegraph/pull/38903)
 
 ### Removed
 

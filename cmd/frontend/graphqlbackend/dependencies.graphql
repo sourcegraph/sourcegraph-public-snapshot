@@ -58,6 +58,7 @@ enum LockfileIndexFidelity {
     """
     GRAPH
 }
+
 """
 A lockfile index is an indexed lockfile in a repository.
 """

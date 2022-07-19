@@ -170,8 +170,8 @@ func TestSetPermissionsForUsers(t *testing.T) {
 
 		for _, bindID := range bindIDs {
 			userPerms := &authz.UserPendingPermissions{
-				ServiceType: extsvc.TypeBitbucketServer,
-				ServiceID:   "1",
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
 				BindID:      bindID,
 				Perm:        authz.Read,
 				Type:        authz.PermRepos,

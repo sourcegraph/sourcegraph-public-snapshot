@@ -130,7 +130,10 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                 <TreeLayerTable onMouseOver={this.props.entryInfo.isDirectory ? this.invokeOnHover : undefined}>
                     <tbody>
                         <Directory
-                            {...this.props}
+                            entryInfo={this.props.entryInfo}
+                            depth={this.props.depth}
+                            index={this.props.index}
+                            isLightTheme={this.props.isLightTheme}
                             maxEntries={maxEntries}
                             loading={false}
                             handleTreeClick={this.handleTreeClick}
@@ -139,6 +142,7 @@ export class SingleChildTreeLayer extends React.Component<SingleChildTreeLayerPr
                             fileDecorations={this.props.fileDecorations}
                             isActive={isActive}
                             isSelected={isSelected}
+                            isExpanded={this.props.isExpanded}
                         />
                         {this.props.isExpanded && (
                             <tr>

@@ -215,10 +215,26 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			}
 			progress.StatusBarFailf(i, "Check %s failed: %s", checkName, errParts[0])
 		}
+		updateCategoryStarted = func(i int) {
+			progressMu.Lock()
+			defer progressMu.Unlock()
+			progress.StatusBarUpdatef(i, "Running checks...")
+		}
+		updateCategorySkipped = func(i int, err error) {
+			progressMu.Lock()
+			defer progressMu.Unlock()
+
+			progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
+		}
+		updateCategoryCompleted = func(i int) {
+			progressMu.Lock()
+			defer progressMu.Unlock()
+			progress.StatusBarCompletef(i, "Done!")
+		}
 	)
 
 	for i, category := range r.Categories {
-		progress.StatusBarUpdatef(i, "Running checks...")
+		updateCategoryStarted(i)
 
 		// Copy
 		i, category := i, category
@@ -227,7 +243,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 		categoriesGroup.Go(func() error {
 			if err := category.CheckEnabled(ctx, args); err != nil {
 				// Mark as done
-				progress.StatusBarCompletef(i, "Category skipped: %s", err.Error())
+				updateCategorySkipped(i, err)
 				return errSkipped
 			}
 
@@ -283,7 +299,7 @@ func (r *Runner[Args]) runAllCategoryChecks(ctx context.Context, args Args) *run
 			// If error'd, status bar has already been set to failed with an error message
 			// so we only update if there is no error
 			if err == nil {
-				progress.StatusBarCompletef(i, "Done!")
+				updateCategoryCompleted(i)
 			}
 		})
 	}
