@@ -2,7 +2,7 @@ import React, { HTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import styles from './TreeLayerRowContentsText.module.scss'
+import styles from '../Tree.module.scss'
 
 type TreeLayerRowContentsTextProps = HTMLAttributes<HTMLDivElement>
 
