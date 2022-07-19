@@ -94,10 +94,10 @@ func NewClient(db database.DB) *ClientImplementor {
 		db:          db,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
-		// Use the binary name for UserAgent. This should effectively identify
+		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent:  filepath.Base(os.Args[0]),
+		userAgent:  filepath.Base(os.Args[0]),
 		operations: getOperations(),
 	}
 }
@@ -114,10 +114,10 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 		},
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
-		// Use the binary name for UserAgent. This should effectively identify
+		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent:  filepath.Base(os.Args[0]),
+		userAgent:  filepath.Base(os.Args[0]),
 		db:         db,
 		operations: newOperations(&observation.TestContext),
 	}
@@ -128,9 +128,9 @@ type ClientImplementor struct {
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
 
-	// UserAgent is a string identifying who the client is. It will be logged in
+	// userAgent is a string identifying who the client is. It will be logged in
 	// the telemetry in gitserver.
-	UserAgent string
+	userAgent string
 
 	// HTTP client to use
 	httpClient httpcli.Doer
@@ -305,7 +305,7 @@ func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(ctx, c.UserAgent, c.db, repo, GitServerAddresses{
+	return AddrForRepo(ctx, c.userAgent, c.db, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
@@ -1332,7 +1332,7 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", c.UserAgent)
+	req.Header.Set("User-Agent", c.userAgent)
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
