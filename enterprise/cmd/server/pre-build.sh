@@ -3,6 +3,22 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 
+function checksum_client_code {
+  tmpfile=$(mktemp)
+  # shellcheck disable=SC2064
+  trap "rm \"$tmpfile\"" EXIT
+
+  {
+    find "./client" "./ui" "yarn.lock" -type f -exec sha1sum {} \;
+    find . -maxdepth 1 -type f -name "*.js" -exec sha1sum {} \;
+    find . -maxdepth 1 -type f -name "*.ts" -exec sha1sum {} \;
+    find . -maxdepth 1 -type f -name "*.json" -exec sha1sum {} \;
+  }>> "$tmpfile"
+
+  # We know for sure that renovate has nothing to do with the client files.
+  grep -v "renovate.json" <"$tmpfile" | sort -k 2 | sha1sum | awk '{print $1}'
+}
+
 echo "--- (enterprise) pre-build frontend"
 
 if [[ ! "$BUILDKITE" == "true" ]]; then
@@ -20,7 +36,7 @@ else
   aws configure set aws_secret_access_key "$BUILDKITE_HMAC_SECRET" --profile buildkite
 
   # scan and concat all the sha1sums of the files into a single blob which is then sha1sum'd again to give us our checksum
-  checksum=$(find "./client" "./ui" "package.json" "yarn.lock" -type f -exec sha1sum {} \; | sort -k 2 | sha1sum | awk '{print $1}')
+  checksum=$(checksum_client_code)
   cache_file="cache-client-bundle-$checksum.tar.gz"
   cache_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_file"
 
