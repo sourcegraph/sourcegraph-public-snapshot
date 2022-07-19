@@ -284,8 +284,8 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	defer func() { err = txs.Done(err) }()
 
 	accounts := &extsvc.Accounts{
-		ServiceType: extsvc.KindToType(svc.Kind),
-		ServiceID:   strconv.FormatInt(svc.ID, 10),
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
 		AccountIDs:  pendingBindIDs,
 	}
 
