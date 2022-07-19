@@ -765,7 +765,7 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
         description: 'Close tracking issues for current release',
         run: async config => {
             const { previous: release } = await releaseVersions(config)
-            // close previous previous tracking issue
+            // close tracking issue
             await closeTrackingIssue(release)
         },
     },
