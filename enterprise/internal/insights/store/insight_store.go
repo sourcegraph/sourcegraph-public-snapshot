@@ -55,6 +55,8 @@ type InsightQueryArgs struct {
 	Limit    int
 	IsFrozen *bool
 
+	Repo *string
+
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
 	WithoutAuthorization bool
@@ -119,6 +121,20 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		} else {
 			preds = append(preds, sqlf.Sprintf("iv.is_frozen = FALSE"))
 		}
+	}
+
+	if args.Repo != nil {
+		repoQuery := `iv.id in (SELECT insight_view_id FROM insight_view_series
+JOIN insight_series ON insight_view_series.insight_series_id = insight_series.id
+WHERE
+	insight_series.series_id IN(
+	SELECT
+		series_id FROM series_points
+		JOIN repo_names rn on sp.repo_id = rn.id
+		WHERE rn.name = %s;
+	)
+)`
+		preds = append(preds, sqlf.Sprintf(repoQuery, *args.Repo))
 	}
 
 	limit := sqlf.Sprintf("")
