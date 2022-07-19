@@ -77,9 +77,11 @@ func ResetClientMocks() {
 	ClientMocks = emptyClientMocks
 }
 
+var _ Client = &ClientImplementor{}
+
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
-func NewClient(db database.DB) Client {
+func NewClient(db database.DB) *ClientImplementor {
 	return &ClientImplementor{
 		logger: sglog.Scoped("NewClient", "returns a new gitserver.Client instantiated with default arguments and httpcli.Doer."),
 		addrs: func() []string {
