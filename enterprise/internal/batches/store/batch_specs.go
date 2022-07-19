@@ -159,7 +159,7 @@ func (s *Store) updateBatchSpecQuery(c *btypes.BatchSpec) (*sqlf.Query, error) {
 		c.AllowUnsupported,
 		c.AllowIgnored,
 		c.NoCache,
-		c.BatchChangeID,
+		nullInt64Column(c.BatchChangeID),
 		c.CreatedAt,
 		c.UpdatedAt,
 		c.ID,
