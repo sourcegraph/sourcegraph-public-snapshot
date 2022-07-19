@@ -8,8 +8,7 @@ import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Alert, Button, Code, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { BatchSpecFields, GetLicenseAndUsageInfoResult } from '../../../graphql-operations'
-import { LicenseAlert } from '../LicenseAlert'
+import { BatchSpecFields } from '../../../graphql-operations'
 import { MultiSelectContext } from '../MultiSelectContext'
 
 import { applyBatchChange, createBatchChange } from './backend'
@@ -22,13 +21,12 @@ export interface CreateUpdateBatchChangeAlertProps extends TelemetryProps {
     toBeArchived: number
     batchChange: BatchSpecFields['appliesToBatchChange']
     viewerCanAdminister: boolean
-    totalCount: number
     history: H.History
 }
 
 export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
     React.PropsWithChildren<CreateUpdateBatchChangeAlertProps>
-> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, totalCount, history, telemetryService }) => {
+> = ({ specID, toBeArchived, batchChange, viewerCanAdminister, history, telemetryService }) => {
     const batchChangeID = batchChange?.id
 
     // `BatchChangePreviewContext` is responsible for managing the overrideable
@@ -38,18 +36,7 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
 
     const [isLoading, setIsLoading] = useState<boolean | Error>(false)
 
-    const [exceedsLicense, setExceedsLicense] = useState(false)
-
-    const onLicenseRetrieved = useCallback(
-        (data: GetLicenseAndUsageInfoResult) => {
-            if (!data.batchChanges && !data.campaigns && totalCount > data.maxUnlicensedChangesets) {
-                setExceedsLicense(true)
-            }
-        },
-        [totalCount, setExceedsLicense]
-    )
-
-    const canApply = selected !== 'all' && selected.size === 0 && !isLoading && viewerCanAdminister && !exceedsLicense
+    const canApply = selected !== 'all' && selected.size === 0 && !isLoading && viewerCanAdminister
 
     // Returns a tooltip error message appropriate for the given circumstances preventing
     // the user from applying the preview.
@@ -92,13 +79,6 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
 
     return (
         <>
-            <LicenseAlert totalChangesetCount={totalCount} onLicenseRetrieved={onLicenseRetrieved}>
-                <div className="mb-2">
-                    <strong>Your license only allows for 5 changesets per batch change</strong>
-                </div>
-                You are running a free version of batch changes. It is fully functional, however it will only generate 5
-                changesets per batch change. If you would like to learn more about our pricing, contact us.
-            </LicenseAlert>
             <Alert className="mb-3 d-block d-md-flex align-items-center body-lead" variant="info">
                 <div className={classNames(styles.createUpdateBatchChangeAlertCopy, 'flex-grow-1 mr-3')}>
                     {batchChange ? (
