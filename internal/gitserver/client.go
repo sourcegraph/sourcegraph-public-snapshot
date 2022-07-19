@@ -102,7 +102,7 @@ func NewClient(db database.DB) *ClientImplementor {
 	}
 }
 
-func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
+func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 	return &ClientImplementor{
 		logger: sglog.Scoped("NewTestClient", "Test New client"),
 		addrs: func() []string {
