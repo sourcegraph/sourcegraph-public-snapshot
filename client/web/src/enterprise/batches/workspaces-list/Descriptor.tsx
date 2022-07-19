@@ -41,7 +41,7 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
                 </>
             ) : null}
             {workspace && (
-                <div className={classNames(styles.workspaceDetails, '.text-monospace')}>
+                <div className={classNames(styles.workspaceDetails, 'text-monospace')}>
                     {workspace.ignored && (
                         <Badge
                             className={styles.badge}

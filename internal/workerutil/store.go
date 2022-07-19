@@ -25,6 +25,10 @@ type Store interface {
 	// touched are returned.
 	Heartbeat(ctx context.Context, jobIDs []int) (knownIDs []int, err error)
 
+	// CanceledJobs returns all the jobs that are to be canceled. These jobs will be found eventually and then canceled.
+	// They will end up in canceled state.
+	CanceledJobs(ctx context.Context, knownJobIDs []int) (canceledIDs []int, err error)
+
 	// AddExecutionLogEntry adds an executor log entry to the record and
 	// returns the ID of the new entry (which can be used with
 	// UpdateExecutionLogEntry) and a possible error.

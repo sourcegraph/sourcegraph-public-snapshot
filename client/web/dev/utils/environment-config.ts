@@ -37,6 +37,17 @@ export const ENVIRONMENT_CONFIG = {
     // Allow overriding default Webpack naming behavior for debugging
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
 
+    // New release candidate version.
+    RELEASE_CANDIDATE_VERSION: process.env.RELEASE_CANDIDATE_VERSION,
+    // Should sourcemaps be uploaded to Sentry.
+    SENTRY_UPLOAD_SOURCE_MAPS: getEnvironmentBoolean('SENTRY_UPLOAD_SOURCE_MAPS'),
+    // Sentry authentication token
+    SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    // Sentry organization
+    SENTRY_ORGANIZATION: process.env.SENTRY_ORGANIZATION,
+    // Sentry project
+    SENTRY_PROJECT: process.env.SENTRY_PROJECT,
+
     //  Webpack is the default web build tool, and esbuild is an experimental option (see
     //  https://docs.sourcegraph.com/dev/background-information/web/build#esbuild).
     DEV_WEB_BUILDER: (process.env.DEV_WEB_BUILDER === 'esbuild' ? 'esbuild' : 'webpack') as WEB_BUILDER,

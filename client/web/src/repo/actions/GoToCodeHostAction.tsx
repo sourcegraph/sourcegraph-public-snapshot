@@ -12,7 +12,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, Icon } from '@sourcegraph/wildcard'
+import { useObservable, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -151,15 +151,16 @@ export const GoToCodeHostAction: React.FunctionComponent<
         id: TARGET_ID,
         onClick,
         onAuxClick: onClick,
-        'data-tooltip': descriptiveText,
-        'aria-label': descriptiveText,
         className: 'btn-icon test-go-to-code-host',
+        'aria-label': descriptiveText,
     }
 
     return (
-        <RepoHeaderActionAnchor {...commonProps}>
-            <Icon as={exportIcon} aria-hidden={true} />
-        </RepoHeaderActionAnchor>
+        <Tooltip content={descriptiveText}>
+            <RepoHeaderActionAnchor {...commonProps}>
+                <Icon as={exportIcon} aria-hidden={true} />
+            </RepoHeaderActionAnchor>
+        </Tooltip>
     )
 }
 

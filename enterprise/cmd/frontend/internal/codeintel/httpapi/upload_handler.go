@@ -35,7 +35,12 @@ func NewUploadHandler(
 	operations *Operations,
 ) http.Handler {
 	handler := &UploadHandler{
-		logger:      sglog.Scoped("UploadHandler", ""),
+		logger: sglog.Scoped("UploadHandler", "").With(
+			sglog.String("db", fmt.Sprintf("%v", db)),
+			sglog.String("dbStore", fmt.Sprintf("%v", dbStore)),
+			sglog.String("uploadStore", fmt.Sprintf("%v", uploadStore)),
+			sglog.String("operations", fmt.Sprintf("%v", operations)),
+		),
 		db:          db,
 		dbStore:     dbStore,
 		uploadStore: uploadStore,

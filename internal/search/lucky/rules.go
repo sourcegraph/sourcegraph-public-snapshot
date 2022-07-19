@@ -65,7 +65,7 @@ func unquotePatterns(b query.Basic) *query.Basic {
 
 	changed := false // track whether we've successfully changed any pattern, which means this rule applies.
 	newParseTree := query.MapPattern(rawParseTree, func(value string, negated bool, annotation query.Annotation) query.Node {
-		if annotation.Labels.IsSet(query.Quoted) {
+		if annotation.Labels.IsSet(query.Quoted) && !annotation.Labels.IsSet(query.IsAlias) {
 			changed = true
 			annotation.Labels.Unset(query.Quoted)
 			annotation.Labels.Set(query.Literal)

@@ -84,7 +84,8 @@ func constructRunCmdLongHelp() string {
 	config, err := sgconf.Get(configFile, configOverwriteFile)
 	if err != nil {
 		out.Write([]byte("\n"))
-		std.NewOutput(&out, false).WriteWarningf(err.Error())
+		// Do not treat error message as a format string
+		std.NewOutput(&out, false).WriteWarningf("%s", err.Error())
 		return out.String()
 	}
 

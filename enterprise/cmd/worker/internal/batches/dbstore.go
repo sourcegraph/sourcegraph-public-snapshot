@@ -80,12 +80,12 @@ var initBulkOperationWorkerStore = memo.NewMemoizedConstructor(func() (dbworkers
 	return store.NewBulkOperationWorkerStore(basestore.NewHandleWithDB(db, sql.TxOptions{}), observationContext), nil
 })
 
-// InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a store.BatchSpecWorkspaceExecutionWorkerStore instance for the batch spec workspace execution worker.
-func InitBatchSpecWorkspaceExecutionWorkerStore() (store.BatchSpecWorkspaceExecutionWorkerStore, error) {
+// InitBatchSpecWorkspaceExecutionWorkerStore initializes and returns a dbworkerstore.Store instance for the batch spec workspace execution worker.
+func InitBatchSpecWorkspaceExecutionWorkerStore() (dbworkerstore.Store, error) {
 	return initBatchSpecWorkspaceExecutionWorkerStore.Init()
 }
 
-var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (store.BatchSpecWorkspaceExecutionWorkerStore, error) {
+var initBatchSpecWorkspaceExecutionWorkerStore = memo.NewMemoizedConstructor(func() (dbworkerstore.Store, error) {
 	observationContext := &observation.Context{
 		Logger:     log.Scoped("store.execution", "the batch spec workspace execution worker store"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},

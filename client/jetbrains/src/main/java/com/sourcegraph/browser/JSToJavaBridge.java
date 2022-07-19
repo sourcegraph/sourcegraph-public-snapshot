@@ -11,7 +11,7 @@ import org.cef.handler.CefLoadHandler;
 import org.cef.network.CefRequest;
 
 public class JSToJavaBridge implements Disposable {
-    JBCefJSQuery query;
+    final JBCefJSQuery query;
 
     public JSToJavaBridge(JBCefBrowser browser,
                           JSToJavaBridgeRequestHandler requestHandler,

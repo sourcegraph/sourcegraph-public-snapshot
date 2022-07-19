@@ -98,7 +98,7 @@ func (s *scheduler) handleRepository(
 			}
 
 			// Attempt to queue an index if one does not exist for each of the matching commits
-			if _, err := s.autoindexingSvc.QueueIndexes(ctx, repositoryID, commit, "", false); err != nil {
+			if _, err := s.autoindexingSvc.QueueIndexes(ctx, repositoryID, commit, "", false, false); err != nil {
 				if errors.HasType(err, &gitdomain.RevisionNotFoundError{}) {
 					continue
 				}

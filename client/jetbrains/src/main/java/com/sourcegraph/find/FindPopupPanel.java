@@ -1,6 +1,7 @@
 package com.sourcegraph.find;
 
 import com.intellij.openapi.Disposable;
+import com.intellij.openapi.diagnostic.Logger;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
 import com.intellij.ui.OnePixelSplitter;
@@ -52,7 +53,10 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         browserAndLoadingPanel = new BrowserAndLoadingPanel(project);
         JSToJavaBridgeRequestHandler requestHandler = new JSToJavaBridgeRequestHandler(project, this, findService);
         browser = JBCefApp.isSupported() ? new SourcegraphJBCefBrowser(requestHandler) : null;
-        if (browser != null) {
+        if (browser == null) {
+            Logger logger = Logger.getInstance(JSToJavaBridgeRequestHandler.class);
+            logger.warn("JCEF browser is not supported!");
+        } else {
             browserAndLoadingPanel.setBrowser(browser);
         }
         // The border is needed on macOS because without it, window and splitter resize don't work because the JCEF
@@ -81,11 +85,6 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
                 SwingUtilities.updateComponentTreeUI(this);
             }
         });
-    }
-
-    @Nullable
-    public SourcegraphJBCefBrowser getBrowser() {
-        return browser;
     }
 
     @Nullable

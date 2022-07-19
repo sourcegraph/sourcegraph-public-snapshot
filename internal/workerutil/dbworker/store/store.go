@@ -13,6 +13,7 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -27,6 +28,19 @@ type HeartbeatOptions struct {
 }
 
 func (o *HeartbeatOptions) ToSQLConds(formatQuery func(query string, args ...any) *sqlf.Query) []*sqlf.Query {
+	conds := []*sqlf.Query{}
+	if o.WorkerHostname != "" {
+		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
+	}
+	return conds
+}
+
+type CanceledJobsOptions struct {
+	// WorkerHostname, if set, enforces worker_hostname to be set to a specific value.
+	WorkerHostname string
+}
+
+func (o *CanceledJobsOptions) ToSQLConds(formatQuery func(query string, args ...any) *sqlf.Query) []*sqlf.Query {
 	conds := []*sqlf.Query{}
 	if o.WorkerHostname != "" {
 		conds = append(conds, formatQuery("{worker_hostname} = %s", o.WorkerHostname))
@@ -129,6 +143,10 @@ type Store interface {
 	// identifiers the age of the record's last heartbeat timestamp for each record reset to queued and failed states,
 	// respectively.
 	ResetStalled(ctx context.Context) (resetLastHeartbeatsByIDs, failedLastHeartbeatsByIDs map[int]time.Duration, err error)
+
+	// CanceledJobs returns all the jobs that are to be canceled. To cancel a running job, the `cancel` field is set
+	// to true. These jobs will be found eventually and then canceled. They will end up in canceled state.
+	CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error)
 }
 
 type ExecutionLogEntry workerutil.ExecutionLogEntry
@@ -359,6 +377,7 @@ var columnNames = []string{
 	"num_failures",
 	"execution_logs",
 	"worker_hostname",
+	"cancel",
 }
 
 // QueuedCount returns the number of queued records matching the given conditions.
@@ -699,6 +718,34 @@ WHERE
 RETURNING {id}
 `
 
+func (s *store) CanceledJobs(ctx context.Context, knownIDs []int, options CanceledJobsOptions) (canceledIDs []int, err error) {
+	ctx, _, endObservation := s.operations.canceledJobs.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	quotedTableName := quote(s.options.TableName)
+
+	conds := []*sqlf.Query{
+		s.formatQuery("{cancel} IS TRUE"),
+		s.formatQuery("{state} = 'processing'"),
+		s.formatQuery("{id} = ANY(%s)", pq.Array(knownIDs)),
+	}
+	conds = append(conds, options.ToSQLConds(s.formatQuery)...)
+
+	return basestore.ScanInts(s.Query(ctx, s.formatQuery(canceledJobsQuery, quotedTableName, sqlf.Join(conds, "AND"))))
+}
+
+const canceledJobsQuery = `
+-- source: internal/workerutil/store.go:CanceledJobs
+SELECT
+	{id}
+FROM
+	%s
+WHERE
+	%s
+ORDER BY
+	{id} ASC
+`
+
 // Requeue updates the state of the record with the given identifier to queued and adds a processing delay before
 // the next dequeue of this record can be performed.
 func (s *store) Requeue(ctx context.Context, id int, after time.Time) (err error) {
@@ -723,7 +770,8 @@ SET
 	{state} = 'queued',
 	{queued_at} = clock_timestamp(),
 	{started_at} = null,
-	{process_after} = %s
+	{process_after} = %s,
+	{cancel} = false
 WHERE {id} = %s
 `
 
@@ -886,10 +934,10 @@ func (s *store) MarkErrored(ctx context.Context, id int, failureMessage string, 
 const markErroredQuery = `
 -- source: internal/workerutil/store.go:MarkErrored
 UPDATE %s
-SET {state} = CASE WHEN {num_failures} + 1 >= %d THEN 'failed' ELSE 'errored' END,
+SET {state} = CASE WHEN {cancel} THEN 'canceled' WHEN {num_failures} + 1 >= %d THEN 'failed' ELSE 'errored' END,
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
-	{num_failures} = {num_failures} + 1
+	{num_failures} = CASE WHEN {cancel} THEN {num_failures} ELSE {num_failures} + 1 END
 WHERE %s
 RETURNING {id}
 `
@@ -917,10 +965,10 @@ func (s *store) MarkFailed(ctx context.Context, id int, failureMessage string, o
 const markFailedQuery = `
 -- source: internal/workerutil/store.go:MarkFailed
 UPDATE %s
-SET {state} = 'failed',
+SET {state} = CASE WHEN {cancel} THEN 'canceled' ELSE 'failed' END,
 	{finished_at} = clock_timestamp(),
 	{failure_message} = %s,
-	{num_failures} = {num_failures} + 1
+	{num_failures} = CASE WHEN {cancel} THEN {num_failures} ELSE {num_failures} + 1 END
 WHERE %s
 RETURNING {id}
 `

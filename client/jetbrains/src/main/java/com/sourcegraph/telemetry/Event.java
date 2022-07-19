@@ -5,15 +5,14 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class Event {
-    String eventName;
-    String anonymousUserId;
-    String url;
-    JsonObject eventProperties;
+    final String eventName;
+    final String anonymousUserId;
+    final String url;
+    final JsonObject eventProperties;
     /**
      * PRIVACY: Do NOT include any potentially private information, such as search queries or repository names.
      */
-    JsonObject publicArgument;
-    int eventId;
+    final JsonObject publicArgument;
 
     public Event(@NotNull String eventName,
                  @NotNull String anonymousUserId,
