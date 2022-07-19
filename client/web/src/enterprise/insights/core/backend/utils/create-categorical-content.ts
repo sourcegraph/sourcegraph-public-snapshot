@@ -1,7 +1,6 @@
 import { groupBy } from 'lodash'
 
 import { InsightDataSeries } from '../../../../../graphql-operations'
-import { ComputeInsight } from '../../types'
 import { CategoricalChartContent } from '../code-insights-backend-types'
 
 import { DATA_SERIES_COLORS_LIST } from './create-line-chart-content'
@@ -12,11 +11,11 @@ interface CategoricalDatum {
     value: number
 }
 
-export function createCategoricalChart(
-    insight: ComputeInsight,
-    seriesData: InsightDataSeries[]
-): CategoricalChartContent<CategoricalDatum> {
-    const seriesGroups = groupBy(seriesData, series => series.label)
+export function createCategoricalChart(seriesData: InsightDataSeries[]): CategoricalChartContent<CategoricalDatum> {
+    const seriesGroups = groupBy(
+        seriesData.filter(series => series.label),
+        series => series.label
+    )
 
     // Group series result by seres name and sum up series value with the same name
     const groups = Object.keys(seriesGroups).map((key, index) =>
