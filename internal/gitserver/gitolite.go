@@ -12,13 +12,13 @@ import (
 )
 
 type GitoliteLister struct {
-	addrs func() []string
-	cli   httpcli.Doer
+	addrs      func() []string
+	httpClient httpcli.Doer
 }
 
 func NewGitoliteLister(cli httpcli.Doer) *GitoliteLister {
 	return &GitoliteLister{
-		cli: cli,
+		httpClient: cli,
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
@@ -39,7 +39,7 @@ func (c *GitoliteLister) ListRepos(ctx context.Context, gitoliteHost string) (li
 		return nil, err
 	}
 
-	resp, err := c.cli.Do(req.WithContext(ctx))
+	resp, err := c.httpClient.Do(req.WithContext(ctx))
 	if err != nil {
 		return nil, err
 	}
