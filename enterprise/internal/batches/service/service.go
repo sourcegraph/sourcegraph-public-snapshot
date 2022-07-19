@@ -646,8 +646,6 @@ func (s *Service) ReplaceBatchSpecInput(ctx context.Context, opts ReplaceBatchSp
 		return nil, err
 	}
 
-	fmt.Printf("\n about to repace new spec with BC of %d and old spec has batch ID: %d", newSpec.BatchChangeID, batchSpec.BatchChangeID)
-
 	return newSpec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             newSpec,
 		allowUnsupported: opts.AllowUnsupported,
@@ -791,6 +789,8 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 
 	var opts store.GetBatchChangeOpts
 
+	// if the batch spec is linked to a batch change, we want to take advantage of querying for the batch change using the primary
+	// key as it's faster.
 	if spec.BatchChangeID != 0 {
 		opts = store.GetBatchChangeOpts{ID: spec.BatchChangeID}
 	} else {
