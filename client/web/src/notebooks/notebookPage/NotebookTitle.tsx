@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 
-import PencilOutlineIcon from 'mdi-react/PencilOutlineIcon'
+import { mdiPencilOutline } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useOnClickOutside, Icon, Input } from '@sourcegraph/wildcard'
@@ -68,7 +68,7 @@ export const NotebookTitle: React.FunctionComponent<React.PropsWithChildren<Note
                 <span>{title}</span>
                 <span className={styles.titleEditIcon}>
                     {/* Dot prefix in aria-label to ensure vocal differentiation from notebook title, when read by screen reader */}
-                    <Icon aria-label=". Click to edit title" as={PencilOutlineIcon} />
+                    <Icon aria-label=". Click to edit title" svgPath={mdiPencilOutline} />
                 </span>
             </button>
         )

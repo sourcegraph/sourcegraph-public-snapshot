@@ -37,7 +37,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     batchChangesExecutionEnabled: false,
     batchChangesWebhookLogsEnabled: false,
     telemetryService: {} as any,
-    isExtensionAlertAnimating: false,
     showSearchBox: true,
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
@@ -49,8 +48,6 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     searchContextsEnabled: true,
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
 }
 

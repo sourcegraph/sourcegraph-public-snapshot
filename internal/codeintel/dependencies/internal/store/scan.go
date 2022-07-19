@@ -3,9 +3,12 @@ package store
 import (
 	"database/sql"
 
+	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/types"
+	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 )
@@ -63,6 +66,32 @@ func scanDependencyRepo(s dbutil.Scanner) (shared.Repo, error) {
 
 var scanDependencyRepos = basestore.NewSliceScanner(scanDependencyRepo)
 
+// scanLockfileIndex scans `shared.LockfileIndex`
+func scanLockfileIndex(s dbutil.Scanner) (shared.LockfileIndex, error) {
+	var (
+		i            shared.LockfileIndex
+		commit       dbutil.CommitBytea
+		referenceIDs pq.Int32Array
+	)
+
+	err := s.Scan(&i.ID, &i.RepositoryID, &commit, &referenceIDs, &i.Lockfile, &i.Fidelity)
+	if err != nil {
+		return i, err
+	}
+
+	i.Commit = string(commit)
+
+	i.LockfileReferenceIDs = make([]int, 0, len(referenceIDs))
+	for _, id := range referenceIDs {
+		i.LockfileReferenceIDs = append(i.LockfileReferenceIDs, int(id))
+	}
+
+	return i, nil
+}
+
+// scanLockfileIndexes scans `[]shared.LockfileIndex`
+var scanLockfileIndexes = basestore.NewSliceScanner(scanLockfileIndex)
+
 // scanIntString scans a int, string pair.
 func scanIntString(s dbutil.Scanner) (int, string, error) {
 	var (
@@ -77,13 +106,13 @@ func scanIntString(s dbutil.Scanner) (int, string, error) {
 	return i, str, nil
 }
 
-func scanIdNames(rows *sql.Rows, queryErr error) (nameIDs map[string]int, ids []int, err error) {
+func scanIdNames(rows *sql.Rows, queryErr error) (nameIDs map[reposource.PackageName]int, ids []int, err error) {
 	if queryErr != nil {
 		return nil, nil, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
-	nameIDs = make(map[string]int)
+	nameIDs = make(map[reposource.PackageName]int)
 	ids = []int{}
 
 	for rows.Next() {
@@ -92,7 +121,7 @@ func scanIdNames(rows *sql.Rows, queryErr error) (nameIDs map[string]int, ids []
 			return nil, nil, err
 		}
 
-		nameIDs[name] = id
+		nameIDs[reposource.PackageName(name)] = id
 		ids = append(ids, id)
 	}
 

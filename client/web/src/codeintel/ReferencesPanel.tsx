@@ -1,12 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
+import { mdiArrowCollapseRight, mdiChevronDown, mdiChevronRight, mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { capitalize } from 'lodash'
-import ArrowCollapseRightIcon from 'mdi-react/ArrowCollapseRightIcon'
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 import { MemoryRouter, useHistory, useLocation } from 'react-router'
 
 import { HoveredToken } from '@sourcegraph/codeintellify'
@@ -49,6 +46,7 @@ import {
     Code,
     H4,
     Text,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelHighlightedBlobResult, ReferencesPanelHighlightedBlobVariables } from '../graphql-operations'
@@ -387,7 +385,8 @@ export const ReferencesList: React.FunctionComponent<
                     <small>
                         <Icon
                             aria-hidden={true}
-                            as={canShowSpinner ? LoadingSpinner : FilterOutlineIcon}
+                            as={canShowSpinner ? LoadingSpinner : undefined}
+                            svgPath={!canShowSpinner ? mdiFilterOutline : undefined}
                             size="sm"
                             className={styles.filterIcon}
                         />
@@ -450,16 +449,22 @@ export const ReferencesList: React.FunctionComponent<
                 <div data-testid="right-pane" className={classNames('px-0 border-left', styles.rightSubPanel)}>
                     <CardHeader className={classNames('d-flex', styles.cardHeader)}>
                         <small>
-                            <Button
-                                onClick={() => setActiveLocation(undefined)}
-                                className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
-                                title="Close code view"
-                                data-tooltip="Close code view"
-                                data-placement="left"
-                                size="sm"
-                            >
-                                <Icon aria-hidden={true} size="sm" as={ArrowCollapseRightIcon} className="border-0" />
-                            </Button>
+                            <Tooltip content="Close code view" placement="left">
+                                <Button
+                                    aria-label="Close"
+                                    onClick={() => setActiveLocation(undefined)}
+                                    className={classNames('btn-icon p-0', styles.sideBlobCollapseButton)}
+                                    size="sm"
+                                    data-testid="close-code-view"
+                                >
+                                    <Icon
+                                        aria-hidden={true}
+                                        size="sm"
+                                        svgPath={mdiArrowCollapseRight}
+                                        className="border-0"
+                                    />
+                                </Button>
+                            </Tooltip>
                             <Link
                                 to={activeLocation.url}
                                 onClick={event => {
@@ -525,9 +530,9 @@ const CollapsibleLocationList: React.FunctionComponent<
                         className="d-flex p-0 justify-content-start w-100"
                     >
                         {isOpen ? (
-                            <Icon aria-label="Close" as={ChevronDownIcon} />
+                            <Icon aria-label="Close" svgPath={mdiChevronDown} />
                         ) : (
-                            <Icon aria-label="Expand" as={ChevronRightIcon} />
+                            <Icon aria-label="Expand" svgPath={mdiChevronRight} />
                         )}{' '}
                         <H4 className="mb-0">{capitalize(props.name)}</H4>
                         <span className={classNames('ml-2 text-muted small', styles.cardHeaderSmallText)}>
@@ -745,8 +750,7 @@ const CollapsibleRepoLocationGroup: React.FunctionComponent<
                     type="button"
                     className={classNames('d-flex justify-content-start w-100', styles.repoLocationGroupHeader)}
                 >
-                    <Icon aria-hidden="true" as={open ? ChevronDownIcon : ChevronRightIcon} />
-
+                    <Icon aria-hidden="true" svgPath={open ? mdiChevronDown : mdiChevronRight} />
                     <small>
                         <Link
                             to={repoUrl}
@@ -791,7 +795,7 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                 navigateToUrl: (url: string) => void
             }
     >
-> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, searchToken, navigateToUrl }) => {
+> = ({ group, setActiveLocation, isActiveLocation, filter, isOpen, handleOpenChange, navigateToUrl }) => {
     let highlighted = [group.path]
     if (filter !== undefined) {
         highlighted = group.path.split(filter)
@@ -813,9 +817,9 @@ const CollapsibleLocationGroup: React.FunctionComponent<
                     )}
                 >
                     {open ? (
-                        <Icon aria-label="Close" as={ChevronDownIcon} />
+                        <Icon aria-label="Close" svgPath={mdiChevronDown} />
                     ) : (
-                        <Icon aria-label="Expand" as={ChevronRightIcon} />
+                        <Icon aria-label="Expand" svgPath={mdiChevronRight} />
                     )}
                     <small className={styles.locationGroupHeaderFilename}>
                         <span>

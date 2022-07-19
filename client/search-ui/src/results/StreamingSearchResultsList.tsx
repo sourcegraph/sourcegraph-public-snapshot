@@ -158,7 +158,6 @@ export const StreamingSearchResultsList: React.FunctionComponent<
         [
             location,
             telemetryService,
-            logSearchResultClicked,
             allExpanded,
             fetchHighlightedFileLineRanges,
             settingsCascade,
@@ -167,6 +166,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
             hoverifier,
             openMatchesInNewTab,
             resultClassName,
+            logSearchResultClicked,
         ]
     )
 

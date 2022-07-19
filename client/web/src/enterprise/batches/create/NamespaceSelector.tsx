@@ -3,7 +3,7 @@ import React, { useCallback } from 'react'
 import { mdiInformationOutline } from '@mdi/js'
 
 import { SettingsOrgSubject, SettingsUserSubject } from '@sourcegraph/shared/src/settings/settings'
-import { Icon, Select } from '@sourcegraph/wildcard'
+import { Icon, Select, Tooltip } from '@sourcegraph/wildcard'
 
 const getNamespaceDisplayName = (namespace: SettingsUserSubject | SettingsOrgSubject): string => {
     switch (namespace.__typename) {
@@ -45,12 +45,9 @@ export const NamespaceSelector: React.FunctionComponent<React.PropsWithChildren<
             label={
                 <>
                     <strong className="text-nowrap mb-2">Namespace</strong>
-                    <Icon
-                        aria-label="Coming soon"
-                        data-tooltip="Coming soon"
-                        className="ml-1"
-                        svgPath={mdiInformationOutline}
-                    />
+                    <Tooltip content="Coming soon">
+                        <Icon aria-label="Coming soon" className="ml-1" svgPath={mdiInformationOutline} />
+                    </Tooltip>
                 </>
             }
             isCustomStyle={true}

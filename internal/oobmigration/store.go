@@ -3,10 +3,13 @@ package oobmigration
 import (
 	"context"
 	"database/sql"
+	"embed"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"gopkg.in/yaml.v3"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -27,6 +30,7 @@ type Migration struct {
 	Created        time.Time
 	LastUpdated    *time.Time
 	NonDestructive bool
+	IsEnterprise   bool
 	ApplyReverse   bool
 	Errors         []MigrationError
 	// Metadata can be used to store custom JSON data
@@ -80,6 +84,7 @@ func scanMigrations(rows *sql.Rows, queryErr error) (_ []Migration, err error) {
 			&value.Created,
 			&value.LastUpdated,
 			&value.NonDestructive,
+			&value.IsEnterprise,
 			&value.ApplyReverse,
 			&value.Metadata,
 			&dbutil.NullString{S: &message},
@@ -143,6 +148,106 @@ func (s *Store) Transact(ctx context.Context) (*Store, error) {
 	return &Store{Store: txBase}, err
 }
 
+type yamlMigration struct {
+	ID                     int    `yaml:"id"`
+	Team                   string `yaml:"team"`
+	Component              string `yaml:"component"`
+	Description            string `yaml:"description"`
+	NonDestructive         bool   `yaml:"non_destructive"`
+	IsEnterprise           bool   `yaml:"is_enterprise"`
+	IntroducedVersionMajor int    `yaml:"introduced_version_major"`
+	IntroducedVersionMinor int    `yaml:"introduced_version_minor"`
+	DeprecatedVersionMajor *int   `yaml:"deprecated_version_major"`
+	DeprecatedVersionMinor *int   `yaml:"deprecated_version_minor"`
+}
+
+//go:embed oobmigrations.yaml
+var migrations embed.FS
+
+var yamlMigrations = func() []yamlMigration {
+	contents, err := migrations.ReadFile("oobmigrations.yaml")
+	if err != nil {
+		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
+	}
+
+	var parsedMigrations []yamlMigration
+	if err := yaml.Unmarshal(contents, &parsedMigrations); err != nil {
+		panic(fmt.Sprintf("malformed oobmigration definitions: %s", err.Error()))
+	}
+
+	return parsedMigrations
+}()
+
+// SynchronizeMetadata upserts the metadata defined in the sibling file oobmigrations.yaml.
+// Existing out-of-band migration metadata that does not match one of the identifiers in
+// the referenced file are not removed, as they have likely been registered by an earlier
+// version of the instance prior to a downgrade.
+func (s *Store) SynchronizeMetadata(ctx context.Context) (err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	for _, migration := range yamlMigrations {
+		if err := tx.Exec(ctx, sqlf.Sprintf(
+			synchronizeMetadataUpsertQuery,
+			migration.ID,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			migration.IsEnterprise,
+			migration.IntroducedVersionMajor,
+			migration.IntroducedVersionMinor,
+			migration.DeprecatedVersionMajor,
+			migration.DeprecatedVersionMinor,
+			migration.Team,
+			migration.Component,
+			migration.Description,
+			migration.NonDestructive,
+			migration.IsEnterprise,
+			migration.IntroducedVersionMajor,
+			migration.IntroducedVersionMinor,
+			migration.DeprecatedVersionMajor,
+			migration.DeprecatedVersionMinor,
+		)); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+const synchronizeMetadataUpsertQuery = `
+-- source: internal/oobmigration/store.go:SynchronizeMetadata
+INSERT INTO out_of_band_migrations
+(
+	id,
+	team,
+	component,
+	description,
+	created,
+	non_destructive,
+	is_enterprise,
+	introduced_version_major,
+	introduced_version_minor,
+	deprecated_version_major,
+	deprecated_version_minor
+)
+VALUES (%s, %s, %s, %s, NOW(), %s, %s, %s, %s, %s, %s)
+ON CONFLICT (id) DO UPDATE SET
+	team = %s,
+	component = %s,
+	description = %s,
+	non_destructive = %s,
+	is_enterprise = %s,
+	introduced_version_major = %s,
+	introduced_version_minor = %s,
+	deprecated_version_major = %s,
+	deprecated_version_minor = %s
+`
+
 // GetByID retrieves a migration by its identifier. If the migration does not exist, a false
 // valued flag is returned.
 func (s *Store) GetByID(ctx context.Context, id int) (_ Migration, _ bool, err error) {
@@ -173,6 +278,7 @@ SELECT
 	m.created,
 	m.last_updated,
 	m.non_destructive,
+	m.is_enterprise,
 	m.apply_reverse,
 	m.metadata,
 	e.message,
@@ -216,6 +322,7 @@ SELECT
 	m.created,
 	m.last_updated,
 	m.non_destructive,
+	m.is_enterprise,
 	m.apply_reverse,
 	m.metadata,
 	e.message,

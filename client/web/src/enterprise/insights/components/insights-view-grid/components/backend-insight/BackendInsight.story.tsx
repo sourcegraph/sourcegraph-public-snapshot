@@ -9,10 +9,15 @@ import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
 import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
-import { SeriesChartContent, SearchBasedInsight } from '../../../../core'
-import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend/gql/GetInsightView'
+import {
+    SeriesChartContent,
+    SearchBasedInsight,
+    CaptureGroupInsight,
+    InsightExecutionType,
+    InsightType,
+} from '../../../../core'
+import { GET_INSIGHT_VIEW_GQL } from '../../../../core/backend/gql-backend'
 import { InsightInProcessError } from '../../../../core/backend/utils/errors'
-import { CaptureGroupInsight, InsightExecutionType, InsightType } from '../../../../core/types'
 
 import { BackendInsightView } from './BackendInsight'
 
@@ -39,11 +44,29 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
-    seriesDisplayOptions: {},
+    seriesDisplayOptions: {
+        limit: 20,
+        sortOptions: {
+            direction: SeriesSortDirection.DESC,
+            mode: SeriesSortMode.RESULT_COUNT,
+        },
+    },
     dashboards: [],
+    seriesCount: 2,
 }
 
 interface BackendInsightDatum {
@@ -147,8 +170,11 @@ const mockInsightAPIResponse = ({
                         id: 'searchInsights.insight.mock_backend_insight_id',
                         filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                         seriesDisplayOptions: {
-                            limit: undefined,
-                            sortOptions: undefined,
+                            limit: 20,
+                            sortOptions: {
+                                direction: SeriesSortDirection.DESC,
+                                mode: SeriesSortMode.RESULT_COUNT,
+                            },
                         },
                     },
                 },
@@ -165,8 +191,11 @@ const mockInsightAPIResponse = ({
                     id: 'searchInsights.insight.mock_backend_insight_id',
                     filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                     seriesDisplayOptions: {
-                        limit: undefined,
-                        sortOptions: undefined,
+                        limit: 20,
+                        sortOptions: {
+                            direction: SeriesSortDirection.DESC,
+                            mode: SeriesSortMode.RESULT_COUNT,
+                        },
                     },
                 },
             },
@@ -230,11 +259,23 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         { id: '003', name: 'shared', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
     dashboards: [],
+    seriesCount: 3,
 }
 
 const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
@@ -248,11 +289,23 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         { id: '003', name: 'useMutation | useQuery | useConnection hooks', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
     dashboards: [],
+    seriesCount: 3,
 }
 
 const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
@@ -263,10 +316,22 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     step: { weeks: 2 },
     repositories: [],
     query: '',
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     dashboards: [],
+    seriesCount: 0,
 }
 
 const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewResult> = {
@@ -276,8 +341,11 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },
@@ -287,24 +355,6 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9aNFFpTERPMGRQVUZSQWNtYnBvZ1hhWnMi',
-                        defaultSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
-                        appliedSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
                         dataSeries: [
                             {
                                 seriesId: '001',
@@ -560,8 +610,11 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },
@@ -571,24 +624,6 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9ZY1VQdThxeXpvcnR1WmJXZE9qdVh2Y2Yi',
-                        defaultSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
-                        appliedSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
                         dataSeries: [
                             {
                                 seriesId: '001',
@@ -844,8 +879,11 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },
@@ -855,24 +893,6 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
                 nodes: [
                     {
                         id: 'aW5zaWdodF92aWV3OiIyNU9lSm8xcTZub05nUkh3aG9MWEdCdUdtN3Yi',
-                        defaultSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
-                        appliedSeriesDisplayOptions: {
-                            __typename: 'SeriesDisplayOptions',
-                            limit: 20,
-                            sortOptions: {
-                                __typename: 'SeriesSortOptions',
-                                mode: SeriesSortMode.LEXICOGRAPHICAL,
-                                direction: SeriesSortDirection.ASC,
-                            },
-                        },
                         dataSeries: [
                             {
                                 seriesId: '25OeJqBD4dOacJDmOA1cXY97Iyb',

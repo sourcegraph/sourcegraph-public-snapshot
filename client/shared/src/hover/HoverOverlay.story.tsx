@@ -52,7 +52,7 @@ const BITBUCKET_CLASS_PROPS: HoverOverlayClassProps = {
     },
 }
 
-export const BitbucketStyles: Story = props => (
+export const BitbucketStyles: Story = (props = {}) => (
     <BrowserRouter>
         <CompatRouter>
             <HoverOverlay

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/internal/search/lucky"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -43,7 +44,10 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
+		newJob := func(b query.Basic) (job.Job, error) {
+			return NewBasicJob(inputs, b)
+		}
+		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
@@ -209,19 +213,13 @@ func orderSearcherJob(j job.Job) job.Job {
 	// This job will be sequentially ordered after any Zoekt jobs. We assume
 	// at most one searcher job exists.
 	var pagedSearcherJob job.Job
-	collector := Mapper{
-		MapJob: func(current job.Job) job.Job {
-			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.Partial().(*searcher.TextSearchJob); ok {
-					pagedSearcherJob = pager
-					return &NoopJob{}
-				}
-			}
-			return current
-		},
-	}
-
-	newJob := collector.Map(j)
+	newJob := job.MapType(j, func(pager *repoPagerJob) job.Job {
+		if job.HasDescendent[*searcher.TextSearchJob](pager) {
+			pagedSearcherJob = pager
+			return &NoopJob{}
+		}
+		return pager
+	})
 
 	if pagedSearcherJob == nil {
 		// No searcher job, nothing to worry about.
@@ -230,24 +228,23 @@ func orderSearcherJob(j job.Job) job.Job {
 
 	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
 	// We assume at most one of either two Zoekt search jobs may exist.
-	seenZoektRepoSearch, seenZoektGlobalSearch := false, false
-	orderer := Mapper{
-		MapJob: func(current job.Job) job.Job {
-			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.Partial().(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
-					seenZoektRepoSearch = true
-					return NewSequentialJob(false, current, pagedSearcherJob)
-				}
-			}
-			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
-				seenZoektGlobalSearch = true
-				return NewSequentialJob(false, current, pagedSearcherJob)
-			}
-			return current
-		},
-	}
+	seenZoektRepoSearch := false
+	newJob = job.MapType(newJob, func(pager *repoPagerJob) job.Job {
+		if job.HasDescendent[*zoekt.RepoSubsetTextSearchJob](pager) {
+			seenZoektRepoSearch = true
+			return NewSequentialJob(false, pager, pagedSearcherJob)
+		}
+		return pager
+	})
 
-	newJob = orderer.Map(newJob)
+	seenZoektGlobalSearch := false
+	newJob = job.MapType(newJob, func(current *zoekt.GlobalTextSearchJob) job.Job {
+		if !seenZoektGlobalSearch {
+			seenZoektGlobalSearch = true
+			return NewSequentialJob(false, current, pagedSearcherJob)
+		}
+		return current
+	})
 
 	if !seenZoektRepoSearch && !seenZoektGlobalSearch {
 		// There were no Zoekt jobs, so no need to modify the tree. Return original.
@@ -626,19 +623,20 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
-		RepoFilters:       repoFilters,
-		MinusRepoFilters:  minusRepoFilters,
-		Dependencies:      b.Dependencies(),
-		Dependents:        b.Dependents(),
-		SearchContextSpec: searchContextSpec,
-		ForkSet:           b.Fork() != nil,
-		OnlyForks:         fork == query.Only,
-		NoForks:           fork == query.No,
-		ArchivedSet:       b.Archived() != nil,
-		OnlyArchived:      archived == query.Only,
-		NoArchived:        archived == query.No,
-		Visibility:        visibility,
-		CommitAfter:       b.RepoContainsCommitAfter(),
+		RepoFilters:         repoFilters,
+		MinusRepoFilters:    minusRepoFilters,
+		Dependencies:        b.Dependencies(),
+		Dependents:          b.Dependents(),
+		DescriptionPatterns: b.RepoHasDescription(),
+		SearchContextSpec:   searchContextSpec,
+		ForkSet:             b.Fork() != nil,
+		OnlyForks:           fork == query.Only,
+		NoForks:             fork == query.No,
+		ArchivedSet:         b.Archived() != nil,
+		OnlyArchived:        archived == query.Only,
+		NoArchived:          archived == query.No,
+		Visibility:          visibility,
+		CommitAfter:         b.RepoContainsCommitAfter(),
 	}
 }
 

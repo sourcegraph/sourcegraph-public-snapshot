@@ -1,15 +1,13 @@
 import React, { useEffect, useCallback } from 'react'
 
+import { mdiCloudOutline, mdiCloudDownload, mdiCog } from '@mdi/js'
 import classNames from 'classnames'
-import CloudDownloadIcon from 'mdi-react/CloudDownloadIcon'
-import CloudOutlineIcon from 'mdi-react/CloudOutlineIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import { RouteComponentProps } from 'react-router'
 import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
 import {
@@ -44,31 +42,26 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
                     </small>
                 )}
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <small
-                        className="ml-2 text-muted"
-                        data-tooltip="Visit the repository to clone it. See its mirroring settings for diagnostics."
-                    >
-                        <Icon as={CloudOutlineIcon} aria-hidden={true} /> Not yet cloned
-                    </small>
+                    <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
+                        <small className="ml-2 text-muted">
+                            <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
+                        </small>
+                    </Tooltip>
                 )}
             </div>
 
             <div className="repository-node__actions">
                 {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
                     <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon as={CloudDownloadIcon} aria-hidden={true} /> Clone now
+                        <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                     </Button>
                 )}{' '}
                 {
-                    <Button
-                        to={`/${node.name}/-/settings`}
-                        data-tooltip="Repository settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
-                    </Button>
+                    <Tooltip content="Repository settings">
+                        <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                        </Button>
+                    </Tooltip>
                 }{' '}
             </div>
         </div>

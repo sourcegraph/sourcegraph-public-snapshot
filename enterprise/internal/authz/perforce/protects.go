@@ -508,14 +508,9 @@ func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}
 						delete(users, line.name)
 					}
 				case "group":
-					members, err := p.getGroupMembers(ctx, line.name)
-					if err != nil {
-						return errors.Wrapf(err, "list members of group %q", line.name)
+					if err := p.excludeGroupMembers(ctx, line.name, users); err != nil {
+						return err
 					}
-					for _, member := range members {
-						delete(users, member)
-					}
-
 				default:
 					log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
 				}
@@ -537,14 +532,9 @@ func allUsersScanner(ctx context.Context, p *Provider, users map[string]struct{}
 					users[line.name] = struct{}{}
 				}
 			case "group":
-				members, err := p.getGroupMembers(ctx, line.name)
-				if err != nil {
-					return errors.Wrapf(err, "list members of group %q", line.name)
+				if err := p.includeGroupMembers(ctx, line.name, users); err != nil {
+					return err
 				}
-				for _, member := range members {
-					users[member] = struct{}{}
-				}
-
 			default:
 				log15.Warn("authz.perforce.Provider.FetchRepoPerms.unrecognizedType", "type", line.entityType)
 			}

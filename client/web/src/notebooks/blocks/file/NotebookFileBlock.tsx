@@ -1,12 +1,9 @@
 import React, { useState, useCallback, useMemo, useEffect } from 'react'
 
 import { EditorView } from '@codemirror/view'
+import { mdiOpenInNew, mdiFileDocument, mdiCheck, mdiPencil } from '@mdi/js'
 import classNames from 'classnames'
 import { debounce } from 'lodash'
-import CheckIcon from 'mdi-react/CheckIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
-import PencilIcon from 'mdi-react/PencilIcon'
 import { of } from 'rxjs'
 import { startWith } from 'rxjs/operators'
 
@@ -122,7 +119,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {
                     type: 'link',
                     label: 'Open in new tab',
-                    icon: <Icon aria-hidden={true} as={OpenInNewIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={mdiOpenInNew} />,
                     url: fileURL,
                 },
             ],
@@ -134,7 +131,7 @@ export const NotebookFileBlock: React.FunctionComponent<React.PropsWithChildren<
                 {
                     type: 'button',
                     label: showInputs ? 'Save' : 'Edit',
-                    icon: <Icon aria-hidden={true} as={showInputs ? CheckIcon : PencilIcon} />,
+                    icon: <Icon aria-hidden={true} svgPath={showInputs ? mdiCheck : mdiPencil} />,
                     onClick: () => setShowInputs(!showInputs),
                     keyboardShortcutLabel: showInputs ? `${modifierKeyLabel} + ↵` : '↵',
                 },
@@ -252,7 +249,7 @@ const NotebookFileBlockHeader: React.FunctionComponent<
     const repoAtRevisionURL = getRepositoryUrl(repositoryName, [revision])
     return (
         <>
-            <Icon aria-hidden={true} as={FileDocumentIcon} />
+            <Icon aria-hidden={true} svgPath={mdiFileDocument} />
             <div className={styles.separator} />
             <RepoFileSymbolLink
                 repoName={repositoryName}

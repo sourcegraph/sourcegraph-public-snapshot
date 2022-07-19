@@ -1,12 +1,11 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
-import { mdiCheckboxBlankCircle } from '@mdi/js'
-import MapSearchIcon from 'mdi-react/MapSearchIcon'
+import { mdiCheckboxBlankCircle, mdiMapSearch } from '@mdi/js'
 import { RouteComponentProps, useHistory } from 'react-router'
 import { Subject } from 'rxjs'
 
-import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text } from '@sourcegraph/wildcard'
+import { Badge, Container, Link, PageHeader, Icon, H3, H4, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../../components/Collapsible'
 import {
@@ -137,12 +136,13 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
                                     svgPath={mdiCheckboxBlankCircle}
                                 />
                             ) : (
-                                <Icon
-                                    className="text-warning mr-2"
-                                    aria-label="This executor missed at least three heartbeats."
-                                    data-tooltip="This executor missed at least three heartbeats."
-                                    svgPath={mdiCheckboxBlankCircle}
-                                />
+                                <Tooltip content="This executor missed at least three heartbeats.">
+                                    <Icon
+                                        aria-label="This executor missed at least three heartbeats."
+                                        className="text-warning mr-2"
+                                        svgPath={mdiCheckboxBlankCircle}
+                                    />
+                                </Tooltip>
                             )}
                             {node.hostname}{' '}
                             <Badge
@@ -211,7 +211,7 @@ export const ExecutorNode: FunctionComponent<React.PropsWithChildren<ExecutorNod
 
 export const NoExecutors: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
-        <MapSearchIcon className="mb-2" />
+        <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />
         No executors found.
     </Text>
