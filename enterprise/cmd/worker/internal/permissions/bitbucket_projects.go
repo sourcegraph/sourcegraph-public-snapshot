@@ -14,12 +14,12 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	edb "github.com/sourcegraph/sourcegraph/enterprise/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
-	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -233,14 +233,8 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 		bindIDs = append(bindIDs, up.BindID)
 	}
 
-	// TODO 2022-07-19 we can't use globals since we are running in worker. In
-	// future we probably should remove globals.PermissionsUserMapping and
-	// just rely on conf. But we are doing the faster and still correct fix
-	// here.
-	userMappings := conf.Get().PermissionsUserMapping
-
 	// bind the bindIDs to actual user IDs
-	mapping, err := h.db.Perms().MapUsers(ctx, bindIDs, userMappings)
+	mapping, err := h.db.Perms().MapUsers(ctx, bindIDs, globals.PermissionsUserMapping())
 	if err != nil {
 		return errors.Wrap(err, "failed to map bind IDs to user IDs")
 	}
