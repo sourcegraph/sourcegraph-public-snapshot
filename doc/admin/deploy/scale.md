@@ -694,7 +694,7 @@ An HTTP server that exposes the Rust Syntect syntax highlighting library to othe
 ### worker
 
 ```
-Runs a background jobs periodically in response to internal requests and external events.
+Runs a collection of background jobs periodically in response to internal requests and external events.
 It is currently janitorial and commit-based.
 ```
 
