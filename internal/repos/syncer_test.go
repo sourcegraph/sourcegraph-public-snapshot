@@ -353,10 +353,14 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 						r.Name = "old-name"
 					})},
 					now: clock.Now,
-					diff: repos.Diff{Modified: types.Repos{
-						tc.repo.With(
-							typestest.Opt.RepoModifiedAt(clock.Time(1))),
-					}},
+					diff: repos.Diff{
+						Modified: repos.ReposModified{
+							{
+								Repo:     tc.repo.With(typestest.Opt.RepoModifiedAt(clock.Time(1))),
+								Modified: types.RepoModifiedName,
+							},
+						},
+					},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "<nil>",
 				},
@@ -384,11 +388,14 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 								r.UpdatedAt = clock.Time(0)
 							}),
 						},
-						Modified: types.Repos{
-							tc.repo.With(
-								typestest.Opt.RepoModifiedAt(clock.Time(1)),
-								func(r *types.Repo) { r.ExternalRepo.ID = "another-id" },
-							),
+						Modified: repos.ReposModified{
+							{
+								Repo: tc.repo.With(
+									typestest.Opt.RepoModifiedAt(clock.Time(1)),
+									func(r *types.Repo) { r.ExternalRepo.ID = "another-id" },
+								),
+								Modified: types.RepoModifiedExternalRepo,
+							},
 						},
 					},
 					svcs: []*types.ExternalService{tc.svc},
@@ -439,11 +446,14 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					}.With(typestest.Opt.RepoCreatedAt(clock.Time(1))),
 					now: clock.Now,
 					diff: repos.Diff{
-						Modified: types.Repos{
-							tc.repo.With(
-								typestest.Opt.RepoCreatedAt(clock.Time(1)),
-								typestest.Opt.RepoModifiedAt(clock.Time(1)),
-							),
+						Modified: repos.ReposModified{
+							{
+								Repo: tc.repo.With(
+									typestest.Opt.RepoCreatedAt(clock.Time(1)),
+									typestest.Opt.RepoModifiedAt(clock.Time(1)),
+								),
+								Modified: types.RepoModifiedName | types.RepoModifiedExternalRepo,
+							},
 						},
 						Deleted: types.Repos{
 							tc.repo.With(func(r *types.Repo) {
@@ -500,17 +510,21 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 						}),
 					},
 					diff: repos.Diff{
-						Modified: types.Repos{
-							tc.repo.With(func(r *types.Repo) {
-								r.Name = "foo"
-								r.ExternalRepo.ID = "1"
-								r.UpdatedAt = clock.Time(0)
-							}),
-							tc.repo.With(func(r *types.Repo) {
-								r.Name = "bar"
-								r.ExternalRepo.ID = "2"
-								r.UpdatedAt = clock.Time(0)
-							}),
+						Modified: repos.ReposModified{
+							{
+								Repo: tc.repo.With(func(r *types.Repo) {
+									r.Name = "foo"
+									r.ExternalRepo.ID = "1"
+									r.UpdatedAt = clock.Time(0)
+								}),
+							},
+							{
+								Repo: tc.repo.With(func(r *types.Repo) {
+									r.Name = "bar"
+									r.ExternalRepo.ID = "2"
+									r.UpdatedAt = clock.Time(0)
+								}),
+							},
 						},
 					},
 					svcs: []*types.ExternalService{tc.svc},
@@ -526,8 +540,12 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 					stored: types.Repos{
 						tc.repo.With(typestest.Opt.RepoName(api.RepoName(strings.ToUpper(string(tc.repo.Name))))),
 					},
-					now:  clock.Now,
-					diff: repos.Diff{Modified: types.Repos{tc.repo.With(typestest.Opt.RepoModifiedAt(clock.Time(0)))}},
+					now: clock.Now,
+					diff: repos.Diff{
+						Modified: repos.ReposModified{
+							{Repo: tc.repo.With(typestest.Opt.RepoModifiedAt(clock.Time(0)))},
+						},
+					},
 					svcs: []*types.ExternalService{tc.svc},
 					err:  "<nil>",
 				},
@@ -601,7 +619,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				var want, have types.Repos
-				want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified, tc.diff.ArchivedChanged)
+				want.Concat(tc.diff.Added, tc.diff.Modified.Repos(), tc.diff.Unmodified)
 				have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
 
 				want = want.With(typestest.Opt.RepoID(0))
@@ -682,7 +700,9 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned:   oldRepo,
 			after:      types.Repos{repo},
 			diff: repos.Diff{
-				Modified: types.Repos{repo},
+				Modified: repos.ReposModified{
+					{Repo: repo, Modified: types.RepoModifiedStars},
+				},
 			},
 		}, {
 			name:       "blocking update",
@@ -693,7 +713,9 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned:   repo,
 			after:      types.Repos{repo},
 			diff: repos.Diff{
-				Modified: types.Repos{repo},
+				Modified: repos.ReposModified{
+					{Repo: repo, Modified: types.RepoModifiedStars},
+				},
 			},
 		}, {
 			name:       "update name",
@@ -704,7 +726,9 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned:   repo,
 			after:      types.Repos{repo},
 			diff: repos.Diff{
-				Modified: types.Repos{repo},
+				Modified: repos.ReposModified{
+					{Repo: repo, Modified: types.RepoModifiedName},
+				},
 			},
 		}, {
 			name:       "archived",
@@ -715,8 +739,12 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned:   repo,
 			after:      types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
 			diff: repos.Diff{
-				Modified:        types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
-				ArchivedChanged: types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
+				Modified: repos.ReposModified{
+					{
+						Repo:     repo.With(typestest.Opt.RepoArchived(true)),
+						Modified: types.RepoModifiedArchived,
+					},
+				},
 			},
 		}, {
 			name:       "unarchived",
@@ -727,8 +755,9 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned:   repo.With(typestest.Opt.RepoArchived(true)),
 			after:      types.Repos{repo},
 			diff: repos.Diff{
-				Modified:        types.Repos{repo},
-				ArchivedChanged: types.Repos{repo},
+				Modified: repos.ReposModified{
+					{Repo: repo, Modified: types.RepoModifiedArchived},
+				},
 			},
 		}, {
 			name:       "delete conflicting name",
@@ -739,7 +768,9 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned:   repo.With(typestest.Opt.RepoExternalID("old id")),
 			after:      types.Repos{repo},
 			diff: repos.Diff{
-				Modified: types.Repos{repo},
+				Modified: repos.ReposModified{
+					{Repo: repo, Modified: types.RepoModifiedExternalRepo},
+				},
 			},
 		}, {
 			name:       "rename and delete conflicting name",
@@ -753,7 +784,9 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 			returned: repo.With(typestest.Opt.RepoExternalID("old id")),
 			after:    types.Repos{repo},
 			diff: repos.Diff{
-				Modified: types.Repos{repo},
+				Modified: repos.ReposModified{
+					{Repo: repo, Modified: types.RepoModifiedName},
+				},
 			},
 		}}
 
@@ -882,7 +915,11 @@ func testSyncRun(store repos.Store) func(t *testing.T) {
 
 		// Next up it should find the existing repo and send it down Synced
 		diff = <-syncer.Synced
-		if d := cmp.Diff(repos.Diff{Modified: sourced[:1]}, diff, ignore); d != "" {
+		if d := cmp.Diff(repos.Diff{
+			Modified: repos.ReposModified{
+				{Repo: sourced[0], Modified: types.RepoModifiedDescription},
+			},
+		}, diff, ignore); d != "" {
 			t.Fatalf("Synced mismatch (-want +got):\n%s", d)
 		}
 
@@ -1053,9 +1090,6 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 			}
 			if len(diff.Unmodified) != 0 {
 				t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
-			}
-			if len(diff.ArchivedChanged) != 0 {
-				t.Fatalf("Expected 0 Archived repos. got %d", len(diff.Added))
 			}
 		}
 
