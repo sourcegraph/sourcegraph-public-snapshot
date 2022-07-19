@@ -605,8 +605,8 @@ ALTER SEQUENCE batch_spec_execution_cache_entries_id_seq OWNED BY batch_spec_exe
 
 CREATE TABLE batch_spec_resolution_jobs (
     id bigint NOT NULL,
-    batch_spec_id integer,
-    state text DEFAULT 'queued'::text,
+    batch_spec_id integer NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,
@@ -634,8 +634,8 @@ ALTER SEQUENCE batch_spec_resolution_jobs_id_seq OWNED BY batch_spec_resolution_
 
 CREATE TABLE batch_spec_workspace_execution_jobs (
     id bigint NOT NULL,
-    batch_spec_workspace_id integer,
-    state text DEFAULT 'queued'::text,
+    batch_spec_workspace_id integer NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,
@@ -705,9 +705,9 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
 
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
-    batch_spec_id integer,
-    changeset_spec_ids jsonb DEFAULT '{}'::jsonb,
-    repo_id integer,
+    batch_spec_id integer NOT NULL,
+    changeset_spec_ids jsonb DEFAULT '{}'::jsonb NOT NULL,
+    repo_id integer NOT NULL,
     branch text NOT NULL,
     commit text NOT NULL,
     path text NOT NULL,
@@ -894,7 +894,7 @@ CREATE TABLE changeset_jobs (
     changeset_id integer NOT NULL,
     job_type text NOT NULL,
     payload jsonb DEFAULT '{}'::jsonb,
-    state text DEFAULT 'queued'::text,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,

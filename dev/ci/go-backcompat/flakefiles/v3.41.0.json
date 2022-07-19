@@ -63,5 +63,10 @@
     "path": "enterprise/internal/batches/store",
     "prefix": "TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff",
     "reason": "Forgot to add userIDs to some records in tests, which fails now but is backwards compatible for app code."
+  },
+  {
+    "path": "internal/usagestats",
+    "prefix": "TestGetBatchChangesUsageStatistics",
+    "reason": "Fixed up DB constraints, now the test inserts invalid test data."
   }
 ]
