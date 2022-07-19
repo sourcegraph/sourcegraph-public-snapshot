@@ -81,6 +81,9 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// UpdateExternalServiceRepo.
 	UpdateExternalServiceRepoFunc *StoreUpdateExternalServiceRepoFunc
+	// UpdateRepoFunc is an instance of a mock function object controlling
+	// the behavior of the method UpdateRepo.
+	UpdateRepoFunc *StoreUpdateRepoFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *StoreWithFunc
@@ -177,6 +180,11 @@ func NewMockStore() *MockStore {
 		},
 		UpdateExternalServiceRepoFunc: &StoreUpdateExternalServiceRepoFunc{
 			defaultHook: func(context.Context, *types.ExternalService, *types.Repo) (r0 error) {
+				return
+			},
+		},
+		UpdateRepoFunc: &StoreUpdateRepoFunc{
+			defaultHook: func(context.Context, *types.Repo) (r0 *types.Repo, r1 error) {
 				return
 			},
 		},
@@ -282,6 +290,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.UpdateExternalServiceRepo")
 			},
 		},
+		UpdateRepoFunc: &StoreUpdateRepoFunc{
+			defaultHook: func(context.Context, *types.Repo) (*types.Repo, error) {
+				panic("unexpected invocation of MockStore.UpdateRepo")
+			},
+		},
 		WithFunc: &StoreWithFunc{
 			defaultHook: func(basestore.ShareableStore) Store {
 				panic("unexpected invocation of MockStore.With")
@@ -347,6 +360,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		UpdateExternalServiceRepoFunc: &StoreUpdateExternalServiceRepoFunc{
 			defaultHook: i.UpdateExternalServiceRepo,
+		},
+		UpdateRepoFunc: &StoreUpdateRepoFunc{
+			defaultHook: i.UpdateRepo,
 		},
 		WithFunc: &StoreWithFunc{
 			defaultHook: i.With,
@@ -2242,6 +2258,113 @@ func (c StoreUpdateExternalServiceRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreUpdateExternalServiceRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
+}
+
+// StoreUpdateRepoFunc describes the behavior when the UpdateRepo method of
+// the parent MockStore instance is invoked.
+type StoreUpdateRepoFunc struct {
+	defaultHook func(context.Context, *types.Repo) (*types.Repo, error)
+	hooks       []func(context.Context, *types.Repo) (*types.Repo, error)
+	history     []StoreUpdateRepoFuncCall
+	mutex       sync.Mutex
+}
+
+// UpdateRepo delegates to the next hook function in the queue and stores
+// the parameter and result values of this invocation.
+func (m *MockStore) UpdateRepo(v0 context.Context, v1 *types.Repo) (*types.Repo, error) {
+	r0, r1 := m.UpdateRepoFunc.nextHook()(v0, v1)
+	m.UpdateRepoFunc.appendCall(StoreUpdateRepoFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the UpdateRepo method of
+// the parent MockStore instance is invoked and the hook queue is empty.
+func (f *StoreUpdateRepoFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// UpdateRepo method of the parent MockStore instance invokes the hook at
+// the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreUpdateRepoFunc) PushHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreUpdateRepoFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
+	f.SetDefaultHook(func(context.Context, *types.Repo) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreUpdateRepoFunc) PushReturn(r0 *types.Repo, r1 error) {
+	f.PushHook(func(context.Context, *types.Repo) (*types.Repo, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreUpdateRepoFunc) nextHook() func(context.Context, *types.Repo) (*types.Repo, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreUpdateRepoFunc) appendCall(r0 StoreUpdateRepoFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreUpdateRepoFuncCall objects describing
+// the invocations of this function.
+func (f *StoreUpdateRepoFunc) History() []StoreUpdateRepoFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreUpdateRepoFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreUpdateRepoFuncCall is an object that describes an invocation of
+// method UpdateRepo on an instance of MockStore.
+type StoreUpdateRepoFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 *types.Repo
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 *types.Repo
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreUpdateRepoFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreUpdateRepoFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
 }
 
 // StoreWithFunc describes the behavior when the With method of the parent

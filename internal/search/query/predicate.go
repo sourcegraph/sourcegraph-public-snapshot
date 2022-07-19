@@ -40,10 +40,12 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
 		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
 		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
+		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
 	},
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
 		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
+		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
 }
 
@@ -318,7 +320,30 @@ func (f *RepoDependentsPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 
-/* repo:contains.content(pattern) */
+/* repo:has.description(...) */
+
+type RepoHasDescriptionPredicate struct {
+	Pattern string
+}
+
+func (f *RepoHasDescriptionPredicate) ParseParams(params string) (err error) {
+	if _, err := regexp.Compile(params); err != nil {
+		return errors.Errorf("invalid repo:has.description() argument: %w", err)
+	}
+	if len(params) == 0 {
+		return errors.New("empty repo:has.description() predicate parameter")
+	}
+	f.Pattern = params
+	return nil
+}
+
+func (f *RepoHasDescriptionPredicate) Field() string { return FieldRepo }
+func (f *RepoHasDescriptionPredicate) Name() string  { return "has.description" }
+func (f *RepoHasDescriptionPredicate) Plan(parent Basic) (Plan, error) {
+	return nil, nil
+}
+
+/* file:contains.content(pattern) */
 
 type FileContainsContentPredicate struct {
 	Pattern string
@@ -353,6 +378,26 @@ func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
 	return BuildPlan(nodes), nil
+}
+
+/* file:has.owner(pattern) */
+
+type FileHasOwnerPredicate struct {
+	Owner string
+}
+
+func (f *FileHasOwnerPredicate) ParseParams(params string) error {
+	if params == "" {
+		return errors.Errorf("file:has.owner argument should not be empty")
+	}
+	f.Owner = params
+	return nil
+}
+
+func (f FileHasOwnerPredicate) Field() string { return FieldFile }
+func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
+func (f *FileHasOwnerPredicate) Plan(parent Basic) (Plan, error) {
+	return nil, nil
 }
 
 // nonPredicateRepos returns the repo nodes in a query that aren't predicates,

@@ -1,82 +1,84 @@
 package reposource
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type PythonPackageVersion struct {
-	Name    string
+type PythonVersionedPackage struct {
+	Name    PackageName
 	Version string
-
-	// The URL of the package to download. Possibly empty.
-	PackageURL string
 }
 
-func NewPythonPackageVersion(name, version string) *PythonPackageVersion {
-	return &PythonPackageVersion{
+func NewPythonVersionedPackage(name PackageName, version string) *PythonVersionedPackage {
+	return &PythonVersionedPackage{
 		Name:    name,
 		Version: version,
 	}
 }
 
-// ParsePackageVersion parses a string in a '<name>(==<version>)?' format into an
-// PythonPackageVersion.
-func ParsePackageVersion(dependency string) (*PythonPackageVersion, error) {
-	var dep PythonPackageVersion
+// ParseVersionedPackage parses a string in a '<name>(==<version>)?' format into an
+// PythonVersionedPackage.
+func ParseVersionedPackage(dependency string) (*PythonVersionedPackage, error) {
+	var dep PythonVersionedPackage
 	if i := strings.LastIndex(dependency, "=="); i == -1 {
-		dep.Name = dependency
+		dep.Name = PackageName(dependency)
 	} else {
-		dep.Name = strings.TrimSpace(dependency[:i])
+		dep.Name = PackageName(strings.TrimSpace(dependency[:i]))
 		dep.Version = strings.TrimSpace(dependency[i+2:])
 	}
 	return &dep, nil
 }
 
+func ParsePythonPackageFromName(name PackageName) (*PythonVersionedPackage, error) {
+	return ParseVersionedPackage(string(name))
+}
+
 // ParsePythonPackageFromRepoName is a convenience function to parse a repo name in a
-// 'python/<name>(==<version>)?' format into a PythonPackageVersion.
-func ParsePythonPackageFromRepoName(name string) (*PythonPackageVersion, error) {
-	dependency := strings.TrimPrefix(name, "python/")
+// 'python/<name>(==<version>)?' format into a PythonVersionedPackage.
+func ParsePythonPackageFromRepoName(name api.RepoName) (*PythonVersionedPackage, error) {
+	dependency := strings.TrimPrefix(string(name), "python/")
 	if len(dependency) == len(name) {
 		return nil, errors.New("invalid python dependency repo name, missing python/ prefix")
 	}
-	return ParsePackageVersion(dependency)
+	return ParseVersionedPackage(dependency)
 }
 
-func (p *PythonPackageVersion) Scheme() string {
+func (p *PythonVersionedPackage) Scheme() string {
 	return "python"
 }
 
-func (p *PythonPackageVersion) PackageSyntax() string {
+func (p *PythonVersionedPackage) PackageSyntax() PackageName {
 	return p.Name
 }
 
-func (p *PythonPackageVersion) PackageVersionSyntax() string {
+func (p *PythonVersionedPackage) VersionedPackageSyntax() string {
 	if p.Version == "" {
-		return p.Name
+		return string(p.Name)
 	}
-	return p.Name + "==" + p.Version
+	return fmt.Sprintf("%s==%s", p.Name, p.Version)
 }
 
-func (p *PythonPackageVersion) PackageVersion() string {
+func (p *PythonVersionedPackage) PackageVersion() string {
 	return p.Version
 }
 
-func (p *PythonPackageVersion) Description() string { return "" }
+func (p *PythonVersionedPackage) Description() string { return "" }
 
-func (p *PythonPackageVersion) RepoName() api.RepoName {
+func (p *PythonVersionedPackage) RepoName() api.RepoName {
 	return api.RepoName("python/" + p.Name)
 }
 
-func (p *PythonPackageVersion) GitTagFromVersion() string {
+func (p *PythonVersionedPackage) GitTagFromVersion() string {
 	version := strings.TrimPrefix(p.Version, "v")
 	return "v" + version
 }
 
-func (p *PythonPackageVersion) Less(other PackageVersion) bool {
-	o := other.(*PythonPackageVersion)
+func (p *PythonVersionedPackage) Less(other VersionedPackage) bool {
+	o := other.(*PythonVersionedPackage)
 
 	if p.Name == o.Name {
 		// TODO: validate once we add a dependency source for vcs syncer.

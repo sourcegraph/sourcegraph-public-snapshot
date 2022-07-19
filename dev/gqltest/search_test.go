@@ -808,10 +808,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load type:file`,
 				zeroResult: true,
 			},
-			{
-				name:  `Escape sequences`,
-				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
-			},
+			// Disabled because it was flaky:
+			// https://buildkite.com/sourcegraph/sourcegraph/builds/161002
+			// {
+			// 	name:  `Escape sequences`,
+			// 	query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
+			// },
 			{
 				name:  `Escaped whitespace sequences with 'and'`,
 				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,
@@ -831,12 +833,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `Literals, not keyword and implicit and inside group`,
 				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
-				skip:  skipStream & skipGraphQL,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  `Literals, not and and keyword inside group`,
 				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
-				skip:  skipStream & skipGraphQL,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  `Dangling right parens, supported via content: filter`,
@@ -1214,11 +1216,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:  `file:go-diff.go select:repo`,
 				counts: counts{Repo: 1},
 			},
-			{
-				name:   `select file`,
-				query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
-				counts: counts{File: 1},
-			},
+			// Temporarily disabled as it can be flaky
+			//{
+			//	name:   `select file`,
+			//	query:  `repo:go-diff patterntype:literal HunkNoChunksize select:file`,
+			//	counts: counts{File: 1},
+			//},
 			{
 				name:   `or statement merges file`,
 				query:  `repo:go-diff HunkNoChunksize or ParseHunksAndPrintHunks select:file`,
@@ -1400,7 +1403,7 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				}),
 			},
 			{
-				Kind:        extsvc.KindGoModules,
+				Kind:        extsvc.KindGoPackages,
 				DisplayName: "gqltest-go-search",
 				Config: mustMarshalJSONString(&schema.GoModulesConnection{
 					Urls: []string{"https://proxy.golang.org"},
@@ -1526,20 +1529,19 @@ func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) 
 				{"repos-go", `r:deps(oklog/ulid)`, []string{
 					"/go/github.com/pborman/getopt@v0.0.0-20170112200414-7148bc3a4c30",
 				}},
-				// Flakey
-				// {"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
-				// 	"/python/atomicwrites@v1.4.0",
-				// 	"/python/attrs@v21.4.0",
-				// 	"/python/colorama@v0.4.4",
-				// 	"/python/more-itertools@v8.13.0",
-				// 	"/python/packaging@v21.3",
-				// 	"/python/pluggy@v0.13.1",
-				// 	"/python/py@v1.11.0",
-				// 	"/python/pyparsing@v3.0.8",
-				// 	"/python/pytest@v5.4.3",
-				// 	"/python/tqdm@v4.64.0",
-				// 	"/python/wcwidth@v0.2.5",
-				// }},
+				{"repos-python-poetry", `r:deps(^github\.com/sgtest/poetry-hw$)`, []string{
+					"/python/atomicwrites@v1.4.0",
+					"/python/attrs@v21.4.0",
+					"/python/colorama@v0.4.4",
+					"/python/more-itertools@v8.13.0",
+					"/python/packaging@v21.3",
+					"/python/pluggy@v0.13.1",
+					"/python/py@v1.11.0",
+					"/python/pyparsing@v3.0.8",
+					"/python/pytest@v5.4.3",
+					"/python/tqdm@v4.64.0",
+					"/python/wcwidth@v0.2.5",
+				}},
 				{"repos-python-pipenv", `r:deps(^github\.com/sgtest/pipenv-hw$)`, []string{
 					"/python/certifi@v2021.10.8",
 					"/python/charset-normalizer@v2.0.12",

@@ -1,12 +1,9 @@
 import * as React from 'react'
 
+import { mdiMessageTextOutline, mdiCog, mdiDelete, mdiPlus } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
 import classNames from 'classnames'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import MessageTextOutlineIcon from 'mdi-react/MessageTextOutlineIcon'
-import PlusIcon from 'mdi-react/PlusIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 import { Subject, Subscription } from 'rxjs'
 import { catchError, map, mapTo, startWith, switchMap } from 'rxjs/operators'
 import { useCallbackRef } from 'use-callback-ref'
@@ -16,7 +13,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
-import { Container, PageHeader, LoadingSpinner, Button, Link, Icon } from '@sourcegraph/wildcard'
+import { Container, PageHeader, LoadingSpinner, Button, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../components/PageTitle'
 import { NamespaceProps } from '../namespaces'
@@ -26,7 +23,7 @@ import { eventLogger } from '../tracking/eventLogger'
 
 import styles from './SavedSearchListPage.module.scss'
 
-interface NodeProps extends RouteComponentProps<{}, {}, { description?: string }>, SearchPatternTypeProps {
+interface NodeProps extends RouteComponentProps, SearchPatternTypeProps {
     savedSearch: GQL.ISavedSearch
     onDelete: () => void
     linkRef: React.MutableRefObject<HTMLAnchorElement | null> | null
@@ -70,7 +67,7 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
         return (
             <div className={classNames(styles.row, 'list-group-item test-saved-search-list-page-row')}>
                 <div className="d-flex">
-                    <Icon className={styles.rowIcon} as={MessageTextOutlineIcon} aria-hidden={true} />
+                    <Icon className={styles.rowIcon} aria-hidden={true} svgPath={mdiMessageTextOutline} />
                     <Link
                         to={
                             '/search?' +
@@ -85,27 +82,29 @@ class SavedSearchNode extends React.PureComponent<NodeProps, NodeState> {
                     </Link>
                 </div>
                 <div>
-                    <Button
-                        className="test-edit-saved-search-button"
-                        to={`${this.props.match.path}/${this.props.savedSearch.id}`}
-                        data-tooltip="Saved search settings"
-                        variant="secondary"
-                        size="sm"
-                        as={Link}
-                    >
-                        <Icon as={SettingsIcon} aria-hidden={true} /> Settings
-                    </Button>{' '}
-                    <Button
-                        className="test-delete-saved-search-button"
-                        onClick={this.onDelete}
-                        disabled={this.state.isDeleting}
-                        data-tooltip="Delete saved search"
-                        variant="danger"
-                        size="sm"
-                        aria-label="Delete saved search"
-                    >
-                        <Icon as={DeleteIcon} aria-hidden={true} />
-                    </Button>
+                    <Tooltip content="Saved search settings">
+                        <Button
+                            className="test-edit-saved-search-button"
+                            to={`${this.props.match.path}/${this.props.savedSearch.id}`}
+                            variant="secondary"
+                            size="sm"
+                            as={Link}
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                        </Button>
+                    </Tooltip>{' '}
+                    <Tooltip content="Delete saved search">
+                        <Button
+                            aria-label="Delete"
+                            className="test-delete-saved-search-button"
+                            onClick={this.onDelete}
+                            disabled={this.state.isDeleting}
+                            variant="danger"
+                            size="sm"
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiDelete} />
+                        </Button>
+                    </Tooltip>
                 </div>
                 {this.state.isDeleting && (
                     <VisuallyHidden aria-live="polite">{`Deleted saved search: ${this.props.savedSearch.description}`}</VisuallyHidden>
@@ -127,7 +126,7 @@ interface State {
     savedSearchesOrError?: GQL.ISavedSearch[] | ErrorLike
 }
 
-interface Props extends RouteComponentProps<{}, {}, { description?: string }>, NamespaceProps {}
+interface Props extends RouteComponentProps, NamespaceProps {}
 
 export class SavedSearchListPage extends React.Component<Props, State> {
     public subscriptions = new Subscription()
@@ -160,7 +159,7 @@ export class SavedSearchListPage extends React.Component<Props, State> {
                             variant="primary"
                             as={Link}
                         >
-                            <Icon as={PlusIcon} aria-hidden={true} /> Add saved search
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Add saved search
                         </Button>
                     }
                     className="mb-3"
@@ -189,6 +188,7 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
     savedSearchesOrError,
     ...props
 }) => {
+    const location = useLocation<{ description?: string }>()
     const searchPatternType = useNavbarQueryState(state => state.searchPatternType)
     const callbackReference = useCallbackRef<HTMLAnchorElement>(null, ref => ref?.focus())
 
@@ -211,7 +211,7 @@ const SavedSearchListPageContent: React.FunctionComponent<React.PropsWithChildre
                 {namespaceSavedSearches.map(search => (
                     <SavedSearchNode
                         key={search.id}
-                        linkRef={props.location.state?.description === search.description ? callbackReference : null}
+                        linkRef={location.state?.description === search.description ? callbackReference : null}
                         {...props}
                         patternType={searchPatternType}
                         savedSearch={search}

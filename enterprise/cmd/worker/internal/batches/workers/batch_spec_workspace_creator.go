@@ -67,9 +67,8 @@ func (r *batchSpecWorkspaceCreator) process(
 	evaluatableSpec, err := batcheslib.ParseBatchSpec([]byte(spec.RawSpec), batcheslib.ParseBatchSpecOptions{
 		AllowTransformChanges: true,
 		AllowConditionalExec:  true,
-		// We don't allow forwarding of environment variables in server-side
-		// batch changes, since we'd then leak the executor/Firecracker
-		// internal environment.
+		// The global env is always mocked to be empty for executors, so we just
+		// want to throw a validation error here for now.
 		AllowArrayEnvironments: false,
 	})
 	if err != nil {

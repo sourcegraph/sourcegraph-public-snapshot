@@ -216,6 +216,24 @@ func addWebApp(pipeline *bk.Pipeline) {
 		bk.Cmd("dev/ci/codecov.sh -c -F typescript -F unit"))
 }
 
+// Adds steps for building webapp with the Sentry Webpack plugin enabled to upload sourcemaps
+// Only builds webapp without ENTERPRISE=1, no tests are performed. Should only run on release branches.
+func buildWebAppWithSentrySourcemaps(version string) operations.Operation {
+	return func(pipeline *bk.Pipeline) {
+		// Webapp build with Sentry's webpack plugin enabled
+		pipeline.AddStep(":webpack::globe_with_meridians: Build and upload sourcemaps to Sentry",
+			withYarnCache(),
+			bk.Cmd("dev/ci/yarn-build.sh client/web"),
+			bk.Env("NODE_ENV", "production"),
+			bk.Env("ENTERPRISE", ""),
+			bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
+			bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
+			bk.Env("SENTRY_PROJECT", "sourcegraph-dot-com"),
+			bk.Env("RELEASE_CANDIDATE_VERSION", version),
+		)
+	}
+}
+
 var browsers = []string{"chrome"}
 
 func getParallelTestCount(webParallelTestCount int) int {
@@ -313,6 +331,7 @@ func clientIntegrationTests(pipeline *bk.Pipeline) {
 		withYarnCache(),
 		bk.Key(prepStepKey),
 		bk.Env("ENTERPRISE", "1"),
+		bk.Env("INTEGRATION_TESTS", "true"),
 		bk.Env("COVERAGE_INSTRUMENT", "true"),
 		bk.Cmd("dev/ci/yarn-build.sh client/web"),
 		bk.Cmd("dev/ci/create-client-artifact.sh"))
@@ -557,7 +576,13 @@ func triggerReleaseBranchHealthchecks(minimumUpgradeableVersion string) operatio
 func codeIntelQA(candidateTag string) operations.Operation {
 	return func(p *bk.Pipeline) {
 		p.AddStep(":docker::brain: Code Intel QA",
-			bk.Skip("Disabled because flaky"),
+			bk.SlackStepNotify(&bk.SlackStepNotifyConfigPayload{
+				Message:     ":alert: :noemi-handwriting: Code Intel QA Flake detected <@Noah S-C>",
+				ChannelName: "code-intel-buildkite",
+				Conditions: bk.SlackStepNotifyPayloadConditions{
+					Failed: true,
+				},
+			}),
 			// Run tests against the candidate server image
 			bk.DependsOn(candidateImageStepKey("server")),
 			bk.Env("CANDIDATE_VERSION", candidateTag),
@@ -566,7 +591,8 @@ func codeIntelQA(candidateTag string) operations.Operation {
 			bk.Env("TEST_USER_EMAIL", "test@sourcegraph.com"),
 			bk.Env("TEST_USER_PASSWORD", "supersecurepassword"),
 			bk.Cmd("dev/ci/integration/code-intel/run.sh"),
-			bk.ArtifactPaths("./*.log"))
+			bk.ArtifactPaths("./*.log"),
+			bk.SoftFail(1))
 	}
 }
 

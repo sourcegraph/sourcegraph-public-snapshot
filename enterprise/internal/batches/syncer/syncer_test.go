@@ -270,6 +270,59 @@ func TestSyncRegistry_EnqueueChangesetSyncs(t *testing.T) {
 	}
 }
 
+func TestSyncRegistry_EnqueueChangesetSyncsForRepos(t *testing.T) {
+	ctx := context.Background()
+
+	t.Run("store error", func(t *testing.T) {
+		bstore := NewMockSyncStore()
+		want := errors.New("expected")
+		bstore.ListChangesetsFunc.SetDefaultReturn(nil, 0, want)
+
+		s := &SyncRegistry{
+			syncStore: bstore,
+		}
+
+		err := s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{})
+		assert.ErrorIs(t, err, want)
+	})
+
+	t.Run("no changesets", func(t *testing.T) {
+		bstore := NewMockSyncStore()
+		bstore.ListChangesetsFunc.SetDefaultHook(func(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error) {
+			assert.Equal(t, []api.RepoID{1}, opts.RepoIDs)
+			return []*btypes.Changeset{}, 0, nil
+		})
+
+		s := &SyncRegistry{
+			syncStore: bstore,
+		}
+
+		assert.NoError(t, s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{1}))
+	})
+
+	t.Run("success", func(t *testing.T) {
+		cs := []*btypes.Changeset{
+			{ID: 1},
+			{ID: 2},
+		}
+
+		bstore := NewMockSyncStore()
+		bstore.ListChangesetsFunc.SetDefaultHook(func(ctx context.Context, opts store.ListChangesetsOpts) (btypes.Changesets, int64, error) {
+			assert.Equal(t, []api.RepoID{1}, opts.RepoIDs)
+			return cs, 0, nil
+		})
+
+		s := &SyncRegistry{
+			logger:         logtest.Scoped(t),
+			priorityNotify: make(chan []int64, 1),
+			syncStore:      bstore,
+		}
+
+		assert.NoError(t, s.EnqueueChangesetSyncsForRepos(ctx, []api.RepoID{1}))
+		assert.ElementsMatch(t, []int64{1, 2}, <-s.priorityNotify)
+	})
+}
+
 func TestLoadChangesetSource(t *testing.T) {
 	ctx := context.Background()
 	cf := httpcli.NewFactory(

@@ -263,7 +263,7 @@ type CountChangesetsOpts struct {
 	PublicationState     *btypes.ChangesetPublicationState
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
-	RepoID               api.RepoID
+	RepoIDs              []api.RepoID
 }
 
 // CountChangesets returns the number of changesets in the database.
@@ -326,8 +326,8 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 	if opts.EnforceAuthz {
 		preds = append(preds, authzConds)
 	}
-	if opts.RepoID != 0 {
-		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
+	if len(opts.RepoIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
 	}
 
 	join := sqlf.Sprintf("")
@@ -524,7 +524,7 @@ type ListChangesetsOpts struct {
 	OwnedByBatchChangeID int64
 	TextSearch           []search.TextSearchTerm
 	EnforceAuthz         bool
-	RepoID               api.RepoID
+	RepoIDs              []api.RepoID
 	BitbucketCloudCommit string
 }
 
@@ -612,8 +612,8 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	if opts.EnforceAuthz {
 		preds = append(preds, authzConds)
 	}
-	if opts.RepoID != 0 {
-		preds = append(preds, sqlf.Sprintf("repo.id = %s", opts.RepoID))
+	if len(opts.RepoIDs) > 0 {
+		preds = append(preds, sqlf.Sprintf("repo.id = ANY (%s)", pq.Array(opts.RepoIDs)))
 	}
 	if len(opts.BitbucketCloudCommit) >= 12 {
 		// Bitbucket Cloud commit hashes in PR objects are generally truncated

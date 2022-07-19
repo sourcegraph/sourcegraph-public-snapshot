@@ -23,8 +23,18 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 	}
 	unprivilegedOnlyFlag := &cli.BoolFlag{
 		Name:  "unprivileged-only",
-		Usage: "Do not apply privileged migrations.",
+		Usage: "Refuse to apply privileged migrations.",
 		Value: false,
+	}
+	noopPrivilegedFlag := &cli.BoolFlag{
+		Name:  "noop-privileged",
+		Usage: "Skip application of privileged migrations, but record that they have been applied. This assumes the user has already applied the required privileged migrations with elevated permissions.",
+		Value: false,
+	}
+	privilegedHashFlag := &cli.StringFlag{
+		Name:  "privileged-hash",
+		Usage: "Running -noop-privileged without this value will supply a value that will unlock migration application for the current upgrade operation. Future (distinct) upgrade operations will require a unique hash.",
+		Value: "",
 	}
 	ignoreSingleDirtyLogFlag := &cli.BoolFlag{
 		Name:  "ignore-single-dirty-log",
@@ -32,7 +42,12 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 		Value: development,
 	}
 
-	makeOptions := func(cmd *cli.Context, versions []int) runner.Options {
+	makeOptions := func(cmd *cli.Context, out *output.Output, versions []int) (runner.Options, error) {
+		privilegedMode, err := getPivilegedModeFromFlags(cmd, out, unprivilegedOnlyFlag, noopPrivilegedFlag)
+		if err != nil {
+			return runner.Options{}, err
+		}
+
 		return runner.Options{
 			Operations: []runner.MigrationOperation{
 				{
@@ -41,9 +56,10 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 					TargetVersions: versions,
 				},
 			},
-			UnprivilegedOnly:     unprivilegedOnlyFlag.Get(cmd),
+			PrivilegedMode:       privilegedMode,
+			PrivilegedHash:       privilegedHashFlag.Get(cmd),
 			IgnoreSingleDirtyLog: ignoreSingleDirtyLogFlag.Get(cmd),
-		}
+		}, nil
 	}
 
 	action := makeAction(outFactory, func(ctx context.Context, cmd *cli.Context, out *output.Output) error {
@@ -59,7 +75,13 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 		if err != nil {
 			return err
 		}
-		return r.Run(ctx, makeOptions(cmd, versions))
+
+		options, err := makeOptions(cmd, out, versions)
+		if err != nil {
+			return err
+		}
+
+		return r.Run(ctx, options)
 	})
 
 	return &cli.Command{
@@ -72,6 +94,8 @@ func UpTo(commandName string, factory RunnerFactory, outFactory OutputFactory, d
 			schemaNameFlag,
 			targetFlag,
 			unprivilegedOnlyFlag,
+			noopPrivilegedFlag,
+			privilegedHashFlag,
 			ignoreSingleDirtyLogFlag,
 		},
 	}

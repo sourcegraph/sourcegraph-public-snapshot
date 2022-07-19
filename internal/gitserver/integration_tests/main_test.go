@@ -30,7 +30,7 @@ var root string
 
 // This is a default gitserver test client currently used for RequestRepoUpdate
 // gitserver calls during invocation of MakeGitRepository function
-var testGitserverClient *gitserver.ClientImplementor
+var testGitserverClient gitserver.Client
 
 func TestMain(m *testing.M) {
 	flag.Parse()

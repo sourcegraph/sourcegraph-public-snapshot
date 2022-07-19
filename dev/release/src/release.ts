@@ -3,6 +3,7 @@ import * as path from 'path'
 
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
+import execa from 'execa'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -15,6 +16,7 @@ import {
     CreatedChangeset,
     createTag,
     ensureTrackingIssues,
+    closeTrackingIssue,
     releaseName,
     commentOnIssue,
     queryIssues,
@@ -31,6 +33,7 @@ import {
     ensureDocker,
     changelogURL,
     ensureReleaseBranchUpToDate,
+    ensureSrcCliUpToDate,
 } from './util'
 
 const sed = process.platform === 'linux' ? 'sed' : 'gsed'
@@ -42,12 +45,14 @@ export type StepID =
     | 'tracking:issues'
     // branch cut
     | 'changelog:cut'
+    | 'release:branch-cut'
     // release
     | 'release:status'
     | 'release:create-candidate'
     | 'release:stage'
     | 'release:add-to-batch-change'
     | 'release:finalize'
+    | 'release:announce'
     | 'release:close'
     // util
     | 'util:clear-cache'
@@ -57,6 +62,7 @@ export type StepID =
     | '_test:batchchange-create-from-changes'
     | '_test:config'
     | '_test:dockerensure'
+    | '_test:srccliensure'
 
 /**
  * Runs given release step with the provided configuration and arguments.
@@ -292,6 +298,29 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         },
     },
     {
+        id: 'release:branch-cut',
+        description: 'Create release branch',
+        run: async config => {
+            const { upcoming: release } = await releaseVersions(config)
+            const branch = `${release.major}.${release.minor}`
+            let message: string
+            // notify cs team on patch release cut
+            if (release.patch !== 0) {
+                message = `:mega: *${release.version} branch has been cut cc: @cs`
+            } else {
+                message = `:mega: *${release.version} branch has been cut.`
+            }
+            try {
+                // Create and push new release branch from changelog commit
+                await execa('git', ['branch', branch])
+                await execa('git', ['push', 'origin', branch])
+                await postMessage(message, config.slackAnnounceChannel)
+            } catch (error) {
+                console.error('Failed to create release branch', error)
+            }
+        },
+    },
+    {
         id: 'release:status',
         description: 'Post a message in Slack summarizing the progress of a release',
         run: async config => {
@@ -362,6 +391,8 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 console.log('Docker required for batch changes')
                 process.exit(1)
             }
+            // ensure src-cli is up to date
+            await ensureSrcCliUpToDate()
             // set up batch change config
             const batchChange = batchChanges.releaseTrackingBatchChange(
                 release.version,
@@ -661,8 +692,8 @@ Batch change: ${batchChangeURL}`,
         },
     },
     {
-        id: 'release:close',
-        description: 'Mark a release as closed',
+        id: 'release:announce',
+        description: 'Announce a release as live',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release } = await releaseVersions(config)
@@ -727,6 +758,15 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                     console.log(`dryRun enabled, skipping GitHub comment to ${trackingIssue.url}: ${comment}`)
                 }
             }
+        },
+    },
+    {
+        id: 'release:close',
+        description: 'Close tracking issues for current release',
+        run: async config => {
+            const { previous: release } = await releaseVersions(config)
+            // close tracking issue
+            await closeTrackingIssue(release)
         },
     },
     {
@@ -809,6 +849,13 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 console.log('Docker required for batch changes')
                 process.exit(1)
             }
+        },
+    },
+    {
+        id: '_test:srccliensure',
+        description: 'test srccli version',
+        run: async () => {
+            await ensureSrcCliUpToDate()
         },
     },
 ]

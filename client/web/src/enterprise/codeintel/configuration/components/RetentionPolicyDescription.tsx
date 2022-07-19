@@ -12,7 +12,7 @@ export const RetentionPolicyDescription: FunctionComponent<
         <>
             <strong>Retention policy:</strong>{' '}
             <span>
-                Retain uploads used to resolve code intelligence queries for{' '}
+                Retain uploads used to resolve code navigation queries for{' '}
                 <GitObjectTargetDescription policy={policy} />
                 {policy.retentionDurationHours && (
                     <> for at least {formatDurationValue(policy.retentionDurationHours)} after upload</>

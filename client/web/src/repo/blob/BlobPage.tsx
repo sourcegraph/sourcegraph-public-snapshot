@@ -41,7 +41,8 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
-import { Blob, BlobInfo } from './Blob'
+import { Blob, BlobInfo, BlobProps } from './Blob'
+import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
@@ -364,8 +365,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
-                <Blob
-                    className={classNames('test-repo-blob', styles.blob, styles.border)}
+                <BlobContainer
+                    data-testid="repo-blob"
+                    className={classNames(styles.blob, styles.border)}
                     blobInfo={blobInfoOrError}
                     wrapCode={wrapCode}
                     platformContext={props.platformContext}
@@ -382,4 +384,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             )}
         </>
     )
+}
+
+const BlobContainer: React.FunctionComponent<BlobProps> = props => {
+    const Component = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
+        ? CodeMirrorBlob
+        : Blob
+    return <Component {...props} />
 }

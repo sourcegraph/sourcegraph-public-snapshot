@@ -8,10 +8,12 @@ import { PageHeader, Link } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../../../../../components/PageTitle'
 import { CodeInsightsIcon } from '../../../../../../insights/Icons'
-import { CodeInsightsPage } from '../../../../components/code-insights-page/CodeInsightsPage'
+import { useExperimentalFeatures } from '../../../../../../stores'
+import { CodeInsightsPage } from '../../../../components'
 
 import {
     CaptureGroupInsightCard,
+    ComputeInsightCard,
     ExtensionInsightsCard,
     LangStatsInsightCard,
     SearchInsightCard,
@@ -27,6 +29,7 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
 
     const history = useHistory()
     const { search } = useLocation()
+    const { codeInsightsCompute } = useExperimentalFeatures()
 
     const handleCreateSearchBasedInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateSearchBasedInsightClick')
@@ -36,6 +39,11 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
     const handleCaptureGroupInsightClick = (): void => {
         telemetryService.log('CodeInsightsCreateCaptureGroupInsightClick')
         history.push(`/insights/create/capture-group${search}`)
+    }
+
+    const handleCreateComputeInsightClick = (): void => {
+        telemetryService.log('CodeInsightsCreateComputeInsightClick')
+        history.push(`/insights/create/group-results${search}`)
     }
 
     const handleCreateCodeStatsInsightClick = (): void => {
@@ -78,6 +86,13 @@ export const IntroCreationPage: React.FunctionComponent<React.PropsWithChildren<
                     data-testid="create-capture-group-insight"
                     handleCreate={handleCaptureGroupInsightClick}
                 />
+
+                {codeInsightsCompute && (
+                    <ComputeInsightCard
+                        data-testid="create-compute-insights"
+                        handleCreate={handleCreateComputeInsightClick}
+                    />
+                )}
 
                 <LangStatsInsightCard
                     data-testid="create-lang-usage-insight"

@@ -27,7 +27,7 @@ export const UPDATE_USER = gql`
 interface Props {
     user: Pick<GQL.IUser, 'id' | 'viewerCanChangeUsername'>
     initialValue: UserProfileFormFieldsValue
-    after?: React.ReactFragment
+    after?: React.ReactNode
 }
 
 /**

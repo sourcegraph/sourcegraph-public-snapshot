@@ -1,14 +1,14 @@
 import * as React from 'react'
 
+import { mdiFileDownload } from '@mdi/js'
 import format from 'date-fns/format'
-import FileDownloadIcon from 'mdi-react/FileDownloadIcon'
 import { RouteComponentProps } from 'react-router'
 import { Subscription } from 'rxjs'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { UserActivePeriod } from '@sourcegraph/shared/src/graphql-operations'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Icon, H2, H3 } from '@sourcegraph/wildcard'
+import { Button, Icon, H2, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { BarChart } from '../components/d3/BarChart'
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
@@ -82,7 +82,7 @@ class UserUsageStatisticsHeader extends React.PureComponent<UserUsageStatisticsH
                     <th>User</th>
                     <th>Page views</th>
                     <th>Search queries</th>
-                    <th>Code intelligence actions</th>
+                    <th>Code navigation actions</th>
                     <th className={styles.dateColumn}>Last active</th>
                     <th className={styles.dateColumn}>Last active in code host or code review</th>
                 </tr>
@@ -250,15 +250,11 @@ export class SiteAdminUsageStatisticsPage extends React.Component<
                 <H2>Usage statistics</H2>
                 {this.state.error && <ErrorAlert className="mb-3" error={this.state.error} />}
 
-                <Button
-                    href="/site-admin/usage-statistics/archive"
-                    data-tooltip="Download usage stats archive"
-                    download="true"
-                    variant="secondary"
-                    as="a"
-                >
-                    <Icon as={FileDownloadIcon} aria-hidden={true} /> Download usage stats archive
-                </Button>
+                <Tooltip content="Download usage stats archive">
+                    <Button href="/site-admin/usage-statistics/archive" download="true" variant="secondary" as="a">
+                        <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download usage stats archive
+                    </Button>
+                </Tooltip>
 
                 {this.state.stats && (
                     <>

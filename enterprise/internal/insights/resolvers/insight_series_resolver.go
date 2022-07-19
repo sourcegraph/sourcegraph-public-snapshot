@@ -117,7 +117,9 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 	for _, rawContext := range rawContexts {
 		searchContext, err := loader.GetByName(ctx, rawContext)
 		if err != nil {
-			return nil, nil, err
+			// If this search context cannot load, we will skip it. This is a temporary measure because our
+			// resolver chain doesn't handle / propagate errors correctly. https://github.com/sourcegraph/sourcegraph/issues/38951#issuecomment-1187915821
+			continue
 		}
 		if searchContext.Query != "" {
 			var plan searchquery.Plan
@@ -125,7 +127,9 @@ func unwrapSearchContexts(ctx context.Context, loader SearchContextLoader, rawCo
 				searchquery.Init(searchContext.Query, searchquery.SearchTypeRegex),
 			)
 			if err != nil {
-				return nil, nil, errors.Wrapf(err, "failed to parse search query for search context: %s", rawContext)
+				// If this search context cannot parse, we will skip it. This is a temporary measure because our
+				// resolver chain doesn't handle / propagate errors correctly. https://github.com/sourcegraph/sourcegraph/issues/38951#issuecomment-1187915821
+				continue
 			}
 			inc, exc := plan.ToQ().Repositories()
 			include = append(include, inc...)
@@ -468,7 +472,7 @@ func streamingSeriesJustInTime(ctx context.Context, definition types.InsightView
 	log15.Debug("just in time series", "seriesId", definition.SeriesID, "filteredRepos", matchedRepos)
 	generatedSeries, err := executor.Execute(ctx, definition.Query, definition.Label, definition.SeriesID, matchedRepos, interval)
 	if err != nil {
-		return nil, errors.Wrap(err, "CaptureGroupExecutor.Execute")
+		return nil, errors.Wrap(err, "StreamingQueryExecutor.Execute")
 	}
 
 	var resolvers []graphqlbackend.InsightSeriesResolver

@@ -601,7 +601,8 @@ CREATE TABLE batch_spec_resolution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    initiator_id integer NOT NULL
+    initiator_id integer NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -630,7 +631,7 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    user_id integer
+    user_id integer NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
@@ -796,6 +797,7 @@ CREATE TABLE changesets (
     last_heartbeat_at timestamp with time zone,
     external_fork_namespace citext,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -887,6 +889,7 @@ CREATE TABLE changeset_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT changeset_jobs_payload_check CHECK ((jsonb_typeof(payload) = 'object'::text))
 );
 
@@ -935,6 +938,7 @@ CREATE TABLE cm_action_jobs (
     webhook bigint,
     slack_webhook bigint,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT cm_action_jobs_only_one_action_type CHECK ((((
 CASE
     WHEN (email IS NULL) THEN 0
@@ -1104,6 +1108,7 @@ CREATE TABLE cm_trigger_jobs (
     execution_logs json[],
     search_results jsonb,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 
@@ -1219,7 +1224,8 @@ CREATE TABLE codeintel_lockfiles (
     repository_id integer NOT NULL,
     commit_bytea bytea NOT NULL,
     codeintel_lockfile_reference_ids integer[] NOT NULL,
-    lockfile text
+    lockfile text,
+    fidelity text DEFAULT 'flat'::text NOT NULL
 );
 
 COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
@@ -1229,6 +1235,8 @@ COMMENT ON COLUMN codeintel_lockfiles.commit_bytea IS 'A 40-char revhash. Note t
 COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key to a resolved repository name-revspec pair. Not all repository names and revspecs are resolvable.';
 
 COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile in the given repository and the given commit.';
+
+COMMENT ON COLUMN codeintel_lockfiles.fidelity IS 'Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...';
 
 CREATE SEQUENCE codeintel_lockfiles_id_seq
     AS integer
@@ -1447,6 +1455,7 @@ CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     external_service_id integer NOT NULL,
     permissions json[],
     unrestricted boolean DEFAULT false NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT explicit_permissions_bitbucket_projects_jobs_check CHECK ((((permissions IS NOT NULL) AND (unrestricted IS FALSE)) OR ((permissions IS NULL) AND (unrestricted IS TRUE))))
 );
 
@@ -1490,7 +1499,8 @@ CREATE TABLE external_service_sync_jobs (
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE external_services (
@@ -1597,7 +1607,8 @@ CREATE TABLE gitserver_relocator_jobs (
     repo_id integer NOT NULL,
     source_hostname text NOT NULL,
     dest_hostname text NOT NULL,
-    delete_source boolean DEFAULT false NOT NULL
+    delete_source boolean DEFAULT false NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE gitserver_relocator_jobs_id_seq
@@ -1665,7 +1676,8 @@ CREATE TABLE insights_query_runner_jobs (
     priority integer DEFAULT 1 NOT NULL,
     cost integer DEFAULT 500 NOT NULL,
     persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
@@ -1819,7 +1831,8 @@ CREATE TABLE lsif_dependency_indexing_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     upload_id integer,
     external_service_kind text DEFAULT ''::text NOT NULL,
-    external_service_sync timestamp with time zone
+    external_service_sync timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.external_service_kind IS 'Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.';
@@ -1839,7 +1852,8 @@ CREATE TABLE lsif_dependency_syncing_jobs (
     execution_logs json[],
     upload_id integer,
     worker_hostname text DEFAULT ''::text NOT NULL,
-    last_heartbeat_at timestamp with time zone
+    last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE lsif_dependency_syncing_jobs IS 'Tracks jobs that scan imports of indexes to schedule auto-index jobs.';
@@ -1927,6 +1941,7 @@ CREATE TABLE lsif_uploads (
     reference_count integer,
     indexer_version text,
     queued_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2064,6 +2079,7 @@ CREATE TABLE lsif_indexes (
     commit_last_checked_at timestamp with time zone,
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -3555,6 +3571,8 @@ CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
 
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
 
+CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finished_at);
+
 CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
@@ -4183,23 +4201,6 @@ ALTER TABLE ONLY user_public_repos
 
 ALTER TABLE ONLY webhook_logs
     ADD CONSTRAINT webhook_logs_external_service_id_fkey FOREIGN KEY (external_service_id) REFERENCES external_services(id) ON UPDATE CASCADE ON DELETE CASCADE;
-
-INSERT INTO out_of_band_migrations VALUES (3, 'core-application', 'frontend-db.external-services', 'Encrypt configuration', 0, '2021-10-08 16:09:36.889968+00', NULL, true, false, false, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (6, 'core-application', 'frontend-db.external-accounts', 'Encrypt auth data', 0, '2021-10-08 16:09:36.986936+00', NULL, true, false, false, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (1, 'code-intelligence', 'codeintel-db.lsif_data_documents', 'Populate num_diagnostics from gob-encoded payload', 0, '2021-06-03 23:21:34.031614+00', NULL, true, false, true, 3, 25, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (2, 'campaigns', 'frontend-db.authenticators', 'Prepare for SSH pushes to code hosts', 0, '2021-10-08 16:09:36.662797+00', NULL, true, false, true, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (4, 'code-intelligence', 'codeintel-db.lsif_data_definitions', 'Populate num_locations from gob-encoded payload', 0, '2021-10-08 16:09:36.958858+00', NULL, true, false, true, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (5, 'code-intelligence', 'codeintel-db.lsif_data_references', 'Populate num_locations from gob-encoded payload', 0, '2021-10-08 16:09:36.958858+00', NULL, true, false, true, 3, 26, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (7, 'code-intelligence', 'codeintel-db.lsif_data_documents', 'Split payload into multiple columns', 0, '2021-10-08 16:09:36.999803+00', NULL, false, false, true, 3, 27, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (8, 'code-intelligence', 'frontend-db.lsif_uploads', 'Backfill committed_at', 0, '2021-10-08 16:09:37.097218+00', NULL, true, false, true, 3, 28, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (9, 'batch-changes', 'frontend-db.user-credentials', 'Encrypt batch changes user credentials', 0, '2021-10-08 16:09:37.127756+00', NULL, false, false, true, 3, 28, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (10, 'batch-changes', 'frontend-db.site-credentials', 'Encrypt batch changes site credentials', 0, '2021-10-08 16:09:37.157552+00', NULL, false, false, true, 3, 28, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (11, 'code-intelligence', 'lsif_uploads.num_references', 'Backfill LSIF upload reference counts', 0, '2022-02-23 02:58:26.401303+00', NULL, true, false, false, 3, 22, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (12, 'apidocs', 'codeintel-db.lsif_data_documentation_search', 'Index API docs for search', 0, '2022-02-23 02:58:31.007046+00', NULL, true, false, false, 3, 32, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (13, 'batch-changes', 'frontend-db.external_services', 'Calculate the webhook state of each external service', 0, '2022-02-23 02:58:32.425336+00', NULL, true, false, false, 3, 34, NULL, NULL, '{}');
-INSERT INTO out_of_band_migrations VALUES (14, 'code-insights', 'db.insights_settings_migration_jobs', 'Migrating insight definitions from settings files to database tables as a last stage to use the GraphQL API.', 0, '2021-12-02 09:39:00+00', NULL, true, false, true, 3, 35, NULL, NULL, '{}');
-
-SELECT pg_catalog.setval('out_of_band_migrations_id_seq', 1, false);
 
 INSERT INTO lsif_configuration_policies VALUES (1, NULL, 'Default tip-of-branch retention policy', 'GIT_TREE', '*', true, 2016, false, false, 0, false, true, NULL, NULL, false);
 INSERT INTO lsif_configuration_policies VALUES (2, NULL, 'Default tag retention policy', 'GIT_TAG', '*', true, 8064, false, false, 0, false, true, NULL, NULL, false);

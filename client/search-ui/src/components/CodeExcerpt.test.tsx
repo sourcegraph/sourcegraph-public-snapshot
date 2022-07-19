@@ -1,7 +1,4 @@
-import * as React from 'react'
-
 import { cleanup, getByText, render } from '@testing-library/react'
-import _VisibilitySensor from 'react-visibility-sensor'
 import { of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
@@ -10,27 +7,9 @@ import {
     HIGHLIGHTED_FILE_LINES_LONG,
     HIGHLIGHTED_FILE_LINES_SIMPLE,
 } from '@sourcegraph/shared/src/testing/searchTestHelpers'
+import '@sourcegraph/shared/dev/mockReactVisibilitySensor'
 
 import { CodeExcerpt } from './CodeExcerpt'
-
-export class MockVisibilitySensor extends React.Component<{ onChange?: (isVisible: boolean) => void }> {
-    constructor(props: { onChange?: (isVisible: boolean) => void }) {
-        super(props)
-        if (props.onChange) {
-            props.onChange(true)
-        }
-    }
-
-    public render(): JSX.Element {
-        return <>{this.props.children}</>
-    }
-}
-
-jest.mock('react-visibility-sensor', (): typeof _VisibilitySensor => ({ children, onChange }) => (
-    <>
-        <MockVisibilitySensor onChange={onChange}>{children}</MockVisibilitySensor>
-    </>
-))
 
 describe('CodeExcerpt', () => {
     afterAll(cleanup)
@@ -66,7 +45,7 @@ describe('CodeExcerpt', () => {
         // at least exist.
         const { container } = render(<CodeExcerpt {...defaultProps} />)
         const dataLines = container.querySelectorAll('[data-line]')
-        expect(dataLines.length).toMatchInlineSnapshot('3')
+        expect(dataLines).toHaveLength(3)
     })
 
     it('renders the code portion of each row', () => {

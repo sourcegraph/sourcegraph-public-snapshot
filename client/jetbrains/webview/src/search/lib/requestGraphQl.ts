@@ -3,7 +3,11 @@ import { GRAPHQL_URI, GraphQLResult } from '@sourcegraph/http-client'
 
 import { getAccessToken, getInstanceURL } from '..'
 
-export const requestGraphQL = async <R, V = object>(request: string, variables: V): Promise<GraphQLResult<R>> => {
+export const requestGraphQL = async <R, V = object>(
+    request: string,
+    variables: V,
+    abortSignal?: AbortSignal
+): Promise<GraphQLResult<R>> => {
     const instanceURL = getInstanceURL()
     const accessToken = getAccessToken()
 
@@ -27,6 +31,7 @@ export const requestGraphQL = async <R, V = object>(request: string, variables: 
             }),
             method: 'POST',
             headers,
+            signal: abortSignal,
         })
     } catch (error) {
         console.log('Error requesting GraphQL', error, response)
