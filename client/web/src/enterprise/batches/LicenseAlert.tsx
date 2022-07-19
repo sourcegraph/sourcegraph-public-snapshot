@@ -34,7 +34,8 @@ export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<Licen
 
     // If totalChangesetCount is not provided then display the alert simply based on if the feature is enabled in the
     // license.
-    const exceedsLimit = totalChangesetCount ? totalChangesetCount > licenseAndUsageInfo.maxUnlicensedChangesets : true
+    const exceedsLimit =
+        totalChangesetCount !== undefined ? totalChangesetCount > licenseAndUsageInfo.maxUnlicensedChangesets : true
     if (!licenseAndUsageInfo.batchChanges && !licenseAndUsageInfo.campaigns && exceedsLimit) {
         return <Alert variant={variant}>{children}</Alert>
     }
