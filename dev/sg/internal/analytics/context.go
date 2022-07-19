@@ -5,6 +5,7 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/otfields"
+	"github.com/sourcegraph/run"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/sdk/resource"
@@ -20,27 +21,33 @@ import (
 
 // WithContext enables analytics in this context.
 func WithContext(ctx context.Context, sgVersion string) (context.Context, error) {
-	processor, err := newSpanToDiskProcessor()
+	processor, err := newSpanToDiskProcessor(ctx)
 	if err != nil {
 		return ctx, errors.Wrap(err, "disk exporter")
 	}
 
+	// Loose attempt at getting identity - if we fail, just discard
+	identity, _ := run.Cmd(ctx, "git config user.email").StdOut().Run().String()
+
+	// Create a provider with configuration and resource specification
 	provider := oteltracesdk.NewTracerProvider(
 		oteltracesdk.WithResource(newResource(otfields.Resource{
 			Name:       "sg",
 			Namespace:  "dev",
 			Version:    sgVersion,
-			InstanceID: "", // TODO 'git config user.name' or 'user.email' maybe?
+			InstanceID: identity,
 		})),
 		oteltracesdk.WithSampler(oteltracesdk.AlwaysSample()),
 		oteltracesdk.WithSpanProcessor(processor),
 	)
 
+	// Configure OpenTelemetry defaults
 	otel.SetTracerProvider(provider)
 	otel.SetErrorHandler(otel.ErrorHandlerFunc(func(err error) {
 		std.Out.WriteWarningf("opentelemetry: %s", err.Error())
 	}))
 
+	// Create a root span for an execution of sg for all spans to be grouped under
 	var rootSpan *Span
 	ctx, rootSpan = StartSpan(ctx, "sg", trace.WithAttributes(
 		attribute.Bool("root_span", true),

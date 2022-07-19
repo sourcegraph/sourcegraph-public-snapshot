@@ -18,17 +18,20 @@ const (
 	otlpEndpointEnvKey = "OTEL_EXPORTER_OTLP_ENDPOINT"
 )
 
-// Submit pushes all persisted events to OkayHQ.
+// Submit pushes all persisted events to Honeycomb if OTEL_EXPORTER_OTLP_ENDPOINT is not
+// set.
 func Submit(ctx context.Context, honeycombToken string) error {
 	spans, err := Load()
 	if err != nil {
 		return err
 	}
+	if len(spans) == 0 {
+		return errors.New("no spans to submit")
+	}
 
 	// if endpoint is not set, point to Honeycomb
 	var otlpOptions []otlptracegrpc.Option
 	if _, exists := os.LookupEnv(otlpEndpointEnvKey); !exists {
-		println("honeycomb mode")
 		os.Setenv(otlpEndpointEnvKey, honeycombEndpoint)
 		otlpOptions = append(otlpOptions, otlptracegrpc.WithHeaders(map[string]string{
 			"x-honeycomb-team": honeycombToken,

@@ -18,17 +18,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func newSpanToDiskProcessor() (tracesdk.SpanProcessor, error) {
-	exporter, err := otlptrace.New(context.Background(), &otlpDiskClient{})
+// newSpanToDiskProcessor creates an OpenTelemetry span processor that persists spans
+// to disk in protojson format.
+func newSpanToDiskProcessor(ctx context.Context) (tracesdk.SpanProcessor, error) {
+	exporter, err := otlptrace.New(ctx, &otlpDiskClient{})
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "create exporter")
 	}
 	return tracesdk.NewBatchSpanProcessor(exporter), nil
 }
 
 type spansStoreKey struct{}
 
-// spansStore tracks events for a single sg command run.
+// spansStore manages the OpenTelemetry tracer provider that manages all events associated
+// with a run of sg.
 type spansStore struct {
 	rootSpan    trace.Span
 	provider    *oteltracesdk.TracerProvider
@@ -63,6 +66,8 @@ func spansPath() (string, error) {
 	return filepath.Join(home, "spans"), nil
 }
 
+// otlpDiskClient is an OpenTelemetry trace client that "sends" spans to disk, instead of
+// to an external collector.
 type otlpDiskClient struct {
 	f         *os.File
 	uploadMux sync.Mutex

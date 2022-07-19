@@ -21,7 +21,7 @@ func StartSpan(ctx context.Context, spanName string, opts ...trace.SpanStartOpti
 	return ctx, &Span{s}
 }
 
-// Span wraps trace.Span with convenience functions.
+// Span wraps an OpenTelemetry span with convenience functions.
 type Span struct{ trace.Span }
 
 // Error records and error in span.
@@ -65,6 +65,7 @@ func (s *Span) Skipped(reason ...string) {
 	s.Span.SetStatus(codes.Ok, v)
 }
 
+// NoOpSpan is a safe-to-use, no-op span.
 func NoOpSpan() *Span {
 	_, s := trace.NewNoopTracerProvider().Tracer("").Start(context.Background(), "")
 	return &Span{s}
