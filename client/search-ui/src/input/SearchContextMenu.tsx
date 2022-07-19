@@ -76,9 +76,7 @@ export const SearchContextMenuItem: React.FunctionComponent<
                 <HighlightedSearchContextSpec spec={spec} searchFilter={searchFilter} />
             </small>{' '}
             <Tooltip content={descriptionOrQuery}>
-                <small className={styles.itemDescription} title={descriptionOrQuery}>
-                    {descriptionOrQuery}
-                </small>
+                <small className={styles.itemDescription}>{descriptionOrQuery}</small>
             </Tooltip>
             {isDefault && (
                 <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
