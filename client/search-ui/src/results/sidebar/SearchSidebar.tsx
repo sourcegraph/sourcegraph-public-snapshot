@@ -135,6 +135,8 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
         repoFilters,
         onDynamicFilterClicked,
     ])
+    const showReposSection = repoFilterLinks.length > 1
+
     const langFilterLinks = useMemo(
         () => getDynamicFilterLinks(props.filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`),
         [props.filters, onDynamicFilterClicked]
@@ -204,7 +206,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                         {langFilterLinks}
                     </SearchSidebarSection>
                 )}
-                {repoFilterLinks.length > 0 && (
+                {showReposSection && (
                     <SearchSidebarSection
                         sectionId={SectionID.REPOSITORIES}
                         className={styles.item}

@@ -3,7 +3,7 @@
 exports[`FilterLink should have correct links for dynamic filters 1`] = `
 <DocumentFragment>
   <button
-    aria-label="Filter by lang:go, At least 500 results match this filter."
+    aria-label="lang:go, At least 500 results match this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -40,7 +40,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
   </button>
   <button
-    aria-label="Filter by lang:typescript, At least 241 results match this filter."
+    aria-label="lang:typescript, At least 241 results match this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
@@ -77,7 +77,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     </span>
   </button>
   <button
-    aria-label="Filter by -file:_test\\\\.go$, At least 1 result matches this filter."
+    aria-label="-file:_test\\\\.go$, At least 1 result matches this filter."
     class="btn btnLink sidebarSectionListItem"
     data-testid="filter-link"
     type="button"
