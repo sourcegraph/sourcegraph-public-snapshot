@@ -43,7 +43,7 @@ type IndexedRepoRevs struct {
 // add will add reporev and repo to the list of repository and branches to
 // search if reporev's refs are a subset of repo's branches. It will return
 // the revision specifiers it can't add.
-func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []search.RevisionSpecifier {
+func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.MinimalRepoListEntry) []string {
 	// A repo should only appear once in revs. However, in case this
 	// invariant is broken we will treat later revs as if it isn't
 	// indexed.
@@ -51,48 +51,39 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 		return reporev.Revs
 	}
 
-	if !reporev.OnlyExplicit() {
-		// Contains a RefGlob or ExcludeRefGlob so we can't do indexed
-		// search on it.
-		//
-		// TODO we could only process the explicit revs and return the non
-		// explicit ones as unindexed.
-		return reporev.Revs
-	}
-
 	// Assume for large searches they will mostly involve indexed
 	// revisions, so just allocate that.
-	var unindexed []search.RevisionSpecifier
+	var unindexed []string
 
 	branches := make([]string, 0, len(reporev.Revs))
 	reporev = reporev.Copy()
 	indexed := reporev.Revs[:0]
 
-	for _, rev := range reporev.Revs {
+	for _, inputRev := range reporev.Revs {
 		found := false
-		revSpec := rev.RevSpec
-		if revSpec == "" {
-			revSpec = "HEAD"
+		rev := inputRev
+		if rev == "" {
+			rev = "HEAD"
 		}
 
 		for _, branch := range repo.Branches {
-			if branch.Name == revSpec {
-				branches = append(branches, branch.Name)
+			if branch.Name == rev {
+				branches = append(branches, inputRev)
 				found = true
 				break
 			}
 			// Check if rev is an abbrev commit SHA
-			if len(revSpec) >= 4 && strings.HasPrefix(branch.Version, revSpec) {
-				branches = append(branches, branch.Name)
+			if len(rev) >= 4 && strings.HasPrefix(branch.Version, rev) {
+				branches = append(branches, inputRev)
 				found = true
 				break
 			}
 		}
 
 		if found {
-			indexed = append(indexed, rev)
+			indexed = append(indexed, inputRev)
 		} else {
-			unindexed = append(unindexed, rev)
+			unindexed = append(unindexed, inputRev)
 		}
 	}
 
@@ -115,13 +106,13 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 
 // getRepoInputRev returns the repo and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, inputRevs []string) {
-	repoRev := rb.RepoRevs[api.RepoID(file.RepositoryID)]
+	repoRev, ok := rb.RepoRevs[api.RepoID(file.RepositoryID)]
 
 	// We search zoekt by repo ID. It is possible that the name has come out
 	// of sync, so the above lookup will fail. We fallback to linking the rev
 	// hash in that case. We intend to restucture this code to avoid this, but
 	// this is the fix to avoid potential nil panics.
-	if repoRev == nil {
+	if !ok {
 		repo := types.MinimalRepo{
 			ID:   api.RepoID(file.RepositoryID),
 			Name: api.RepoName(file.Repository),
@@ -137,7 +128,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 	for _, rev := range repoRev.Revs {
 		// We rely on the Sourcegraph implementation that the HEAD branch is
 		// indexed as "HEAD" rather than resolving the symref.
-		revBranchName := rev.RevSpec
+		revBranchName := rev
 		if revBranchName == "" {
 			revBranchName = "HEAD" // empty string in Sourcegraph means HEAD
 		}
@@ -150,13 +141,13 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 			}
 		}
 		if found {
-			inputRevs = append(inputRevs, rev.RevSpec)
+			inputRevs = append(inputRevs, rev)
 			continue
 		}
 
 		// Check if rev is an abbrev commit SHA
-		if len(rev.RevSpec) >= 4 && strings.HasPrefix(file.Version, rev.RevSpec) {
-			inputRevs = append(inputRevs, rev.RevSpec)
+		if len(rev) >= 4 && strings.HasPrefix(file.Version, rev) {
+			inputRevs = append(inputRevs, rev)
 			continue
 		}
 	}

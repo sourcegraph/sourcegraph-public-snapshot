@@ -158,7 +158,7 @@ func repoStatusSingleton(id api.RepoID, status RepoStatus) RepoStatusMap {
 // search limits are hit, and error promotion. If searchErr is a fatal error, it
 // returns a non-nil error; otherwise, if searchErr == nil or a non-fatal error,
 // it returns a nil error.
-func HandleRepoSearchResult(repoID api.RepoID, revSpecs []RevisionSpecifier, limitHit, timedOut bool, searchErr error) (RepoStatusMap, bool, error) {
+func HandleRepoSearchResult(repoID api.RepoID, revSpecs []string, limitHit, timedOut bool, searchErr error) (RepoStatusMap, bool, error) {
 	var fatalErr error
 	var status RepoStatus
 	if limitHit {
@@ -172,7 +172,7 @@ func HandleRepoSearchResult(repoID api.RepoID, revSpecs []RevisionSpecifier, lim
 			status |= RepoStatusMissing
 		}
 	} else if errors.HasType(searchErr, &gitdomain.RevisionNotFoundError{}) {
-		if len(revSpecs) == 0 || len(revSpecs) == 1 && revSpecs[0].RevSpec == "" {
+		if len(revSpecs) == 0 || len(revSpecs) == 1 && revSpecs[0] == "" {
 			// If we didn't specify an input revision, then the repo is empty and can be ignored.
 		} else {
 			fatalErr = searchErr

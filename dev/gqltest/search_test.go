@@ -808,10 +808,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 				query:      `repo:^github\.com/sgtest/go-diff$ "*" and cert.*Load type:file`,
 				zeroResult: true,
 			},
-			{
-				name:  `Escape sequences`,
-				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
-			},
+			// Disabled because it was flaky:
+			// https://buildkite.com/sourcegraph/sourcegraph/builds/161002
+			// {
+			// 	name:  `Escape sequences`,
+			// 	query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \' and \" and \\ and /`,
+			// },
 			{
 				name:  `Escaped whitespace sequences with 'and'`,
 				query: `repo:^github\.com/sgtest/go-diff$ patternType:regexp \ and /`,

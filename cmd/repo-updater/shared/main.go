@@ -49,6 +49,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -495,9 +496,12 @@ func watchSyncer(
 			}
 
 			// Similarly, changesetSyncer is only available in enterprise mode.
-			if changesetSyncer != nil && len(diff.ArchivedChanged) > 0 {
-				if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, diff.ArchivedChanged.IDs()); err != nil {
-					logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
+			if changesetSyncer != nil {
+				repos := diff.Modified.ReposModified(types.RepoModifiedArchived)
+				if len(repos) > 0 {
+					if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repos.IDs()); err != nil {
+						logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
+					}
 				}
 			}
 		}
@@ -513,7 +517,7 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 		}
 	}
 
-	for _, r := range diff.Modified {
+	for _, r := range diff.Modified.Repos() {
 		if r.Private {
 			repoIDs = append(repoIDs, r.ID)
 		}

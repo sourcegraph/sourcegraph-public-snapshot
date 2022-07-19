@@ -190,7 +190,7 @@ DELETE FROM series_points_snapshots where series_id = %s;
 const fullVectorSeriesAggregation = `
 -- source: enterprise/internal/insights/store/store.go:SeriesPoints
 SELECT sub.series_id, sub.interval_time, SUM(sub.value) as value, sub.metadata, sub.capture FROM (
-	SELECT sp.repo_name_id, sp.series_id, sp.time AS interval_time, MAX(value) as value, null as metadata, capture
+	SELECT sp.repo_name_id, sp.series_id, date_trunc('seconds', sp.time) AS interval_time, MAX(value) as value, null as metadata, capture
 	FROM (  select * from series_points
 			union
 			select * from series_points_snapshots
