@@ -13,6 +13,7 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -25,7 +26,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -531,21 +531,7 @@ func TestRepoHasFileContent(t *testing.T) {
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(repos)
 
-	corpus := map[string]map[string]map[string]struct{}{
-		string(repoA.Name): {
-			"pathA": {
-				"lineA": {},
-				"line1": {},
-				"line2": {},
-			},
-		},
-		string(repoB.Name): {
-			"pathB": {
-				"lineB": {},
-				"line1": {},
-				"line2": {},
-			},
-		},
+	unindexedCorpus := map[string]map[string]map[string]struct{}{
 		string(repoC.Name): {
 			"pathC": {
 				"lineC": {},
@@ -562,7 +548,7 @@ func TestRepoHasFileContent(t *testing.T) {
 		},
 	}
 	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
-		if r, ok := corpus[string(repo)]; ok {
+		if r, ok := unindexedCorpus[string(repo)]; ok {
 			for path, lines := range r {
 				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
 					for line := range lines {
@@ -577,27 +563,29 @@ func TestRepoHasFileContent(t *testing.T) {
 	}
 
 	// Only repos A and B are indexed
-	mockZoekt := &searchbackend.FakeSearcher{
-		Repos: []*zoekt.RepoListEntry{{
-			Repository: zoekt.Repository{
-				ID:   uint32(repoA.ID),
-				Name: string(repoA.Name),
+	mockZoekt := NewMockStreamer()
+	mockZoekt.ListFunc.SetDefaultReturn(&zoekt.RepoList{
+		Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
+			uint32(repoA.ID): {
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
 			},
-		}, {
-			Repository: zoekt.Repository{
-				ID:   uint32(repoB.ID),
-				Name: string(repoB.Name),
+			uint32(repoB.ID): {
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
 			},
-		}},
-	}
+		},
+	},
+		nil,
+	)
 
 	cases := []struct {
-		name     string
-		filters  []query.RepoHasFileContentArgs
-		expected []*search.RepositoryRevisions
+		name       string
+		filters    []query.RepoHasFileContentArgs
+		zoektFiles []zoekt.FileMatch
+		expected   []*search.RepositoryRevisions
 	}{{
-		name:    "no filters",
-		filters: nil,
+		name:       "no filters",
+		filters:    nil,
+		zoektFiles: nil,
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoA),
 			mkHead(repoB),
@@ -609,19 +597,58 @@ func TestRepoHasFileContent(t *testing.T) {
 		filters: []query.RepoHasFileContentArgs{{
 			Path: "bad path",
 		}},
-		expected: []*search.RepositoryRevisions{},
+		zoektFiles: nil,
+		expected:   []*search.RepositoryRevisions{},
 	}, {
-		name: "one path",
+		name: "one indexed path",
 		filters: []query.RepoHasFileContentArgs{{
 			Path: "pathB",
 		}},
+		zoektFiles: []zoekt.FileMatch{{
+			Repository:   "repoB",
+			RepositoryID: 2,
+			Branches:     []string{"HEAD"},
+		}},
 		expected: []*search.RepositoryRevisions{
 			mkHead(repoB),
+		},
+	}, {
+		name: "one unindexed path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path: "pathC",
+		}},
+		zoektFiles: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoC),
+		},
+	}, {
+		name: "path but no content",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:    "pathC",
+			Content: "lineB",
+		}},
+		zoektFiles: nil,
+		expected:   []*search.RepositoryRevisions{},
+	}, {
+		name: "path and content",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:    "pathC",
+			Content: "lineC",
+		}},
+		zoektFiles: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoC),
 		},
 	}}
 
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
+			mockZoekt.StreamSearchFunc.SetDefaultHook(func(_ context.Context, _ zoektquery.Q, _ *zoekt.SearchOptions, s zoekt.Sender) error {
+				s.Send(&zoekt.SearchResult{
+					Files: tc.zoektFiles,
+				})
+				return nil
+			})
 			res := NewResolver(logtest.Scoped(t), db, endpoint.Static("test"), mockZoekt)
 			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
 				RepoFilters:    []string{".*"},

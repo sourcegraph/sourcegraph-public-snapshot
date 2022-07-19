@@ -208,3 +208,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github
   interfaces:
     - client
+- filename: internal/search/repos/mocks_test.go
+  path: github.com/google/zoekt
+  interfaces:
+    - Streamer
