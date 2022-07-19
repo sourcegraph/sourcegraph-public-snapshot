@@ -559,7 +559,7 @@ func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 			Repo:     repo,
 			Priority: p,
 		})
-		notifyyy(q.notifyEnqueue)
+		notify(q.notifyEnqueue)
 		return false
 	}
 

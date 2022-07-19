@@ -95,26 +95,6 @@ func TestGitHubWebhooks_CreateListDelete(t *testing.T) {
 	}
 }
 
-func TestGitHubWebhooks_Find(t *testing.T) {
-	ctx := context.Background()
-	err := godotenv.Load("./.env")
-	if err != nil {
-		t.Fatal(err)
-	}
-	token := os.Getenv("ACCESS_TOKEN")
-
-	gh, err := NewGithubWebhookAPI()
-	if err != nil {
-		t.Fatal(err)
-	}
-	gh.Client = NewTestClient(t, "Find", updateWebhook)
-
-	_, found := gh.FindSyncWebhook(ctx, repoName, token)
-	if !found {
-		t.Fatalf("Could not find webhook")
-	}
-}
-
 func TestCreateFile(t *testing.T) {
 	ctx := context.Background()
 	err := godotenv.Load("./.env")

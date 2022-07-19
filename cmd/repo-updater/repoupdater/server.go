@@ -64,7 +64,7 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
-	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdateUsingWebhooks)
+	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
