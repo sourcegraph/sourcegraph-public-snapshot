@@ -46,7 +46,7 @@ else
   cache_file="cache-client-bundle-$checksum.tar.gz"
   cache_desc_file="cache-client-bundle-$checksum.txt"
   cache_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_file"
-  cache_desc_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_file"
+  cache_desc_key="$BUILDKITE_ORGANIZATION_SLUG/$BUILDKITE_PIPELINE_NAME/$cache_desc_file"
 
   echo -e "~~~ ClientBundle 🔍 Locating cache: $cache_key"
   if aws s3api head-object --bucket "sourcegraph_buildkite_cache" --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" --key "$cache_key"; then
