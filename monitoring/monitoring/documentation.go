@@ -132,7 +132,7 @@ func (d *documentation) renderAlertSolutionEntry(c *Dashboard, o Observable) err
 <details>
 <summary>Technical details</summary>
 
-Query: %s
+Custom alert query: %s
 
 </details>
 `, fmt.Sprintf("`%s`", alert.threshold.query))
