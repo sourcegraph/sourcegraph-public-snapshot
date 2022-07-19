@@ -5,8 +5,14 @@ cd "$(dirname "${BASH_SOURCE[0]}")"/../../..
 
 echo "--- (enterprise) pre-build frontend"
 
-if [[ ! "$BUILDKITE" == "true" ]]; then
+if [[ "$BUILDKITE" != "true" || "${SERVER_NO_CLIENT_BUNDLE_CACHE:-}" == "true" ]]; then
   # Not-in-buildkite simple install.
+  #
+  # Or When we are building a release, we do not want to cache the client bundle.
+  #
+  # This is a defensive measure, as caching the client bundle is tricky when it comes to invalidating it.
+  # This makes sure that we're running integration tests on a fresh bundle and, the image
+  # that 99% of our customers are using is exactly the same as the other deployments.
   ./enterprise/cmd/frontend/pre-build.sh
 else
   # set the buildkite cache access keys
