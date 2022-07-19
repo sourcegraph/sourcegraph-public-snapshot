@@ -103,8 +103,8 @@ Foreign-key constraints:
       Column       |           Type           | Collation | Nullable |                        Default                         
 -------------------+--------------------------+-----------+----------+--------------------------------------------------------
  id                | bigint                   |           | not null | nextval('batch_spec_resolution_jobs_id_seq'::regclass)
- batch_spec_id     | integer                  |           |          | 
- state             | text                     |           |          | 'queued'::text
+ batch_spec_id     | integer                  |           | not null | 
+ state             | text                     |           | not null | 'queued'::text
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
  finished_at       | timestamp with time zone |           |          | 
@@ -133,8 +133,8 @@ Foreign-key constraints:
          Column          |           Type           | Collation | Nullable |                             Default                             
 -------------------------+--------------------------+-----------+----------+-----------------------------------------------------------------
  id                      | bigint                   |           | not null | nextval('batch_spec_workspace_execution_jobs_id_seq'::regclass)
- batch_spec_workspace_id | integer                  |           |          | 
- state                   | text                     |           |          | 'queued'::text
+ batch_spec_workspace_id | integer                  |           | not null | 
+ state                   | text                     |           | not null | 'queued'::text
  failure_message         | text                     |           |          | 
  started_at              | timestamp with time zone |           |          | 
  finished_at             | timestamp with time zone |           |          | 
@@ -181,9 +181,9 @@ Foreign-key constraints:
         Column        |           Type           | Collation | Nullable |                      Default                      
 ----------------------+--------------------------+-----------+----------+---------------------------------------------------
  id                   | bigint                   |           | not null | nextval('batch_spec_workspaces_id_seq'::regclass)
- batch_spec_id        | integer                  |           |          | 
- changeset_spec_ids   | jsonb                    |           |          | '{}'::jsonb
- repo_id              | integer                  |           |          | 
+ batch_spec_id        | integer                  |           | not null | 
+ changeset_spec_ids   | jsonb                    |           | not null | '{}'::jsonb
+ repo_id              | integer                  |           | not null | 
  branch               | text                     |           | not null | 
  commit               | text                     |           | not null | 
  path                 | text                     |           | not null | 
@@ -274,7 +274,7 @@ Foreign-key constraints:
  changeset_id      | integer                  |           | not null | 
  job_type          | text                     |           | not null | 
  payload           | jsonb                    |           |          | '{}'::jsonb
- state             | text                     |           |          | 'queued'::text
+ state             | text                     |           | not null | 'queued'::text
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
  finished_at       | timestamp with time zone |           |          | 
