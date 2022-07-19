@@ -39,29 +39,19 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                     be autoscaled to speed up creating large-scale batch changes.
                 </Text>
 
-                <div className="row">
-                    <div className="col-12 col-md-7">
-                        <video
-                            className="w-100 h-auto shadow percy-hide"
-                            width={1280}
-                            height={720}
-                            autoPlay={true}
-                            muted={true}
-                            loop={true}
-                            playsInline={true}
-                            controls={false}
-                        >
-                            <source
-                                type="video/webm"
-                                src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.webm"
-                            />
-                            <source
-                                type="video/mp4"
-                                src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.mp4"
-                            />
-                        </video>
-                    </div>
-                </div>
+                <video
+                    className="w-100 h-auto shadow percy-hide"
+                    width={1280}
+                    height={720}
+                    autoPlay={true}
+                    muted={true}
+                    loop={true}
+                    playsInline={true}
+                    controls={false}
+                >
+                    <source type="video/webm" src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.webm" />
+                    <source type="video/mp4" src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.mp4" />
+                </video>
             </div>
             <div className={styles.right}>
                 <div className={styles.rightTop}>
