@@ -948,9 +948,11 @@ func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinit
 	return a
 }
 
-// Query sets a different query to be used for this alert instead of the query used
-// in the Grafana panel.
-func (a *ObservableAlertDefinition) Query(query string) *ObservableAlertDefinition {
+// CustomQuery sets a different query to be used for this alert instead of the query used
+// in the Grafana panel. Note that thresholds, etc will still be generated for the panel, so
+// ensure the panel query still makes sense in the context of an alert with a custom
+// query.
+func (a *ObservableAlertDefinition) CustomQuery(query string) *ObservableAlertDefinition {
 	a.query = query
 	return a
 }
