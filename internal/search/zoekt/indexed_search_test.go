@@ -16,6 +16,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 	"github.com/stretchr/testify/require"
 
+	"github.com/RoaringBitmap/roaring"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
@@ -489,6 +490,14 @@ func TestZoektResultCountFactor(t *testing.T) {
 }
 
 func TestZoektIndexedRepos_single(t *testing.T) {
+	branchesRepos := func(branch string, repo api.RepoID) map[string]*zoektquery.BranchRepos {
+		return map[string]*zoektquery.BranchRepos{
+			branch: {
+				Branch: branch,
+				Repos:  roaring.BitmapOf(uint32(repo)),
+			},
+		}
+	}
 	repoRev := func(revSpec string) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
 			Repo: types.MinimalRepo{ID: api.RepoID(1), Name: "test/repo"},
@@ -509,64 +518,87 @@ func TestZoektIndexedRepos_single(t *testing.T) {
 			},
 		},
 	}
+	cmpRoaring := func(a, b *roaring.Bitmap) bool {
+		arrayA, arrayB := a.ToArray(), b.ToArray()
+		if len(arrayA) != len(arrayB) {
+			return false
+		}
+		for i := range arrayA {
+			if arrayA[i] != arrayB[i] {
+				return false
+			}
+		}
+		return true
+	}
 	cases := []struct {
-		rev           string
-		wantIndexed   []*search.RepositoryRevisions
-		wantUnindexed []*search.RepositoryRevisions
+		rev               string
+		wantIndexed       []*search.RepositoryRevisions
+		wantBranchesRepos map[string]*zoektquery.BranchRepos
+		wantUnindexed     []*search.RepositoryRevisions
 	}{
 		{
-			rev:           "",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("")},
-			wantUnindexed: []*search.RepositoryRevisions{},
+			rev:               "",
+			wantIndexed:       []*search.RepositoryRevisions{repoRev("")},
+			wantBranchesRepos: branchesRepos("HEAD", 1),
+			wantUnindexed:     []*search.RepositoryRevisions{},
 		},
 		{
-			rev:           "HEAD",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("HEAD")},
-			wantUnindexed: []*search.RepositoryRevisions{},
+			rev:               "HEAD",
+			wantIndexed:       []*search.RepositoryRevisions{repoRev("HEAD")},
+			wantBranchesRepos: branchesRepos("HEAD", 1),
+			wantUnindexed:     []*search.RepositoryRevisions{},
 		},
 		{
-			rev:           "df3f4e499698e48152b39cd655d8901eaf583fa5",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
-			wantUnindexed: []*search.RepositoryRevisions{},
+			rev:               "df3f4e499698e48152b39cd655d8901eaf583fa5",
+			wantIndexed:       []*search.RepositoryRevisions{repoRev("df3f4e499698e48152b39cd655d8901eaf583fa5")},
+			wantBranchesRepos: branchesRepos("HEAD", 1),
+			wantUnindexed:     []*search.RepositoryRevisions{},
 		},
 		{
-			rev:           "df3f4e",
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("df3f4e")},
-			wantUnindexed: []*search.RepositoryRevisions{},
+			rev:               "df3f4e",
+			wantIndexed:       []*search.RepositoryRevisions{repoRev("df3f4e")},
+			wantBranchesRepos: branchesRepos("HEAD", 1),
+			wantUnindexed:     []*search.RepositoryRevisions{},
 		},
 		{
-			rev:           "d",
-			wantIndexed:   []*search.RepositoryRevisions{},
-			wantUnindexed: []*search.RepositoryRevisions{repoRev("d")},
+			rev:               "d",
+			wantIndexed:       []*search.RepositoryRevisions{},
+			wantBranchesRepos: map[string]*zoektquery.BranchRepos{},
+			wantUnindexed:     []*search.RepositoryRevisions{repoRev("d")},
 		},
 		{
-			rev:           "HEAD^1",
-			wantIndexed:   []*search.RepositoryRevisions{},
-			wantUnindexed: []*search.RepositoryRevisions{repoRev("HEAD^1")},
+			rev:               "HEAD^1",
+			wantIndexed:       []*search.RepositoryRevisions{},
+			wantBranchesRepos: map[string]*zoektquery.BranchRepos{},
+			wantUnindexed:     []*search.RepositoryRevisions{repoRev("HEAD^1")},
 		},
 		{
-			rev:           "8ec975423738fe7851676083ebf660a062ed1578",
-			wantUnindexed: []*search.RepositoryRevisions{},
-			wantIndexed:   []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
+			rev:               "8ec975423738fe7851676083ebf660a062ed1578",
+			wantIndexed:       []*search.RepositoryRevisions{repoRev("8ec975423738fe7851676083ebf660a062ed1578")},
+			wantBranchesRepos: branchesRepos("NOT-HEAD", 1),
+			wantUnindexed:     []*search.RepositoryRevisions{},
 		},
 	}
 
 	type ret struct {
-		Indexed   map[api.RepoID]*search.RepositoryRevisions
-		Unindexed []*search.RepositoryRevisions
+		Indexed     map[api.RepoID]*search.RepositoryRevisions
+		BranchRepos map[string]*zoektquery.BranchRepos
+		Unindexed   []*search.RepositoryRevisions
 	}
 
 	for _, tt := range cases {
 		indexed, unindexed := zoektIndexedRepos(zoektRepos, []*search.RepositoryRevisions{repoRev(tt.rev)}, nil)
 		got := ret{
-			Indexed:   indexed.RepoRevs,
-			Unindexed: unindexed,
+			Indexed:     indexed.RepoRevs,
+			BranchRepos: indexed.branchRepos,
+			Unindexed:   unindexed,
 		}
 		want := ret{
-			Indexed:   repoRevsSliceToMap(tt.wantIndexed),
-			Unindexed: tt.wantUnindexed,
+			Indexed:     repoRevsSliceToMap(tt.wantIndexed),
+			BranchRepos: tt.wantBranchesRepos,
+			Unindexed:   tt.wantUnindexed,
 		}
-		if !cmp.Equal(want, got) {
+		if !cmp.Equal(want, got, cmp.Comparer(cmpRoaring)) {
 			t.Errorf("%s mismatch (-want +got):\n%s", tt.rev, cmp.Diff(want, got))
 		}
 	}

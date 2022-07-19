@@ -198,7 +198,7 @@ $theme-colors: (
     );
     --modal-bg: #{rgba($gray-04, 0.5)};
     // Colors used in the search sidebar with .core-workflow-improvements-enabled
-    --sidebar-bg: #{$oc-gray-1};
+    --sidebar-bg: var(--color-bg-1);
     --sidebar-border-color: var(--border-color-2);
 }
 

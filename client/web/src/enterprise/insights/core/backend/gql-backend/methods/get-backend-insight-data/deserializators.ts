@@ -15,10 +15,13 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
 
     if (isComputeInsight(insight)) {
         return {
-            isFetchingHistoricalData,
+            // We have to tweak original logic around historical data since compute powered
+            // insights have problem with generated data series status info
+            // see https://github.com/sourcegraph/sourcegraph/issues/38893
+            isFetchingHistoricalData: isFetchingHistoricalData || seriesData.some(series => !series.label),
             data: {
                 type: InsightContentType.Categorical,
-                content: createCategoricalChart(insight, seriesData),
+                content: createCategoricalChart(seriesData),
             },
         }
     }

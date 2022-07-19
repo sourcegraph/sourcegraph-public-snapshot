@@ -66,6 +66,12 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 	// On release branches Percy must compare to the previous commit of the release branch, not main.
 	if c.RunType.Is(runtype.ReleaseBranch) {
 		env["PERCY_TARGET_BRANCH"] = c.Branch
+		// When we are building a release, we do not want to cache the client bundle.
+		//
+		// This is a defensive measure, as caching the client bundle is tricky when it comes to invalidating it.
+		// This makes sure that we're running integration tests on a fresh bundle and, the image
+		// that 99% of our customers are using is exactly the same as the other deployments.
+		env["SERVER_NO_CLIENT_BUNDLE_CACHE"] = "true"
 	}
 
 	// Build options for pipeline operations that spawn more build steps

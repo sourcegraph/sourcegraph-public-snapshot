@@ -164,7 +164,8 @@
 - filename: internal/codeintel/uploads/background/expiration/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/expiration
   interfaces:
-    - DBStore
+    - UploadService
+    - PolicyService
     - PolicyMatcher
 - filename: internal/database/migration/runner/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/database/migration/runner

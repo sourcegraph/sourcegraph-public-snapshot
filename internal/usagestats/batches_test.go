@@ -103,13 +103,13 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// Create batch spec workspaces
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO batch_spec_workspaces
-			(id, batch_spec_id, branch, commit, path, file_matches)
+			(id, repo_id, batch_spec_id, branch, commit, path, file_matches)
 		VALUES
-			(1, 2, 'refs/heads/main', 'some-commit', '', '{README.md}'),
-			(2, 2, 'refs/heads/main', 'some-commit', '', '{README.md}'),
-			(3, 3, 'refs/heads/main', 'some-commit', '', '{README.md}'),
-			(4, 5, 'refs/heads/main', 'some-commit', '', '{README.md}'),
-			(5, 7, 'refs/heads/main', 'some-commit', '', '{README.md}')
+			(1, 1, 2, 'refs/heads/main', 'some-commit', '', '{README.md}'),
+			(2, 1, 2, 'refs/heads/main', 'some-commit', '', '{README.md}'),
+			(3, 1, 3, 'refs/heads/main', 'some-commit', '', '{README.md}'),
+			(4, 1, 5, 'refs/heads/main', 'some-commit', '', '{README.md}'),
+			(5, 1, 7, 'refs/heads/main', 'some-commit', '', '{README.md}')
 	`)
 	if err != nil {
 		t.Fatal(err)

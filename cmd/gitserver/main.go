@@ -129,6 +129,11 @@ func main() {
 		logger.Fatal("failed to initialise keyring", zap.Error(err))
 	}
 
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
+	if err != nil {
+		logger.Fatal("Failed to create sub-repo client", zap.Error(err))
+	}
+
 	gitserver := server.Server{
 		Logger:             logger,
 		ReposDir:           reposDir,

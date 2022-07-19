@@ -13,7 +13,7 @@ import { SearchMatch } from '@sourcegraph/shared/src/search/stream'
 const SOURCEGRAPH_SEARCH = 'sourcegraphSearch' as const
 
 /**
- * Adds code intelligence for the Sourcegraph search syntax to Monaco.
+ * Adds code navigation for the Sourcegraph search syntax to Monaco.
  */
 export function useQueryIntelligence(
     fetchSuggestions: (query: string) => Observable<SearchMatch[]>,

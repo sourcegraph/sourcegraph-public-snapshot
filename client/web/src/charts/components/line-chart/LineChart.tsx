@@ -146,12 +146,14 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
     const voronoiLayout = useMemo(
         () =>
             voronoi<Point<D>>({
-                x: point => point.x,
-                y: point => point.y,
+                // Taking into account content area shift in point distribution map
+                // see https://github.com/sourcegraph/sourcegraph/issues/38919
+                x: point => point.x + content.left,
+                y: point => point.y + content.top,
                 width: outerWidth,
                 height: outerHeight,
             })(Object.values(points).flat()),
-        [outerWidth, outerHeight, points]
+        [content, outerWidth, outerHeight, points]
     )
 
     const handlers = useChartEventHandlers({

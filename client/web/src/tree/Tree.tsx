@@ -301,7 +301,7 @@ export class Tree extends React.PureComponent<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element | null {
+    public render(): JSX.Element {
         return (
             /**
              * TODO: Improve accessibility here.
