@@ -23,6 +23,6 @@ CREATE TABLE IF NOT EXISTS webhook_build_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL
 );
 
-ALTER TABLE webhook_build_jobs
-    DROP CONSTRAINT IF EXISTS webhook_build_jobs_fk,
-    ADD CONSTRAINT webhook_build_jobs_fk FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;
+-- ALTER TABLE webhook_build_jobs
+--     DROP CONSTRAINT IF EXISTS webhook_build_jobs_fk,
+--     ADD CONSTRAINT webhook_build_jobs_fk FOREIGN KEY (repo_id) REFERENCES repo(id) ON DELETE CASCADE;

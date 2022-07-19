@@ -1,0 +1,30 @@
+{Ref: "refs/heads/main", Commits: [github.HeadCommit{Message: "Initial commit", Author:github.CommitAuthor{Name: "milton", Email: "dev@sourcegraph.com", Login: "milton"
+      }, URL: "https://ghe.sgdev.org/milton/test/commit/9cae21b79a239d5b02a33f8323c6770c418d16a0", Distinct: true, ID: "9cae21b79a239d5b02a33f8323c6770c418d16a0", TreeID: "7713cad4d6de429f9bfc9bf9efcc09f9481d26a1", Timestamp:github.Timestamp{
+        2022-07-06 15: 34: 48 -0400 -0400
+      }, Committer:github.CommitAuthor{Name: "GitHub Enterprise", Email: "noreply@35.232.213.103"
+      }, Added: [
+        "README.md"
+      ], Removed: [], Modified: []
+    }
+  ], Before: "0000000000000000000000000000000000000000", After: "9cae21b79a239d5b02a33f8323c6770c418d16a0", Created: true, Deleted: false, Forced: false, Compare: "https://ghe.sgdev.org/milton/test/commit/9cae21b79a23",
+  Repo:github.PushEventRepository{ID: 442310, NodeID: "MDEwOlJlcG9zaXRvcnk0NDIzMTA=", Name: "test", FullName: "milton/test", Owner:github.User{Login: "milton", ID: 3, NodeID: "MDQ6VXNlcjM=", AvatarURL: "https://ghe.sgdev.org/avatars/u/3?", HTMLURL: "https://ghe.sgdev.org/milton", GravatarID: "", Name: "milton", Email: "dev@sourcegraph.com", Type: "User", SiteAdmin: true, URL: "https://ghe.sgdev.org/api/v3/users/milton", EventsURL: "https://ghe.sgdev.org/api/v3/users/milton/events{/privacy}", FollowingURL: "https://ghe.sgdev.org/api/v3/users/milton/following{/other_user}", FollowersURL: "https://ghe.sgdev.org/api/v3/users/milton/followers", GistsURL: "https://ghe.sgdev.org/api/v3/users/milton/gists{/gist_id}", OrganizationsURL: "https://ghe.sgdev.org/api/v3/users/milton/orgs", ReceivedEventsURL: "https://ghe.sgdev.org/api/v3/users/milton/received_events", ReposURL: "https://ghe.sgdev.org/api/v3/users/milton/repos", StarredURL: "https://ghe.sgdev.org/api/v3/users/milton/starred{/owner}{/repo}", SubscriptionsURL: "https://ghe.sgdev.org/api/v3/users/milton/subscriptions"
+    }, Private: false, Fork: false, CreatedAt:github.Timestamp{
+      2022-07-06 19: 34: 48 +0000 UTC
+    }, PushedAt:github.Timestamp{
+      2022-07-06 19: 34: 48 +0000 UTC
+    }, UpdatedAt:github.Timestamp{
+      2022-07-06 19: 34: 50 +0000 UTC
+    }, PullsURL: "https://ghe.sgdev.org/api/v3/repos/milton/test/pulls{/number}",
+    Size: 0, StargazersCount: 0, WatchersCount: 0, HasIssues: true, HasDownloads: true, HasWiki: true, HasPages: false, ForksCount: 0, Archived: false, Disabled: false, OpenIssuesCount: 0, DefaultBranch: "main", MasterBranch: "main",
+    URL: "https://ghe.sgdev.org/milton/test", ArchiveURL: "https://ghe.sgdev.org/api/v3/repos/milton/test/{archive_format}{/ref}", HTMLURL: "https://ghe.sgdev.org/milton/test", StatusesURL: "https://ghe.sgdev.org/api/v3/repos/milton/test/statuses/{sha}", GitURL: "git://ghe.sgdev.org/milton/test.git", SSHURL: "git@ghe.sgdev.org:milton/test.git", CloneURL: "https://ghe.sgdev.org/milton/test.git", SVNURL: "https://ghe.sgdev.org/milton/test"
+  }, HeadCommit:github.HeadCommit{Message: "Initial commit", Author:github.CommitAuthor{Name: "milton", Email: "dev@sourcegraph.com", Login: "milton"
+    }, URL: "https://ghe.sgdev.org/milton/test/commit/9cae21b79a239d5b02a33f8323c6770c418d16a0", Distinct: true, ID: "9cae21b79a239d5b02a33f8323c6770c418d16a0", TreeID: "7713cad4d6de429f9bfc9bf9efcc09f9481d26a1", Timestamp:github.Timestamp{
+      2022-07-06 15: 34: 48 -0400 -0400
+    }, Committer:github.CommitAuthor{Name: "GitHub Enterprise", Email: "noreply@35.232.213.103"
+    }, Added: [
+      "README.md"
+    ], Removed: [], Modified: []
+  }, Pusher:github.User{Name: "milton", Email: "dev@sourcegraph.com"
+  }, Sender:github.User{Login: "milton", ID: 3, NodeID: "MDQ6VXNlcjM=", AvatarURL: "https://ghe.sgdev.org/avatars/u/3?", HTMLURL: "https://ghe.sgdev.org/milton", GravatarID: "", Type: "User", SiteAdmin: true, URL: "https://ghe.sgdev.org/api/v3/users/milton", EventsURL: "https://ghe.sgdev.org/api/v3/users/milton/events{/privacy}", FollowingURL: "https://ghe.sgdev.org/api/v3/users/milton/following{/other_user}", FollowersURL: "https://ghe.sgdev.org/api/v3/users/milton/followers", GistsURL: "https://ghe.sgdev.org/api/v3/users/milton/gists{/gist_id}", OrganizationsURL: "https://ghe.sgdev.org/api/v3/users/milton/orgs", ReceivedEventsURL: "https://ghe.sgdev.org/api/v3/users/milton/received_events", ReposURL: "https://ghe.sgdev.org/api/v3/users/milton/repos", StarredURL: "https://ghe.sgdev.org/api/v3/users/milton/starred{/owner}{/repo}", SubscriptionsURL: "https://ghe.sgdev.org/api/v3/users/milton/subscriptions"
+  }
+}

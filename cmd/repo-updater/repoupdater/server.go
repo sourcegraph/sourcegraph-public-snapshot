@@ -64,7 +64,7 @@ func (s *Server) Handler() http.Handler {
 	})
 	mux.HandleFunc("/repo-update-scheduler-info", s.handleRepoUpdateSchedulerInfo)
 	mux.HandleFunc("/repo-lookup", s.handleRepoLookup)
-	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdate)
+	mux.HandleFunc("/enqueue-repo-update", s.handleEnqueueRepoUpdateUsingWebhooks)
 	mux.HandleFunc("/sync-external-service", s.handleExternalServiceSync)
 	mux.HandleFunc("/enqueue-changeset-sync", s.handleEnqueueChangesetSync)
 	mux.HandleFunc("/schedule-perms-sync", s.handleSchedulePermsSync)
@@ -139,8 +139,22 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+func (s *Server) handleEnqueueRepoUpdateUsingWebhooks(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("ENQUEUE REPO UPDATE WEBHOOKS ENDPOINT")
+	// if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+	// 	s.respond(w, http.StatusBadRequest, err)
+	// 	return
+	// }
+	result, status, err := s.enqueueRepoUpdate(r.Context(), &protocol.RepoUpdateRequest{Repo: api.RepoName("ghe.sgdev.org/milton/test")})
+	if err != nil {
+		// s.Logger.Error("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
+		s.respond(w, status, err)
+		return
+	}
+	s.respond(w, status, result)
+}
+
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("ENQUEUE REPO UPDATE ENDPOINT")
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		s.respond(w, http.StatusBadRequest, err)
@@ -156,7 +170,6 @@ func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request)
 }
 
 func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdateRequest) (resp *protocol.RepoUpdateResponse, httpStatus int, err error) {
-	fmt.Println("The next enqueueRepoUpdate")
 	tr, ctx := trace.New(ctx, "enqueueRepoUpdate", req.String())
 	defer func() {
 		s.Logger.Debug("enqueueRepoUpdate", log.Object("http", log.Int("status", httpStatus), log.String("resp", fmt.Sprint(resp)), log.Error(err)))
@@ -176,15 +189,13 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 		return nil, http.StatusInternalServerError, errors.Wrap(err, "store.list-repos")
 	}
 
-	fmt.Println("len:", len(rs))
 	if len(rs) != 1 {
 		return nil, http.StatusNotFound, errors.Errorf("repo %q not found in store", req.Repo)
 	}
 
 	repo := rs[0]
-
+	fmt.Printf("Repo:%+v\n", repo)
 	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
-
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: string(repo.Name),

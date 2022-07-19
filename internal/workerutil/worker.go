@@ -127,7 +127,6 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 
 // Start begins polling for work from the underlying store and processing records.
 func (w *Worker) Start() {
-	fmt.Println("worker.Start()")
 	defer close(w.finished)
 
 	// Create a background routine that periodically writes the current time to the running records.
@@ -175,7 +174,6 @@ func (w *Worker) Start() {
 
 loop:
 	for {
-		// fmt.Println("jobsDequeued:", w.numDequeues, "totalJobs:", w.options.NumTotalJobs)
 		if w.options.NumTotalJobs != 0 && w.numDequeues >= w.options.NumTotalJobs {
 			reason = "NumTotalJobs dequeued"
 			break loop
@@ -222,7 +220,6 @@ loop:
 
 	w.options.Metrics.logger.Info("Shutting down dequeue loop", log.String("reason", reason))
 	w.wg.Wait()
-	fmt.Println("done with worker.Start()!")
 }
 
 // Stop will cause the worker loop to exit after the current iteration. This is done by canceling the
@@ -248,7 +245,6 @@ func (w *Worker) Cancel(id int) {
 // can be dequeued and returns an error only on failure to dequeue a new record - no handler errors
 // will bubble up.
 func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
-	// fmt.Println("dequeueAndHandle")
 	select {
 	// If we block here we are waiting for a handler to exit so that we do not
 	// exceed our configured concurrency limit.
@@ -284,7 +280,6 @@ func (w *Worker) dequeueAndHandle() (dequeued bool, err error) {
 		// Nothing to process
 		return false, nil
 	}
-	fmt.Printf("Dequeued Record:%+v\n", record)
 
 	// Create context and span based on the root context
 	workerSpan, workerCtxWithSpan := ot.StartSpanFromContext(ot.WithShouldTrace(w.rootCtx, true), w.options.Name)

@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
-	githubwebhook "github.com/sourcegraph/sourcegraph/internal/repos/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -168,11 +167,21 @@ func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record 
 			return errors.Errorf("error getting token", err)
 		}
 
-		foundSyncWebhook := githubwebhook.FindSyncWebhook(wbj.RepoName, token.AccessToken)
+		gh, err := NewGithubWebhookAPI()
+		if err != nil {
+			return err
+		}
+
+		id, foundSyncWebhook := gh.FindSyncWebhook(ctx, wbj.RepoName, token.AccessToken)
 		if !foundSyncWebhook {
 			secret := randstr.Hex(32)
-			githubwebhook.CreateSyncWebhook(wbj.RepoName, secret, token.AccessToken)
+			// store it somewhere [org : secret]
+			id, err = gh.CreateSyncWebhook(ctx, wbj.RepoName, "https://fcba-116-15-22-254.ap.ngrok.io", secret, token.AccessToken)
+			if err != nil {
+				return errors.Errorf("creation error:", err)
+			}
 		}
+		fmt.Println("ID:", id)
 	}
 
 	// how will we know if a repo has been deleted?
@@ -637,6 +646,7 @@ func (s *Syncer) SyncExternalService(
 		if !allowed(sourced) {
 			continue
 		}
+		fmt.Printf("sourced:%+v\n", sourced)
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
@@ -656,10 +666,11 @@ func (s *Syncer) SyncExternalService(
 		if svc.SyncUsingWebhooks {
 			err = s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name), svc.Kind)
 			if err != nil && s.Logger != nil {
-				fmt.Println("failed to enqueue")
 				s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
 			}
+			// need to check for nil results
 		}
+		// no hardcode
 
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}

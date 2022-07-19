@@ -1,0 +1,93 @@
+---
+version: 1
+interactions:
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/38/tests
+    method: POST
+  response:
+    body: ""
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Date:
+      - Tue, 19 Jul 2022 07:57:44 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Enterprise-Version:
+      - 3.3.0
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - 639bf8e6-2659-4593-9db3-133e3f5c3f0c
+      X-Runtime-Rack:
+      - "0.112832"
+      X-Xss-Protection:
+      - "0"
+    status: 204 No Content
+    code: 204
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.v3+json
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/38
+    method: DELETE
+  response:
+    body: ""
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, Deprecation,
+        Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Date:
+      - Tue, 19 Jul 2022 07:57:44 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Enterprise-Version:
+      - 3.3.0
+      X-Github-Media-Type:
+      - github.v3; format=json
+      X-Github-Request-Id:
+      - a419088b-0edb-4e66-9109-376e8860278f
+      X-Runtime-Rack:
+      - "0.063061"
+      X-Xss-Protection:
+      - "0"
+    status: 204 No Content
+    code: 204
+    duration: ""

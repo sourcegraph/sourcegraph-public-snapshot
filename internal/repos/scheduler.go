@@ -389,7 +389,6 @@ func configuredRepoFromRepo(r *types.Repo) configuredRepo {
 // UpdateOnce causes a single update of the given repository.
 // It neither adds nor removes the repo from the schedule.
 func (s *UpdateScheduler) UpdateOnce(id api.RepoID, name api.RepoName) {
-	fmt.Println("UpdateOnce() has been called, mission success")
 	repo := configuredRepo{
 		ID:   id,
 		Name: name,
@@ -530,6 +529,14 @@ func (q *updateQueue) reset() {
 	schedUpdateQueueLength.Set(0)
 }
 
+var notifyyy = func(ch chan struct{}) {
+	fmt.Println("notifyyyyyyying...")
+	select {
+	case ch <- struct{}{}:
+	default:
+	}
+}
+
 // enqueue adds the repo to the queue with the given priority.
 //
 // If the repo is already in the queue and it isn't yet updating,
@@ -538,6 +545,7 @@ func (q *updateQueue) reset() {
 // If the given priority is higher than the one in the queue,
 // the repo's position in the queue is updated accordingly.
 func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
+	fmt.Printf("enqueuing repo:%+v\n", repo)
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -551,7 +559,7 @@ func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 			Repo:     repo,
 			Priority: p,
 		})
-		notify(q.notifyEnqueue)
+		notifyyy(q.notifyEnqueue)
 		return false
 	}
 
