@@ -1172,7 +1172,7 @@ func lockRepoForGC(dir GitDir) (error, func() error) {
 		name = name[0:hostNameMax]
 	}
 
-	_, err = f.Write([]byte(fmt.Sprintf("%d %s", os.Getpid(), name)))
+	_, err = fmt.Fprintf(f, "%d %s", os.Getpid(), name)
 	if err1 := f.Close(); err1 != nil && err == nil {
 		err = err1
 	}
