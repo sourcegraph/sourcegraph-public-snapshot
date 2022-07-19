@@ -21,7 +21,7 @@ type SearchMatch struct {
 	RepositoryID   int32
 	RepositoryName string
 	MatchCount     int
-	
+	LineMatches    []streamhttp.EventLineMatch
 }
 
 type TabulationResult struct {
@@ -36,16 +36,18 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 		RepoCounts: make(map[string]*SearchMatch),
 	}
 
-	addCount := func(repo string, repoId int32, count int) {
+	addCount := func(repo string, repoId int32, count int, lineMatches []streamhttp.EventLineMatch) {
 		if forRepo, ok := tr.RepoCounts[repo]; !ok {
 			tr.RepoCounts[repo] = &SearchMatch{
 				RepositoryID:   repoId,
 				RepositoryName: repo,
 				MatchCount:     count,
+				LineMatches:    lineMatches,
 			}
 			return
 		} else {
 			forRepo.MatchCount += count
+			forRepo.LineMatches = append(forRepo.LineMatches, lineMatches...)
 		}
 	}
 
@@ -76,20 +78,20 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 						count += len(lineMatch.OffsetAndLengths)
 					}
 					tr.TotalCount += count
-					addCount(match.Repository, match.RepositoryID, count)
+					addCount(match.Repository, match.RepositoryID, count, match.LineMatches)
 				case *streamhttp.EventPathMatch:
 					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
+					addCount(match.Repository, match.RepositoryID, 1, nil)
 				case *streamhttp.EventRepoMatch:
 					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
+					addCount(match.Repository, match.RepositoryID, 1, nil)
 				case *streamhttp.EventCommitMatch:
 					tr.TotalCount += 1
-					addCount(match.Repository, match.RepositoryID, 1)
+					addCount(match.Repository, match.RepositoryID, 1, nil)
 				case *streamhttp.EventSymbolMatch:
 					count := len(match.Symbols)
 					tr.TotalCount += count
-					addCount(match.Repository, match.RepositoryID, count)
+					addCount(match.Repository, match.RepositoryID, count, nil)
 				}
 			}
 		},
