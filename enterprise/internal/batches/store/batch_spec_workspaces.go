@@ -434,7 +434,7 @@ func getListRetryBatchSpecWorkspacesQuery(opts *ListRetryBatchSpecWorkspacesOpts
 	}
 
 	if !opts.IncludeCompleted {
-		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state != 'completed'"))
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state != %s", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
 	}
 
 	return sqlf.Sprintf(
