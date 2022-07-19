@@ -20,9 +20,9 @@ function checksum_client_code {
 }
 
 function generate_cache_desc {
-  echo -e "Generated from commit: \`$(git rev-parse HEAD)\`"
-  echo -e "Created at: \`$(date)\`"
-  echo -e "Filename: \`$cache_file\`"
+  echo -e "- Generated from commit: \`$(git rev-parse HEAD)\`"
+  echo -e "- Created at: \`$(date)\`"
+  echo -e "- Filename: \`$cache_file\`"
 }
 
 echo "--- (enterprise) pre-build frontend"
@@ -58,7 +58,7 @@ else
 
     # Retrieving the cache description
     aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "s3://sourcegraph_buildkite_cache/$cache_desc_key" "./"
-    echo -e "## ClientBundle 🔥 Cache hit: $cache_key\n$(cat "$cache_desc_file")" | ./enterprise/dev/ci/scripts/annotate.sh -m -t info
+    echo -e "ClientBundle 🔥 Cache hit: \`$cache_key\`\n\n$(cat "$cache_desc_file")" | ./enterprise/dev/ci/scripts/annotate.sh -m -t info
     rm "$cache_desc_file"
   else
     echo -e "~~~ ClientBundle 🚨 Cache miss: $cache_key"
