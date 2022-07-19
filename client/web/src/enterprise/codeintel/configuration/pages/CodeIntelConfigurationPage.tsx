@@ -93,7 +93,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
 
     return (
         <>
-            <PageTitle title="Precise code graph configuration" />
+            <PageTitle title="Code graph data configuration" />
             <CodeIntelConfigurationPageHeader>
                 <PageHeader
                     headingElement="h2"
