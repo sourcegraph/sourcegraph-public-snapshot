@@ -21,6 +21,7 @@ type SearchMatch struct {
 	RepositoryID   int32
 	RepositoryName string
 	MatchCount     int
+	
 }
 
 type TabulationResult struct {

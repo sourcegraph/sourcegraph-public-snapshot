@@ -129,7 +129,7 @@ JOIN insight_series ON insight_view_series.insight_series_id = insight_series.id
 WHERE
 	insight_series.series_id IN(
 	SELECT
-		series_id FROM series_points
+		series_id FROM series_points sp
 		JOIN repo_names rn on sp.repo_id = rn.id
 		WHERE rn.name = %s;
 	)
