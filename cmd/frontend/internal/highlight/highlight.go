@@ -413,6 +413,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
+		OnlyRanges:       true,
 	}
 
 	// Set the Filetype part of the command if:

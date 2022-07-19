@@ -42,6 +42,10 @@ type Query struct {
 	// have any use case for these anymore (and haven't for awhile).
 	CSS bool `json:"css"`
 
+	// If set to true instructs the syntax highlight to not return HTML but to
+	// include a list of [start, end, class] tuples.
+	OnlyRanges bool `json:"onlyranges"`
+
 	// LineLengthLimit is the maximum length of line that will be highlighted if set.
 	// Defaults to no max if zero.
 	// If CSS is false, LineLengthLimit is ignored.
@@ -94,12 +98,19 @@ var (
 
 type response struct {
 	// Successful response fields.
-	Data      [][]interface{} `json:"data"`
+	Data      string `json:"data"`
 	Plaintext bool   `json:"plaintext"`
 
 	// Error response fields.
 	Error string `json:"error"`
 	Code  string `json:"code"`
+}
+
+type rangesresponse struct {
+	response
+
+	// Successful response fields.
+	Data      [][]interface{} `json:"data"`
 }
 
 // Make sure all names are lowercase here, since they are normalized
@@ -200,9 +211,29 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 
 	// Decode the response.
 	var r response
-	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
-		return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
+
+	if q.OnlyRanges {
+		var rangesrsp rangesresponse
+		if err := json.NewDecoder(resp.Body).Decode(&rangesrsp); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
+		}
+		encoded, err := json.Marshal(rangesrsp.Data)
+		if err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("encoding JSON response from %s", c.url("/")))
+		}
+
+		r = response {
+			Data: string(encoded),
+			Plaintext: rangesrsp.Plaintext,
+			Error: rangesrsp.Error,
+			Code: rangesrsp.Code,
+		}
+	} else {
+		if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+			return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
+		}
 	}
+
 	if r.Error != "" {
 		var err error
 		switch r.Code {
@@ -221,9 +252,8 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 		}
 		return nil, errors.Wrap(err, c.syntectServer)
 	}
-	res, err := json.Marshal(r.Data)
 	return &Response{
-		Data:      string(res),
+		Data:      r.Data,
 		Plaintext: r.Plaintext,
 	}, nil
 }

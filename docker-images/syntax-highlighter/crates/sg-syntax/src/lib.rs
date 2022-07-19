@@ -19,7 +19,8 @@ pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 
 mod sg_syntect;
-use sg_syntect::JSONGenerator;
+use sg_syntect::ClassedTableGenerator;
+use sg_syntect::RangesGenerator;
 
 thread_local! {
     pub(crate) static SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
@@ -54,6 +55,11 @@ pub struct SourcegraphQuery {
     // annotating the highlighted types.
     #[serde(default)]
     pub css: bool,
+
+    // If onlyranges is set return a list of [start, end, CSS class] tuples instead of annotated
+    // HTML.
+    #[serde(default)]
+    pub onlyranges: bool,
 
     // line_length_limit is ignored if css is false
     pub line_length_limit: Option<usize>,
@@ -187,19 +193,53 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
             Err(e) => return e,
         };
 
-        let output = JSONGenerator::new(
-            syntax_set,
-            syntax_def,
-            &q.code,
-            q.line_length_limit,
-            ClassStyle::SpacedPrefixed { prefix: "hl-" },
-        )
-            .generate();
+        if q.css {
+            if q.onlyranges {
+                let output = RangesGenerator::new(
+                    syntax_set,
+                    syntax_def,
+                    &q.code,
+                    q.line_length_limit,
+                )
+                    .generate();
 
-        json!({
-            "data": output,
-            "plaintext": syntax_def.name == "Plain Text",
-        })
+                json!({
+                    "data": output,
+                    "plaintext": syntax_def.name == "Plain Text",
+                })
+            } else {
+                let output = ClassedTableGenerator::new(
+                    syntax_set,
+                    syntax_def,
+                    &q.code,
+                    q.line_length_limit,
+                    ClassStyle::SpacedPrefixed { prefix: "hl-" },
+                )
+                .generate();
+
+                json!({
+                    "data": output,
+                    "plaintext": syntax_def.name == "Plain Text",
+                })
+            }
+        } else {
+            // TODO(slimsag): return the theme's background color (and other info??) to caller?
+            // https://github.com/trishume/syntect/blob/c8b47758a3872d478c7fc740782cd468b2c0a96b/examples/synhtml.rs#L24
+
+            // Determine theme to use.
+            //
+            // TODO(slimsag): We could let the query specify the theme file's actual
+            // bytes? e.g. via `load_from_reader`.
+            let theme = match THEME_SET.themes.get(&q.theme) {
+                Some(v) => v,
+                None => return json!({"error": "invalid theme", "code": "invalid_theme"}),
+            };
+
+            json!({
+                "data": highlighted_html_for_string(&q.code, syntax_set, syntax_def, theme),
+                "plaintext": syntax_def.name == "Plain Text",
+            })
+        }
     })
 }
 
@@ -217,6 +257,7 @@ mod tests {
             filetype: None,
             code: "%".to_string(),
             css: false,
+            onlyranges: false,
             line_length_limit: None,
             extension: String::new(),
             theme: String::new(),
@@ -233,6 +274,7 @@ mod tests {
             filetype: None,
             code: "/**".to_string(),
             css: false,
+            onlyranges: false,
             line_length_limit: None,
             extension: String::new(),
             theme: String::new(),

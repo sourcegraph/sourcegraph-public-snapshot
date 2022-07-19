@@ -191,33 +191,30 @@ fn close_row(s: &mut String) {
     s.push_str("</div></td></tr>");
 }
 
-pub struct JSONGenerator<'a> {
+pub struct RangesGenerator<'a> {
     syntax_set: &'a SyntaxSet,
     parse_state: ParseState,
     position_stack: Vec<(Scope, usize)>,
     stack: ScopeStack,
     data: Vec<(usize, usize, Scope)>,
-    style: ClassStyle,
     code: &'a str,
     max_line_len: Option<usize>,
 }
 
-impl<'a> JSONGenerator<'a> {
+impl<'a> RangesGenerator<'a> {
     pub fn new(
         ss: &'a SyntaxSet,
         sr: &SyntaxReference,
         code: &'a str,
         max_line_len: Option<usize>,
-        style: ClassStyle,
     ) -> Self {
-        JSONGenerator {
+        RangesGenerator {
             code,
             syntax_set: ss,
             parse_state: ParseState::new(sr),
             stack: ScopeStack::new(),
             data: vec![],
             position_stack: vec![],
-            style,
             max_line_len,
         }
     }
@@ -225,9 +222,10 @@ impl<'a> JSONGenerator<'a> {
     // generate takes ownership of self so that it can't be re-used
     pub fn generate(mut self) -> Vec<(usize, usize, Scope)> {
         let mut file_offset = 0;
-        for (i, line) in LinesWithEndings::from(self.code).enumerate() {
+        for (_i, line) in LinesWithEndings::from(self.code).enumerate() {
             if self.max_line_len.map_or(false, |n| line.len() > n) {
-                // TODO
+                // TODO: Not sure what should happen here... close all open
+                // scopes?
             } else {
                 self.write_data_for_tokens(line, file_offset);
             }
@@ -332,6 +330,7 @@ mod tests {
             extension: String::new(),
             theme: String::new(),
             css: true,
+            onlyranges: false,
         };
         let expected = "<table>\
                             <tbody>\
@@ -362,6 +361,7 @@ mod tests {
             extension: String::new(),
             theme: String::new(),
             css: true,
+            onlyranges: false,
         };
         let expected = "<table>\
                             <tbody>\
@@ -411,6 +411,7 @@ mod tests {
             extension: String::new(),
             theme: String::new(),
             css: true,
+            onlyranges: false,
         };
         let expected = "<table>\
                             <tbody>\

@@ -41,7 +41,7 @@ import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
-import { Blob, BlobInfo, BlobProps } from './Blob'
+import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
@@ -80,6 +80,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
         props.location.hash,
@@ -156,7 +157,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         if (blob === null) {
                             return blob
                         }
-                        console.log(blob)
 
                         // Replace html with lsif generated HTML, if available
                         if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
@@ -166,11 +166,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         const blobInfo: BlobInfo & {
                             richHTML: string
                             aborted: boolean
-                            data: [number, number, string][]
                         } = {
                             content: blob.content,
-                            //html: blob.highlight.html,
-                            data: JSON.parse(blob.highlight.html).sort((a, b) => a[0] - b[0]),
+                            html: blob.highlight.html,
                             repoName,
                             revision,
                             commitID,
@@ -323,6 +321,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         )
     }
 
+    const Component = enableCodeMirror ? CodeMirrorBlob : Blob
     return (
         <>
             {alwaysRender}
@@ -371,7 +370,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
-                <BlobContainer
+                <Component
                     data-testid="repo-blob"
                     className={classNames(styles.blob, styles.border)}
                     blobInfo={blobInfoOrError}
@@ -390,11 +389,4 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             )}
         </>
     )
-}
-
-const BlobContainer: React.FunctionComponent<BlobProps> = props => {
-    const Component = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
-        ? CodeMirrorBlob
-        : Blob
-    return <Component {...props} />
 }

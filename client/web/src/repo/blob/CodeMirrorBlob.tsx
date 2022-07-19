@@ -5,7 +5,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { Extension, RangeSetBuilder } from '@codemirror/state'
-import { Decoration, EditorView } from '@codemirror/view'
+import { Decoration, EditorView, ViewPlugin } from '@codemirror/view'
 import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
@@ -33,31 +33,59 @@ const staticExtensions: Extension = [
 export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, wrapCode, isLightTheme }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
-    const dynamicExtensions = useMemo(
-        () => [
-            wrapCode ? EditorView.lineWrapping : [],
-            EditorView.darkTheme.of(isLightTheme === false),
-            EditorView.decorations.of(view => {
-                const builder = new RangeSetBuilder<Decoration>()
-                for (const [start, end, cls] of blobInfo.data as [number, number, string][]) {
-                    builder.add(
-                        start,
-                        end,
-                        Decoration.mark({
-                            class: cls
-                                .split('.')
-                                .map(cls => `hl-${cls}`)
-                                .join(' '),
-                        })
-                    )
-                }
-                return builder.finish()
+    const syntaxHighlighting = useMemo(() => {
+        // When CodeMirror is enabled, blobInfo.html contains a JSON blob
+        // encoding ranges as [start, end, CSS class] (unless there is no syntax
+        // highlighting)
+        if (blobInfo.html.includes('<table>')) {
+            return []
+        }
+        const builder = new RangeSetBuilder<Decoration>()
+        const decorations: Record<string, Decoration> = {}
+
+        for (const [start, end, spec] of parseAndSortRangesJSON(blobInfo.html)) {
+            // Creating a single CSS class string (and thus a single span)
+            // appears to be more performant than creating a separate decoration
+            // for each class
+            // TODO: Consider using a ViewPlugin to only create decorations for
+            // lines that are rendered
+            const cls = spec
+                .split('.')
+                .map(cls => `hl-${cls}`)
+                .sort()
+                .join(' ')
+            builder.add(start, end, decorations[cls] || (decorations[cls] = Decoration.mark({ class: cls })))
+        }
+        // This is implemented as a ViewPlugin because of how CodeMirror gets
+        // updated atm: The value and the syntax decorations are updated in two
+        // separate transactions (value first then syntax highlighting). This
+        // causes CodeMirror to throw an error because a lot of decorations will
+        // be out of range.
+        // We therefore clear the decorations when the document changes.
+        // The base hook needs to be refactored so that multiple parts of the
+        // editor's state can be updated at the same time when the value changes
+        return ViewPlugin.define(
+            () => ({
+                decorations: builder.finish(),
+                update(update) {
+                    if (update.docChanged) {
+                        // False positive?
+                        // eslint-disable-next-line react/no-this-in-sfc
+                        this.decorations = Decoration.none
+                    }
+                },
             }),
-        ],
-        [wrapCode, isLightTheme, blobInfo]
+            { decorations: value => value.decorations }
+        )
+    }, [blobInfo.html])
+
+    const settings = useMemo(
+        () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
+        [wrapCode, isLightTheme]
     )
 
-    const [compartment, updateCompartment] = useCompartment(dynamicExtensions)
+    const [settingsCompartment, updateSettingsCompartment] = useCompartment(settings)
+    const [syntaxHighlightingCompartment, updateSyntaxHighlightingCompartment] = useCompartment(syntaxHighlighting)
 
     const history = useHistory()
     const location = useLocation()
@@ -92,18 +120,29 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         )
     }, [])
 
-    const extensions = useMemo(() => [staticExtensions, compartment, selectableLineNumbers({ onSelection })], [
-        compartment,
-        onSelection,
-    ])
+    const extensions = useMemo(
+        () => [
+            staticExtensions,
+            settingsCompartment,
+            syntaxHighlightingCompartment,
+            selectableLineNumbers({ onSelection }),
+        ],
+        [settingsCompartment, syntaxHighlightingCompartment, onSelection]
+    )
 
     const editor = useCodeMirror(container, blobInfo.content, extensions)
 
     useEffect(() => {
         if (editor) {
-            updateCompartment(editor, dynamicExtensions)
+            updateSettingsCompartment(editor, settings)
         }
-    }, [editor, updateCompartment, dynamicExtensions])
+    }, [editor, updateSettingsCompartment, settings])
+
+    useEffect(() => {
+        if (editor) {
+            updateSyntaxHighlightingCompartment(editor, syntaxHighlighting)
+        }
+    }, [editor, updateSyntaxHighlightingCompartment, syntaxHighlighting])
 
     // Update selected lines when URL changes
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
@@ -121,4 +160,8 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
     }, [editor, position, blobInfo])
 
     return <div ref={setContainer} className={`${className} overflow-hidden`} />
+}
+
+function parseAndSortRangesJSON(ranges: string): [number, number, string][] {
+    return (JSON.parse(ranges) as [number, number, string][]).sort(([startA], [startB]) => startA - startB)
 }
