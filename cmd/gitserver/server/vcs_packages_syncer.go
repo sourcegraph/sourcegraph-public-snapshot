@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
@@ -245,10 +246,6 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	}
 
 	return nil
-}
-
-func (s *vcsPackagesSyncer) downloadPackage(ctx context.Context, dep reposource.VersionedPackage) (workDir string, err error) {
-	return workDir, nil
 }
 
 // gitPushDependencyTag downloads the dependency dep and updates
