@@ -54,9 +54,13 @@ func (r *resolver) LockfileIndexes(ctx context.Context, args *graphqlbackend.Lis
 		repoIDs[i] = api.RepoID(li.RepositoryID)
 	}
 
-	repos, err := backend.NewRepos(r.logger, r.db).List(ctx, database.ReposListOptions{IDs: repoIDs})
-	if err != nil {
-		return nil, err
+	var repos []*types.Repo
+	if len(repoIDs) > 0 {
+		var err error
+		repos, err = backend.NewRepos(r.logger, r.db).List(ctx, database.ReposListOptions{IDs: repoIDs})
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	reposByID := make(map[api.RepoID]*types.Repo, len(repos))

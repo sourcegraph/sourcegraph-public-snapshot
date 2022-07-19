@@ -109,6 +109,11 @@ const codeIntelGroup: SiteAdminSideBarGroup = {
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
         {
+            to: '/site-admin/code-intelligence/lockfiles',
+            label: 'Lockfiles',
+            condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
+        },
+        {
             to: '/site-admin/code-intelligence/configuration',
             label: 'Configuration',
         },
