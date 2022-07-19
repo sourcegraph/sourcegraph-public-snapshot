@@ -20,7 +20,7 @@ type ConfigurationSource interface {
 
 // Server provides access and manages modifications to the site configuration.
 type Server struct {
-	Source ConfigurationSource
+	source ConfigurationSource
 	// sourceWrites signals when our app writes to the configuration source. The
 	// received channel should be closed when server.Raw() would return the new
 	// configuration that has been written to disk.
@@ -38,7 +38,7 @@ type Server struct {
 // The server must be started with Start() before it can handle requests.
 func NewServer(source ConfigurationSource) *Server {
 	return &Server{
-		Source:       source,
+		source:       source,
 		sourceWrites: make(chan chan struct{}, 1),
 	}
 }
@@ -52,7 +52,7 @@ func (s *Server) Write(ctx context.Context, input conftypes.RawUnified) error {
 		return err
 	}
 
-	err = s.Source.Write(ctx, input)
+	err = s.source.Write(ctx, input)
 	if err != nil {
 		return err
 	}
