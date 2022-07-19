@@ -56,7 +56,6 @@ export interface BaseInsight {
     dashboardReferenceCount: number
     dashboards: InsightDashboardReference[]
     isFrozen: boolean
-    seriesCount: number
 
     // TODO: move these fields out of base insight since they are
     // specific to the search based and capture group insights only
