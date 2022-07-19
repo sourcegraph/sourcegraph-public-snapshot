@@ -113,7 +113,7 @@ export const BackendInsightView: React.FunctionComponent<React.PropsWithChildren
     // polling is disabled ignore all
     if (enablePolling) {
         // not on the screen so stop polling if we are - multiple stop calls are safe
-        if (error || !isVisible) {
+        if (error || !isVisible || !isFetchingHistoricalData) {
             isPolling.current = false
             stopPolling()
         } else if (isFetchingHistoricalData && !isPolling.current) {
