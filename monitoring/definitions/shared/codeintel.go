@@ -305,7 +305,7 @@ func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitori
 			Errors:   NoAlertsOption("none"),
 			ErrorRate: CriticalOption(
 				monitoring.Alert().
-					Query(Workerutil.LastOverTimeErrorRate(containerName, model.Duration(time.Hour*5), constructorOptions)).
+					CustomQuery(Workerutil.LastOverTimeErrorRate(containerName, model.Duration(time.Hour*5), constructorOptions)).
 					For(time.Hour).
 					GreaterOrEqual(100),
 				`
