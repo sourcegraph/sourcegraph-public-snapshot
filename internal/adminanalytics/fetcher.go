@@ -69,28 +69,26 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		return nil, err
 	}
 
-	now := time.Now().UTC()
-	to, from := now, now
+	now := time.Now()
+	to := now
 	daysOffset := 1
+	from, err := getFromDate(f.dateRange, now)
+	if err != nil {
+		return nil, err
+	}
 
-	switch f.dateRange {
-	case "LAST_WEEK":
-		from = now.AddDate(0, 0, -7)
-	case "LAST_MONTH":
-		from = now.AddDate(0, -1, 0)
-	case "LAST_THREE_MONTHS":
-		to = now.AddDate(0, 0, -int(now.Weekday()))
-		from = now.AddDate(0, -3, 0)
+	if f.dateRange == "LAST_THREE_MONTHS" {
+		to = now.AddDate(0, 0, -int(now.Weekday())+1) // monday of current week
 		daysOffset = 7
 	}
 
 	allNodes := make([]*AnalyticsNode, 0)
 
-	for date := from; date.Before(to); date = date.AddDate(0, 0, daysOffset) {
+	for date := to; date.After(from) || date.Equal(from); date = date.AddDate(0, 0, -daysOffset) {
 		var node *AnalyticsNode
 
 		for _, n := range nodes {
-			if bod(date).Equal(bod(n.Data.Date.UTC())) {
+			if bod(date).Equal(bod(n.Data.Date)) {
 				node = n
 				break
 			}
@@ -99,7 +97,7 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		if node == nil {
 			node = &AnalyticsNode{
 				Data: AnalyticsNodeData{
-					Date:            date,
+					Date:            bod(date),
 					Count:           0,
 					UniqueUsers:     0,
 					RegisteredUsers: 0,
@@ -111,6 +109,7 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 	}
 
 	return allNodes, nil
+
 }
 
 func bod(t time.Time) time.Time {
