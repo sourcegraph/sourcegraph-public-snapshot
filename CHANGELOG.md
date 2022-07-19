@@ -62,7 +62,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Improve keyboard navigation for batch changes server-side execution flow. [#38601](https://github.com/sourcegraph/sourcegraph/pull/38601)
 - Fixed a bug with the WorkspacePreview panel glitching when it's resized. [#36470](https://github.com/sourcegraph/sourcegraph/issues/36470)
 - Handle special characters in search query when creating a batch change from search. [#38772](https://github.com/sourcegraph/sourcegraph/pull/38772)
-- Handle numeric timezone offset when parsing Gitlab webhook payload. [#38250](https://github.com/sourcegraph/sourcegraph/pull/38250)
+- Fixed bug when parsing numeric timezone offset in Gitlab webhook payload. [#38250](https://github.com/sourcegraph/sourcegraph/pull/38250)
 
 ### Removed
 
