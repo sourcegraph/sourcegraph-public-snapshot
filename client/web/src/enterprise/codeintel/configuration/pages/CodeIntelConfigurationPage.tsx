@@ -99,7 +99,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
                     headingElement="h2"
                     path={[
                         {
-                            text: <>Precise code graph configuration</>,
+                            text: <>Code graph data configuration</>,
                         },
                     ]}
                     description={`Rules that control data retention${
