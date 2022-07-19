@@ -212,3 +212,7 @@
   path: github.com/sourcegraph/sourcegraph/internal/conf
   interfaces:
     - ConfigurationSource
+- filename: internal/search/repos/mocks_test.go
+  path: github.com/google/zoekt
+  interfaces:
+    - Streamer
