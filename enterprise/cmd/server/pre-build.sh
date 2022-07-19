@@ -13,7 +13,7 @@ function checksum_client_code {
     find . -maxdepth 1 -type f -name "*.js" -exec sha1sum {} \;
     find . -maxdepth 1 -type f -name "*.ts" -exec sha1sum {} \;
     find . -maxdepth 1 -type f -name "*.json" -exec sha1sum {} \;
-  }>> "$tmpfile"
+  } >>"$tmpfile"
 
   # We know for sure that renovate has nothing to do with the client files.
   grep -v "renovate.json" <"$tmpfile" | sort -k 2 | sha1sum | awk '{print $1}'
@@ -63,7 +63,7 @@ else
 
     # Retrieving the cache description
     aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "s3://sourcegraph_buildkite_cache/$cache_desc_key" "./"
-    echo -e "ClientBundle 🔥 Cache hit: \`$cache_key\`\n\n$(cat "$cache_desc_file")" | ./enterprise/dev/ci/scripts/annotate.sh -m -t info
+    echo -e "\`$cache_key\`\n\n$(cat "$cache_desc_file")" >>"./annotations/🔥 Client bundle cache hit.md"
     rm "$cache_desc_file"
   else
     echo -e "~~~ ClientBundle 🚨 Cache miss: $cache_key"
@@ -76,7 +76,7 @@ else
     rm "$cache_file"
 
     # Building the bundle description
-    generate_cache_desc > "$cache_desc_file"
+    generate_cache_desc >"$cache_desc_file"
     aws s3 cp --profile buildkite --endpoint-url 'https://storage.googleapis.com' --region "us-central1" "$cache_desc_file" "s3://sourcegraph_buildkite_cache/$cache_desc_key"
     rm "$cache_desc_file"
   fi
