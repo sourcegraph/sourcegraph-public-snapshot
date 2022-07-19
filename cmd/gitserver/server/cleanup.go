@@ -1421,7 +1421,7 @@ func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
 		if os.IsNotExist(err) {
 			return false, nil
 		}
-		return false, nil
+		return false, err
 	}
 
 	age := time.Since(fi.ModTime())
