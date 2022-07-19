@@ -12,3 +12,90 @@
         color: inherit;
     }
 }
+
+.cell {
+    padding-left: 0;
+    padding-right: 0;
+    border-radius: var(--border-radius);
+}
+
+.tree-layer {
+    width: 100%;
+    outline: none;
+}
+
+.tree-row-contents {
+    display: flex;
+    color: inherit;
+    align-items: center;
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem;
+    cursor: pointer;
+}
+
+.is-new {
+    justify-content: space-between;
+}
+
+.tree-row-contents-text {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.row {
+    color: var(--body-color);
+    width: 100%;
+
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+
+    &--selected {
+        background-color: var(--color-bg-3);
+        cursor: pointer;
+
+        &:hover {
+            background-color: var(--color-bg-3);
+        }
+    }
+
+    &--active {
+        width: 100%;
+        background-color: var(--color-bg-3);
+        color: var(--body-color);
+    }
+
+    &-contents,
+    &-label {
+        &:hover {
+            text-decoration: none;
+        }
+    }
+
+    :global(.theme-light) &--active,
+    :global(.theme-light) &--selected,
+    :global(.theme-light) &:hover {
+        meter {
+            --meter-background: var(--gray-05);
+        }
+    }
+}
+
+.row-alert {
+    display: block;
+    padding: 0.75rem 1.25rem;
+    white-space: pre-wrap;
+    margin-bottom: 0;
+}
+
+.row-icon {
+    color: var(--link-color);
+    /* stylelint-disable-next-line declaration-property-unit-allowed-list */
+    width: 1.1em;
+}
+
+.row-label {
+    margin-left: 0.25rem;
+    color: inherit;
+}
