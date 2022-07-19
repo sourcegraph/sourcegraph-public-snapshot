@@ -16,6 +16,7 @@ import {
     CreatedChangeset,
     createTag,
     ensureTrackingIssues,
+    closeTrackingIssue,
     releaseName,
     commentOnIssue,
     queryIssues,
@@ -51,6 +52,7 @@ export type StepID =
     | 'release:stage'
     | 'release:add-to-batch-change'
     | 'release:finalize'
+    | 'release:announce'
     | 'release:close'
     // util
     | 'util:clear-cache'
@@ -690,8 +692,8 @@ Batch change: ${batchChangeURL}`,
         },
     },
     {
-        id: 'release:close',
-        description: 'Mark a release as closed',
+        id: 'release:announce',
+        description: 'Announce a release as live',
         run: async config => {
             const { slackAnnounceChannel, dryRun } = config
             const { upcoming: release } = await releaseVersions(config)
@@ -756,6 +758,15 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                     console.log(`dryRun enabled, skipping GitHub comment to ${trackingIssue.url}: ${comment}`)
                 }
             }
+        },
+    },
+    {
+        id: 'release:close',
+        description: 'Close tracking issues for current release',
+        run: async config => {
+            const { previous: release } = await releaseVersions(config)
+            // close tracking issue
+            await closeTrackingIssue(release)
         },
     },
     {
