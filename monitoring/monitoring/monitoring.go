@@ -326,8 +326,12 @@ func (c *Dashboard) renderRules() (*promRulesFile, error) {
 					}
 
 					// The alertQuery must contribute a query that returns true when it should be firing.
-					alertQuery := fmt.Sprintf("%s((%s) %s %v)",
-						a.aggregator, o.Query, a.comparator, a.threshold)
+					var alertQuery string
+					if a.query != "" {
+						alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, a.query, a.comparator, a.threshold)
+					} else {
+						alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, o.Query, a.comparator, a.threshold)
+					}
 
 					// If the data must exist, we alert if the query returns no value as well
 					if o.DataMustExist {
@@ -893,10 +897,12 @@ type ObservableAlertDefinition struct {
 	// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
 	// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
 	aggregator Aggregator
-	// Comparator sets how a metric should be compared against a threshold
+	// Comparator sets how a metric should be compared against a threshold.
 	comparator string
-	// Threshold sets the value to be compared against
+	// Threshold sets the value to be compared against.
 	threshold float64
+	// alternative query to use for an alert instead of the observables query.
+	query string
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
@@ -939,6 +945,15 @@ func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
 // considered firing. Defaults to 0s (immediately alerts when threshold is exceeded).
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
 	a.duration = d
+	return a
+}
+
+// CustomQuery sets a different query to be used for this alert instead of the query used
+// in the Grafana panel. Note that thresholds, etc will still be generated for the panel, so
+// ensure the panel query still makes sense in the context of an alert with a custom
+// query.
+func (a *ObservableAlertDefinition) CustomQuery(query string) *ObservableAlertDefinition {
+	a.query = query
 	return a
 }
 
