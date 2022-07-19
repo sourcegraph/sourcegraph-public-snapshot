@@ -16,12 +16,13 @@ import (
 // This safety limit is to protect us from a DDOS attack caused by hashing very large passwords on Sourcegraph.com.
 const maxPasswordRunes = 256
 
-// Validate Password: Validates that a password meets the required criteria
+// ValidatePassword: Validates that a password meets the required criteria
 func ValidatePassword(passwd string) error {
 
-	if policy := conf.ExperimentalFeatures().PasswordPolicy; policy != nil && policy.Enabled {
+	if passwordPolicyEnabled() {
 		return validatePasswordUsingPolicy(passwd)
 	}
+
 	return validatePasswordUsingDefaultMethod(passwd)
 }
 
@@ -73,7 +74,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 	}
 
 	// Get a reference to the password policy
-	policy := conf.ExperimentalFeatures().PasswordPolicy
+	policy := getPasswordPolicy()
 
 	// Minimum Length Check
 	if letters < policy.MinimumLength {
