@@ -110,3 +110,5 @@
   is_enterprise: true
   introduced_version_major: 3
   introduced_version_minor: 35
+  deprecated_major_version: 3
+  deprecated_minor_version: 42
