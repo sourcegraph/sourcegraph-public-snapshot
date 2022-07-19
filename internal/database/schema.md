@@ -614,6 +614,7 @@ Slack webhook actions configured on code monitors
  queued_at         | timestamp with time zone |           |          | now()
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
+    "cm_trigger_jobs_finished_at" btree (finished_at)
     "cm_trigger_jobs_state_idx" btree (state)
 Check constraints:
     "search_results_is_array" CHECK (jsonb_typeof(search_results) = 'array'::text)
