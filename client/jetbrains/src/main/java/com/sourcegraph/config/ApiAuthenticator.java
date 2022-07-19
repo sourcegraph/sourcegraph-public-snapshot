@@ -33,6 +33,7 @@ public class ApiAuthenticator {
                     callback.accept(ConnectionStatus.COULD_NOT_CONNECT);
                 }
             } catch (IOException | JsonSyntaxException e) {
+                callback.accept(ConnectionStatus.COULD_NOT_CONNECT);
                 logger.info(e);
             }
         }).start();
