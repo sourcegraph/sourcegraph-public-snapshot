@@ -228,7 +228,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         run: async (config, changelogFile = 'CHANGELOG.md') => {
             const { upcoming: release } = await releaseVersions(config)
             const prMessage = `changelog: cut sourcegraph@${release.version}`
-            const pr = await createChangesets({
+            const pullRequest = await createChangesets({
                 requiredCommands: [],
                 changes: [
                     {
@@ -295,7 +295,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 ],
                 dryRun: config.dryRun.changesets,
             })
-            const changeLogPrUrl = pr[0].pullRequestURL
+            const changeLogPrUrl = pullRequest[0].pullRequestURL
             console.log(
                 `\nPlease review the changelog PR at ${changeLogPrUrl}, and merge manually when checks have passed.`
             )
