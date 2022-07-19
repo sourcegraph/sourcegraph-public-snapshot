@@ -266,7 +266,12 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 		}
 	}
 
-	logger.Info("Applying permissions to Bitbucket project repositories", log.String("project_key", projectKey))
+	logger.Info("Applying permissions to Bitbucket project repositories",
+		log.String("project_key", projectKey),
+		log.Int("repo_ids_len", len(repoIDs)),
+		log.Int("user_ids_len", len(userIDs)),
+		log.Int("pending_bind_ids_len", len(pendingBindIDs)),
+	)
 
 	// apply the permissions for each repo
 	for _, repoID := range repoIDs {
