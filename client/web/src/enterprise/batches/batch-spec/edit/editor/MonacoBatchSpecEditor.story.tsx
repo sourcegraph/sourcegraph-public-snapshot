@@ -1,12 +1,11 @@
+import { action } from '@storybook/addon-actions'
+import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
+import sample from '../library/hello-world.batch.yaml'
 
 import { MonacoBatchSpecEditor } from './MonacoBatchSpecEditor'
-
-import sample from '../library/hello-world.batch.yaml'
-import { boolean, withKnobs } from '@storybook/addon-knobs'
-import { action } from '@storybook/addon-actions'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
