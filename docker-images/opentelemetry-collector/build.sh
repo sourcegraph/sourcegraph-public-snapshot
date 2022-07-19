@@ -3,6 +3,7 @@
 set -ex
 cd "$(dirname "${BASH_SOURCE[0]}")"
 
-OTEL_COLLECTOR_VERSION=""
-docker pull otel/opentelemetry-collector:$OTEL_COLLECTOR_VERSION
-docker tag otel/opentelemetry-collector:$OTEL_COLLECTOR_VERSION "$IMAGE"
+export OTEL_COLLECTOR_VERSION="${OTEL_COLLECTOR_VERSION:-0.54.0}"
+
+docker build --no-cache -t "${IMAGE:-sourcegraph/opentelemetry-collector}" . \
+  --build-arg OTEL_COLLECTOR_VERSION
