@@ -1119,7 +1119,7 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 	err, unlock := lockRepoForGC(dir)
 	if err != nil {
 		logger.Debug(
-			"could not lock repository for sg maintenance. There is probably another git gc operation running.",
+			"could not lock repository for sg maintenance",
 			log.String("dir", string(dir)),
 			log.Error(err),
 		)
@@ -1146,7 +1146,15 @@ func lockRepoForGC(dir GitDir) (error, func() error) {
 	// Setting permissions to 644 to mirror the permissions that git gc sets for gc.pid.
 	f, err := os.OpenFile(dir.Path(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
 	if err != nil {
-		return err, nil
+		content, err1 := os.ReadFile(dir.Path(gcLockFile))
+		if err1 != nil {
+			return err, nil
+		}
+		pidMachine := strings.Split(string(content), " ")
+		if len(pidMachine) < 2 {
+			return err, nil
+		}
+		return errors.Wrapf(err, "process %s on machine %s is already running a gc operation", pidMachine[0], pidMachine[1]), nil
 	}
 
 	// We cut the hostname to 256 bytes, just like git gc does. See HOST_NAME_MAX in

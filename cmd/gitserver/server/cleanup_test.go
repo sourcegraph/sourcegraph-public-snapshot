@@ -1595,7 +1595,7 @@ func TestSGMaintenanceRespectsLock(t *testing.T) {
 		t.Fatal("expected at least 1 log message")
 	}
 
-	if !strings.Contains(cl[len(cl)-1].Message, "could not lock repository for sg maintenance. There is probably another git gc operation running.") {
+	if !strings.Contains(cl[len(cl)-1].Message, "could not lock repository for sg maintenance") {
 		t.Fatal("expected sg maintenance to complain about the lockfile")
 	}
 }
