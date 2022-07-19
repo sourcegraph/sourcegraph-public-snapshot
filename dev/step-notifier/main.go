@@ -4,14 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/sourcegraph/log"
 	"io/ioutil"
 	_ "log"
 	"net/http"
 	"os"
-	"sync"
+	"time"
 
-	"github.com/buildkite/go-buildkite/v3/buildkite"
+	"github.com/sourcegraph/log"
 )
 
 var ErrRequestBody = fmt.Errorf("failed to read body from request")
@@ -20,114 +19,6 @@ var ErrInvalidToken = fmt.Errorf("buildkite token is invalid")
 var ErrInvalidHeader = fmt.Errorf("Header of request is invalid")
 var ErrUnwantedEvent = fmt.Errorf("Unwanted event received")
 
-type Build struct {
-	buildkite.Build
-	Jobs []buildkite.Job
-}
-
-func (b *Build) HasFailed() bool {
-	for _, j := range b.Jobs {
-		if j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0 {
-			return true
-		}
-	}
-	return false
-}
-
-func (b *Build) AvatarURL() string {
-	if b.Creator == nil {
-		return ""
-	}
-	return b.Creator.AvatarURL
-}
-
-func (b *Build) PipelineName() string {
-	if b.Pipeline == nil {
-		return "N/A"
-	}
-	if b.Pipeline.Name == nil {
-		return "N/A"
-	}
-	return *b.Pipeline.Name
-
-}
-
-func NewBuildFrom(event *BuildEvent) *Build {
-	return &Build{
-		Build: event.Build,
-		Jobs:  make([]buildkite.Job, 0),
-	}
-}
-
-type BuildEvent struct {
-	Event string          `json:"event"`
-	Build buildkite.Build `json:"build,omitempty"`
-	Job   buildkite.Job   `json:"job,omitempty"`
-}
-
-func (b *BuildEvent) IsBuildFinished() bool {
-	return b.Event == "build.finished"
-}
-
-func (b *BuildEvent) BuildNumber() int {
-	if b.Build.Number == nil {
-		return -1
-	}
-	return *b.Build.Number
-}
-
-func (b *BuildEvent) JobName() string {
-	if b.Job.Name == nil {
-		return "N/A"
-	}
-	return *b.Job.Name
-}
-
-type BuildStore struct {
-	logger log.Logger
-	builds map[int]*Build
-	m      sync.RWMutex
-}
-
-func NewBuildStore(logger log.Logger) *BuildStore {
-	return &BuildStore{
-		logger: logger.Scoped("store", "stores all the builds"),
-		builds: make(map[int]*Build),
-		m:      sync.RWMutex{},
-	}
-}
-
-func (s *BuildStore) Add(event *BuildEvent) {
-	s.m.Lock()
-	defer s.m.Unlock()
-	build, ok := s.builds[event.BuildNumber()]
-	if !ok {
-		build = NewBuildFrom(event)
-		s.builds[event.BuildNumber()] = build
-	}
-	// if the build is finished replace the original build with the replaced one since it will be more up to date
-	if event.IsBuildFinished() {
-		build.Build = event.Build
-	}
-	build.Jobs = append(build.Jobs, event.Job)
-
-	s.logger.Debug("job added", log.Int("buildNumber", event.BuildNumber()), log.Int("totalJobs", len(build.Jobs)))
-}
-
-func (s *BuildStore) DelByBuildNumber(num int) {
-	s.m.Lock()
-	defer s.m.Unlock()
-	delete(s.builds, num)
-	s.logger.Info("build deleted", log.Int("buildNumber", num))
-}
-
-func (s *BuildStore) GetByBuildNumber(num int) *Build {
-	s.m.RLock()
-	defer s.m.RUnlock()
-
-	return s.builds[num]
-}
-
 type BuildTrackingServer struct {
 	logger  log.Logger
 	store   *BuildStore
@@ -135,21 +26,11 @@ type BuildTrackingServer struct {
 	slack   *SlackClient
 }
 
-func NewStepServer() (*BuildTrackingServer, error) {
-	slackToken := os.Getenv("SLACK_TOKEN")
-	if slackToken == "" {
-		return nil, fmt.Errorf("SLACK_TOKEN cannot be empty")
-	}
-	token := os.Getenv("BK_WEBHOOK_TOKEN")
-
-	if token == "" {
-		return nil, fmt.Errorf("BK_WEBHOOK_TOKEN cannot be empty")
-	}
-	logger := log.Scoped("server", "Server that tracks completed builds")
+func NewBuildTrackingServer(logger log.Logger, buildkiteToken, slackToken string) (*BuildTrackingServer, error) {
 	return &BuildTrackingServer{
 		logger:  logger,
 		store:   NewBuildStore(logger),
-		bkToken: token,
+		bkToken: buildkiteToken,
 		slack:   NewSlackClient(logger, slackToken),
 	}, nil
 }
@@ -183,6 +64,14 @@ func (s *BuildTrackingServer) processBuildkiteRequest(req *http.Request, token s
 	return &event, nil
 }
 
+// handleEvent handles an event received from the http listener. A event is valid when:
+// - Has the correct headers from Buildkite
+// - On of the following events
+//   * job.finished
+//   * build.finished
+// - Has valid JSON
+// Note that if we received an unwanted event ie. the event is not "job.finished" or "build.finished" we respond with a 200 OK regardless.
+// Once all the conditions are met, the event is processed in a go routine with `processEvent`
 func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Request) {
 	event, err := s.processBuildkiteRequest(req, s.bkToken)
 
@@ -224,12 +113,8 @@ func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 	return nil
 }
 
-func (s *BuildTrackingServer) notify(build *Build) error {
-	if len(build.Jobs) == 0 {
-		s.logger.Info("build has no jobs", log.Int("buildNumber", *build.Number))
-		return nil
-	}
-
+// notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful not notifcation is sent
+func (s *BuildTrackingServer) notifyIfFailed(build *Build) error {
 	if build.HasFailed() {
 		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", *build.Number))
 		return s.slack.sendNotification(build)
@@ -239,23 +124,58 @@ func (s *BuildTrackingServer) notify(build *Build) error {
 	return nil
 }
 
+func (s *BuildTrackingServer) startOldBuildCleaner(every, window time.Duration) func() {
+	ticker := time.NewTicker(every)
+	done := make(chan interface{})
+
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				{
+					oldBuilds := make([]int, 0)
+					now := time.Now()
+					for _, b := range s.store.AllFinishedBuilds() {
+						finishedAt := *b.FinishedAt
+						delta := now.Sub(finishedAt.Time)
+						if delta >= window {
+							oldBuilds = append(oldBuilds, *b.Number)
+						}
+					}
+					s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
+					s.store.DelByBuildNumber(oldBuilds...)
+				}
+			case <-done:
+				{
+					ticker.Stop()
+					return
+				}
+			}
+		}
+	}()
+
+	return func() { done <- nil }
+}
+
+// processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
+// full build which includes all recorded jobs for the build and send a notification.
+// processEvent delegates the decision to actually send a notifcation
 func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
+	// Build number is required!
 	if event.Build.Number == nil {
-		//Build number is required!
 		return
 	}
 
 	s.store.Add(event)
 	if event.IsBuildFinished() {
 		build := s.store.GetByBuildNumber(event.BuildNumber())
-		if err := s.notify(build); err != nil {
+		if err := s.notifyIfFailed(build); err != nil {
 			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.BuildNumber()), log.Error(err))
 		}
-		// since the build is done we don't need it anymore
-		s.store.DelByBuildNumber(*event.Build.Number)
 	}
 }
 
+// Server starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
 func (s *BuildTrackingServer) Serve() error {
 	http.HandleFunc("/buildkite", s.handleEvent)
 	s.logger.Info("listening on :8080")
@@ -263,15 +183,31 @@ func (s *BuildTrackingServer) Serve() error {
 }
 
 func main() {
+	slackToken := os.Getenv("SLACK_TOKEN")
+	if slackToken == "" {
+		panic("SLACK_TOKEN cannot be empty")
+	}
+	buildkiteToken := os.Getenv("BK_WEBHOOK_TOKEN")
+	if buildkiteToken == "" {
+		panic("BK_WEBHOOK_TOKEN cannot be empty")
+	}
+
 	sync := log.Init(log.Resource{
 		Name:      "BuildTracker",
 		Namespace: "CI",
 	})
 	defer sync.Sync()
-	server, err := NewStepServer()
+
+	logger := log.Scoped("server", "Server that tracks completed builds")
+	server, err := NewBuildTrackingServer(logger, buildkiteToken, slackToken)
 	if err != nil {
-		panic(err)
+		log.Scoped("BuildTracker.main", "main entrypoint for BuildTracker").Fatal(
+			"failed to create BuildTracking server", log.Error(err),
+		)
 	}
+
+	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
+	defer stopFn()
 	if err := server.Serve(); err != nil {
 		server.logger.Fatal("server exited with error", log.Error(err))
 	}
