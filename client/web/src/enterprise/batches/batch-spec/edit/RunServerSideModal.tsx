@@ -40,7 +40,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                 </Text>
 
                 <div className="row">
-                    <div className="col-12 col-md-7">
+                    <div className="col-12 col-md-10">
                         <video
                             className="w-100 h-auto shadow percy-hide"
                             width={1280}
