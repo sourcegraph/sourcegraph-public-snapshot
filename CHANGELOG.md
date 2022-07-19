@@ -26,10 +26,8 @@ All notable changes to Sourcegraph are documented in this file.
 - A toggle to enable/disable a beta simplified UI has been added to the user menu. This new UI is still actively in development and any changes visible with the toggle enabled may not be stable are subject to change. [#38763](https://github.com/sourcegraph/sourcegraph/pull/38763)
 - Search query inputs are now backed by the CodeMirror library instead of Monaco. Monaco can be re-enabled by setting `experimentalFeatures.editor` to `"monaco"`. [38584](https://github.com/sourcegraph/sourcegraph/pull/38584)
 - Better search-based code navigation for Python using tree-sitter [#38459](https://github.com/sourcegraph/sourcegraph/pull/38459)
-- Gitserver `/exec` endpoint access logs can now be enabled with `"log": { "gitserver.accessLog": true }` ([#38798](https://github.com/sourcegraph/sourcegraph/pull/38798))
-- Gitserver `/exec` endpoint access logs can now be enabled with `"log": { "gitserver.accessLogs": true }` ([#38798](https://github.com/sourcegraph/sourcegraph/pull/38798))
-- Gitserver `/exec` endpoint access logs can now be enabled with `"log": { "gitserver.accessLogs": true }`. [#38798](https://github.com/sourcegraph/sourcegraph/pull/38798)
-- Gitserver `/exec` endpoint access logs can now be enabled by adding `"log": { "gitserver.accessLogs": true }` to the site config. [#38798](https://github.com/sourcegraph/sourcegraph/pull/38798)
+- Gitserver endpoint access logs can now be enabled by adding `"log": { "gitserver.accessLogs": true }` to the site config. [#38798](https://github.com/sourcegraph/sourcegraph/pull/38798)
+- Code Insights supports a new type of insight - compute-powered insight, currently under the experimental feature flag: `codeInsightsCompute` [#37857](https://github.com/sourcegraph/sourcegraph/issues/37857)
 
 ### Changed
 
@@ -54,6 +52,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Support timestamps with numeric timezone format from Gitlab's Webhook payload [#38250](https://github.com/sourcegraph/sourcegraph/pull/38250)
 - Fix regression in 3.41 where search-based Code Insights could have their queries wrongly parsed into regex patterns when containing quotes or parentheses. [#38400](https://github.com/sourcegraph/sourcegraph/pull/38400)
 - Fixed regression of mismatched `From` address when render emails. [#38589](https://github.com/sourcegraph/sourcegraph/pull/38589)
+- Fixed a bug with GitHub code hosts using `"repositoryQuery":{"public"}` where it wasn't respecting exclude archived. [#38839](https://github.com/sourcegraph/sourcegraph/pull/38839)
+- Fixed a bug with GitHub code hosts using `repositoryQuery` with custom queries, where it could potentially stall out searching for repos. [#38839](https://github.com/sourcegraph/sourcegraph/pull/38839)
 
 ### Removed
 

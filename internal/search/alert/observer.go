@@ -278,9 +278,9 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 		var a *search.Alert
 		dependencies := o.Query.Dependencies()
 		if len(dependencies) == 0 {
-			a = search.AlertForMissingRepoRevs(mErr.Missing)
+			a = AlertForMissingRepoRevs(mErr.Missing)
 		} else {
-			a = search.AlertForMissingDependencyRepoRevs(mErr.Missing)
+			a = AlertForMissingDependencyRepoRevs(mErr.Missing)
 		}
 		a.Priority = 6
 		return a, nil
@@ -391,4 +391,72 @@ func (e *ErrLuckyQueries) Error() string {
 // is an error caused by context cancelation or timeout.
 func isContextError(ctx context.Context, err error) bool {
 	return ctx.Err() != nil || errors.IsAny(err, context.Canceled, context.DeadlineExceeded)
+}
+
+func AlertForMissingRepoRevs(missingRepoRevs []searchrepos.RepoRevSpecs) *search.Alert {
+	var description string
+	if len(missingRepoRevs) == 1 {
+		if len(missingRepoRevs[0].RevSpecs()) == 1 {
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it does not contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
+		} else {
+			description = fmt.Sprintf("The repository %s matched by your repo: filter could not be searched because it has multiple specified revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
+		}
+	} else {
+		sampleSize := 10
+		if sampleSize > len(missingRepoRevs) {
+			sampleSize = len(missingRepoRevs)
+		}
+		repoRevs := make([]string, 0, sampleSize)
+		for _, r := range missingRepoRevs[:sampleSize] {
+			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
+		}
+		b := strings.Builder{}
+		_, _ = fmt.Fprintf(&b, "%d repositories matched by your repo: filter could not be searched because the following revisions do not exist, or differ but were specified for the same repository:", len(missingRepoRevs))
+		for _, rr := range repoRevs {
+			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
+		}
+		if sampleSize < len(missingRepoRevs) {
+			b.WriteString("\n* ...")
+		}
+		description = b.String()
+	}
+	return &search.Alert{
+		PrometheusType: "missing_repo_revs",
+		Title:          "Some repositories could not be searched",
+		Description:    description,
+	}
+}
+
+func AlertForMissingDependencyRepoRevs(missingRepoRevs []searchrepos.RepoRevSpecs) *search.Alert {
+	var description string
+	if len(missingRepoRevs) == 1 {
+		if len(missingRepoRevs[0].RevSpecs()) == 1 {
+			description = fmt.Sprintf("The dependency %s matched by your repo:deps(...) predicate could not be searched because it does not yet contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
+		} else {
+			description = fmt.Sprintf("The dependency %s matched by your repo:deps(...) predicate could not be searched because it has multiple missing revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
+		}
+	} else {
+		sampleSize := 10
+		if sampleSize > len(missingRepoRevs) {
+			sampleSize = len(missingRepoRevs)
+		}
+		repoRevs := make([]string, 0, sampleSize)
+		for _, r := range missingRepoRevs[:sampleSize] {
+			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
+		}
+		b := strings.Builder{}
+		_, _ = fmt.Fprintf(&b, "%d dependencies matched by your repo:deps(...) predicate could not be searched because the following revisions either don't exist or aren't yet cloned:", len(missingRepoRevs))
+		for _, rr := range repoRevs {
+			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
+		}
+		if sampleSize < len(missingRepoRevs) {
+			b.WriteString("\n* ...")
+		}
+		description = b.String()
+	}
+	return &search.Alert{
+		PrometheusType: "missing_dependency_repo_revs",
+		Title:          "Some dependencies could not be searched",
+		Description:    description + "\n\nDependency repository revisions are cloned on demand. Try again in a few seconds.",
+	}
 }

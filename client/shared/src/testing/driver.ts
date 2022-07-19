@@ -4,10 +4,9 @@ import * as path from 'path'
 import realPercySnapshot from '@percy/puppeteer'
 import delay from 'delay'
 import expect from 'expect'
-import getFreePort from 'get-port'
 import * as jsonc from 'jsonc-parser'
 import { escapeRegExp } from 'lodash'
-import { readFile, appendFile, mkdir } from 'mz/fs'
+import { readFile } from 'mz/fs'
 import puppeteer, {
     PageEventObject,
     Page,
@@ -15,15 +14,12 @@ import puppeteer, {
     LaunchOptions,
     ConsoleMessage,
     Target,
-    PuppeteerNode,
     BrowserLaunchArgumentOptions,
     BrowserConnectOptions,
 } from 'puppeteer'
-import puppeteerFirefox from 'puppeteer-firefox'
 import { from, fromEvent, merge, Subscription } from 'rxjs'
 import { filter, map, concatAll, mergeMap, mergeAll, takeUntil } from 'rxjs/operators'
 import { Key } from 'ts-key-enum'
-import webExt from 'web-ext'
 
 import { isDefined } from '@sourcegraph/common'
 import { dataOrThrowErrors, gql, GraphQLResult } from '@sourcegraph/http-client'
@@ -155,7 +151,7 @@ export class Driver {
     public visitedPages: Readonly<URL>[] = []
 
     public sourcegraphBaseUrl: string
-    public browserType: 'chrome' | 'firefox'
+    public browserType: 'chrome'
     private keepBrowser: boolean
     private subscriptions = new Subscription()
 
@@ -196,7 +192,7 @@ export class Driver {
                                 ),
                                 map(message =>
                                     // Immediately format remote handles to strings, but maintain order.
-                                    formatPuppeteerConsoleMessage(page, message, this.browserType === 'firefox')
+                                    formatPuppeteerConsoleMessage(page, message)
                                 ),
                                 concatAll(),
                                 takeUntil(fromEvent(page, 'close'))
@@ -757,25 +753,8 @@ export function modifyJSONC(
     )
 }
 
-// Copied from node_modules/puppeteer-firefox/misc/install-preferences.js
-async function getFirefoxCfgPath(): Promise<string> {
-    const firefoxFolder = path.dirname(((puppeteerFirefox as unknown) as PuppeteerNode).executablePath())
-    let configPath: string
-    if (process.platform === 'darwin') {
-        configPath = path.join(firefoxFolder, '..', 'Resources')
-    } else if (process.platform === 'linux') {
-        await mkdir(path.join(firefoxFolder, 'browser', 'defaults', 'preferences'), { recursive: true })
-        configPath = firefoxFolder
-    } else if (process.platform === 'win32') {
-        configPath = firefoxFolder
-    } else {
-        throw new Error('Unsupported platform: ' + process.platform)
-    }
-    return path.join(configPath, 'puppeteer.cfg')
-}
-
 interface DriverOptions extends LaunchOptions, BrowserConnectOptions, BrowserLaunchArgumentOptions {
-    browser?: 'chrome' | 'firefox'
+    browser?: 'chrome'
 
     /** If true, load the Sourcegraph browser extension. */
     loadExtension?: boolean
@@ -816,61 +795,28 @@ export async function createDriverForTest(options?: Partial<DriverOptions>): Pro
         defaultViewport: null,
         timeout: 300000,
     }
-    let browser: puppeteer.Browser
-    if (resolvedOptions.browser === 'firefox') {
-        // Make sure CSP is disabled in FF preferences,
-        // because Puppeteer uses new Function() to evaluate code
-        // which is not allowed by the github.com CSP.
-        // The pref option does not work to disable CSP for some reason.
-        const cfgPath = await getFirefoxCfgPath()
-        const disableCspPreference = '\npref("security.csp.enable", false);\n'
-        if (!(await readFile(cfgPath, 'utf-8')).includes(disableCspPreference)) {
-            await appendFile(cfgPath, disableCspPreference)
-        }
-        if (loadExtension) {
-            const cdpPort = await getFreePort()
-            const firefoxExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'firefox')
-            // webExt.util.logger.consoleStream.makeVerbose()
-            args.push(`-juggler=${cdpPort}`)
-            if (launchOptions.headless) {
-                args.push('-headless')
-            }
-            await webExt.cmd.run(
-                {
-                    sourceDir: firefoxExtensionPath,
-                    firefox: ((puppeteer as unknown) as puppeteer.PuppeteerNode).executablePath(),
-                    args,
-                },
-                { shouldExitProgram: false }
-            )
-            const browserWSEndpoint = `ws://127.0.0.1:${cdpPort}`
-            browser = await puppeteerFirefox.connect({ browserWSEndpoint })
-        } else {
-            browser = await puppeteerFirefox.launch(launchOptions)
-        }
-    } else {
-        // Chrome
-        args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
-        if (process.getuid() === 0) {
-            // TODO don't run as root in CI
-            console.warn('Running as root, disabling sandbox')
-            args.push('--no-sandbox', '--disable-setuid-sandbox')
-        }
-        if (loadExtension) {
-            const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
-            const manifest = JSON.parse(
-                await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8')
-            ) as { permissions: string[] }
-            if (!manifest.permissions.includes('<all_urls>')) {
-                throw new Error(
-                    'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
-                )
-            }
-            args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
-        }
 
-        browser = await puppeteer.launch({ ...launchOptions })
+    // Chrome
+    args.push(`--window-size=${config.windowWidth},${config.windowHeight}`)
+    if (process.getuid() === 0) {
+        // TODO don't run as root in CI
+        console.warn('Running as root, disabling sandbox')
+        args.push('--no-sandbox', '--disable-setuid-sandbox')
     }
+    if (loadExtension) {
+        const chromeExtensionPath = path.resolve(__dirname, '..', '..', '..', 'browser', 'build', 'chrome')
+        const manifest = JSON.parse(await readFile(path.resolve(chromeExtensionPath, 'manifest.json'), 'utf-8')) as {
+            permissions: string[]
+        }
+        if (!manifest.permissions.includes('<all_urls>')) {
+            throw new Error(
+                'Browser extension was not built with permissions for all URLs.\nThis is necessary because permissions cannot be granted by e2e tests.\nTo fix, run `EXTENSION_PERMISSIONS_ALL_URLS=true yarn run dev` inside the browser/ directory.'
+            )
+        }
+        args.push(`--disable-extensions-except=${chromeExtensionPath}`, `--load-extension=${chromeExtensionPath}`)
+    }
+
+    const browser: puppeteer.Browser = await puppeteer.launch({ ...launchOptions })
 
     const page = await browser.newPage()
 

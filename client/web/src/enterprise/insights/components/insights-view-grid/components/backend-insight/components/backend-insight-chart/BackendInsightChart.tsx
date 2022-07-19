@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { FC } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -7,8 +7,10 @@ import useResizeObserver from 'use-resize-observer'
 import { useDebounce } from '@sourcegraph/wildcard'
 
 import { getLineColor, LegendItem, LegendList, ScrollBox, Series } from '../../../../../../../../charts'
+import { BarChart } from '../../../../../../../../charts/components/bar-chart/BarChart'
 import { UseSeriesToggleReturn } from '../../../../../../../../insights/utils/use-series-toggle'
-import { BackendInsightData } from '../../../../../../core'
+import { BackendInsightData, CategoricalChartContent, InsightContent } from '../../../../../../core'
+import { InsightContentType } from '../../../../../../core/types/insight/common'
 import { SeriesBasedChartTypes, SeriesChart } from '../../../../../views'
 import { BackendAlertOverlay } from '../backend-insight-alerts/BackendInsightAlerts'
 
@@ -48,19 +50,11 @@ interface BackendInsightChartProps<Datum> extends BackendInsightData {
 }
 
 export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum>): React.ReactElement {
-    const {
-        locked,
-        isFetchingHistoricalData,
-        content,
-        zeroYAxisMin,
-        className,
-        onDatumClick,
-        seriesToggleState,
-    } = props
+    const { locked, isFetchingHistoricalData, data, zeroYAxisMin, className, onDatumClick, seriesToggleState } = props
     const { ref, width = 0 } = useDebounce(useResizeObserver(), 100)
-    const { setHoveredId, isSeriesSelected, isSeriesHovered } = seriesToggleState
+    const { setHoveredId } = seriesToggleState
 
-    const hasViewManySeries = content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+    const hasViewManySeries = isManyKeysInsight(data)
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
 
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
@@ -77,47 +71,36 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         {parent => (
                             <>
                                 <BackendAlertOverlay
-                                    hasNoData={content.series.every(series => series.data.length === 0)}
+                                    hasNoData={hasData(data)}
                                     isFetchingHistoricalData={isFetchingHistoricalData}
                                     className={styles.alertOverlay}
                                 />
 
-                                <SeriesChart
-                                    type={SeriesBasedChartTypes.Line}
-                                    width={parent.width}
-                                    height={parent.height}
-                                    locked={locked}
-                                    className={styles.chart}
-                                    onDatumClick={onDatumClick}
-                                    zeroYAxisMin={zeroYAxisMin}
-                                    seriesToggleState={seriesToggleState}
-                                    {...content}
-                                />
+                                {data.type === InsightContentType.Series ? (
+                                    <SeriesChart
+                                        type={SeriesBasedChartTypes.Line}
+                                        width={parent.width}
+                                        height={parent.height}
+                                        locked={locked}
+                                        className={styles.chart}
+                                        onDatumClick={onDatumClick}
+                                        zeroYAxisMin={zeroYAxisMin}
+                                        seriesToggleState={seriesToggleState}
+                                        {...data.content}
+                                    />
+                                ) : (
+                                    <BarChart width={parent.width} height={parent.height} {...data.content} />
+                                )}
                             </>
                         )}
                     </ParentSize>
 
                     <ScrollBox className={styles.legendListContainer} onMouseLeave={() => setHoveredId(undefined)}>
-                        <LegendList className={styles.legendList}>
-                            {content.series.map(series => (
-                                <LegendItem
-                                    key={series.id as string}
-                                    color={getLineColor(series)}
-                                    name={series.name}
-                                    selected={isSeriesSelected(`${series.id}`)}
-                                    hovered={isSeriesHovered(`${series.id}`)}
-                                    className={classNames(styles.legendListItem, {
-                                        [styles.clickable]: content.series.length > 1,
-                                    })}
-                                    onClick={() =>
-                                        seriesToggleState.toggle(`${series.id}`, mapSeriesIds(content.series))
-                                    }
-                                    onMouseEnter={() => setHoveredId(`${series.id}`)}
-                                    // prevent accidental dragging events
-                                    onMouseDown={event => event.stopPropagation()}
-                                />
-                            ))}
-                        </LegendList>
+                        {data.type === InsightContentType.Series ? (
+                            <SeriesLegends series={data.content.series} seriesToggleState={seriesToggleState} />
+                        ) : (
+                            <CategoricalLegends data={data.content} />
+                        )}
                     </ScrollBox>
                 </>
             )}
@@ -125,4 +108,78 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
     )
 }
 
-const mapSeriesIds = <D,>(series: Series<D>[]): string[] => series.map(series => `${series.id}`)
+const isManyKeysInsight = (data: InsightContent<any>): boolean => {
+    if (data.type === InsightContentType.Series) {
+        return data.content.series.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+    }
+
+    return data.content.data.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
+}
+
+const hasData = (data: InsightContent<any>): boolean => {
+    if (data.type === InsightContentType.Series) {
+        return data.content.series.every(series => series.data.length === 0)
+    }
+
+    return data.content.data.length === 0
+}
+
+interface SeriesLegendsProps {
+    series: Series<any>[]
+    seriesToggleState: UseSeriesToggleReturn
+}
+
+const SeriesLegends: FC<SeriesLegendsProps> = props => {
+    const { series, seriesToggleState } = props
+
+    const { setHoveredId, isSeriesSelected, isSeriesHovered, toggle } = seriesToggleState
+
+    return (
+        <LegendList className={styles.legendList}>
+            {series.map(item => (
+                <LegendItem
+                    key={item.id as string}
+                    color={getLineColor(item)}
+                    name={item.name}
+                    selected={isSeriesSelected(`${item.id}`)}
+                    hovered={isSeriesHovered(`${item.id}`)}
+                    className={classNames(styles.legendListItem, {
+                        [styles.clickable]: series.length > 1,
+                    })}
+                    onClick={() =>
+                        toggle(
+                            `${item.id}`,
+                            series.map(series => `${series.id}`)
+                        )
+                    }
+                    onMouseEnter={() => setHoveredId(`${item.id}`)}
+                    // prevent accidental dragging events
+                    onMouseDown={event => event.stopPropagation()}
+                />
+            ))}
+        </LegendList>
+    )
+}
+
+interface CategoricalLegendsProps {
+    data: CategoricalChartContent<any>
+}
+
+const CategoricalLegends: FC<CategoricalLegendsProps> = props => {
+    const { data } = props
+
+    return (
+        <LegendList className={styles.legendList}>
+            {data.data.map(item => (
+                <LegendItem
+                    key={item.id as string}
+                    color={data.getDatumColor(item) ?? 'gray'}
+                    name={data.getDatumName(item)}
+                    className={styles.legendListItem}
+                    // prevent accidental dragging events
+                    onMouseDown={event => event.stopPropagation()}
+                />
+            ))}
+        </LegendList>
+    )
+}

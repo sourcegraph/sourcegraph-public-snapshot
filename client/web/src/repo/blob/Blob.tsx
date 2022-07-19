@@ -866,7 +866,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
  * from the current ones. This prevents adding a new entry when e.g. the user
  * clicks the same line multiple times.
  */
-function updateBrowserHistoryIfNecessary(
+export function updateBrowserHistoryIfNecessary(
     history: H.History,
     location: H.Location,
     newSearchParameters: URLSearchParams

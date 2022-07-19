@@ -2,9 +2,14 @@ package runner
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/base64"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/jackc/pgconn"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log"
 
@@ -49,6 +54,7 @@ func (r *Runner) Run(ctx context.Context, options Options) error {
 			operationMap[schemaName],
 			schemaContext,
 			options.PrivilegedMode,
+			options.PrivilegedHash,
 			options.IgnoreSingleDirtyLog,
 		); err != nil {
 			return errors.Wrapf(err, "failed to run migration for schema %q", schemaName)
@@ -67,6 +73,7 @@ func (r *Runner) runSchema(
 	operation MigrationOperation,
 	schemaContext schemaContext,
 	privilegedMode PrivilegedMode,
+	privilegedHash string,
 	ignoreSingleDirtyLog bool,
 ) error {
 	// First, rewrite operations into a smaller set of operations we'll handle below. This call converts
@@ -136,6 +143,7 @@ func (r *Runner) runSchema(
 			schemaContext,
 			definitions,
 			privilegedMode,
+			privilegedHash,
 			ignoreSingleDirtyLog,
 		); err != nil {
 			return err
@@ -158,12 +166,11 @@ func (r *Runner) applyMigrations(
 	schemaContext schemaContext,
 	definitions []definition.Definition,
 	privilegedMode PrivilegedMode,
+	privilegedHash string,
 	ignoreSingleDirtyLog bool,
 ) (retry bool, _ error) {
-	var (
-		droppedLock bool
-		up          = operation.Type == MigrationOperationTypeTargetedUp
-	)
+	var droppedLock bool
+	up := operation.Type == MigrationOperationTypeTargetedUp
 
 	callback := func(schemaVersion schemaVersion, _ definitionsByState, earlyUnlock unlockFunc) error {
 		// Filter the set of definitions we still need to apply given our new view of the schema
@@ -179,6 +186,14 @@ func (r *Runner) applyMigrations(
 			log.Bool("up", up),
 			log.Int("count", len(definitions)),
 		)
+
+		// Print a warning message or block the application of privileged migrations, depending on the
+		// flags specified by the user. A nil error value returned here indicates that application of
+		// each migration file can proceed.
+
+		if err := r.checkPrivilegedState(operation, schemaContext, definitions, privilegedMode, privilegedHash); err != nil {
+			return err
+		}
 
 		for _, definition := range definitions {
 			if up && definition.IsCreateIndexConcurrently {
@@ -216,6 +231,91 @@ func (r *Runner) applyMigrations(
 	return droppedLock, nil
 }
 
+// checkPrivilegedState determines if we should fail-fast or print a warning about privileged migration
+// behavior given the set of definitions to apply.
+func (r *Runner) checkPrivilegedState(
+	operation MigrationOperation,
+	schemaContext schemaContext,
+	definitions []definition.Definition,
+	privilegedMode PrivilegedMode,
+	expectedPrivilegedHash string,
+) error {
+	up := operation.Type == MigrationOperationTypeTargetedUp
+
+	if privilegedMode == ApplyPrivilegedMigrations || (privilegedMode == RefusePrivilegedMigrations && !up) {
+		// We will either apply all migrations, or we are downgrading and do not want to
+		// fail-fast as the user is not expected to front-load the removal of extensions,
+		// which could trivially break down migrations defined after the inclusion of the
+		// extension. In the latter case, we want to fail only at the point where the down
+		// migration can be safely applied.
+		return nil
+	}
+
+	// Gather only the privileged definitions
+	privilegedDefinitions := make([]definition.Definition, 0, len(definitions))
+	for _, definition := range definitions {
+		if definition.Privileged {
+			privilegedDefinitions = append(privilegedDefinitions, definition)
+		}
+	}
+	if len(privilegedDefinitions) == 0 {
+		// All migrations are unprivileged
+		return nil
+	}
+
+	// Extract IDs from privileged definitions
+	privilegedDefinitionIDs := make([]int, 0, len(privilegedDefinitions))
+	for _, definition := range privilegedDefinitions {
+		privilegedDefinitionIDs = append(privilegedDefinitionIDs, definition.ID)
+	}
+
+	if privilegedMode == RefusePrivilegedMigrations {
+		// The condition at the top of this function ensures that we're migrating up. In
+		// this case, we want to fail-fast and alert the user that they should run a set
+		// of privileged migrations manually before proceeding.
+		return newPrivilegedMigrationError(operation.SchemaName, privilegedDefinitionIDs...)
+	}
+
+	if privilegedMode == NoopPrivilegedMigrations {
+		// The user has enabled a mode where we assume the contents of the privileged migrations
+		// have already been applied, or in the down direction will be applied after this operation.
+
+		if privilegedHash := hashDefinitionIDs(privilegedDefinitionIDs); privilegedHash != expectedPrivilegedHash && up {
+			// In order to ensure the user reads the following instructions for this operation, we
+			// fail-fast equivalently to the -unprivileged-only case when a hash of the privileged
+			// migrations to-be-applied is not also supplied.
+
+			if expectedPrivilegedHash != "" {
+				r.logger.Error(
+					"Unexpected value provided for -privileged-hash for this operation. This value is likely left over from an invocation of privileged migrations during a previous upgrade.",
+					log.String("schema", schemaContext.schema.Name),
+					log.String("given", expectedPrivilegedHash),
+					log.String("expected", privilegedHash),
+				)
+			}
+
+			return errors.Newf(
+				"refusing to apply a privileged migration: apply the following SQL and re-run with the added flag `-privileged-hash=%s` to continue.\n\n```\n%s\n```\n",
+				privilegedHash,
+				concatenateSQL(privilegedDefinitions, up),
+			)
+		}
+
+		message := "The migrator assumes that the following SQL queries have already been applied. Failure to have done so may cause the following operation to fail."
+		if !up {
+			message = "The following SQL queries must be applied after the downgrade operation is complete."
+		}
+
+		r.logger.Warn(
+			message,
+			log.String("schema", schemaContext.schema.Name),
+			log.String("sql", concatenateSQL(privilegedDefinitions, up)),
+		)
+	}
+
+	return nil
+}
+
 // applyMigration applies the given migration in the direction indicated by the given operation.
 func (r *Runner) applyMigration(
 	ctx context.Context,
@@ -228,7 +328,7 @@ func (r *Runner) applyMigration(
 
 	if definition.Privileged {
 		if privilegedMode == RefusePrivilegedMigrations {
-			return newPrivilegedMigrationError(operation.SchemaName, definition)
+			return newPrivilegedMigrationError(operation.SchemaName, definition.ID)
 		}
 
 		if privilegedMode == NoopPrivilegedMigrations {
@@ -445,4 +545,34 @@ func filterAppliedDefinitions(
 	}
 
 	return filtered
+}
+
+// concatenateSQL renders and concatenates the query text of each of the given migration definitions,
+// depending on the given migration direction. The output will wrap the concatenated SQL in a single
+// transaction, and the source of each query will be identified via a SQL comment.
+func concatenateSQL(definitions []definition.Definition, up bool) string {
+	migrationContents := make([]string, 0, len(definitions))
+	for _, definition := range definitions {
+		migrationContents = append(migrationContents, fmt.Sprintf("-- Migration %d\n%s\n", definition.ID, strings.TrimSpace(renderQuery(definition, up))))
+	}
+
+	return fmt.Sprintf("BEGIN;\n\n%s\nCOMMIT;\n", strings.Join(migrationContents, "\n"))
+}
+
+// renderQuery returns the string representation of the definition's SQL query.
+func renderQuery(definition definition.Definition, up bool) string {
+	query := definition.UpQuery
+	if !up {
+		query = definition.DownQuery
+	}
+
+	return query.Query(sqlf.PostgresBindVar)
+
+}
+
+// hashDefinitionIDs returns a deterministic hash of the given definition IDs.
+func hashDefinitionIDs(ids []int) string {
+	hasher := sha1.New()
+	hasher.Write([]byte(strings.Join(intsToStrings(ids), ",")))
+	return base64.StdEncoding.EncodeToString(hasher.Sum(nil))
 }

@@ -17,7 +17,7 @@ import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculator } from '../components/TimeSavedCalculatorGroup'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
-import { StandardDatum, buildStandardDatum } from '../utils'
+import { StandardDatum } from '../utils'
 
 import { BATCHCHANGES_STATISTICS } from './queries'
 
@@ -44,11 +44,11 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                 id: 'changesets_created',
                 name: 'Changesets created',
                 color: 'var(--orange)',
-                data: buildStandardDatum(
-                    changesetsCreated.nodes.map(node => ({
+                data: changesetsCreated.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node.count,
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -58,11 +58,11 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                 id: 'changesets_merged',
                 name: 'Changesets merged',
                 color: 'var(--cyan)',
-                data: buildStandardDatum(
-                    changesetsMerged.nodes.map(node => ({
+                data: changesetsMerged.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node.count,
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -83,6 +83,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
         ]
 
         const calculatorProps = {
+            page: 'BatchChanges',
             label: 'Changesets merged',
             color: 'var(--cyan)',
             value: changesetsMerged.summary.totalCount,
@@ -111,7 +112,10 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                     <HorizontalSelect<AnalyticsDateRange>
                         value={dateRange}
                         label="Date&nbsp;range"
-                        onChange={setDateRange}
+                        onChange={value => {
+                            setDateRange(value)
+                            eventLogger.log(`AdminAnalyticsBatchChangesDateRange${value}Selected`)
+                        }}
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
