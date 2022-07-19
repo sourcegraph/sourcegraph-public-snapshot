@@ -16,6 +16,7 @@ import {
     CreatedChangeset,
     createTag,
     ensureTrackingIssues,
+    closeTrackingIssue,
     releaseName,
     commentOnIssue,
     queryIssues,
@@ -52,6 +53,7 @@ export type StepID =
     | 'release:add-to-batch-change'
     | 'release:finalize'
     | 'release:announce'
+    | 'release:close'
     // util
     | 'util:clear-cache'
     // testing
@@ -757,6 +759,16 @@ ${patchRequestIssues.map(issue => `* #${issue.number}`).join('\n')}`
                 }
             }
         },
+    },
+    {
+        id: 'release:close',
+        description: 'Close tracking issues for current release',
+        run: async config => {
+            const { previous: release } = await releaseVersions(config)
+            // close previous previous tracking issue
+            await closeTrackingIssue(release)
+
+        }
     },
     {
         id: 'util:clear-cache',
