@@ -33,5 +33,35 @@
     "path": "internal/database",
     "prefix": "TestBitbucketProjectPermissionsEnqueue",
     "reason": "Used SELECT * in test, which is not backwards compatible. The actual code doesn't."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestBatchSpecWorkspaceResolver",
+    "reason": "Forgot to add userIDs to some records in tests, which fails now but is backwards compatible for app code."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestBatchSpecResolver_BatchSpecCreatedFromRaw",
+    "reason": "Forgot to add userIDs to some records in tests, which fails now but is backwards compatible for app code."
+  },
+  {
+    "path": "enterprise/internal/batches/service",
+    "prefix": "TestService",
+    "reason": "Forgot to add userIDs to some records in tests, which fails now but is backwards compatible for app code."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete",
+    "reason": "Forgot to add userIDs to some records in tests, which fails now but is backwards compatible for app code."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestBatchSpecWorkspaceExecutionWorkerStore_MarkFailed",
+    "reason": "Forgot to add userIDs to some records in tests, which fails now but is backwards compatible for app code."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestBatchSpecWorkspaceExecutionWorkerStore_MarkComplete_EmptyDiff",
+    "reason": "Forgot to add userIDs to some records in tests, which fails now but is backwards compatible for app code."
   }
 ]
