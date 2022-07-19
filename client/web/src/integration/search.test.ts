@@ -165,6 +165,7 @@ describe('Search', () => {
                                         containerName: 'jwtmiddleware',
                                         url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go#L56:1-56:14',
                                         kind: SymbolKind.FUNCTION,
+                                        line: 56,
                                     },
                                 ],
                                 path: 'jwtmiddleware.go',
