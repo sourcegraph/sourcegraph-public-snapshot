@@ -23,5 +23,15 @@
     "path": "internal/database",
     "prefix": "TestEventLogs_CodeIntelligenceSettingsPageViewCounts",
     "reason": "Unclear why this is failing; disabling to unblock CI. Re-enabling tracked in https://github.com/sourcegraph/sourcegraph/issues/37623"
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestScanFirstBitbucketProjectPermissionsJob",
+    "reason": "Used SELECT * in test, which is not backwards compatible. The actual code doesn't."
+  },
+  {
+    "path": "internal/database",
+    "prefix": "TestBitbucketProjectPermissionsEnqueue",
+    "reason": "Used SELECT * in test, which is not backwards compatible. The actual code doesn't."
   }
 ]
