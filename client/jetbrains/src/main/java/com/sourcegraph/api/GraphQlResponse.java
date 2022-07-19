@@ -3,7 +3,7 @@ package com.sourcegraph.api;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.google.gson.JsonSyntaxException;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 
 public class GraphQlResponse {
     private final int statusCode;
@@ -18,11 +18,7 @@ public class GraphQlResponse {
         return statusCode;
     }
 
-    @Nullable
-    public String getBody() {
-        return body;
-    }
-
+    @NotNull
     public JsonObject getBodyAsJson() throws JsonSyntaxException {
         return JsonParser.parseString(body).getAsJsonObject();
     }

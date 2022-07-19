@@ -84,11 +84,6 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
     }
 
     @Nullable
-    public SourcegraphJBCefBrowser getBrowser() {
-        return browser;
-    }
-
-    @Nullable
     public PreviewPanel getPreviewPanel() {
         return previewPanel;
     }

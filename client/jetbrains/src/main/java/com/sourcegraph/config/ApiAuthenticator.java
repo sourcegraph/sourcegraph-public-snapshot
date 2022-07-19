@@ -2,6 +2,7 @@ package com.sourcegraph.config;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonSyntaxException;
 import com.intellij.openapi.diagnostic.Logger;
 import com.sourcegraph.api.GraphQlClient;
 import com.sourcegraph.api.GraphQlResponse;
@@ -31,7 +32,7 @@ public class ApiAuthenticator {
                 } else {
                     callback.accept(ConnectionStatus.COULD_NOT_CONNECT);
                 }
-            } catch (IOException e) {
+            } catch (IOException | JsonSyntaxException e) {
                 logger.info(e);
             }
         }).start();
