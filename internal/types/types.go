@@ -154,7 +154,8 @@ func (r *Repo) IsBlocked() error {
 type RepoModified uint64
 
 const (
-	RepoModifiedName RepoModified = 1 << iota
+	RepoUnmodified   RepoModified = 0
+	RepoModifiedName              = 1 << iota
 	RepoModifiedURI
 	RepoModifiedDescription
 	RepoModifiedExternalRepo
@@ -164,8 +165,6 @@ const (
 	RepoModifiedStars
 	RepoModifiedMetadata
 	RepoModifiedSources
-
-	RepoUnmodified RepoModified = 0
 )
 
 func (m RepoModified) String() string {
