@@ -15,9 +15,9 @@ func NewExpirer(store DBStore, policyMatcher PolicyMatcher, metrics *metrics) go
 		policyMatcher: policyMatcher,
 		metrics:       metrics,
 		logger: log.Scoped("NewExpirer", "").With(
-			log.String("dbStore", fmt.Sprint(store)),
-			log.String("policyMatcher", fmt.Sprint(policyMatcher)),
-			log.String("metrics", fmt.Sprint(metrics)),
+			log.String("dbStore", fmt.Sprintf("%v", store)),
+			log.String("policyMatcher", fmt.Sprintf("%v", policyMatcher)),
+			log.String("metrics", fmt.Sprintf("%v", metrics)),
 		),
 	})
 }
