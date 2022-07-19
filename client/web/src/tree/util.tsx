@@ -2,7 +2,6 @@ import React from 'react'
 
 import { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 
-import { TreeLayerProps } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
 
 /** TreeEntryInfo is the information we need to render an entry in the file tree */
@@ -95,7 +94,9 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
 }
 
-export function compareTreeProps(a: TreeLayerProps | TreeRootProps, b: TreeLayerProps | TreeRootProps): boolean {
+interface ComparisonTreeRootProps extends Omit<TreeRootProps, 'sizeKey'> { }
+
+export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRootProps): boolean {
     return a.repoName === b.repoName &&
         a.revision === b.revision &&
         a.commitID === b.commitID &&

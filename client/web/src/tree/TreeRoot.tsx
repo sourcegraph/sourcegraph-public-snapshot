@@ -169,7 +169,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element | null {
+    public render(): JSX.Element {
         const { treeOrError } = this.state
 
         let singleChildTreeEntry = {} as SingleChildGitTree
