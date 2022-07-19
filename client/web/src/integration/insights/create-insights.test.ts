@@ -171,7 +171,7 @@ describe('Code insight create insight page', () => {
                             },
                             dashboardReferenceCount: 0,
                             dashboards: { nodes: [] },
-                            seriesCount: 2,
+
                             presentation: {
                                 __typename: 'LineChartInsightViewPresentation',
                                 title: 'Test insight title',
