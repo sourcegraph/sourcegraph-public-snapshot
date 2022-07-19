@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 
@@ -94,36 +95,6 @@ func (s *vcsPackagesSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL
 	return exec.CommandContext(ctx, "git", "--version"), nil
 }
 
-// it's safe to silently ignore this error because there's no problem that needs to be fixed
-// if the version is already synced.
-var errVersionAlreadySynced = errors.New("version already synced")
-
-func (s *vcsPackagesSyncer) lazySyncRequestedVersion(ctx context.Context, dir GitDir, name reposource.PackageName, existingVersions []string, requestedVersion string) error {
-	for _, existingVersion := range existingVersions {
-		if existingVersion == requestedVersion {
-			return errVersionAlreadySynced
-		}
-	}
-	dep, err := s.source.ParseVersionedPackageFromNameAndVersion(name, requestedVersion)
-	if err != nil {
-		return err
-	}
-	err = s.gitPushDependencyTag(ctx, string(dir), dep)
-	if err != nil {
-		return err
-	}
-	// silently ignore errors
-	_, err = s.svc.UpsertDependencyRepos(ctx, []dependencies.Repo{
-		{
-			ID:      0,
-			Scheme:  dep.Scheme(),
-			Name:    dep.PackageSyntax(),
-			Version: dep.PackageVersion(),
-		},
-	})
-	return err
-}
-
 func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) (err error) {
 	var dep reposource.Package
 	dep, err = s.source.ParsePackageFromRepoName(api.RepoName(remoteURL.Path))
@@ -132,12 +103,6 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 	}
 
 	depName := dep.PackageSyntax()
-
-	var versions []string
-	versions, err = s.versions(ctx, depName)
-	if err != nil {
-		return err
-	}
 
 	if revspec != "" {
 		// Optionally try to resolve the version of the user-provided revspec (formatted as `"v${VERSION}^0"`).
@@ -153,10 +118,26 @@ func (s *vcsPackagesSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir G
 		// a git commit SHA. It should be harmless if the string is invalid, worst case the resolution fails
 		// and we silently ignore the error.
 		requestedVersion := strings.TrimSuffix(strings.TrimPrefix(revspec, "v"), "^0")
-		err = s.lazySyncRequestedVersion(ctx, dir, depName, versions, requestedVersion)
-		if err == nil {
-			versions = append(versions, requestedVersion)
-		} // else silently ignore error, see comment above why.
+		requestedDep, err := s.source.ParseVersionedPackageFromNameAndVersion(depName, requestedVersion)
+		if err != nil {
+			return err
+		}
+		_, err = s.svc.UpsertDependencyRepos(ctx, []dependencies.Repo{
+			{
+				Name:    requestedDep.PackageSyntax(),
+				Scheme:  requestedDep.Scheme(),
+				Version: requestedDep.PackageVersion(),
+			},
+		})
+		if err != nil {
+			return err
+		}
+	}
+
+	var versions []string
+	versions, err = s.versions(ctx, depName)
+	if err != nil {
+		return err
 	}
 
 	var errs errors.MultiError
