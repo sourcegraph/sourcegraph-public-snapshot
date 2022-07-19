@@ -11,7 +11,7 @@ import styles from './BatchChangesListIntro.module.scss'
 export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
     <DismissibleAlert
         className={styles.batchChangesListIntroAlert}
-        partialStorageKey="batch-changes-list-intro-changelog-3.41"
+        partialStorageKey="batch-changes-list-intro-changelog-3.42"
     >
         <Card className={classNames(styles.batchChangesListIntroCard, 'h-100')}>
             <CardBody>
