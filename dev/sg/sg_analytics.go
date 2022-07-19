@@ -24,15 +24,15 @@ var analyticsCommand = &cli.Command{
 			Name:        "submit",
 			ArgsUsage:   " ",
 			Usage:       "Make sg better by submitting all analytics stored locally!",
-			Description: "Requires HONEYCOMB_API_TOKEN or OTEL_EXPORTER_OTLP_ENDPOINT to be set.",
+			Description: "Requires HONEYCOMB_ENV_TOKEN or OTEL_EXPORTER_OTLP_ENDPOINT to be set.",
 			Action: func(cmd *cli.Context) error {
-				honeyToken := os.Getenv("HONEYCOMB_API_TOKEN")
+				honeyToken := os.Getenv("HONEYCOMB_ENV_TOKEN")
 				if honeyToken == "" && os.Getenv("OTEL_EXPORTER_OTLP_ENDPOINT") == "" {
 					// we leave OTEL_EXPORTER_OTLP_ENDPOINT configuration a bit of a
 					// hidden thing, most users will want to just send to Honeycomb
 					//
 					// TODO: follow up with fetching secrets from somewhere
-					return errors.New("HONEYCOMB_API_TOKEN not set")
+					return errors.New("HONEYCOMB_ENV_TOKEN not set")
 				}
 
 				pending := std.Out.Pending(output.Line(output.EmojiHourglass, output.StylePending, "Hang tight! We're submitting your analytics"))
