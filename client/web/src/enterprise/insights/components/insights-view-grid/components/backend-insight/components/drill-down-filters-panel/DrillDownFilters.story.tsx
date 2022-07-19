@@ -20,6 +20,13 @@ export const DrillDownPopover: Story = () => {
         excludeRepoRegexp: 'EXCLUDE',
         includeRepoRegexp: '',
         context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
     }
     const insight: BackendInsight = {
         id: 'example',
@@ -33,6 +40,7 @@ export const DrillDownPopover: Story = () => {
         filters: initialFiltersValue,
         dashboardReferenceCount: 0,
         dashboards: [],
+        seriesCount: 0,
     }
 
     return (
@@ -46,14 +54,6 @@ export const DrillDownPopover: Story = () => {
             onFilterSave={log('onFilterSave')}
             onInsightCreate={log('onInsightCreate')}
             onVisibilityChange={log('onVisibilityChange')}
-            originalSeriesDisplayOptions={{
-                limit: 20,
-                sortOptions: {
-                    direction: SeriesSortDirection.DESC,
-                    mode: SeriesSortMode.RESULT_COUNT,
-                },
-            }}
-            onSeriesDisplayOptionsChange={log('onSeriesDisplayOptionsChange')}
         />
     )
 }

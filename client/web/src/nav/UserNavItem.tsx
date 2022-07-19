@@ -1,13 +1,14 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useCallback, useMemo } from 'react'
 
 import { mdiChevronDown, mdiChevronUp, mdiOpenInNew } from '@mdi/js'
 import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 // eslint-disable-next-line no-restricted-imports
-import { Tooltip } from 'reactstrap'
 
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
 import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
 import { KEYBOARD_SHORTCUT_SHOW_HELP } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
     Menu,
@@ -15,7 +16,6 @@ import {
     MenuDivider,
     MenuHeader,
     MenuItem,
-    useTimeoutManager,
     MenuLink,
     MenuList,
     Link,
@@ -24,6 +24,7 @@ import {
     Select,
     Icon,
     Badge,
+    ProductStatusBadge,
 } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
@@ -34,7 +35,7 @@ import { UserAvatar } from '../user/UserAvatar'
 
 import styles from './UserNavItem.module.scss'
 
-export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, ExtensionAlertAnimationProps {
+export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
     authenticatedUser: Pick<
         AuthenticatedUser,
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
@@ -45,37 +46,6 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps, Exte
     showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
-}
-
-export interface ExtensionAlertAnimationProps {
-    isExtensionAlertAnimating: boolean
-}
-
-/**
- * React hook to manage the animation that occurs after the user dismisses
- * `InstallBrowserExtensionAlert`.
- *
- * This hook is called from the the LCA of `UserNavItem` and the component that triggers
- * the animation.
- */
-export function useExtensionAlertAnimation(): ExtensionAlertAnimationProps & {
-    startExtensionAlertAnimation: () => void
-} {
-    const [isAnimating, setIsAnimating] = useState(false)
-
-    const animationManager = useTimeoutManager()
-
-    const startExtensionAlertAnimation = useCallback(() => {
-        if (!isAnimating) {
-            setIsAnimating(true)
-
-            animationManager.setTimeout(() => {
-                setIsAnimating(false)
-            }, 5100)
-        }
-    }, [isAnimating, animationManager])
-
-    return { isExtensionAlertAnimating: isAnimating, startExtensionAlertAnimation }
 }
 
 /**
@@ -103,7 +73,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
         menuButtonRef,
         themePreference,
         onThemePreferenceChange,
-        isExtensionAlertAnimating,
         codeHostIntegrationMessaging,
         position = Position.bottomEnd,
     } = props
@@ -123,6 +92,8 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
     const onThemeCycle = useCallback((): void => {
         onThemePreferenceChange(themePreference === ThemePreference.Dark ? ThemePreference.Light : ThemePreference.Dark)
     }, [onThemePreferenceChange, themePreference])
+
+    const [coreWorkflowImprovementsEnabled, setCoreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
@@ -155,21 +126,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     <Icon svgPath={isExpanded ? mdiChevronUp : mdiChevronDown} aria-hidden={true} />
                                 </div>
                             </div>
-                            {isExtensionAlertAnimating && (
-                                <Tooltip
-                                    target={targetID}
-                                    placement="bottom"
-                                    isOpen={true}
-                                    modifiers={{
-                                        offset: {
-                                            offset: '0, 10px',
-                                        },
-                                    }}
-                                    className={styles.tooltip}
-                                >
-                                    Install the browser extension from here later
-                                </Tooltip>
-                            )}
                         </MenuButton>
 
                         <MenuList position={position} className={styles.dropdownMenu} aria-label="User. Open menu">
@@ -240,6 +196,17 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                         </small>
                                     </div>
                                 )}
+                            </div>
+                            <div className="px-2 py-1">
+                                <div className="d-flex align-items-center justify-content-between">
+                                    <div className="mr-2">
+                                        Simple UI <ProductStatusBadge status="beta" className="ml-1" />
+                                    </div>
+                                    <Toggle
+                                        value={coreWorkflowImprovementsEnabled}
+                                        onToggle={setCoreWorkflowImprovementsEnabled}
+                                    />
+                                </div>
                             </div>
                             {!isOpenBetaEnabled && props.authenticatedUser.organizations.nodes.length > 0 && (
                                 <>

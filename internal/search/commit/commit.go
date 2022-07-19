@@ -94,8 +94,8 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		return doSearch(args)
 	}
 
-	repos := searchrepos.Resolver{DB: clients.DB, Opts: j.RepoOpts}
-	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.NewResolver(clients.DB)
+	return nil, repos.Paginate(ctx, j.RepoOpts, func(page *searchrepos.Resolved) error {
 		g := group.New().WithContext(ctx).WithMaxConcurrency(j.Concurrency).WithFirstError()
 
 		for _, repoRev := range page.RepoRevs {
@@ -235,13 +235,11 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 	return gitprotocol.Reduce(gitprotocol.NewAnd(res...))
 }
 
-func searchRevsToGitserverRevs(in []search.RevisionSpecifier) []gitprotocol.RevisionSpecifier {
+func searchRevsToGitserverRevs(in []string) []gitprotocol.RevisionSpecifier {
 	out := make([]gitprotocol.RevisionSpecifier, 0, len(in))
 	for _, rev := range in {
 		out = append(out, gitprotocol.RevisionSpecifier{
-			RevSpec:        rev.RevSpec,
-			RefGlob:        rev.RefGlob,
-			ExcludeRefGlob: rev.ExcludeRefGlob,
+			RevSpec: rev,
 		})
 	}
 	return out

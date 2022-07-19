@@ -14,7 +14,6 @@ import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
 import { ConnectGitHubAppPage } from './org/settings/codeHosts/ConnectGitHubAppPage'
 import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
-import type { ExtensionAlertProps } from './repo/actions/InstallIntegrationsAlert'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
@@ -37,7 +36,6 @@ export interface LayoutRouteComponentProps<RouteParameters extends { [K in keyof
         ThemePreferenceProps,
         BreadcrumbsProps,
         BreadcrumbSetters,
-        ExtensionAlertProps,
         CodeIntelligenceProps,
         BatchChangesProps {
     isSourcegraphDotCom: boolean

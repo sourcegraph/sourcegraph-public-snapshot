@@ -10,7 +10,7 @@ import { parse as _parseVersion, SemVer } from 'semver'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, useObservable, Alert, Icon, Code, H2, H3, Text } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useObservable, Alert, Icon, Code, H2, H3, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { Collapsible } from '../components/Collapsible'
 import { FilteredConnection, FilteredConnectionFilter, Connection } from '../components/FilteredConnection'
@@ -316,19 +316,19 @@ const MigrationNode: React.FunctionComponent<React.PropsWithChildren<MigrationNo
                     {Math.floor(node.progress * 100)}%
                 </div>
 
-                <div>
-                    <meter
-                        min={0}
-                        low={0.2}
-                        high={0.8}
-                        max={1}
-                        optimum={1}
-                        value={node.progress}
-                        data-tooltip={`${Math.floor(node.progress * 100)}%`}
-                        aria-label="migration progress"
-                        data-placement="bottom"
-                    />
-                </div>
+                <Tooltip content={`${Math.floor(node.progress * 100)}%`} placement="bottom">
+                    <div>
+                        <meter
+                            min={0}
+                            low={0.2}
+                            high={0.8}
+                            max={1}
+                            optimum={1}
+                            value={node.progress}
+                            aria-label="migration progress"
+                        />
+                    </div>
+                </Tooltip>
 
                 {node.lastUpdated && node.lastUpdated !== '' && (
                     <>

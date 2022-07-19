@@ -5,9 +5,9 @@ import classNames from 'classnames'
 
 import { Text } from '@sourcegraph/wildcard'
 
-import { formatNumber } from '../lib'
+import { formatNumber } from '../utils'
 
-import styles from '../index.module.scss'
+import styles from './index.module.scss'
 
 interface ValueLegendItemProps {
     color: string
@@ -16,7 +16,7 @@ interface ValueLegendItemProps {
 }
 
 const ValueLegendItem: React.FunctionComponent<ValueLegendItemProps> = ({ value, color, description }) => (
-    <div className="d-flex flex-column align-items-center mr-3 justify-content-center">
+    <div className="d-flex flex-column align-items-center mr-4 justify-content-center">
         <span style={{ color }} className={styles.count}>
             {formatNumber(value)}
         </span>

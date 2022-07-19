@@ -1324,7 +1324,7 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				RepoID: repoID,
+				RepoIDs: []api.RepoID{repoID},
 			},
 		},
 		// onlyClosable changesets
@@ -1523,6 +1523,7 @@ func TestDeleteBatchChangesCredential(t *testing.T) {
 	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -2170,6 +2171,7 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 	pruneUserCredentials(t, db, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
+	ctx = actor.WithActor(ctx, actor.FromUser(userID))
 
 	cstore := store.New(db, &observation.TestContext, nil)
 
@@ -2355,5 +2357,5 @@ query($includeLocallyExecutedSpecs: Boolean!) {
 func stringPtr(s string) *string { return &s }
 
 func newSchema(db database.DB, r graphqlbackend.BatchChangesResolver) (*graphql.Schema, error) {
-	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	return graphqlbackend.NewSchema(db, r, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 }

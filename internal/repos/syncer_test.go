@@ -601,7 +601,7 @@ func testSyncerSync(s repos.Store) func(*testing.T) {
 				}
 
 				var want, have types.Repos
-				want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified)
+				want.Concat(tc.diff.Added, tc.diff.Modified, tc.diff.Unmodified, tc.diff.ArchivedChanged)
 				have, _ = st.RepoStore().List(ctx, database.ReposListOptions{})
 
 				want = want.With(typestest.Opt.RepoID(0))
@@ -655,45 +655,92 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 		})
 
 		testCases := []struct {
-			name          string
-			repo          api.RepoName
-			background    bool
-			before, after types.Repos
-			returned      *types.Repo
+			name       string
+			repo       api.RepoName
+			background bool        // whether to run SyncRepo in the background
+			before     types.Repos // the repos to insert into the database before syncing
+			sourced    *types.Repo // the repo that is returned by the fake sourcer
+			returned   *types.Repo // the expected return value from SyncRepo (which changes meaning depending on background)
+			after      types.Repos // the expected database repos after syncing
+			diff       repos.Diff  // the expected repos.Diff sent by the syncer
 		}{{
 			name:       "insert",
 			repo:       repo.Name,
 			background: true,
+			sourced:    repo.Clone(),
 			returned:   repo,
 			after:      types.Repos{repo},
+			diff: repos.Diff{
+				Added: types.Repos{repo},
+			},
 		}, {
 			name:       "update",
 			repo:       repo.Name,
 			background: true,
 			before:     types.Repos{oldRepo},
+			sourced:    repo.Clone(),
 			returned:   oldRepo,
 			after:      types.Repos{repo},
+			diff: repos.Diff{
+				Modified: types.Repos{repo},
+			},
 		}, {
 			name:       "blocking update",
 			repo:       repo.Name,
 			background: false,
 			before:     types.Repos{oldRepo},
+			sourced:    repo.Clone(),
 			returned:   repo,
 			after:      types.Repos{repo},
+			diff: repos.Diff{
+				Modified: types.Repos{repo},
+			},
 		}, {
 			name:       "update name",
 			repo:       repo.Name,
 			background: true,
 			before:     types.Repos{repo.With(typestest.Opt.RepoName("old/name"))},
+			sourced:    repo.Clone(),
 			returned:   repo,
 			after:      types.Repos{repo},
+			diff: repos.Diff{
+				Modified: types.Repos{repo},
+			},
+		}, {
+			name:       "archived",
+			repo:       repo.Name,
+			background: true,
+			before:     types.Repos{repo},
+			sourced:    repo.With(typestest.Opt.RepoArchived(true)),
+			returned:   repo,
+			after:      types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
+			diff: repos.Diff{
+				Modified:        types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
+				ArchivedChanged: types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
+			},
+		}, {
+			name:       "unarchived",
+			repo:       repo.Name,
+			background: true,
+			before:     types.Repos{repo.With(typestest.Opt.RepoArchived(true))},
+			sourced:    repo.Clone(),
+			returned:   repo.With(typestest.Opt.RepoArchived(true)),
+			after:      types.Repos{repo},
+			diff: repos.Diff{
+				Modified:        types.Repos{repo},
+				ArchivedChanged: types.Repos{repo},
+			},
 		}, {
 			name:       "delete conflicting name",
 			repo:       repo.Name,
 			background: true,
 			before:     types.Repos{repo.With(typestest.Opt.RepoExternalID("old id"))},
+			sourced:    repo.Clone(),
 			returned:   repo.With(typestest.Opt.RepoExternalID("old id")),
 			after:      types.Repos{repo},
+			diff: repos.Diff{
+				Modified: types.Repos{repo},
+			},
 		}, {
 			name:       "rename and delete conflicting name",
 			repo:       repo.Name,
@@ -702,8 +749,12 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 				repo.With(typestest.Opt.RepoExternalID("old id")),
 				repo.With(typestest.Opt.RepoName("old name")),
 			},
+			sourced:  repo.Clone(),
 			returned: repo.With(typestest.Opt.RepoExternalID("old id")),
 			after:    types.Repos{repo},
+			diff: repos.Diff{
+				Modified: types.Repos{repo},
+			},
 		}}
 
 		for _, tc := range testCases {
@@ -729,7 +780,7 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 					Store:  s,
 					Synced: make(chan repos.Diff, 1),
 					Sourcer: repos.NewFakeSourcer(nil,
-						repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, repo.Clone()),
+						repos.NewFakeSource(servicesPerKind[extsvc.KindGitHub], nil, tc.sourced),
 					),
 				}
 
@@ -747,7 +798,9 @@ func testSyncRepo(s repos.Store) func(*testing.T) {
 					t.Errorf("returned mismatch: (-have, +want):\n%s", diff)
 				}
 
-				<-syncer.Synced
+				if diff := cmp.Diff(<-syncer.Synced, tc.diff, opt); diff != "" {
+					t.Errorf("diff mismatch: (-have, +want):\n%s", diff)
+				}
 
 				after, err := s.RepoStore().List(ctx, database.ReposListOptions{})
 				if err != nil {
@@ -1000,6 +1053,9 @@ func testSyncerMultipleServices(store repos.Store) func(t *testing.T) {
 			}
 			if len(diff.Unmodified) != 0 {
 				t.Fatalf("Expected 0 Unmodified repos. got %d", len(diff.Added))
+			}
+			if len(diff.ArchivedChanged) != 0 {
+				t.Fatalf("Expected 0 Archived repos. got %d", len(diff.Added))
 			}
 		}
 

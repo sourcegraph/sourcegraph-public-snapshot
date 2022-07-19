@@ -18,7 +18,6 @@ export function buildFrequencyDatum(
     max: number,
     isGradual = true
 ): FrequencyDatum[] {
-    console.log('isGradual', isGradual)
     const result: FrequencyDatum[] = []
     for (let days = min; days <= max; ++days) {
         const index = datums.findIndex(datum => datum.daysUsed >= days)
@@ -65,3 +64,5 @@ export function buildStandardDatum(datums: StandardDatum[], dateRange: Analytics
 
     return newDatums
 }
+
+export const formatNumber = (value: number): string => Intl.NumberFormat('en', { notation: 'compact' }).format(value)

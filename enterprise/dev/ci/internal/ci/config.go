@@ -109,7 +109,7 @@ func NewConfig(now time.Time) Config {
 	case runType.Is(runtype.MainBranch):
 		// This tag is used for deploying continuously. Only ever generate this on the
 		// main branch.
-		tag = fmt.Sprintf("%05d_%10s_%.12s", buildNumber, now.Format("2006-01-02"), commit)
+		tag = images.MainBranchImageTag(now, commit, buildNumber)
 	default:
 		// Encode branch inside build tag by default.
 		tag = fmt.Sprintf("%s_%05d_%10s_%.12s", sanitizeBranchForDockerTag(branch), buildNumber, now.Format("2006-01-02"), commit)
@@ -178,7 +178,7 @@ func (c Config) ensureCommit() error {
 // Note that the availability of this image depends on whether a candidate gets built,
 // as determined in `addDockerImages()`.
 func (c Config) candidateImageTag() string {
-	return images.CandidateImageTag(c.Commit, strconv.Itoa(c.BuildNumber))
+	return images.CandidateImageTag(c.Commit, c.BuildNumber)
 }
 
 // MessageFlags indicates flags that can be parsed out of commit messages to change

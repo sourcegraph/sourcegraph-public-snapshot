@@ -71,9 +71,13 @@ export const checkPublishability = (
     if (node.targets.__typename === 'VisibleApplyPreviewTargetsUpdate') {
         // The changeset is already published
         if (
-            [ChangesetState.CLOSED, ChangesetState.DELETED, ChangesetState.MERGED, ChangesetState.OPEN].includes(
-                node.targets.changeset.state
-            )
+            [
+                ChangesetState.CLOSED,
+                ChangesetState.DELETED,
+                ChangesetState.MERGED,
+                ChangesetState.OPEN,
+                ChangesetState.READONLY,
+            ].includes(node.targets.changeset.state)
         ) {
             return { publishable: false, reason: 'This changeset has already been published.' }
         }

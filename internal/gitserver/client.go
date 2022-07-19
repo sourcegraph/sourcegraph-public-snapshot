@@ -184,7 +184,8 @@ type Client interface {
 	// BlameFile returns Git blame information about a file.
 	BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
 
-	// GitCommand creates a new GitCommand.
+	// GitCommand is deprecated. You should use one of the other methods provided
+	// here or add a new one if what you need doesn't exist.
 	GitCommand(repo api.RepoName, args ...string) GitCommand
 
 	// CreateCommitFromPatch will attempt to create a commit from a patch
@@ -200,6 +201,10 @@ type Client interface {
 
 	// GetObject fetches git object data in the supplied repo
 	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
+
+	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
+	// contains a commit past a specified date.
+	HasCommitAfter(ctx context.Context, repo api.RepoName, date string, revspec string, checker authz.SubRepoPermissionChecker) (bool, error)
 
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error

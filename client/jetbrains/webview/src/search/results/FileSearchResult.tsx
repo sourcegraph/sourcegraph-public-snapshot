@@ -86,8 +86,13 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
 
     const formattedRepositoryStarCount = formatRepositoryStarCount(match.repoStars)
 
+    const onClick = (): void =>
+        lines.length
+            ? selectResult(getResultId(match, match.type === 'content' ? match.lineMatches[0] : match.symbols[0]))
+            : undefined
+
     const title = (
-        <SearchResultHeader>
+        <SearchResultHeader onClick={onClick}>
             <SearchResultLayout
                 iconColumn={{
                     icon: match.type === 'content' ? FileDocumentIcon : AlphaSBoxIcon,
@@ -96,7 +101,9 @@ export const FileSearchResult: React.FunctionComponent<Props> = ({
                 infoColumn={
                     formattedRepositoryStarCount && (
                         <>
-                            {lines.length} {lines.length > 1 ? 'matches' : 'match'}
+                            <span className={styles.matches}>
+                                {lines.length} {lines.length > 1 ? 'matches' : 'match'}
+                            </span>
                             <InfoDivider />
                             <SearchResultStar />
                             {formattedRepositoryStarCount}

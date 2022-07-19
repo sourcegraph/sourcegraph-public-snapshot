@@ -40,11 +40,11 @@ func init() {
 	}
 }
 
-func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenPackageVersion) (sourceCodeJarPath string, err error) {
+func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (sourceCodeJarPath string, err error) {
 	operations := getOperations()
 
 	ctx, _, endObservation := operations.fetchSources.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.PackageVersionSyntax()),
+		otlog.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -80,7 +80,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 		// arguments appears at a specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.PackageVersionSyntax(),
+		"--intransitive", dependency.VersionedPackageSyntax(),
 		"--classifier", "sources",
 	)
 	if err != nil {
@@ -95,7 +95,7 @@ func FetchSources(ctx context.Context, config *schema.JVMPackagesConnection, dep
 	return paths[0], nil
 }
 
-func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenPackageVersion) (byteCodeJarPath string, err error) {
+func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (byteCodeJarPath string, err error) {
 	operations := getOperations()
 
 	ctx, _, endObservation := operations.fetchByteCode.With(ctx, &err, observation.Args{})
@@ -110,7 +110,7 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 		// arguments appears at a specific index.
 		"fetch",
 		"--quiet", "--quiet",
-		"--intransitive", dependency.PackageVersionSyntax(),
+		"--intransitive", dependency.VersionedPackageSyntax(),
 	)
 	if err != nil {
 		return "", err
@@ -124,11 +124,11 @@ func FetchByteCode(ctx context.Context, config *schema.JVMPackagesConnection, de
 	return paths[0], nil
 }
 
-func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenPackageVersion) (err error) {
+func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependency *reposource.MavenVersionedPackage) (err error) {
 	operations := getOperations()
 
 	ctx, _, endObservation := operations.exists.With(ctx, &err, observation.Args{LogFields: []otlog.Field{
-		otlog.String("dependency", dependency.PackageVersionSyntax()),
+		otlog.String("dependency", dependency.VersionedPackageSyntax()),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -140,7 +140,7 @@ func Exists(ctx context.Context, config *schema.JVMPackagesConnection, dependenc
 			config,
 			"resolve",
 			"--quiet", "--quiet",
-			"--intransitive", dependency.PackageVersionSyntax(),
+			"--intransitive", dependency.VersionedPackageSyntax(),
 		)
 	}
 	if err != nil {

@@ -1,15 +1,15 @@
 import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react'
 
 import { useApolloClient } from '@apollo/client'
+import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { RouteComponentProps, useHistory, useLocation } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps, TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Container, PageHeader, Link, H3, Text } from '@sourcegraph/wildcard'
+import { Container, PageHeader, Link, H3, Text, Icon } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../../auth'
 import {
@@ -81,6 +81,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfiguration'), [telemetryService])
 
     const history = useHistory()
+    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryPoliciesCallback = useCallback(
@@ -109,9 +110,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
                 {authenticatedUser?.siteAdmin && <PolicyListActions history={history} />}
             </CodeIntelConfigurationPageHeader>
 
-            {history.location.state && (
-                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
-            )}
+            {location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
             <Container>
                 <FilteredConnection<CodeIntelligenceConfigurationPolicyFields, {}>
                     listComponent="div"
@@ -209,7 +208,7 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
 
         <span className={classNames(styles.button, 'd-none d-md-inline')}>
             <Link to={`./configuration/${policy.id}`} className="p-0">
-                <ChevronRightIcon />
+                <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
             </Link>
         </span>
     </>

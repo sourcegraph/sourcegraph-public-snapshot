@@ -7,7 +7,7 @@ import { useQuery } from '@sourcegraph/http-client'
 import { Settings, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 // import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Icon, LoadingSpinner, H4, Alert } from '@sourcegraph/wildcard'
+import { Button, Icon, LoadingSpinner, H3, H4, Alert } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
 import { useFeatureFlag } from '../../../../featureFlags/useFeatureFlag'
@@ -253,7 +253,7 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
 
     return (
         <div className={layoutStyles.pageContainer}>
-            {searchQuery && <SearchTemplatesBanner />}
+            {searchQuery && <SearchTemplatesBanner className="mb-3" />}
             {insightTitle && <InsightTemplatesBanner insightTitle={insightTitle} type="create" className="mb-3" />}
             <div className={layoutStyles.headerContainer}>
                 <BatchChangeHeader
@@ -274,9 +274,12 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                 <div className={styles.form}>
                     <LibraryPane name={batchChange.name} onReplaceItem={editor.handleCodeChange} />
                     <div className={styles.editorContainer}>
-                        <H4 className={styles.header}>Batch spec</H4>
+                        <H4 as={H3} className={styles.header}>
+                            Batch spec
+                        </H4>
                         {executionAlert}
                         <MonacoBatchSpecEditor
+                            autoFocus={true}
                             batchChangeName={batchChange.name}
                             className={styles.editor}
                             isLightTheme={isLightTheme}

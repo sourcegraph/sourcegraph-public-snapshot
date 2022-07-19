@@ -225,6 +225,13 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: true,
     },
     {
+        ...createQueryExampleFromString('has.description({regex-pattern})'),
+        field: FilterType.repo,
+        description: 'Search inside repositories that have a description matched by the provided regex pattern.',
+        examples: ['repo:has.description(linux kernel)', 'repo:has.description(go.*library)'],
+        showSuggestions: false,
+    },
+    {
         ...createQueryExampleFromString('{revision}'),
         field: FilterType.rev,
         commonRank: 20,
@@ -397,7 +404,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
     const [collapsed, setCollapsed] = useState(true)
     const collapseIcon = collapsed ? mdiChevronLeft : mdiChevronDown
 
-    const handleOpenChange = useCallback(collapsed => setCollapsed(!collapsed), [])
+    const handleOpenChange = useCallback((collapsed: boolean) => setCollapsed(!collapsed), [])
 
     let buttonTextPrefix: ReactElement | null = null
     if (isFilterInfo(searchReference)) {
@@ -613,6 +620,6 @@ const SearchReference = React.memo(
 
 export function getSearchReferenceFactory(
     props: Omit<SearchReferenceProps, 'filter'>
-): (filter: string) => ReactElement {
+): (filter: string) => React.ReactNode {
     return (filter: string) => <SearchReference {...props} filter={filter} />
 }

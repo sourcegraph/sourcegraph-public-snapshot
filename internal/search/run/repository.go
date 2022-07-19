@@ -5,7 +5,6 @@ import (
 
 	"github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -28,8 +27,8 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
-	err = repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.NewResolver(clients.DB)
+	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
 		// Filter the repos if there is a repohasfile: or -repohasfile field.
@@ -42,7 +41,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		}
 
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(ctx, clients.DB, page.RepoRevs),
+			Results: repoRevsToRepoMatches(page.RepoRevs),
 		})
 
 		return nil
@@ -79,14 +78,10 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 func (s *RepoSearchJob) Children() []job.Describer       { return nil }
 func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func repoRevsToRepoMatches(ctx context.Context, db database.DB, repos []*search.RepositoryRevisions) []result.Match {
+func repoRevsToRepoMatches(repos []*search.RepositoryRevisions) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
 	for _, r := range repos {
-		revs, err := r.ExpandedRevSpecs(ctx, db)
-		if err != nil { // fallback to just return revspecs
-			revs = r.RevSpecs()
-		}
-		for _, rev := range revs {
+		for _, rev := range r.Revs {
 			matches = append(matches, &result.RepoMatch{
 				Name: r.Repo.Name,
 				ID:   r.Repo.ID,
