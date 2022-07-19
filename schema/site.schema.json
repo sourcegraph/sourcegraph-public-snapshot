@@ -106,7 +106,7 @@
             "enabled": {
               "description": "Enables password policy",
               "type": "boolean",
-              "default": true
+              "default": false
             },
             "minimumLength": {
               "description": "The minimum length required for a password",
@@ -1403,6 +1403,39 @@
       "type": "integer",
       "default": 12,
       "group": "Authentication"
+    },
+    "auth.passwordPolicy": {
+      "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "enabled": {
+          "description": "Enables password policy",
+          "type": "boolean",
+          "default": false
+        },
+        "minimumLength": {
+          "description": "The minimum length required for a password",
+          "type": "integer",
+          "length": 12,
+          "default": 12
+        },
+        "numberOfSpecialCharacters": {
+          "description": "The required number of special characters",
+          "type": "integer",
+          "length": 2
+        },
+        "requireAtLeastOneNumber": {
+          "description": "Does the password require a number",
+          "type": "boolean",
+          "default": true
+        },
+        "requireUpperandLowerCase": {
+          "description": "Require Mixed characters",
+          "type": "boolean",
+          "default": true
+        }
+      }
     },
     "auth.passwordResetLinkExpiry": {
       "description": "The duration (in seconds) that a password reset link is considered valid.",
