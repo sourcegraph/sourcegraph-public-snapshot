@@ -34,6 +34,7 @@ import { Directory } from './Directory'
 import { File } from './File'
 import { TreeNode } from './Tree'
 import {
+    compareTreeProps,
     hasSingleChild,
     maxEntries,
     singleChildEntriesToGitTree,
@@ -97,15 +98,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         this.props.setChildNodes(this.node, this.node.index)
 
         const treeOrErrors = this.componentUpdates.pipe(
-            distinctUntilChanged(
-                (a, b) =>
-                    a.repoName === b.repoName &&
-                    a.revision === b.revision &&
-                    a.commitID === b.commitID &&
-                    a.parentPath === b.parentPath &&
-                    a.isExpanded === b.isExpanded &&
-                    a.location === b.location
-            ),
+            distinctUntilChanged(compareTreeProps),
             filter(props => props.isExpanded),
             switchMap(props => {
                 const treeFetch = fetchTreeEntries({
@@ -139,12 +132,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     switchMap(treeOrError =>
                         treeOrError !== 'loading' && !isErrorLike(treeOrError)
                             ? getFileDecorations({
-                                  files: treeOrError.entries,
-                                  repoName: this.props.repoName,
-                                  commitID: this.props.commitID,
-                                  extensionsController: this.props.extensionsController,
-                                  parentNodeUri: treeOrError.url,
-                              })
+                                files: treeOrError.entries,
+                                repoName: this.props.repoName,
+                                commitID: this.props.commitID,
+                                extensionsController: this.props.extensionsController,
+                                parentNodeUri: treeOrError.url,
+                            })
                             : EMPTY
                     )
                 )
