@@ -15,8 +15,8 @@ export const createBackendInsightData = (insight: BackendInsight, response: Insi
 
     if (isComputeInsight(insight)) {
         return {
-            // We have to tweak original logic around historical data since compute powered and
-            // capture group insights have problem with data series generation tracking
+            // We have to tweak original logic around historical data since compute powered
+            // insights have problem with generated data series status info
             // see https://github.com/sourcegraph/sourcegraph/issues/38893
             isFetchingHistoricalData: isFetchingHistoricalData || seriesData.some(series => !series.label),
             data: {

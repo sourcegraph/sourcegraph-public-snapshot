@@ -58,7 +58,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
 
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
-    const isNonEmptyDataset = useMemo(() => hasNoData(data), [data])
+    const isEmptyDataset = useMemo(() => hasNoData(data), [data])
 
     return (
         <div ref={ref} className={classNames(className, styles.root, { [styles.rootHorizontal]: isHorizontalMode })}>
@@ -72,7 +72,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         {parent => (
                             <>
                                 <BackendAlertOverlay
-                                    hasNoData={isNonEmptyDataset}
+                                    hasNoData={isEmptyDataset}
                                     isFetchingHistoricalData={isFetchingHistoricalData}
                                     className={styles.alertOverlay}
                                 />
