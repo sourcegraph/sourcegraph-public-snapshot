@@ -62,7 +62,7 @@ func (s *GitRepoSyncer) CloneCommand(ctx context.Context, remoteURL *vcs.URL, tm
 }
 
 // Fetch tries to fetch updates of a Git repository.
-func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir) error {
+func (s *GitRepoSyncer) Fetch(ctx context.Context, remoteURL *vcs.URL, dir GitDir, revspec string) error {
 	cmd, configRemoteOpts := s.fetchCommand(ctx, remoteURL)
 	dir.Set(cmd)
 	if output, err := runWith(ctx, cmd, configRemoteOpts, nil); err != nil {
