@@ -22,13 +22,6 @@ type ConfigurationSource interface {
 type Server struct {
 	Source ConfigurationSource
 
-	// store is a shared read-only reference - we never write to the store.
-	//
-	// TODO(@bobheadxi) we might be able to follow up with a factor to remove store, since
-	// it is the same instance as is used in DefaultClient(). Updates are made in a timely
-	// manner to the configWrites channel.
-	store *store
-
 	// sourceWrites signals when our app writes to the configuration source. The
 	// received channel should be closed when server.Raw() would return the new
 	// configuration that has been written to disk.
@@ -47,14 +40,8 @@ type Server struct {
 func NewServer(source ConfigurationSource) *Server {
 	return &Server{
 		Source:       source,
-		store:        defaultStore,
 		sourceWrites: make(chan chan struct{}, 1),
 	}
-}
-
-// Raw returns the raw text of the configuration file.
-func (s *Server) Raw() conftypes.RawUnified {
-	return s.store.Raw()
 }
 
 // Write validates and writes input to the server's source.
@@ -102,8 +89,9 @@ func (s *Server) Edit(ctx context.Context, computeEdits func(current *Unified, r
 	// TODO@ggilmore: There is a race condition here (also present in the existing library).
 	// Current and raw could be inconsistent. Another thing to offload to configStore?
 	// Snapshot method?
-	current := s.store.LastValid()
-	raw := s.store.Raw()
+	client := DefaultClient()
+	current := client.store.LastValid()
+	raw := client.Raw()
 
 	// Compute edits.
 	edits, err := computeEdits(current, raw)
