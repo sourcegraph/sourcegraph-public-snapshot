@@ -104,7 +104,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
                     ]}
                     description={`Rules that control data retention${
                         indexingEnabled ? ' and auto-indexing' : ''
-                    } behavior for precise code graph.`}
+                    } behavior for code graph data.`}
                     className="mb-3"
                 />
                 {authenticatedUser?.siteAdmin && <PolicyListActions history={history} />}
