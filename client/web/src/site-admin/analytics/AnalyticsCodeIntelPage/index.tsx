@@ -111,10 +111,10 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
 
         const calculatorProps = {
             page: 'CodeIntel',
-            label: 'Intel Events',
+            label: 'Intel events',
             color: 'var(--purple)',
             description:
-                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this caculation down into use cases and types of code intel to be able to independantly value important product capabilities.',
+                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code intel to be able to independently value product capabilities.',
             value: totalEvents,
             items: [
                 {
@@ -122,7 +122,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     minPerItem: 0.5,
                     value: inAppEvents.summary.totalCount,
                     description:
-                        'In app code navigation supports developers finding the impact of a change by listing references and finding definitions to reference.',
+                        'In app code navigation supports developers finding the impact of a change or code to reuse by listing references and finding definitions.',
                 },
                 {
                     label: 'Code intel on code hosts <br/> via the browser extension',
