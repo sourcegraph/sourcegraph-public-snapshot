@@ -112,12 +112,12 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     switchMap(treeOrError =>
                         treeOrError !== 'loading' && !isErrorLike(treeOrError)
                             ? getFileDecorations({
-                                files: treeOrError.entries,
-                                repoName: this.props.repoName,
-                                commitID: this.props.commitID,
-                                extensionsController: this.props.extensionsController,
-                                parentNodeUri: treeOrError.url,
-                            })
+                                  files: treeOrError.entries,
+                                  repoName: this.props.repoName,
+                                  commitID: this.props.commitID,
+                                  extensionsController: this.props.extensionsController,
+                                  parentNodeUri: treeOrError.url,
+                              })
                             : EMPTY
                     )
                 )
