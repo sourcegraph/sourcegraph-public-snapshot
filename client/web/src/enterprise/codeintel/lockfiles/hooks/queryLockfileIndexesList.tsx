@@ -27,8 +27,5 @@ export const queryLockfileIndexesList = (
             query: getDocumentNode(LOCKFILE_INDEXES_LIST),
             variables: { ...variables },
         })
-    ).pipe(
-        map(({ data }) => data),
-        map(({ lockfileIndexes }) => lockfileIndexes)
-    )
+    ).pipe(map(({ data }) => data.lockfileIndexes))
 }
