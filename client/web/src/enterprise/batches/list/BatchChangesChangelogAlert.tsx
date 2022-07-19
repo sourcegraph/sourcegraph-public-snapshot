@@ -18,9 +18,7 @@ export const BatchChangesChangelogAlert: React.FunctionComponent<React.PropsWith
                 <H4 as={H3}>Batch Changes updates in version 3.42</H4>
                 <ul className="mb-0 pl-3">
                     <li>Mounted files can be cached when executing a batch spec.</li>
-                    <li>
-                        Improved keyboard navigation for server-side execution flow.
-                    </li>
+                    <li>Improved keyboard navigation for server-side execution flow.</li>
                 </ul>
             </CardBody>
         </Card>
