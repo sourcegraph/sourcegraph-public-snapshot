@@ -22,7 +22,6 @@ function checksum_client_code {
 function generate_cache_desc {
   echo -e "- Generated from commit: \`$(git rev-parse HEAD)\`"
   echo -e "- Created at: \`$(date)\`"
-  echo -e "- Filename: \`$cache_file\`"
 }
 
 echo "--- (enterprise) pre-build frontend"
