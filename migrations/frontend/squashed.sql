@@ -601,7 +601,8 @@ CREATE TABLE batch_spec_resolution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    initiator_id integer NOT NULL
+    initiator_id integer NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -796,6 +797,7 @@ CREATE TABLE changesets (
     last_heartbeat_at timestamp with time zone,
     external_fork_namespace citext,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -887,6 +889,7 @@ CREATE TABLE changeset_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT changeset_jobs_payload_check CHECK ((jsonb_typeof(payload) = 'object'::text))
 );
 
@@ -935,6 +938,7 @@ CREATE TABLE cm_action_jobs (
     webhook bigint,
     slack_webhook bigint,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT cm_action_jobs_only_one_action_type CHECK ((((
 CASE
     WHEN (email IS NULL) THEN 0
@@ -1104,6 +1108,7 @@ CREATE TABLE cm_trigger_jobs (
     execution_logs json[],
     search_results jsonb,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 
@@ -1450,6 +1455,7 @@ CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     external_service_id integer NOT NULL,
     permissions json[],
     unrestricted boolean DEFAULT false NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT explicit_permissions_bitbucket_projects_jobs_check CHECK ((((permissions IS NOT NULL) AND (unrestricted IS FALSE)) OR ((permissions IS NULL) AND (unrestricted IS TRUE))))
 );
 
@@ -1493,7 +1499,8 @@ CREATE TABLE external_service_sync_jobs (
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE external_services (
@@ -1600,7 +1607,8 @@ CREATE TABLE gitserver_relocator_jobs (
     repo_id integer NOT NULL,
     source_hostname text NOT NULL,
     dest_hostname text NOT NULL,
-    delete_source boolean DEFAULT false NOT NULL
+    delete_source boolean DEFAULT false NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE gitserver_relocator_jobs_id_seq
@@ -1668,7 +1676,8 @@ CREATE TABLE insights_query_runner_jobs (
     priority integer DEFAULT 1 NOT NULL,
     cost integer DEFAULT 500 NOT NULL,
     persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
@@ -1822,7 +1831,8 @@ CREATE TABLE lsif_dependency_indexing_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     upload_id integer,
     external_service_kind text DEFAULT ''::text NOT NULL,
-    external_service_sync timestamp with time zone
+    external_service_sync timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.external_service_kind IS 'Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.';
@@ -1842,7 +1852,8 @@ CREATE TABLE lsif_dependency_syncing_jobs (
     execution_logs json[],
     upload_id integer,
     worker_hostname text DEFAULT ''::text NOT NULL,
-    last_heartbeat_at timestamp with time zone
+    last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE lsif_dependency_syncing_jobs IS 'Tracks jobs that scan imports of indexes to schedule auto-index jobs.';
@@ -1930,6 +1941,7 @@ CREATE TABLE lsif_uploads (
     reference_count integer,
     indexer_version text,
     queued_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2067,6 +2079,7 @@ CREATE TABLE lsif_indexes (
     commit_last_checked_at timestamp with time zone,
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 

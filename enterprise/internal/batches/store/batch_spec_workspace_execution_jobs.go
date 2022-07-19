@@ -434,7 +434,7 @@ func (s *Store) cancelBatchSpecWorkspaceExecutionJobQuery(opts CancelBatchSpecWo
 		btypes.BatchSpecWorkspaceExecutionJobStateQueued,
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
-		btypes.BatchSpecWorkspaceExecutionJobStateFailed,
+		btypes.BatchSpecWorkspaceExecutionJobStateCanceled,
 		btypes.BatchSpecWorkspaceExecutionJobStateProcessing,
 		s.now(),
 		s.now(),

@@ -1528,6 +1528,19 @@
           "Comment": ""
         },
         {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "created_at",
           "Index": 13,
           "TypeName": "timestamp with time zone",
@@ -2710,6 +2723,19 @@
           "Comment": ""
         },
         {
+          "Name": "cancel",
+          "Index": 21,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "changeset_id",
           "Index": 5,
           "TypeName": "integer",
@@ -3315,6 +3341,19 @@
           "TypeName": "jsonb",
           "IsNullable": false,
           "Default": "'{}'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cancel",
+          "Index": 40,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -3980,6 +4019,19 @@
       "Name": "cm_action_jobs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 18,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "email",
           "Index": 2,
@@ -5101,6 +5153,19 @@
       "Name": "cm_trigger_jobs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 19,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "execution_logs",
           "Index": 16,
@@ -7213,6 +7278,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 11,
           "TypeName": "json[]",
@@ -7645,6 +7723,19 @@
       "Name": "external_service_sync_jobs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 15,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "execution_logs",
           "Index": 11,
@@ -8476,6 +8567,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "delete_source",
           "Index": 16,
           "TypeName": "boolean",
@@ -8931,6 +9035,19 @@
       "Name": "insights_query_runner_jobs",
       "Comment": "See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job\u0026patternType=literal)",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 19,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "cost",
           "Index": 16,
@@ -9815,6 +9932,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 16,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 10,
           "TypeName": "json[]",
@@ -10119,6 +10249,19 @@
       "Name": "lsif_dependency_syncing_jobs",
       "Comment": "Tracks jobs that scan imports of indexes to schedule auto-index jobs.",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 14,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "execution_logs",
           "Index": 10,
@@ -10501,6 +10644,19 @@
       "Name": "lsif_indexes",
       "Comment": "Stores metadata about a code intel index job.",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 23,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "commit",
           "Index": 2,
@@ -11423,6 +11579,19 @@
           "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cancel",
+          "Index": 29,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",

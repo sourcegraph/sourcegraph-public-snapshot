@@ -118,6 +118,7 @@ Foreign-key constraints:
  updated_at        | timestamp with time zone |           | not null | now()
  queued_at         | timestamp with time zone |           |          | now()
  initiator_id      | integer                  |           | not null | 
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "batch_spec_resolution_jobs_pkey" PRIMARY KEY, btree (id)
     "batch_spec_resolution_jobs_batch_spec_id_unique" UNIQUE CONSTRAINT, btree (batch_spec_id)
@@ -270,6 +271,7 @@ Foreign-key constraints:
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
  queued_at         | timestamp with time zone |           |          | now()
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "changeset_jobs_pkey" PRIMARY KEY, btree (id)
     "changeset_jobs_bulk_group_idx" btree (bulk_group)
@@ -363,6 +365,7 @@ Referenced by:
  last_heartbeat_at        | timestamp with time zone                     |           |          | 
  external_fork_namespace  | citext                                       |           |          | 
  queued_at                | timestamp with time zone                     |           |          | now()
+ cancel                   | boolean                                      |           | not null | false
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
@@ -413,6 +416,7 @@ Referenced by:
  webhook           | bigint                   |           |          | 
  slack_webhook     | bigint                   |           |          | 
  queued_at         | timestamp with time zone |           |          | now()
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "cm_action_jobs_pkey" PRIMARY KEY, btree (id)
     "cm_action_jobs_state_idx" btree (state)
@@ -612,6 +616,7 @@ Slack webhook actions configured on code monitors
  execution_logs    | json[]                   |           |          | 
  search_results    | jsonb                    |           |          | 
  queued_at         | timestamp with time zone |           |          | now()
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "cm_trigger_jobs_pkey" PRIMARY KEY, btree (id)
     "cm_trigger_jobs_state_idx" btree (state)
@@ -976,6 +981,7 @@ Tracks the most recent activity of executors attached to this Sourcegraph instan
  external_service_id | integer                  |           | not null | 
  permissions         | json[]                   |           |          | 
  unrestricted        | boolean                  |           | not null | false
+ cancel              | boolean                  |           | not null | false
 Indexes:
     "explicit_permissions_bitbucket_projects_jobs_pkey" PRIMARY KEY, btree (id)
     "explicit_permissions_bitbucket_projects_jobs_project_key_extern" btree (project_key, external_service_id, state)
@@ -1028,6 +1034,7 @@ Foreign-key constraints:
  worker_hostname     | text                     |           | not null | ''::text
  last_heartbeat_at   | timestamp with time zone |           |          | 
  queued_at           | timestamp with time zone |           |          | now()
+ cancel              | boolean                  |           | not null | false
 Indexes:
     "external_service_sync_jobs_state_external_service_id" btree (state, external_service_id) INCLUDE (finished_at)
 Foreign-key constraints:
@@ -1157,6 +1164,7 @@ Referenced by:
  source_hostname   | text                     |           | not null | 
  dest_hostname     | text                     |           | not null | 
  delete_source     | boolean                  |           | not null | false
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "gitserver_relocator_jobs_pkey" PRIMARY KEY, btree (id)
 
@@ -1219,6 +1227,7 @@ Indexes:
  cost              | integer                  |           | not null | 500
  persist_mode      | persistmode              |           | not null | 'record'::persistmode
  queued_at         | timestamp with time zone |           |          | now()
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "insights_query_runner_jobs_pkey" PRIMARY KEY, btree (id)
     "finished_at_insights_query_runner_jobs_idx" btree (finished_at)
@@ -1384,6 +1393,7 @@ A lookup table to get all the repository patterns by repository id that apply to
  upload_id             | integer                  |           |          | 
  external_service_kind | text                     |           | not null | ''::text
  external_service_sync | timestamp with time zone |           |          | 
+ cancel                | boolean                  |           | not null | false
 Indexes:
     "lsif_dependency_indexing_jobs_pkey1" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -1426,6 +1436,7 @@ Indexes:
  upload_id         | integer                  |           |          | 
  worker_hostname   | text                     |           | not null | ''::text
  last_heartbeat_at | timestamp with time zone |           |          | 
+ cancel            | boolean                  |           | not null | false
 Indexes:
     "lsif_dependency_indexing_jobs_pkey" PRIMARY KEY, btree (id)
     "lsif_dependency_indexing_jobs_upload_id" btree (upload_id)
@@ -1508,6 +1519,7 @@ Stores the configuration used for code intel index jobs for a repository.
  commit_last_checked_at | timestamp with time zone |           |          | 
  worker_hostname        | text                     |           | not null | ''::text
  last_heartbeat_at      | timestamp with time zone |           |          | 
+ cancel                 | boolean                  |           | not null | false
 Indexes:
     "lsif_indexes_pkey" PRIMARY KEY, btree (id)
     "lsif_indexes_commit_last_checked_at" btree (commit_last_checked_at) WHERE state <> 'deleted'::text
@@ -1722,6 +1734,7 @@ Stores the retention policy of code intellience data for a repository.
  reference_count        | integer                  |           |          | 
  indexer_version        | text                     |           |          | 
  queued_at              | timestamp with time zone |           |          | 
+ cancel                 | boolean                  |           | not null | false
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
