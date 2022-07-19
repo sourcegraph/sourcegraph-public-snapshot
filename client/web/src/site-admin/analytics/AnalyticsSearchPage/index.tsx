@@ -127,7 +127,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     label: 'Complex searches',
                     minPerItem: 120,
                     description:
-                        'Without Sourcegraph, these searches would require complex scripting. They often answer specific and valuable questions such as finding occurrences of log4j at a specific version globally.',
+                        'Without Sourcegraph, these searches would require complex scripting. They often answer specific and valuable questions such as finding occurrences of Log4j at a specific version globally.',
                     percentage: 3,
                     value: totalCount,
                 },
@@ -143,7 +143,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     label: 'Core workflow',
                     minPerItem: 0.5,
                     description:
-                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language and features like syntax aware search patterns and the ability to search code, diffs, and commit messages at any revision.',
+                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language, syntax aware search patterns, and the ability to search code, diffs, and commit messages at any revision.',
                     percentage: 75,
                     value: totalCount,
                 },
