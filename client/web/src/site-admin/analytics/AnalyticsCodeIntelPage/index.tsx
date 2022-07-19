@@ -231,7 +231,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                             <AnchorLink to="/help/integration/browser_extension" target="_blank">
                                 browser extension
                             </AnchorLink>{' '}
-                            to increase value.
+                            to add code intelligence to your code hosts.
                         </Text>
                         {repos && (
                             <Text as="li">
