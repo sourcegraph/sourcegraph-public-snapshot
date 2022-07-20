@@ -60,6 +60,19 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		children = append(children, j)
 	}
 
+	fileContainsPatterns := b.FileContainsContent()
+	originalPattern := b.Pattern
+	if len(fileContainsPatterns) > 0 {
+		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
+		for _, pat := range fileContainsPatterns {
+			newNodes = append(newNodes, query.Pattern{Value: pat})
+		}
+		if originalPattern != nil {
+			newNodes = append(newNodes, originalPattern)
+		}
+		b.Pattern = query.Operator{Operands: newNodes, Kind: query.And}
+	}
+
 	{
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
@@ -158,6 +171,12 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	}
 
 	basicJob := NewParallelJob(children...)
+
+	{ // Apply file:contains() post-filter
+		if len(fileContainsPatterns) > 0 {
+			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalPattern, b.IsCaseSensitive(), basicJob)
+		}
+	}
 
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
