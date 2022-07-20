@@ -301,6 +301,120 @@ mutation($namespace: ID!, $batchSpec: String!, $changesetSpecs: [ID!]!){
 }
 `
 
+func TestCreateBatchSpecFromRaw(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	user := ct.CreateTestUser(t, db, true)
+	userID := user.ID
+
+	cstore := store.New(db, &observation.TestContext, nil)
+
+	r := &Resolver{store: cstore}
+	s, err := newSchema(db, r)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	name := "my-simple-change"
+
+	falsy := overridable.FromBoolOrString(false)
+	bs := &btypes.BatchSpec{
+		RawSpec: ct.TestRawBatchSpec,
+		Spec: &batcheslib.BatchSpec{
+			Name:        name,
+			Description: "My description",
+			ChangesetTemplate: &batcheslib.ChangesetTemplate{
+				Title:  "Hello there",
+				Body:   "This is the body",
+				Branch: "my-branch",
+				Commit: batcheslib.ExpandedGitCommitDescription{
+					Message: "Add hello world",
+				},
+				Published: &falsy,
+			},
+		},
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	if err := cstore.CreateBatchSpec(ctx, bs); err != nil {
+		t.Fatal(err)
+	}
+
+	bc := ct.CreateBatchChange(t, ctx, cstore, name, userID, bs.ID)
+	rawSpec := ct.TestRawBatchSpec
+
+	userAPIID := string(graphqlbackend.MarshalUserID(userID))
+	batchChangeID := string(marshalBatchChangeID(bc.ID))
+
+	input := map[string]any{
+		"namespace":     userAPIID,
+		"batchSpec":     rawSpec,
+		"batchChangeID": batchChangeID,
+	}
+
+	var response struct{ CreateBatchSpecFromRaw apitest.BatchSpec }
+	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+
+	errs := apitest.Exec(actorCtx, t, s, input, &response, mutationCreateBatchSpecFromRaw)
+	if errs != nil {
+		t.Errorf("unexpected error(s): %+v", errs)
+	}
+
+	var unmarshaled any
+	err = json.Unmarshal([]byte(rawSpec), &unmarshaled)
+	if err != nil {
+		t.Fatal(err)
+	}
+	have := response.CreateBatchSpecFromRaw
+
+	want := apitest.BatchSpec{
+		ID:                   have.ID,
+		OriginalInput:        rawSpec,
+		ParsedInput:          graphqlbackend.JSONValue{Value: unmarshaled},
+		Creator:              &apitest.User{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
+		Namespace:            apitest.UserOrg{ID: userAPIID, DatabaseID: userID, SiteAdmin: true},
+		AppliesToBatchChange: apitest.BatchChange{ID: batchChangeID},
+		CreatedAt:            have.CreatedAt,
+		ExpiresAt:            have.ExpiresAt,
+	}
+
+	if diff := cmp.Diff(want, have); diff != "" {
+		t.Fatalf("unexpected response (-want +got):\n%s", diff)
+	}
+}
+
+const mutationCreateBatchSpecFromRaw = `
+fragment u on User { id, databaseID, siteAdmin }
+fragment o on Org  { id, name }
+
+mutation($batchSpec: String!, $namespace: ID!, $batchChangeID: ID!){
+	createBatchSpecFromRaw(batchSpec: $batchSpec, namespace: $namespace, batchChangeID: $batchChangeID) {
+		id
+		originalInput
+		parsedInput
+
+		creator  { ...u }
+		namespace {
+			... on User { ...u }
+			... on Org  { ...o }
+		}
+
+		appliesToBatchChange {
+			id
+		}
+
+		createdAt
+		expiresAt
+	}
+}
+`
+
 func TestCreateChangesetSpec(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
