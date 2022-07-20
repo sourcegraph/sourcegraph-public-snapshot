@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -19,8 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-func assertPythonParsesPlaceholder() *reposource.PythonPackageVersion {
-	placeholder, err := reposource.ParsePackageVersion("sourcegraph.com/placeholder@v0.0.0")
+func assertPythonParsesPlaceholder() *reposource.PythonVersionedPackage {
+	placeholder, err := reposource.ParseVersionedPackage("sourcegraph.com/placeholder@v0.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder dependency to parse but got %v", err))
 	}
@@ -51,27 +52,29 @@ type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
 
-func (pythonPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParsePackageVersion(dep)
+func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseVersionedPackage(string(name) + "==" + version)
 }
 
-func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (pythonPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseVersionedPackage(dep)
+}
+
+func (pythonPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return reposource.ParsePythonPackageFromName(name)
+}
+
+func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParsePythonPackageFromRepoName(repoName)
 }
 
-func (s *pythonPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	f, err := s.client.Version(ctx, name, version)
+func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	pythonDep := dep.(*reposource.PythonVersionedPackage)
+	pypiFile, err := s.client.Version(ctx, pythonDep.Name, pythonDep.Version)
 	if err != nil {
-		return nil, err
+		return err
 	}
-	dep := reposource.NewPythonPackageVersion(name, version)
-	dep.PackageURL = f.URL
-	return dep, nil
-}
-
-func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
-	packageURL := dep.(*reposource.PythonPackageVersion).PackageURL
-
+	packageURL := pypiFile.URL
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {
 		return errors.Wrap(err, "download")

@@ -1,13 +1,11 @@
 import React, { DOMAttributes, useRef, useState } from 'react'
 
+import { mdiFilterOutline } from '@mdi/js'
 import classNames from 'classnames'
-import FilterOutlineIcon from 'mdi-react/FilterOutlineIcon'
 
-import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position } from '@sourcegraph/wildcard'
+import { Button, createRectangle, Popover, PopoverContent, PopoverTrigger, Position, Icon } from '@sourcegraph/wildcard'
 
-import { SeriesDisplayOptionsInput } from '../../../../../../../../graphql-operations'
-import { Insight, InsightFilters } from '../../../../../../core'
-import { SeriesDisplayOptions, SeriesDisplayOptionsInputRequired } from '../../../../../../core/types/insight/common'
+import { InsightFilters } from '../../../../../../core'
 import { FormChangeEvent, SubmissionResult } from '../../../../../form/hooks/useForm'
 import {
     DrillDownInsightCreationForm,
@@ -17,7 +15,6 @@ import {
     FilterSectionVisualMode,
     hasActiveFilters,
 } from '../drill-down-filters-panel'
-import { parseSeriesDisplayOptions } from '../drill-down-filters-panel/drill-down-filters/utils'
 
 import styles from './DrillDownFiltersPopover.module.scss'
 
@@ -27,13 +24,10 @@ interface DrillDownFiltersPopoverProps {
     initialFiltersValue: InsightFilters
     originalFiltersValue: InsightFilters
     anchor: React.RefObject<HTMLElement>
-    insight: Insight
     onFilterChange: (filters: InsightFilters) => void
-    onFilterSave: (filters: InsightFilters, displayOptions: SeriesDisplayOptionsInput) => void
+    onFilterSave: (filters: InsightFilters) => void
     onInsightCreate: (values: DrillDownInsightCreationFormValues) => SubmissionResult
     onVisibilityChange: (open: boolean) => void
-    originalSeriesDisplayOptions: SeriesDisplayOptions
-    onSeriesDisplayOptionsChange: (options: SeriesDisplayOptionsInputRequired) => void
 }
 
 // To prevent grid layout position change animation. Attempts to drag
@@ -62,8 +56,6 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
         onFilterChange,
         onFilterSave,
         onInsightCreate,
-        originalSeriesDisplayOptions,
-        onSeriesDisplayOptionsChange,
     } = props
 
     // By default always render filters mode
@@ -96,7 +88,14 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                     [styles.filterButtonActive]: isFiltered,
                 })}
             >
-                <FilterOutlineIcon className={styles.filterIcon} size="1rem" />
+                <Icon
+                    className={styles.filterIcon}
+                    svgPath={mdiFilterOutline}
+                    inline={false}
+                    aria-hidden={true}
+                    height="1rem"
+                    width="1rem"
+                />
             </PopoverTrigger>
 
             <PopoverContent
@@ -115,8 +114,6 @@ export const DrillDownFiltersPopover: React.FunctionComponent<
                         onFiltersChange={handleFilterChange}
                         onFilterSave={onFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
-                        originalSeriesDisplayOptions={parseSeriesDisplayOptions(originalSeriesDisplayOptions)}
-                        onSeriesDisplayOptionsChange={onSeriesDisplayOptionsChange}
                     />
                 )}
 

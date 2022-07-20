@@ -67,9 +67,9 @@ const setupPorts = (sourcegraphURL: string, updateBlockInputWithID: (blockInput:
         openRequests.push(ctrl)
         async function fetch(): Promise<void> {
             await fetchEventSource(address, {
-                method: 'POST',
+                method: 'GET',
                 headers: {
-                    origin: sourcegraphURL,
+                    'X-Requested-With': 'Sourcegraph',
                 },
                 signal: ctrl.signal,
                 onerror(error) {

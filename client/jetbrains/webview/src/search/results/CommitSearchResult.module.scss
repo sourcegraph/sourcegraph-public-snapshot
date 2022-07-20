@@ -11,4 +11,9 @@
 .commit-oid {
     display: inline-block;
     padding: 0.25rem;
+    color: var(--jb-secondary-info-text-color);
+}
+
+.timestamp {
+    color: var(--jb-secondary-info-text-color);
 }

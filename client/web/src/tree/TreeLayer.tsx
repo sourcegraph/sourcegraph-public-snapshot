@@ -1,7 +1,6 @@
 /* eslint jsx-a11y/mouse-events-have-key-events: warn */
 import * as React from 'react'
 
-import * as H from 'history'
 import { EMPTY, merge, of, Subject, Subscription } from 'rxjs'
 import {
     catchError,
@@ -19,11 +18,7 @@ import { FileDecoration } from 'sourcegraph'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
-import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
-import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
 
 import { getFileDecorations } from '../backend/features'
 import { requestGraphQL } from '../backend/graphql'
@@ -33,7 +28,9 @@ import { TreeLayerCell, TreeLayerTable, TreeRowAlert } from './components'
 import { Directory } from './Directory'
 import { File } from './File'
 import { TreeNode } from './Tree'
+import { TreeRootProps } from './TreeRoot'
 import {
+    compareTreeProps,
     hasSingleChild,
     maxEntries,
     singleChildEntriesToGitTree,
@@ -42,26 +39,10 @@ import {
     treePadding,
 } from './util'
 
-export interface TreeLayerProps extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
-    location: H.Location
-    activeNode: TreeNode
-    activePath: string
-    depth: number
-    expandedTrees: string[]
-    parent: TreeNode | null
-    parentPath?: string
-    index: number
-    isExpanded: boolean
-    /** EntryInfo is information we need to render this layer. */
+export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
     entryInfo: TreeEntryInfo
-    selectedNode: TreeNode
-    onHover: (filePath: string) => void
-    onSelect: (node: TreeNode) => void
-    onToggleExpand: (path: string, expanded: boolean, node: TreeNode) => void
-    setChildNodes: (node: TreeNode, index: number) => void
-    setActiveNode: (node: TreeNode) => void
-
     fileDecorations?: FileDecoration[]
+    onHover: (filePath: string) => void
 }
 
 const LOADING = 'loading' as const
@@ -97,15 +78,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         this.props.setChildNodes(this.node, this.node.index)
 
         const treeOrErrors = this.componentUpdates.pipe(
-            distinctUntilChanged(
-                (a, b) =>
-                    a.repoName === b.repoName &&
-                    a.revision === b.revision &&
-                    a.commitID === b.commitID &&
-                    a.parentPath === b.parentPath &&
-                    a.isExpanded === b.isExpanded &&
-                    a.location === b.location
-            ),
+            distinctUntilChanged(compareTreeProps),
             filter(props => props.isExpanded),
             switchMap(props => {
                 const treeFetch = fetchTreeEntries({
@@ -268,7 +241,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element | null {
+    public render(): JSX.Element {
         const entryInfo = this.props.entryInfo
         const isActive = this.node === this.props.activeNode
         const isSelected = this.node === this.props.selectedNode
@@ -301,7 +274,11 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                         {entryInfo.isDirectory ? (
                             <>
                                 <Directory
-                                    {...this.props}
+                                    fileDecorations={this.props.fileDecorations}
+                                    entryInfo={this.props.entryInfo}
+                                    depth={this.props.depth}
+                                    index={this.props.index}
+                                    isLightTheme={this.props.isLightTheme}
                                     maxEntries={maxEntries}
                                     loading={treeOrError === LOADING}
                                     handleTreeClick={this.handleTreeClick}
@@ -341,14 +318,17 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             </>
                         ) : (
                             <File
-                                {...this.props}
+                                fileDecorations={this.props.fileDecorations}
+                                entryInfo={this.props.entryInfo}
+                                depth={this.props.depth}
+                                index={this.props.index}
+                                isLightTheme={this.props.isLightTheme}
                                 maxEntries={maxEntries}
                                 handleTreeClick={this.handleTreeClick}
                                 noopRowClick={this.noopRowClick}
                                 linkRowClick={this.linkRowClick}
                                 isActive={isActive}
                                 isSelected={isSelected}
-                                isExpanded={this.props.isExpanded}
                             />
                         )}
                     </tbody>

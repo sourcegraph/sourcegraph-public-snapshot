@@ -1,8 +1,10 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import * as React from 'react'
 
-import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
+import { mdiSourceRepository } from '@mdi/js'
+import { FileDecoration } from 'sourcegraph'
 
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon } from '@sourcegraph/wildcard'
 
 import {
@@ -16,10 +18,13 @@ import {
     TreeRow,
 } from './components'
 import { FileDecorator } from './FileDecorator'
-import { TreeLayerProps } from './TreeLayer'
-import { maxEntries, treePadding } from './util'
+import { maxEntries, TreeEntryInfo, treePadding } from './util'
 
-interface FileProps extends TreeLayerProps {
+interface FileProps extends ThemeProps {
+    fileDecorations?: FileDecoration[]
+    entryInfo: TreeEntryInfo
+    depth: number
+    index: number
     className?: string
     maxEntries: number
     handleTreeClick: () => void
@@ -59,7 +64,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             <TreeLayerRowContentsText>
                                 {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
                                 <TreeRowIcon style={treePadding(props.depth, true)} onClick={props.noopRowClick}>
-                                    <Icon as={SourceRepositoryIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                                 </TreeRowIcon>
                                 <TreeRowLabel className="test-file-decorable-name">
                                     {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}
@@ -71,7 +76,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                         <TreeLayerRowContents title={'Submodule: ' + props.entryInfo.submodule.url}>
                             <TreeLayerRowContentsText>
                                 <TreeRowIcon style={treePadding(props.depth, true)}>
-                                    <Icon as={SourceRepositoryIcon} aria-hidden={true} />
+                                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                                 </TreeRowIcon>
                                 <TreeRowLabel className="test-file-decorable-name">
                                     {props.entryInfo.name} @ {props.entryInfo.submodule.commit.slice(0, 7)}

@@ -2,7 +2,7 @@ import React, { InputHTMLAttributes } from 'react'
 
 import classNames from 'classnames'
 
-import { Label } from '@sourcegraph/wildcard'
+import { Label, Tooltip, TooltipProps } from '@sourcegraph/wildcard'
 
 interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Title of radio input. */
@@ -14,7 +14,7 @@ interface RadioInputProps extends InputHTMLAttributes<HTMLInputElement> {
     /** Tooltip text for radio label element. */
     labelTooltipText?: string
     /** Tooltip position */
-    labelTooltipPosition?: string
+    labelTooltipPosition?: TooltipProps['placement']
 }
 
 /** Displays form radio input for code insight creation form. */
@@ -22,24 +22,24 @@ export const FormRadioInput: React.FunctionComponent<React.PropsWithChildren<Rad
     const { title, description, className, labelTooltipText, labelTooltipPosition, ...otherProps } = props
 
     return (
-        <Label
-            data-placement={labelTooltipPosition}
-            data-tooltip={labelTooltipText}
-            className={classNames('d-flex flex-wrap align-items-center', className, {
-                'text-muted': otherProps.disabled,
-            })}
-        >
-            {/* eslint-disable-next-line react/forbid-elements */}
-            <input type="radio" {...otherProps} />
+        <Tooltip content={labelTooltipText} placement={labelTooltipPosition}>
+            <Label
+                className={classNames('d-flex flex-wrap align-items-center', className, {
+                    'text-muted': otherProps.disabled,
+                })}
+            >
+                {/* eslint-disable-next-line react/forbid-elements */}
+                <input type="radio" {...otherProps} />
 
-            <span className="pl-2">{title}</span>
+                <span className="pl-2">{title}</span>
 
-            {description && (
-                <>
-                    <span className="pl-2 pr-2">—</span>
-                    <span className="text-muted">{description}</span>
-                </>
-            )}
-        </Label>
+                {description && (
+                    <>
+                        <span className="pl-2 pr-2">—</span>
+                        <span className="text-muted">{description}</span>
+                    </>
+                )}
+            </Label>
+        </Tooltip>
     )
 }

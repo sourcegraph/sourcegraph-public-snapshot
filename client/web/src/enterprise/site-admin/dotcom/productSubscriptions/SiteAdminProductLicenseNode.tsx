@@ -3,6 +3,7 @@ import * as React from 'react'
 import { gql } from '@sourcegraph/http-client'
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
 import * as GQL from '@sourcegraph/shared/src/schema'
+import { Tooltip } from '@sourcegraph/wildcard'
 
 import { CopyableText } from '../../../../components/CopyableText'
 import { Timestamp } from '../../../../components/time/Timestamp'
@@ -69,12 +70,9 @@ export const SiteAdminProductLicenseNode: React.FunctionComponent<
                 {node.info && node.subscription.activeLicense && node.subscription.activeLicense.id === node.id ? (
                     <ProductLicenseValidity licenseInfo={node.info} primary={false} className="d-inline-block mr-3" />
                 ) : (
-                    <span
-                        className="text-warning font-weight-bold mr-3"
-                        data-tooltip="A newer license was generated for this subscription. This license should no longer be used."
-                    >
-                        Inactive
-                    </span>
+                    <Tooltip content="A newer license was generated for this subscription. This license should no longer be used.">
+                        <span className="text-warning font-weight-bold mr-3">Inactive</span>
+                    </Tooltip>
                 )}
                 <span className="text-muted">
                     Created <Timestamp date={node.createdAt} />

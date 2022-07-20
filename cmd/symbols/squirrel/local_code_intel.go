@@ -38,8 +38,8 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 
 	// Collect scopes
 	scopes := map[NodeId]Scope{}
-	err = forEachCapture(root.LangSpec.localsQuery, root, func(captureName string, node Node) {
-		if captureName == "scope" {
+	err = forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
+		if node, ok := nameToNode["scope"]; ok {
 			scopes[nodeId(node.Node)] = map[SymbolName]*PartialSymbol{}
 			return
 		}
@@ -49,31 +49,33 @@ func (squirrel *SquirrelService) localCodeIntel(ctx context.Context, repoCommitP
 	}
 
 	// Collect defs
-	err = forEachCapture(root.LangSpec.localsQuery, root, func(captureName string, node Node) {
-		// Only collect "definition*" captures.
-		if strings.HasPrefix(captureName, "definition") {
-			// Find the nearest scope (if it exists).
-			for cur := node.Node; cur != nil; cur = cur.Parent() {
-				// Found the scope.
-				if scope, ok := scopes[nodeId(cur)]; ok {
-					// Get the symbol name.
-					symbolName := SymbolName(node.Content(node.Contents))
+	err = forEachCapture(root.LangSpec.localsQuery, *root, func(nameToNode map[string]Node) {
+		for captureName, node := range nameToNode {
+			// Only collect "definition*" captures.
+			if strings.HasPrefix(captureName, "definition") {
+				// Find the nearest scope (if it exists).
+				for cur := node.Node; cur != nil; cur = cur.Parent() {
+					// Found the scope.
+					if scope, ok := scopes[nodeId(cur)]; ok {
+						// Get the symbol name.
+						symbolName := SymbolName(node.Content(node.Contents))
 
-					// Skip the symbol if it's already defined.
-					if _, ok := scope[symbolName]; ok {
+						// Skip the symbol if it's already defined.
+						if _, ok := scope[symbolName]; ok {
+							break
+						}
+
+						// Put the symbol in the scope.
+						scope[symbolName] = &PartialSymbol{
+							Name:  string(symbolName),
+							Hover: findHover(node),
+							Def:   nodeToRange(node.Node),
+							Refs:  map[types.Range]struct{}{},
+						}
+
+						// Stop walking up the tree.
 						break
 					}
-
-					// Put the symbol in the scope.
-					scope[symbolName] = &PartialSymbol{
-						Name:  string(symbolName),
-						Hover: findHover(node),
-						Def:   nodeToRange(node.Node),
-						Refs:  map[types.Range]struct{}{},
-					}
-
-					// Stop walking up the tree.
-					break
 				}
 			}
 		}

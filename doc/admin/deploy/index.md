@@ -16,6 +16,8 @@ Or, if you don't want to bother with setup and configuration [try Sourcegraph Cl
 
 Sourcegraph has provided the [Resource Estimator](resource_estimator.md) as a starting point to determine necessary resources based on the size of your deployment. 
 
+The [Scaling Overview for Services docs](scale.md) provides a comprehensive overview of how each Sourcegraph service scales.
+
 We recommend the Kubernetes deployment type if your deployment scenario includes a large codebase and many users. The [Kubernetes docs](kubernetes/index.md) provide additional information for [scaling Kubernetes deployments](kubernetes/scale.md).
 
 ## Deployment types

@@ -4,16 +4,16 @@ import org.jetbrains.annotations.Nullable;
 
 public class PluginSettingChangeContext {
     @Nullable
-    public String oldUrl;
+    final public String oldUrl;
 
     @Nullable
-    public String oldAccessToken;
+    final public String oldAccessToken;
 
     @Nullable
-    public String newUrl;
+    final public String newUrl;
 
     @Nullable
-    public String newAccessToken;
+    final public String newAccessToken;
 
     public PluginSettingChangeContext(@Nullable String oldUrl, @Nullable String oldAccessToken, @Nullable String newUrl, @Nullable String newAccessToken) {
         this.oldUrl = oldUrl;

@@ -158,7 +158,6 @@ export const OrgSettingsArea: React.FunctionComponent<React.PropsWithChildren<Pr
                                             context={window.context}
                                             routingPrefix={`${props.org.url}/settings`}
                                             telemetryService={props.telemetryService}
-                                            onUserExternalServicesOrRepositoriesUpdate={() => {}}
                                         />
                                     )}
                                 />,
@@ -177,7 +176,6 @@ export const OrgSettingsArea: React.FunctionComponent<React.PropsWithChildren<Pr
                                             }}
                                             onOrgGetStartedRefresh={onOrgGetStartedRefresh}
                                             routingPrefix={`${props.org.url}/settings`}
-                                            onUserExternalServicesOrRepositoriesUpdate={() => {}} // TODO...
                                         />
                                     )}
                                 />,
@@ -195,7 +193,6 @@ export const OrgSettingsArea: React.FunctionComponent<React.PropsWithChildren<Pr
                                                 name: props.org.displayName || props.org.name,
                                             }}
                                             routingPrefix={`${props.org.url}/settings`}
-                                            onSyncedPublicRepositoriesUpdate={() => {}}
                                         />
                                     )}
                                 />,

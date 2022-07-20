@@ -1,12 +1,13 @@
 import React from 'react'
 
-import { mdiAccount } from '@mdi/js'
+import { mdiAccount, mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
 
 import { Icon, Link, H3, Text } from '@sourcegraph/wildcard'
 
 import { ExternalServiceFields, ExternalServiceKind } from '../../graphql-operations'
+
+import styles from './ExternalServiceCard.module.scss'
 
 interface ExternalServiceCardProps {
     /**
@@ -43,7 +44,7 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
 }) => {
     const children = (
         <div className={classNames('p-3 d-flex align-items-start border', className)}>
-            <Icon className="h3 mb-0 mr-3" as={CardIcon} aria-hidden={true} />
+            <Icon className={classNames('mb-0 mr-3', styles.icon)} as={CardIcon} aria-hidden={true} />
             <div className="flex-1">
                 <H3 className={shortDescription ? 'mb-0' : 'mt-1 mb-0'}>
                     {title}
@@ -58,7 +59,7 @@ export const ExternalServiceCard: React.FunctionComponent<React.PropsWithChildre
                 </H3>
                 {shortDescription && <Text className="mb-0 text-muted">{shortDescription}</Text>}
             </div>
-            {to && <ChevronRightIcon className="align-self-center" />}
+            {to && <Icon className="align-self-center" svgPath={mdiChevronRight} inline={false} aria-hidden={true} />}
         </div>
     )
     return to ? (

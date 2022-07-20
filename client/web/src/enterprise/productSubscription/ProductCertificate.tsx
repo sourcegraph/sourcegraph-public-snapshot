@@ -8,16 +8,16 @@ import styles from './ProductCertificate.module.scss'
 
 interface Props {
     /** The title of the certificate. */
-    title: React.ReactFragment
+    title: React.ReactNode
 
     /** The subtitle of the certificate. */
-    subtitle?: React.ReactFragment | null
+    subtitle?: React.ReactNode
 
     /** The detail text of the certificate. */
-    detail?: React.ReactFragment | null
+    detail?: React.ReactNode
 
     /** Rendered after the certificate body (usually consists of a Wildcard <CardFooter />). */
-    footer?: React.ReactFragment | null
+    footer?: React.ReactNode
 
     className?: string
 }

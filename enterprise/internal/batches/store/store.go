@@ -150,7 +150,7 @@ func (s *Store) ExternalServices() database.ExternalServiceStore {
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
 func (s *Store) UserCredentials() database.UserCredentialsStore {
-	return database.UserCredentialsWith(s, s.key)
+	return database.UserCredentialsWith(s.logger, s, s.key)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {

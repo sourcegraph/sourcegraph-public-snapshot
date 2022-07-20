@@ -1,6 +1,8 @@
 package precise
 
-import "github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+import (
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/lsif/protocol"
+)
 
 type ID string
 

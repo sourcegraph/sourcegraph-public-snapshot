@@ -44,6 +44,7 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -57,7 +58,7 @@ import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { UserNavItem } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
@@ -71,13 +72,12 @@ interface Props
         TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
-        ExtensionAlertAnimationProps,
         ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
     history: H.History
-    location: H.Location<{ query: string }>
+    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     authRequired: boolean
     isSourcegraphDotCom: boolean
@@ -128,6 +128,22 @@ function useCalculatedNavLinkVariant(
     }, [containerReference, savedWindowWidth, width])
 
     return navLinkVariant
+}
+
+const AnalyticsNavItem: React.FunctionComponent = () => {
+    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
+
+    if (isAdminAnalyticsDisabled) {
+        return null
+    }
+
+    return (
+        <NavAction className="d-none d-sm-flex">
+            <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
+                Analytics
+            </Link>
+        </NavAction>
+    )
 }
 
 export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -328,6 +344,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             )}
                         </>
                     )}
+                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {props.authenticatedUser && (
                         <NavAction>
                             <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>

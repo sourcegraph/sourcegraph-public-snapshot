@@ -3,7 +3,7 @@ import React from 'react'
 import { mdiImport } from '@mdi/js'
 
 import { LinkOrSpan } from '@sourcegraph/shared/src/components/LinkOrSpan'
-import { Icon, H4 } from '@sourcegraph/wildcard'
+import { Icon, H3, H4 } from '@sourcegraph/wildcard'
 
 import { UseConnectionResult } from '../../../../../components/FilteredConnection/hooks/useConnection'
 import {
@@ -34,7 +34,9 @@ export const ImportingChangesetsPreviewList: React.FunctionComponent<
     React.PropsWithChildren<ImportingChangesetsPreviewListProps>
 > = ({ importingChangesetsConnection: { connection, hasNextPage, fetchMore, loading }, isStale }) => (
     <ConnectionContainer className="w-100">
-        <H4 className="align-self-start w-100 mt-4">Importing changesets</H4>
+        <H4 as={H3} className="align-self-start w-100 mt-4">
+            Importing changesets
+        </H4>
         <ConnectionList className="list-group list-group-flush w-100">
             {connection?.nodes.map(node =>
                 node.__typename === 'VisibleChangesetSpec' ? (

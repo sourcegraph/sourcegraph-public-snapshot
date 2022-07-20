@@ -7,7 +7,7 @@ import { catchError, map, mapTo, startWith, switchMap, tap } from 'rxjs/operator
 import { asError, createAggregateError, isErrorLike } from '@sourcegraph/common'
 import { gql } from '@sourcegraph/http-client'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, useEventObservable, Link, Icon } from '@sourcegraph/wildcard'
+import { Button, useEventObservable, Link, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../../backend/graphql'
 import { Scalars, SetCustomerBillingResult, SetCustomerBillingVariables } from '../../../../graphql-operations'
@@ -72,12 +72,9 @@ export const SiteAdminCustomerBillingLink: React.FunctionComponent<React.PropsWi
                     </Link>
                 )}
                 {isErrorLike(update) && (
-                    <Icon
-                        aria-label={update.message}
-                        className="text-danger mr-2"
-                        data-tooltip={update.message}
-                        svgPath={mdiAlertCircle}
-                    />
+                    <Tooltip content={update.message}>
+                        <Icon aria-label={update.message} svgPath={mdiAlertCircle} className="text-danger mr-2" />
+                    </Tooltip>
                 )}
                 <Button
                     onClick={customerHasLinkedBilling ? onUnlinkBillingClick : onLinkBillingClick}

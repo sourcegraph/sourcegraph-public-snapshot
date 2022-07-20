@@ -680,20 +680,23 @@ func (a *backfillAnalyzer) analyzeSeries(ctx context.Context, bctx *buildSeriesC
 	}
 
 	// Construct the search query that will generate data for this repository and time (revision) tuple.
-	modifiedQuery, err := querybuilder.SingleRepoQuery(query, repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
+	var newQueryStr string
+	modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repoName, revision, querybuilder.CodeInsightsQueryDefaults(len(bctx.series.Repositories) == 0))
 	if err != nil {
 		err = errors.Append(err, errors.Wrap(err, "SingleRepoQuery"))
 		return
 	}
+	newQueryStr = modifiedQuery.String()
 	if bctx.series.GroupBy != nil {
-		modifiedQuery, err = querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy))
-		if err != nil {
+		computeQuery, computeErr := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*bctx.series.GroupBy))
+		if computeErr != nil {
 			err = errors.Append(err, errors.Wrap(err, "ComputeInsightCommandQuery"))
 			return
 		}
+		newQueryStr = computeQuery.String()
 	}
 
-	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, modifiedQuery, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
+	job = queryrunner.ToQueueJob(bctx.execution, bctx.seriesID, newQueryStr, priority.Unindexed, priority.FromTimeInterval(bctx.execution.RecordingTime, bctx.series.CreatedAt))
 	return err, job, preempted
 }
 

@@ -1,9 +1,9 @@
 import React from 'react'
 
+import { mdiClose } from '@mdi/js'
 import { VisuallyHidden } from '@reach/visually-hidden'
-import CloseIcon from 'mdi-react/CloseIcon'
 
-import { Button, Link, Modal, H3, H4, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Modal, H3, H4, Text, Icon } from '@sourcegraph/wildcard'
 
 import styles from './RunServerSideModal.module.scss'
 
@@ -29,7 +29,7 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
             }}
         >
             <VisuallyHidden>Close</VisuallyHidden>
-            <CloseIcon className={styles.icon} />
+            <Icon className={styles.icon} svgPath={mdiClose} inline={false} aria-hidden={true} />
         </Button>
 
         <div className={styles.content}>
@@ -39,7 +39,19 @@ export const RunServerSideModal: React.FunctionComponent<RunServerSideModalProps
                     be autoscaled to speed up creating large-scale batch changes.
                 </Text>
 
-                <div className={styles.videoContainer}>Video</div>
+                <video
+                    className="w-100 h-auto shadow percy-hide"
+                    width={1280}
+                    height={720}
+                    autoPlay={true}
+                    muted={true}
+                    loop={true}
+                    playsInline={true}
+                    controls={false}
+                >
+                    <source type="video/webm" src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.webm" />
+                    <source type="video/mp4" src="https://storage.googleapis.com/sourcegraph-assets/ssbc_demo.mp4" />
+                </video>
             </div>
             <div className={styles.right}>
                 <div className={styles.rightTop}>

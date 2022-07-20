@@ -169,3 +169,91 @@ func TestRepoDependentsPredicate(t *testing.T) {
 		}
 	})
 }
+
+func TestRepoHasDescriptionPredicate(t *testing.T) {
+	t.Run("ParseParams", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *RepoHasDescriptionPredicate
+		}
+
+		valid := []test{
+			{`literal`, `test`, &RepoHasDescriptionPredicate{Pattern: "test"}},
+			{`regexp`, `test(.*)package`, &RepoHasDescriptionPredicate{Pattern: "test(.*)package"}},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &RepoHasDescriptionPredicate{}
+				err := p.ParseParams(tc.params)
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+
+		invalid := []test{
+			{`empty`, ``, nil},
+			{`catch invalid regexp`, `([)`, nil},
+		}
+
+		for _, tc := range invalid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &RepoHasDescriptionPredicate{}
+				err := p.ParseParams(tc.params)
+				if err == nil {
+					t.Fatal("expected error but got none")
+				}
+			})
+		}
+	})
+}
+
+func TestFileHasOwnerPredicate(t *testing.T) {
+	t.Run("ParseParams", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *FileHasOwnerPredicate
+		}
+
+		valid := []test{
+			{`literal`, `test`, &FileHasOwnerPredicate{Owner: "test"}},
+			{`regexp`, `@octo-org/octocats`, &FileHasOwnerPredicate{Owner: "@octo-org/octocats"}},
+			{`regexp`, `test@example.com`, &FileHasOwnerPredicate{Owner: "test@example.com"}},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &FileHasOwnerPredicate{}
+				err := p.ParseParams(tc.params)
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+
+		invalid := []test{
+			{`empty`, ``, nil},
+		}
+
+		for _, tc := range invalid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &FileHasOwnerPredicate{}
+				err := p.ParseParams(tc.params)
+				if err == nil {
+					t.Fatal("expected error but got none")
+				}
+			})
+		}
+	})
+}

@@ -1,10 +1,19 @@
 import { Duration } from 'date-fns'
 import { uniq } from 'lodash'
 
-import { InsightViewNode, TimeIntervalStepInput, TimeIntervalStepUnit } from '../../../../../../graphql-operations'
+import { SeriesSortDirection } from '@sourcegraph/shared/src/schema'
+
+import {
+    InsightViewNode,
+    SeriesSortMode,
+    GroupByField,
+    TimeIntervalStepInput,
+    TimeIntervalStepUnit,
+} from '../../../../../../graphql-operations'
 import { parseSeriesDisplayOptions } from '../../../../components/insights-view-grid/components/backend-insight/components/drill-down-filters-panel/drill-down-filters/utils'
-import { Insight, InsightExecutionType, InsightType } from '../../../types'
+import { ComputeInsight, Insight, InsightExecutionType, InsightType } from '../../../types'
 import { BaseInsight } from '../../../types/insight/common'
+import { MAX_NUMBER_OF_SERIES } from '../methods/get-backend-insight-data/deserializators'
 
 /**
  * Transforms/casts gql api insight model to FE insight model. We still
@@ -13,8 +22,9 @@ import { BaseInsight } from '../../../types/insight/common'
  * api for insights.
  */
 export const createInsightView = (insight: InsightViewNode): Insight => {
-    const baseInsight: Omit<BaseInsight, 'title' | 'type' | 'executionType'> = {
+    const baseInsight: Omit<BaseInsight, 'type' | 'executionType'> = {
         id: insight.id,
+        title: insight.presentation.title,
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
         seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
@@ -25,25 +35,40 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
 
     switch (insight.presentation.__typename) {
         case 'LineChartInsightViewPresentation': {
+            const isComputeInsight = insight.dataSeriesDefinitions.some(series => series.groupBy)
             const isCaptureGroupInsight = insight.dataSeriesDefinitions.some(
-                series => series.generatedFromCaptureGroups
+                series => series.generatedFromCaptureGroups && !series.groupBy
             )
+
+            const { appliedFilters } = insight
             // We do not support different time scope for different series at the moment
             const step = getDurationFromStep(insight.dataSeriesDefinitions[0].timeScope)
             const repositories = uniq(
                 insight.dataSeriesDefinitions.flatMap(series => series.repositoryScope.repositories)
             )
 
+            // Transform display options into format compatible with our input forms
+            // TODO: Remove when we consume GQL types directly
+            const seriesDisplayOptions = {
+                limit: `${Math.min(
+                    baseInsight.seriesDisplayOptions?.limit ?? MAX_NUMBER_OF_SERIES,
+                    MAX_NUMBER_OF_SERIES
+                )}`,
+                sortOptions: {
+                    direction: baseInsight.seriesDisplayOptions?.sortOptions?.direction ?? SeriesSortDirection.DESC,
+                    mode: baseInsight.seriesDisplayOptions?.sortOptions?.mode ?? SeriesSortMode.RESULT_COUNT,
+                },
+            }
+
             if (isCaptureGroupInsight) {
                 // It's safe because capture group insight always has only 1 data series
                 const { query } = insight.dataSeriesDefinitions[0] ?? {}
-                const { presentation, appliedFilters } = insight
+                const { appliedFilters } = insight
 
                 return {
                     ...baseInsight,
                     executionType: InsightExecutionType.Backend,
                     type: InsightType.CaptureGroup,
-                    title: presentation.title,
                     repositories,
                     query,
                     step,
@@ -51,9 +76,10 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                         context: appliedFilters.searchContexts?.[0] ?? '',
+                        seriesDisplayOptions,
                     },
-                    appliedSeriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
-                    defaultSeriesDisplayOptions: parseSeriesDisplayOptions(insight.defaultSeriesDisplayOptions),
+                    appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
+                    defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
                 }
             }
 
@@ -71,13 +97,30 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         : '',
             }))
 
-            const { presentation, appliedFilters } = insight
+            if (isComputeInsight) {
+                // It's safe because capture group insight always has only 1 data series
+                const { groupBy } = insight.dataSeriesDefinitions[0] ?? {}
+
+                return {
+                    ...baseInsight,
+                    executionType: InsightExecutionType.Backend,
+                    type: InsightType.Compute,
+                    groupBy: groupBy ?? GroupByField.REPO,
+                    repositories,
+                    series,
+                    filters: {
+                        includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
+                        excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
+                        context: appliedFilters.searchContexts?.[0] ?? '',
+                        seriesDisplayOptions,
+                    },
+                } as ComputeInsight
+            }
 
             return {
                 ...baseInsight,
                 executionType: InsightExecutionType.Backend,
                 type: InsightType.SearchBased,
-                title: presentation.title,
                 repositories,
                 series,
                 step,
@@ -85,6 +128,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                     includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                     excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                     context: appliedFilters.searchContexts?.[0] ?? '',
+                    seriesDisplayOptions,
                 },
             }
         }

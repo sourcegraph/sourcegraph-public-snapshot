@@ -6,6 +6,7 @@ import (
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -83,6 +84,9 @@ func setAuthzProviders(logger log.Logger) {
 	if err != nil {
 		return
 	}
+
+	// authz also relies on UserMappings being setup.
+	globals.WatchPermissionsUserMapping()
 
 	ctx := context.Background()
 	db := database.NewDB(logger, sqlDB)
