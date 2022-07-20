@@ -64,13 +64,6 @@ var ClientMocks, emptyClientMocks struct {
 	LocalGitCommandReposDir string
 }
 
-// AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
-// because it is not intended to be cleared when other mocks should be.
-// This mock should be initialized during tests initialization so that
-// gitserver client always contain address of a local machine during tests
-// and tests which use gitserver client can pass successfully
-var AddrsMock func() []string
-
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
 // tests don't inadvertently use them).
 func ResetClientMocks() {
@@ -167,10 +160,6 @@ type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogRe
 type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
-
-	// Addrs returns the addresses for gitservers. It is safe for concurrent
-	// use. It may return different results at different times.
-	Addrs() []string
 
 	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
@@ -414,9 +403,6 @@ type Client interface {
 }
 
 func (c *ClientImplementor) Addrs() []string {
-	if AddrsMock != nil {
-		return AddrsMock()
-	}
 	return c.addrs()
 }
 

@@ -31,6 +31,7 @@ var root string
 // This is a default gitserver test client currently used for RequestRepoUpdate
 // gitserver calls during invocation of MakeGitRepository function
 var testGitserverClient gitserver.Client
+var gitserverAddresses []string
 
 func TestMain(m *testing.M) {
 	flag.Parse()
@@ -84,9 +85,7 @@ func init() {
 
 	serverAddress := l.Addr().String()
 	testGitserverClient = gitserver.NewTestClient(httpcli.InternalDoer, database.NewMockDB(), []string{serverAddress})
-	gitserver.AddrsMock = func() []string {
-		return []string{serverAddress}
-	}
+	gitserverAddresses = []string{serverAddress}
 }
 
 var Times = []string{
@@ -135,14 +134,6 @@ func MakeGitRepository(t testing.TB, cmds ...string) api.RepoName {
 		t.Fatal(resp.Error)
 	}
 	return repo
-}
-
-func MustParseTime(layout, value string) time.Time {
-	tm, err := time.Parse(layout, value)
-	if err != nil {
-		panic(err.Error())
-	}
-	return tm
 }
 
 func AppleTime(t string) string {
