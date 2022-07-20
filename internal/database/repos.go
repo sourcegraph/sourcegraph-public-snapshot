@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"github.com/grafana/regexp"
 	"net"
 	"os"
 	"strconv"
@@ -1570,7 +1571,7 @@ func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
 		otlog.String("pattern", pattern))
 
 	var conds []*sqlf.Query
-	if exact != nil && len(exact) != 0 {
+	if len(exact) > 0 {
 		// NOTE: We add anchors to each element of `exact`, store the resulting contents in `exactWithAnchors`,
 		// then pass `exactWithAnchors` into the query condition, because using `~* ANY (%s)` is more efficient
 		// than `IN (%s)` as it uses the trigram index on `description`.
@@ -1580,7 +1581,7 @@ func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
 		// Discussion: https://github.com/sourcegraph/sourcegraph/pull/39117#discussion_r925131158
 		exactWithAnchors := make([]string, len(exact))
 		for i, v := range exact {
-			exactWithAnchors[i] = "^" + v + "$"
+			exactWithAnchors[i] = "^" + regexp.QuoteMeta(v) + "$"
 		}
 		conds = append(conds, sqlf.Sprintf("lower(description) ~* ANY (%s)", pq.Array(exactWithAnchors)))
 	}
