@@ -40,7 +40,6 @@ const defaultProps = (
     onThemePreferenceChange: () => undefined,
     globbing: false,
     platformContext: {} as any,
-    keyboardShortcuts: [],
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',

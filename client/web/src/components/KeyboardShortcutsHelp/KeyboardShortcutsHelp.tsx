@@ -1,13 +1,13 @@
-import React, { useCallback, useState } from 'react'
+import React from 'react'
 
 import { mdiClose } from '@mdi/js'
-import { Shortcut, ModifierKey, Key } from '@slimsag/react-shortcuts'
+import { ModifierKey, Key } from '@slimsag/react-shortcuts'
 
-import { Button, Modal, Icon, H4 } from '@sourcegraph/wildcard'
-
-import { KeyboardShortcut } from '../keyboardShortcuts'
-
-import { KeyboardShortcutsProps, KEYBOARD_SHORTCUTS } from './keyboardShortcuts'
+import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { Button, Modal, Icon, H4, Label } from '@sourcegraph/wildcard'
 
 import styles from './KeyboardShortcutsHelp.module.scss'
 
@@ -19,15 +19,13 @@ interface Props {
 /**
  * Keyboard shortcuts that are implemented in a legacy way, not using the central keyboard shortcuts
  * registry. These are shown in the help modal.
- * // TODO: CHECK IF USED
  */
-const LEGACY_KEYBOARD_SHORTCUTS: KeyboardShortcut[] = [
-    {
-        id: 'canonicalURL',
+const LEGACY_KEYBOARD_SHORTCUTS: Record<string, KeyboardShortcut> = {
+    canonicalURL: {
         title: 'Expand URL to its canonical form (on file or tree page)',
         keybindings: [{ ordered: ['y'] }],
     },
-]
+}
 
 const KEY_TO_NAMES: { [P in Key | ModifierKey | string]?: string } = {
     Meta: 'Cmd',
@@ -41,6 +39,11 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
     isOpen,
     onDismiss,
 }) => {
+    const [keyboardShortcutsEnabled, setKeyboardShortcutsEnabled] = useTemporarySetting(
+        'keyboardShortcuts.enabled',
+        true
+    )
+
     return (
         <Modal
             position="center"
@@ -57,7 +60,7 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
             </div>
             <div>
                 <ul className="list-group list-group-flush">
-                    {Object.values(KEYBOARD_SHORTCUTS)
+                    {Object.values({ ...KEYBOARD_SHORTCUTS, ...LEGACY_KEYBOARD_SHORTCUTS })
                         .filter(({ hideInHelp }) => !hideInHelp)
                         .map(({ title, keybindings }, index) => (
                             <li
@@ -78,6 +81,15 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
                             </li>
                         ))}
                 </ul>
+                <Label className={styles.modalFooter}>
+                    <Toggle
+                        value={keyboardShortcutsEnabled}
+                        onToggle={() => setKeyboardShortcutsEnabled(previous => !previous)}
+                        title="Toggle keyboard shortcuts"
+                        className="mr-2"
+                    />
+                    Keyboard shortcuts {keyboardShortcutsEnabled ? 'enabled ' : 'disabled'}
+                </Label>
             </div>
         </Modal>
     )

@@ -6,6 +6,7 @@ import classNames from 'classnames'
 // eslint-disable-next-line no-restricted-imports
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -24,7 +25,6 @@ import {
     Badge,
     ProductStatusBadge,
 } from '@sourcegraph/wildcard'
-import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 
 import { AuthenticatedUser } from '../auth'
 import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
