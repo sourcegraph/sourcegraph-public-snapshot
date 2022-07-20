@@ -1,3 +1,9 @@
+# Export traces to a Jaeger instance.
+#
+# Variables:
+#
+# - $JAEGER_AGENT_HOST
+
 receivers:
   otlp:
     protocols:
@@ -6,7 +12,7 @@ receivers:
 exporters:
   jaeger:
     # Default Jaeger GRPC server
-    endpoint: "$JAEGER_HOST:14250"
+    endpoint: "$JAEGER_AGENT_HOST:14250"
     tls:
       insecure: true
 
