@@ -858,9 +858,9 @@ func (c *Changeset) Detach(batchChangeID int64) bool {
 	return false
 }
 
-// Archive marks the given batch change as to-be-archived. Returns true, if the
-// batch change currently is attached to the batch change and *not* archived.
-// This function is a noop, if the given changeset was already archived.
+// Archive marks the given changeset as to-be-archived. Returns true, if the
+// changeset currently is attached to the batch change and *not* archived. This
+// function is a noop, if the given changeset was already archived.
 func (c *Changeset) Archive(batchChangeID int64) bool {
 	for i := range c.BatchChanges {
 		if c.BatchChanges[i].BatchChangeID == batchChangeID && !c.BatchChanges[i].IsArchived {
