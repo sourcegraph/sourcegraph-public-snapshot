@@ -8,7 +8,7 @@ import { TreeLayerTable } from './components'
 import { GO_UP_TREE_LABEL } from './constants'
 import { File } from './File'
 import { SingleChildTreeLayer } from './SingleChildTreeLayer'
-import { TreeContext } from './TreeContext'
+import { TreeRootContext } from './TreeContext'
 import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
 import { hasSingleChild, SingleChildGitTree, TreeEntryInfo } from './util'
@@ -61,14 +61,14 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                         <tr>
                             <td>
                                 <TreeLayerTable>
-                                    <TreeContext.Consumer>
-                                        {treeContext => (
+                                    <TreeRootContext.Consumer>
+                                        {treeRootContext => (
                                             <File
                                                 entryInfo={{
                                                     name: GO_UP_TREE_LABEL,
                                                     path: props.parentPath as string,
                                                     isDirectory: false,
-                                                    url: dirname(treeContext.rootTreeUrl),
+                                                    url: dirname(treeRootContext.rootTreeUrl),
                                                     isSingleChild: false,
                                                     submodule: null,
                                                 }}
@@ -82,7 +82,7 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                 isSelected={false}
                                             />
                                         )}
-                                    </TreeContext.Consumer>
+                                    </TreeRootContext.Consumer>
                                 </TreeLayerTable>
                             </td>
                         </tr>

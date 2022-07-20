@@ -32,7 +32,7 @@ import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { TreeNode } from './Tree'
-import { TreeContext } from './TreeContext'
+import { TreeRootContext } from './TreeContext'
 import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
 const errorWidth = (width?: string): { width: string } => ({
@@ -208,7 +208,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                         </div>
                                     ) : (
                                         treeOrError && (
-                                            <TreeContext.Provider
+                                            <TreeRootContext.Provider
                                                 value={{
                                                     rootTreeUrl: treeOrError.url,
                                                 }}
@@ -224,7 +224,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                     setChildNodes={this.setChildNode}
                                                     fileDecorationsByPath={this.state.fileDecorationsByPath}
                                                 />
-                                            </TreeContext.Provider>
+                                            </TreeRootContext.Provider>
                                         )
                                     )}
                                 </TreeLayerCell>

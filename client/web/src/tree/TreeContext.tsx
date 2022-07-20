@@ -1,9 +1,9 @@
 import React from 'react'
 
-export interface TreeContext {
+export interface TreeRootContext {
     rootTreeUrl: string
 }
 
-export const TreeContext = React.createContext<TreeContext>({
+export const TreeRootContext = React.createContext<TreeRootContext>({
     rootTreeUrl: '',
 })
