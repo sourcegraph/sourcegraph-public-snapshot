@@ -164,6 +164,7 @@ require (
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	go.etcd.io/bbolt v1.3.6
+	go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
 	go.opentelemetry.io/contrib/propagators/ot v1.7.0
 	go.opentelemetry.io/otel v1.8.0
 	go.opentelemetry.io/otel/bridge/opentracing v1.8.0
@@ -195,13 +196,6 @@ require (
 	layeh.com/gopher-luar v1.0.10
 	sigs.k8s.io/kustomize/kyaml v0.13.3
 	sigs.k8s.io/yaml v1.3.0
-)
-
-require go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
-
-require (
-	github.com/go-sql-driver/mysql v1.6.0 // indirect
-	github.com/onsi/ginkgo v1.16.4 // indirect
 )
 
 require (
@@ -279,6 +273,7 @@ require (
 	github.com/go-openapi/spec v0.20.4 // indirect
 	github.com/go-openapi/swag v0.21.1 // indirect
 	github.com/go-openapi/validate v0.20.3 // indirect
+	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/go-stack/stack v1.8.1 // indirect
 	github.com/go-toast/toast v0.0.0-20190211030409-01e6764cf0a4 // indirect
 	github.com/godbus/dbus/v5 v5.0.6 // indirect
@@ -353,6 +348,7 @@ require (
 	github.com/nu7hatch/gouuid v0.0.0-20131221200532-179d4d0c4d8d // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
 	github.com/olekukonko/tablewriter v0.0.5 // indirect
+	github.com/onsi/ginkgo v1.16.4 // indirect
 	github.com/pkg/browser v0.0.0-20210911075715-681adbf594b8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.6.0 // indirect
@@ -396,7 +392,7 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.8.0 // indirect
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.8.0
-	go.opentelemetry.io/proto/otlp v0.18.0 // indirect
+	go.opentelemetry.io/proto/otlp v0.18.0
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/mod v0.6.0-dev.0.20220106191415-9b9b3d81d5e3
 	golang.org/x/term v0.0.0-20220411215600-e5f449aeb171 // indirect
