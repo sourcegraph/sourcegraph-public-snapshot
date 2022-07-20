@@ -369,14 +369,10 @@ export const UnstartedWithLicenseAlertConnectionResult: Story = () => (
             >
                 <BatchSpecContextProvider
                     batchChange={mockBatchChange()}
-                    batchSpec={
-                        boolean('Valid batch spec?', true)
-                            ? mockBatchSpec()
-                            : mockBatchSpec({ originalInput: 'not-valid' })
-                    }
+                    batchSpec={mockBatchSpec()}
                     refetchBatchChange={() => Promise.resolve()}
                 >
-                    <WorkspacesPreview {...props} />
+                    <WorkspacesPreview {...props} isReadOnly={false} />
                 </BatchSpecContextProvider>
             </MockedTestProvider>
         )}
