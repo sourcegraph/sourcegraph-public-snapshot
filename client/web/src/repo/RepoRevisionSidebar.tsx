@@ -93,7 +93,7 @@ export const RepoRevisionSidebar: React.FunctionComponent<React.PropsWithChildre
     }
 
     return (
-        <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY}>
+        <Panel defaultSize={256} position="left" storageKey={SIZE_STORAGE_KEY} ariaLabel="File sidebar">
             <div className="d-flex flex-column h-100 w-100">
                 <GettingStartedTour
                     className="mr-3"

@@ -122,6 +122,8 @@ export interface BlobProps
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
+    role?: string
+    ariaLabel?: string
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -204,6 +206,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         blobInfo,
         platformContext,
         settingsCascade,
+        role,
+        ariaLabel,
         'data-testid': dataTestId,
     } = props
 
@@ -797,6 +801,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 className={classNames(props.className, styles.blob)}
                 ref={nextBlobElement}
                 tabIndex={-1}
+                role={role}
+                aria-label={ariaLabel}
             >
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
