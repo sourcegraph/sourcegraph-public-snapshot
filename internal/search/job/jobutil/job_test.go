@@ -549,7 +549,30 @@ func TestNewPlanJob(t *testing.T) {
         (OR
           NoopJob
           NoopJob)))))`),
-	}}
+	},
+		{
+			query:      `file:has.owner(@sqs) example`,
+			protocol:   search.Streaming,
+			searchType: query.SearchTypeRegex,
+			want: autogold.Want("codeownership", `
+(ALERT
+  (query . )
+  (originalQuery . )
+  (patternType . literal)
+  (TIMEOUT
+    (timeout . 20s)
+    (LIMIT
+      (limit . 500)
+      (CODEOWNERSHIP
+        (PARALLEL
+          (ZOEKTGLOBALTEXTSEARCH
+            (query . substr:"example")
+            (type . text)
+            )
+          (REPOSCOMPUTEEXCLUDED
+            )
+          NoopJob)))))`),
+		}}
 
 	for _, tc := range cases {
 		t.Run(tc.want.Name(), func(t *testing.T) {

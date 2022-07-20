@@ -2,7 +2,6 @@ package codeownership
 
 import (
 	"context"
-	"fmt"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -37,8 +36,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	// file currently has any owner. A search to include any owner will
 	// therefore return no results.
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		fmt.Println("%+v", s.fileOwnersMustExclude)
-		if len(s.fileOwnersMustExclude) > 0 {
+		if len(s.fileOwnersMustInclude) > 0 {
 			event.Results = event.Results[:0]
 		}
 		stream.Send(event)
