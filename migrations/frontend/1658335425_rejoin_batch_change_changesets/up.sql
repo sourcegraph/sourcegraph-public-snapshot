@@ -1,11 +1,15 @@
 -- Set up the new table and its dependent type.
 
+-- TODO: probably match naming to the Go types and constants.
+
 DROP TYPE IF EXISTS batch_change_changesets_archived;
 
 CREATE TYPE batch_change_changesets_archived AS ENUM (
   'pending',
   'archived'
 );
+
+-- TODO: do we need created_at or updated_at?
 
 CREATE TABLE IF NOT EXISTS batch_change_changesets (
   batch_change_id BIGINT NOT NULL,
