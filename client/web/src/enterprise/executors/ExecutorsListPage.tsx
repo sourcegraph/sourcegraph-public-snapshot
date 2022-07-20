@@ -81,7 +81,7 @@ export const ExecutorsListPage: FunctionComponent<React.PropsWithChildren<Execut
                 <Text className="mb-0">
                     Executors enable{' '}
                     <Link to="/help/code_intelligence/explanations/auto_indexing" rel="noopener">
-                        auto-indexing for Code Intelligence
+                        auto-indexing for code navigation
                     </Link>{' '}
                     and{' '}
                     <Link to="/help/batch_changes/explanations/server_side" rel="noopener">

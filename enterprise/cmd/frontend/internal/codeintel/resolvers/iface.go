@@ -82,8 +82,8 @@ type LSIFStore interface {
 }
 
 type IndexEnqueuer interface {
-	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force bool) ([]dbstore.Index, error)
-	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, []config.IndexJobHint, error)
+	QueueIndexes(ctx context.Context, repositoryID int, rev, configuration string, force, bypassLimit bool) ([]dbstore.Index, error)
+	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (*config.IndexConfiguration, []config.IndexJobHint, error)
 }
 
 type (

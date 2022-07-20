@@ -134,12 +134,8 @@ var tlsExternal = conf.Cached(func() any {
 	}
 })
 
-func runWithRemoteOpts(ctx context.Context, cmd *exec.Cmd, progress io.Writer) ([]byte, error) {
-	return runWith(ctx, cmd, true, progress)
-}
-
-// runWithRemoteOpts runs the command after applying the remote options.
-// If progress is not nil, all output is written to it in a separate goroutine.
+// runWith runs the command after applying the remote options. If progress is not
+// nil, all output is written to it in a separate goroutine.
 func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress io.Writer) ([]byte, error) {
 	if configRemoteOpts {
 		// Inherit process environment. This allows admins to configure
@@ -154,7 +150,7 @@ func runWith(ctx context.Context, cmd *exec.Cmd, configRemoteOpts bool, progress
 		Bytes() []byte
 	}
 
-	logger := log.Scoped("runWith", "runWithRemoteOpts runs the command after applying the remote options")
+	logger := log.Scoped("runWith", "runWith runs the command after applying the remote options")
 
 	if progress != nil {
 		var pw progressWriter

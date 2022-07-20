@@ -30,7 +30,14 @@ const staticExtensions: Extension = [
     }),
 ]
 
-export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, wrapCode, isLightTheme }) => {
+export const Blob: React.FunctionComponent<BlobProps> = ({
+    className,
+    blobInfo,
+    wrapCode,
+    isLightTheme,
+    ariaLabel,
+    role,
+}) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
     const dynamicExtensions = useMemo(
@@ -101,5 +108,5 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         // logic whenever the content changes
     }, [editor, position, blobInfo])
 
-    return <div ref={setContainer} className={`${className} overflow-hidden`} />
+    return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
 }

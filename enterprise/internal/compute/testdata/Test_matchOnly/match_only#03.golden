@@ -1,0 +1,87 @@
+{
+  "Input": "a(b(c))(de)f(g)h",
+  "Result": {
+    "matches": [
+      {
+        "value": "abcdefgh",
+        "range": {
+          "start": {
+            "offset": -1,
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "offset": -1,
+            "line": 1,
+            "column": 8
+          }
+        },
+        "environment": {
+          "1": {
+            "value": "bc",
+            "range": {
+              "start": {
+                "offset": -1,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": -1,
+                "line": 1,
+                "column": 3
+              }
+            }
+          },
+          "2": {
+            "value": "c",
+            "range": {
+              "start": {
+                "offset": -1,
+                "line": 1,
+                "column": 2
+              },
+              "end": {
+                "offset": -1,
+                "line": 1,
+                "column": 3
+              }
+            }
+          },
+          "3": {
+            "value": "de",
+            "range": {
+              "start": {
+                "offset": -1,
+                "line": 1,
+                "column": 3
+              },
+              "end": {
+                "offset": -1,
+                "line": 1,
+                "column": 5
+              }
+            }
+          },
+          "4": {
+            "value": "g",
+            "range": {
+              "start": {
+                "offset": -1,
+                "line": 1,
+                "column": 6
+              },
+              "end": {
+                "offset": -1,
+                "line": 1,
+                "column": 7
+              }
+            }
+          }
+        }
+      }
+    ],
+    "path": "bedge",
+    "repositoryID": 5,
+    "repository": "codehost.com/myorg/myrepo"
+  }
+}

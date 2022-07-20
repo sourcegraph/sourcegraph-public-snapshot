@@ -8,7 +8,6 @@ import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.browser.URLBuilder;
 import com.sourcegraph.find.PreviewContent;
 import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.git.GitUtil;
@@ -17,7 +16,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public abstract class FileActionBase extends DumbAwareAction {
-    abstract protected void handleFileUri(@NotNull String uri);
+    abstract protected void handleFileUri(@NotNull Project project, @NotNull String uri);
 
     @Override
     public void actionPerformed(@NotNull AnActionEvent e) {
@@ -38,14 +37,14 @@ public abstract class FileActionBase extends DumbAwareAction {
 
         if (currentFile instanceof SourcegraphVirtualFile) {
             SourcegraphVirtualFile sourcegraphFile = (SourcegraphVirtualFile) currentFile;
-            handleFileUri(URLBuilder.buildSourcegraphBlobUrl(project, sourcegraphFile.getRepoUrl(), sourcegraphFile.getCommit(), sourcegraphFile.getRelativePath(), getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
+            handleFileUri(project, URLBuilder.buildSourcegraphBlobUrl(project, sourcegraphFile.getRepoUrl(), sourcegraphFile.getCommit(), sourcegraphFile.getRelativePath(), getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
         } else {
             RepoInfo repoInfo = GitUtil.getRepoInfo(currentFile.getPath(), project);
             if (repoInfo.remoteUrl.equals("")) {
                 return;
             }
 
-            handleFileUri(URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
+            handleFileUri(project, URLBuilder.buildEditorFileUrl(project, repoInfo.remoteUrl, repoInfo.branchName, repoInfo.relativePath, getSelectionStartPosition(editor), getSelectionEndPosition(editor)));
         }
     }
 
@@ -57,7 +56,7 @@ public abstract class FileActionBase extends DumbAwareAction {
             return;
         }
 
-        handleFileUri(URLBuilder.buildSourcegraphBlobUrl(project, previewContent.getRepoUrl(), previewContent.getCommit(), previewContent.getPath(), start, end));
+        handleFileUri(project, URLBuilder.buildSourcegraphBlobUrl(project, previewContent.getRepoUrl(), previewContent.getCommit(), previewContent.getPath(), start, end));
     }
 
     @Nullable

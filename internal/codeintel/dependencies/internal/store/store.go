@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"database/sql"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -34,6 +35,7 @@ type Store interface {
 	UpsertDependencyRepos(ctx context.Context, deps []shared.Repo) (newDeps []shared.Repo, err error)
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
 	ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, totalCount int, err error)
+	GetLockfileIndex(ctx context.Context, opts GetLockfileIndexOpts) (index shared.LockfileIndex, err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -776,6 +778,79 @@ func makeListLockfileIndexesConds(opts ListLockfileIndexesOpts, forCount bool) [
 	}
 
 	return conds
+}
+
+// GetLockfileIndexOpts are options for loading a lockfile index from database.
+type GetLockfileIndexOpts struct {
+	ID       int
+	RepoName string
+	Commit   string
+	Lockfile string
+}
+
+var ErrLockfileIndexNotFound = errors.New("lockfile index matching conditions not found")
+
+// GetLockfileIndex returns a lockfile index.
+func (s *store) GetLockfileIndex(ctx context.Context, opts GetLockfileIndexOpts) (index shared.LockfileIndex, err error) {
+	ctx, _, endObservation := s.operations.listLockfileIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", opts.ID),
+		log.String("repoName", opts.RepoName),
+		log.String("commit", opts.Commit),
+		log.String("lockfile", opts.Commit),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{
+			log.Int("id", index.ID),
+		}})
+	}()
+
+	conds, err := makeGetLockfileIndexConds(opts)
+	if err != nil {
+		return index, err
+	}
+
+	index, err = scanLockfileIndex(s.db.QueryRow(ctx, sqlf.Sprintf(
+		getLockfileIndexQuery,
+		sqlf.Join(conds, "AND"),
+	)))
+	if err == sql.ErrNoRows {
+		return index, ErrLockfileIndexNotFound
+	}
+	return index, err
+}
+
+const getLockfileIndexQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:GetLockfileIndex
+SELECT id, repository_id, commit_bytea, codeintel_lockfile_reference_ids, lockfile, fidelity
+FROM codeintel_lockfiles
+WHERE %s
+ORDER BY id
+`
+
+func makeGetLockfileIndexConds(opts GetLockfileIndexOpts) ([]*sqlf.Query, error) {
+	var conds []*sqlf.Query
+
+	if opts.ID != 0 {
+		conds = append(conds, sqlf.Sprintf("id = %s", opts.ID))
+	}
+
+	if opts.RepoName != "" {
+		conds = append(conds, sqlf.Sprintf("repository_id IN (SELECT id FROM repo WHERE name = %s)", opts.RepoName))
+	}
+
+	if opts.Commit != "" {
+		conds = append(conds, sqlf.Sprintf("commit_bytea = %s", dbutil.CommitBytea(opts.Commit)))
+	}
+
+	if opts.Lockfile != "" {
+		conds = append(conds, sqlf.Sprintf("lockfile = %s", opts.Lockfile))
+	}
+
+	if len(conds) == 0 {
+		return nil, errors.New("not enough conditions given to query lockfile index")
+	}
+
+	return conds, nil
 }
 
 // UpsertDependencyRepos creates the given dependency repos if they don't yet exist. The values
