@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useHistory, useLocation } from 'react-router'
@@ -97,7 +97,6 @@ export const BatchChangePreviewPage: React.FunctionComponent<
                         toBeArchived={spec.applyPreview.stats.archive}
                         batchChange={spec.appliesToBatchChange}
                         viewerCanAdminister={spec.viewerCanAdminister}
-                        totalCount={spec.applyPreview.totalCount}
                         telemetryService={telemetryService}
                     />
                     <Description description={spec.description.description} />
@@ -138,6 +137,8 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
         pollInterval: 5000,
     })
 
+    const [exceedsLicense, setExceedsLicense] = useState(false)
+
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
@@ -174,21 +175,24 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         diffStat={spec.diffStat!}
                         queryApplyPreviewStats={queryApplyPreviewStats}
                     />
-                    <CreateUpdateBatchChangeAlert
-                        history={history}
-                        specID={spec.id}
-                        toBeArchived={spec.applyPreview.stats.archive}
-                        batchChange={spec.appliesToBatchChange}
-                        viewerCanAdminister={spec.viewerCanAdminister}
-                        totalCount={spec.applyPreview.totalCount}
-                        telemetryService={telemetryService}
-                    />
+                    {!exceedsLicense && (
+                        <CreateUpdateBatchChangeAlert
+                            history={history}
+                            specID={spec.id}
+                            toBeArchived={spec.applyPreview.stats.archive}
+                            batchChange={spec.appliesToBatchChange}
+                            viewerCanAdminister={spec.viewerCanAdminister}
+                            telemetryService={telemetryService}
+                        />
+                    )}
                     <PreviewList
                         batchSpecID={specID}
                         history={history}
                         location={location}
                         authenticatedUser={authenticatedUser}
                         isLightTheme={isLightTheme}
+                        totalCount={spec.applyPreview.totalCount}
+                        onLicenseExceeded={() => setExceedsLicense(true)}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}
