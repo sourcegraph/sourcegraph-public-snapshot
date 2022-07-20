@@ -580,7 +580,7 @@ func testGitLabWebhook(db *sql.DB) func(*testing.T) {
 				es := createGitLabExternalService(t, ctx, store.ExternalServices())
 
 				// We can induce an error with an incomplete merge request
-				// event that's missing a projebt.
+				// event that's missing a project.
 				event := &webhooks.MergeRequestApprovedEvent{
 					MergeRequestEventCommon: webhooks.MergeRequestEventCommon{
 						MergeRequest: &gitlab.MergeRequest{IID: 42},
