@@ -9,7 +9,13 @@ import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
-import { BatchSpecApplyPreviewVariables, ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
+import {
+    BatchSpecApplyPreviewVariables,
+    ChangesetApplyPreviewFields,
+    GetLicenseAndUsageInfoResult,
+    Scalars,
+} from '../../../../graphql-operations'
+import { LicenseAlert } from '../../LicenseAlert'
 import { MultiSelectContext } from '../../MultiSelectContext'
 import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
@@ -34,6 +40,11 @@ interface Props extends ThemeProps {
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
+    /** The total number of changesets. Used to determine whether to show the LicenseAlert. **/
+    totalCount?: number
+    /** Used to bubble up whether total count exceeds the limit. **/
+    onLicenseExceeded?: () => void
+
     /** For testing only. */
     queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
     /** For testing only. */
@@ -53,6 +64,9 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     location,
     authenticatedUser,
     isLightTheme,
+
+    totalCount,
+    onLicenseExceeded,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
@@ -118,6 +132,17 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
         ]
     )
 
+    const onLicenseRetrieved = useCallback(
+        (result: GetLicenseAndUsageInfoResult) => {
+            if (totalCount && onLicenseExceeded) {
+                if (!result.batchChanges && !result.campaigns && totalCount > result.maxUnlicensedChangesets) {
+                    onLicenseExceeded()
+                }
+            }
+        },
+        [totalCount, onLicenseExceeded]
+    )
+
     const showSelectRow = selected === 'all' || selected.size > 0
 
     return (
@@ -130,6 +155,10 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
             ) : (
                 <PreviewFilterRow history={history} location={location} />
             )}
+            <LicenseAlert variant="warning" onLicenseRetrieved={onLicenseRetrieved} totalChangesetCount={totalCount}>
+                Since more than 5 changesets are generated, you won't be able to apply the batch change and actually
+                publish the changesets to the code host.
+            </LicenseAlert>
             <PublicationStatesUpdateAlerts />
             <FilteredConnection<
                 ChangesetApplyPreviewFields,
