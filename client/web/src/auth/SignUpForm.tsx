@@ -57,15 +57,18 @@ export function getPasswordRequirements(
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
 ): string {
     let requirements = ''
-    const passwordPolicyReference = context.experimentalFeatures.passwordPolicy
+    let passwordPolicyReference = context.authPasswordPolicy
 
-    if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
+    if (!passwordPolicyReference) {
+        passwordPolicyReference = context.experimentalFeatures.passwordPolicy
+    }
+
+    const minPasswordLen = (window.context.authMinPasswordLength > 0) ? window.context.authMinPasswordLength : 12
+
+    if (passwordPolicyReference && passwordPolicyReference.enabled) {
         console.log('Using enhanced password policy.')
+        requirements += 'Your password must include at least ' + minPasswordLen.toString() + ' characters'
 
-        if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
-            requirements +=
-                'Your password must include at least ' + String(passwordPolicyReference.minimumLength) + ' characters'
-        }
         if (
             passwordPolicyReference.numberOfSpecialCharacters &&
             passwordPolicyReference.numberOfSpecialCharacters > 0
@@ -74,18 +77,18 @@ export function getPasswordRequirements(
         }
         if (
             passwordPolicyReference.requireAtLeastOneNumber &&
-            passwordPolicyReference.requireAtLeastOneNumber === true
+            passwordPolicyReference.requireAtLeastOneNumber
         ) {
             requirements += ', at least one number'
         }
         if (
             passwordPolicyReference.requireUpperandLowerCase &&
-            passwordPolicyReference.requireUpperandLowerCase === true
+            passwordPolicyReference.requireUpperandLowerCase
         ) {
             requirements += ', at least one uppercase letter'
         }
     } else {
-        requirements += 'At least 12 characters'
+        requirements += 'At least ' + minPasswordLen.toString() + ' characters'
     }
     return requirements
 }
@@ -131,6 +134,14 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
     const [passwordState, nextPasswordFieldChange, passwordInputReference] = useInputValidation(
         signUpFieldValidators.password
     )
+
+    let passwordPolicyReference = context.authPasswordPolicy
+
+    if (!passwordPolicyReference) {
+        passwordPolicyReference = context.experimentalFeatures.passwordPolicy
+    }
+
+    const minPasswordLen = window.context.authMinPasswordLength
 
     const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
 
@@ -251,11 +262,9 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             disabled={loading}
                             autoComplete="new-password"
                             minLength={
-                                context.experimentalFeatures.passwordPolicy?.enabled !== undefined &&
-                                context.experimentalFeatures.passwordPolicy.enabled &&
-                                context.experimentalFeatures.passwordPolicy?.minimumLength !== undefined
-                                    ? context.experimentalFeatures.passwordPolicy.minimumLength
-                                    : 12
+                                passwordPolicyReference?.enabled !== undefined &&
+                                passwordPolicyReference.enabled &&
+                                minPasswordLen
                             }
                             placeholder=" "
                             onInvalid={preventDefault}
@@ -373,39 +382,48 @@ function validatePassword(
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>,
     password: string
 ): string | undefined {
-    if (context.experimentalFeatures.passwordPolicy?.enabled) {
+
+    let passwordPolicyReference = context.authPasswordPolicy
+
+    if (!passwordPolicyReference) {
+        passwordPolicyReference = context.experimentalFeatures.passwordPolicy
+    }
+
+    const minPasswordLen = context.authMinPasswordLength
+
+    if (passwordPolicy?.enabled) {
         if (
-            context.experimentalFeatures.passwordPolicy.minimumLength &&
-            password.length < context.experimentalFeatures.passwordPolicy.minimumLength
+            context.authMinPasswordLength &&
+            password.length < minPasswordLen
         ) {
             return (
                 'Password must be greater than ' +
-                String(context.experimentalFeatures.passwordPolicy.minimumLength) +
+                minPasswordLen.toString() +
                 ' characters.'
             )
         }
         if (
-            context.experimentalFeatures.passwordPolicy?.numberOfSpecialCharacters &&
-            context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters > 0
+            passwordPolicyReference?.numberOfSpecialCharacters &&
+            passwordPolicyReference.numberOfSpecialCharacters > 0
         ) {
             const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
             // This must be kept in sync with the security.go checks
             const count = (password.match(specialCharacters) || []).length
             if (
-                context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters &&
-                count < context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters
+                passwordPolicyReference.numberOfSpecialCharacters &&
+                count < passwordPolicyReference.numberOfSpecialCharacters
             ) {
                 return (
                     'Password must contain ' +
-                    String(context.experimentalFeatures.passwordPolicy.numberOfSpecialCharacters) +
+                    passwordPolicyReference.numberOfSpecialCharacters.toString() +
                     ' special character(s).'
                 )
             }
         }
 
         if (
-            context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber &&
-            context.experimentalFeatures.passwordPolicy.requireAtLeastOneNumber
+            passwordPolicyReference.requireAtLeastOneNumber &&
+            passwordPolicyReference.requireAtLeastOneNumber
         ) {
             const validRequireAtLeastOneNumber = /\d+/
             if (password.match(validRequireAtLeastOneNumber) === null) {
@@ -414,8 +432,8 @@ function validatePassword(
         }
 
         if (
-            context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase &&
-            context.experimentalFeatures.passwordPolicy.requireUpperandLowerCase
+            passwordPolicyReference.requireUpperandLowerCase &&
+            passwordPolicyReference.requireUpperandLowerCase
         ) {
             const validUseUpperCase = new RegExp('[A-Z]+')
             if (!validUseUpperCase.test(password)) {
@@ -426,8 +444,8 @@ function validatePassword(
         return undefined
     }
 
-    if (password.length < 12) {
-        return 'Password must be at least 12 characters.'
+    if (password.length < minPasswordLen) {
+        return 'Password must be at least ' + minPasswordLen.toString() + ' characters.'
     }
 
     return undefined

@@ -183,15 +183,16 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
 
     public getPasswordRequirements(): JSX.Element {
         let requirements = ''
-        const passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
+        let passwordPolicyReference = window.context.authPasswordPolicy
 
-        if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
-            if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
-                requirements +=
-                    'Your password must include at least ' +
-                    passwordPolicyReference.minimumLength.toString() +
-                    ' characters'
-            }
+        if (!passwordPolicyReference) {
+            passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
+        }
+
+        const minPasswordLen = (window.context.authMinPasswordLength > 0) ? window.context.authMinPasswordLength : 12
+
+        if (passwordPolicyReference && passwordPolicyReference.enabled) {
+           requirements += 'Your password must include at least ' + minPasswordLen.toString() + ' characters'
             if (
                 passwordPolicyReference.numberOfSpecialCharacters &&
                 passwordPolicyReference.numberOfSpecialCharacters > 0
@@ -201,18 +202,18 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
             }
             if (
                 passwordPolicyReference.requireAtLeastOneNumber &&
-                passwordPolicyReference.requireAtLeastOneNumber === true
+                passwordPolicyReference.requireAtLeastOneNumber
             ) {
                 requirements += ', at least one number'
             }
             if (
                 passwordPolicyReference.requireUpperandLowerCase &&
-                passwordPolicyReference.requireUpperandLowerCase === true
+                passwordPolicyReference.requireUpperandLowerCase
             ) {
                 requirements += ', at least one uppercase letter'
             }
         } else {
-            requirements += 'At least 12 characters.'
+            requirements += 'At least ' + minPasswordLen?.toString() + ' characters.'
         }
 
         return <small className="form-help text-muted">{requirements}</small>
@@ -316,11 +317,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         name="newPassword"
                                         aria-label="new password"
                                         minLength={
-                                            window.context.experimentalFeatures.passwordPolicy?.enabled &&
-                                            window.context.experimentalFeatures.passwordPolicy.minimumLength !==
-                                                undefined
-                                                ? window.context.experimentalFeatures.passwordPolicy.minimumLength
-                                                : 12
+                                            window.context.authMinPasswordLength
                                         }
                                         placeholder=" "
                                         autoComplete="new-password"
@@ -338,11 +335,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         aria-label="new password confirmation"
                                         placeholder=" "
                                         minLength={
-                                            window.context.experimentalFeatures.passwordPolicy?.enabled &&
-                                            window.context.experimentalFeatures.passwordPolicy.minimumLength !==
-                                                undefined
-                                                ? window.context.experimentalFeatures.passwordPolicy.minimumLength
-                                                : 12
+                                            window.context.authMinPasswordLength
                                         }
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
