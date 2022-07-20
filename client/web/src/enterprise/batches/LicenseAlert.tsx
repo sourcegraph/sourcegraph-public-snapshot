@@ -37,7 +37,17 @@ export const LicenseAlert: React.FunctionComponent<React.PropsWithChildren<Licen
     const exceedsLimit =
         totalChangesetCount !== undefined ? totalChangesetCount > licenseAndUsageInfo.maxUnlicensedChangesets : true
     if (!licenseAndUsageInfo.batchChanges && !licenseAndUsageInfo.campaigns && exceedsLimit) {
-        return <Alert variant={variant}>{children}</Alert>
+        return (
+            <Alert variant={variant}>
+                <div className="mb-2">
+                    <strong>
+                        Your license only allows for {licenseAndUsageInfo.maxUnlicensedChangesets} changesets per batch
+                        change
+                    </strong>
+                </div>
+                {children}
+            </Alert>
+        )
     }
     return null
 }
