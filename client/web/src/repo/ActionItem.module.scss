@@ -1,0 +1,40 @@
+.item {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    width: 2rem;
+    height: 2rem;
+    margin-left: 0.25rem;
+    border-radius: 0.1875rem;
+
+    &:hover {
+        background-color: var(--color-bg-2);
+    }
+
+    // &--toggle {
+    //     height: auto;
+    //     padding: 0.25rem;
+    // }
+
+    // &--pressed {
+    //     color: var(--body-color);
+    //     background-color: var(--color-bg-3);
+
+    //     /* Override existing hover styles */
+    //     &:hover {
+    //         background-color: var(--color-bg-3);
+    //     }
+    // }
+
+    // &--inactive {
+    //     cursor: default;
+    //     filter: saturate(0%);
+    //     opacity: 0.7;
+    // }
+}
+
+.icon {
+    height: 1rem;
+    width: 1rem;
+}
