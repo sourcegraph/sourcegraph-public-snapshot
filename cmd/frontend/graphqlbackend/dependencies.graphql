@@ -14,16 +14,6 @@ extend type Query {
         """
         after: String
     ): LockfileIndexConnection!
-
-    """
-    Looks up a lockfile index by ID.
-    """
-    lockfileIndex(
-        """
-        The ID of the lockfile index.
-        """
-        id: ID!
-    ): LockfileIndex
 }
 
 """
