@@ -1,47 +1,53 @@
-/* eslint-disable arrow-body-style */
-import { FunctionComponent, useCallback, useEffect } from 'react'
+import { FunctionComponent, useEffect } from 'react'
 
-import { useApolloClient } from '@apollo/client'
-import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
+import { createAggregateError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
+import { useConnection } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
-    FilteredConnection,
-    FilteredConnectionFilter,
-    FilteredConnectionQueryArguments,
-} from '../../../../components/FilteredConnection'
+    ConnectionContainer,
+    ConnectionList,
+    ConnectionLoading,
+    ConnectionSummary,
+    ConnectionError,
+    SummaryContainer,
+    ShowMoreButton,
+} from '../../../../components/FilteredConnection/ui'
 import { PageTitle } from '../../../../components/PageTitle'
-import { LockfileIndexFields } from '../../../../graphql-operations'
-import { CodeIntelLockfileNode, CodeIntelLockfileNodeProps } from '../components/CodeIntelLockfileIndexNode'
-import { EmptyLockfiles } from '../components/EmptyLockfiles'
-import { queryLockfileIndexesList as defaultQueryLockfileIndexesList } from '../hooks/queryLockfileIndexesList'
+import { LockfileIndexesResult, LockfileIndexesVariables, LockfileIndexFields } from '../../../../graphql-operations'
+import { CodeIntelLockfileNode } from '../components/CodeIntelLockfileIndexNode'
 
-import styles from './CodeIntelLockfilesPage.module.scss'
+import { LOCKFILE_INDEXES_LIST } from './queries'
 
-export interface CodeIntelLockfilesPageProps extends RouteComponentProps<{}>, TelemetryProps {
-    queryLockfileIndexesList?: typeof defaultQueryLockfileIndexesList
-}
+export interface CodeIntelLockfilesPageProps extends RouteComponentProps<{}>, TelemetryProps {}
 
-const filters: FilteredConnectionFilter[] = []
+const DEFAULT_LOCKFILE_INDEXES_PAGE_SIZE = 50
 
 export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<CodeIntelLockfilesPageProps>> = ({
-    queryLockfileIndexesList = defaultQueryLockfileIndexesList,
     telemetryService,
-    history,
-    ...props
 }) => {
-    useEffect(() => telemetryService.logViewEvent('CodeIntelLockfiles'), [telemetryService])
+    useEffect(() => telemetryService.logPageView('CodeIntelLockfiles'), [telemetryService])
 
-    const apolloClient = useApolloClient()
-    const queryLockfileIndexes = useCallback(
-        (args: FilteredConnectionQueryArguments) => {
-            return queryLockfileIndexesList({ ...args }, apolloClient)
+    const { connection, loading, error, hasNextPage, fetchMore } = useConnection<
+        LockfileIndexesResult,
+        LockfileIndexesVariables,
+        LockfileIndexFields
+    >({
+        query: LOCKFILE_INDEXES_LIST,
+        variables: { first: DEFAULT_LOCKFILE_INDEXES_PAGE_SIZE, after: null },
+        getConnection: ({ data, errors }) => {
+            if (!data || !data.lockfileIndexes) {
+                throw createAggregateError(errors)
+            }
+            return data.lockfileIndexes
         },
-        [queryLockfileIndexesList, apolloClient]
-    )
+        options: {
+            fetchPolicy: 'cache-first',
+        },
+    })
 
     return (
         <div className="code-intel-lockfiles">
@@ -55,21 +61,32 @@ export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<C
 
             <Container>
                 <div className="list-group position-relative">
-                    <FilteredConnection<LockfileIndexFields, Omit<CodeIntelLockfileNodeProps, 'node'>>
-                        listComponent="div"
-                        listClassName={classNames(styles.grid, 'mb-3')}
-                        inputClassName="w-auto"
-                        noun="lockfile index"
-                        pluralNoun="lockfile indexes"
-                        nodeComponent={CodeIntelLockfileNode}
-                        queryConnection={queryLockfileIndexes}
-                        history={history}
-                        location={props.location}
-                        cursorPaging={true}
-                        filters={filters}
-                        hideSearch={true}
-                        emptyElement={<EmptyLockfiles />}
-                    />
+                    <ConnectionContainer>
+                        {error && <ConnectionError errors={[error.message]} />}
+                        {connection && (
+                            <ConnectionList>
+                                {connection.nodes.map(node => (
+                                    <CodeIntelLockfileNode key={node.id} node={node} />
+                                ))}
+                            </ConnectionList>
+                        )}
+                        {loading && <ConnectionLoading />}
+                        {!loading && connection && (
+                            <SummaryContainer>
+                                <ConnectionSummary
+                                    connection={connection}
+                                    first={DEFAULT_LOCKFILE_INDEXES_PAGE_SIZE}
+                                    noun="lockfile index"
+                                    pluralNoun="lockfile indexes"
+                                    hasNextPage={hasNextPage}
+                                    // connectionQuery={query}
+                                    noSummaryIfAllNodesVisible={true}
+                                    compact={true}
+                                />
+                                {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
+                            </SummaryContainer>
+                        )}
+                    </ConnectionContainer>
                 </div>
             </Container>
         </div>
