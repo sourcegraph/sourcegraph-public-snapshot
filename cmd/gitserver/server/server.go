@@ -531,9 +531,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			ctx2, cancel := s.serverContext()
-			defer cancel()
-			s.setLastErrorNonFatal(ctx2, job.repo, err)
+			s.setLastErrorNonFatal(s.ctx, job.repo, err)
 		}(j)
 	}
 }
@@ -1922,9 +1920,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We always want to store whether there was an error cloning the repo
 	defer func() {
 		// Use a different context in case we failed because the original context failed.
-		ctx2, cancel := s.serverContext()
-		defer cancel()
-		s.setLastErrorNonFatal(ctx2, repo, err)
+		s.setLastErrorNonFatal(s.ctx, repo, err)
 	}()
 
 	dir := s.dir(repo)
@@ -2385,9 +2381,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 			if err != nil {
 				s.Logger.Error("performing background repo update", log.Error(err))
 			}
-			ctx, cancel := s.serverContext()
-			defer cancel()
-			s.setLastErrorNonFatal(ctx, repo, err)
+			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})
 	}()
 
