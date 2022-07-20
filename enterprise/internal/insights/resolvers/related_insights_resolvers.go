@@ -2,7 +2,7 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
+	"sort"
 
 	"github.com/inconshreveable/log15"
 
@@ -14,9 +14,8 @@ import (
 )
 
 var _ graphqlbackend.RelatedInsightsInlineResolver = &relatedInsightsInlineResolver{}
-var _ graphqlbackend.RelatedInsightsInlineMetadataResolver = &relatedInsightsInlineMetadataResolver{}
 
-func (r *Resolver) Insights(ctx context.Context, args graphqlbackend.RelatedInsightsInlineArgs) ([]graphqlbackend.RelatedInsightsInlineResolver, error) {
+func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsInlineArgs) ([]graphqlbackend.RelatedInsightsInlineResolver, error) {
 	validator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 	validator.loadUserContext(ctx)
 
@@ -25,28 +24,21 @@ func (r *Resolver) Insights(ctx context.Context, args graphqlbackend.RelatedInsi
 		UserID: validator.userIds,
 		OrgID:  validator.orgIds,
 	})
-
 	if err != nil {
 		return nil, errors.Wrap(err, "GetAll")
 	}
-	fmt.Printf("found %d total series\n", len(allSeries))
 
-	resolvers := []*relatedInsightsInlineMetadataResolver{}
-
+	seriesMatches := map[string]*relatedInsightMetadata{}
 	for _, series := range allSeries {
 		decoder, metadataResult := streaming.MetadataDecoder()
 		modifiedQuery, err := querybuilder.SingleFileQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.File, args.Input.Revision, querybuilder.CodeInsightsQueryDefaults(false))
 		if err != nil {
 			return nil, errors.Wrap(err, "SingleFileQuery")
 		}
-		fmt.Printf("query: %s\n", series.Query)
-		fmt.Printf("modified query: %s\n", modifiedQuery.String())
-
 		err = streaming.Search(ctx, modifiedQuery.String(), decoder)
 		if err != nil {
 			return nil, errors.Wrap(err, "streaming.Search")
 		}
-
 		mr := *metadataResult
 		if len(mr.Errors) > 0 {
 			log15.Warn("related insights errors", mr.Errors)
@@ -57,34 +49,37 @@ func (r *Resolver) Insights(ctx context.Context, args graphqlbackend.RelatedInsi
 		if len(mr.SkippedReasons) > 0 {
 			log15.Warn("related insights skipped", mr.SkippedReasons)
 		}
+
 		for _, match := range mr.Matches {
 			for _, lineMatch := range match.LineMatches {
-				fmt.Println("Found a match!")
-				fmt.Println(lineMatch.Line)
-				fmt.Println(lineMatch.LineNumber)
-				fmt.Println(lineMatch.OffsetAndLengths)
-
-				// maybe we want to store multiple line numbers per insight instead?
-				// append to resolvers here?
+				if seriesMatches[series.UniqueID] == nil {
+					seriesMatches[series.UniqueID] = &relatedInsightMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}}
+				} else {
+					// Since insights can have multiple series, we might get duplicate matches.
+					if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
+						seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
+					}
+				}
 			}
 		}
 	}
 
-	// TODO format the results and return them. Also possible all of this should go below in the Insights resolver.
+	var resolvers []graphqlbackend.RelatedInsightsInlineResolver
+	for insightId, metadata := range seriesMatches {
+		sort.SliceStable(metadata.lineNumbers, func(i, j int) bool {
+			return metadata.lineNumbers[i] < metadata.lineNumbers[j]
+		})
+		resolvers = append(resolvers, &relatedInsightsInlineResolver{viewID: insightId, title: metadata.title, lineNumbers: metadata.lineNumbers})
+	}
+	return resolvers, nil
+}
 
-	return nil, nil
+type relatedInsightMetadata struct {
+	title       string
+	lineNumbers []int32
 }
 
 type relatedInsightsInlineResolver struct {
-	series string
-	baseInsightResolver
-}
-
-func (r *relatedInsightsInlineResolver) Insights(ctx context.Context) ([]relatedInsightsInlineMetadataResolver, error) {
-	return nil, nil
-}
-
-type relatedInsightsInlineMetadataResolver struct {
 	viewID      string
 	title       string
 	lineNumbers []int32
@@ -92,14 +87,23 @@ type relatedInsightsInlineMetadataResolver struct {
 	baseInsightResolver
 }
 
-func (r *relatedInsightsInlineMetadataResolver) ViewID() string {
+func (r *relatedInsightsInlineResolver) ViewID() string {
 	return r.viewID
 }
 
-func (r *relatedInsightsInlineMetadataResolver) Title() string {
+func (r *relatedInsightsInlineResolver) Title() string {
 	return r.title
 }
 
-func (r *relatedInsightsInlineMetadataResolver) LineNumbers() []int32 {
+func (r *relatedInsightsInlineResolver) LineNumbers() []int32 {
 	return r.lineNumbers
+}
+
+func containsInt(array []int32, findElement int32) bool {
+	for _, currentElement := range array {
+		if findElement == currentElement {
+			return true
+		}
+	}
+	return false
 }

@@ -83,6 +83,6 @@ func (r *disabledResolver) SearchInsightPreview(ctx context.Context, args graphq
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsInlineArgs) (graphqlbackend.RelatedInsightsInlineResolver, error) {
+func (r *disabledResolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsInlineArgs) ([]graphqlbackend.RelatedInsightsInlineResolver, error) {
 	return nil, errors.New(r.reason)
 }
