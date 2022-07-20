@@ -32,7 +32,7 @@ import (
 )
 
 func printConfigValidation() {
-	messages, err := conf.Validate(conf.DefaultClient().Raw())
+	messages, err := conf.Validate(conf.Raw())
 	if err != nil {
 		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
 		return

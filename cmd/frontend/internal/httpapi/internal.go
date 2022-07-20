@@ -145,7 +145,7 @@ func serveExternalServicesList(db database.DB) func(w http.ResponseWriter, r *ht
 }
 
 func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
-	raw := conf.DefaultClient().Raw()
+	raw := conf.Raw()
 	err := json.NewEncoder(w).Encode(raw)
 	if err != nil {
 		return errors.Wrap(err, "Encode")

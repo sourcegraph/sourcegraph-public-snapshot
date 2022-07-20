@@ -126,7 +126,7 @@ func init() {
 			return nil
 		}
 
-		problems, err := conf.Validate(conf.DefaultClient().Raw())
+		problems, err := conf.Validate(conf.Raw())
 		if err != nil {
 			return []*Alert{
 				{
