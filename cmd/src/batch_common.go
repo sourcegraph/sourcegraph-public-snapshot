@@ -371,7 +371,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		ui.DeterminingWorkspacesSuccess(len(workspaces))
 	} else {
 		ui.ResolvingRepositories()
-		repos, err := svc.ResolveRepositories(ctx, batchSpec, opts.flags.allowUnsupported, opts.flags.allowIgnored)
+		repos, err = svc.ResolveRepositories(ctx, batchSpec, opts.flags.allowUnsupported, opts.flags.allowIgnored)
 		if err != nil {
 			if repoSet, ok := err.(batches.UnsupportedRepoSet); ok {
 				ui.ResolvingRepositoriesDone(repos, repoSet, nil)
@@ -385,7 +385,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		}
 
 		ui.DeterminingWorkspaces()
-		workspaces, err := svc.DetermineWorkspaces(ctx, repos, batchSpec)
+		workspaces, err = svc.DetermineWorkspaces(ctx, repos, batchSpec)
 		if err != nil {
 			return err
 		}

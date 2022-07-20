@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.42.1
+
+### Fixed
+
+- Fixed an issue where no workspaces would be executed on after successful workspace resolution.
+
 ## 3.42.0
 
 ### Changed
