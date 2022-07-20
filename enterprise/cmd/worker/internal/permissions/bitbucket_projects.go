@@ -121,11 +121,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 		return errors.Wrap(err, "failed to get gitserver repos from the database")
 	}
 
-	if workerJob.Unrestricted {
-		return h.setReposUnrestricted(ctx, logger, repoIDs, projectKey)
-	}
-
-	err = h.setPermissionsForUsers(ctx, svc, logger, workerJob.Permissions, repoIDs, projectKey)
+	err = h.setPermissionsForUsers(ctx, svc, logger, workerJob.Permissions, workerJob.Unrestricted, repoIDs, projectKey)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set permissions for Bitbucket Project %q", projectKey)
 	}
@@ -156,27 +152,6 @@ func (h *bitbucketProjectPermissionsHandler) getBitbucketClient(svc *types.Exter
 	}
 
 	return bitbucketserver.NewClient(svc.URN(), &c, cli)
-}
-
-func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Context, logger log.Logger, repoIDs []api.RepoID, projectKey string) error {
-	sort.Slice(repoIDs, func(i, j int) bool {
-		return repoIDs[i] < repoIDs[j]
-	})
-
-	// converting api.RepoID to int32
-	repoIntIDs := make([]int32, len(repoIDs))
-	for i, id := range repoIDs {
-		repoIntIDs[i] = int32(id)
-	}
-
-	logger.Info("Setting bitbucket repositories to unrestricted", log.String("project_key", projectKey))
-
-	err := h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIntIDs, true)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set permissions to unrestricted for Bitbucket Project %q", projectKey)
-	}
-
-	return nil
 }
 
 // getRepoIDsByNames queries repo IDs from frontend database using repo names fetched from
@@ -234,7 +209,7 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 // Each repo is processed atomically. In case of error, the task fails but doesn't rollback the committed changes
 // done on previous repos. This is fine because when the task is retried, previous repos won't incur any
 // additional writes.
-func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, svc *types.ExternalService, logger log.Logger, perms []types.UserPermission, repoIDs []api.RepoID, projectKey string) error {
+func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, svc *types.ExternalService, logger log.Logger, perms []types.UserPermission, unrestricted bool, repoIDs []api.RepoID, projectKey string) error {
 	sort.Slice(perms, func(i, j int) bool {
 		return perms[i].BindID < perms[j].BindID
 	})
@@ -271,11 +246,12 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 		log.Int("repo_ids_len", len(repoIDs)),
 		log.Int("user_ids_len", len(userIDs)),
 		log.Int("pending_bind_ids_len", len(pendingBindIDs)),
+		log.Bool("unrestricted", unrestricted),
 	)
 
 	// apply the permissions for each repo
 	for _, repoID := range repoIDs {
-		err = h.setRepoPermissions(ctx, svc, repoID, perms, userIDs, pendingBindIDs)
+		err = h.setRepoPermissions(ctx, svc, repoID, perms, unrestricted, userIDs, pendingBindIDs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to set permissions for repo %d", repoID)
 		}
@@ -284,16 +260,17 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 	return nil
 }
 
-func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, svc *types.ExternalService, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
+func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, svc *types.ExternalService, repoID api.RepoID, _ []types.UserPermission, unrestricted bool, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
 	if err := h.repoExists(ctx, repoID); err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
 	}
 
 	p := authz.RepoPermissions{
-		RepoID:  int32(repoID),
-		Perm:    authz.Read, // Note: We currently only support read for repository permissions.
-		UserIDs: userIDs,
+		RepoID:       int32(repoID),
+		Perm:         authz.Read, // Note: We currently only support read for repository permissions.
+		UserIDs:      userIDs,
+		Unrestricted: unrestricted,
 	}
 
 	txs, err := h.db.Perms().Transact(ctx)
@@ -306,12 +283,6 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 		ServiceType: authz.SourcegraphServiceType,
 		ServiceID:   authz.SourcegraphServiceID,
 		AccountIDs:  pendingBindIDs,
-	}
-
-	// make sure the repo is not unrestricted
-	err = txs.SetRepoPermissionsUnrestricted(ctx, []int32{int32(repoID)}, false)
-	if err != nil {
-		return errors.Wrapf(err, "failed to set repo %d to restricted", repoID)
 	}
 
 	// set repo permissions (and user permissions)
