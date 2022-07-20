@@ -662,7 +662,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(99)},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCanceled, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
@@ -676,7 +676,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(55)},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCanceled, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},

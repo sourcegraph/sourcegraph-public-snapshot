@@ -17,6 +17,7 @@ type AnalyticsFetcher struct {
 	nodesQuery   *sqlf.Query
 	summaryQuery *sqlf.Query
 	cache        bool
+	noSetCache   *bool
 }
 
 type AnalyticsNodeData struct {
@@ -65,32 +66,26 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		nodes = append(nodes, &AnalyticsNode{data})
 	}
 
-	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
+	now := bod(time.Now())
+	to := now
+	daysOffset := 1
+	from, err := getFromDate(f.dateRange, now)
+	if err != nil {
 		return nil, err
 	}
 
-	now := time.Now().UTC()
-	to, from := now, now
-	daysOffset := 1
-
-	switch f.dateRange {
-	case "LAST_WEEK":
-		from = now.AddDate(0, 0, -7)
-	case "LAST_MONTH":
-		from = now.AddDate(0, -1, 0)
-	case "LAST_THREE_MONTHS":
-		to = now.AddDate(0, 0, -int(now.Weekday()))
-		from = now.AddDate(0, -3, 0)
+	if f.dateRange == "LAST_THREE_MONTHS" {
+		to = sow(now)
 		daysOffset = 7
 	}
 
 	allNodes := make([]*AnalyticsNode, 0)
 
-	for date := from; date.Before(to); date = date.AddDate(0, 0, daysOffset) {
+	for date := to; date.After(from) || date.Equal(from); date = date.AddDate(0, 0, -daysOffset) {
 		var node *AnalyticsNode
 
 		for _, n := range nodes {
-			if bod(date).Equal(bod(n.Data.Date.UTC())) {
+			if date.Equal(bod(n.Data.Date)) {
 				node = n
 				break
 			}
@@ -99,7 +94,7 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		if node == nil {
 			node = &AnalyticsNode{
 				Data: AnalyticsNodeData{
-					Date:            date,
+					Date:            bod(date),
 					Count:           0,
 					UniqueUsers:     0,
 					RegisteredUsers: 0,
@@ -110,12 +105,24 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		allNodes = append(allNodes, node)
 	}
 
+	if f.noSetCache == nil || *f.noSetCache != true {
+		if _, err := setArrayToCache(cacheKey, allNodes); err != nil {
+			return nil, err
+		}
+	}
+
 	return allNodes, nil
 }
 
+// beginning of day
 func bod(t time.Time) time.Time {
 	year, month, day := t.Date()
 	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
+}
+
+// start of week (monday)
+func sow(t time.Time) time.Time {
+	return t.AddDate(0, 0, -int(t.Weekday())+1)
 }
 
 type AnalyticsSummaryData struct {
@@ -150,8 +157,10 @@ func (f *AnalyticsFetcher) Summary(ctx context.Context) (*AnalyticsSummary, erro
 
 	summary := &AnalyticsSummary{data}
 
-	if _, err := setItemToCache(cacheKey, summary); err != nil {
-		return nil, err
+	if f.noSetCache == nil || *f.noSetCache != true {
+		if _, err := setItemToCache(cacheKey, summary); err != nil {
+			return nil, err
+		}
 	}
 
 	return summary, nil

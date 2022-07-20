@@ -115,11 +115,6 @@ public class PreviewContent {
         return resultType;
     }
 
-    @Nullable
-    public String getFileName() {
-        return fileName;
-    }
-
     @NotNull
     public String getRepoUrl() {
         return repoUrl;
@@ -155,17 +150,8 @@ public class PreviewContent {
         return commitMessagePreview;
     }
 
-    public int getLineNumber() {
-        return lineNumber;
-    }
-
     public int[][] getAbsoluteOffsetAndLengths() {
         return absoluteOffsetAndLengths;
-    }
-
-    @Nullable
-    public String getRelativeUrl() {
-        return relativeUrl;
     }
 
     @NotNull

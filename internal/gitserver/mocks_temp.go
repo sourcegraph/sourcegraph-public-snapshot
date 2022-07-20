@@ -17,7 +17,6 @@ import (
 	diff "github.com/sourcegraph/go-diff/diff"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
-	gitolite "github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	protocol "github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 )
@@ -56,9 +55,6 @@ type MockClient struct {
 	// GetObjectFunc is an instance of a mock function object controlling
 	// the behavior of the method GetObject.
 	GetObjectFunc *ClientGetObjectFunc
-	// GitCommandFunc is an instance of a mock function object controlling
-	// the behavior of the method GitCommand.
-	GitCommandFunc *ClientGitCommandFunc
 	// HasCommitAfterFunc is an instance of a mock function object
 	// controlling the behavior of the method HasCommitAfter.
 	HasCommitAfterFunc *ClientHasCommitAfterFunc
@@ -74,9 +70,6 @@ type MockClient struct {
 	// ListClonedFunc is an instance of a mock function object controlling
 	// the behavior of the method ListCloned.
 	ListClonedFunc *ClientListClonedFunc
-	// ListGitoliteFunc is an instance of a mock function object controlling
-	// the behavior of the method ListGitolite.
-	ListGitoliteFunc *ClientListGitoliteFunc
 	// ListRefsFunc is an instance of a mock function object controlling the
 	// behavior of the method ListRefs.
 	ListRefsFunc *ClientListRefsFunc
@@ -181,11 +174,6 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		GitCommandFunc: &ClientGitCommandFunc{
-			defaultHook: func(api.RepoName, ...string) (r0 GitCommand) {
-				return
-			},
-		},
 		HasCommitAfterFunc: &ClientHasCommitAfterFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string, authz.SubRepoPermissionChecker) (r0 bool, r1 error) {
 				return
@@ -208,11 +196,6 @@ func NewMockClient() *MockClient {
 		},
 		ListClonedFunc: &ClientListClonedFunc{
 			defaultHook: func(context.Context) (r0 []string, r1 error) {
-				return
-			},
-		},
-		ListGitoliteFunc: &ClientListGitoliteFunc{
-			defaultHook: func(context.Context, string) (r0 []*gitolite.Repo, r1 error) {
 				return
 			},
 		},
@@ -353,11 +336,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.GetObject")
 			},
 		},
-		GitCommandFunc: &ClientGitCommandFunc{
-			defaultHook: func(api.RepoName, ...string) GitCommand {
-				panic("unexpected invocation of MockClient.GitCommand")
-			},
-		},
 		HasCommitAfterFunc: &ClientHasCommitAfterFunc{
 			defaultHook: func(context.Context, api.RepoName, string, string, authz.SubRepoPermissionChecker) (bool, error) {
 				panic("unexpected invocation of MockClient.HasCommitAfter")
@@ -381,11 +359,6 @@ func NewStrictMockClient() *MockClient {
 		ListClonedFunc: &ClientListClonedFunc{
 			defaultHook: func(context.Context) ([]string, error) {
 				panic("unexpected invocation of MockClient.ListCloned")
-			},
-		},
-		ListGitoliteFunc: &ClientListGitoliteFunc{
-			defaultHook: func(context.Context, string) ([]*gitolite.Repo, error) {
-				panic("unexpected invocation of MockClient.ListGitolite")
 			},
 		},
 		ListRefsFunc: &ClientListRefsFunc{
@@ -505,9 +478,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		GetObjectFunc: &ClientGetObjectFunc{
 			defaultHook: i.GetObject,
 		},
-		GitCommandFunc: &ClientGitCommandFunc{
-			defaultHook: i.GitCommand,
-		},
 		HasCommitAfterFunc: &ClientHasCommitAfterFunc{
 			defaultHook: i.HasCommitAfter,
 		},
@@ -522,9 +492,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ListClonedFunc: &ClientListClonedFunc{
 			defaultHook: i.ListCloned,
-		},
-		ListGitoliteFunc: &ClientListGitoliteFunc{
-			defaultHook: i.ListGitolite,
 		},
 		ListRefsFunc: &ClientListRefsFunc{
 			defaultHook: i.ListRefs,
@@ -1677,117 +1644,6 @@ func (c ClientGetObjectFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
-// ClientGitCommandFunc describes the behavior when the GitCommand method of
-// the parent MockClient instance is invoked.
-type ClientGitCommandFunc struct {
-	defaultHook func(api.RepoName, ...string) GitCommand
-	hooks       []func(api.RepoName, ...string) GitCommand
-	history     []ClientGitCommandFuncCall
-	mutex       sync.Mutex
-}
-
-// GitCommand delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) GitCommand(v0 api.RepoName, v1 ...string) GitCommand {
-	r0 := m.GitCommandFunc.nextHook()(v0, v1...)
-	m.GitCommandFunc.appendCall(ClientGitCommandFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the GitCommand method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientGitCommandFunc) SetDefaultHook(hook func(api.RepoName, ...string) GitCommand) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GitCommand method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientGitCommandFunc) PushHook(hook func(api.RepoName, ...string) GitCommand) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientGitCommandFunc) SetDefaultReturn(r0 GitCommand) {
-	f.SetDefaultHook(func(api.RepoName, ...string) GitCommand {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientGitCommandFunc) PushReturn(r0 GitCommand) {
-	f.PushHook(func(api.RepoName, ...string) GitCommand {
-		return r0
-	})
-}
-
-func (f *ClientGitCommandFunc) nextHook() func(api.RepoName, ...string) GitCommand {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientGitCommandFunc) appendCall(r0 ClientGitCommandFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientGitCommandFuncCall objects describing
-// the invocations of this function.
-func (f *ClientGitCommandFunc) History() []ClientGitCommandFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientGitCommandFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientGitCommandFuncCall is an object that describes an invocation of
-// method GitCommand on an instance of MockClient.
-type ClientGitCommandFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 api.RepoName
-	// Arg1 is a slice containing the values of the variadic arguments
-	// passed to this method invocation.
-	Arg1 []string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 GitCommand
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation. The variadic slice argument is flattened in this array such
-// that one positional argument and three variadic arguments would result in
-// a slice of four, not two.
-func (c ClientGitCommandFuncCall) Args() []interface{} {
-	trailing := []interface{}{}
-	for _, val := range c.Arg1 {
-		trailing = append(trailing, val)
-	}
-
-	return append([]interface{}{c.Arg0}, trailing...)
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientGitCommandFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
 // ClientHasCommitAfterFunc describes the behavior when the HasCommitAfter
 // method of the parent MockClient instance is invoked.
 type ClientHasCommitAfterFunc struct {
@@ -2328,113 +2184,6 @@ func (c ClientListClonedFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientListClonedFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientListGitoliteFunc describes the behavior when the ListGitolite
-// method of the parent MockClient instance is invoked.
-type ClientListGitoliteFunc struct {
-	defaultHook func(context.Context, string) ([]*gitolite.Repo, error)
-	hooks       []func(context.Context, string) ([]*gitolite.Repo, error)
-	history     []ClientListGitoliteFuncCall
-	mutex       sync.Mutex
-}
-
-// ListGitolite delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) ListGitolite(v0 context.Context, v1 string) ([]*gitolite.Repo, error) {
-	r0, r1 := m.ListGitoliteFunc.nextHook()(v0, v1)
-	m.ListGitoliteFunc.appendCall(ClientListGitoliteFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListGitolite method
-// of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientListGitoliteFunc) SetDefaultHook(hook func(context.Context, string) ([]*gitolite.Repo, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListGitolite method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientListGitoliteFunc) PushHook(hook func(context.Context, string) ([]*gitolite.Repo, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientListGitoliteFunc) SetDefaultReturn(r0 []*gitolite.Repo, r1 error) {
-	f.SetDefaultHook(func(context.Context, string) ([]*gitolite.Repo, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientListGitoliteFunc) PushReturn(r0 []*gitolite.Repo, r1 error) {
-	f.PushHook(func(context.Context, string) ([]*gitolite.Repo, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientListGitoliteFunc) nextHook() func(context.Context, string) ([]*gitolite.Repo, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientListGitoliteFunc) appendCall(r0 ClientListGitoliteFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientListGitoliteFuncCall objects
-// describing the invocations of this function.
-func (f *ClientListGitoliteFunc) History() []ClientListGitoliteFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientListGitoliteFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientListGitoliteFuncCall is an object that describes an invocation of
-// method ListGitolite on an instance of MockClient.
-type ClientListGitoliteFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []*gitolite.Repo
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientListGitoliteFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientListGitoliteFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

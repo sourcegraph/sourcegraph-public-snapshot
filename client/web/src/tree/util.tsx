@@ -2,6 +2,8 @@ import React from 'react'
 
 import { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 
+import { TreeRootProps } from './TreeRoot'
+
 /** TreeEntryInfo is the information we need to render an entry in the file tree */
 export interface TreeEntryInfo {
     path: string
@@ -90,4 +92,17 @@ function gitTreeToTreeObject(entry: TreeEntryInfo): SingleChildGitTree {
 /** Determines whether a Tree has single-child directories as children, in order to determine whether to render a SingleChildTreeLayer or TreeLayer */
 export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
+}
+
+interface ComparisonTreeRootProps extends Omit<TreeRootProps, 'sizeKey'> {}
+
+export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRootProps): boolean {
+    return (
+        a.repoName === b.repoName &&
+        a.revision === b.revision &&
+        a.commitID === b.commitID &&
+        a.parentPath === b.parentPath &&
+        a.isExpanded === b.isExpanded &&
+        a.location === b.location
+    )
 }
