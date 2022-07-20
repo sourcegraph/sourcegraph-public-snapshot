@@ -3,6 +3,7 @@ package adminanalytics
 import (
 	"context"
 
+	"github.com/keegancsmith/sqlf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
 
@@ -44,8 +45,9 @@ func (s *CodeIntel) DefinitionClicks() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
-func (s *CodeIntel) BrowserExtensionInstalls() (*AnalyticsFetcher, error) {
-	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"BrowserExtensionInstalled"})
+func (s *CodeIntel) InAppEvents() (*AnalyticsFetcher, error) {
+	sourceCond := sqlf.Sprintf("source = 'WEB'")
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"goToDefinition.preloaded", "goToDefinition", "findReferences"}, sourceCond)
 	if err != nil {
 		return nil, err
 	}
@@ -55,7 +57,24 @@ func (s *CodeIntel) BrowserExtensionInstalls() (*AnalyticsFetcher, error) {
 		dateRange:    s.DateRange,
 		nodesQuery:   nodesQuery,
 		summaryQuery: summaryQuery,
-		group:        "CodeIntel:BrowserExtensionInstalls",
+		group:        "CodeIntel:InAppEvents",
+		cache:        s.Cache,
+	}, nil
+}
+
+func (s *CodeIntel) CodeHostEvents() (*AnalyticsFetcher, error) {
+	sourceCond := sqlf.Sprintf("source = 'CODEHOSTINTEGRATION'")
+	nodesQuery, summaryQuery, err := makeEventLogsQueries(s.DateRange, []string{"goToDefinition.preloaded", "goToDefinition", "findReferences"}, sourceCond)
+	if err != nil {
+		return nil, err
+	}
+
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "CodeIntel:CodeHostEvents",
 		cache:        s.Cache,
 	}, nil
 }
@@ -127,7 +146,8 @@ func (s *CodeIntel) CacheAll(ctx context.Context) error {
 	fetcherBuilders := []func() (*AnalyticsFetcher, error){
 		s.DefinitionClicks,
 		s.ReferenceClicks,
-		s.BrowserExtensionInstalls,
+		s.InAppEvents,
+		s.CodeHostEvents,
 		s.SearchBasedEvents,
 		s.PreciseEvents,
 		s.CrossRepoEvents,

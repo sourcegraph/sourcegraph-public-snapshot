@@ -61,9 +61,9 @@ describe('User profile page', () => {
             UpdateUser: () => ({ updateUser: { ...USER, displayName: 'Test2' } }),
         })
         await driver.page.goto(driver.sourcegraphBaseUrl + '/users/test/settings/profile')
+        await driver.page.waitForSelector('[data-testid="user-profile-form-fields"]')
         await percySnapshotWithVariants(driver.page, 'User Profile Settings Page')
         await accessibilityAudit(driver.page)
-        await driver.page.waitForSelector('[data-testid="user-profile-form-fields"]')
         await driver.replaceText({
             selector: '[data-testid="test-UserProfileFormFields__displayName"]',
             newText: 'Test2',

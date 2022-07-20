@@ -28,6 +28,11 @@ func environment(r *MatchContext) any {
 	return env
 }
 
+type want struct {
+	Input  string
+	Result any
+}
+
 func Test_matchOnly(t *testing.T) {
 	data := &result.FileMatch{
 		File: result.File{Path: "bedge", Repo: types.MinimalRepo{
@@ -47,179 +52,25 @@ func Test_matchOnly(t *testing.T) {
 	test := func(input string, serialize serializer) string {
 		r, _ := regexp.Compile(input)
 		result := matchOnly(data, r)
-		v, _ := json.MarshalIndent(serialize(result), "", "  ")
+		w := want{Input: input, Result: result}
+		v, _ := json.MarshalIndent(w, "", "  ")
 		return string(v)
 	}
 
-	autogold.Want("compute regexp submatch empty environment", `{
-  "matches": [],
-  "path": "bedge",
-  "repositoryID": 5,
-  "repository": "codehost.com/myorg/myrepo"
-}`).Equal(t, test("nothing", match))
+	cases := []struct {
+		input      string
+		serializer serializer
+	}{
+		{input: "nothing", serializer: match},
+		{input: "(a)(?P<ThisIsNamed>b)", serializer: environment},
+		{input: "(lasvegans)|abcdefgh", serializer: environment},
+		{input: "a(b(c))(de)f(g)h", serializer: match},
+		{input: "([ag])", serializer: match},
+	}
 
-	autogold.Want("compute named regexp submatch", `{
-  "1": "a",
-  "ThisIsNamed": "b"
-}`).Equal(t, test("(a)(?P<ThisIsNamed>b)", environment))
-
-	autogold.Want("no slice out of bounds access on capture group", "{}").Equal(t, test("(lasvegans)|abcdefgh", environment))
-
-	autogold.Want("compute regexp submatch nonempty environment", `{
-  "matches": [
-    {
-      "value": "abcdefgh",
-      "range": {
-        "start": {
-          "offset": -1,
-          "line": 1,
-          "column": 0
-        },
-        "end": {
-          "offset": -1,
-          "line": 1,
-          "column": 8
-        }
-      },
-      "environment": {
-        "1": {
-          "value": "bc",
-          "range": {
-            "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 1
-            },
-            "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 3
-            }
-          }
-        },
-        "2": {
-          "value": "c",
-          "range": {
-            "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 2
-            },
-            "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 3
-            }
-          }
-        },
-        "3": {
-          "value": "de",
-          "range": {
-            "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 3
-            },
-            "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 5
-            }
-          }
-        },
-        "4": {
-          "value": "g",
-          "range": {
-            "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 6
-            },
-            "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 7
-            }
-          }
-        }
-      }
-    }
-  ],
-  "path": "bedge",
-  "repositoryID": 5,
-  "repository": "codehost.com/myorg/myrepo"
-}`).Equal(t, test("a(b(c))(de)f(g)h", match))
-
-	autogold.Want("compute regexp submatch includes all matches on line", `{
-  "matches": [
-    {
-      "value": "a",
-      "range": {
-        "start": {
-          "offset": -1,
-          "line": 1,
-          "column": 0
-        },
-        "end": {
-          "offset": -1,
-          "line": 1,
-          "column": 1
-        }
-      },
-      "environment": {
-        "1": {
-          "value": "a",
-          "range": {
-            "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 0
-            },
-            "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 1
-            }
-          }
-        }
-      }
-    },
-    {
-      "value": "g",
-      "range": {
-        "start": {
-          "offset": -1,
-          "line": 1,
-          "column": 6
-        },
-        "end": {
-          "offset": -1,
-          "line": 1,
-          "column": 7
-        }
-      },
-      "environment": {
-        "1": {
-          "value": "g",
-          "range": {
-            "start": {
-              "offset": -1,
-              "line": 1,
-              "column": 6
-            },
-            "end": {
-              "offset": -1,
-              "line": 1,
-              "column": 7
-            }
-          }
-        }
-      }
-    }
-  ],
-  "path": "bedge",
-  "repositoryID": 5,
-  "repository": "codehost.com/myorg/myrepo"
-}`).Equal(t, test("([ag])", match))
-
+	for _, c := range cases {
+		t.Run("match_only", func(t *testing.T) {
+			autogold.Equal(t, autogold.Raw(test(c.input, c.serializer)))
+		})
+	}
 }

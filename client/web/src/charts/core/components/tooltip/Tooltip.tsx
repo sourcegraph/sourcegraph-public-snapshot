@@ -8,7 +8,7 @@ import styles from './Tooltip.module.scss'
 
 const TOOLTIP_PADDING = createRectangle(0, 0, 10, 10)
 
-export const Tooltip: React.FunctionComponent = props => {
+export const Tooltip: React.FunctionComponent<React.PropsWithChildren<{}>> = props => {
     const [virtualElement, setVirtualElement] = useState<PopoverPoint | null>(null)
 
     useEffect(() => {

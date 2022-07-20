@@ -15,7 +15,7 @@ import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
-import { StandardDatum, buildStandardDatum } from '../utils'
+import { StandardDatum } from '../utils'
 
 import { SEARCH_STATISTICS } from './queries'
 
@@ -42,11 +42,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 id: 'searches',
                 name: eventAggregation === 'count' ? 'Searches' : 'Users searched',
                 color: 'var(--cyan)',
-                data: buildStandardDatum(
-                    searches.nodes.map(node => ({
+                data: searches.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -56,11 +56,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 id: 'resultClicks',
                 name: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
                 color: 'var(--purple)',
-                data: buildStandardDatum(
-                    resultClicks.nodes.map(node => ({
+                data: resultClicks.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -70,25 +70,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 id: 'fileViews',
                 name: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
                 color: 'var(--orange)',
-                data: buildStandardDatum(
-                    fileViews.nodes.map(node => ({
+                data: fileViews.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
-                    dateRange
-                ),
-                getXValue: ({ date }) => date,
-                getYValue: ({ value }) => value,
-            },
-            {
-                id: 'fileOpens',
-                name: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
-                color: 'var(--body-color)',
-                data: buildStandardDatum(
-                    fileOpens.nodes.map(node => ({
-                        date: new Date(node.date),
-                        value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -103,19 +89,20 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 color: 'var(--cyan)',
             },
             {
-                value: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
-                description: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
-                color: 'var(--orange)',
-            },
-            {
                 value: resultClicks.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'Result clicks' : 'Users clicked results',
                 color: 'var(--purple)',
             },
             {
+                value: fileViews.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
+                description: eventAggregation === 'count' ? 'File views' : 'Users viewed files',
+                color: 'var(--orange)',
+            },
+            {
                 value: fileOpens.summary[eventAggregation === 'count' ? 'totalCount' : 'totalUniqueUsers'],
                 description: eventAggregation === 'count' ? 'File opens' : 'Users opened files',
                 color: 'var(--body-color)',
+                position: 'right',
             },
         ]
         return [stats, legends]
@@ -129,17 +116,18 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
 
         const totalCount = searches.summary.totalCount + fileViews.summary.totalCount
         return {
+            page: 'Search',
             label: 'Searches &<br/>file views',
             color: 'var(--blue)',
             description:
-                'The value of code search greatly varies by use case. We’ve calculated this total value with defaults from primary use cases below.',
+                'The value of code search greatly varies by use case. We’ve calculated this total value with defaults from the primary use cases below.',
             value: totalCount,
             items: [
                 {
                     label: 'Complex searches',
-                    minPerItem: 5,
+                    minPerItem: 120,
                     description:
-                        'These searches that would require ad-hoc scripting to accomplish without Sourcegraph.  These searches often answer  specific and valuable questions such as finding occurrences of log4j at a specific version globally.',
+                        'Without Sourcegraph, these searches would require complex scripting. They often answer specific and valuable questions such as finding occurrences of Log4j at a specific version globally.',
                     percentage: 3,
                     value: totalCount,
                 },
@@ -153,9 +141,9 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 },
                 {
                     label: 'Core workflow',
-                    minPerItem: 5,
+                    minPerItem: 0.5,
                     description:
-                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language and features like syntax aware search patterns and the ability to search code, diffs, and commit messages at any revision.',
+                        'Common code search use cases are made more efficient through Sourcegraph’s advanced query language, syntax aware search patterns, and the ability to search code, diffs, and commit messages at any revision.',
                     percentage: 75,
                     value: totalCount,
                 },
@@ -180,7 +168,10 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                     <HorizontalSelect<AnalyticsDateRange>
                         value={dateRange}
                         label="Date&nbsp;range"
-                        onChange={setDateRange}
+                        onChange={value => {
+                            setDateRange(value)
+                            eventLogger.log(`AdminAnalyticsSearchDateRange${value}Selected`)
+                        }}
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -202,7 +193,12 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                         <div className="d-flex justify-content-end align-items-stretch mb-2">
                             <ToggleSelect<typeof eventAggregation>
                                 selected={eventAggregation}
-                                onChange={setEventAggregation}
+                                onChange={value => {
+                                    setEventAggregation(value)
+                                    eventLogger.log(
+                                        `AdminAnalyticsSearchAgg${value === 'count' ? 'Totals' : 'Uniques'}Clicked`
+                                    )
+                                }}
                                 items={[
                                     {
                                         tooltip: 'total # of actions triggered',
@@ -221,22 +217,27 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
                 )}
                 <H3 className="my-3">Time saved</H3>
                 {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
-                <H4 className="my-3">Suggestions</H4>
-                <div className={classNames(styles.border, 'mb-3')} />
-                <ul className="mb-3 pl-3">
-                    <Text as="li">
-                        Promote the{' '}
-                        <AnchorLink to="/help/integration/editor" target="_blank">
-                            IDE extension
-                        </AnchorLink>{' '}
-                        and{' '}
-                        <AnchorLink to="/help/cli" target="_blank">
-                            SRC CLI
-                        </AnchorLink>{' '}
-                        to your users to allow them to search where they work.
-                    </Text>
-                </ul>
+                <div className={styles.suggestionBox}>
+                    <H4 className="my-3">Suggestions</H4>
+                    <div className={classNames(styles.border, 'mb-3')} />
+                    <ul className="mb-3 pl-3">
+                        <Text as="li">
+                            Promote the{' '}
+                            <AnchorLink to="/help/integration/editor" target="_blank">
+                                IDE extension
+                            </AnchorLink>{' '}
+                            and{' '}
+                            <AnchorLink to="/help/cli" target="_blank">
+                                SRC CLI
+                            </AnchorLink>{' '}
+                            to your users to allow them to search where they work.
+                        </Text>
+                    </ul>
+                </div>
             </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table and are updated every 24 hours.
+            </Text>
         </>
     )
 }

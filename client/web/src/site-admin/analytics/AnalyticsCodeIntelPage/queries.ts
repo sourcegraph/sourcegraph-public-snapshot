@@ -16,11 +16,6 @@ const analyticsStatItemFragment = gql`
 
 export const CODEINTEL_STATISTICS = gql`
     query CodeIntelStatistics($dateRange: AnalyticsDateRange!) {
-        currentUser {
-            organizationMemberships {
-                totalCount
-            }
-        }
         site {
             analytics {
                 repos {
@@ -34,9 +29,14 @@ export const CODEINTEL_STATISTICS = gql`
                     definitionClicks {
                         ...AnalyticsStatItemFragment
                     }
-                    browserExtensionInstalls {
+                    inAppEvents {
                         summary {
-                            totalRegisteredUsers
+                            totalCount
+                        }
+                    }
+                    codeHostEvents {
+                        summary {
+                            totalCount
                         }
                     }
                     searchBasedEvents {

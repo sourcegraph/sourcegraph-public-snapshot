@@ -169,7 +169,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     const { openFile, openSymbol } = useOpenSearchResultsContext()
 
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) => {
+        (isFirst: boolean, startLine: number, endLine: number) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {

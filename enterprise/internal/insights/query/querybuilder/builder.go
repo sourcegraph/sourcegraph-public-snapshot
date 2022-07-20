@@ -17,7 +17,7 @@ import (
 // and the result would be generated as `repo:myrepo test archive:no`. This preserves the semantics of the original query
 // by fully parsing and reconstructing the tree, and does **not** overwrite user supplied values for the default fields.
 func withDefaults(inputQuery BasicQuery, defaults searchquery.Parameters) (BasicQuery, error) {
-	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeRegex))
+	plan, err := searchquery.Pipeline(searchquery.Init(string(inputQuery), searchquery.SearchTypeLiteral))
 	if err != nil {
 		return "", errors.Wrap(err, "Pipeline")
 	}
@@ -54,6 +54,12 @@ func CodeInsightsQueryDefaults(allReposInsight bool) searchquery.Parameters {
 		{
 			Field:      searchquery.FieldArchived,
 			Value:      string(forkArchiveValue),
+			Negated:    false,
+			Annotation: searchquery.Annotation{},
+		},
+		{
+			Field:      searchquery.FieldPatternType,
+			Value:      "literal",
 			Negated:    false,
 			Annotation: searchquery.Annotation{},
 		},

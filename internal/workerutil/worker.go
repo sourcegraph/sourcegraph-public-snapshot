@@ -30,6 +30,7 @@ type Worker struct {
 	options          WorkerOptions
 	dequeueClock     glock.Clock
 	heartbeatClock   glock.Clock
+	cancelClock      glock.Clock
 	shutdownClock    glock.Clock
 	numDequeues      int             // tracks number of dequeue attempts
 	handlerSemaphore chan struct{}   // tracks available handler slots
@@ -77,6 +78,10 @@ type WorkerOptions struct {
 	// record is neither pending nor abandoned.
 	HeartbeatInterval time.Duration
 
+	// CancelInterval is the interval between checking for jobs that are to be canceled. If not set,
+	// the worker will not check for canceled jobs.
+	CancelInterval time.Duration
+
 	// MaximumRuntimePerJob is the maximum wall time that can be spent on a single job.
 	MaximumRuntimePerJob time.Duration
 
@@ -86,10 +91,10 @@ type WorkerOptions struct {
 
 func NewWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions) *Worker {
 	clock := glock.NewRealClock()
-	return newWorker(ctx, store, handler, options, clock, clock, clock)
+	return newWorker(ctx, store, handler, options, clock, clock, clock, clock)
 }
 
-func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, shutdownClock glock.Clock) *Worker {
+func newWorker(ctx context.Context, store Store, handler Handler, options WorkerOptions, mainClock, heartbeatClock, cancelClock, shutdownClock glock.Clock) *Worker {
 	if options.Name == "" {
 		panic("no name supplied to github.com/sourcegraph/sourcegraph/internal/workerutil:newWorker")
 	}
@@ -116,6 +121,7 @@ func newWorker(ctx context.Context, store Store, handler Handler, options Worker
 		options:          options,
 		dequeueClock:     mainClock,
 		heartbeatClock:   heartbeatClock,
+		cancelClock:      cancelClock,
 		shutdownClock:    shutdownClock,
 		handlerSemaphore: handlerSemaphore,
 		rootCtx:          ctx,
@@ -163,6 +169,35 @@ func (w *Worker) Start() {
 			}
 		}
 	}()
+
+	if w.options.CancelInterval > 0 {
+		// Create a background routine that periodically checks for jobs that are to be canceled.
+		go func() {
+			for {
+				select {
+				case <-w.finished:
+					// All jobs finished.
+					return
+				case <-w.cancelClock.After(w.options.CancelInterval):
+				}
+
+				knownIDs := w.runningIDSet.Slice()
+				canceled, err := w.store.CanceledJobs(w.rootCtx, knownIDs)
+				if err != nil {
+					w.options.Metrics.logger.Error("Failed to fetch canceled jobs", log.Error(err))
+					continue
+				}
+
+				if len(canceled) > 0 {
+					w.options.Metrics.logger.Info("Found jobs to cancel", log.Ints("IDs", canceled))
+				}
+
+				for _, id := range canceled {
+					w.runningIDSet.Cancel(id)
+				}
+			}
+		}()
+	}
 
 	var shutdownChan <-chan time.Time
 	if w.options.MaxActiveTime > 0 {
@@ -234,12 +269,6 @@ func (w *Worker) Stop() {
 // Wait blocks until all handler goroutines have exited.
 func (w *Worker) Wait() {
 	<-w.finished
-}
-
-// Cancel cancels the handler context of the running job with the given record id.
-// It will eventually be marked as failed.
-func (w *Worker) Cancel(id int) {
-	w.runningIDSet.Cancel(id)
 }
 
 // dequeueAndHandle selects a queued record to process. This method returns false if no such record

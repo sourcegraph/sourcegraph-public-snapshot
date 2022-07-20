@@ -1,9 +1,10 @@
 import React, { useMemo, useState, useEffect } from 'react'
 
+import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner } from '@sourcegraph/wildcard'
+import { Card, LoadingSpinner, H3, Text, H4, AnchorLink } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
 import {
@@ -15,11 +16,14 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
+import { TimeSavedCalculator } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
-import { StandardDatum, buildStandardDatum } from '../utils'
+import { StandardDatum } from '../utils'
 
 import { NOTEBOOKS_STATISTICS } from './queries'
+
+import styles from './index.module.scss'
 
 export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps<{}>> = () => {
     const [eventAggregation, setEventAggregation] = useState<'count' | 'uniqueUsers'>('count')
@@ -35,7 +39,7 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsNotebooks')
     }, [])
-    const [stats, legends] = useMemo(() => {
+    const [stats, legends, calculatorProps] = useMemo(() => {
         if (!data) {
             return []
         }
@@ -45,11 +49,11 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 id: 'creations',
                 name: eventAggregation === 'count' ? 'Notebooks created' : 'Users created notebooks',
                 color: 'var(--cyan)',
-                data: buildStandardDatum(
-                    creations.nodes.map(node => ({
+                data: creations.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -59,11 +63,11 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                 id: 'views',
                 name: eventAggregation === 'count' ? 'Notebook views' : 'Users viewed notebooks',
                 color: 'var(--orange)',
-                data: buildStandardDatum(
-                    views.nodes.map(node => ({
+                data: views.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -89,7 +93,17 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
             },
         ]
 
-        return [stats, legends]
+        const calculatorProps = {
+            page: 'Notebooks',
+            label: 'Views',
+            color: 'var(--body-color)',
+            value: views.summary.totalCount,
+            minPerItem: 5,
+            description:
+                'Notebooks reduce the time it takes to create living documentation and share it. Each notebook view accounts for time saved by both creators and consumers of notebooks.',
+        }
+
+        return [stats, legends, calculatorProps]
     }, [data, dateRange, eventAggregation])
 
     if (error) {
@@ -109,7 +123,10 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                     <HorizontalSelect<AnalyticsDateRange>
                         value={dateRange}
                         label="Date&nbsp;range"
-                        onChange={setDateRange}
+                        onChange={value => {
+                            setDateRange(value)
+                            eventLogger.log(`AdminAnalyticsNotebooksDateRange${value}Selected`)
+                        }}
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -131,7 +148,12 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                         <div className="d-flex justify-content-end align-items-stretch mb-2">
                             <ToggleSelect<typeof eventAggregation>
                                 selected={eventAggregation}
-                                onChange={setEventAggregation}
+                                onChange={value => {
+                                    setEventAggregation(value)
+                                    eventLogger.log(
+                                        `AdminAnalyticsNotebooksAgg${value === 'count' ? 'Totals' : 'Uniques'}Clicked`
+                                    )
+                                }}
                                 items={[
                                     {
                                         tooltip: 'total # of actions triggered',
@@ -148,7 +170,24 @@ export const AnalyticsNotebooksPage: React.FunctionComponent<RouteComponentProps
                         </div>
                     </div>
                 )}
+                <H3 className="my-3">Time saved</H3>
+                {calculatorProps && <TimeSavedCalculator {...calculatorProps} />}
+                <div className={styles.suggestionBox}>
+                    <H4 className="my-3">Suggestions</H4>
+                    <div className={classNames(styles.border, 'mb-3')} />
+                    <ul className="mb-3 pl-3">
+                        <Text as="li">
+                            <AnchorLink to="https://about.sourcegraph.com/blog/notebooks-ci" target="_blank">
+                                Learn more
+                            </AnchorLink>{' '}
+                            about how notebooks improves onbaording, code reuse and saves developers time.
+                        </Text>
+                    </ul>
+                </div>
             </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table and are updated every 24 hours.
+            </Text>
         </>
     )
 }

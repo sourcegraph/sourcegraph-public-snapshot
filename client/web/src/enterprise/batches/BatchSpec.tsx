@@ -29,7 +29,7 @@ export interface BatchSpecProps extends ThemeProps {
     className?: string
 }
 
-export const BatchSpec: React.FunctionComponent<React.PropsWithChildren<BatchSpecProps>> = ({
+export const BatchSpec: React.FunctionComponent<BatchSpecProps> = ({
     originalInput,
     isLightTheme,
     className,
@@ -90,19 +90,12 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
 
 // TODO: Consider merging this component with BatchSpecDownloadLink
 export const BatchSpecDownloadButton: React.FunctionComponent<
-    React.PropsWithChildren<BatchSpecProps & Pick<BatchChangeFields, 'name'>>
+    BatchSpecProps & Pick<BatchChangeFields, 'name'>
 > = React.memo(function BatchSpecDownloadButton(props) {
     return (
-        <Button
-            className="text-right text-nowrap"
-            {...props}
-            variant="secondary"
-            outline={true}
-            as={BatchSpecDownloadLink}
-            asButton={false}
-        >
+        <BatchSpecDownloadLink className="text-right text-nowrap" {...props} asButton={false}>
             <Icon aria-hidden={true} svgPath={mdiFileDownload} /> Download YAML
-        </Button>
+        </BatchSpecDownloadLink>
     )
 })
 

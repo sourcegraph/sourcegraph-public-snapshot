@@ -13,8 +13,6 @@ const config: Meta = {
 
 export default config
 
-export const CreatingNewBatchChangeFromSearch: Story = () => (
-    <WebStory>{props => <SearchTemplatesBanner {...props} />}</WebStory>
-)
+export const CreatingNewBatchChangeFromSearch: Story = () => <WebStory>{() => <SearchTemplatesBanner />}</WebStory>
 
 CreatingNewBatchChangeFromSearch.storyName = 'Creating new batch change from search'

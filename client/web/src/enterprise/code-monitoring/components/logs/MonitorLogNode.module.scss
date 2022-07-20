@@ -6,6 +6,10 @@
     color: var(--icon-color);
 }
 
+.chevron-icon {
+    --icon-inline-size: 1.5rem;
+}
+
 .error-icon-spacer {
     display: inline-block;
     width: 1rem;

@@ -59,7 +59,7 @@ func SignIn(baseURL, email, password string) (*Client, error) {
 
 // authenticate initializes an authenticated client with given request body.
 func authenticate(baseURL, path string, body any) (*Client, error) {
-	client, err := NewClient(baseURL)
+	client, err := NewClient(baseURL, nil, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "new client")
 	}
@@ -97,12 +97,27 @@ type Client struct {
 	csrfCookie    *http.Cookie
 	sessionCookie *http.Cookie
 
-	userID string
+	userID         string
+	requestLogger  LogFunc
+	responseLogger LogFunc
 }
 
+type LogFunc func(payload []byte)
+
+func noopLog(payload []byte) {}
+
 // NewClient instantiates a new client by performing a GET request then obtains the
-// CSRF token and cookie from its response, if there is one (old versions of Sourcegraph only.)
-func NewClient(baseURL string) (*Client, error) {
+// CSRF token and cookie from its response, if there is one (old versions of Sourcegraph only).
+// If request- or responseLogger are provided, the request and response bodies, respectively,
+// will be written to them for any GraphQL requests only.
+func NewClient(baseURL string, requestLogger, responseLogger LogFunc) (*Client, error) {
+	if requestLogger == nil {
+		requestLogger = noopLog
+	}
+	if responseLogger == nil {
+		responseLogger = noopLog
+	}
+
 	resp, err := http.Get(baseURL)
 	if err != nil {
 		return nil, errors.Wrap(err, "get URL")
@@ -124,9 +139,11 @@ func NewClient(baseURL string) (*Client, error) {
 	}
 
 	return &Client{
-		baseURL:    baseURL,
-		csrfToken:  csrfToken,
-		csrfCookie: csrfCookie,
+		baseURL:        baseURL,
+		csrfToken:      csrfToken,
+		csrfCookie:     csrfCookie,
+		requestLogger:  requestLogger,
+		responseLogger: responseLogger,
 	}, nil
 }
 
@@ -275,6 +292,8 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 		}
 	}
 
+	c.requestLogger(body)
+
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
 		return err
@@ -285,6 +304,8 @@ func (c *Client) GraphQL(token, query string, variables map[string]any, target a
 	if err != nil {
 		return errors.Wrap(err, "read response body")
 	}
+
+	c.responseLogger(body)
 
 	// Check if the response format should be JSON
 	if strings.Contains(resp.Header.Get("Content-Type"), "application/json") {

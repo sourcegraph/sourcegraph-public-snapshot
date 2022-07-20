@@ -67,33 +67,17 @@ CREATE TABLE skunk_payloads (
 
 #### Step 1: Add migration record
 
-The first step is to register the migration in the database. This should be done with a normal in-band migration. If the data you are migrating needs additional columns or constraints, they can also be added in the same migration.
+The first step is to declare metadata for a new migration. Add a new entry to the file `internal/oobmigration/oobmigrations.yaml`.
 
-```sql
-BEGIN;
-
-INSERT INTO out_of_band_migrations (id, team, component, description, created, introduced_version_major, introduced_version_minor, non_destructive)
-VALUES (
-    42,                           -- This must be consistent across all Sourcegraph instances
-    'skunkworks',                 -- Team owning migration
-    'db.skunk_payloads',          -- Component being migrated
-    'Re-encode our skunky data',  -- Description
-    '2022-05-23 19:35:01.249518', -- The approximate date this migration was added. Hard-code this date in this table in order to make our
-                                  -- squashed migrations deterministic. If we use NOW() then we can't compare old and new versions via textual
-                                  -- diff alone.
-    3,                            -- The current major release
-    34,                           -- The current minor release
-    true                          -- Can be read with previous version without down migration
-)
-ON CONFLICT DO NOTHING;
-
--- we'll migrate payload -> payload2
-ALTER TABLE skunk_payloads ADD COLUMN payload2 text;
-
-COMMIT;
+```yaml
+- id: 42                                  -- This must be consistent across all Sourcegraph instances
+  team: skunkworks                        -- Team owning migration
+  component: db.skunk_payloads            -- Component being migrated
+  description: Re-encode our skunky data  -- Human-readable description
+  introduced_major_version: 3             -- The current major release
+  introduced_minor_version: 34            -- The current minor release
+  non_destructive: true                   -- Can be read with previous version without down migration
 ```
-
-The migration record does not need to be _removed_ on database down migrations (hence the no-op `ON CONFLICT` clause in the up direction).
 
 #### Step 2: Modify reads
 
@@ -160,7 +144,7 @@ This migrator reports progress by counting the number of records with its new fi
 func (m *migrator) Progress(ctx context.Context) (float64, error) {
 	progress, _, err := basestore.ScanFirstFloat(m.store.Query(ctx, sqlf.Sprintf(`
 		SELECT
-			CASE c2.count WHEN 0 THEN 1 ELSE 
+			CASE c2.count WHEN 0 THEN 1 ELSE
 				cast(c1.count as float) / cast(c2.count as float)
 			END
 		FROM
@@ -203,8 +187,8 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 		}
 
 		if err := tx.Exec(ctx, sqlf.Sprintf(
-			"UPDATE skunk_payloads SET payload2 = %s WHERE id = %s", 
-			oldToNew(payload), 
+			"UPDATE skunk_payloads SET payload2 = %s WHERE id = %s",
+			oldToNew(payload),
 			id,
 		)); err != nil {
 			return err
@@ -280,17 +264,24 @@ Here, we're telling the migration runner to invoke the `Up` or `Down` method per
 
 Once the engineering team has decided on which versions require the new format, old migrations can be marked with a concrete deprecation version. The deprecation version denotes the first Sourcegraph version that no longer runs the migration, and is no longer guaranteed to successfully read un-migrated records.
 
-A new in-band migration can be created to update the deprecation field of the target record.
+New fields can be added to the existing migration metadata entry in the file `internal/oobmigration/oobmigrations.yaml`.
 
-```sql
-BEGIN;
-UPDATE out_of_band_migrations SET deprecated_version_major = 3, deprecated_version_minor = 39 WHERE id = 42;
-COMMIT;
+```yaml
+- id: 42
+  team: skunkworks
+  component: db.skunk_payloads
+  description: Re-encode our skunky data
+  introduced_major_version: 3
+  introduced_minor_version: 34
+  non_destructive: true
+  # NEW FIELDS:
+  deprecated_major_version: 3   -- The current major release
+  deprecated_minor_version: 39  -- The current minor release
 ```
 
 This date may be known at the time the migration is created, in which case it is fine to set both the introduced and the deprecated fields at the same time.
 
-Note that it is not advised to set the deprecated version to the _next_ minor release of Sourcegraph. This will not given site-admins enough warning on the previous version that updating with an unfinished migration may cause issues at startup or data loss.
+Note that it is not advised to set the deprecated version to the minor release of Sourcegraph directly following its introduction. This will not give site-admins enough warning on the previous version that updating with an unfinished migration may cause issues at startup or data loss.
 
 #### Step 6: Deprecation
 

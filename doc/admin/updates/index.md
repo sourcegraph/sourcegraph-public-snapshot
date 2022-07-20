@@ -15,7 +15,7 @@ A new version of Sourcegraph is released every month (with patch releases in bet
 
 Please see the instructions for your deployment type:
 
-- [Sourcegraph with Docker Compose](upgrade_docker-compose.md)
+- [Sourcegraph with Docker Compose](docker_compose.md)
 - [Sourcegraph with Kubernetes](kubernetes.md)
 - [Single-container Sourcegraph with Docker](server.md)
 - [Pure-Docker custom deployments](pure_docker.md)

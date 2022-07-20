@@ -19,7 +19,7 @@ import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
-import { StandardDatum, buildStandardDatum } from '../utils'
+import { StandardDatum } from '../utils'
 
 import { CODEINTEL_STATISTICS } from './queries'
 
@@ -46,6 +46,8 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
         const {
             referenceClicks,
             definitionClicks,
+            inAppEvents,
+            codeHostEvents,
             searchBasedEvents,
             preciseEvents,
             crossRepoEvents,
@@ -60,11 +62,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 name:
                     eventAggregation === 'count' ? '"Find references" clicked' : 'Users who clicked "Find references"',
                 color: 'var(--cyan)',
-                data: buildStandardDatum(
-                    referenceClicks.nodes.map(node => ({
+                data: referenceClicks.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -77,11 +79,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         ? '"Go to definition" clicked'
                         : 'Users who clicked "Go to definition"',
                 color: 'var(--orange)',
-                data: buildStandardDatum(
-                    definitionClicks.nodes.map(node => ({
+                data: definitionClicks.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -103,30 +105,31 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                 description: 'Cross repo events',
                 position: 'right',
-                color: 'var(--black)',
+                color: 'var(--body-color)',
             },
         ]
 
         const calculatorProps = {
-            label: 'Intel Events',
+            page: 'CodeIntel',
+            label: 'Intel events',
             color: 'var(--purple)',
             description:
-                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this caculation down into use cases and types of code intel to be able to independantly value important product capabilities.',
+                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code intel to be able to independently value product capabilities.',
             value: totalEvents,
             items: [
                 {
-                    label: 'Search based',
+                    label: 'In app code navigation',
                     minPerItem: 0.5,
-                    value: Math.floor((searchBasedEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
+                    value: inAppEvents.summary.totalCount,
                     description:
-                        'Searched based code intel reconizes symbols and is supported across all languages. Search intel events are not exact, thus their time savings is not as high as precise events. ',
+                        'In app code navigation supports developers finding the impact of a change or code to reuse by listing references and finding definitions.',
                 },
                 {
-                    label: 'Precise events',
-                    minPerItem: 1,
-                    value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
+                    label: 'Code intel on code hosts <br/> via the browser extension',
+                    minPerItem: 1.5,
+                    value: codeHostEvents.summary.totalCount,
                     description:
-                        'Precise code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant time savings.',
+                        'Intel events on the code host typically occur during PR reviews, where the ability to quickly understand code is key to efficient reviews.',
                 },
                 {
                     label: 'Cross repository <br/> code intel events',
@@ -134,6 +137,16 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
                         'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
+                },
+                {
+                    label: 'Precise code intel',
+                    minPerItem: 1,
+                    value: Math.floor((preciseEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
+                    eventsLabel: `Events (${Math.floor(
+                        (preciseEvents.summary.totalCount * 100) / totalHoverEvents || 0
+                    )}%)*`,
+                    description:
+                        'Compiler-accurate code intel takes users to the correct result as defined by SCIP, and does so cross repository. The reduction in false positives produced by other search engines represents significant additional time savings.',
                 },
             ],
         }
@@ -150,10 +163,6 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     }
 
     const repos = data?.site.analytics.repos
-    const orgMembersCount = data?.currentUser?.organizationMemberships?.totalCount || 0
-    const browserExtensionInstalls =
-        data?.site.analytics.codeIntel.browserExtensionInstalls.summary.totalRegisteredUsers || 0
-    const browserExtensionInstallPercentage = orgMembersCount ? (browserExtensionInstalls * 100) / orgMembersCount : 0
 
     return (
         <>
@@ -164,7 +173,10 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     <HorizontalSelect<AnalyticsDateRange>
                         value={dateRange}
                         label="Date&nbsp;range"
-                        onChange={setDateRange}
+                        onChange={value => {
+                            setDateRange(value)
+                            eventLogger.log(`AdminAnalyticsCodeIntelDateRange${value}Selected`)
+                        }}
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -186,7 +198,12 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         <div className="d-flex justify-content-end align-items-stretch mb-2">
                             <ToggleSelect<typeof eventAggregation>
                                 selected={eventAggregation}
-                                onChange={setEventAggregation}
+                                onChange={value => {
+                                    setEventAggregation(value)
+                                    eventLogger.log(
+                                        `AdminAnalyticsCodeIntelAgg${value === 'count' ? 'Totals' : 'Uniques'}Clicked`
+                                    )
+                                }}
                                 items={[
                                     {
                                         tooltip: 'total # of actions triggered',
@@ -205,32 +222,36 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 )}
                 <H3 className="my-3">Time saved</H3>
                 {calculatorProps && <TimeSavedCalculatorGroup {...calculatorProps} />}
-                <H4 className="my-3">Suggestions</H4>
-                <div className={classNames(styles.border, 'mb-3')} />
-                <ul className="mb-3 pl-3">
-                    <Text as="li">
-                        <b>{browserExtensionInstallPercentage}%</b> of users have installed the browser extension.{' '}
-                        <AnchorLink to="/help/integration/browser_extension" target="_blank">
-                            Promote installation of the browser extesion to increase value.
-                        </AnchorLink>
-                    </Text>
-                    {repos && (
+                <div className={styles.suggestionBox}>
+                    <H4 className="my-3">Suggestions</H4>
+                    <div className={classNames(styles.border, 'mb-3')} />
+                    <ul className="mb-3 pl-3">
                         <Text as="li">
-                            <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have precise
-                            code intel.{' '}
-                            <AnchorLink
-                                to="/help/code_intelligence/explanations/precise_code_intelligence"
-                                target="_blank"
-                            >
-                                Learn how to improve precise code intel coverage.
-                            </AnchorLink>
+                            Promote installation of the{' '}
+                            <AnchorLink to="/help/integration/browser_extension" target="_blank">
+                                browser extension
+                            </AnchorLink>{' '}
+                            to add code intelligence to your code hosts.
                         </Text>
-                    )}
-                </ul>
-                <Text className="font-italic text-center">
-                    * All events are actually entries from this instance's event_logs table.{' '}
-                </Text>
+                        {repos && (
+                            <Text as="li">
+                                <b>{repos.preciseCodeIntelCount}</b> of your <b>{repos.count}</b> repositories have
+                                precise code intel.{' '}
+                                <AnchorLink
+                                    to="/help/code_intelligence/explanations/precise_code_intelligence"
+                                    target="_blank"
+                                >
+                                    Learn how to improve precise code intel coverage.
+                                </AnchorLink>
+                            </Text>
+                        )}
+                    </ul>
+                </div>
             </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table and are updated every 24 hours.
+                <br />* Calculated from precise code intel events
+            </Text>
         </>
     )
 }

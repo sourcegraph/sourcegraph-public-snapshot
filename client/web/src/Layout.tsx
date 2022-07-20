@@ -1,4 +1,4 @@
-import React, { Suspense, useCallback, useEffect, useMemo } from 'react'
+import React, { Suspense, useEffect, useMemo } from 'react'
 
 import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
@@ -20,6 +20,7 @@ import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { LoadingSpinner, Panel, useObservable } from '@sourcegraph/wildcard'
@@ -42,7 +43,7 @@ import { GlobalAlerts } from './global/GlobalAlerts'
 import { GlobalDebug } from './global/GlobalDebug'
 import { SurveyToast } from './marketing/toast'
 import { GlobalNavbar } from './nav/GlobalNavbar'
-import { useExtensionAlertAnimation } from './nav/UserNavItem'
+import type { BlockInput } from './notebooks'
 import { OrgAreaRoute } from './org/area/OrgArea'
 import { OrgAreaHeaderNavItem } from './org/area/OrgHeader'
 import { RepoContainerRoute } from './repo/RepoContainer'
@@ -53,6 +54,7 @@ import { RepoSettingsSideBarGroup } from './repo/settings/RepoSettingsSidebar'
 import { LayoutRouteProps, LayoutRouteComponentProps } from './routes'
 import { PageRoutes, EnterprisePageRoutes } from './routes.constants'
 import { parseSearchURLQuery, HomePanelsProps, SearchStreamingProps, parseSearchURL } from './search'
+import { NotepadContainer } from './search/Notepad'
 import { SiteAdminAreaRoute } from './site-admin/SiteAdminArea'
 import { SiteAdminSideBarGroups } from './site-admin/SiteAdminSidebar'
 import { setQueryStateFromURL } from './stores'
@@ -108,6 +110,7 @@ export interface LayoutProps
 
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    onCreateNotebookFromNotepad: (blocks: BlockInput[]) => void
 
     globbing: boolean
     isSourcegraphDotCom: boolean
@@ -127,6 +130,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
     const isSearchConsolePage = routeMatch?.startsWith('/search/console')
     const isSearchNotebooksPage = routeMatch?.startsWith(PageRoutes.Notebooks)
+    const isSearchNotebookListPage = props.location.pathname === PageRoutes.Notebooks
     const isRepositoryRelatedPage = routeMatch === '/:repoRevAndRest+' ?? false
 
     // Update patternType, caseSensitivity, and selectedSearchContextSpec based on current URL
@@ -169,15 +173,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     const themeProps = useThemeProps()
     const [enableContrastCompliantSyntaxHighlighting] = useFeatureFlag('contrast-compliant-syntax-highlighting')
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     const breadcrumbProps = useBreadcrumbs()
-
-    // Control browser extension discoverability animation here.
-    // `Layout` is the lowest common ancestor of `UserNavItem` (target) and `RepoContainer` (trigger)
-    const { isExtensionAlertAnimating, startExtensionAlertAnimation } = useExtensionAlertAnimation()
-    const onExtensionAlertDismissed = useCallback(() => {
-        startExtensionAlertAnimation()
-    }, [startExtensionAlertAnimation])
 
     useScrollToLocationHash(props.location)
 
@@ -207,7 +205,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         ...props,
         ...themeProps,
         ...breadcrumbProps,
-        onExtensionAlertDismissed,
         isMacPlatform: isMacPlatform(),
     }
 
@@ -215,7 +212,8 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
         <div
             className={classNames(
                 styles.layout,
-                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME
+                enableContrastCompliantSyntaxHighlighting && CONTRAST_COMPLIANT_CLASSNAME,
+                coreWorkflowImprovementsEnabled && 'core-workflow-improvements-enabled'
             )}
         >
             <KeyboardShortcutsHelp
@@ -249,7 +247,6 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     }
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
-                    isExtensionAlertAnimating={isExtensionAlertAnimating}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
                 />
             )}
@@ -283,7 +280,13 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             </ErrorBoundary>
             {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
-                    <Panel className={styles.panel} position="bottom" defaultSize={350} storageKey="panel-size">
+                    <Panel
+                        className={styles.panel}
+                        position="bottom"
+                        defaultSize={350}
+                        storageKey="panel-size"
+                        ariaLabel="References panel"
+                    >
                         <TabbedPanelContent
                             {...props}
                             {...themeProps}
@@ -299,6 +302,9 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 history={props.history}
             />
             <GlobalDebug {...props} />
+            {(isSearchNotebookListPage || (isSearchRelatedPage && !isSearchHomepage)) && (
+                <NotepadContainer onCreateNotebook={props.onCreateNotebookFromNotepad} />
+            )}
         </div>
     )
 }

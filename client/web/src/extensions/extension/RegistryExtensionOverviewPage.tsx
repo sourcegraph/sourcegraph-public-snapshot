@@ -9,7 +9,7 @@ import { isObject } from 'lodash'
 import { isErrorLike, isDefined, isEncodedImage } from '@sourcegraph/common'
 import { splitExtensionID } from '@sourcegraph/shared/src/extensions/extension'
 import { ExtensionCategory, ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
-import { Button, Link, Icon, H2, H3 } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H2, H3, Tooltip } from '@sourcegraph/wildcard'
 
 import { PageTitle } from '../../components/PageTitle'
 import { Timestamp } from '../../components/time/Timestamp'
@@ -109,11 +109,9 @@ export const RegistryExtensionOverviewPage: React.FunctionComponent<React.PropsW
                 {publisher && (
                     <div className="pt-2 pb-3">
                         <H3 as={H2}>Publisher</H3>
-                        <small
-                            data-tooltip={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}
-                        >
-                            {publisher}
-                        </small>
+                        <Tooltip content={isSourcegraphExtension ? 'Created and maintained by Sourcegraph' : undefined}>
+                            <small>{publisher}</small>
+                        </Tooltip>
                         {isSourcegraphExtension && <SourcegraphExtensionIcon className={styles.sourcegraphIcon} />}
                     </div>
                 )}

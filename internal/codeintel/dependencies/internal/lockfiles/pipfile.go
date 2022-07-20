@@ -44,10 +44,10 @@ func parsePipfileLockFile(r io.Reader) ([]reposource.VersionedPackage, error) {
 
 	libs := make([]reposource.VersionedPackage, 0, len(lockfile.Default)+len(lockfile.Develop))
 	for pkgName, info := range lockfile.Default {
-		libs = append(libs, reposource.NewPythonVersionedPackage(pkgName, strings.TrimPrefix(info.Version, "==")))
+		libs = append(libs, reposource.NewPythonVersionedPackage(reposource.PackageName(pkgName), strings.TrimPrefix(info.Version, "==")))
 	}
 	for pkgName, info := range lockfile.Develop {
-		libs = append(libs, reposource.NewPythonVersionedPackage(pkgName, strings.TrimPrefix(info.Version, "==")))
+		libs = append(libs, reposource.NewPythonVersionedPackage(reposource.PackageName(pkgName), strings.TrimPrefix(info.Version, "==")))
 	}
 	return libs, nil
 }

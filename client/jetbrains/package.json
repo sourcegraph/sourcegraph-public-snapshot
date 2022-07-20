@@ -13,13 +13,14 @@
     "directory": "client/jetbrains"
   },
   "scripts": {
-    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
-    "build": "yarn task:gulp esbuild ",
-    "watch": "WATCH=true yarn task:gulp esbuild",
-    "standalone": "ts-node standalone/src/server.ts",
+    "build": "yarn task:gulp esbuild",
     "lint": "yarn run lint:js && yarn run lint:css",
     "lint:js": "eslint --cache 'webview/**/*.[jt]s?(x)'",
     "lint:css": "stylelint 'webview/**/*.scss'",
-    "typecheck": "tsc -b"
+    "standalone": "ts-node standalone/src/server.ts",
+    "storybook": "STORIES_GLOB=client/jetbrains/webview/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
+    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "typecheck": "tsc -b",
+    "watch": "WATCH=true yarn task:gulp esbuild"
   }
 }

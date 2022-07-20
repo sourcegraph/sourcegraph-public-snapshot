@@ -4,6 +4,7 @@ import { FetchResult } from '@apollo/client'
 import { noop } from 'lodash'
 
 import { useLazyQuery, useMutation, useQuery } from '@sourcegraph/http-client'
+import { screenReaderAnnounce } from '@sourcegraph/wildcard'
 
 import {
     CreateBatchSpecFromRawResult,
@@ -250,6 +251,7 @@ export const useWorkspacesPreview = (
             uiState === BatchSpecWorkspaceResolutionState.ERRORED ||
             uiState === BatchSpecWorkspaceResolutionState.FAILED
         ) {
+            screenReaderAnnounce('Workspaces preview failed.')
             // We can stop polling if the workspace resolution fails.
             stop()
         } else if (uiState === BatchSpecWorkspaceResolutionState.COMPLETED) {

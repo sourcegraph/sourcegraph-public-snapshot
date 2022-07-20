@@ -1,7 +1,0 @@
-[
-  {
-    "Description": "patterns as regular expressions",
-    "Input": "a.*b",
-    "Query": "/a.*b/"
-  }
-]

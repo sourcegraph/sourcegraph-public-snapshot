@@ -23,13 +23,19 @@ type RepoHeaderButtonLinkProps = ButtonLinkProps & {
     file?: boolean
 }
 
-export const RepoHeaderActionButtonLink: React.FunctionComponent<
-    React.PropsWithChildren<RepoHeaderButtonLinkProps>
-> = ({ children, className, file, ...rest }) => (
-    <ButtonLink className={classNames(file ? styles.fileAction : styles.action, className)} {...rest}>
-        {children}
-    </ButtonLink>
-)
+// eslint-disable-next-line react/display-name
+export const RepoHeaderActionButtonLink = React.forwardRef(
+    ({ children, className, file, ...rest }: React.PropsWithChildren<RepoHeaderButtonLinkProps>, reference) => (
+        <ButtonLink
+            ref={reference}
+            className={classNames(file ? styles.fileAction : styles.action, className)}
+            {...rest}
+        >
+            {children}
+        </ButtonLink>
+    )
+) as ForwardReferenceComponent<typeof ButtonLink, React.PropsWithChildren<RepoHeaderButtonLinkProps>>
+RepoHeaderActionButtonLink.displayName = 'RepoHeaderActionButtonLink'
 
 export const RepoHeaderActionDropdownToggle: React.FunctionComponent<
     React.PropsWithChildren<Pick<React.AriaAttributes, 'aria-label'>>
@@ -46,6 +52,7 @@ export type RepoHeaderActionAnchorProps = Omit<ButtonLinkProps, 'as' | 'href'> &
     file?: boolean
 }
 
+// eslint-disable-next-line react/display-name
 export const RepoHeaderActionAnchor = React.forwardRef((props: RepoHeaderActionAnchorProps, reference) => {
     const { children, className, file, ...rest } = props
 
@@ -59,6 +66,7 @@ export const RepoHeaderActionAnchor = React.forwardRef((props: RepoHeaderActionA
         </ButtonLink>
     )
 }) as ForwardReferenceComponent<typeof ButtonLink, RepoHeaderActionAnchorProps>
+RepoHeaderActionAnchor.displayName = 'RepoHeaderActionAnchor'
 
 type RepoHeaderActionMenuLinkProps = MenuLinkProps & {
     /**
@@ -83,6 +91,7 @@ export const RepoHeaderActionMenuLink = React.forwardRef((props: RepoHeaderActio
         </MenuLink>
     )
 }) as ForwardReferenceComponent<'a', RepoHeaderActionMenuLinkProps>
+RepoHeaderActionMenuLink.displayName = 'RepoHeaderActionMenuLink'
 
 export type RepoHeaderActionMenuItemProps = MenuItemProps & {
     /**
@@ -113,3 +122,4 @@ export const RepoHeaderActionMenuItem = React.forwardRef((props: RepoHeaderActio
         </MenuItem>
     )
 }) as ForwardReferenceComponent<'div', RepoHeaderActionMenuItemProps>
+RepoHeaderActionMenuItem.displayName = 'RepoHeaderActionMenuItem'

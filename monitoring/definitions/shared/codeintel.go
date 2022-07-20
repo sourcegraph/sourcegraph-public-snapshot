@@ -5,6 +5,8 @@ import (
 	"strings"
 	"time"
 
+	"github.com/prometheus/common/model"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -283,23 +285,35 @@ func (codeIntelligence) NewExecutorQueueGroup(containerName string) monitoring.G
 func (codeIntelligence) NewExecutorProcessorGroup(containerName string) monitoring.Group {
 	filters := []string{`queue=~"${queue:regex}"`}
 
+	constructorOptions := ObservableConstructorOptions{
+		MetricNameRoot:        "executor",
+		MetricDescriptionRoot: "handler",
+		Filters:               filters,
+	}
+
 	return Workerutil.NewGroup(containerName, monitoring.ObservableOwnerCodeIntel, WorkerutilGroupOptions{
 		GroupConstructorOptions: GroupConstructorOptions{
 			Namespace:       "executor",
 			DescriptionRoot: "Executor jobs",
 
-			ObservableConstructorOptions: ObservableConstructorOptions{
-				MetricNameRoot:        "executor",
-				MetricDescriptionRoot: "handler",
-				Filters:               filters,
-			},
+			ObservableConstructorOptions: constructorOptions,
 		},
 
 		SharedObservationGroupOptions: SharedObservationGroupOptions{
-			Total:     NoAlertsOption("none"),
-			Duration:  NoAlertsOption("none"),
-			Errors:    NoAlertsOption("none"),
-			ErrorRate: NoAlertsOption("none"),
+			Total:    NoAlertsOption("none"),
+			Duration: NoAlertsOption("none"),
+			Errors:   NoAlertsOption("none"),
+			ErrorRate: CriticalOption(
+				monitoring.Alert().
+					CustomQuery(Workerutil.LastOverTimeErrorRate(containerName, model.Duration(time.Hour*5), constructorOptions)).
+					For(time.Hour).
+					GreaterOrEqual(100),
+				`
+				- Determine the cause of failure from the auto-indexing job logs in the site-admin page.
+				- This alert fires if all executor jobs have been failing for the past hour. The alert will continue for up
+				to 5 hours until the error rate is no longer 100%, even if there are no running jobs in that time, as the
+				problem is not know to be resolved until jobs start succeeding again.
+			`),
 		},
 		Handlers: NoAlertsOption("none"),
 	})

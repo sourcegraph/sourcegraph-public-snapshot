@@ -8,11 +8,11 @@ import (
 )
 
 type RustVersionedPackage struct {
-	Name    string
+	Name    PackageName
 	Version string
 }
 
-func NewRustVersionedPackage(name, version string) *RustVersionedPackage {
+func NewRustVersionedPackage(name PackageName, version string) *RustVersionedPackage {
 	return &RustVersionedPackage{
 		Name:    name,
 		Version: version,
@@ -24,22 +24,22 @@ func NewRustVersionedPackage(name, version string) *RustVersionedPackage {
 func ParseRustVersionedPackage(dependency string) (*RustVersionedPackage, error) {
 	var dep RustVersionedPackage
 	if i := strings.LastIndex(dependency, "@"); i == -1 {
-		dep.Name = dependency
+		dep.Name = PackageName(dependency)
 	} else {
-		dep.Name = strings.TrimSpace(dependency[:i])
+		dep.Name = PackageName(strings.TrimSpace(dependency[:i]))
 		dep.Version = strings.TrimSpace(dependency[i+1:])
 	}
 	return &dep, nil
 }
 
-func ParseRustPackageFromName(name string) (*RustVersionedPackage, error) {
-	return ParseRustVersionedPackage(name)
+func ParseRustPackageFromName(name PackageName) (*RustVersionedPackage, error) {
+	return ParseRustVersionedPackage(string(name))
 }
 
 // ParseRustPackageFromRepoName is a convenience function to parse a repo name in a
 // 'crates/<name>(@<version>)?' format into a RustVersionedPackage.
-func ParseRustPackageFromRepoName(name string) (*RustVersionedPackage, error) {
-	dependency := strings.TrimPrefix(name, "crates/")
+func ParseRustPackageFromRepoName(name api.RepoName) (*RustVersionedPackage, error) {
+	dependency := strings.TrimPrefix(string(name), "crates/")
 	if len(dependency) == len(name) {
 		return nil, errors.Newf("invalid Rust dependency repo name, missing crates/ prefix '%s'", name)
 	}
@@ -50,15 +50,15 @@ func (p *RustVersionedPackage) Scheme() string {
 	return "rust-analyzer"
 }
 
-func (p *RustVersionedPackage) PackageSyntax() string {
+func (p *RustVersionedPackage) PackageSyntax() PackageName {
 	return p.Name
 }
 
 func (p *RustVersionedPackage) VersionedPackageSyntax() string {
 	if p.Version == "" {
-		return p.Name
+		return string(p.Name)
 	}
-	return p.Name + "@" + p.Version
+	return string(p.Name) + "@" + p.Version
 }
 
 func (p *RustVersionedPackage) PackageVersion() string {

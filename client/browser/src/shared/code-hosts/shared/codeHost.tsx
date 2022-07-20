@@ -3,7 +3,8 @@ import * as React from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import { render as reactDOMRender, Renderer } from 'react-dom'
+import { Renderer } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import {
     asyncScheduler,
     combineLatest,
@@ -167,7 +168,7 @@ export type CodeHostContext = RawRepoSpec & Partial<RevisionSpec> & { privateRep
 
 export type CodeHostType = 'github' | 'phabricator' | 'bitbucket-server' | 'bitbucket-cloud' | 'gitlab' | 'gerrit'
 
-/** Information for adding code intelligence to code views on arbitrary code hosts. */
+/** Information for adding code navigation to code views on arbitrary code hosts. */
 export interface CodeHost extends ApplyLinkPreviewOptions {
     /**
      * The type of the code host. This will be added as a className to the overlay mount.
@@ -354,7 +355,7 @@ export const createGlobalDebugMount = (): HTMLElement => {
 }
 
 /**
- * Prepares the page for code intelligence. It creates the hoverifier, injects
+ * Prepares the page for code navigation. It creates the hoverifier, injects
  * and mounts the hover overlay and then returns the hoverifier.
  */
 function initCodeIntelligence({
@@ -890,7 +891,7 @@ export async function handleCodeHost({
     }
 
     if (!(await isSafeToContinueCodeIntel({ sourcegraphURL, requestGraphQL, codeHost, render }))) {
-        // Stop initializing code intelligence
+        // Stop initializing code navigation
         return subscriptions
     }
 
@@ -1396,7 +1397,7 @@ export async function handleCodeHost({
                     }
                 }
 
-                // Add hover code intelligence
+                // Add hover code navigation
                 const resolveContext: ContextResolver<RepoSpec & RevisionSpec & FileSpec & ResolvedRevisionSpec> = ({
                     part,
                 }) => {
@@ -1604,8 +1605,14 @@ export function injectCodeIntelligenceToCodeHost(
     // Flag to hide the actions in the code view toolbar (hide ActionNavItems) leaving only the "Open on Sourcegraph" button in the toolbar.
     const hideActions = codeHost.type === 'gerrit'
 
-    const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void =>
-        reactDOMRender(<WildcardThemeProvider isBranded={false}>{element}</WildcardThemeProvider>, container)
+    const renderWithThemeProvider = (element: React.ReactNode, container: Element | null): void => {
+        if (!container) {
+            return
+        }
+
+        const root = createRoot(container)
+        root.render(<WildcardThemeProvider isBranded={false}>{element}</WildcardThemeProvider>)
+    }
 
     subscriptions.add(
         // eslint-disable-next-line rxjs/no-async-subscribe, @typescript-eslint/no-misused-promises

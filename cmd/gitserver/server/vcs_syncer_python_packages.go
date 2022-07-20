@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -51,25 +52,29 @@ type pythonPackagesSyncer struct {
 	client *pypi.Client
 }
 
-func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name, version string) (reposource.VersionedPackage, error) {
-	return reposource.ParseVersionedPackage(name + "==" + version)
+func (pythonPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseVersionedPackage(string(name) + "==" + version)
 }
 
 func (pythonPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
 	return reposource.ParseVersionedPackage(dep)
 }
 
-func (pythonPackagesSyncer) ParsePackageFromName(name string) (reposource.Package, error) {
+func (pythonPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
 	return reposource.ParsePythonPackageFromName(name)
 }
 
-func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (pythonPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParsePythonPackageFromRepoName(repoName)
 }
 
 func (s *pythonPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
-	packageURL := dep.(*reposource.PythonVersionedPackage).PackageURL
-
+	pythonDep := dep.(*reposource.PythonVersionedPackage)
+	pypiFile, err := s.client.Version(ctx, pythonDep.Name, pythonDep.Version)
+	if err != nil {
+		return err
+	}
+	packageURL := pypiFile.URL
 	pkg, err := s.client.Download(ctx, packageURL)
 	if err != nil {
 		return errors.Wrap(err, "download")

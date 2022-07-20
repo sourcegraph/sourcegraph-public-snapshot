@@ -113,6 +113,7 @@ export interface BlobProps
     wrapCode: boolean
     /** The current text document to be rendered and provided to extensions */
     blobInfo: BlobInfo
+    'data-testid'?: string
 
     // Experimental reference panel
     disableStatusBar: boolean
@@ -121,6 +122,8 @@ export interface BlobProps
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
+    role?: string
+    ariaLabel?: string
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -196,7 +199,17 @@ const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
  * in this state, hovers can lead to errors like `DocumentNotFoundError`.
  */
 export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> = props => {
-    const { location, isLightTheme, extensionsController, blobInfo, platformContext, settingsCascade } = props
+    const {
+        location,
+        isLightTheme,
+        extensionsController,
+        blobInfo,
+        platformContext,
+        settingsCascade,
+        role,
+        ariaLabel,
+        'data-testid': dataTestId,
+    } = props
 
     const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
     useEffect(() => {
@@ -783,7 +796,14 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
     return (
         <>
-            <div className={classNames(props.className, styles.blob)} ref={nextBlobElement} tabIndex={-1}>
+            <div
+                data-testid={dataTestId}
+                className={classNames(props.className, styles.blob)}
+                ref={nextBlobElement}
+                tabIndex={-1}
+                role={role}
+                aria-label={ariaLabel}
+            >
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
@@ -852,7 +872,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
  * from the current ones. This prevents adding a new entry when e.g. the user
  * clicks the same line multiple times.
  */
-function updateBrowserHistoryIfNecessary(
+export function updateBrowserHistoryIfNecessary(
     history: H.History,
     location: H.Location,
     newSearchParameters: URLSearchParams

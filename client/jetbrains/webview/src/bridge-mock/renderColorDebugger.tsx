@@ -1,5 +1,5 @@
 /* eslint-disable react/forbid-dom-props */
-import ReactDOM from 'react-dom'
+import { createRoot } from 'react-dom/client'
 
 import { Code, H2 } from '@sourcegraph/wildcard'
 
@@ -8,7 +8,10 @@ import { light } from './theme-snapshots/light'
 
 export const renderColorDebugger = (): void => {
     document.body.innerHTML = "<div id='color-debug'></div>"
-    ReactDOM.render(<ColorDebugger />, document.querySelector('#color-debug'))
+
+    const root = createRoot(document.querySelector('#color-debug')!)
+
+    root.render(<ColorDebugger />)
 }
 
 const ColorDebugger = (): JSX.Element => (

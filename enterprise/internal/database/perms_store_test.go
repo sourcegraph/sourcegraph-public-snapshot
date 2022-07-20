@@ -648,16 +648,35 @@ func testPermsStore_SetRepoPermissionsUnrestricted(db database.DB) func(*testing
 			assertUnrestricted(ctx, t, s, 1, true)
 			assertUnrestricted(ctx, t, s, 2, true)
 
+			// Set unrestricted on a repo missing from repo_permissions.
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{3}, true); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, true)
+			assertUnrestricted(ctx, t, s, 2, true)
+			assertUnrestricted(ctx, t, s, 3, true)
+
+			// Unset restricted on a present and missing repo from repo_permissions.
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{2, 3, 4}, false); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, true)
+			assertUnrestricted(ctx, t, s, 2, false)
+			assertUnrestricted(ctx, t, s, 3, false)
+			assertUnrestricted(ctx, t, s, 4, false)
+
 			// Set them back to false again, also checking that more than 65535 IDs
 			// can be processed without an error
 			var ids [66000]int32
-			ids[0] = 1
-			ids[65900] = 2
+			for i := range ids {
+				ids[i] = int32(i + 1)
+			}
 			if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], false); err != nil {
 				t.Fatal(err)
 			}
 			assertUnrestricted(ctx, t, s, 1, false)
-			assertUnrestricted(ctx, t, s, 2, false)
+			assertUnrestricted(ctx, t, s, 500, false)
+			assertUnrestricted(ctx, t, s, 66000, false)
 		})
 	}
 }
@@ -2459,19 +2478,21 @@ func testPermsStore_GetUserIDsByExternalAccounts(db database.DB) func(*testing.T
 
 		// Set up test users and external accounts
 		extSQL := `
-INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at)
-	VALUES(%s, %s, %s, %s, %s, %s, %s, %s)
+INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id, client_id, created_at, updated_at, deleted_at, expired_at)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s)
 `
 		qs := []*sqlf.Query{
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`), // ID=1
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),   // ID=2
-			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`), // ID=3
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('alice')`),  // ID=1
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('bob')`),    // ID=2
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('cindy')`),  // ID=3
+			sqlf.Sprintf(`INSERT INTO users(username) VALUES('denise')`), // ID=4
 
-			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil), // ID=1
-			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil),          // ID=2
-			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil),     // ID=3
-			sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLab, "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock(), nil), // ID=4
-			sqlf.Sprintf(extSQL, 3, "github", "https://github.com/", "cindy_github", "cindy_github_client_id", clock(), clock(), clock()),      // ID=5, deleted
+			sqlf.Sprintf(extSQL, 1, extsvc.TypeGitLab, "https://gitlab.com/", "alice_gitlab", "alice_gitlab_client_id", clock(), clock(), nil, nil), // ID=1
+			sqlf.Sprintf(extSQL, 1, "github", "https://github.com/", "alice_github", "alice_github_client_id", clock(), clock(), nil, nil),          // ID=2
+			sqlf.Sprintf(extSQL, 2, extsvc.TypeGitLab, "https://gitlab.com/", "bob_gitlab", "bob_gitlab_client_id", clock(), clock(), nil, nil),     // ID=3
+			sqlf.Sprintf(extSQL, 3, extsvc.TypeGitLab, "https://gitlab.com/", "cindy_gitlab", "cindy_gitlab_client_id", clock(), clock(), nil, nil), // ID=4
+			sqlf.Sprintf(extSQL, 3, "github", "https://github.com/", "cindy_github", "cindy_github_client_id", clock(), clock(), clock(), nil),      // ID=5, deleted
+			sqlf.Sprintf(extSQL, 4, "github", "https://github.com/", "denise_github", "denise_github_client_id", clock(), clock(), nil, clock()),    // ID=6, expired
 		}
 		for _, q := range qs {
 			if err := s.execute(ctx, q); err != nil {
@@ -2502,7 +2523,7 @@ INSERT INTO user_external_accounts(user_id, service_type, service_id, account_id
 		accounts = &extsvc.Accounts{
 			ServiceType: "github",
 			ServiceID:   "https://github.com/",
-			AccountIDs:  []string{"cindy_github"},
+			AccountIDs:  []string{"cindy_github", "denise_github"},
 		}
 		userIDs, err = s.GetUserIDsByExternalAccounts(ctx, accounts)
 		require.Nil(t, err)

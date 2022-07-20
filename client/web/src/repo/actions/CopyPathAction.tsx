@@ -4,7 +4,7 @@ import { mdiContentCopy } from '@mdi/js'
 import copy from 'copy-to-clipboard'
 import { useLocation } from 'react-router'
 
-import { Button, DeprecatedTooltipController, Icon, screenReaderAnnounce } from '@sourcegraph/wildcard'
+import { Button, DeprecatedTooltipController, Icon, screenReaderAnnounce, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../tracking/eventLogger'
 import { parseBrowserRepoURL } from '../../util/url'
@@ -38,8 +38,10 @@ export const CopyPathAction: React.FunctionComponent<React.PropsWithChildren<unk
     const label = copied ? 'Copied!' : 'Copy path to clipboard'
 
     return (
-        <Button variant="icon" className="p-2" data-tooltip={label} aria-label={label} onClick={onClick} size="sm">
-            <Icon className={styles.copyIcon} aria-hidden={true} svgPath={mdiContentCopy} />
-        </Button>
+        <Tooltip content={label}>
+            <Button aria-label="Copy" variant="icon" className="p-2" onClick={onClick} size="sm">
+                <Icon className={styles.copyIcon} aria-hidden={true} svgPath={mdiContentCopy} />
+            </Button>
+        </Tooltip>
     )
 }

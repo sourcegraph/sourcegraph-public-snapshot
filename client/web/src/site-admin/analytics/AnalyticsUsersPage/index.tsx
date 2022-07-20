@@ -4,10 +4,12 @@ import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { Card, LoadingSpinner, useMatchMedia } from '@sourcegraph/wildcard'
+import { AlertType } from '@sourcegraph/shared/src/graphql-operations'
+import { Card, LoadingSpinner, useMatchMedia, Text } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
 import { BarChart } from '../../../charts/components/bar-chart/BarChart'
+import { GlobalAlert } from '../../../global/GlobalAlert'
 import { AnalyticsDateRange, UsersStatisticsResult, UsersStatisticsVariables } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
@@ -15,7 +17,7 @@ import { ChartContainer } from '../components/ChartContainer'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
-import { StandardDatum, buildStandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
+import { StandardDatum, FrequencyDatum, buildFrequencyDatum } from '../utils'
 
 import { USERS_STATISTICS } from './queries'
 
@@ -49,7 +51,7 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
             },
             {
                 value: data.site.productSubscription.license?.userCount ?? 0,
-                description: 'Users licenses',
+                description: 'User licenses',
                 color: 'var(--body-color)',
                 position: 'right',
             },
@@ -70,11 +72,11 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                 id: 'activity',
                 name: eventAggregation === 'count' ? 'Activities' : 'Active users',
                 color: eventAggregation === 'count' ? 'var(--cyan)' : 'var(--purple)',
-                data: buildStandardDatum(
-                    users.activity.nodes.map(node => ({
+                data: users.activity.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -92,15 +94,15 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
         const { avgDAU, avgWAU, avgMAU } = data.site.analytics.users.summary
         return [
             {
-                value: avgDAU.totalUniqueUsers,
+                value: avgDAU,
                 label: 'DAU',
             },
             {
-                value: avgWAU.totalUniqueUsers,
+                value: avgWAU,
                 label: 'WAU',
             },
             {
-                value: avgMAU.totalUniqueUsers,
+                value: avgMAU,
                 label: 'MAU',
             },
         ]
@@ -124,7 +126,10 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                     <HorizontalSelect<AnalyticsDateRange>
                         label="Date&nbsp;range"
                         value={dateRange}
-                        onChange={setDateRange}
+                        onChange={value => {
+                            setDateRange(value)
+                            eventLogger.log(`AdminAnalyticsUsersDateRange${value}Selected`)
+                        }}
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -133,6 +138,15 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                         ]}
                     />
                 </div>
+                <GlobalAlert
+                    alert={{
+                        message:
+                            'Note these charts are experimental. For billing information, use [usage stats](/site-admin/usage-statistics).',
+                        type: AlertType.INFO,
+                        isDismissibleWithKey: '',
+                    }}
+                    className="my-3"
+                />
                 {legends && <ValueLegendList className="mb-3" items={legends} />}
                 {activities && (
                     <div>
@@ -146,7 +160,12 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                         <div className="d-flex justify-content-end align-items-stretch mb-2">
                             <ToggleSelect<typeof eventAggregation>
                                 selected={eventAggregation}
-                                onChange={setEventAggregation}
+                                onChange={value => {
+                                    setEventAggregation(value)
+                                    eventLogger.log(
+                                        `AdminAnalyticsUsersAgg${value === 'count' ? 'Totals' : 'Uniques'}Clicked`
+                                    )
+                                }}
                                 items={[
                                     {
                                         tooltip: 'total # of actions triggered',
@@ -204,6 +223,9 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                     )}
                 </div>
             </Card>
+            <Text className="font-italic text-center mt-2">
+                All events are generated from entries in the event logs table and are updated every 24 hours..
+            </Text>
         </>
     )
 }

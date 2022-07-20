@@ -583,12 +583,14 @@ describe('Batches', () => {
         // TODO: SSBC has to go through accessibility audits before this can pass.
         it.skip('is styled correctly', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes/create')
+            await driver.page.waitForSelector('[data-testid="batch-spec-yaml-file"]')
             await percySnapshotWithVariants(driver.page, 'Create batch change')
             await accessibilityAudit(driver.page)
         })
     })
 
-    describe('Batch changes details', () => {
+    // Disabled because it's flaky. See: https://github.com/sourcegraph/sourcegraph/issues/37233
+    describe.skip('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
             it(`displays a single batch change for ${entityType}`, async () => {
                 testContext.overrideGraphQL({

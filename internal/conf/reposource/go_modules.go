@@ -48,14 +48,14 @@ func ParseGoVersionedPackage(dependency string) (*GoVersionedPackage, error) {
 	return &GoVersionedPackage{Module: mod}, nil
 }
 
-func ParseGoDependencyFromName(name string) (*GoVersionedPackage, error) {
-	return ParseGoVersionedPackage(name)
+func ParseGoDependencyFromName(name PackageName) (*GoVersionedPackage, error) {
+	return ParseGoVersionedPackage(string(name))
 }
 
 // ParseGoDependencyFromRepoName is a convenience function to parse a repo name in a
 // 'go/<name>(@<version>)?' format into a GoVersionedPackage.
-func ParseGoDependencyFromRepoName(name string) (*GoVersionedPackage, error) {
-	dependency := strings.TrimPrefix(name, "go/")
+func ParseGoDependencyFromRepoName(name api.RepoName) (*GoVersionedPackage, error) {
+	dependency := strings.TrimPrefix(string(name), "go/")
 	if len(dependency) == len(name) {
 		return nil, errors.New("invalid go dependency repo name, missing go/ prefix")
 	}
@@ -67,11 +67,11 @@ func (d *GoVersionedPackage) Scheme() string {
 }
 
 // PackageSyntax returns the name of the Go module.
-func (d *GoVersionedPackage) PackageSyntax() string {
-	return d.Module.Path
+func (d *GoVersionedPackage) PackageSyntax() PackageName {
+	return PackageName(d.Module.Path)
 }
 
-// PackageManagerSyntax returns the dependency in Go syntax. The returned string
+// VersionedPackageSyntax returns the dependency in Go syntax. The returned string
 // can (for example) be passed to `go get`.
 func (d *GoVersionedPackage) VersionedPackageSyntax() string {
 	return d.Module.String()
