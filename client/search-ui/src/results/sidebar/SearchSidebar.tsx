@@ -131,10 +131,10 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
 
     const repoFilters = useMemo(() => getFiltersOfKind(props.filters, FilterType.repo), [props.filters])
     const repoName = useLastRepoName(query, repoFilters)
-    const repoFilterLinks = useMemo(() => getRepoFilterLinks(repoFilters, onDynamicFilterClicked), [
-        repoFilters,
-        onDynamicFilterClicked,
-    ])
+    const repoFilterLinks = useMemo(
+        () => getRepoFilterLinks(repoFilters, onDynamicFilterClicked, coreWorkflowImprovementsEnabled),
+        [repoFilters, onDynamicFilterClicked, coreWorkflowImprovementsEnabled]
+    )
     const showReposSection = repoFilterLinks.length > 1
 
     const langFilterLinks = useMemo(
