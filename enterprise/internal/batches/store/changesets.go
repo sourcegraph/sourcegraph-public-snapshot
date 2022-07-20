@@ -3,9 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
-	"database/sql/driver"
 	"encoding/json"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -38,7 +36,6 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.created_at"),
 	sqlf.Sprintf("changesets.updated_at"),
 	sqlf.Sprintf("changesets.metadata"),
-	sqlf.Sprintf("changesets.batch_change_ids"),
 	sqlf.Sprintf("changesets.external_id"),
 	sqlf.Sprintf("changesets.external_service_type"),
 	sqlf.Sprintf("changesets.external_branch"),
@@ -75,7 +72,6 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("created_at"),
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("metadata"),
-	sqlf.Sprintf("batch_change_ids"),
 	sqlf.Sprintf("external_id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_branch"),
@@ -137,11 +133,6 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		return nil, err
 	}
 
-	batchChanges, err := batchChangesColumn(c)
-	if err != nil {
-		return nil, err
-	}
-
 	syncState, err := json.Marshal(c.SyncState)
 	if err != nil {
 		return nil, err
@@ -158,7 +149,6 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		c.CreatedAt,
 		c.UpdatedAt,
 		metadata,
-		batchChanges,
 		nullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		nullStringColumn(c.ExternalBranch),
@@ -230,7 +220,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -292,12 +282,11 @@ func countChangesetsQuery(opts *CountChangesetsOpts, authzConds *sqlf.Query) *sq
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
 	}
 	if opts.BatchChangeID != 0 {
-		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
-		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
+		preds = append(preds, sqlf.Sprintf("EXISTS (SELECT 1 FROM batch_change_changesets WHERE batch_change_id = %s)", opts.BatchChangeID))
 		if opts.OnlyArchived {
-			preds = append(preds, archivedInBatchChange(batchChangeID))
+			preds = append(preds, archivedInBatchChange(opts.BatchChangeID))
 		} else if !opts.IncludeArchived {
-			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(batchChangeID)))
+			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(opts.BatchChangeID)))
 		}
 	}
 	if opts.PublicationState != nil {
@@ -480,7 +469,8 @@ SELECT changesets.id,
 	r.external_service_id
 FROM changesets
 LEFT JOIN changeset_events ce ON changesets.id = ce.changeset_id
-JOIN batch_changes ON changesets.batch_change_ids ? batch_changes.id::TEXT
+JOIN batch_change_changesets bcc ON bcc.changeset_id = changesets.id
+JOIN batch_changes ON batch_changes.id = bcc.batch_change_id
 JOIN repo r ON changesets.repo_id = r.id
 WHERE %s
 GROUP BY changesets.id, r.id
@@ -573,13 +563,11 @@ func listChangesetsQuery(opts *ListChangesetsOpts, authzConds *sqlf.Query) *sqlf
 	}
 
 	if opts.BatchChangeID != 0 {
-		batchChangeID := strconv.Itoa(int(opts.BatchChangeID))
-		preds = append(preds, sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeID))
-
+		preds = append(preds, sqlf.Sprintf("EXISTS (SELECT 1 FROM batch_change_changesets WHERE batch_change_id = %s)", opts.BatchChangeID))
 		if opts.OnlyArchived {
-			preds = append(preds, archivedInBatchChange(batchChangeID))
+			preds = append(preds, archivedInBatchChange(opts.BatchChangeID))
 		} else if !opts.IncludeArchived {
-			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(batchChangeID)))
+			preds = append(preds, sqlf.Sprintf("NOT (%s)", archivedInBatchChange(opts.BatchChangeID)))
 		}
 	}
 
@@ -741,19 +729,56 @@ RETURNING
 
 // UpdateChangesetBatchChanges updates only the `batch_changes` & `updated_at`
 // columns of the given Changeset.
-func (s *Store) UpdateChangesetBatchChanges(ctx context.Context, cs *btypes.Changeset) (err error) {
+func (s *Store) UpdateChangesetBatchChanges(
+	ctx context.Context,
+	cs *btypes.Changeset,
+	batchChangeIDs []int64,
+) (err error) {
 	ctx, _, endObservation := s.operations.updateChangesetBatchChanges.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("ID", int(cs.ID)),
 	}})
 	defer endObservation(1, observation.Args{})
 
-	batchChanges, err := batchChangesColumn(cs)
-	if err != nil {
-		return err
+	if len(batchChangeIDs) == 0 {
+		return nil
 	}
 
-	return s.updateChangesetColumn(ctx, cs, "batch_change_ids", batchChanges)
+	values := make([]*sqlf.Query, 0, len(batchChangeIDs))
+	for _, id := range batchChangeIDs {
+		values = append(values, sqlf.Sprintf("(%s, %s)", id, cs.ID))
+	}
+
+	q := sqlf.Sprintf(updateChangesetBatchChangesFmtstr, sqlf.Join(values, ","), cs.ID)
+	return s.Store.Exec(ctx, q)
 }
+
+const updateChangesetBatchChangesFmtstr = `
+-- source: changesets.go:UpdateChangesetBatchChanges
+WITH
+  data (batch_change_id, changeset_id)
+    AS (VALUES %s),
+  changed AS (
+    INSERT INTO
+      batch_change_changesets
+      (batch_change_id, changeset_id)
+    SELECT
+      batch_change_id, changeset_id
+    FROM
+      data
+    ON CONFLICT (batch_change_id, changeset_id)
+      DO NOTHING
+  )
+DELETE FROM
+  batch_change_changesets
+WHERE
+  changeset_id = %s
+  AND batch_change_id NOT IN (
+    SELECT
+      batch_change_id
+    FROM
+      data
+  )
+`
 
 // UpdateChangesetUiPublicationState updates only the `ui_publication_state` &
 // `updated_at` columns of the given Changeset.
@@ -1078,54 +1103,6 @@ func scanChangesets(rows *sql.Rows, queryErr error) ([]*btypes.Changeset, error)
 	})
 }
 
-// jsonBatchChangeChangesetSet represents a "join table" set as a JSONB object
-// where the keys are the ids and the values are json objects holding the properties.
-// It implements the sql.Scanner interface so it can be used as a scan destination,
-// similar to sql.NullString.
-type jsonBatchChangeChangesetSet struct {
-	Assocs *[]btypes.BatchChangeAssoc
-}
-
-// Scan implements the Scanner interface.
-func (n *jsonBatchChangeChangesetSet) Scan(value any) error {
-	m := make(map[int64]btypes.BatchChangeAssoc)
-
-	switch value := value.(type) {
-	case nil:
-	case []byte:
-		if err := json.Unmarshal(value, &m); err != nil {
-			return err
-		}
-	default:
-		return errors.Errorf("value is not []byte: %T", value)
-	}
-
-	if *n.Assocs == nil {
-		*n.Assocs = make([]btypes.BatchChangeAssoc, 0, len(m))
-	} else {
-		*n.Assocs = (*n.Assocs)[:0]
-	}
-
-	for id, assoc := range m {
-		assoc.BatchChangeID = id
-		*n.Assocs = append(*n.Assocs, assoc)
-	}
-
-	sort.Slice(*n.Assocs, func(i, j int) bool {
-		return (*n.Assocs)[i].BatchChangeID < (*n.Assocs)[j].BatchChangeID
-	})
-
-	return nil
-}
-
-// Value implements the driver Valuer interface.
-func (n jsonBatchChangeChangesetSet) Value() (driver.Value, error) {
-	if n.Assocs == nil {
-		return nil, nil
-	}
-	return *n.Assocs, nil
-}
-
 func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 	var metadata, syncState json.RawMessage
 
@@ -1143,7 +1120,6 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&t.CreatedAt,
 		&t.UpdatedAt,
 		&metadata,
-		&jsonBatchChangeChangesetSet{Assocs: &t.BatchChanges},
 		&dbutil.NullString{S: &t.ExternalID},
 		&t.ExternalServiceType,
 		&dbutil.NullString{S: &t.ExternalBranch},
@@ -1381,24 +1357,35 @@ WHERE
 	id = %d
 `
 
-func archivedInBatchChange(batchChangeID string) *sqlf.Query {
+func archivedInBatchChange(batchChangeID int64) *sqlf.Query {
 	return sqlf.Sprintf(
-		"(COALESCE((batch_change_ids->%s->>'isArchived')::bool, false) OR COALESCE((batch_change_ids->%s->>'archive')::bool, false))",
-		batchChangeID,
+		archivedInBatchChangeFmtstr,
 		batchChangeID,
 	)
 }
 
-func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
-	batchChangeIDStr := strconv.Itoa(int(batchChangeID))
+const archivedInBatchChangeFmtstr = `
+EXISTS (
+  SELECT 1
+  FROM
+    batch_change_changesets
+  WHERE
+    batch_change_id = %s
+    AND archived IS NOT NULL
+)
+`
 
+func getChangesetsStatsQuery(batchChangeID int64) *sqlf.Query {
 	preds := []*sqlf.Query{
 		sqlf.Sprintf("repo.deleted_at IS NULL"),
-		sqlf.Sprintf("changesets.batch_change_ids ? %s", batchChangeIDStr),
+		sqlf.Sprintf(
+			"EXISTS (SELECT 1 FROM batch_change_changesets WHERE batch_change_id = %s)",
+			batchChangeID,
+		),
 	}
 
 	publishedAndCompleted := sqlf.Sprintf("changesets.publication_state = 'PUBLISHED' AND changesets.reconciler_state = 'completed'")
-	archived := archivedInBatchChange(batchChangeIDStr)
+	archived := archivedInBatchChange(batchChangeID)
 
 	return sqlf.Sprintf(
 		getChangesetStatsFmtstr,
@@ -1445,20 +1432,11 @@ FROM (
 	WHERE
 		repo.id = %s
 		-- where the changeset is not archived on at least one batch change
-		AND jsonb_path_exists (batch_change_ids, '$.* ? ((!exists(@.isArchived) || @.isArchived == false) && (!exists(@.archive) || @.archive == false))')
+    AND NOT EXISTS (SELECT 1 FROM batch_change_changesets WHERE archived IS NOT NULL AND changeset_id = changesets.id)
 		-- authz conditions:
 		AND %s
 ) AS fcs;
 `
-
-func batchChangesColumn(c *btypes.Changeset) ([]byte, error) {
-	assocsAsMap := make(map[int64]btypes.BatchChangeAssoc, len(c.BatchChanges))
-	for _, assoc := range c.BatchChanges {
-		assocsAsMap[assoc.BatchChangeID] = assoc
-	}
-
-	return json.Marshal(assocsAsMap)
-}
 
 func uiPublicationStateColumn(c *btypes.Changeset) *string {
 	var uiPublicationState *string

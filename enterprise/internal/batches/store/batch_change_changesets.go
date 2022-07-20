@@ -5,6 +5,7 @@ import (
 	"fmt"
 
 	"github.com/keegancsmith/sqlf"
+
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
