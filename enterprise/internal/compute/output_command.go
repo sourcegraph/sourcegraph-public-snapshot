@@ -61,13 +61,13 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
-func resultContent(r result.Match, onlyPath bool) (string, bool, error) {
+func resultContent(r result.Match, onlyPath bool) string {
 	switch m := r.(type) {
 	case *result.RepoMatch:
-		return string(m.Name), true, nil
+		return string(m.Name)
 	case *result.FileMatch:
 		if onlyPath {
-			return m.Path, true, nil
+			return m.Path
 		}
 		var sb strings.Builder
 		for _, cm := range m.ChunkMatches {
@@ -75,7 +75,7 @@ func resultContent(r result.Match, onlyPath bool) (string, bool, error) {
 				sb.WriteString(chunkContent(cm, range_))
 			}
 		}
-		return sb.String(), true, nil
+		return sb.String()
 	case *result.CommitDiffMatch:
 		var sb strings.Builder
 		for _, h := range m.Hunks {
@@ -83,7 +83,7 @@ func resultContent(r result.Match, onlyPath bool) (string, bool, error) {
 				sb.WriteString(l)
 			}
 		}
-		return sb.String(), true, nil
+		return sb.String()
 	case *result.CommitMatch:
 		var content string
 		if m.DiffPreview != nil {
@@ -91,9 +91,9 @@ func resultContent(r result.Match, onlyPath bool) (string, bool, error) {
 		} else {
 			content = string(m.Commit.Message)
 		}
-		return content, true, nil
+		return content
 	default:
-		return "", false, nil
+		panic("unsupported result kind in compute output command")
 	}
 }
 
@@ -117,13 +117,7 @@ func toTextExtraResult(text *Text, r result.Match) *TextExtra {
 
 func (c *Output) Run(ctx context.Context, _ database.DB, r result.Match) (Result, error) {
 	onlyPath := c.TypeValue == "path" // don't read file contents for file matches when we only want type:path
-	content, ok, err := resultContent(r, onlyPath)
-	if err != nil {
-		return nil, err
-	}
-	if !ok {
-		return nil, nil
-	}
+	content := resultContent(r, onlyPath)
 	env := NewMetaEnvironment(r, content)
 	outputPattern, err := substituteMetaVariables(c.OutputPattern, env)
 	if err != nil {
