@@ -210,7 +210,7 @@ func canonicalizeQuery(query string) string {
 	}
 
 	// Strip outermost transactions
-	stripped := strings.TrimSpace(
+	return strings.TrimSpace(
 		strings.TrimSuffix(
 			strings.TrimPrefix(
 				strings.TrimSpace(query),
@@ -219,16 +219,6 @@ func canonicalizeQuery(query string) string {
 			"COMMIT;",
 		),
 	)
-
-	// Strip comments that give extra grief to drift detection. This
-	// isn't the idea place for this type of special casing, but a bit
-	// of debt here is unblocking great value in upgrade tooling.
-	replacer := strings.NewReplacer(
-		"-- Increment tally counting tables.\n", "",
-		"-- Decrement tally counting tables.\n", "",
-	)
-
-	return replacer.Replace(stripped)
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
