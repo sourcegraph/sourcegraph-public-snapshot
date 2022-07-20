@@ -1,8 +1,6 @@
 package zoekt
 
 import (
-	"fmt"
-
 	"github.com/go-enry/go-enry/v2"
 	"github.com/grafana/regexp"
 
@@ -98,8 +96,6 @@ func QueryToZoektQuery(b query.Basic, resultTypes result.Types, feat *search.Fea
 		}
 		and = append(and, or)
 	}
-
-	fmt.Printf("zoekt query: %+v\n", and)
 
 	return zoekt.Simplify(zoekt.NewAnd(and...)), nil
 }
