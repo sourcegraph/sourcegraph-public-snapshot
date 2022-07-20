@@ -136,9 +136,6 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
         <Form className={styles.form} onSubmit={handleCreate}>
             <Container className="mb-4">
                 <LicenseAlert>
-                    <div className="mb-2">
-                        <strong>Your license only allows for 5 changesets per batch change</strong>
-                    </div>
                     You can execute this batch spec and see how it operates, but if more than 5 changesets are
                     generated, you won't be able to apply the batch change and actually publish the changesets to the
                     code host.
