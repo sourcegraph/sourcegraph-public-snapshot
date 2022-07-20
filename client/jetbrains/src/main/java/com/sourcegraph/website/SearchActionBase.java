@@ -12,7 +12,6 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.browser.URLBuilder;
 import com.sourcegraph.common.BrowserErrorNotification;
 import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.git.GitUtil;
