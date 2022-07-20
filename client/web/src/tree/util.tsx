@@ -1,8 +1,6 @@
 import React from 'react'
 
-import { cloneDeep } from 'lodash'
-
-import { TreeEntryFields, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { TreeEntryFields } from '@sourcegraph/shared/src/graphql-operations'
 
 import { TreeRootProps } from './TreeRoot'
 
@@ -52,8 +50,6 @@ export const treePadding = (depth: number, isTree: boolean, isDirectory = false)
     marginLeft: `${depth * 12 + (isTree ? 0 : 12) + (isDirectory ? 0 : 8)}px`,
     paddingRight: '1rem',
 })
-
-export const maxEntries = 2500
 
 // Utility functions to handle single-child directories:
 
@@ -107,27 +103,4 @@ export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRo
         a.isExpanded === b.isExpanded &&
         a.location === b.location
     )
-}
-
-export function prependGoUpOnce(tree: TreeFields, goUpPath: string, goUpUrl: string): TreeFields {
-    if (!tree.isRoot) {
-        const firstEntryPath = tree.entries?.[0].path ?? null
-        if (firstEntryPath !== goUpPath) {
-            const newTree = cloneDeep(tree)
-            newTree.entries = [
-                {
-                    name: '..',
-                    path: goUpPath,
-                    isDirectory: false,
-                    url: goUpUrl,
-                    isSingleChild: !tree.entries.length,
-                    submodule: null,
-                },
-                ...tree.entries,
-            ]
-            return newTree
-        }
-    }
-
-    return tree
 }

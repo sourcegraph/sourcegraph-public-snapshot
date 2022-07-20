@@ -27,20 +27,12 @@ import { LoadingSpinner } from '@sourcegraph/wildcard'
 
 import { getFileDecorations } from '../backend/features'
 import { requestGraphQL } from '../backend/graphql'
-import { dirname } from '../util/path'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
+import { MAX_TREE_ENTRIES } from './constants'
 import { TreeNode } from './Tree'
-import {
-    hasSingleChild,
-    compareTreeProps,
-    singleChildEntriesToGitTree,
-    SingleChildGitTree,
-    prependGoUpOnce,
-} from './util'
-
-const maxEntries = 2500
+import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
 const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
@@ -104,7 +96,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     revision: props.revision,
                     commitID: props.commitID,
                     filePath: props.parentPath || '',
-                    first: maxEntries,
+                    first: MAX_TREE_ENTRIES,
                     requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
                 }).pipe(
                     catchError(error => [asError(error)]),
@@ -117,15 +109,6 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.subscriptions.add(
             treeOrErrors.subscribe(
                 treeOrError => {
-                    // Append '..'
-                    if (treeOrError && treeOrError !== LOADING && !isErrorLike(treeOrError)) {
-                        treeOrError = prependGoUpOnce(
-                            treeOrError,
-                            dirname(this.props.parentPath ?? ''),
-                            dirname(treeOrError.url)
-                        )
-                    }
-
                     // clear file decorations before latest file decorations come
                     this.setState({ treeOrError, fileDecorationsByPath: {} })
                 },
@@ -166,7 +149,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                             revision: this.props.revision,
                             commitID: this.props.commitID,
                             filePath: path,
-                            first: maxEntries,
+                            first: MAX_TREE_ENTRIES,
                             requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
                         }).pipe(catchError(error => [asError(error)]))
                     )
@@ -229,6 +212,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                                 parent={this.node}
                                                 depth={-1 as number}
                                                 entries={treeOrError.entries}
+                                                treeUrl={treeOrError.url}
                                                 singleChildTreeEntry={singleChildTreeEntry}
                                                 childrenEntries={singleChildTreeEntry.children}
                                                 onHover={this.fetchChildContents}

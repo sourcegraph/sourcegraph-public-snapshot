@@ -2,7 +2,10 @@ import React from 'react'
 
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
+import { dirname } from '../util/path'
+
 import { TreeLayerTable } from './components'
+import { File } from './File'
 import { SingleChildTreeLayer } from './SingleChildTreeLayer'
 import { TreeLayer } from './TreeLayer'
 import { TreeRootProps } from './TreeRoot'
@@ -17,6 +20,7 @@ interface ChildTreeLayerProps extends Pick<TreeRootProps, Exclude<keyof TreeRoot
     /** The children entries of a SingleChildTreeLayer. Will be undefined if there is no SingleChildTreeLayer to render. */
     childrenEntries?: SingleChildGitTree[]
     onHover: (filePath: string) => void
+    treeUrl: string
 }
 
 /**
@@ -45,17 +49,46 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
         isLightTheme: props.isLightTheme,
     }
 
+    // Only show ".." (go up) for non-root file trees
+    const shouldShowGoUp = props.depth === -1 && props.parentPath
+
     return (
         <div>
             <TreeLayerTable>
                 <tbody>
+                    {shouldShowGoUp && (
+                        <tr>
+                            <td>
+                                <TreeLayerTable>
+                                    <File
+                                        entryInfo={{
+                                            name: '..',
+                                            path: props.parentPath as string,
+                                            isDirectory: false,
+                                            url: dirname(props.treeUrl),
+                                            isSingleChild: false,
+                                            submodule: null,
+                                        }}
+                                        depth={sharedProps.depth}
+                                        index={0}
+                                        isLightTheme={sharedProps.isLightTheme}
+                                        handleTreeClick={() => undefined}
+                                        noopRowClick={() => undefined}
+                                        linkRowClick={() => props.telemetryService.log('FileTreeClick')}
+                                        isActive={false}
+                                        isSelected={false}
+                                    />
+                                </TreeLayerTable>
+                            </td>
+                        </tr>
+                    )}
                     <tr>
                         <td>
                             {hasSingleChild(props.entries) ? (
                                 <SingleChildTreeLayer
                                     {...sharedProps}
                                     key={props.singleChildTreeEntry.path}
-                                    index={0}
+                                    index={shouldShowGoUp ? 1 : 0}
                                     isExpanded={props.expandedTrees.includes(props.singleChildTreeEntry.path)}
                                     parentPath={props.singleChildTreeEntry.path}
                                     entryInfo={props.singleChildTreeEntry}
@@ -63,18 +96,20 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                     fileDecorationsByPath={props.fileDecorationsByPath}
                                     fileDecorations={props.fileDecorationsByPath[props.singleChildTreeEntry.path]}
                                     telemetryService={props.telemetryService}
+                                    treeUrl={props.treeUrl}
                                 />
                             ) : (
                                 props.entries.map((item, index) => (
                                     <TreeLayer
                                         {...sharedProps}
                                         key={item.path}
-                                        index={index}
+                                        index={shouldShowGoUp ? index + 1 : index}
                                         isExpanded={props.expandedTrees.includes(item.path)}
                                         parentPath={item.path}
                                         entryInfo={item}
                                         fileDecorations={props.fileDecorationsByPath[item.path]}
                                         telemetryService={props.telemetryService}
+                                        treeUrl={props.treeUrl}
                                     />
                                 ))
                             )}
