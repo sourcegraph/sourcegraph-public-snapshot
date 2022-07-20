@@ -7,6 +7,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,13 +33,8 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	var errs error
 
-	// We currently don't have a way to access file ownership information, so no
-	// file currently has any owner. A search to include any owner will
-	// therefore return no results.
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		if len(s.fileOwnersMustInclude) > 0 {
-			event.Results = event.Results[:0]
-		}
+		event.Results, _ = applyCodeOwnershipFiltering(ctx, s.fileOwnersMustInclude, s.fileOwnersMustExclude, event.Results)
 		stream.Send(event)
 	})
 
@@ -63,4 +59,17 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *s
 	cp.child = job.Map(s.child, fn)
 	return &cp
+}
+
+func applyCodeOwnershipFiltering(ctx context.Context, fileOwnersMustInclude []string, fileOwnersMustExclude []string, matches []result.Match) ([]result.Match, error) {
+	filtered := matches[:0]
+
+	// We currently don't have a way to access file ownership information, so no
+	// file currently has any owner. A search to include any owner will
+	// therefore return no results.
+	if len(fileOwnersMustInclude) <= 0 {
+		filtered = matches
+	}
+
+	return filtered, nil
 }
