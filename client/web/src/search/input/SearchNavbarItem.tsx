@@ -67,6 +67,9 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const fuzzyFinderShortcut = useKeyboardShortcut('fuzzyFinder')
+    const applySuggestionsOnEnter = useExperimentalFeatures(
+        features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -111,6 +114,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
             <SearchBox
                 {...props}
                 editorComponent={editorComponent}
+                applySuggestionsOnEnter={applySuggestionsOnEnter}
                 showSearchContext={showSearchContext}
                 showSearchContextManagement={showSearchContextManagement}
                 caseSensitive={searchCaseSensitivity}

@@ -152,6 +152,9 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
     } = props
     const history = useHistory()
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const applySuggestionsOnEnter = useExperimentalFeatures(
+        features => features.applySearchQuerySuggestionOnEnter ?? false
+    )
 
     const [name, setName] = useState(searchContext ? searchContext.name : '')
     const [description, setDescription] = useState(searchContext ? searchContext.description : '')
@@ -459,6 +462,7 @@ export const SearchContextForm: React.FunctionComponent<React.PropsWithChildren<
                                 onChange={setQueryState}
                                 globbing={false}
                                 preventNewLine={false}
+                                applySuggestionsOnEnter={applySuggestionsOnEnter}
                             />
                         </div>
                         <div className={classNames(styles.searchContextFormQueryLabel, 'text-muted')}>
