@@ -1,0 +1,57 @@
+{
+  "Input": "(a)(?P\u003cThisIsNamed\u003eb)",
+  "Result": {
+    "matches": [
+      {
+        "value": "ab",
+        "range": {
+          "start": {
+            "offset": -1,
+            "line": 1,
+            "column": 0
+          },
+          "end": {
+            "offset": -1,
+            "line": 1,
+            "column": 2
+          }
+        },
+        "environment": {
+          "1": {
+            "value": "a",
+            "range": {
+              "start": {
+                "offset": -1,
+                "line": 1,
+                "column": 0
+              },
+              "end": {
+                "offset": -1,
+                "line": 1,
+                "column": 1
+              }
+            }
+          },
+          "ThisIsNamed": {
+            "value": "b",
+            "range": {
+              "start": {
+                "offset": -1,
+                "line": 1,
+                "column": 1
+              },
+              "end": {
+                "offset": -1,
+                "line": 1,
+                "column": 2
+              }
+            }
+          }
+        }
+      }
+    ],
+    "path": "bedge",
+    "repositoryID": 5,
+    "repository": "codehost.com/myorg/myrepo"
+  }
+}

@@ -1307,6 +1307,7 @@ func TestService(t *testing.T) {
 
 				job := &btypes.BatchSpecWorkspaceExecutionJob{
 					BatchSpecWorkspaceID: ws.ID,
+					UserID:               user.ID,
 				}
 				if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
@@ -1367,6 +1368,7 @@ func TestService(t *testing.T) {
 
 			job := &btypes.BatchSpecWorkspaceExecutionJob{
 				BatchSpecWorkspaceID: ws.ID,
+				UserID:               user.ID,
 			}
 			if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 				t.Fatal(err)
@@ -1721,8 +1723,9 @@ changesetTemplate:
 					t.Fatal(err)
 				}
 
-				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
-				if err := bt.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
+
+				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID, UserID: user.ID}
+				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
 
@@ -2643,6 +2646,10 @@ changesetTemplate:
 
 func createJob(t *testing.T, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
 	t.Helper()
+
+	if job.UserID == 0 {
+		job.UserID = 1
+	}
 
 	clone := *job
 
