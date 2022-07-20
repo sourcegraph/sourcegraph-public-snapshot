@@ -31,7 +31,7 @@ jobs:
       - name: Move design issues
         uses: actions/add-to-project@main
         with:
-          project-url: https://github.com/orgs/sourcegraph/projects/278/views/1
+          project-url: https://github.com/orgs/sourcegraph/projects/278
           github-token: ${{ secrets.GH_PROJECTS_ACTION_TOKEN }}
           labeled: design
           label-operator: OR
