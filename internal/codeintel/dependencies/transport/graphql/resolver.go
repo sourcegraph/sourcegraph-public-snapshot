@@ -36,7 +36,7 @@ func (r *resolver) LockfileIndexes(ctx context.Context, args *graphqlbackend.Lis
 		return nil, err
 	}
 
-	p, err := validateArgs(args)
+	p, err := validateListArgs(args)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ type params struct {
 	limit int
 }
 
-func validateArgs(args *graphqlbackend.ListLockfileIndexesArgs) (params, error) {
+func validateListArgs(args *graphqlbackend.ListLockfileIndexesArgs) (params, error) {
 	var p params
 	afterCount, err := graphqlutil.DecodeIntCursor(args.After)
 	if err != nil {
@@ -108,4 +108,32 @@ func validateArgs(args *graphqlbackend.ListLockfileIndexesArgs) (params, error) 
 	p.limit = limit
 
 	return p, nil
+}
+
+func (r *resolver) LockfileIndex(ctx context.Context, args *graphqlbackend.GetLockfileIndexArgs) (graphqlbackend.LockfileIndexResolver, error) {
+	// 🚨 SECURITY: For now we only allow site admins to query lockfile indexes.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalLockfileIndexID(args.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	lockfileIndex, err := r.svc.GetLockfileIndexOpts(ctx, dependencies.GetLockfileIndexOpts{
+		ID: id,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	repo, err := backend.NewRepos(r.logger, r.db).Get(ctx, api.RepoID(lockfileIndex.RepositoryID))
+	if err != nil {
+		return nil, err
+	}
+	repoResolver := graphqlbackend.NewRepositoryResolver(r.db, repo)
+	commit := graphqlbackend.NewGitCommitResolver(r.db, repoResolver, api.CommitID(lockfileIndex.Commit), nil)
+
+	return NewLockfileIndexResolver(lockfileIndex, repoResolver, commit), nil
 }

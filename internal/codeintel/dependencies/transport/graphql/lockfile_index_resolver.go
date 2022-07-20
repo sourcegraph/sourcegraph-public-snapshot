@@ -37,3 +37,8 @@ func (e *LockfileIndexResolver) Commit() *graphqlbackend.GitCommitResolver {
 func (e *LockfileIndexResolver) Fidelity() string {
 	return e.lockfile.Fidelity.ToGraphQL()
 }
+
+func unmarshalLockfileIndexID(id graphql.ID) (lockfileIndexID int, err error) {
+	err = relay.UnmarshalSpec(id, &lockfileIndexID)
+	return
+}

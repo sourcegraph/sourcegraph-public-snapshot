@@ -13,8 +13,13 @@ type ListLockfileIndexesArgs struct {
 	After *string
 }
 
+type GetLockfileIndexArgs struct {
+	ID graphql.ID
+}
+
 type DependenciesResolver interface {
 	LockfileIndexes(ctx context.Context, args *ListLockfileIndexesArgs) (LockfileIndexConnectionResolver, error)
+	LockfileIndex(ctx context.Context, args *GetLockfileIndexArgs) (LockfileIndexResolver, error)
 }
 
 type LockfileIndexConnectionResolver interface {

@@ -501,3 +501,14 @@ type ListLockfileIndexesOpts struct {
 func (s *Service) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
 	return s.dependenciesStore.ListLockfileIndexes(ctx, store.ListLockfileIndexesOpts(opts))
 }
+
+type GetLockfileIndexOpts struct {
+	ID       int
+	RepoName string
+	Commit   string
+	Lockfile string
+}
+
+func (s *Service) GetLockfileIndexOpts(ctx context.Context, opts GetLockfileIndexOpts) (shared.LockfileIndex, error) {
+	return s.dependenciesStore.GetLockfileIndex(ctx, store.GetLockfileIndexOpts(opts))
+}
