@@ -1991,7 +1991,7 @@ func (r *Resolver) CheckBatchChangesCredential(ctx context.Context, args *graphq
 }
 
 func (r *Resolver) MaxUnlicensedChangesets(ctx context.Context) (max int32, err error) {
-	tr, ctx := trace.New(ctx, "Resolver.MaxUnlicensedChangesets", "Max Unlicensed Changesets")
+	tr, _ := trace.New(ctx, "Resolver.MaxUnlicensedChangesets", "Max Unlicensed Changesets")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
