@@ -253,7 +253,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		})
 	}
 
-	if !reflebt.DeepEqual(response.Node.ChangesetCountsOverTime, wantCounts) {
+	if !reflect.DeepEqual(response.Node.ChangesetCountsOverTime, wantCounts) {
 		t.Errorf("wrong counts listed. diff=%s", cmp.Diff(response.Node.ChangesetCountsOverTime, wantCounts))
 	}
 }
