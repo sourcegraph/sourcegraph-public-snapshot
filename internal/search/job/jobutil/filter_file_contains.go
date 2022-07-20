@@ -27,6 +27,9 @@ func NewFileContainsFilterJob(includePatterns []string, originalPattern query.No
 	originalPatternStrings := patternsInTree(originalPattern)
 	originalPatternMatchers := make([]*regexp.Regexp, 0, len(originalPatternStrings))
 	for _, originalPatternString := range originalPatternStrings {
+		if !caseSensitive {
+			originalPatternString = "(?i:" + originalPatternString + ")"
+		}
 		originalPatternMatchers = append(originalPatternMatchers, regexp.MustCompile(originalPatternString))
 	}
 
