@@ -24,7 +24,7 @@ func Test_output(t *testing.T) {
 		if err != nil {
 			return err.Error()
 		}
-		return result.Value
+		return result
 	}
 
 	autogold.Want(

@@ -38,7 +38,7 @@ func substituteRegexp(content string, match *regexp.Regexp, replacePattern, sepa
 	return b.String()
 }
 
-func output(ctx context.Context, fragment string, matchPattern MatchPattern, replacePattern string, separator string) (*Text, error) {
+func output(ctx context.Context, fragment string, matchPattern MatchPattern, replacePattern string, separator string) (string, error) {
 	var newContent string
 	var err error
 	switch match := matchPattern.(type) {
@@ -54,11 +54,11 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 			NumWorkers:      0,
 		})
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 
 	}
-	return &Text{Value: newContent, Kind: "output"}, nil
+	return newContent, nil
 }
 
 func resultContent(r result.Match, onlyPath bool) string {
@@ -97,19 +97,19 @@ func resultContent(r result.Match, onlyPath bool) string {
 	}
 }
 
-func toTextResult(ctx context.Context, content string, matchPattern MatchPattern, outputPattern, separator, selector string) (Result, error) {
+func toTextResult(ctx context.Context, content string, matchPattern MatchPattern, outputPattern, separator, selector string) (string, error) {
 	if selector != "" {
 		// Don't run the search pattern over the search result content
 		// when there's an explicit `select:` value.
-		return &Text{Value: outputPattern, Kind: "output"}, nil
+		return outputPattern, nil
 	}
 
 	return output(ctx, content, matchPattern, outputPattern, separator)
 }
 
-func toTextExtraResult(text *Text, r result.Match) *TextExtra {
+func toTextExtraResult(content string, r result.Match) *TextExtra {
 	return &TextExtra{
-		Text:         *text,
+		Text:         Text{Value: content, Kind: "output"},
 		RepositoryID: int32(r.RepoName().ID),
 		Repository:   string(r.RepoName().Name),
 	}
@@ -131,8 +131,8 @@ func (c *Output) Run(ctx context.Context, _ database.DB, r result.Match) (Result
 
 	switch c.Kind {
 	case "output.extra":
-		return toTextExtraResult(result.(*Text), r), nil
+		return toTextExtraResult(result, r), nil
 	default:
-		return result, nil
+		return &Text{Value: result, Kind: "output"}, nil
 	}
 }
