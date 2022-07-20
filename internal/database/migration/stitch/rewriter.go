@@ -38,10 +38,16 @@ func readMigrations(schemaName, root, rev string) (fs.FS, error) {
 		return nil, err
 	}
 
+	replacer := strings.NewReplacer(
+		// These lines cause issues with schema drift comparison
+		"-- Increment tally counting tables.\n", "",
+		"-- Decrement tally counting tables.\n", "",
+	)
+
 	contents := make(map[string]string, len(migrations)*3)
 	for _, m := range migrations {
-		contents[filepath.Join(m.id, "up.sql")] = m.up
-		contents[filepath.Join(m.id, "down.sql")] = m.down
+		contents[filepath.Join(m.id, "up.sql")] = replacer.Replace(m.up)
+		contents[filepath.Join(m.id, "down.sql")] = replacer.Replace(m.down)
 		contents[filepath.Join(m.id, "metadata.yaml")] = m.metadata
 	}
 
