@@ -11,7 +11,6 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -38,29 +37,22 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 	}
 	logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	// db, err := workerdb.Init()
-	// if err != nil {
-	// 	return nil, err
-	// }
-
-	var db database.DB
 	return []goroutine.BackgroundRoutine{
-		newBackgroundTelemetryJob(db, logger),
+		newBackgroundTelemetryJob(logger),
 	}, nil
 }
 
-func newBackgroundTelemetryJob(db database.DB, logger log.Logger) goroutine.BackgroundRoutine {
+func newBackgroundTelemetryJob(logger log.Logger) goroutine.BackgroundRoutine {
 	observationContext := &observation.Context{
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.NewRegistry(),
 	}
 	operation := observationContext.Operation(observation.Op{})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, &telemetryHandler{db: db, logger: logger}, operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, &telemetryHandler{logger: logger}, operation)
 }
 
 type telemetryHandler struct {
-	db     database.DB
 	logger log.Logger
 }
 
