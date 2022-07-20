@@ -10,7 +10,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     value="lang:go"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       <span
         class="text-monospace search-query-link"
@@ -47,7 +47,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     value="lang:typescript"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       <span
         class="text-monospace search-query-link"
@@ -84,7 +84,7 @@ exports[`FilterLink should have correct links for dynamic filters 1`] = `
     value="-file:_test\\\\.go$"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       <span
         class="text-monospace search-query-link"
@@ -141,7 +141,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
     value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       <span
         class="text-monospace search-query-link sidebarSectionListItemBreakWords"
@@ -183,7 +183,7 @@ exports[`FilterLink should have correct links for repos 1`] = `
     value="repo:^github\\\\.com/microsoft/vscode$"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       <span
         class="text-monospace search-query-link sidebarSectionListItemBreakWords"
@@ -230,7 +230,7 @@ exports[`FilterLink should have correct links for scopes 1`] = `
     value="repo:sourcegraph"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       This is a search scope with a very long name lorem ipsum dolor sit amet
     </span>
@@ -243,7 +243,7 @@ exports[`FilterLink should have correct links for scopes 1`] = `
     value="count:all"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       All results
     </span>
@@ -261,7 +261,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     value="repo:^gitlab\\\\.com/sourcegraph/sourcgreaph$"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       <span
         class="text-monospace search-query-link sidebarSectionListItemBreakWords"
@@ -303,7 +303,7 @@ exports[`FilterLink should have show icons for repos on cloud 1`] = `
     value="repo:^github\\\\.com/microsoft/vscode$"
   >
     <span
-      class="flex-grow-1"
+      class="flex-grow-1 sidebarSectionListItemLabel"
     >
       <span
         class="text-monospace search-query-link sidebarSectionListItemBreakWords"
