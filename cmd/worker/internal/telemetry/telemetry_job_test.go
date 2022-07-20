@@ -16,6 +16,8 @@ func TestInitializeJob(t *testing.T) {
 	ctx := context.Background()
 	logger := log.Scoped("", "")
 
+	confClient = conf.MockClient()
+
 	tests := []struct {
 		name         string
 		mockedConfig schema.SiteConfiguration
@@ -50,7 +52,7 @@ func TestInitializeJob(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			conf.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
+			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
 			job := NewTelemetryJob()
 			routines, err := job.Routines(ctx, logger)
@@ -109,7 +111,7 @@ func TestHandler(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			conf.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
+			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
 			handler := telemetryHandler{logger: logger}
 			err := handler.Handle(ctx)

@@ -76,8 +76,11 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	return nil
 }
 
+// This package level client is to prevent race conditions when mocking this configuration in tests.
+var confClient = conf.DefaultClient()
+
 func isEnabled() bool {
-	ptr := conf.Get().ExportUsageTelemetry
+	ptr := confClient.Get().ExportUsageTelemetry
 	if ptr != nil {
 		return ptr.Enabled
 	}
