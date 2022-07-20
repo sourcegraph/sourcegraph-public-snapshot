@@ -257,9 +257,6 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                         (totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0)
                     }
                 >
-                    <div className="mb-2">
-                        <strong>Your license only allows for 5 changesets per batch change</strong>
-                    </div>
                     If more than 5 changesets are generated, you won't be able to apply the batch change and actually
                     publish the changesets to the code host.
                 </LicenseAlert>
