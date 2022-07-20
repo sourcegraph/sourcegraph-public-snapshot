@@ -9,8 +9,6 @@ import (
 	"sync"
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/telemetry"
-
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
@@ -49,7 +47,6 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 		"codeintel-dependencies":                codeintel.NewDependenciesJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
-		"export-usage-telemetry":                telemetry.NewTelemetryJob(),
 	}
 
 	jobs := map[string]job.Job{}
