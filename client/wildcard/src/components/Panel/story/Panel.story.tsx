@@ -105,7 +105,7 @@ export const Simple: Story = () => {
                 defaultSize={200}
                 storageKey={`size-cache-${position}`}
                 className={styles.panel}
-                ariaLabel="Sorybook panel"
+                ariaLabel="Storybook panel"
             >
                 <PanelBodyContent position={position}>
                     <b>{position}</b> panel content
