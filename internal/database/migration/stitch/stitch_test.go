@@ -36,33 +36,38 @@ import (
 func TestStitchFrontendDefinitions(t *testing.T) {
 	t.Parallel()
 
-	testSimple(t, "frontend", 41, 42, +1644868458, []int{1657635365})
-	testSimple(t, "frontend", 40, 42, +1528395943, []int{1657635365})
-	testSimple(t, "frontend", 35, 42, -1528395834, []int{1657635365})
-	testSimple(t, "frontend", 29, 42, -1528395787, []int{1657635365})
+	testStitchGraphShape(t, "frontend", 41, 42, +1644868458, []int{1657635365})
+	testStitchGraphShape(t, "frontend", 40, 42, +1528395943, []int{1657635365})
+	testStitchGraphShape(t, "frontend", 38, 42, +1528395943, []int{1657635365})
+	testStitchGraphShape(t, "frontend", 37, 42, -1528395834, []int{1657635365})
+	testStitchGraphShape(t, "frontend", 35, 42, -1528395834, []int{1657635365})
+	testStitchGraphShape(t, "frontend", 29, 42, -1528395787, []int{1657635365})
 }
 
 func TestStitchCodeintelDefinitions(t *testing.T) {
 	t.Parallel()
 
-	testSimple(t, "codeintel", 41, 42, +1000000029, []int{1000000034})
-	testSimple(t, "codeintel", 38, 42, +1000000029, []int{1000000034})
-	testSimple(t, "codeintel", 37, 42, -1000000015, []int{1000000034})
-	testSimple(t, "codeintel", 29, 42, -1000000005, []int{1000000034})
+	testStitchGraphShape(t, "codeintel", 41, 42, +1000000029, []int{1000000034})
+	testStitchGraphShape(t, "codeintel", 40, 42, +1000000029, []int{1000000034})
+	testStitchGraphShape(t, "codeintel", 38, 42, +1000000029, []int{1000000034})
+	testStitchGraphShape(t, "codeintel", 37, 42, -1000000015, []int{1000000034})
+	testStitchGraphShape(t, "codeintel", 35, 42, -1000000015, []int{1000000034})
+	testStitchGraphShape(t, "codeintel", 29, 42, -1000000005, []int{1000000034})
 }
 
 func TestStitchCodeinsightsDefinitions(t *testing.T) {
 	t.Parallel()
 
-	testSimple(t, "codeinsights", 41, 42, +1000000026, []int{1656517037, 1656608833})
-	testSimple(t, "codeinsights", 40, 42, +1000000020, []int{1656517037, 1656608833})
-	testSimple(t, "codeinsights", 38, 42, +1000000020, []int{1656517037, 1656608833})
-	testSimple(t, "codeinsights", 37, 42, -1000000000, []int{1656517037, 1656608833})
-	testSimple(t, "codeinsights", 29, 42, -1000000000, []int{1656517037, 1656608833})
+	testStitchGraphShape(t, "codeinsights", 41, 42, +1000000026, []int{1656517037, 1656608833})
+	testStitchGraphShape(t, "codeinsights", 40, 42, +1000000020, []int{1656517037, 1656608833})
+	testStitchGraphShape(t, "codeinsights", 38, 42, +1000000020, []int{1656517037, 1656608833})
+	testStitchGraphShape(t, "codeinsights", 37, 42, -1000000000, []int{1656517037, 1656608833})
+	testStitchGraphShape(t, "codeinsights", 35, 42, -1000000000, []int{1656517037, 1656608833})
+	testStitchGraphShape(t, "codeinsights", 29, 42, -1000000000, []int{1656517037, 1656608833})
 }
 
-func testSimple(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int) {
-	t.Run(fmt.Sprintf("3.%d -> 3.%d", from, to), func(t *testing.T) {
+func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int) {
+	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {
 		t.Parallel()
 
 		definitions, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
