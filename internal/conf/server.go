@@ -121,18 +121,17 @@ func (s *Server) Start() {
 		// needing a restart (or not). This must be in a goroutine, since Watch must
 		// happen after conf initialization (which may have not happened yet)
 		go func() {
-			initialUpdate := true
-			oldConfig := DefaultClient().Get()
-			DefaultClient().Watch(func() {
+			var oldConfig *Unified
+			Watch(func() {
 				// Don't indicate restarts if this is the first update (initial configuration
 				// after service startup).
-				if initialUpdate {
-					initialUpdate = false
+				if oldConfig == nil {
+					oldConfig = Get()
 					return
 				}
 
 				// Update global "needs restart" state.
-				newConfig := DefaultClient().Get()
+				newConfig := Get()
 				if NeedRestartToApply(oldConfig, newConfig) {
 					s.markNeedServerRestart()
 				}
