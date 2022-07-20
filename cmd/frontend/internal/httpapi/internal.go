@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
@@ -143,12 +144,9 @@ func serveExternalServicesList(db database.DB) func(w http.ResponseWriter, r *ht
 	}
 }
 
-func serveConfiguration(w http.ResponseWriter, r *http.Request) error {
-	raw, err := globals.ConfigurationServerFrontendOnly.Source.Read(r.Context())
-	if err != nil {
-		return err
-	}
-	err = json.NewEncoder(w).Encode(raw)
+func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
+	raw := conf.Raw()
+	err := json.NewEncoder(w).Encode(raw)
 	if err != nil {
 		return errors.Wrap(err, "Encode")
 	}
