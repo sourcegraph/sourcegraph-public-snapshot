@@ -193,7 +193,7 @@ export const useCodeIntel = ({
                         fetchSearchBasedReferences(deduplicateAndAddReferences)
                     }
                 } else {
-                    console.info('No LSIF data. Falling back to search-based code intelligence.')
+                    console.info('No LSIF data. Falling back to search-based code navigation.')
                     fellBackToSearchBased.current = true
 
                     fetchSearchBasedCodeIntel(setReferences, setDefinitions)

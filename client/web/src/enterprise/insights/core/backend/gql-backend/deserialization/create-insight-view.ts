@@ -27,11 +27,10 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
         title: insight.presentation.title,
         isFrozen: insight.isFrozen,
         dashboardReferenceCount: insight.dashboardReferenceCount,
-        seriesDisplayOptions: parseSeriesDisplayOptions(insight.seriesCount, insight.appliedSeriesDisplayOptions),
+        seriesDisplayOptions: parseSeriesDisplayOptions(insight.appliedSeriesDisplayOptions),
         dashboards: insight.dashboards?.nodes ?? [],
         appliedSeriesDisplayOptions: insight.appliedSeriesDisplayOptions,
         defaultSeriesDisplayOptions: insight.defaultSeriesDisplayOptions,
-        seriesCount: insight.seriesCount,
     }
 
     switch (insight.presentation.__typename) {
@@ -113,6 +112,7 @@ export const createInsightView = (insight: InsightViewNode): Insight => {
                         includeRepoRegexp: appliedFilters.includeRepoRegex ?? '',
                         excludeRepoRegexp: appliedFilters.excludeRepoRegex ?? '',
                         context: appliedFilters.searchContexts?.[0] ?? '',
+                        seriesDisplayOptions,
                     },
                 } as ComputeInsight
             }

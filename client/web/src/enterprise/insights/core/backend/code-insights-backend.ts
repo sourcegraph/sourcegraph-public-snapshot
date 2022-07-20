@@ -64,7 +64,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (input: { dashboardId: string }) => Observable<Insight[]>
+    getInsights: (input: { dashboardId: string; withCompute: boolean }) => Observable<Insight[]>
 
     getAccessibleInsightsList: () => Observable<AccessibleInsightInfo[]>
 

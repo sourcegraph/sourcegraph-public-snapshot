@@ -72,14 +72,14 @@ func (e *dirtySchemaError) Error() string {
 }
 
 type privilegedMigrationError struct {
-	schemaName string
-	definition definition.Definition
+	schemaName    string
+	definitionIDs []int
 }
 
-func newPrivilegedMigrationError(schemaName string, definition definition.Definition) error {
+func newPrivilegedMigrationError(schemaName string, definitionIDs ...int) error {
 	return &privilegedMigrationError{
-		schemaName: schemaName,
-		definition: definition,
+		schemaName:    schemaName,
+		definitionIDs: definitionIDs,
 	}
 }
 
@@ -87,9 +87,9 @@ func (e *privilegedMigrationError) Error() string {
 	return (instructionalError{
 		class: "refusing to apply a privileged migration",
 		description: fmt.Sprintf(
-			"schema %q requires database migration %d to be applied by a database user with elevated permissions\n",
+			"schema %q requires database %s to be applied by a database user with elevated permissions\n",
 			e.schemaName,
-			e.definition.ID,
+			humanizeList("migration", "migrations", intsToStrings(e.definitionIDs)),
 		),
 		instructions: strings.Join([]string{
 			`The migration runner is currently being run with -unprivileged-only.`,
@@ -108,4 +108,20 @@ type instructionalError struct {
 
 func (e instructionalError) Error() string {
 	return fmt.Sprintf("%s: %s\n\n%s\n", e.class, e.description, e.instructions)
+}
+
+func humanizeList(singularNoun, pluralNoun string, values []string) string {
+	switch len(values) {
+	case 0:
+		return ""
+	case 1:
+		return fmt.Sprintf("%s %s", singularNoun, values[0])
+	case 2:
+		return fmt.Sprintf("%s %s", pluralNoun, strings.Join(values, " and "))
+
+	default:
+		lastIndex := len(values) - 1
+		values[lastIndex] = "and " + values[lastIndex]
+		return fmt.Sprintf("%s %s", pluralNoun, strings.Join(values, ", "))
+	}
 }

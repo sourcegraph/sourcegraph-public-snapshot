@@ -26,25 +26,27 @@ export const ComputeInsightMapPicker: FC<ComputeInsightMapPickerProps> = props =
         onChange(pickedValue)
     }
 
-    const hasTypeDiffOrCommit = useMemo(
-        () =>
-            series.every(({ query }) => {
-                const tokens = scanSearchQuery(query)
+    const hasTypeDiffOrCommit = useMemo(() => {
+        if (series.length === 0) {
+            return false
+        }
 
-                if (tokens.type === 'success') {
-                    return tokens.term
-                        .filter((token): token is Filter => token.type === 'filter')
-                        .some(
-                            filter =>
-                                resolveFilter(filter.field.value)?.type === FilterType.type &&
-                                (filter.value?.value === 'diff' || filter.value?.value === 'commit')
-                        )
-                }
+        return series.every(({ query }) => {
+            const tokens = scanSearchQuery(query)
 
-                return false
-            }),
-        [series]
-    )
+            if (tokens.type === 'success') {
+                return tokens.term
+                    .filter((token): token is Filter => token.type === 'filter')
+                    .some(
+                        filter =>
+                            resolveFilter(filter.field.value)?.type === FilterType.type &&
+                            (filter.value?.value === 'diff' || filter.value?.value === 'commit')
+                    )
+            }
+
+            return false
+        })
+    }, [series])
 
     useEffect(() => {
         if (!hasTypeDiffOrCommit && (value === GroupByField.AUTHOR || value === GroupByField.DATE)) {

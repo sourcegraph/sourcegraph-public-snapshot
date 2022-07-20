@@ -313,7 +313,7 @@ func (s *store) SoftDeleteExpiredUploads(ctx context.Context) (count int, err er
 		return 0, nil
 	}
 
-	unset, _ := s.db.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
+	unset, _ := tx.SetLocal(ctx, "codeintel.lsif_uploads_audit.reason", "soft-deleting expired uploads")
 	defer unset(ctx)
 	repositories, err := scanCounts(tx.Query(ctx, sqlf.Sprintf(softDeleteExpiredUploadsQuery)))
 	if err != nil {

@@ -127,7 +127,7 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>Whether new user signup is allowed (true/false)</li>
                 <li>Whether a repository has ever been added (true/false)</li>
                 <li>Whether a code search has ever been executed (true/false)</li>
-                <li>Whether code intelligence has ever been used (true/false)</li>
+                <li>Whether code navigation has ever been used (true/false)</li>
                 <li>Aggregate counts of current daily, weekly, and monthly users</li>
                 <li>
                     Aggregate counts of current daily, weekly, and monthly users, by:
@@ -141,21 +141,20 @@ export const SiteAdminPingsPage: React.FunctionComponent<React.PropsWithChildren
                 <li>
                     Aggregate daily, weekly, and monthly counts of:
                     <ul>
-                        <li>Code intelligence events (e.g., hover tooltips)</li>
+                        <li>Code navigation events (e.g., hover tooltips)</li>
                         <li>Searches using each search mode (interactive search, plain-text search)</li>
                         <li>Searches using each search filter (e.g. "type:", "repo:", "file:", "lang:", etc.)</li>
                     </ul>
                 </li>
                 <li>
-                    Code intelligence usage data
+                    Code navigation usage data
                     <ul>
                         <li>Total number of repositories with and without an uploaded LSIF index</li>
                         <li>
-                            Total number of code intelligence queries (e.g., hover tooltips) per week grouped by
-                            language
+                            Total number of code navigation queries (e.g., hover tooltips) per week grouped by language
                         </li>
                         <li>
-                            Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped
+                            Number of users performing code navigation queries (e.g., hover tooltips) per week grouped
                             by language
                         </li>
                     </ul>

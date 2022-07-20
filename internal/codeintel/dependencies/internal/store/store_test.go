@@ -1125,7 +1125,7 @@ func TestLockfileDependents(t *testing.T) {
 	}
 }
 
-func TestListAndCountLockfileIndexes(t *testing.T) {
+func TestListAndGetLockfileIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -1252,5 +1252,46 @@ func TestListAndCountLockfileIndexes(t *testing.T) {
 		if diff := cmp.Diff(tt.expectedCount, count); diff != "" {
 			t.Errorf("[%d] unexpected lockfiles count (-want +got):\n%s", i, diff)
 		}
+	}
+
+	for i, tt := range []struct {
+		opts     GetLockfileIndexOpts
+		expected shared.LockfileIndex
+	}{
+		{
+			opts:     GetLockfileIndexOpts{ID: lockfileIndexes[0].ID},
+			expected: lockfileIndexes[0],
+		},
+		{
+			opts:     GetLockfileIndexOpts{ID: lockfileIndexes[1].ID},
+			expected: lockfileIndexes[1],
+		},
+		{
+			// two indexes for this repo, but first one is returned
+			opts:     GetLockfileIndexOpts{RepoName: "foo"},
+			expected: lockfileIndexes[0],
+		},
+		{
+			opts:     GetLockfileIndexOpts{RepoName: "foo", Commit: "d34db33f"},
+			expected: lockfileIndexes[1],
+		},
+		{
+			opts:     GetLockfileIndexOpts{Lockfile: "lock2.file"},
+			expected: lockfileIndexes[2],
+		},
+	} {
+		lockfile, err := store.GetLockfileIndex(ctx, tt.opts)
+		if err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		if diff := cmp.Diff(tt.expected, lockfile); diff != "" {
+			t.Errorf("[%d] unexpected lockfiles (-want +got):\n%s", i, diff)
+		}
+	}
+
+	_, err := store.GetLockfileIndex(ctx, GetLockfileIndexOpts{ID: 1999})
+	if err != ErrLockfileIndexNotFound {
+		t.Fatalf("unexpected error: %s", err)
 	}
 }
