@@ -113,8 +113,8 @@ func (r *resolver) References(ctx context.Context, args shared.RequestArgs) (_ [
 			}
 		}
 
-		for len(locations) < limit {
-			remoteLocations, hasMore, err := r.pageRemoteLocations(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, limit-len(locations), trace)
+		for len(locations) < args.Limit {
+			remoteLocations, hasMore, err := r.getPageRemoteLocations(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, args.Limit-len(locations), trace)
 			if err != nil {
 				return nil, "", err
 			}
@@ -133,16 +133,16 @@ func (r *resolver) References(ctx context.Context, args shared.RequestArgs) (_ [
 	// locations within the repository the user is browsing so that it appears all references
 	// are occurring at the same commit they are looking at.
 
-	adjustedLocations, err := r.adjustLocations(ctx, locations)
+	referenceLocations, err := r.getUploadLocations(ctx, locations)
 	if err != nil {
 		return nil, "", err
 	}
-	trace.Log(log.Int("numAdjustedLocations", len(adjustedLocations)))
+	trace.Log(log.Int("numReferenceLocations", len(referenceLocations)))
 
 	nextCursor := ""
 	if cursor.Phase != "done" {
 		nextCursor = encodeReferencesCursor(cursor)
 	}
 
-	return adjustedLocations, nextCursor, nil
+	return referenceLocations, nextCursor, nil
 }

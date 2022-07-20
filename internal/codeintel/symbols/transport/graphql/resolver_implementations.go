@@ -21,9 +21,6 @@ import (
 
 const slowImplementationsRequestThreshold = time.Second
 
-// DefinitionsLimit is maximum the number of locations returned from Definitions.
-const DefinitionsLimit = 100
-
 // Implementations returns the list of source locations that define the symbol at the given position.
 func (r *resolver) Implementations(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.references, slowImplementationsRequestThreshold, observation.Args{
@@ -145,18 +142,18 @@ func (r *resolver) Implementations(ctx context.Context, args shared.RequestArgs)
 	// locations within the repository the user is browsing so that it appears all implementations
 	// are occurring at the same commit they are looking at.
 
-	adjustedLocations, err := r.adjustLocations(ctx, locations)
+	implementationLocations, err := r.getUploadLocations(ctx, locations)
 	if err != nil {
 		return nil, "", err
 	}
-	trace.Log(log.Int("numAdjustedLocations", len(adjustedLocations)))
+	trace.Log(log.Int("numImplementationsLocations", len(implementationLocations)))
 
 	nextCursor := ""
 	if cursor.Phase != "done" {
 		nextCursor = encodeImplementationsCursor(cursor)
 	}
 
-	return adjustedLocations, nextCursor, nil
+	return implementationLocations, nextCursor, nil
 }
 
 // ErrConcurrentModification occurs when a page of a references request cannot be resolved as
@@ -533,9 +530,9 @@ func (r *resolver) getUploadsByIDs(ctx context.Context, ids []int) ([]shared.Dum
 	return allUploads, nil
 }
 
-// adjustLocations translates a set of locations into an equivalent set of locations in the requested
+// getUploadLocations translates a set of locations into an equivalent set of locations in the requested
 // commit.
-func (r *resolver) adjustLocations(ctx context.Context, locations []shared.Location) ([]shared.UploadLocation, error) {
+func (r *resolver) getUploadLocations(ctx context.Context, locations []shared.Location) ([]shared.UploadLocation, error) {
 	uploadLocations := make([]shared.UploadLocation, 0, len(locations))
 
 	checker := authz.DefaultSubRepoPermsChecker

@@ -47,11 +47,12 @@ type QueryResolver interface {
 	LSIFUploads(ctx context.Context) ([]store.Upload, error)
 	Stencil(ctx context.Context) ([]lsifstore.Range, error)
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
+	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
+	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
+
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Implementations(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
-	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
-	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 }
 
 type queryResolver struct {

@@ -13,8 +13,9 @@ import (
 )
 
 type operations struct {
-	symbol     *observation.Operation
-	references *observation.Operation
+	symbol      *observation.Operation
+	definitions *observation.Operation
+	references  *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -36,7 +37,8 @@ func newOperations(observationContext *observation.Context) *operations {
 	return &operations{
 		symbol: op("Symbol"),
 
-		references: op("References"),
+		definitions: op("Definitions"),
+		references:  op("References"),
 	}
 }
 

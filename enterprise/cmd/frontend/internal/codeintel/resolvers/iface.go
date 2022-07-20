@@ -98,6 +98,7 @@ type SymbolsResolver interface {
 	SetLocalCommitCache(gitserverClient symbolsShared.GitserverClient)
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
 
+	Definitions(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, err error)
 	References(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
 	Implementations(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
 
