@@ -1,3 +1,9 @@
+# Export traces to a Jaeger instance.
+#
+# Variables:
+#
+# - $JAEGER_HOST
+
 receivers:
   otlp:
     protocols:
