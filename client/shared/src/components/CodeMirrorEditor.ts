@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { HighlightStyle, syntaxHighlighting } from '@codemirror/language'
-import { Compartment, EditorState, EditorStateConfig, Extension, StateEffect } from '@codemirror/state'
+import { ChangeSpec, Compartment, EditorState, EditorStateConfig, Extension, StateEffect } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { tags } from '@lezer/highlight'
 
@@ -23,7 +23,16 @@ if (process.env.INTEGRATION_TESTS) {
 export function useCodeMirror(
     container: HTMLDivElement | null,
     value: string,
-    extensions?: EditorStateConfig['extensions']
+    extensions?: EditorStateConfig['extensions'],
+    options?: {
+        /**
+         * When value changes, trigger a transaction to update it. This is `true` by default.
+         * However, if other parts of the editor state should be changed when the value changes,
+         * you can set this to `false` and use the `replaceValue` function to update the value
+         * in a custom transaction.
+         */
+        updateValueOnChange: boolean
+    }
 ): EditorView | undefined {
     const [view, setView] = useState<EditorView>()
 
@@ -49,16 +58,14 @@ export function useCodeMirror(
     // editor. Doing this instead of setting the initial value when the state is
     // created ensures that extensions have a chance to modify the document.
     useEffect(() => {
-        if (view) {
-            const currentValue = view.state.sliceDoc() ?? ''
+        if (view && options?.updateValueOnChange !== false) {
+            const changes = replaceValue(view, value ?? '')
 
-            if (currentValue !== value) {
-                view.dispatch({
-                    changes: { from: 0, to: currentValue.length, insert: value ?? '' },
-                })
+            if (changes) {
+                view.dispatch({ changes })
             }
         }
-    }, [value, view])
+    }, [value, view, options?.updateValueOnChange])
 
     useEffect(() => {
         if (view && extensions) {
@@ -70,6 +77,19 @@ export function useCodeMirror(
     }, [extensions])
 
     return view
+}
+
+/**
+ * Create a {@link ChangeSpec} for replacing the current editor value. Returns `undefined` if the
+ * new value is the same as the current value.
+ */
+export function replaceValue(view: EditorView, newValue: string): ChangeSpec | undefined {
+    const currentValue = view.state.sliceDoc() ?? ''
+    if (currentValue === newValue) {
+        return undefined
+    }
+
+    return { from: 0, to: currentValue.length, insert: newValue }
 }
 
 /**

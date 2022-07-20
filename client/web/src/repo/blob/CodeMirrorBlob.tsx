@@ -9,81 +9,90 @@ import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@
 import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import {
+    editorHeight,
+    replaceValue,
+    useCodeMirror,
+    useCompartment,
+} from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfNecessary } from './Blob'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './CodeMirrorLineNumbers'
 
-const setRanges = StateEffect.define<[number, number, string][]>()
-const syntaxHighlighting = StateField.define<[number, number, string][]>({
-    create() {
-        return []
-    },
-    update(value, update) {
-        for (const effect of update.effects) {
-            if (effect.is(setRanges)) {
-                return effect.value
+type HighlightRange = [number, number, string]
+
+const setRanges = StateEffect.define<HighlightRange[]>()
+function syntaxHighlighting(initialRange: HighlightRange[]): Extension {
+    return StateField.define<HighlightRange[]>({
+        create() {
+            return initialRange
+        },
+        update(value, update) {
+            for (const effect of update.effects) {
+                if (effect.is(setRanges)) {
+                    return effect.value
+                }
             }
-        }
-        return value
-    },
-    provide: field =>
-        ViewPlugin.fromClass(
-            class {
-                decorationCache: Record<string, Decoration> = {}
-                decorations: DecorationSet = Decoration.none
+            return value
+        },
+        provide: field =>
+            ViewPlugin.fromClass(
+                class {
+                    decorationCache: Record<string, Decoration> = {}
+                    decorations: DecorationSet = Decoration.none
 
-                constructor(view: EditorView) {
-                    this.decorations = this.computeDecorations(view)
-                }
-
-                update(update: ViewUpdate) {
-                    if (update.docChanged) {
-                        this.decorationCache = {}
+                    constructor(view: EditorView) {
+                        this.decorations = this.computeDecorations(view)
                     }
 
-                    if (
-                        update.viewportChanged ||
-                        update.transactions.some(transaction =>
-                            transaction.effects.some(effect => effect.is(setRanges))
-                        )
-                    ) {
-                        console.log(update)
-                        this.decorations = this.computeDecorations(update.view)
-                    }
-                }
+                    update(update: ViewUpdate) {
+                        if (update.docChanged) {
+                            this.decorationCache = {}
+                        }
 
-                computeDecorations(view: EditorView): DecorationSet {
-                    const { from, to } = view.viewport
-                    const ranges = view.state.field(field)
-                    const rangeIndex = rangeIndexOf(ranges, from)
-
-                    if (rangeIndex === -1) {
-                        return Decoration.none
-                    }
-                    const builder = new RangeSetBuilder<Decoration>()
-
-                    for (let index = rangeIndex; index < ranges.length && ranges[index][0] <= to; index++) {
-                        const [start, end, spec] = ranges[index]
-                        const cls = spec
-                            .split('.')
-                            .map(cls => `hl-${cls}`)
-                            .sort()
-                            .join(' ')
-                        builder.add(
-                            start,
-                            end,
-                            this.decorationCache[cls] || (this.decorationCache[cls] = Decoration.mark({ class: cls }))
-                        )
+                        if (
+                            update.viewportChanged ||
+                            update.transactions.some(transaction =>
+                                transaction.effects.some(effect => effect.is(setRanges))
+                            )
+                        ) {
+                            this.decorations = this.computeDecorations(update.view)
+                        }
                     }
 
-                    return builder.finish()
-                }
-            },
-            { decorations: plugin => plugin.decorations }
-        ),
-})
+                    computeDecorations(view: EditorView): DecorationSet {
+                        const { from, to } = view.viewport
+                        const ranges = view.state.field(field)
+                        const rangeIndex = rangeIndexOf(ranges, from)
+
+                        if (rangeIndex === -1) {
+                            return Decoration.none
+                        }
+                        const builder = new RangeSetBuilder<Decoration>()
+
+                        for (let index = rangeIndex; index < ranges.length && ranges[index][0] <= to; index++) {
+                            const [start, end, spec] = ranges[index]
+                            const cls = spec
+                                .split('.')
+                                .map(cls => `hl-${cls}`)
+                                .sort()
+                                .join(' ')
+                            builder.add(
+                                start,
+                                end,
+                                this.decorationCache[cls] ||
+                                    (this.decorationCache[cls] = Decoration.mark({ class: cls }))
+                            )
+                        }
+
+                        return builder.finish()
+                    }
+                },
+                { decorations: plugin => plugin.decorations }
+            ),
+    })
+}
 
 const staticExtensions: Extension = [
     EditorView.editable.of(false),
@@ -98,7 +107,6 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-selection-bg)',
         },
     }),
-    syntaxHighlighting,
 ]
 
 export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, wrapCode, isLightTheme }) => {
@@ -144,12 +152,17 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         )
     }, [])
 
-    const extensions = useMemo(() => [staticExtensions, settingsCompartment, selectableLineNumbers({ onSelection })], [
-        settingsCompartment,
-        onSelection,
-    ])
+    const extensions = useMemo(
+        () => [
+            staticExtensions,
+            settingsCompartment,
+            selectableLineNumbers({ onSelection }),
+            syntaxHighlighting(parseAndSortRangesJSON(blobInfo.html)),
+        ],
+        [settingsCompartment, onSelection]
+    )
 
-    const editor = useCodeMirror(container, blobInfo.content, extensions)
+    const editor = useCodeMirror(container, blobInfo.content, extensions, { updateValueOnChange: false })
 
     useEffect(() => {
         if (editor) {
@@ -157,11 +170,18 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         }
     }, [editor, updateSettingsCompartment, settings])
 
+    // We don't want to trigger the transaction on the first render. Maybe there
+    // is a better way to do this.
+    const initialRender = useRef(true)
     useEffect(() => {
-        if (editor) {
-            editor.dispatch({ effects: setRanges.of(parseAndSortRangesJSON(blobInfo.html)) })
+        if (editor && !initialRender.current) {
+            editor.dispatch({
+                changes: replaceValue(editor, blobInfo.content),
+                effects: setRanges.of(parseAndSortRangesJSON(blobInfo.html)),
+            })
         }
-    }, [editor, blobInfo.html])
+        initialRender.current = false
+    }, [editor, blobInfo])
 
     // Update selected lines when URL changes
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
@@ -182,6 +202,11 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
 }
 
 function parseAndSortRangesJSON(ranges: string): [number, number, string][] {
+    // Workaround for current ranges implementation
+    if (ranges.includes('<table>')) {
+        return []
+    }
+
     return (JSON.parse(ranges) as [number, number, string][]).sort(([startA, endA], [startB, endB]) =>
         startA === startB ? endA - endB : startA - startB
     )
