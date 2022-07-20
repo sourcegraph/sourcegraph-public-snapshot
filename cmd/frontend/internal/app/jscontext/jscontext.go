@@ -82,6 +82,9 @@ type JSContext struct {
 
 	ExternalServicesUserMode string `json:"externalServicesUserMode"`
 
+	AuthMinPasswordLength int                       `json:"authMinPasswordLength""`
+	AuthPasswordPolicy    schema.AuthPasswordPolicy `json:"authPasswordPolicy"`
+
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
 	Branding *schema.Branding `json:"branding"`
@@ -198,6 +201,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExternalServicesUserMode: conf.ExternalServiceUserMode().String(),
 
 		AllowSignup: conf.AuthAllowSignup(),
+
+		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
+		AuthPasswordPolicy:    conf.AuthPasswordPolicy(),
 
 		AuthProviders: authProviders,
 

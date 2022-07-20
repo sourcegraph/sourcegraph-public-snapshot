@@ -294,6 +294,16 @@ func AuthMinPasswordLength() int {
 	return val
 }
 
+func AuthPasswordPolicy() schema.AuthPasswordPolicy {
+	pol := Get().AuthPasswordPolicy
+
+	if pol == nil {
+		return schema.AuthPasswordPolicy{}
+	}
+
+	return *pol
+}
+
 // By default, password reset links are valid for 4 hours.
 const defaultPasswordLinkExpiry = 14400
 
