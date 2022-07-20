@@ -354,6 +354,7 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 	)
 	if svc.Features().ServerSideWorkspaceResolution {
 		ui.ResolvingRepositories()
+		var err error
 		workspaces, repos, err = svc.ResolveWorkspacesForBatchSpec(ctx, batchSpec, opts.flags.allowUnsupported, opts.flags.allowIgnored)
 		if err != nil {
 			if repoSet, ok := err.(batches.UnsupportedRepoSet); ok {
@@ -417,7 +418,6 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 
 	ui.CheckingCache()
 	tasks := svc.BuildTasks(
-		ctx,
 		&template.BatchChangeAttributes{
 			Name:        batchSpec.Name,
 			Description: batchSpec.Description,
@@ -430,7 +430,9 @@ func executeBatchSpec(ctx context.Context, ui ui.ExecUI, opts executeBatchSpecOp
 		uncachedTasks []*executor.Task
 	)
 	if opts.flags.clearCache {
-		coord.ClearCache(ctx, tasks)
+		if err := coord.ClearCache(ctx, tasks); err != nil {
+			return err
+		}
 		uncachedTasks = tasks
 	} else {
 		// Check the cache for completely cached executions.

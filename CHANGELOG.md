@@ -19,6 +19,12 @@ All notable changes to `src-cli` are documented in this file.
 
 ### Removed
 
+## 3.42.2
+
+### Fixed
+
+- Fixed an issue where execution would eventually fail with an error when there were unsupported or ignored workspaces found by server-side execution.
+
 ## 3.42.1
 
 ### Fixed

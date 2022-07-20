@@ -368,8 +368,8 @@ func (svc *Service) DetermineWorkspaces(ctx context.Context, repos []*graphql.Re
 	return findWorkspaces(ctx, spec, svc, repos)
 }
 
-func (svc *Service) BuildTasks(ctx context.Context, attributes *templatelib.BatchChangeAttributes, steps []batcheslib.Step, workspaces []RepoWorkspace) []*executor.Task {
-	return buildTasks(ctx, attributes, steps, workspaces)
+func (svc *Service) BuildTasks(attributes *templatelib.BatchChangeAttributes, steps []batcheslib.Step, workspaces []RepoWorkspace) []*executor.Task {
+	return buildTasks(attributes, steps, workspaces)
 }
 
 func (svc *Service) Features() batches.FeatureFlags {

@@ -1,8 +1,6 @@
 package service
 
 import (
-	"context"
-
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 	"github.com/sourcegraph/sourcegraph/lib/batches/template"
 
@@ -10,7 +8,7 @@ import (
 )
 
 // buildTasks returns *executor.Tasks for all the workspaces determined for the given spec.
-func buildTasks(ctx context.Context, attributes *template.BatchChangeAttributes, steps []batcheslib.Step, workspaces []RepoWorkspace) []*executor.Task {
+func buildTasks(attributes *template.BatchChangeAttributes, steps []batcheslib.Step, workspaces []RepoWorkspace) []*executor.Task {
 	tasks := make([]*executor.Task, 0, len(workspaces))
 
 	for _, ws := range workspaces {
