@@ -74,6 +74,7 @@ export function useBreakpoint(size: keyof typeof breakpoints, debounceMs = 50): 
                     debounceTime(debounceMs),
                     map(entry => {
                         const borderBoxSize = normalizeResizeObserverSize(entry?.borderBoxSize)
+                        // contentRect used as fallback for versions of safari that does not support borderBoxSize
                         const width = borderBoxSize?.inlineSize ?? entry?.contentRect.width
 
                         if (!width) {
