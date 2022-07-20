@@ -4,8 +4,6 @@ import (
 	"context"
 	"fmt"
 	"regexp"
-	"strconv"
-	"strings"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -26,17 +24,23 @@ func NewFileContainsFilterJob(includePatterns []string, originalPattern query.No
 		includeMatchers = append(includeMatchers, regexp.MustCompile(pattern))
 	}
 
+	originalPatternStrings := patternsInTree(originalPattern)
+	originalPatternMatchers := make([]*regexp.Regexp, 0, len(originalPatternStrings))
+	for _, originalPatternString := range originalPatternStrings {
+		originalPatternMatchers = append(originalPatternMatchers, regexp.MustCompile(originalPatternString))
+	}
+
 	return &fileContainsFilterJob{
-		includeMatchers:        includeMatchers,
-		originalPatternMatcher: newPatternTreeMatcher(originalPattern, caseSensitive),
-		child:                  child,
+		includeMatchers:         includeMatchers,
+		originalPatternMatchers: originalPatternMatchers,
+		child:                   child,
 	}
 }
 
 type fileContainsFilterJob struct {
-	includeMatchers        []*regexp.Regexp
-	originalPatternMatcher patternTreeMatcher
-	child                  job.Job
+	includeMatchers         []*regexp.Regexp
+	originalPatternMatchers []*regexp.Regexp
+	child                   job.Job
 }
 
 func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -82,7 +86,7 @@ func (j *fileContainsFilterJob) filterFileMatch(m result.Match) result.Match {
 func (j *fileContainsFilterJob) filterChunk(chunk result.ChunkMatch) result.ChunkMatch {
 	filteredRanges := chunk.Ranges[:0]
 	for i, val := range chunk.MatchedContent() {
-		if matchesAny(val, j.includeMatchers) && !j.originalPatternMatcher.Match(val) {
+		if matchesAny(val, j.includeMatchers) && !matchesAny(val, j.originalPatternMatchers) {
 			continue
 		}
 		filteredRanges = append(filteredRanges, chunk.Ranges[i])
@@ -115,7 +119,12 @@ func (j *fileContainsFilterJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
-		res = append(res, trace.Stringer("originalPattern", j.originalPatternMatcher))
+		originalPatternStrings := make([]string, 0, len(j.originalPatternMatchers))
+		for _, re := range j.originalPatternMatchers {
+			originalPatternStrings = append(originalPatternStrings, re.String())
+		}
+		res = append(res, trace.Strings("originalPatterns", originalPatternStrings))
+
 		filterStrings := make([]string, 0, len(j.includeMatchers))
 		for _, re := range j.includeMatchers {
 			filterStrings = append(filterStrings, re.String())
@@ -129,105 +138,19 @@ func (j *fileContainsFilterJob) Name() string {
 	return "FileContainsFilterJob"
 }
 
-func newPatternTreeMatcher(originalPattern query.Node, caseSensitive bool) patternTreeMatcher {
+func patternsInTree(originalPattern query.Node) (res []string) {
 	if originalPattern == nil {
-		return &constMatcher{false}
+		return nil
 	}
 	switch v := originalPattern.(type) {
 	case query.Operator:
-		children := make([]patternTreeMatcher, 0, len(v.Operands))
 		for _, operand := range v.Operands {
-			children = append(children, newPatternTreeMatcher(operand, caseSensitive))
-		}
-		switch v.Kind {
-		case query.And:
-			return &andMatcher{children: children}
-		case query.Or:
-			return &orMatcher{children: children}
-		default:
-			panic(fmt.Sprintf("cannot handle operator kind %d", v.Kind))
+			res = append(res, patternsInTree(operand)...)
 		}
 	case query.Pattern:
-		value := v.Value
-		if caseSensitive {
-			value = "(?i:" + value + ")"
-
-		}
-		return &leafMatcher{
-			re: regexp.MustCompile(value), // already validated
-		}
+		res = append(res, v.Value)
 	default:
 		panic(fmt.Sprintf("unknown pattern node type %T", originalPattern))
 	}
-}
-
-type patternTreeMatcher interface {
-	Match(string) bool
-	String() string
-}
-
-type orMatcher struct {
-	children []patternTreeMatcher
-}
-
-func (m *orMatcher) Match(val string) bool {
-	for _, child := range m.children {
-		if child.Match(val) {
-			return true
-		}
-	}
-	return false
-}
-
-func (m *orMatcher) String() string {
-	childStrings := make([]string, 0, len(m.children))
-	for _, child := range m.children {
-		childStrings = append(childStrings, child.String())
-	}
-	return "(" + strings.Join(childStrings, " OR ") + ")"
-}
-
-type andMatcher struct {
-	children []patternTreeMatcher
-}
-
-func (m *andMatcher) Match(val string) bool {
-	for _, child := range m.children {
-		if !child.Match(val) {
-			return false
-		}
-	}
-	return true
-}
-
-func (m *andMatcher) String() string {
-	childStrings := make([]string, 0, len(m.children))
-	for _, child := range m.children {
-		childStrings = append(childStrings, child.String())
-	}
-	return "(" + strings.Join(childStrings, " AND ") + ")"
-}
-
-type leafMatcher struct {
-	re *regexp.Regexp
-}
-
-func (m *leafMatcher) Match(val string) bool {
-	return m.re.MatchString(val)
-}
-
-func (m *leafMatcher) String() string {
-	return fmt.Sprintf("%q", m.re.String())
-}
-
-type constMatcher struct {
-	value bool
-}
-
-func (m *constMatcher) Match(val string) bool {
-	return m.value
-}
-
-func (m *constMatcher) String() string {
-	return strconv.FormatBool(m.value)
+	return res
 }
