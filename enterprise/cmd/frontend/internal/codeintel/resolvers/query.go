@@ -55,19 +55,23 @@ type QueryResolver interface {
 }
 
 type queryResolver struct {
-	db                  database.DB
-	dbStore             DBStore
-	lsifStore           LSIFStore
+	db        database.DB
+	dbStore   DBStore
+	lsifStore LSIFStore
+
 	cachedCommitChecker *cachedCommitChecker
 	positionAdjuster    PositionAdjuster
-	repositoryID        int
-	commit              string
-	path                string
-	inMemoryUploads     []store.Dump
-	uploadCache         map[int]store.Dump
-	uploadCacheMutex    sync.RWMutex
-	operations          *operations
-	checker             authz.SubRepoPermissionChecker
+
+	repositoryID int
+	commit       string
+	path         string
+
+	inMemoryUploads  []store.Dump
+	uploadCache      map[int]store.Dump
+	uploadCacheMutex sync.RWMutex
+
+	operations *operations
+	checker    authz.SubRepoPermissionChecker
 
 	// maximumIndexesPerMonikerSearch configures the maximum number of reference upload identifiers
 	// that can be passed to a single moniker search query. Previously this limit was meant to keep
