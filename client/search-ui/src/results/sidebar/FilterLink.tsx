@@ -49,7 +49,9 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
             variant="link"
             aria-label={`${ariaLabel ?? label}${countTooltip ? `, ${countTooltip}` : ''}`}
         >
-            <span className="flex-grow-1">{labelConverter(label)}</span>
+            <span className={classNames('flex-grow-1', styles.sidebarSectionListItemLabel)}>
+                {labelConverter(label)}
+            </span>
             {count && (
                 <span className="pl-2 flex-shrink-0" data-tooltip={countTooltip}>
                     {count}
@@ -62,17 +64,23 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
 
 export const getRepoFilterLinks = (
     filters: Filter[] | undefined,
-    onFilterChosen: (value: string, kind?: string) => void
+    onFilterChosen: (value: string, kind?: string) => void,
+    coreWorkflowImprovementsEnabled: boolean | undefined
 ): React.ReactElement[] => {
     function repoLabelConverter(label: string): JSX.Element {
         const Icon = CodeHostIcon({
             repoName: label,
-            className: classNames('text-muted', styles.sidebarSectionIcon),
+            className: classNames(!coreWorkflowImprovementsEnabled && 'text-muted', styles.sidebarSectionIcon),
         })
 
         return (
-            <span className={classNames('text-monospace search-query-link', styles.sidebarSectionListItemBreakWords)}>
-                <span className="search-filter-keyword">r:</span>
+            <span
+                className={classNames(
+                    !coreWorkflowImprovementsEnabled && 'text-monospace search-query-link',
+                    styles.sidebarSectionListItemBreakWords
+                )}
+            >
+                {!coreWorkflowImprovementsEnabled && <span className="search-filter-keyword">r:</span>}
                 {Icon ? (
                     <>
                         {Icon}
