@@ -658,6 +658,23 @@ func testPermsStore_SetRepoPermissionsUnrestricted(db database.DB) func(*testing
 			}
 			assertUnrestricted(ctx, t, s, 1, false)
 			assertUnrestricted(ctx, t, s, 2, false)
+
+			// Set unrestricted on a repo missing from repo_permissions.
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{3}, true); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, false)
+			assertUnrestricted(ctx, t, s, 2, false)
+			assertUnrestricted(ctx, t, s, 3, true)
+
+			// Set unrestricted on a present and missing repo from repo_permissions.
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{2, 3, 4}, true); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, false)
+			assertUnrestricted(ctx, t, s, 2, true)
+			assertUnrestricted(ctx, t, s, 3, true)
+			assertUnrestricted(ctx, t, s, 4, true)
 		})
 	}
 }
