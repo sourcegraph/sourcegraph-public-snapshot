@@ -948,7 +948,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 		// Create initial specs. Note that we have to append the test case name
 		// to the batch spec ID to avoid cross-contamination between the test
 		// cases.
-		batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "batch-spec-"+name, userID)
+		batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "batch-spec-"+name, userID, 0)
 		changesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
@@ -960,7 +960,7 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 		// be able to test that changeset specs attached to other batch specs
 		// cannot be modified, and that changeset specs with explicit published
 		// fields cause errors.
-		otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "other-batch-spec-"+name, userID)
+		otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "other-batch-spec-"+name, userID, 0)
 		otherChangesetSpec := ct.CreateChangesetSpec(t, ctx, cstore, ct.TestSpecOpts{
 			User:      userID,
 			Repo:      repo.ID,
@@ -1594,8 +1594,8 @@ func TestCreateChangesetComments(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments", userID)
-	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments-other", userID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments", userID, 0)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-comments-other", userID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-comments-other", userID, otherBatchSpec.ID)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -1696,8 +1696,8 @@ func TestReenqueueChangesets(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue", userID)
-	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue-other", userID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue", userID, 0)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-reenqueue-other", userID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-reenqueue", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-reenqueue-other", userID, otherBatchSpec.ID)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -1806,8 +1806,8 @@ func TestMergeChangesets(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge", userID)
-	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge-other", userID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge", userID, 0)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-merge-other", userID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-merge", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-merge-other", userID, otherBatchSpec.ID)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -1918,8 +1918,8 @@ func TestCloseChangesets(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close", userID)
-	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close", userID, 0)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
@@ -2030,8 +2030,8 @@ func TestPublishChangesets(t *testing.T) {
 	cstore := store.New(db, &observation.TestContext, nil)
 
 	userID := ct.CreateTestUser(t, db, true).ID
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close", userID)
-	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close", userID, 0)
+	otherBatchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test-close-other", userID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close", userID, batchSpec.ID)
 	otherBatchChange := ct.CreateBatchChange(t, ctx, cstore, "test-close-other", userID, otherBatchSpec.ID)
 	repo, _ := ct.CreateTestRepo(t, ctx, db)

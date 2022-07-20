@@ -744,7 +744,7 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("GetBatchChangeMatchingBatchSpec", func(t *testing.T) {
-		batchSpec := ct.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID)
+		batchSpec := ct.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID, 0)
 
 		haveBatchChange, err := svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
 		if err != nil {
@@ -783,7 +783,7 @@ func TestService(t *testing.T) {
 		})
 
 		t.Run("BatchChangeID is provided", func(t *testing.T) {
-			batchSpec2 := ct.CreateBatchSpecWithBatchChangeID(t, ctx, s, "matching-batch-spec", admin.ID, matchingBatchChange.ID)
+			batchSpec2 := ct.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID, matchingBatchChange.ID)
 			haveBatchChange, err = svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec2)
 			if err != nil {
 				t.Fatalf("unexpected error: %s\n", err)
@@ -799,8 +799,8 @@ func TestService(t *testing.T) {
 	})
 
 	t.Run("GetNewestBatchSpec", func(t *testing.T) {
-		older := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
-		newer := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID)
+		older := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID, 0)
+		newer := ct.CreateBatchSpec(t, ctx, s, "superseding", user.ID, 0)
 
 		for name, in := range map[string]*btypes.BatchSpec{
 			"older": older,
@@ -1696,7 +1696,7 @@ changesetTemplate:
 	})
 
 	t.Run("ValidateChangesetSpecs", func(t *testing.T) {
-		batchSpec := ct.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID)
+		batchSpec := ct.CreateBatchSpec(t, ctx, s, "matching-batch-spec", admin.ID, 0)
 		conflictingRef := "refs/heads/conflicting-head-ref"
 		for _, opts := range []ct.TestSpecOpts{
 			{HeadRef: conflictingRef, Repo: rs[0].ID, BatchSpec: batchSpec.ID},
