@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -40,18 +39,6 @@ func TestStore(t *testing.T) {
 	count, err := store.QueuedCount(ctx, true)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
-}
-
-func intPtr(v int) *int              { return &v }
-func stringPtr(v string) *string     { return &v }
-func timePtr(v time.Time) *time.Time { return &v }
-
-func mustParseTime(v string) time.Time {
-	t, err := time.Parse("2006-01-02", v)
-	if err != nil {
-		panic(err)
-	}
-	return t
 }
 
 func TestGetBitbucketClient(t *testing.T) {
@@ -342,14 +329,23 @@ func TestHandleRestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, name, fork)
+	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork, private)
 	VALUES
-		(1, 'bitbucket.sgdev.org/SGDEMO/go', false),
-		(2, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
-		(3, 'bitbucket.sgdev.org/SGDEMO/mux', false),
-		(4, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
-		(5, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
-		(6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false)
+		(1, 10060, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/go', false, true),
+		(2, 10056, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/jenkins', false, true),
+		(3, 10061, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/mux', false, true),
+		(4, 10058, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sentry', false, true),
+		(5, 10059, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sinatra', false, true),
+		(6, 10072, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false, true);
+
+	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+	VALUES
+		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go'),
+		(1, 2, 'bitbucket.sgdev.org/SGDEMO/jenkins'),
+		(1, 3, 'bitbucket.sgdev.org/SGDEMO/mux'),
+		(1, 4, 'bitbucket.sgdev.org/SGDEMO/sentry'),
+		(1, 5, 'bitbucket.sgdev.org/SGDEMO/sinatra'),
+		(1, 6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph');
 `)
 	require.NoError(t, err)
 
@@ -442,14 +438,23 @@ func TestHandleUnrestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, name, fork)
+	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork, private)
 	VALUES
-		(1, 'bitbucket.sgdev.org/SGDEMO/go', false),
-		(2, 'bitbucket.sgdev.org/SGDEMO/jenkins', false),
-		(3, 'bitbucket.sgdev.org/SGDEMO/mux', false),
-		(4, 'bitbucket.sgdev.org/SGDEMO/sentry', false),
-		(5, 'bitbucket.sgdev.org/SGDEMO/sinatra', false),
-		(6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false);
+		(1, 10060, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/go', false, true),
+		(2, 10056, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/jenkins', false, true),
+		(3, 10061, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/mux', false, true),
+		(4, 10058, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sentry', false, true),
+		(5, 10059, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sinatra', false, true),
+		(6, 10072, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false, true);
+
+	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+	VALUES
+		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go'),
+		(1, 2, 'bitbucket.sgdev.org/SGDEMO/jenkins'),
+		(1, 3, 'bitbucket.sgdev.org/SGDEMO/mux'),
+		(1, 4, 'bitbucket.sgdev.org/SGDEMO/sentry'),
+		(1, 5, 'bitbucket.sgdev.org/SGDEMO/sinatra'),
+		(1, 6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph');
 
 	INSERT INTO repo_permissions (repo_id, permission, updated_at)
 	VALUES

@@ -1,4 +1,4 @@
-package com.sourcegraph.browser;
+package com.sourcegraph.website;
 
 import com.intellij.openapi.application.ApplicationInfo;
 import com.intellij.openapi.editor.LogicalPosition;
