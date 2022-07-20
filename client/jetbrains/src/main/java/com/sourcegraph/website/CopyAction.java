@@ -9,7 +9,7 @@ import org.jetbrains.annotations.NotNull;
 
 import java.awt.datatransfer.StringSelection;
 
-public class Copy extends FileActionBase {
+public class CopyAction extends FileActionBase {
     @Override
     protected void handleFileUri(@NotNull Project project, @NotNull String uri) {
         // Remove utm tags for sharing

@@ -30,28 +30,28 @@
     <actions>
         <action
             id="sourcegraph.openFile"
-            class="com.sourcegraph.website.OpenFile"
+            class="com.sourcegraph.website.OpenFileAction"
             text="Open Selection in Sourcegraph Web"
             description="Open selection in Sourcegraph Web"
             icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.searchSelection"
-            class="com.sourcegraph.website.SearchSelection"
+            class="com.sourcegraph.website.SearchSelectionAction"
             text="Search Selection on Sourcegraph Web"
             description="Search selection on Sourcegraph web"
             icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.searchRepository"
-            class="com.sourcegraph.website.SearchRepository"
+            class="com.sourcegraph.website.SearchRepositoryAction"
             text="Search Selection in Repository on Sourcegraph Web"
             description="Search selection in repository on Sourcegraph web"
             icon="/icons/sourcegraphLogo.svg">
         </action>
         <action
             id="sourcegraph.copy"
-            class="com.sourcegraph.website.Copy"
+            class="com.sourcegraph.website.CopyAction"
             text="Copy Sourcegraph File Link"
             description="Copy Sourcegraph file link"
             icon="/icons/sourcegraphLogo.svg">
