@@ -139,11 +139,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	extSvc := &types.ExternalService{
-		ID:   1,
-		Kind: extsvc.KindBitbucketServer,
-	}
-
 	check := func() {
 		// check that the permissions were set
 		perms := db.Perms()
@@ -190,7 +185,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
 	err = h.setPermissionsForUsers(
 		ctx,
-		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
@@ -210,7 +204,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again, shouldn't change anything
 	err = h.setPermissionsForUsers(
 		ctx,
-		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
@@ -230,7 +223,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// test with only non-existent users
 	err = h.setPermissionsForUsers(
 		ctx,
-		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "username1@foo.bar", Permission: "read"},
@@ -254,7 +246,6 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	// run the same set of permissions again
 	err = h.setPermissionsForUsers(
 		ctx,
-		extSvc,
 		logtest.Scoped(t),
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},

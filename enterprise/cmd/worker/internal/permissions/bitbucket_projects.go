@@ -70,7 +70,7 @@ func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, logger log.
 
 	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(logger)
 
-	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+	rootContext := actor.WithInternalActor(context.Background())
 
 	return []goroutine.BackgroundRoutine{
 		newBitbucketProjectPermissionsWorker(rootContext, db, ConfigInst, bbProjectMetrics),
@@ -129,7 +129,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 		return h.setReposUnrestricted(ctx, logger, repoIDs, projectKey)
 	}
 
-	err = h.setPermissionsForUsers(ctx, svc, logger, workerJob.Permissions, repoIDs, projectKey)
+	err = h.setPermissionsForUsers(ctx, logger, workerJob.Permissions, repoIDs, projectKey)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set permissions for Bitbucket Project %q", projectKey)
 	}
@@ -239,7 +239,7 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 // Each repo is processed atomically. In case of error, the task fails but doesn't rollback the committed changes
 // done on previous repos. This is fine because when the task is retried, previous repos won't incur any
 // additional writes.
-func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, svc *types.ExternalService, logger log.Logger, perms []types.UserPermission, repoIDs []api.RepoID, projectKey string) error {
+func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, logger log.Logger, perms []types.UserPermission, repoIDs []api.RepoID, projectKey string) error {
 	sort.Slice(perms, func(i, j int) bool {
 		return perms[i].BindID < perms[j].BindID
 	})
@@ -280,7 +280,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 
 	// apply the permissions for each repo
 	for _, repoID := range repoIDs {
-		err = h.setRepoPermissions(ctx, svc, repoID, perms, userIDs, pendingBindIDs)
+		err = h.setRepoPermissions(ctx, repoID, perms, userIDs, pendingBindIDs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to set permissions for repo %d", repoID)
 		}
@@ -289,7 +289,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 	return nil
 }
 
-func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, svc *types.ExternalService, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
+func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
 	if err := h.repoExists(ctx, repoID); err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
