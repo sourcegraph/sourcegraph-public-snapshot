@@ -1,12 +1,21 @@
 package stitch
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/sourcegraph/log/logtest"
+
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/runner"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
+	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 // Notable versions:
@@ -66,6 +75,48 @@ func TestStitchCodeinsightsDefinitions(t *testing.T) {
 	testStitchGraphShape(t, "codeinsights", 29, 42, -1000000000, []int{1656517037, 1656608833})
 }
 
+func TestStitchAndApplyFrontendDefinitions(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	t.Parallel()
+
+	testStitchApplication(t, "frontend", 41, 42, nil)
+	testStitchApplication(t, "frontend", 40, 42, nil)
+	testStitchApplication(t, "frontend", 38, 42, nil)
+	testStitchApplication(t, "frontend", 37, 42, nil)
+	testStitchApplication(t, "frontend", 35, 42, nil)
+	testStitchApplication(t, "frontend", 29, 42, nil)
+}
+
+func TestStitchAndApplyCodeintelDefinitions(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	t.Parallel()
+
+	testStitchApplication(t, "codeintel", 41, 42, nil)
+	testStitchApplication(t, "codeintel", 40, 42, nil)
+	testStitchApplication(t, "codeintel", 38, 42, nil)
+	testStitchApplication(t, "codeintel", 37, 42, nil)
+	testStitchApplication(t, "codeintel", 35, 42, nil)
+	testStitchApplication(t, "codeintel", 29, 42, nil)
+}
+
+func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
+	if testing.Short() {
+		return
+	}
+	t.Parallel()
+
+	testStitchApplication(t, "codeinsights", 41, 42, nil)
+	testStitchApplication(t, "codeinsights", 40, 42, nil)
+	testStitchApplication(t, "codeinsights", 38, 42, nil)
+	testStitchApplication(t, "codeinsights", 37, 42, nil)
+	testStitchApplication(t, "codeinsights", 35, 42, nil)
+	testStitchApplication(t, "codeinsights", 29, 42, nil)
+}
+
 func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int) {
 	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {
 		t.Parallel()
@@ -85,6 +136,49 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 		}
 		if len(leafIDs) != len(expectedLeaves) || cmp.Diff(expectedLeaves, leafIDs) != "" {
 			t.Fatalf("unexpected leaf migrations. want=%v have=%v", expectedLeaves, leafIDs)
+		}
+	})
+}
+
+func testStitchApplication(t *testing.T, schemaName string, from, to int, payload any) {
+	t.Run(fmt.Sprintf("upgrade 3.%d -> 3.%d", from, to), func(t *testing.T) {
+		t.Parallel()
+
+		definitions, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
+		if err != nil {
+			t.Fatalf("failed to stitch definitions: %s", err)
+		}
+
+		ctx := context.Background()
+		logger := logtest.Scoped(t)
+		db := dbtest.NewRawDB(logger, t)
+
+		migrationRunner := runner.NewRunnerWithSchemas(logger, map[string]runner.StoreFactory{
+			schemaName: func(ctx context.Context) (runner.Store, error) {
+				shim := connections.NewStoreShim(store.NewWithDB(db, "testing", store.NewOperations(&observation.TestContext)))
+				if err := shim.EnsureSchemaTable(ctx); err != nil {
+					return nil, err
+				}
+
+				return shim, nil
+			},
+		}, []*schemas.Schema{
+			{
+				Name:                schemaName,
+				MigrationsTableName: "testing",
+				Definitions:         definitions,
+			},
+		})
+
+		if err := migrationRunner.Run(ctx, runner.Options{
+			Operations: []runner.MigrationOperation{
+				{
+					SchemaName: schemaName,
+					Type:       runner.MigrationOperationTypeUpgrade,
+				},
+			},
+		}); err != nil {
+			t.Fatalf("failed to upgrade: %s", err)
 		}
 	})
 }
