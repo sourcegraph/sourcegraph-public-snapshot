@@ -85,7 +85,12 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 		}
 
 		checks.Go(func() *replace {
-			originalImage, ok := service["image"].(string)
+			imageField, set := service["image"]
+			if !set {
+				std.Out.Verbosef("%s: no image", name)
+				return nil
+			}
+			originalImage, ok := imageField.(string)
 			if !ok {
 				std.Out.WriteWarningf("%s: invalid image", name)
 				return nil
@@ -93,7 +98,11 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 
 			newImage, err := getUpdatedSourcegraphImage(originalImage, creds, pinTag)
 			if err != nil {
-				std.Out.WriteWarningf("%s: %s", name, err)
+				if errors.Is(err, ErrNoUpdateNeeded) {
+					std.Out.Verbosef("%s: %s", name, err)
+				} else {
+					std.Out.WriteWarningf("%s: %s", name, err)
+				}
 				return nil
 			}
 
