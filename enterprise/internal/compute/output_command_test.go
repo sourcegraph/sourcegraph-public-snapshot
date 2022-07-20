@@ -60,6 +60,14 @@ func fileMatch(content string) result.Match {
 			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
 			Path: "my/awesome/path.ml",
 		},
+		ChunkMatches: result.ChunkMatches{{
+			Content:      content,
+			ContentStart: result.Location{Offset: 0, Line: 1, Column: 0},
+			Ranges: result.Ranges{{
+				Start: result.Location{Offset: 0, Line: 1, Column: 0},
+				End:   result.Location{Offset: len(content), Line: 1, Column: len(content)},
+			}},
+		}},
 	}
 }
 

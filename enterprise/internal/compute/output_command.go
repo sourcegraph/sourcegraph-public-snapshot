@@ -7,10 +7,8 @@ import (
 
 	"github.com/grafana/regexp"
 
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 )
 
@@ -63,7 +61,7 @@ func output(ctx context.Context, fragment string, matchPattern MatchPattern, rep
 	return &Text{Value: newContent, Kind: "output"}, nil
 }
 
-func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath bool) (string, bool, error) {
+func resultContent(r result.Match, onlyPath bool) (string, bool, error) {
 	switch m := r.(type) {
 	case *result.RepoMatch:
 		return string(m.Name), true, nil
@@ -71,11 +69,13 @@ func resultContent(ctx context.Context, db database.DB, r result.Match, onlyPath
 		if onlyPath {
 			return m.Path, true, nil
 		}
-		contentBytes, err := gitserver.NewClient(db).ReadFile(ctx, m.Repo.Name, m.CommitID, m.Path, authz.DefaultSubRepoPermsChecker)
-		if err != nil {
-			return "", false, err
+		var sb strings.Builder
+		for _, cm := range m.ChunkMatches {
+			for _, range_ := range cm.Ranges {
+				sb.WriteString(chunkContent(cm, range_))
+			}
 		}
-		return string(contentBytes), true, nil
+		return sb.String(), true, nil
 	case *result.CommitDiffMatch:
 		var sb strings.Builder
 		for _, h := range m.Hunks {
@@ -115,9 +115,9 @@ func toTextExtraResult(text *Text, r result.Match) *TextExtra {
 	}
 }
 
-func (c *Output) Run(ctx context.Context, db database.DB, r result.Match) (Result, error) {
+func (c *Output) Run(ctx context.Context, _ database.DB, r result.Match) (Result, error) {
 	onlyPath := c.TypeValue == "path" // don't read file contents for file matches when we only want type:path
-	content, ok, err := resultContent(ctx, db, r, onlyPath)
+	content, ok, err := resultContent(r, onlyPath)
 	if err != nil {
 		return nil, err
 	}
