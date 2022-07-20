@@ -36,6 +36,7 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 	// Check for minimum/maximum length only
 	pwLen := utf8.RuneCountInString(passwd)
 	minPasswordRunes := conf.AuthMinPasswordLength()
+
 	if pwLen < minPasswordRunes ||
 		pwLen > maxPasswordRunes {
 		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d or be more than %d characters.", minPasswordRunes, maxPasswordRunes))
@@ -46,7 +47,7 @@ func validatePasswordUsingDefaultMethod(passwd string) error {
 
 // This validates the password using the Password Policy configured
 func validatePasswordUsingPolicy(passwd string) error {
-	letters := 0
+	chars := 0
 	numbers := false
 	upperCase := false
 	special := 0
@@ -55,21 +56,21 @@ func validatePasswordUsingPolicy(passwd string) error {
 		switch {
 		case unicode.IsNumber(c):
 			numbers = true
-			letters++
+			chars++
 		case unicode.IsUpper(c):
 			upperCase = true
-			letters++
+			chars++
 		case unicode.IsPunct(c) || unicode.IsSymbol(c):
 			special++
-			letters++
+			chars++
 		case unicode.IsLetter(c) || c == ' ':
-			letters++
+			chars++
 		default:
 			//ignore
 		}
 	}
 	// Check for blank password
-	if letters == 0 {
+	if chars == 0 {
 		return errors.New("password empty")
 	}
 
@@ -77,12 +78,12 @@ func validatePasswordUsingPolicy(passwd string) error {
 	policy := getPasswordPolicy()
 
 	// Minimum Length Check
-	if letters < policy.MinimumLength {
+	if chars < policy.MinimumLength {
 		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be less than %d characters.", policy.MinimumLength))
 	}
 
 	// Maximum Length Check
-	if letters > maxPasswordRunes {
+	if chars > maxPasswordRunes {
 		return errcode.NewPresentationError(fmt.Sprintf("Your password may not be more than %d characters.", maxPasswordRunes))
 	}
 

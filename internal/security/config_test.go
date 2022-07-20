@@ -1,55 +1,53 @@
 package security
 
 import (
-	"fmt"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
 	"testing"
 )
 
-func TestFetchPasswordPolicy(t *testing.T) {
-	//cfg := conf.Get()
+func setMockPasswordPolicyConfig(policyEnabled bool, authPolicyEnabled bool, authMinPasswordLength int,
+	policyMinLength int, authPolicyLength int, authPolicySpChr int, reqNumber bool, reqCase bool) {
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
-			AuthMinPasswordLength: 9,
+			AuthMinPasswordLength: authMinPasswordLength,
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
 				PasswordPolicy: &schema.PasswordPolicy{
-					Enabled:                   true,
-					MinimumLength:             10,
-					NumberOfSpecialCharacters: 2,
-					RequireUpperandLowerCase:  true,
-					RequireAtLeastOneNumber:   true,
+					Enabled:                   policyEnabled,
+					NumberOfSpecialCharacters: authPolicySpChr,
+					RequireUpperandLowerCase:  reqNumber,
+					RequireAtLeastOneNumber:   reqCase,
 				},
 			},
 			AuthPasswordPolicy: &schema.AuthPasswordPolicy{
-				Enabled:                   true,
-				MinimumLength:             12,
-				NumberOfSpecialCharacters: 2,
-				RequireAtLeastOneNumber:   true,
-				RequireUpperandLowerCase:  true,
+				Enabled:                   authPolicyEnabled,
+				NumberOfSpecialCharacters: authPolicySpChr,
+				RequireAtLeastOneNumber:   reqNumber,
+				RequireUpperandLowerCase:  reqCase,
 			},
 		},
 	})
+}
 
-	t.Run("policy is parsed correctly", func(t *testing.T) {
+func TestGetPasswordPolicy(t *testing.T) {
+
+	authPolicyLength := 12
+
+	setMockPasswordPolicyConfig(false, true, 10, 12, authPolicyLength,
+		2, true, true)
+
+	t.Run("Policy retrieved is correct.", func(t *testing.T) {
 		p := getPasswordPolicy()
-		// policy is enabled
-		assert.True(t, p.Enabled == true)
 
-		// password length is from AuthPasswordPolicy
-		assert.Equal(t, p.MinimumLength, 12)
+		assert.True(t, p.Enabled == true)
+		assert.Equal(t, p.MinimumLength, authPolicyLength)
 
 	})
-
-	// TODO t.Cleanup()
 }
 
 func TestFetchPasswordPolicy_nil(t *testing.T) {
-	//cfg := conf.Get()
-
-	fmt.Println("start nil test")
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
@@ -57,17 +55,12 @@ func TestFetchPasswordPolicy_nil(t *testing.T) {
 		},
 	})
 
-	t.Run("policy is parsed correctly", func(t *testing.T) {
-		fmt.Println("hello 3")
+	t.Run("When no policy is defined, only check password length ", func(t *testing.T) {
 		p := getPasswordPolicy()
-		// policy is enabled
-		fmt.Println(p)
-		assert.True(t, p.Enabled == true)
+		assert.True(t, p.Enabled == false)
 
-		// password length is from AuthPasswordPolicy
-		assert.Equal(t, p.MinimumLength, 12)
+		assert.Nil(t, ValidatePassword("idontneedanythingspecial"))
+		assert.ErrorContains(t, ValidatePassword("abshort"), "Your password may not be less than 9 or be more than 256 characters.")
 
 	})
-
-	// TODO t.Cleanup()
 }

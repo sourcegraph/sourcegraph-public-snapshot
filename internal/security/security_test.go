@@ -1,47 +1,40 @@
 package security
 
 import (
-	"github.com/sourcegraph/sourcegraph/internal/conf"
-	"github.com/sourcegraph/sourcegraph/schema"
 	"github.com/stretchr/testify/assert"
+	"strings"
 	"testing"
 )
 
-// TODO look at testcases here enterprise/cmd/frontend/internal/dotcom/productsubscription/license_expiration_test.go
 func TestPasswordPolicy(t *testing.T) {
-	//cfg := conf.Get()
 
-	conf.Mock(&conf.Unified{
-		SiteConfiguration: schema.SiteConfiguration{
-			AuthMinPasswordLength: 9,
-			ExperimentalFeatures: &schema.ExperimentalFeatures{
-				PasswordPolicy: &schema.PasswordPolicy{
-					Enabled:                   true,
-					MinimumLength:             10,
-					NumberOfSpecialCharacters: 2,
-					RequireUpperandLowerCase:  true,
-					RequireAtLeastOneNumber:   true,
-				},
-			},
-			AuthPasswordPolicy: &schema.AuthPasswordPolicy{
-				Enabled:                   true,
-				MinimumLength:             12,
-				NumberOfSpecialCharacters: 2,
-				RequireAtLeastOneNumber:   true,
-				RequireUpperandLowerCase:  true,
-			},
-		},
+	setMockPasswordPolicyConfig(false, true, 12,
+		10, 12, 2, true, true)
+
+	t.Run("PasswordPolicy correctly detects deviating passwords", func(t *testing.T) {
+		password := "sup3rstr0ngbutn0teno0ugh"
+		assert.ErrorContains(t, ValidatePassword(password),
+			"Your password must include one uppercase letter.")
+
+		password = "id0hav3symb0lsn0w!!works?"
+		assert.ErrorContains(t, ValidatePassword(password),
+			"Your password must include one uppercase letter.")
+
+		password = "Andn0w?!!"
+		assert.ErrorContains(t, ValidatePassword(password),
+			"Your password may not be less than 12 characters.")
+
+		password = strings.Repeat("A", 259)
+		assert.ErrorContains(t, ValidatePassword(password),
+			"Your password may not be more than 256 characters.")
 	})
 
-	t.Run("policy is parsed correctly", func(t *testing.T) {
-		p := getPasswordPolicy()
-		// policy is enabled
-		assert.True(t, p.Enabled == true)
+	t.Run("PasswordPolicy detects correct passwords", func(t *testing.T) {
+		setMockPasswordPolicyConfig(false, true, 12,
+			10, 2, 2, true, true)
 
-		// password length is from AuthPasswordPolicy
-		assert.Equal(t, p.MinimumLength, 12)
+		password := "tH1smustCert@!inlybe0kthen?"
+		assert.Nil(t, ValidatePassword(password))
 
 	})
-
-	// TODO t.Cleanup()
 }
