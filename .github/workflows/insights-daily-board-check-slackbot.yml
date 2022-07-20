@@ -2,8 +2,8 @@ name: Code Insights daily iteration board check Slack bot
 
 on:
   schedule:
-    # Every workday at midnight UTC
-    - cron: 0 0 * * 1-5
+    # Every workday at 10:00AM UTC / 3:00AM PST / 6:00AM EST
+    - cron: 0 10 * * 1-5
 
 jobs:
   update-status:

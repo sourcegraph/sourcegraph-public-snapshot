@@ -30,8 +30,11 @@ $slackUserIds = @{
     'vovakulikov' = 'U01SD823C9W'
 }
 
+$designerGitHubHandle = 'AlicjaSuska'
+
 function Get-UserReference {
     [CmdletBinding()]
+    [OutputType([string])]
     param(
         [Parameter(Mandatory, ValueFromPipeline, ValueFromPipelineByPropertyName)]
         [string] $Login
@@ -59,11 +62,8 @@ $slackParams = @{
     Uri = $SlackWebhookUri
 }
 
-# PST is the most western timezone we have, i.e. the latest EOD teammates have.
-# Therefor the milestone due date refers to the end of PST Friday (which is already Saturday in UTC, and GitHub Actions run in UTC, but this script may also be run locally for testing in any timezone).
-$todayInPST = [TimeZoneInfo]::ConvertTimeBySystemTimeZoneId([DateTime]::Today, 'Pacific Standard Time').Date
-
-Write-Information "Current date: $todayInPST"
+$now = Get-Date
+Write-Information "Current date: $now"
 
 $milestones = Get-GitHubMilestone -Owner sourcegraph -RepositoryName sourcegraph -State open -Sort DueDate
 
@@ -72,11 +72,11 @@ $relevantMilestones = $milestones |
     Where-Object { $_.Title -like 'Insights iteration*' } |
     Where-Object {
         $iterationStart = $_.DueOn.Date.AddDays(-11) # First Monday of the iteration (due date is always on the second Friday)
-        $daysUntilIterationStart = ($iterationStart - $todayInPST).TotalDays
+        $daysUntilIterationStart = ($iterationStart - $now).TotalDays
 
         (
             # Is current iteration?
-            ($todayInPST -ge $iterationStart -and $todayInPST -lt $_.DueOn.Date) -or
+            ($now -ge $iterationStart -and $now -lt $_.DueOn.Date) -or
             # Is next iteration and only a week away (start date less than 7 days away)?
             $daysUntilIterationStart -gt 0 -and $daysUntilIterationStart -lt 7
         )
@@ -85,20 +85,69 @@ $relevantMilestones = $milestones |
 
 
 if (!$relevantMilestones) {
-    Write-Warning "No current milestone found for today ($($todayInPST.ToLongDateString()))"
+    Write-Warning "No current milestone found for today ($($now.ToLongDateString()))"
     return
 }
 
-$now = Get-Date
+# Estimates
+
+$parts = $relevantMilestones | ForEach-Object {
+    $milestone = $_
+
+    $iterationStart = $_.DueOn.Date.AddDays(-11)
+    $daysUntilIterationStart = ($iterationStart - $now).TotalDays
+    $isCurrent = $now -lt $_.DueOn.Date -and $now -ge $iterationStart
+    $label = if ($isCurrent) { 'current' } else { 'next' }
+    $viewUrl = $iterationViews[$label]
+
+    # Only start posting after Tuesday before the next iteration, or during the current.
+    # The estimations are important for the PM's pre-planning/proposals before our Thursday planning meeting.
+    if (-not ($isCurrent -or $daysUntilIterationStart -lt 6)) {
+        return
+    }
+
+    Write-Information "Milestone: $($milestone.Title) ($label)"
+
+    $itemsWithoutEstimate = Find-GitHubIssue "org:sourcegraph is:issue milestone:`"$($milestone.Title)`" -assignee:$designerGitHubHandle" |
+        Get-GitHubBetaProjectItem |
+        Where-Object { $_.project.id -eq $ProjectNodeId -and !$_.Fields['Size 🔵'] }
+
+    if (!$itemsWithoutEstimate) {
+        Write-Information "No items without estimate"
+        return
+    }
+
+    $list = $itemsWithoutEstimate | ForEach-Object {
+        $assignees = ($_.content.assignees | Get-UserReference) -join ', '
+        $icon = if ($_.content.state -eq 'open') { ':issue:' } else { ':issueclosed:' }
+        "$icon *<$($_.content.url)|$($_.content.title)>* created by $($_.content.author | Get-UserReference), $($_.content.assignees ? "assigned to $assignees" : "unassigned")"
+    }
+
+    "There are $($itemsWithoutEstimate.Count) issues in *<$viewUrl|$($milestone.Title)>* (*$label iteration*) that have *no estimate*:`n`n$($list -join "`n")"
+}
+
+if ($parts) {
+    $message = "$($parts -join "`n`n")`n`nAuthors or assignees, can you give these an estimate?"
+    Write-Information "Sending Slack message:`n$message"
+    Send-SlackMessage @slackParams -Text $message
+}
 
 # Proposed issues
 
 $parts = $relevantMilestones | ForEach-Object {
     $milestone = $_
 
-    $isCurrent = $todayInPST -lt $_.DueOn.Date -and $todayInPST -ge $_.DueOn.Date.AddDays(-11)
+    $iterationStart = $_.DueOn.Date.AddDays(-11)
+    $daysUntilIterationStart = ($iterationStart - $now).TotalDays
+    $isCurrent = $now -lt $_.DueOn.Date -and $now -ge $iterationStart
     $label = if ($isCurrent) { 'current' } else { 'next' }
     $viewUrl = $iterationViews[$label]
+
+    # Only start posting after Thursday before the next iteration, or during the current.
+    # After Thursday, all items should be in Todo or moved out of the iteration.
+    if (-not ($isCurrent -or $daysUntilIterationStart -lt 4)) {
+        return
+    }
 
     Write-Information "Milestone: $($milestone.Title) ($label)"
 
@@ -131,52 +180,22 @@ if ($parts) {
 }
 
 
-# Estimates
-
-$parts = $relevantMilestones | ForEach-Object {
-    $milestone = $_
-
-    $isCurrent = $todayInPST -lt $_.DueOn.Date -and $todayInPST -ge $_.DueOn.Date.AddDays(-11)
-    $label = if ($isCurrent) { 'current' } else { 'next' }
-    $viewUrl = $iterationViews[$label]
-
-    Write-Information "Milestone: $($milestone.Title) ($label)"
-
-    $itemsWithoutEstimate = Find-GitHubIssue "org:sourcegraph is:issue milestone:`"$($milestone.Title)`" -assignee:AlicjaSuska" |
-        Get-GitHubBetaProjectItem |
-        Where-Object { $_.project.id -eq $ProjectNodeId -and !$_.Fields['Size 🔵'] }
-
-    if (!$itemsWithoutEstimate) {
-        Write-Information "No items without estimate"
-        return
-    }
-
-    $list = $itemsWithoutEstimate | ForEach-Object {
-        $assignees = ($_.content.assignees | Get-UserReference) -join ', '
-        $icon = if ($_.content.state -eq 'open') { ':issue:' } else { ':issueclosed:' }
-        "$icon *<$($_.content.url)|$($_.content.title)>* created by $($_.content.author | Get-UserReference), $($_.content.assignees ? "assigned to $assignees" : "unassigned")"
-    }
-
-    "There are $($itemsWithoutEstimate.Count) issues in *<$viewUrl|$($milestone.Title)>* (*$label iteration*) that have *no estimate*:`n`n$($list -join "`n")"
-}
-
-if ($parts) {
-    $message = "$($parts -join "`n`n")`n`nAuthors or assignees, can you give these an estimate?"
-    Write-Information "Sending Slack message:`n$message"
-    Send-SlackMessage @slackParams -Text $message
-}
-
-
 # Assignees
 
 $parts = $relevantMilestones | ForEach-Object {
     $milestone = $_
 
-    $isCurrent = $todayInPST -lt $_.DueOn.Date -and $todayInPST -ge $_.DueOn.Date.AddDays(-11)
+    $isCurrent = $now -lt $_.DueOn.Date -and $now -ge $_.DueOn.Date.AddDays(-11)
     $label = if ($isCurrent) { 'current' } else { 'next' }
     $viewUrl = $iterationViews[$label]
 
     Write-Information "Milestone: $($milestone.Title) ($label)"
+
+    # Only start posting after Thursday before the next iteration, or during the current.
+    # After Thursday, all items should have assignees.
+    if (-not ($isCurrent -or $daysUntilIterationStart -lt 4)) {
+        return
+    }
 
     $itemsWithoutAssignee = Find-GitHubIssue "org:sourcegraph is:issue milestone:`"$($milestone.Title)`" no:assignee" |
         Get-GitHubBetaProjectItem |
