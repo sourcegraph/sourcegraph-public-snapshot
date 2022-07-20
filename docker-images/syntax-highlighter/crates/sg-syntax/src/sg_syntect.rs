@@ -232,7 +232,7 @@ impl<'a> RangesGenerator<'a> {
             } else {
                 self.write_data_for_tokens(line, file_offset);
             }
-            file_offset += line.len()
+            file_offset += line.chars().count()
         }
         self.data
     }
@@ -249,10 +249,10 @@ impl<'a> RangesGenerator<'a> {
             let mut stack = self.stack.clone();
             stack.apply_with_hook(op, |basic_op, _| match basic_op {
                 BasicScopeStackOp::Push(scope) => {
-                    self.open_scope(&scope, file_offset + i);
+                    self.open_scope(&scope, file_offset + unsafe { line.get_unchecked(0..i).chars().count() });
                 }
                 BasicScopeStackOp::Pop => {
-                    self.close_scope(file_offset + i);
+                    self.close_scope(file_offset + unsafe { line.get_unchecked(0..i).chars().count() });
                 }
             });
             self.stack = stack;
