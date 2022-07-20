@@ -19,6 +19,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SectionID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { TemporarySettings } from '@sourcegraph/shared/src/settings/temporary/TemporarySettings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, Code, Icon } from '@sourcegraph/wildcard'
 
@@ -76,6 +77,7 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
     const history = useHistory()
     const [collapsedSections, setCollapsedSections] = useTemporarySetting('search.collapsedSidebarSections', {})
     const [, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     // The zustand store for search query state is referenced through context
     // because there may be different global stores across clients
@@ -133,11 +135,31 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
         repoFilters,
         onDynamicFilterClicked,
     ])
-    const dynamicFilterLinks = useMemo(() => getDynamicFilterLinks(props.filters, onDynamicFilterClicked), [
+    const showReposSection = repoFilterLinks.length > 1
+
+    const langFilterLinks = useMemo(
+        () => getDynamicFilterLinks(props.filters, ['lang'], onDynamicFilterClicked, label => `Search ${label} files`),
+        [props.filters, onDynamicFilterClicked]
+    )
+    const fileFilterLinks = useMemo(() => getDynamicFilterLinks(props.filters, ['file'], onDynamicFilterClicked), [
         props.filters,
         onDynamicFilterClicked,
     ])
-    const showReposSection = repoFilterLinks.length > 1
+    const utilityFilterLinks = useMemo(
+        () => getDynamicFilterLinks(props.filters, ['utility'], onDynamicFilterClicked),
+        [props.filters, onDynamicFilterClicked]
+    )
+    const dynamicFilterLinks = useMemo(
+        () =>
+            getDynamicFilterLinks(
+                props.filters,
+                ['lang', 'file', 'utility'],
+                onDynamicFilterClicked,
+                (label, value) => `Filter by ${value}`,
+                (label, value) => value
+            ),
+        [props.filters, onDynamicFilterClicked]
+    )
 
     let body
 
@@ -162,16 +184,29 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                         forceButton: props.forceButton,
                     })}
                 </SearchSidebarSection>
-                <SearchSidebarSection
-                    sectionId={SectionID.DYNAMIC_FILTERS}
-                    className={styles.item}
-                    header="Dynamic filters"
-                    startCollapsed={collapsedSections?.[SectionID.DYNAMIC_FILTERS]}
-                    onToggle={persistToggleState}
-                >
-                    {dynamicFilterLinks}
-                </SearchSidebarSection>
-                {showReposSection ? (
+                {!coreWorkflowImprovementsEnabled && dynamicFilterLinks.length > 0 && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.DYNAMIC_FILTERS}
+                        className={styles.item}
+                        header="Dynamic Filters"
+                        startCollapsed={collapsedSections?.[SectionID.DYNAMIC_FILTERS]}
+                        onToggle={persistToggleState}
+                    >
+                        {dynamicFilterLinks}
+                    </SearchSidebarSection>
+                )}
+                {coreWorkflowImprovementsEnabled && langFilterLinks.length > 0 && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.LANGUAGES}
+                        className={styles.item}
+                        header="Languages"
+                        startCollapsed={collapsedSections?.[SectionID.LANGUAGES]}
+                        onToggle={persistToggleState}
+                    >
+                        {langFilterLinks}
+                    </SearchSidebarSection>
+                )}
+                {showReposSection && (
                     <SearchSidebarSection
                         sectionId={SectionID.REPOSITORIES}
                         className={styles.item}
@@ -188,7 +223,29 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                     >
                         {repoFilterLinks}
                     </SearchSidebarSection>
-                ) : null}
+                )}
+                {coreWorkflowImprovementsEnabled && fileFilterLinks.length > 0 && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.FILE_TYPES}
+                        className={styles.item}
+                        header="File types"
+                        startCollapsed={collapsedSections?.[SectionID.FILE_TYPES]}
+                        onToggle={persistToggleState}
+                    >
+                        {fileFilterLinks}
+                    </SearchSidebarSection>
+                )}
+                {coreWorkflowImprovementsEnabled && utilityFilterLinks.length > 0 && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.OTHER}
+                        className={styles.item}
+                        header="Other"
+                        startCollapsed={collapsedSections?.[SectionID.OTHER]}
+                        onToggle={persistToggleState}
+                    >
+                        {utilityFilterLinks}
+                    </SearchSidebarSection>
+                )}
                 {props.getRevisions && repoName ? (
                     <SearchSidebarSection
                         sectionId={SectionID.REVISIONS}
@@ -202,22 +259,24 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                         {props.getRevisions({ repoName, onFilterClick: submitQueryWithProps })}
                     </SearchSidebarSection>
                 ) : null}
-                <SearchSidebarSection
-                    sectionId={SectionID.SEARCH_REFERENCE}
-                    className={styles.item}
-                    header="Search reference"
-                    showSearch={true}
-                    startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
-                    onToggle={onSearchReferenceToggle}
-                    // search reference should always preserve the filter
-                    // (false is just an arbitrary but static value)
-                    clearSearchOnChange={false}
-                >
-                    {getSearchReferenceFactory({
-                        telemetryService: props.telemetryService,
-                        setQueryState,
-                    })}
-                </SearchSidebarSection>
+                {!coreWorkflowImprovementsEnabled && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.SEARCH_REFERENCE}
+                        className={styles.item}
+                        header="Search reference"
+                        showSearch={true}
+                        startCollapsed={collapsedSections?.[SectionID.SEARCH_REFERENCE]}
+                        onToggle={onSearchReferenceToggle}
+                        // search reference should always preserve the filter
+                        // (false is just an arbitrary but static value)
+                        clearSearchOnChange={false}
+                    >
+                        {getSearchReferenceFactory({
+                            telemetryService: props.telemetryService,
+                            setQueryState,
+                        })}
+                    </SearchSidebarSection>
+                )}
                 <SearchSidebarSection
                     sectionId={SectionID.SEARCH_SNIPPETS}
                     className={styles.item}
@@ -227,15 +286,17 @@ export const SearchSidebar: React.FunctionComponent<React.PropsWithChildren<Sear
                 >
                     {getSearchSnippetLinks(props.settingsCascade, onSnippetClicked)}
                 </SearchSidebarSection>
-                <SearchSidebarSection
-                    sectionId={SectionID.QUICK_LINKS}
-                    className={styles.item}
-                    header="Quicklinks"
-                    startCollapsed={collapsedSections?.[SectionID.QUICK_LINKS]}
-                    onToggle={persistToggleState}
-                >
-                    {getQuickLinks(props.settingsCascade)}
-                </SearchSidebarSection>
+                {!coreWorkflowImprovementsEnabled && (
+                    <SearchSidebarSection
+                        sectionId={SectionID.QUICK_LINKS}
+                        className={styles.item}
+                        header="Quicklinks"
+                        startCollapsed={collapsedSections?.[SectionID.QUICK_LINKS]}
+                        onToggle={persistToggleState}
+                    >
+                        {getQuickLinks(props.settingsCascade)}
+                    </SearchSidebarSection>
+                )}
             </>
         )
     }
