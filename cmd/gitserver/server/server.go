@@ -2079,7 +2079,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	go readCloneProgress(newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
+	if output, err := runWith(ctx, cmd, true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2542,7 +2542,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runWithRemoteOpts(ctx, cmd, nil)
+	output, err := runWith(ctx, cmd, true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")
