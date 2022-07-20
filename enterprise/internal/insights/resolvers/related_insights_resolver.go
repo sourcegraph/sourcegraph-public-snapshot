@@ -29,11 +29,8 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 	fmt.Printf("found %d total series\n", len(allSeries))
 
 	for _, series := range allSeries {
-		// TODO I tried to test this with a revision but it's not finding matches. Maybe I have the wrong string? Or maybe
-		// we don't need a revision string if it's the current index?
-
-		decoder, tabulationResult := streaming.MetadataDecoder()
-		modifiedQuery, err := querybuilder.SingleFileQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.File, nil, querybuilder.CodeInsightsQueryDefaults(false))
+		decoder, metadataResult := streaming.MetadataDecoder()
+		modifiedQuery, err := querybuilder.SingleFileQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.File, args.Input.Revision, querybuilder.CodeInsightsQueryDefaults(false))
 		if err != nil {
 			return nil, errors.Wrap(err, "SingleFileQuery")
 		}
@@ -47,8 +44,8 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 
 		// Other error handling?
 
-		tr := *tabulationResult
-		for _, match := range tr.Matches {
+		mr := *metadataResult
+		for _, match := range mr.Matches {
 			for _, lineMatch := range match.LineMatches {
 				fmt.Println("Found a match!")
 				fmt.Println(lineMatch.Line)
