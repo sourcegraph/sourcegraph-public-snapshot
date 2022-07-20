@@ -84,6 +84,7 @@ var DeploySourcegraphDockerImages = []string{
 	"worker",
 	"migrator",
 	"executor",
+	"opentelemetry-collector",
 }
 
 // CandidateImageTag provides the tag for a candidate image built for this Buildkite run.

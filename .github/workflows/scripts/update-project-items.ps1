@@ -83,7 +83,7 @@ switch ($github.event_name) {
                 -AuthorIcon $item.content.author.avatarUrl `
                 -Title "#$($item.content.number) $($item.content.title)" `
                 -TitleLink $item.content.url `
-                -Text $item.content.bodyText.Substring(0, [System.Math]::Min(1000, $item.content.bodyText.Length)) `
+                -Text $item.content.bodyText.Substring(0, [System.Math]::Min(500, $item.content.bodyText.Length)) `
                 -Fields @(
                     @{ title = 'Size'; value = $item.Fields['Size 🔵']; short = $true },
                     @{ title = 'Importance'; value = $item.Fields['Importance']; short = $true },
