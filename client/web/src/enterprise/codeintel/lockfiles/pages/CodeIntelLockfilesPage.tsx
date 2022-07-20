@@ -6,17 +6,16 @@ import { createAggregateError } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Container, PageHeader } from '@sourcegraph/wildcard'
 
-import { FilteredConnectionFilter } from '../../../../components/FilteredConnection'
 import { useConnection } from '../../../../components/FilteredConnection/hooks/useConnection'
 import {
     ConnectionContainer,
     ConnectionList,
     ConnectionLoading,
     ConnectionSummary,
+    ConnectionError,
+    SummaryContainer,
     ShowMoreButton,
 } from '../../../../components/FilteredConnection/ui'
-import { ConnectionError } from '../../../../components/FilteredConnection/ui/ConnectionError'
-import { SummaryContainer } from '../../../../components/FilteredConnection/ui/SummaryContainer'
 import { PageTitle } from '../../../../components/PageTitle'
 import { LockfileIndexesResult, LockfileIndexesVariables, LockfileIndexFields } from '../../../../graphql-operations'
 import { CodeIntelLockfileNode } from '../components/CodeIntelLockfileIndexNode'
@@ -25,14 +24,10 @@ import { LOCKFILE_INDEXES_LIST } from './queries'
 
 export interface CodeIntelLockfilesPageProps extends RouteComponentProps<{}>, TelemetryProps {}
 
-const filters: FilteredConnectionFilter[] = []
-
-const DEFAULT_LOCKFILE_INDEXES_PAGE_SIZE = 2
+const DEFAULT_LOCKFILE_INDEXES_PAGE_SIZE = 50
 
 export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<CodeIntelLockfilesPageProps>> = ({
     telemetryService,
-    history,
-    ...props
 }) => {
     useEffect(() => telemetryService.logPageView('CodeIntelLockfiles'), [telemetryService])
 
@@ -53,19 +48,6 @@ export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<C
             fetchPolicy: 'cache-first',
         },
     })
-
-    const summary = connection && (
-        <ConnectionSummary
-            connection={connection}
-            first={DEFAULT_LOCKFILE_INDEXES_PAGE_SIZE}
-            noun="lockfile index"
-            pluralNoun="lockfile indexes"
-            hasNextPage={hasNextPage}
-            // connectionQuery={query}
-            noSummaryIfAllNodesVisible={true}
-            compact={true}
-        />
-    )
 
     return (
         <div className="code-intel-lockfiles">
@@ -91,7 +73,16 @@ export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<C
                         {loading && <ConnectionLoading />}
                         {!loading && connection && (
                             <SummaryContainer>
-                                {summary}
+                                <ConnectionSummary
+                                    connection={connection}
+                                    first={DEFAULT_LOCKFILE_INDEXES_PAGE_SIZE}
+                                    noun="lockfile index"
+                                    pluralNoun="lockfile indexes"
+                                    hasNextPage={hasNextPage}
+                                    // connectionQuery={query}
+                                    noSummaryIfAllNodesVisible={true}
+                                    compact={true}
+                                />
                                 {hasNextPage && <ShowMoreButton onClick={fetchMore} />}
                             </SummaryContainer>
                         )}
