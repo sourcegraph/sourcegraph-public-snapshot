@@ -344,7 +344,7 @@ func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, rep
 
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
-func newBitbucketProjectPermissionsWorker(rootContext context.Context, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
+func newBitbucketProjectPermissionsWorker(ctx context.Context, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
 		NumHandlers:       cfg.WorkerConcurrency,
@@ -353,7 +353,7 @@ func newBitbucketProjectPermissionsWorker(rootContext context.Context, db edb.En
 		Metrics:           metrics.workerMetrics,
 	}
 
-	return dbworker.NewWorker(rootContext, createBitbucketProjectPermissionsStore(db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
+	return dbworker.NewWorker(ctx, createBitbucketProjectPermissionsStore(db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
