@@ -67,7 +67,7 @@ func applyCodeOwnershipFiltering(ctx context.Context, fileOwnersMustInclude []st
 	// We currently don't have a way to access file ownership information, so no
 	// file currently has any owner. A search to include any owner will
 	// therefore return no results.
-	if len(fileOwnersMustInclude) <= 0 {
+	if len(fileOwnersMustInclude) == 0 {
 		filtered = matches
 	}
 
