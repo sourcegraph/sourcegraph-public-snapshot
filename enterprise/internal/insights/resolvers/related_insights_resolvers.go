@@ -14,8 +14,9 @@ import (
 )
 
 var _ graphqlbackend.RelatedInsightsInlineResolver = &relatedInsightsInlineResolver{}
+var _ graphqlbackend.RelatedInsightsInlineMetadataResolver = &relatedInsightsInlineMetadataResolver{}
 
-func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsInlineArgs) (graphqlbackend.RelatedInsightsInlineResolver, error) {
+func (r *Resolver) Insights(ctx context.Context, args graphqlbackend.RelatedInsightsInlineArgs) ([]graphqlbackend.RelatedInsightsInlineResolver, error) {
 	validator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 	validator.loadUserContext(ctx)
 
@@ -29,6 +30,8 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		return nil, errors.Wrap(err, "GetAll")
 	}
 	fmt.Printf("found %d total series\n", len(allSeries))
+
+	resolvers := []*relatedInsightsInlineMetadataResolver{}
 
 	for _, series := range allSeries {
 		decoder, metadataResult := streaming.MetadataDecoder()
@@ -60,13 +63,16 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 				fmt.Println(lineMatch.Line)
 				fmt.Println(lineMatch.LineNumber)
 				fmt.Println(lineMatch.OffsetAndLengths)
+
+				// maybe we want to store multiple line numbers per insight instead?
+				// append to resolvers here?
 			}
 		}
 	}
 
 	// TODO format the results and return them. Also possible all of this should go below in the Insights resolver.
 
-	return &relatedInsightsInlineResolver{series: "HI"}, nil
+	return nil, nil
 }
 
 type relatedInsightsInlineResolver struct {
@@ -74,6 +80,26 @@ type relatedInsightsInlineResolver struct {
 	baseInsightResolver
 }
 
-func (r *relatedInsightsInlineResolver) Insights(ctx context.Context) ([]string, error) {
+func (r *relatedInsightsInlineResolver) Insights(ctx context.Context) ([]relatedInsightsInlineMetadataResolver, error) {
 	return nil, nil
+}
+
+type relatedInsightsInlineMetadataResolver struct {
+	viewID      string
+	title       string
+	lineNumbers []int32
+
+	baseInsightResolver
+}
+
+func (r *relatedInsightsInlineMetadataResolver) ViewID() string {
+	return r.viewID
+}
+
+func (r *relatedInsightsInlineMetadataResolver) Title() string {
+	return r.title
+}
+
+func (r *relatedInsightsInlineMetadataResolver) LineNumbers() []int32 {
+	return r.lineNumbers
 }

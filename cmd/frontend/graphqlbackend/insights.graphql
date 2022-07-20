@@ -213,7 +213,7 @@ extend type Query {
     """
     Return all related insights for a file visible to the authenticated user.
     """
-    relatedInsightsInline(input: RelatedInsightsInput!): RelatedInsights!
+    relatedInsightsInline(input: RelatedInsightsInput!): RelatedInsightsInline!
 }
 
 input RelatedInsightsInput {
@@ -222,8 +222,14 @@ input RelatedInsightsInput {
     file: String!
 }
 
-type RelatedInsights {
-    insights: [String!]!
+type RelatedInsightsInline {
+    insights: [RelatedInsightInlineMetadata!]!
+}
+
+type RelatedInsightInlineMetadata {
+    viewID: String!
+    title: String!
+    lineNumbers: [Int!]!
 }
 
 extend type Mutation {

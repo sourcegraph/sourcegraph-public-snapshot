@@ -463,5 +463,11 @@ type RelatedInsightsInlineInput struct {
 }
 
 type RelatedInsightsInlineResolver interface {
-	Insights(ctx context.Context) ([]string, error)
+	Insights(ctx context.Context) ([]RelatedInsightsInlineMetadataResolver, error)
+}
+
+type RelatedInsightsInlineMetadataResolver interface {
+	ViewID() string
+	Title() string
+	LineNumbers() []int32
 }
