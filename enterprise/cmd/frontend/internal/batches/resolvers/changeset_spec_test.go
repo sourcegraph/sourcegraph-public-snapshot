@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
@@ -32,7 +32,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	esStore := database.ExternalServicesWith(logger, cstore)
@@ -40,7 +40,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	// Creating user with matching email to the changeset spec author.
 	user, err := database.UsersWith(logger, cstore).Create(ctx, database.NewUser{
 		Username:        "mary",
-		Email:           ct.ChangesetSpecAuthorEmail,
+		Email:           bt.ChangesetSpecAuthorEmail,
 		EmailIsVerified: true,
 		DisplayName:     "Mary Tester",
 	})
@@ -79,7 +79,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 	}{
 		{
 			name:    "GitBranchChangesetDescription",
-			rawSpec: ct.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
+			rawSpec: bt.NewRawChangesetSpecGitBranch(repoID, string(testRev)),
 			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
@@ -134,7 +134,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		},
 		{
 			name:    "GitBranchChangesetDescription Draft",
-			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: "draft"}),
+			rawSpec: bt.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: "draft"}),
 			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
@@ -189,7 +189,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		},
 		{
 			name:    "GitBranchChangesetDescription publish from UI",
-			rawSpec: ct.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: nil}),
+			rawSpec: bt.NewPublishedRawChangesetSpecGitBranch(repoID, string(testRev), batches.PublishedValue{Val: nil}),
 			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",
@@ -244,7 +244,7 @@ func TestChangesetSpecResolver(t *testing.T) {
 		},
 		{
 			name:    "ExistingChangesetReference",
-			rawSpec: ct.NewRawChangesetSpecExisting(repoID, "9999"),
+			rawSpec: bt.NewRawChangesetSpecExisting(repoID, "9999"),
 			want: func(spec *btypes.ChangesetSpec) apitest.ChangesetSpec {
 				return apitest.ChangesetSpec{
 					Typename: "VisibleChangesetSpec",

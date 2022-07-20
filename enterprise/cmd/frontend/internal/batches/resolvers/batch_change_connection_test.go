@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/batches/resolvers/apitest"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -30,7 +30,7 @@ func TestBatchChangeConnectionResolver(t *testing.T) {
 	ctx := actor.WithInternalActor(context.Background())
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 
 	cstore := store.New(db, &observation.TestContext, nil)
 	repoStore := database.ReposWith(logger, cstore)
@@ -183,10 +183,10 @@ func TestBatchChangesListing(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
-	userID := ct.CreateTestUser(t, db, false).ID
+	userID := bt.CreateTestUser(t, db, false).ID
 	actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
 
-	orgID := ct.InsertTestOrg(t, db, "org")
+	orgID := bt.InsertTestOrg(t, db, "org")
 
 	store := store.New(db, &observation.TestContext, nil)
 
@@ -278,7 +278,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 
 		// DRAFTS CASE 2: ADMIN USERS CAN VIEW OTHER USERS' DRAFTS
-		adminUserID := ct.CreateTestUser(t, db, true).ID
+		adminUserID := bt.CreateTestUser(t, db, true).ID
 		adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
 		apitest.MustExec(adminActorCtx, t, s, input, &response, listNamespacesBatchChanges)
@@ -288,7 +288,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 
 		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
-		otherUserID := ct.CreateTestUser(t, db, false).ID
+		otherUserID := bt.CreateTestUser(t, db, false).ID
 		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
 
 		apitest.MustExec(otherActorCtx, t, s, input, &response, listNamespacesBatchChanges)
@@ -362,7 +362,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 
 		// DRAFTS CASE 2: ADMIN USERS CAN VIEW OTHER USERS' DRAFTS
-		adminUserID := ct.CreateTestUser(t, db, true).ID
+		adminUserID := bt.CreateTestUser(t, db, true).ID
 		adminActorCtx := actor.WithActor(ctx, actor.FromUser(adminUserID))
 
 		apitest.MustExec(adminActorCtx, t, s, input, &response, listNamespacesBatchChanges)
@@ -372,7 +372,7 @@ func TestBatchChangesListing(t *testing.T) {
 		}
 
 		// DRAFTS CASE 3: NON-ADMIN USERS CANNOT VIEW OTHER USERS' DRAFTS.
-		otherUserID := ct.CreateTestUser(t, db, false).ID
+		otherUserID := bt.CreateTestUser(t, db, false).ID
 		otherActorCtx := actor.WithActor(ctx, actor.FromUser(otherUserID))
 
 		apitest.MustExec(otherActorCtx, t, s, input, &response, listNamespacesBatchChanges)

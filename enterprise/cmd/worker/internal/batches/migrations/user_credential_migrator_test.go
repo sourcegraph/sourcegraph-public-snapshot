@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -38,7 +38,7 @@ func TestUserCredentialMigrator(t *testing.T) {
 	// Now we'll set up enough users to validate that it takes multiple Up
 	// invocations.
 	for i := 0; i < userCredentialMigrationCountPerRun; i++ {
-		user := ct.CreateTestUser(t, db, false)
+		user := bt.CreateTestUser(t, db, false)
 		createUnencryptedUserCredential(t, ctx, cstore, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,
@@ -47,7 +47,7 @@ func TestUserCredentialMigrator(t *testing.T) {
 		}, a)
 	}
 	for i := 0; i < userCredentialMigrationCountPerRun; i++ {
-		user := ct.CreateTestUser(t, db, false)
+		user := bt.CreateTestUser(t, db, false)
 		createPreviouslyEncryptedUserCredential(t, ctx, cstore, database.UserCredentialScope{
 			Domain:              database.UserCredentialDomainBatches,
 			UserID:              user.ID,

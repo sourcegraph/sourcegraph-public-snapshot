@@ -21,7 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
-	ct "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
+	bt "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/testing"
 	btypes "github.com/sourcegraph/sourcegraph/enterprise/internal/batches/types"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -45,7 +45,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 
 		rcache.SetupForTest(t)
 
-		ct.TruncateTables(t, db, "changeset_events", "changesets")
+		bt.TruncateTables(t, db, "changeset_events", "changesets")
 
 		cf, save := httptestutil.NewGitHubRecorderFactory(t, *update, "github-webhooks")
 		defer save()
@@ -60,7 +60,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		extSvc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
 			DisplayName: "GitHub",
-			Config: ct.MarshalJSON(t, &schema.GitHubConnection{
+			Config: bt.MarshalJSON(t, &schema.GitHubConnection{
 				Url:      "https://github.com",
 				Token:    token,
 				Repos:    []string{"sourcegraph/sourcegraph"},
@@ -130,7 +130,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		// Set up mocks to prevent the diffstat computation from trying to
 		// use a real gitserver, and so we can control what diff is used to
 		// create the diffstat.
-		state := ct.MockChangesetSyncState(&protocol.RepoInfo{
+		state := bt.MockChangesetSyncState(&protocol.RepoInfo{
 			Name: "repo",
 			VCS:  protocol.VCSInfo{URL: "https://example.com/repo/"},
 		})
@@ -156,7 +156,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			_, name := path.Split(fixtureFile)
 			name = strings.TrimSuffix(name, ".json")
 			t.Run(name, func(t *testing.T) {
-				ct.TruncateTables(t, db, "changeset_events")
+				bt.TruncateTables(t, db, "changeset_events")
 
 				tc := loadWebhookTestCase(t, fixtureFile)
 
