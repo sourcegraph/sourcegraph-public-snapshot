@@ -1,3 +1,5 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
 .toast {
     position: fixed;
     right: 2rem;
@@ -7,7 +9,12 @@
     align-items: flex-start;
     border-radius: 0.25rem;
     border: 1px solid var(--border-color);
-    max-width: 520px;
+    width: 32.5rem;
+
+    @media (--xs-breakpoint-down) {
+        right: 0;
+        width: 100%;
+    }
 }
 
 .contents {
@@ -24,6 +31,7 @@
 
 .toast-body {
     padding-top: 0.688rem;
+    width: 100%;
 }
 
 .close-button-wrap {

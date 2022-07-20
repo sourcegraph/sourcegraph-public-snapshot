@@ -36,8 +36,8 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 
+	"github.com/sourcegraph/sourcegraph/cmd/gitserver/server/internal/accesslog"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -53,6 +53,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/mutablelimiter"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repotrackutil"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -254,9 +255,6 @@ type Server struct {
 	repoUpdateLocksMu sync.Mutex // protects the map below and also updates to locks.once
 	repoUpdateLocks   map[api.RepoName]*locks
 
-	// Used for setRepoSizes function to run only during the first run of janitor
-	setRepoSizesOnce sync.Once
-
 	// GlobalBatchLogSemaphore is a semaphore shared between all requests to ensure that a
 	// maximum number of Git subprocesses are active for all /batch-log requests combined.
 	GlobalBatchLogSemaphore *semaphore.Weighted
@@ -362,11 +360,23 @@ func (s *Server) Handler() http.Handler {
 	})
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("/archive", trace.WithRouteName("archive", s.handleArchive))
-	mux.HandleFunc("/exec", trace.WithRouteName("exec", s.handleExec))
+	mux.HandleFunc("/archive", trace.WithRouteName("archive", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("archive.accesslog", "archive endpoint access log"),
+		conf.DefaultClient(),
+		s.handleArchive,
+	)))
+	mux.HandleFunc("/exec", trace.WithRouteName("exec", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("exec.accesslog", "exec endpoint access log"),
+		conf.DefaultClient(),
+		s.handleExec,
+	)))
 	mux.HandleFunc("/search", trace.WithRouteName("search", s.handleSearch))
 	mux.HandleFunc("/batch-log", trace.WithRouteName("batch-log", s.handleBatchLog))
-	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", s.handleP4Exec))
+	mux.HandleFunc("/p4-exec", trace.WithRouteName("p4-exec", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("p4-exec.accesslog", "p4-exec endpoint access log"),
+		conf.DefaultClient(),
+		s.handleP4Exec,
+	)))
 	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
@@ -381,9 +391,13 @@ func (s *Server) Handler() http.Handler {
 		w.WriteHeader(http.StatusOK)
 	}))
 
-	mux.HandleFunc("/git/", trace.WithRouteName("git", func(rw http.ResponseWriter, r *http.Request) {
-		http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
-	}))
+	mux.HandleFunc("/git/", trace.WithRouteName("git", accesslog.HTTPMiddleware(
+		s.Logger.Scoped("git.accesslog", "git endpoint access log"),
+		conf.DefaultClient(),
+		func(rw http.ResponseWriter, r *http.Request) {
+			http.StripPrefix("/git", s.gitServiceHandler()).ServeHTTP(rw, r)
+		},
+	)))
 
 	// Migration to hexagonal architecture starting here:
 
@@ -403,7 +417,12 @@ func (s *Server) Handler() http.Handler {
 		return getObjectService.GetObject(ctx, repo, objectName)
 	})
 
-	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object", handleGetObject(getObjectFunc)))
+	mux.HandleFunc("/commands/get-object", trace.WithRouteName("commands/get-object",
+		accesslog.HTTPMiddleware(
+			s.Logger.Scoped("commands/get-object.accesslog", "commands/get-object endpoint access log"),
+			conf.DefaultClient(),
+			handleGetObject(getObjectFunc),
+		)))
 
 	return mux
 }
@@ -512,9 +531,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			ctx2, cancel := s.serverContext()
-			defer cancel()
-			s.setLastErrorNonFatal(ctx2, job.repo, err)
+			s.setLastErrorNonFatal(s.ctx, job.repo, err)
 		}(j)
 	}
 }
@@ -898,7 +915,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		var statusErr, updateErr error
 
 		if debounce(req.Repo, req.Since) {
-			updateErr = s.doRepoUpdate(ctx, req.Repo)
+			updateErr = s.doRepoUpdate(ctx, req.Repo, "")
 		}
 
 		// attempts to acquire these values are not contingent on the success of
@@ -944,6 +961,13 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		format    = q.Get("format")
 		pathspecs = q["path"]
 	)
+
+	// Log which which actor is accessing the repo.
+	accesslog.Record(r.Context(), repo, map[string]string{
+		"treeish": treeish,
+		"format":  format,
+		"path":    strings.Join(pathspecs, ","),
+	})
 
 	if err := checkSpecArgSafety(treeish); err != nil {
 		w.WriteHeader(http.StatusBadRequest)
@@ -1135,6 +1159,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 
 		searcher := &search.CommitSearcher{
 			Logger:               s.Logger,
+			RepoName:             args.Repo,
 			RepoDir:              dir.Path(),
 			Revisions:            args.Revisions,
 			Query:                mt,
@@ -1360,6 +1385,19 @@ func (s *Server) handleExec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
+
+	// Log which which actor is accessing the repo.
+	args := req.Args
+	cmd := ""
+	if len(req.Args) > 0 {
+		cmd = req.Args[0]
+		args = args[1:]
+	}
+	accesslog.Record(r.Context(), string(req.Repo), map[string]string{
+		"cmd":  cmd,
+		"args": strings.Join(args, " "),
+	})
+
 	s.exec(w, r, &req)
 }
 
@@ -1380,15 +1418,11 @@ func (s *Server) exec(w http.ResponseWriter, r *http.Request, req *protocol.Exec
 	// See https://github.com/sourcegraph/security-issues/issues/213.
 	if !gitdomain.IsAllowedGitCmd(s.Logger, req.Args) {
 		blockedCommandExecutedCounter.Inc()
-
 		s.Logger.Warn("exec: bad command", log.String("RemoteAddr", r.RemoteAddr), log.Strings("req.Args", req.Args))
 
-		// Temporary feature flag to disable this feature in case their are any regressions.
-		if conf.ExperimentalFeatures().EnableGitServerCommandExecFilter {
-			w.WriteHeader(http.StatusBadRequest)
-			_, _ = w.Write([]byte("invalid command"))
-			return
-		}
+		w.WriteHeader(http.StatusBadRequest)
+		_, _ = w.Write([]byte("invalid command"))
+		return
 	}
 
 	ctx := r.Context()
@@ -1624,6 +1658,16 @@ func (s *Server) handleP4Exec(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, fmt.Sprintf("subcommand %q is not allowed", req.Args[0]), http.StatusBadRequest)
 		return
 	}
+
+	// Log which actor is accessing p4-exec.
+	//
+	// p4-exec is currently only used for fetching user based permissions information
+	// so, we don't have a repo name.
+	accesslog.Record(r.Context(), "<no-repo>", map[string]string{
+		"p4user": req.P4User,
+		"p4port": req.P4Port,
+		"args":   strings.Join(req.Args, " "),
+	})
 
 	// Make sure credentials are valid before heavier operation
 	err := p4pingWithTrust(r.Context(), req.P4Port, req.P4User, req.P4Passwd)
@@ -1876,9 +1920,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We always want to store whether there was an error cloning the repo
 	defer func() {
 		// Use a different context in case we failed because the original context failed.
-		ctx2, cancel := s.serverContext()
-		defer cancel()
-		s.setLastErrorNonFatal(ctx2, repo, err)
+		s.setLastErrorNonFatal(s.ctx, repo, err)
 	}()
 
 	dir := s.dir(repo)
@@ -2037,7 +2079,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	go readCloneProgress(newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
+	if output, err := runWith(ctx, cmd, true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2063,6 +2105,11 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	// Set gitattributes
 	if err := setGitAttributes(tmp); err != nil {
+		return err
+	}
+
+	// Set gc.auto depending on gitGCMode.
+	if err := gitSetAutoGC(tmp); err != nil {
 		return err
 	}
 
@@ -2292,7 +2339,7 @@ func honeySampleRate(cmd string, internal bool) uint {
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) error {
 	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	defer span.Finish()
@@ -2330,13 +2377,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 			l.once = new(sync.Once) // Make new requests wait for next update.
 			s.repoUpdateLocksMu.Unlock()
 
-			err = s.doBackgroundRepoUpdate(repo)
+			err = s.doBackgroundRepoUpdate(repo, revspec)
 			if err != nil {
 				s.Logger.Error("performing background repo update", log.Error(err))
 			}
-			ctx, cancel := s.serverContext()
-			defer cancel()
-			s.setLastErrorNonFatal(ctx, repo, err)
+			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})
 	}()
 
@@ -2351,7 +2396,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
-func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
+func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
 	}
@@ -2395,9 +2440,8 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	err = syncer.Fetch(ctx, remoteURL, dir)
+	err = syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
-		s.Logger.Error("Failed to fetch", log.String("repo", string(repo)), log.Error(err))
 		return errors.Wrap(err, "failed to fetch")
 	}
 
@@ -2498,7 +2542,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runWithRemoteOpts(ctx, cmd, nil)
+	output, err := runWith(ctx, cmd, true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")
@@ -2678,7 +2722,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		return false
 	}
 	// Revision not found, update before returning.
-	err := s.doRepoUpdate(ctx, repo)
+	err := s.doRepoUpdate(ctx, repo, rev)
 	if err != nil {
 		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
 	}

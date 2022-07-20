@@ -75,6 +75,7 @@ export const WorkspaceFilterRow: React.FunctionComponent<React.PropsWithChildren
                     ref={searchElement}
                     defaultValue={search}
                     placeholder="Search repository name"
+                    aria-label="Search repository name"
                 />
             </Form>
             <WorkspaceFilter<BatchSpecWorkspaceState>

@@ -47,9 +47,10 @@ type service interface {
 	GetDirtyRepositories(ctx context.Context) (_ map[int]int, err error)
 	SetRepositoryAsDirty(ctx context.Context, repositoryID int, tx *basestore.Store) (err error)
 	UpdateDirtyRepositories(ctx context.Context, maxAgeForNonStaleBranches time.Duration, maxAgeForNonStaleTags time.Duration) (err error)
+	SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error)
 
 	// Uploads
-	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []Upload, totalCount int, err error)
+	GetUploads(ctx context.Context, opts shared.GetUploadsOptions) (uploads []shared.Upload, totalCount int, err error)
 	UpdateUploadsVisibleToCommits(ctx context.Context, repositoryID int, graph *gitdomain.CommitGraph, refDescriptions map[string][]gitdomain.RefDescription, maxAgeForNonStaleBranches, maxAgeForNonStaleTags time.Duration, dirtyToken int, now time.Time) error
 	UpdateUploadRetention(ctx context.Context, protectedIDs, expiredIDs []int) (err error)
 	UpdateUploadsReferenceCounts(ctx context.Context, ids []int, dependencyUpdateType shared.DependencyReferenceCountUpdateType) (updated int, err error)
@@ -305,6 +306,13 @@ func (s *Service) getCommitGraph(ctx context.Context, repositoryID int) (*gitdom
 	}
 
 	return commitGraph, nil
+}
+
+func (s *Service) SetRepositoriesForRetentionScan(ctx context.Context, processDelay time.Duration, limit int) (_ []int, err error) {
+	ctx, _, endObservation := s.operations.setRepositoriesForRetentionScan.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.store.SetRepositoriesForRetentionScan(ctx, processDelay, limit)
 }
 
 func (s *Service) GetRepositoriesMaxStaleAge(ctx context.Context) (_ time.Duration, err error) {

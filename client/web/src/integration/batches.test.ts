@@ -30,6 +30,8 @@ import {
     BatchChangeChangesetsResult,
     BatchChangeState,
     BatchSpecState,
+    BatchChangeBatchSpecsResult,
+    BatchChangeBatchSpecsVariables,
 } from '../graphql-operations'
 
 import { createWebIntegrationTestContext, WebIntegrationTestContext } from './context'
@@ -249,6 +251,37 @@ const BatchChangeChangesets: (variables: BatchChangeChangesetsVariables) => Batc
 
                         forkTarget: null,
                     },
+                },
+            ],
+        },
+    },
+})
+
+const BatchChangeBatchSpecs: (variables: BatchChangeBatchSpecsVariables) => BatchChangeBatchSpecsResult = () => ({
+    node: {
+        __typename: 'BatchChange',
+        batchSpecs: {
+            __typename: 'BatchSpecConnection',
+            totalCount: 1,
+            pageInfo: { endCursor: null, hasNextPage: false },
+            nodes: [
+                {
+                    __typename: 'BatchSpec',
+                    id: 'Execution',
+                    state: BatchSpecState.COMPLETED,
+                    finishedAt: null,
+                    createdAt: '2022-07-06T23:21:45Z',
+                    description: {
+                        name: 'test-batch-change',
+                    },
+                    namespace: {
+                        namespaceName: 'alice',
+                        url: '/users/alice',
+                    },
+                    creator: {
+                        username: 'alice',
+                    },
+                    originalInput: 'name: awesome-batch-change\ndescription: somesttring',
                 },
             ],
         },
@@ -550,6 +583,7 @@ describe('Batches', () => {
         // TODO: SSBC has to go through accessibility audits before this can pass.
         it.skip('is styled correctly', async () => {
             await driver.page.goto(driver.sourcegraphBaseUrl + '/batch-changes/create')
+            await driver.page.waitForSelector('[data-testid="batch-spec-yaml-file"]')
             await percySnapshotWithVariants(driver.page, 'Create batch change')
             await accessibilityAudit(driver.page)
         })
@@ -567,6 +601,7 @@ describe('Batches', () => {
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
+                    BatchChangeBatchSpecs,
                 })
                 const namespaceURL = entityType === 'user' ? '/users/alice' : '/organizations/test-org'
 
@@ -576,8 +611,6 @@ describe('Batches', () => {
                 await percySnapshotWithVariants(driver.page, `Batch change details page ${entityType}`)
                 await accessibilityAudit(driver.page)
 
-                // TODO: This is the part of the test that flakes because "Error: Node is
-                // either not clickable or not an HTMLElement"
                 await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.
                 await driver.page.waitForSelector('.test-file-diff-node')
@@ -586,9 +619,9 @@ describe('Batches', () => {
                 await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(2)')
                 await driver.page.waitForSelector('.test-batches-chart')
 
-                // Switch to view spec file.
+                // Switch to view executions.
                 await driver.page.click('[data-testid="wildcard-tab-list"] [data-testid="wildcard-tab"]:nth-child(3)')
-                await driver.page.waitForSelector('.test-batches-spec')
+                await driver.page.waitForSelector('.test-batches-executions')
 
                 // Go to close page via button.
                 await Promise.all([driver.page.waitForNavigation(), driver.page.click('.test-batches-close-btn')])
@@ -605,6 +638,7 @@ describe('Batches', () => {
                     BatchChangeChangesets,
                     ChangesetCountsOverTime,
                     ExternalChangesetFileDiffs,
+                    BatchChangeBatchSpecs,
                     DeleteBatchChange: () => ({
                         deleteBatchChange: {
                             alwaysNil: null,
@@ -638,9 +672,9 @@ describe('Batches', () => {
                 )
                 await driver.page.waitForSelector('.test-batches-chart')
                 await driver.page.goto(
-                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change?tab=spec'
+                    driver.sourcegraphBaseUrl + namespaceURL + '/batch-changes/test-batch-change/executions'
                 )
-                await driver.page.waitForSelector('.test-batches-spec')
+                await driver.page.waitForSelector('.test-batches-executions')
             })
         }
     })
@@ -811,6 +845,7 @@ describe('Batches', () => {
                                     reopen: 10,
                                     undraft: 10,
                                     update: 10,
+                                    reattach: 10,
                                     archive: 18,
                                     added: 5,
                                     modified: 10,

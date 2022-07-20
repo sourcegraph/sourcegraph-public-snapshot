@@ -78,13 +78,13 @@ func (c *StreamingQueryExecutor) Execute(ctx context.Context, query string, seri
 				continue
 			}
 
-			modified, err := querybuilder.SingleRepoQuery(query, repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
+			modified, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(query), repository, string(commits[0].ID), querybuilder.CodeInsightsQueryDefaults(false))
 			if err != nil {
 				return nil, errors.Wrap(err, "SingleRepoQuery")
 			}
 
 			decoder, tabulationResult := streaming.TabulationDecoder()
-			err = streaming.Search(ctx, modified, decoder)
+			err = streaming.Search(ctx, modified.String(), decoder)
 			if err != nil {
 				return nil, errors.Wrap(err, "streaming.Search")
 			}

@@ -56,7 +56,7 @@ func (s *Service) hybrid(ctx context.Context, p *protocol.Request, sender matchS
 		// TODO if our store was more flexible we could cache just based on
 		// indexed and p.Commit and avoid the need of running diff for each
 		// search.
-		out, err := s.GitOutput(ctx, p.Repo, "diff", "-z", "--name-status", "--no-renames", string(indexed), string(p.Commit))
+		out, err := s.GitDiffSymbols(ctx, p.Repo, indexed, p.Commit)
 		if err != nil {
 			return nil, false, err
 		}
@@ -124,7 +124,7 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 			return false, nil
 		}
 
-		cms := make([]protocol.ChunkMatch, 0, len(fm.LineMatches))
+		cms := make([]protocol.ChunkMatch, 0, len(fm.ChunkMatches))
 		for _, l := range fm.LineMatches {
 			if l.FileName {
 				continue
@@ -156,6 +156,34 @@ func zoektSearchIgnorePaths(ctx context.Context, client zoekt.Streamer, p *proto
 					}},
 				})
 			}
+		}
+
+		for _, cm := range fm.ChunkMatches {
+			ranges := make([]protocol.Range, 0, len(cm.Ranges))
+			for _, r := range cm.Ranges {
+				ranges = append(ranges, protocol.Range{
+					Start: protocol.Location{
+						Offset: int32(r.Start.ByteOffset),
+						Line:   int32(r.Start.LineNumber - 1),
+						Column: int32(r.Start.Column - 1),
+					},
+					End: protocol.Location{
+						Offset: int32(r.End.ByteOffset),
+						Line:   int32(r.End.LineNumber - 1),
+						Column: int32(r.End.Column - 1),
+					},
+				})
+			}
+
+			cms = append(cms, protocol.ChunkMatch{
+				Content: string(cm.Content),
+				ContentStart: protocol.Location{
+					Offset: int32(cm.ContentStart.ByteOffset),
+					Line:   int32(cm.ContentStart.LineNumber) - 1,
+					Column: int32(cm.ContentStart.Column) - 1,
+				},
+				Ranges: ranges,
+			})
 		}
 
 		sender.Send(protocol.FileMatch{

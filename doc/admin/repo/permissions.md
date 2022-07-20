@@ -4,7 +4,7 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 - [GitHub / GitHub Enterprise](#github)
 - [GitLab](#gitlab)
-- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server)
+- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-bitbucket-data-center)
 - [Unified SSO](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/)
 - [Explicit permissions API](#explicit-permissions-api)
 
@@ -237,7 +237,7 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 <img src="https://imgur.com/1qxEAye.png" width="800">
 
-Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
+Go to your Sourcegraph's *Manage code hosts* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
 
 ```json
 {
@@ -337,6 +337,26 @@ For example, permissions syncs may be scheduled:
 - When a [manual sync is scheduled](#manually-scheduling-a-sync)
 
 When a sync is scheduled, it is added to a queue that is steadily processed to avoid overloading the code host - a sync [might not happen immediately](#permissions-sync-duration). Prioritization of permissions sync also happens to, for example, ensure users or repositories with no permissions get processed first.
+
+There are variety of options in the site configuration to tune how the permissions sync requests are scheduled and processed:
+
+```json
+{
+  // Time interval (in seconds) of how often each component picks up authorization changes in external services.
+  "permissions.syncScheduleInterval": 15,
+  // Number of user permissions to schedule for syncing in single scheduler iteration.
+  "permissions.syncOldestUsers": 10,
+  // Number of repo permissions to schedule for syncing in single scheduler iteration.
+  "permissions.syncOldestRepos": 10,
+  // Don't sync a user's permissions if they have synced within the last n seconds.
+  "permissions.syncUsersBackoffSeconds": 60,
+  // Don't sync a repo's permissions if it has synced within the last n seconds.
+  "permissions.syncReposBackoffSeconds": 60,
+  // The maximum number of user-centric permissions syncing jobs that can be spawned concurrently.
+  // Service restart is required to take effect for changes.
+  "permissions.syncUsersMaxConcurrency": 1,
+}
+```
 
 #### Manually scheduling a sync
 
@@ -441,14 +461,16 @@ To enable the permissions API, add the following to the [site configuration](../
 
 The `bindID` value specifies how to uniquely identify users when setting permissions:
 
-- `email`: You can [set permissions](#settings-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account).
-- `username`: You can [set permissions](#settings-repository-permissions-for-users) for users by specifying their Sourcegraph usernames.
+- `email`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account).
+- `username`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their Sourcegraph usernames.
 
 If the permissions API is enabled, all other repository permissions mechanisms are disabled.
 
-After you enable the permissions API, you must [set permissions](#settings-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
+After you enable the permissions API, you must [set permissions](#setting-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
 
 > NOTE: If you were previously using [background permissions syncing](#background-permissions-syncing), e.g. using [GitHub permissions](#github), then those permissions are used as the initial state after enabling explicit permissions. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
+
+<span class="virtual-br"></span>
 
 > NOTE: If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for some repositories and inherit code host permissions for others. (See [RFC 626: Permissions mechanisms in parallel](https://docs.google.com/document/d/1nWbmfM5clAH4pi_4tEt6zDtqN1-z1DuHlQ7A5KAijf8/edit#) for a design document about future support for this situation.)
 

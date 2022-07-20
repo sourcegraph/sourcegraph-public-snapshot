@@ -71,7 +71,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
-insert into repo(id, name) values (1, 'a'), (2, 'b/d'), (3, 'c');
+insert into repo(id, name, fork) values (1, 'a', false), (2, 'b/d', false), (3, 'c', false);
 update gitserver_repos set shard_id = 1;
 update gitserver_repos set repo_size_bytes = 228 where repo_id = 3;
 `); err != nil {
@@ -543,6 +543,24 @@ func TestCleanupOldLocks(t *testing.T) {
 				{
 					name:        "refs/heads/stale.lock",
 					age:         2 * time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
+		{
+			name: "fresh_gc.pid",
+			files: []file{
+				{
+					name: "gc.pid",
+				},
+			},
+		},
+		{
+			name: "stale_gc.pid",
+			files: []file{
+				{
+					name:        "gc.pid",
+					age:         48 * time.Hour,
 					wantRemoved: true,
 				},
 			},
@@ -1347,10 +1365,10 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// inserting info about repos to DB. Repo with ID = 1 already has its size
 	if _, err := db.Exec(`
-insert into repo(id, name)
-values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket'),
-       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux'),
-       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions');
+insert into repo(id, name, fork)
+values (1, 'ghe.sgdev.org/sourcegraph/gorilla-websocket', false),
+       (2, 'ghe.sgdev.org/sourcegraph/gorilla-mux', false),
+       (3, 'ghe.sgdev.org/sourcegraph/gorilla-sessions', false);
 update gitserver_repos set shard_id = 1;
 update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 `); err != nil {
@@ -1367,8 +1385,8 @@ update gitserver_repos set repo_size_bytes = 228 where repo_id = 1;
 		if repo.RepoSizeBytes == 0 {
 			t.Fatal("repo_size_bytes is not updated")
 		}
-		if i == 1 && repo.RepoSizeBytes != 228 {
-			t.Fatal("existing repo_size_bytes has been updated")
+		if i == 1 && repo.RepoSizeBytes == 228 {
+			t.Fatal("existing repo_size_bytes has not been updated")
 		}
 		if repo.ShardID != "1" {
 			t.Fatal("shard_id has been corrupted")
@@ -1507,5 +1525,98 @@ error message
 				t.Fatalf("want %d, got %d", tt.wantRetries, got)
 			}
 		})
+	}
+}
+
+// We test whether the lock set by sg maintenance is respected by git gc.
+func TestGitGCRespectsLock(t *testing.T) {
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	err, unlock := lockRepoForGC(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd = exec.Command("git", "gc")
+	dir.Set(cmd)
+	b, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatal("expected command to return with non-zero exit value")
+	}
+
+	// We check that git complains about the lockfile as expected. By comparing the
+	// output string we make sure we catch changes to Git. If the test fails here,
+	// this means that a new version of Git might have changed the logic around
+	// locking.
+	if !strings.Contains(string(b), "gc is already running on machine") {
+		t.Fatal("git gc should have complained about an existing lockfile")
+	}
+
+	err = unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd = exec.Command("git", "gc")
+	dir.Set(cmd)
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSGMaintenanceRespectsLock(t *testing.T) {
+	logger, getLogs := logtest.Captured(t)
+
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	err, _ := lockRepoForGC(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = sgMaintenance(logger, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cl := getLogs()
+	if len(cl) == 0 {
+		t.Fatal("expected at least 1 log message")
+	}
+
+	if !strings.Contains(cl[len(cl)-1].Message, "could not lock repository for sg maintenance") {
+		t.Fatal("expected sg maintenance to complain about the lockfile")
+	}
+}
+
+func TestSGMaintenanceRemovesLock(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	err := sgMaintenance(logger, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = os.Stat(dir.Path(gcLockFile))
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Fatal("sg maintenance should have removed the lockfile it created")
 	}
 }

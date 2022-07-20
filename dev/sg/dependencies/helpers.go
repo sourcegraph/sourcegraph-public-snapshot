@@ -377,13 +377,6 @@ func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	return check.Version("cargo", parts[1], constraint)
 }
 
-// check1password defines the 1password dependency check which is uniform across platforms.
-func check1password() check.CheckFunc {
-	return check.Combine(
-		check.WrapErrMessage(check.InPath("op"), "The 1password CLI, 'op', is required"),
-		check.CommandOutputContains("op account list", "team-sourcegraph.1password.com"))
-}
-
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {
 	err := usershell.Run(ctx, "asdf plugin-add", plugin, source).Wait()
 	if err != nil && strings.Contains(err.Error(), "already added") {

@@ -23,6 +23,7 @@ import {
     UiFeaturesConfig,
     InsightContent,
     InsightPreviewSettings,
+    BackendInsightDatum,
 } from './code-insights-backend-types'
 
 /**
@@ -63,7 +64,7 @@ export interface CodeInsightsBackend {
      *
      * @param ids - list of insight ids
      */
-    getInsights: (input: { dashboardId: string }) => Observable<Insight[]>
+    getInsights: (input: { dashboardId: string; withCompute: boolean }) => Observable<Insight[]>
 
     getAccessibleInsightsList: () => Observable<AccessibleInsightInfo[]>
 
@@ -103,7 +104,7 @@ export interface CodeInsightsBackend {
      */
     getLangStatsInsightContent: (input: GetLangStatsInsightContentInput) => Promise<CategoricalChartContent<unknown>>
 
-    getInsightPreviewContent: (input: InsightPreviewSettings) => Promise<SeriesChartContent<unknown>>
+    getInsightPreviewContent: (input: InsightPreviewSettings) => Promise<SeriesChartContent<BackendInsightDatum>>
 
     /**
      * Returns a list of suggestions for the repositories' field in the insight creation UI.

@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/require"
 
@@ -37,26 +36,13 @@ func TestStore(t *testing.T) {
 	require.NotZero(t, jobID)
 
 	store := createBitbucketProjectPermissionsStore(db, &config{})
-	count, err := store.QueuedCount(ctx, true, nil)
+	count, err := store.QueuedCount(ctx, true)
 	require.NoError(t, err)
 	require.Equal(t, 1, count)
 }
 
-func intPtr(v int) *int              { return &v }
-func stringPtr(v string) *string     { return &v }
-func timePtr(v time.Time) *time.Time { return &v }
-
-func mustParseTime(v string) time.Time {
-	t, err := time.Parse("2006-01-02", v)
-	if err != nil {
-		panic(err)
-	}
-	return t
-}
-
 func TestGetBitbucketClient(t *testing.T) {
 	t.Parallel()
-	ctx := context.Background()
 
 	var c schema.BitbucketServerConnection
 	c.Token = "secret"
@@ -71,7 +57,7 @@ func TestGetBitbucketClient(t *testing.T) {
 	}
 
 	var handler bitbucketProjectPermissionsHandler
-	client, err := handler.getBitbucketClient(ctx, &svc)
+	client, err := handler.getBitbucketClient(&svc)
 	require.NoError(t, err)
 	require.NotNil(t, client)
 }
@@ -174,6 +160,27 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		}, up.IDs)
 	}
 
+	checkPendingPerms := func(bindIDs []string) {
+		perms := db.Perms()
+
+		for _, bindID := range bindIDs {
+			userPerms := &authz.UserPendingPermissions{
+				ServiceType: authz.SourcegraphServiceType,
+				ServiceID:   authz.SourcegraphServiceID,
+				BindID:      bindID,
+				Perm:        authz.Read,
+				Type:        authz.PermRepos,
+			}
+
+			err := perms.LoadUserPendingPermissions(ctx, userPerms)
+			require.NoError(t, err)
+			require.Equal(t, map[int32]struct{}{
+				1: {},
+				2: {},
+			}, userPerms.IDs)
+		}
+	}
+
 	h := bitbucketProjectPermissionsHandler{db: db}
 	// set permissions for 3 users (2 existing, 1 pending) and 2 repos
 	err = h.setPermissionsForUsers(
@@ -182,7 +189,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -192,6 +199,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	check()
+	checkPendingPerms([]string{"username1@foo.bar"})
 
 	// run the same set of permissions again, shouldn't change anything
 	err = h.setPermissionsForUsers(
@@ -200,7 +208,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -210,15 +218,16 @@ func TestSetPermissionsForUsers(t *testing.T) {
 	)
 	require.NoError(t, err)
 	check()
+	checkPendingPerms([]string{"username1@foo.bar"})
 
-	// test with wrong bindids
+	// test with only non-existent users
 	err = h.setPermissionsForUsers(
 		ctx,
 		logtest.Scoped(t),
 		[]types.UserPermission{
-			{BindID: "pushpa", Permission: "read"},
-			{BindID: "igor", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
+			{BindID: "username2@foo.bar", Permission: "read"},
+			{BindID: "username3@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -227,7 +236,8 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		"foo",
 	)
 	// should fail if the bind ids are wrong
-	require.Error(t, err)
+	require.NoError(t, err)
+	checkPendingPerms([]string{"username1@foo.bar", "username2@foo.bar", "username3@foo.bar"})
 
 	// ensure this unsets the unrestricted flag
 	_, err = db.ExecContext(ctx, "UPDATE repo_permissions SET unrestricted = true WHERE repo_id = 1")
@@ -240,7 +250,7 @@ func TestSetPermissionsForUsers(t *testing.T) {
 		[]types.UserPermission{
 			{BindID: "pushpa@example.com", Permission: "read"},
 			{BindID: "igor@example.com", Permission: "read"},
-			{BindID: "sayako", Permission: "read"},
+			{BindID: "username1@foo.bar", Permission: "read"},
 		},
 		[]api.RepoID{
 			1,
@@ -277,7 +287,7 @@ func TestHandleRestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
+		Config:      `{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`,
 	})
 	require.NoError(t, err)
 
@@ -310,14 +320,23 @@ func TestHandleRestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, name, fork)
+	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork, private)
 	VALUES
-		(10060, 'go', false),
-		(10056, 'jenkins', false),
-		(10061, 'mux', false),
-		(10058, 'sentry', false),
-		(10059, 'sinatra', false),
-		(10072, 'sourcegraph', false)
+		(1, 10060, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/go', false, true),
+		(2, 10056, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/jenkins', false, true),
+		(3, 10061, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/mux', false, true),
+		(4, 10058, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sentry', false, true),
+		(5, 10059, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sinatra', false, true),
+		(6, 10072, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false, true);
+
+	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+	VALUES
+		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go'),
+		(1, 2, 'bitbucket.sgdev.org/SGDEMO/jenkins'),
+		(1, 3, 'bitbucket.sgdev.org/SGDEMO/mux'),
+		(1, 4, 'bitbucket.sgdev.org/SGDEMO/sentry'),
+		(1, 5, 'bitbucket.sgdev.org/SGDEMO/sinatra'),
+		(1, 6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph');
 `)
 	require.NoError(t, err)
 
@@ -341,7 +360,7 @@ func TestHandleRestricted(t *testing.T) {
 	// check that the permissions were set
 	perms := db.Perms()
 
-	for _, repoID := range []int32{10060, 10056, 10061, 10058, 10059, 10072} {
+	for _, repoID := range []int32{1, 2, 3, 4, 5, 6} {
 		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
 		err = perms.LoadRepoPermissions(ctx, &p)
 		require.NoError(t, err)
@@ -355,7 +374,7 @@ func TestHandleRestricted(t *testing.T) {
 	err = perms.LoadUserPermissions(ctx, &up)
 	require.NoError(t, err)
 	require.Equal(t, map[int32]struct{}{
-		10060: {}, 10056: {}, 10061: {}, 10058: {}, 10059: {}, 10072: {},
+		1: {}, 2: {}, 3: {}, 4: {}, 5: {}, 6: {},
 	}, up.IDs)
 }
 
@@ -377,7 +396,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	err := db.ExternalServices().Create(ctx, confGet, &types.ExternalService{
 		Kind:        extsvc.KindBitbucketServer,
 		DisplayName: "Bitbucket #1",
-		Config:      `{"url": "https://bitbucket.com", "username": "username", "token": "qwerty", "repositoryQuery": ["none"]}`,
+		Config:      `{"url": "https://bitbucket.sgdev.org", "username": "username", "token": "qwerty", "projectKeys": ["SGDEMO"]}`,
 	})
 	require.NoError(t, err)
 
@@ -410,23 +429,32 @@ func TestHandleUnrestricted(t *testing.T) {
 
 	// create 6 repos
 	_, err = db.ExecContext(ctx, `--sql
-	INSERT INTO repo (id, name, fork)
+	INSERT INTO repo (id, external_id, external_service_type, external_service_id, name, fork, private)
 	VALUES
-		(10060, 'go', false),
-		(10056, 'jenkins', false),
-		(10061, 'mux', false),
-		(10058, 'sentry', false),
-		(10059, 'sinatra', false),
-		(10072, 'sourcegraph', false);
+		(1, 10060, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/go', false, true),
+		(2, 10056, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/jenkins', false, true),
+		(3, 10061, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/mux', false, true),
+		(4, 10058, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sentry', false, true),
+		(5, 10059, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sinatra', false, true),
+		(6, 10072, 'bitbucketServer', 'https://bitbucket.sgdev.org/', 'bitbucket.sgdev.org/SGDEMO/sourcegraph', false, true);
+
+	INSERT INTO external_service_repos (external_service_id, repo_id, clone_url)
+	VALUES
+		(1, 1, 'bitbucket.sgdev.org/SGDEMO/go'),
+		(1, 2, 'bitbucket.sgdev.org/SGDEMO/jenkins'),
+		(1, 3, 'bitbucket.sgdev.org/SGDEMO/mux'),
+		(1, 4, 'bitbucket.sgdev.org/SGDEMO/sentry'),
+		(1, 5, 'bitbucket.sgdev.org/SGDEMO/sinatra'),
+		(1, 6, 'bitbucket.sgdev.org/SGDEMO/sourcegraph');
 
 	INSERT INTO repo_permissions (repo_id, permission, updated_at)
 	VALUES
-		(10060, 'read', now()),
-		(10056, 'read', now()),
-		(10061, 'read', now()),
-		(10058, 'read', now()),
-		(10059, 'read', now()),
-		(10072, 'read', now());
+		(1, 'read', now()),
+		(2, 'read', now()),
+		(3, 'read', now()),
+		(4, 'read', now()),
+		(5, 'read', now()),
+		(6, 'read', now());
 `)
 	require.NoError(t, err)
 
@@ -446,7 +474,7 @@ func TestHandleUnrestricted(t *testing.T) {
 	// check that the permissions were set
 	perms := db.Perms()
 
-	for _, repoID := range []int32{10060, 10056, 10061, 10058, 10059, 10072} {
+	for _, repoID := range []int32{1, 2, 3, 4, 5, 6} {
 		p := authz.RepoPermissions{RepoID: repoID, Perm: authz.Read}
 		err = perms.LoadRepoPermissions(ctx, &p)
 		require.NoError(t, err)

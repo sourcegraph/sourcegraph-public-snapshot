@@ -43,11 +43,7 @@ func newInsightEnqueuer(ctx context.Context, workerBaseStore *basestore.Store, i
 	return goroutine.NewPeriodicGoroutineWithMetrics(ctx, 1*time.Hour, goroutine.NewHandlerWithErrorMessage(
 		"insights_enqueuer",
 		func(ctx context.Context) error {
-			queryRunnerEnqueueJob := func(ctx context.Context, job *queryrunner.Job) error {
-				_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
-				return err
-			}
-			ie := NewInsightEnqueuer(time.Now, queryRunnerEnqueueJob)
+			ie := NewInsightEnqueuer(time.Now, workerBaseStore)
 
 			return ie.discoverAndEnqueueInsights(ctx, insightStore, featureFlagStore)
 		},
@@ -59,10 +55,13 @@ type InsightEnqueuer struct {
 	enqueueQueryRunnerJob func(context.Context, *queryrunner.Job) error
 }
 
-func NewInsightEnqueuer(now func() time.Time, enqueueQueryRunnerJob func(context.Context, *queryrunner.Job) error) *InsightEnqueuer {
+func NewInsightEnqueuer(now func() time.Time, workerBaseStore *basestore.Store) *InsightEnqueuer {
 	return &InsightEnqueuer{
-		now:                   now,
-		enqueueQueryRunnerJob: enqueueQueryRunnerJob,
+		now: now,
+		enqueueQueryRunnerJob: func(ctx context.Context, job *queryrunner.Job) error {
+			_, err := queryrunner.EnqueueJob(ctx, workerBaseStore, job)
+			return err
+		},
 	}
 }
 
@@ -137,27 +136,32 @@ func (ie *InsightEnqueuer) EnqueueSingle(
 	// Construct the search query that will generate data for this repository and time (revision) tuple.
 	defaultQueryParams := querybuilder.CodeInsightsQueryDefaults(len(series.Repositories) == 0)
 	seriesID := series.SeriesID
-	var modifiedQuery string
 	var err error
 
+	basicQuery := querybuilder.BasicQuery(series.Query)
+	var modifiedQuery querybuilder.BasicQuery
+	var finalQuery string
+
 	if len(series.Repositories) > 0 {
-		modifiedQuery, err = querybuilder.MultiRepoQuery(series.Query, series.Repositories, defaultQueryParams)
+		modifiedQuery, err = querybuilder.MultiRepoQuery(basicQuery, series.Repositories, defaultQueryParams)
 	} else {
-		modifiedQuery, err = querybuilder.GlobalQuery(series.Query, defaultQueryParams)
+		modifiedQuery, err = querybuilder.GlobalQuery(basicQuery, defaultQueryParams)
 	}
 	if err != nil {
 		return errors.Wrapf(err, "GlobalQuery series_id:%s", seriesID)
 	}
+	finalQuery = modifiedQuery.String()
 	if series.GroupBy != nil {
-		modifiedQuery, err = querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy))
+		computeQuery, err := querybuilder.ComputeInsightCommandQuery(modifiedQuery, querybuilder.MapType(*series.GroupBy))
 		if err != nil {
 			return errors.Wrapf(err, "ComputeInsightCommandQuery series_id:%s", seriesID)
 		}
+		finalQuery = computeQuery.String()
 	}
 
 	err = ie.enqueueQueryRunnerJob(ctx, &queryrunner.Job{
 		SeriesID:    seriesID,
-		SearchQuery: modifiedQuery,
+		SearchQuery: finalQuery,
 		State:       "queued",
 		Priority:    int(priority.High),
 		Cost:        int(priority.Indexed),

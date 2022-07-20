@@ -101,3 +101,15 @@ livenessProbe:
     path: /minio/health/live
     port: minio   #this port name MUST exist in the same spec
 ```
+
+### Search stops working after enabling service mesh, ex istio.
+
+![image](https://user-images.githubusercontent.com/68532117/178506378-3d047bc5-d672-487a-920f-8f228ae5cb27.png)
+
+```error
+Git command [git rev-parse HEAD] failed (stderr: ""): strconv.Atoi: parsing "": invalid syntax
+```
+
+This error occurs when the service mesh, like istio, drops the [Trailer response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer) for http1 by default. Enable trailers in your instance to resolve this issue. See our `envoy` examples in [Kubernetes with Helm](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) and [Kubernetes without Helm](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) for details. 
+
+

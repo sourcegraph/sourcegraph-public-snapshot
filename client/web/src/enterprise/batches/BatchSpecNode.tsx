@@ -15,7 +15,7 @@ import { upperFirst } from 'lodash'
 
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, Link, Icon, H3, H4 } from '@sourcegraph/wildcard'
+import { Button, Link, Icon, H3, H4, Tooltip } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
 import { BatchSpecListFields, Scalars } from '../../graphql-operations'
@@ -62,12 +62,13 @@ export const BatchSpecNode: React.FunctionComponent<React.PropsWithChildren<Batc
                         <Link to={`${node.namespace.url}/batch-changes/${node.description.name}/executions/${node.id}`}>
                             {currentSpecID === node.id && (
                                 <>
-                                    <Icon
-                                        className="text-warning"
-                                        data-tooltip="Currently applied spec"
-                                        aria-label="Currently applied spec"
-                                        svgPath={mdiStar}
-                                    />{' '}
+                                    <Tooltip content="Currently applied spec">
+                                        <Icon
+                                            aria-label="Currently applied spec"
+                                            className="text-warning"
+                                            svgPath={mdiStar}
+                                        />
+                                    </Tooltip>{' '}
                                 </>
                             )}
                             Executed by <strong>{node.creator?.username}</strong>{' '}

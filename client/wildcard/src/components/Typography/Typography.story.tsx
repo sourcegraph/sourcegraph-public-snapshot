@@ -4,14 +4,19 @@ import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
 import webStyles from '@sourcegraph/web/src/SourcegraphWebApp.scss'
 
+import { Link } from '../Link'
+
 import { TYPOGRAPHY_ALIGNMENTS, TYPOGRAPHY_MODES } from './constants'
+import { Heading } from './Heading'
 
 import { Code, Label, H1, H2, H3, H4, H5, H6, Text } from '.'
 
-const decorator: DecoratorFn = story => <BrandedStory styles={webStyles}>{() => <div>{story()}</div>}</BrandedStory>
+const decorator: DecoratorFn = story => (
+    <BrandedStory styles={webStyles}>{() => <div className="container mt-3">{story()}</div>}</BrandedStory>
+)
 
 const config: Meta = {
-    title: 'wildcard/Typography/All',
+    title: 'wildcard/Typography',
 
     decorators: [decorator],
 
@@ -316,5 +321,48 @@ export const Simple: Story = () => (
                 </tr>
             </tbody>
         </table>
+    </>
+)
+
+export const CrossingStyles: Story = () => (
+    <>
+        <H1>Crossing Header Styles</H1>
+        <Text>
+            Sometimes we need, for example, an <Code>{'<h2>'}</Code> with the styles of an <Code>{'<h3>'}</Code> to
+            create a page structure that is both{' '}
+            <Link
+                target="_blank"
+                rel="noopener noreferrer"
+                to="https://docs.sourcegraph.com/dev/background-information/web/accessibility/detailed-checklist#headings"
+            >
+                accessible
+            </Link>{' '}
+            and visually-consistent with designs.
+        </Text>
+        <Text>
+            It is possible both to <strong>"downscale"</strong> crossing header styles (e.g. <Code>{'<h2>'}</Code> with
+            the styles of an <Code>{'<h3>'}</Code>) and <strong>"upscale"</strong> them (e.g. <Code>{'<h3>'}</Code> with
+            the styles of an <Code>{'<h2>'}</Code>), but due to CSS priority rules, the two directions require using
+            different APIs.
+        </Text>
+
+        <H2 className="mt-4 mb-3">Examples of downscaling</H2>
+
+        <H2>I'm a normal H2.</H2>
+        <H3 as={H2}>I'm an H2 with the style of an H3.</H3>
+        <H4 as={H2}>I'm an H2 with the style of an H4.</H4>
+        <H5 as={H2}>I'm an H2 with the style of an H5.</H5>
+
+        <H2 className="mt-5 mb-3">Examples of upscaling</H2>
+        <H4>I'm a normal H4.</H4>
+        <Heading as="h4" styleAs="h3">
+            I'm an H4 with the style of an H3.
+        </Heading>
+        <Heading as="h4" styleAs="h2">
+            I'm an H4 with the style of an H2.
+        </Heading>
+        <Heading as="h4" styleAs="h1">
+            I'm an H4 with the style of an H1.
+        </Heading>
     </>
 )

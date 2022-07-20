@@ -35,6 +35,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/httpapi"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/siteid"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/vfsutil"
+	"github.com/sourcegraph/sourcegraph/internal/adminanalytics"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/check"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -168,6 +169,10 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		}
 		outOfBandMigrationRunner := oobmigration.NewRunnerWithDB(db, oobmigration.RefreshInterval, observationContext)
 
+		if err := outOfBandMigrationRunner.SynchronizeMetadata(ctx); err != nil {
+			return errors.Wrap(err, "failed to synchronized out of band migration metadata")
+		}
+
 		if err := oobmigration.ValidateOutOfBandMigrationRunner(ctx, db, outOfBandMigrationRunner); err != nil {
 			return errors.Wrap(err, "failed to validate out of band migrations")
 		}
@@ -270,6 +275,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 	goroutine.Go(func() { bg.DeleteOldEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { bg.DeleteOldSecurityEventLogsInPostgres(context.Background(), db) })
 	goroutine.Go(func() { updatecheck.Start(db) })
+	goroutine.Go(func() { adminanalytics.StartAnalyticsCacheRefresh(context.Background(), db) })
 
 	schema, err := graphqlbackend.NewSchema(db,
 		enterprise.BatchChangesResolver,
@@ -283,6 +289,7 @@ func Main(enterpriseSetupHook func(db database.DB, c conftypes.UnifiedWatchable)
 		enterprise.OrgRepositoryResolver,
 		enterprise.NotebooksResolver,
 		enterprise.ComputeResolver,
+		enterprise.DependenciesResolver,
 	)
 	if err != nil {
 		return err

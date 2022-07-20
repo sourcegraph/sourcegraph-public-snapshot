@@ -3,6 +3,7 @@ import React, { useContext, useMemo } from 'react'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { useDeepMemo, Text } from '@sourcegraph/wildcard'
 
+import { Series } from '../../../../../charts'
 import { useSeriesToggle } from '../../../../../insights/utils/use-series-toggle'
 import {
     SeriesChart,
@@ -41,9 +42,7 @@ interface LineChartLivePreviewProps {
     series: LivePreviewSeries[]
 }
 
-export const LineChartLivePreview: React.FunctionComponent<
-    React.PropsWithChildren<LineChartLivePreviewProps>
-> = props => {
+export const LineChartLivePreview: React.FunctionComponent<LineChartLivePreviewProps> = props => {
     const { disabled, repositories, stepValue, step, series, isAllReposMode, className } = props
     const { getInsightPreviewContent: getLivePreviewContent } = useContext(CodeInsightsBackendContext)
     const seriesToggleState = useSeriesToggle()
@@ -119,7 +118,9 @@ export const LineChartLivePreview: React.FunctionComponent<
                     </LivePreviewChart>
                 )}
 
-                {state.status === StateStatus.Data && <LivePreviewLegend series={state.data.series} />}
+                {state.status === StateStatus.Data && (
+                    <LivePreviewLegend series={state.data.series as Series<unknown>[]} />
+                )}
             </LivePreviewCard>
 
             {isAllReposMode && (

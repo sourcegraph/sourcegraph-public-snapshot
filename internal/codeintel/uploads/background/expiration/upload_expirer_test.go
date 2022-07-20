@@ -8,8 +8,10 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policyShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
@@ -25,11 +27,13 @@ func init() {
 
 func TestUploadExpirer(t *testing.T) {
 	now := timeutil.Now()
-	dbStore := testUploadExpirerMockDBStore(now)
+	uploadSvc := setupMockUploadService(now)
+	policySvc := setupMockPolicyService()
 	policyMatcher := testUploadExpirerMockPolicyMatcher()
 
 	uploadExpirer := &expirer{
-		dbStore:       dbStore,
+		uploadSvc:     uploadSvc,
+		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
 		metrics:       newMetrics(&observation.TestContext),
 	}
@@ -39,13 +43,13 @@ func TestUploadExpirer(t *testing.T) {
 	}
 
 	var protectedIDs []int
-	for _, call := range dbStore.UpdateUploadRetentionFunc.History() {
+	for _, call := range uploadSvc.UpdateUploadRetentionFunc.History() {
 		protectedIDs = append(protectedIDs, call.Arg1...)
 	}
 	sort.Ints(protectedIDs)
 
 	var expiredIDs []int
-	for _, call := range dbStore.UpdateUploadRetentionFunc.History() {
+	for _, call := range uploadSvc.UpdateUploadRetentionFunc.History() {
 		expiredIDs = append(expiredIDs, call.Arg2...)
 	}
 	sort.Ints(expiredIDs)
@@ -83,8 +87,33 @@ func TestUploadExpirer(t *testing.T) {
 	}
 }
 
-func testUploadExpirerMockDBStore(now time.Time) *MockDBStore {
-	uploads := []dbstore.Upload{
+func setupMockPolicyService() *MockPolicyService {
+	policies := []policyShared.ConfigurationPolicy{
+		{ID: 1, RepositoryID: nil},
+		{ID: 2, RepositoryID: intPtr(53)},
+		{ID: 3, RepositoryID: nil},
+		{ID: 4, RepositoryID: nil},
+		{ID: 5, RepositoryID: intPtr(50)},
+	}
+
+	getConfigurationPolicies := func(ctx context.Context, opts policyShared.GetConfigurationPoliciesOptions) (filtered []policyShared.ConfigurationPolicy, _ int, _ error) {
+		for _, policy := range policies {
+			if policy.RepositoryID == nil || *policy.RepositoryID == opts.RepositoryID {
+				filtered = append(filtered, policy)
+			}
+		}
+
+		return filtered, len(filtered), nil
+	}
+
+	policySvc := NewMockPolicyService()
+	policySvc.GetConfigurationPoliciesFunc.SetDefaultHook(getConfigurationPolicies)
+
+	return policySvc
+}
+
+func setupMockUploadService(now time.Time) *MockUploadService {
+	uploads := []uploadShared.Upload{
 		{ID: 11, State: "completed", RepositoryID: 50, Commit: "deadbeef01", UploadedAt: daysAgo(now, 1)}, // repo 50
 		{ID: 12, State: "completed", RepositoryID: 50, Commit: "deadbeef02", UploadedAt: daysAgo(now, 2)},
 		{ID: 13, State: "completed", RepositoryID: 50, Commit: "deadbeef03", UploadedAt: daysAgo(now, 3)},
@@ -107,14 +136,6 @@ func testUploadExpirerMockDBStore(now time.Time) *MockDBStore {
 		{ID: 30, State: "completed", RepositoryID: 53, Commit: "deadbeef20", UploadedAt: daysAgo(now, 9)},
 	}
 
-	policies := []dbstore.ConfigurationPolicy{
-		{ID: 1, RepositoryID: nil},
-		{ID: 2, RepositoryID: intPtr(53)},
-		{ID: 3, RepositoryID: nil},
-		{ID: 4, RepositoryID: nil},
-		{ID: 5, RepositoryID: intPtr(50)},
-	}
-
 	repositoryIDMap := map[int]struct{}{}
 	for _, upload := range uploads {
 		repositoryIDMap[upload.RepositoryID] = struct{}{}
@@ -128,7 +149,7 @@ func testUploadExpirerMockDBStore(now time.Time) *MockDBStore {
 	protected := map[int]time.Time{}
 	expired := map[int]struct{}{}
 
-	selectRepositoriesForRetentionScanFunc := func(ctx context.Context, processDelay time.Duration, limit int) (scannedIDs []int, _ error) {
+	setRepositoriesForRetentionScanFunc := func(ctx context.Context, processDelay time.Duration, limit int) (scannedIDs []int, _ error) {
 		if len(repositoryIDs) <= limit {
 			scannedIDs, repositoryIDs = repositoryIDs, nil
 		} else {
@@ -138,18 +159,8 @@ func testUploadExpirerMockDBStore(now time.Time) *MockDBStore {
 		return scannedIDs, nil
 	}
 
-	getConfigurationPolicies := func(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) (filtered []dbstore.ConfigurationPolicy, _ int, _ error) {
-		for _, policy := range policies {
-			if policy.RepositoryID == nil || *policy.RepositoryID == opts.RepositoryID {
-				filtered = append(filtered, policy)
-			}
-		}
-
-		return filtered, len(filtered), nil
-	}
-
-	getUploads := func(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error) {
-		var filtered []dbstore.Upload
+	getUploads := func(ctx context.Context, opts uploadShared.GetUploadsOptions) ([]uploadShared.Upload, int, error) {
+		var filtered []uploadShared.Upload
 		for _, upload := range uploads {
 			if upload.RepositoryID != opts.RepositoryID {
 				continue
@@ -183,7 +194,7 @@ func testUploadExpirerMockDBStore(now time.Time) *MockDBStore {
 		return nil
 	}
 
-	commitsVisibleToUpload := func(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error) {
+	getCommitsVisibleToUpload := func(ctx context.Context, uploadID, limit int, token *string) ([]string, *string, error) {
 		for _, upload := range uploads {
 			if upload.ID == uploadID {
 				return []string{
@@ -196,17 +207,17 @@ func testUploadExpirerMockDBStore(now time.Time) *MockDBStore {
 		return nil, nil, nil
 	}
 
-	dbStore := NewMockDBStore()
-	dbStore.SelectRepositoriesForRetentionScanFunc.SetDefaultHook(selectRepositoriesForRetentionScanFunc)
-	dbStore.GetConfigurationPoliciesFunc.SetDefaultHook(getConfigurationPolicies)
-	dbStore.GetUploadsFunc.SetDefaultHook(getUploads)
-	dbStore.UpdateUploadRetentionFunc.SetDefaultHook(updateUploadRetention)
-	dbStore.CommitsVisibleToUploadFunc.SetDefaultHook(commitsVisibleToUpload)
-	return dbStore
+	uploadSvc := NewMockUploadService()
+	uploadSvc.SetRepositoriesForRetentionScanFunc.SetDefaultHook(setRepositoriesForRetentionScanFunc)
+	uploadSvc.GetUploadsFunc.SetDefaultHook(getUploads)
+	uploadSvc.UpdateUploadRetentionFunc.SetDefaultHook(updateUploadRetention)
+	uploadSvc.GetCommitsVisibleToUploadFunc.SetDefaultHook(getCommitsVisibleToUpload)
+
+	return uploadSvc
 }
 
 func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
-	policyMatches := map[int]map[string][]policies.PolicyMatch{
+	policyMatches := map[int]map[string][]policiesEnterprise.PolicyMatch{
 		50: {
 			"deadbeef01": {{PolicyDuration: days(1)}}, // 1 = 1
 			"deadbeef02": {{PolicyDuration: days(9)}}, // 9 > 2 (protected)
@@ -238,7 +249,7 @@ func testUploadExpirerMockPolicyMatcher() *MockPolicyMatcher {
 		},
 	}
 
-	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policies.PolicyMatch, error) {
+	commitsDescribedByPolicy := func(ctx context.Context, repositoryID int, policies []dbstore.ConfigurationPolicy, now time.Time, _ ...string) (map[string][]policiesEnterprise.PolicyMatch, error) {
 		return policyMatches[repositoryID], nil
 	}
 

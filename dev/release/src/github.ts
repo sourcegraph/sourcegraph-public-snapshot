@@ -1,4 +1,4 @@
-import { mkdtemp as original_mkdtemp } from 'fs'
+import { mkdtemp as original_mkdtemp, readFileSync, existsSync } from 'fs'
 import * as os from 'os'
 import * as path from 'path'
 import { promisify } from 'util'
@@ -6,16 +6,24 @@ import { promisify } from 'util'
 import Octokit from '@octokit/rest'
 import commandExists from 'command-exists'
 import execa from 'execa'
+import fetch from 'node-fetch'
 import * as semver from 'semver'
 
 import { readLine, formatDate, timezoneLink, cacheFolder, changelogURL, getContainerRegistryCredential } from './util'
 const mkdtemp = promisify(original_mkdtemp)
+let githubPAT: string
 
 export async function getAuthenticatedGitHubClient(): Promise<Octokit> {
-    const githubPAT = await readLine(
-        'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
-        `${cacheFolder}/github.txt`
-    )
+    const cacheFile = `${cacheFolder}/github.txt`
+    if (existsSync(cacheFile) && (await validateToken()) === true) {
+        githubPAT = readFileSync(`${cacheFolder}/github.txt`, 'utf-8')
+    } else {
+        githubPAT = await readLine(
+            'Enter a GitHub personal access token with "repo" scope (https://github.com/settings/tokens/new): ',
+            cacheFile
+        )
+    }
+
     const trimmedGithubPAT = githubPAT.trim()
     return new Octokit({ auth: trimmedGithubPAT })
 }
@@ -238,25 +246,6 @@ export async function ensureTrackingIssues({
             parentIssue = { ...issue }
         }
         created.push({ ...issue })
-
-        // close previous iterations of this issue
-        const previous = await queryIssues(octokit, template.titleSuffix, template.labels)
-        for (const previousIssue of previous) {
-            if (previousIssue.number === issue.number) {
-                // don't close self
-                continue
-            }
-
-            if (dryRun) {
-                console.log(`dryRun enabled, skipping closure of #${previousIssue.number} '${previousIssue.title}'`)
-                continue
-            }
-            const comment = await commentOnIssue(octokit, previousIssue, `Superseded by #${issue.number}`)
-            console.log(
-                `Closing #${previousIssue.number} '${previousIssue.title}' - commented with an update: ${comment}`
-            )
-            await closeIssue(octokit, previousIssue)
-        }
     }
     return created
 }
@@ -700,4 +689,38 @@ export async function createLatestRelease(
     }
     const response = await octokit.repos.createRelease(request)
     return response.data.html_url
+}
+
+async function validateToken(): Promise<boolean> {
+    const githubPAT: string = readFileSync(`${cacheFolder}/github.txt`, 'utf-8')
+    const trimmedGithubPAT = githubPAT.trim()
+    const response = await fetch('https://api.github.com/repos/sourcegraph/sourcegraph', {
+        method: 'GET',
+        headers: {
+            Authorization: `token ${trimmedGithubPAT}`,
+        },
+    })
+
+    if (response.status !== 200) {
+        console.log(`Existing GitHub token is invalid, got status ${response.statusText}`)
+        return false
+    }
+    return true
+}
+
+export async function closeTrackingIssue(version: semver.SemVer): Promise<void> {
+    const octokit = await getAuthenticatedGitHubClient()
+    const release = releaseName(version)
+    const labels = [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE]
+    // close old tracking issue
+    const previous = await queryIssues(octokit, release, labels)
+    for (const previousIssue of previous) {
+        const comment = await commentOnIssue(
+            octokit,
+            previousIssue,
+            `Issue closed by release tool. #${previousIssue.number}`
+        )
+        console.log(`Closing #${previousIssue.number} '${previousIssue.title} with ${comment}`)
+        await closeIssue(octokit, previousIssue)
+    }
 }

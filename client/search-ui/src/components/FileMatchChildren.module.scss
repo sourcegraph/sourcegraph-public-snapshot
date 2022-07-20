@@ -4,6 +4,15 @@
     border-radius: var(--border-radius);
     padding: 0.25rem 0;
     position: relative;
+
+    :global(.core-workflow-improvements-enabled) & {
+        border: none;
+    }
+
+    :global(.core-workflow-improvements-enabled) [data-collapsible='true'] & {
+        border-bottom-left-radius: 0;
+        border-bottom-right-radius: 0;
+    }
 }
 
 .item {
@@ -33,6 +42,10 @@
 
         &:not(:first-child) {
             border-top: 1px solid var(--border-color-2);
+
+            :global(.core-workflow-improvements-enabled) & {
+                border-top-color: var(--border-color);
+            }
         }
     }
 }

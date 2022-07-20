@@ -591,7 +591,7 @@ type ExperimentalFeatures struct {
 	DebugLog *DebugLog `json:"debug.log,omitempty"`
 	// DependenciesSearch description: Enables support for repo:dependencies predicate queries.
 	DependenciesSearch string `json:"dependenciesSearch,omitempty"`
-	// EnableGitServerCommandExecFilter description: Enable filtering of all exec commands on gitserver based on a pre-defined allowlist
+	// EnableGitServerCommandExecFilter description: DEPRECATED: Setting any value to this flag has no effect.
 	EnableGitServerCommandExecFilter bool `json:"enableGitServerCommandExecFilter,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
@@ -1071,6 +1071,8 @@ type JVMPackagesConnection struct {
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
+	// GitserverAccessLogs description: Enable gitserver access logging.
+	GitserverAccessLogs bool `json:"gitserver.accessLogs,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
@@ -1714,6 +1716,8 @@ type SettingsExperimentalFeatures struct {
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeInsightsAllRepos description: DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.
 	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
+	// CodeInsightsCompute description: Enables Compute powered Code Insights
+	CodeInsightsCompute *bool `json:"codeInsightsCompute,omitempty"`
 	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
 	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
@@ -1729,6 +1733,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// Editor description: Specifies which (code) editor to use for query and text input
 	Editor *string `json:"editor,omitempty"`
+	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
+	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableExtensionsDecorationsColumnView description: If extension supports column view show its decorations in a separate column in the blob view.
 	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
@@ -1737,6 +1743,8 @@ type SettingsExperimentalFeatures struct {
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
+	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
+	ExtensionsAsCoreFeatures *bool `json:"extensionsAsCoreFeatures,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
@@ -1920,7 +1928,7 @@ type SiteConfiguration struct {
 	InsightsCommitIndexerInterval int `json:"insights.commit.indexer.interval,omitempty"`
 	// InsightsCommitIndexerWindowDuration description: The number of days of commits the insights commit indexer will pull during each request (0 is no limit).
 	InsightsCommitIndexerWindowDuration int `json:"insights.commit.indexer.windowDuration,omitempty"`
-	// InsightsComputeGraphql description: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
+	// InsightsComputeGraphql description: DEPRECATED: Force GraphQL mode for insights compute searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
 	InsightsComputeGraphql *bool `json:"insights.compute.graphql,omitempty"`
 	// InsightsHistoricalFrameLength description: (debug) duration of historical insights timeframes, one point per repository will be recorded in each timeframe.
 	InsightsHistoricalFrameLength string `json:"insights.historical.frameLength,omitempty"`
@@ -1934,7 +1942,7 @@ type SiteConfiguration struct {
 	InsightsQueryWorkerConcurrency int `json:"insights.query.worker.concurrency,omitempty"`
 	// InsightsQueryWorkerRateLimit description: Maximum number of Code Insights queries initiated per second on a worker node.
 	InsightsQueryWorkerRateLimit *float64 `json:"insights.query.worker.rateLimit,omitempty"`
-	// InsightsSearchGraphql description: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
+	// InsightsSearchGraphql description: DEPRECATED: Force GraphQL mode for insights searches. This will overwrite the default streaming behavior and force search clients to use the GraphQL API
 	InsightsSearchGraphql *bool `json:"insights.search.graphql,omitempty"`
 	// LicenseKey description: The license key associated with a Sourcegraph product subscription, which is necessary to activate Sourcegraph Enterprise functionality. To obtain this value, contact Sourcegraph to purchase a subscription. To escape the value into a JSON string, you may want to use a tool like https://json-escape-text.now.sh.
 	LicenseKey string `json:"licenseKey,omitempty"`
@@ -1958,16 +1966,18 @@ type SiteConfiguration struct {
 	OrganizationInvitations *OrganizationInvitations `json:"organizationInvitations,omitempty"`
 	// ParentSourcegraph description: URL to fetch unreachable repository details from. Defaults to "https://sourcegraph.com"
 	ParentSourcegraph *ParentSourcegraph `json:"parentSourcegraph,omitempty"`
-	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration
+	// PermissionsSyncOldestRepos description: Number of repo permissions to schedule for syncing in single scheduler iteration.
 	PermissionsSyncOldestRepos int `json:"permissions.syncOldestRepos,omitempty"`
-	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration
+	// PermissionsSyncOldestUsers description: Number of user permissions to schedule for syncing in single scheduler iteration.
 	PermissionsSyncOldestUsers int `json:"permissions.syncOldestUsers,omitempty"`
-	// PermissionsSyncReposBackoffSeconds description: Don't sync a repo's permissions if it has synced within the last n seconds
+	// PermissionsSyncReposBackoffSeconds description: Don't sync a repo's permissions if it has synced within the last n seconds.
 	PermissionsSyncReposBackoffSeconds int `json:"permissions.syncReposBackoffSeconds,omitempty"`
 	// PermissionsSyncScheduleInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	PermissionsSyncScheduleInterval int `json:"permissions.syncScheduleInterval,omitempty"`
-	// PermissionsSyncUsersBackoffSeconds description: Don't sync a user's permissions if they have synced within the last n seconds
+	// PermissionsSyncUsersBackoffSeconds description: Don't sync a user's permissions if they have synced within the last n seconds.
 	PermissionsSyncUsersBackoffSeconds int `json:"permissions.syncUsersBackoffSeconds,omitempty"`
+	// PermissionsSyncUsersMaxConcurrency description: The maximum number of user-centric permissions syncing jobs that can be spawned concurrently. Service restart is required to take effect for changes.
+	PermissionsSyncUsersMaxConcurrency int `json:"permissions.syncUsersMaxConcurrency,omitempty"`
 	// PermissionsUserMapping description: Settings for Sourcegraph permissions, which allow the site admin to explicitly manage repository permissions via the GraphQL API. This setting cannot be enabled if repository permissions for any specific external service are enabled (i.e., when the external service's `authorization` field is set).
 	PermissionsUserMapping *PermissionsUserMapping `json:"permissions.userMapping,omitempty"`
 	// ProductResearchPageEnabled description: Enables users access to the product research page in their settings.

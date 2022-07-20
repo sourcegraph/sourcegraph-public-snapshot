@@ -4,6 +4,7 @@ package gitservice
 import (
 	"bytes"
 	"compress/gzip"
+	"context"
 	"net/http"
 	"os"
 	"os/exec"
@@ -58,7 +59,7 @@ type Handler struct {
 	// Trace if non-nil is called at the start of serving a request. It will
 	// call the returned function when done executing. If the executation
 	// failed, it will pass in a non-nil error.
-	Trace func(svc, repo, protocol string) func(error)
+	Trace func(ctx context.Context, svc, repo, protocol string) func(error)
 }
 
 func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -106,7 +107,7 @@ func (s *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	// captured for tracing.
 	var err error
 	if s.Trace != nil {
-		done := s.Trace(svc, repo, r.Header.Get("Git-Protocol"))
+		done := s.Trace(r.Context(), svc, repo, r.Header.Get("Git-Protocol"))
 		defer func() {
 			done(err)
 		}()

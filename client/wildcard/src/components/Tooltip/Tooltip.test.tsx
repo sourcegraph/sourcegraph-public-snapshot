@@ -38,7 +38,7 @@ describe('Tooltip', () => {
         userEvent.hover(rendered.getByTestId('trigger-1'))
 
         await waitFor(() => {
-            expect(rendered.getByTestId('trigger-1')).toHaveAttribute('aria-describedby', 'radix-0')
+            expect(rendered.getByTestId('trigger-1')).toHaveAttribute('aria-describedby', 'radix-:r0:')
             expect(rendered.getByTestId('trigger-2')).not.toHaveAttribute('aria-describedby')
 
             // Should be one tooltip for visual users, and a second for use with aria-describedby
@@ -46,21 +46,21 @@ describe('Tooltip', () => {
             expect(tooltips).toHaveLength(2)
             expect(tooltips[0]).toHaveTextContent('Tooltip 1')
             expect(tooltips[1]).toHaveTextContent('Tooltip 1')
-            expect(tooltips[1]).toHaveAttribute('id', 'radix-0')
+            expect(tooltips[1]).toHaveAttribute('id', 'radix-:r0:')
         })
 
         userEvent.hover(rendered.getByTestId('trigger-2'))
 
         await waitFor(() => {
             expect(rendered.getByTestId('trigger-1')).not.toHaveAttribute('aria-describedby')
-            expect(rendered.getByTestId('trigger-2')).toHaveAttribute('aria-describedby', 'radix-1')
+            expect(rendered.getByTestId('trigger-2')).toHaveAttribute('aria-describedby', 'radix-:r1:')
 
             // Should be one tooltip for visual users, and a second for use with aria-describedby
             const tooltips = rendered.getAllByRole('tooltip')
             expect(tooltips).toHaveLength(2)
             expect(tooltips[0]).toHaveTextContent('Tooltip 2')
             expect(tooltips[1]).toHaveTextContent('Tooltip 2')
-            expect(tooltips[1]).toHaveAttribute('id', 'radix-1')
+            expect(tooltips[1]).toHaveAttribute('id', 'radix-:r1:')
         })
     })
 
@@ -85,7 +85,8 @@ describe('Tooltip', () => {
             expect(rendered.getAllByRole('tooltip')).toHaveLength(2)
         })
 
-        userEvent.type(rendered.getByTestId('trigger-1'), '{esc}')
+        // Not sure why `userEvent.type(rendered.getByTestId('trigger-1'), '{esc}')` doesn't work
+        await userEvent.type(rendered.getByTestId('trigger-1'), '_{esc}', { delay: 1 })
 
         await waitFor(() => {
             expect(rendered.queryByRole('tooltip')).not.toBeInTheDocument()

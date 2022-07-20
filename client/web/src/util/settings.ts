@@ -59,6 +59,20 @@ export function enableExtensionsDecorationsColumnViewFromSettings(settingsCascad
 }
 
 /**
+ * Whether user wants to use default extensions functionality as core product features instead of the corresponding extensions.
+ */
+export function useExtensionsAsCoreFeaturesFromSettings(settingsCascade: SettingsCascadeOrError): boolean {
+    if (!settingsCascade.final) {
+        return false
+    }
+    if (isErrorLike(settingsCascade.final)) {
+        return false
+    }
+
+    return settingsCascade.final.experimentalFeatures?.extensionsAsCoreFeatures === true
+}
+
+/**
  * Returns undefined if the settings cannot be loaded or if the setting doesn't
  * exist.
  */

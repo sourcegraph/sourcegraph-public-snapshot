@@ -1,5 +1,7 @@
 import React from 'react'
 
+import classNames from 'classnames'
+
 import { Alert, AlertProps, H4 } from '@sourcegraph/wildcard'
 
 interface ReadOnlyBatchSpecAlertProps {
@@ -16,7 +18,7 @@ export const ReadOnlyBatchSpecAlert: React.FunctionComponent<React.PropsWithChil
     header,
     message,
 }) => (
-    <Alert variant={variant} className={className}>
+    <Alert variant={variant} className={classNames('flex-shrink-0', className)}>
         <div className="flex-grow-1 pr-3">
             <H4>{header}</H4>
             {message}

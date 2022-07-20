@@ -37,6 +37,8 @@ func main() {
 		args = append(args, "up")
 	}
 
+	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator v%s", version.Version()))
+
 	if err := mainErr(context.Background(), args); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)

@@ -7,12 +7,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 )
 
-type parser func(io.Reader) ([]reposource.PackageVersion, *DependencyGraph, error)
+type parser func(io.Reader) ([]reposource.VersionedPackage, *DependencyGraph, error)
 
-type nonGraphParser func(io.Reader) ([]reposource.PackageVersion, error)
+type nonGraphParser func(io.Reader) ([]reposource.VersionedPackage, error)
 
 func wrapNonGraphParser(f nonGraphParser) parser {
-	return func(r io.Reader) ([]reposource.PackageVersion, *DependencyGraph, error) {
+	return func(r io.Reader) ([]reposource.VersionedPackage, *DependencyGraph, error) {
 		deps, err := f(r)
 		return deps, nil, err
 	}
@@ -20,7 +20,7 @@ func wrapNonGraphParser(f nonGraphParser) parser {
 
 var parsers = map[string]parser{
 	"package-lock.json": wrapNonGraphParser(parsePackageLockFile),
-	"yarn.lock":         wrapNonGraphParser(parseYarnLockFile),
+	"yarn.lock":         parseYarnLockFile,
 	"go.mod":            wrapNonGraphParser(parseGoModFile),
 	"poetry.lock":       wrapNonGraphParser(parsePoetryLockFile),
 	"Pipfile.lock":      wrapNonGraphParser(parsePipfileLockFile),

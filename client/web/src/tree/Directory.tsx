@@ -1,9 +1,9 @@
 import * as React from 'react'
 
-import ChevronDownIcon from 'mdi-react/ChevronDownIcon'
-import ChevronRightIcon from 'mdi-react/ChevronRightIcon'
+import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
 import { FileDecoration } from 'sourcegraph'
 
+import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { LoadingSpinner, Icon } from '@sourcegraph/wildcard'
 
 import {
@@ -16,19 +16,20 @@ import {
     TreeRow,
 } from './components'
 import { FileDecorator } from './FileDecorator'
-import { TreeLayerProps } from './TreeLayer'
-import { treePadding } from './util'
+import { TreeEntryInfo, treePadding } from './util'
 
-interface TreeChildProps extends TreeLayerProps {
+interface DirectoryProps extends ThemeProps {
+    depth: number
+    index: number
     className?: string
+    entryInfo: TreeEntryInfo
+    isExpanded: boolean
     maxEntries: number
     loading: boolean
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
-
     fileDecorations?: FileDecoration[]
-
     isActive: boolean
     isSelected: boolean
 }
@@ -38,8 +39,8 @@ interface TreeChildProps extends TreeLayerProps {
  *
  * @param props
  */
-export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChildProps>> = (
-    props: TreeChildProps
+export const Directory: React.FunctionComponent<React.PropsWithChildren<DirectoryProps>> = (
+    props: DirectoryProps
 ): JSX.Element => (
     <TreeRow
         key={props.entryInfo.path}
@@ -60,7 +61,7 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<TreeChil
                             onClick={props.noopRowClick}
                             tabIndex={-1}
                         >
-                            <Icon as={props.isExpanded ? ChevronDownIcon : ChevronRightIcon} aria-hidden={true} />
+                            <Icon svgPath={props.isExpanded ? mdiChevronDown : mdiChevronRight} aria-hidden={true} />
                         </TreeRowIconLink>
                         <TreeRowLabelLink
                             to={props.entryInfo.url}
