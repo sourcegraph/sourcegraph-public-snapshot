@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"net/url"
 
 	"github.com/graph-gophers/graphql-go"
@@ -70,8 +69,7 @@ type UserResolver struct {
 func NewUserResolver(db database.DB, user *types.User) *UserResolver {
 	return &UserResolver{db: db, user: user, logger: log.Scoped("userResolver", "resolves a specific user").With(
 		log.Object("repo",
-			log.String("db", fmt.Sprintf("%v", db)),
-			log.String("user", fmt.Sprintf("%v ", user)))),
+			log.String("user", user.Username))),
 	}
 }
 
