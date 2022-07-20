@@ -58,36 +58,41 @@ export const TriggerEvent: React.FunctionComponent<
 
     return (
         <li>
-            <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
-                <Icon aria-hidden={true} className="mr-2" svgPath={expanded ? mdiChevronDown : mdiChevronRight} />
-
-                {hasError ? (
-                    <Icon
-                        aria-hidden={true}
-                        className={classNames(styles.errorIcon, 'mr-2')}
-                        svgPath={mdiAlertCircle}
-                    />
-                ) : (
-                    <span />
-                )}
-
-                <span>
-                    {triggerEvent.status === EventStatus.PENDING ? 'Scheduled' : 'Ran'}{' '}
-                    <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
-                    {triggerEvent.query && (
-                        <Link
-                            to={`/search?${buildSearchURLQuery(triggerEvent.query, SearchPatternType.literal, false)}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-weight-normal ml-2"
-                        >
-                            {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
-                            <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
-                        </Link>
+            <div className="d-flex align-items-center">
+                <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
+                    {expanded ? (
+                        <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Collapse run." />
+                    ) : (
+                        <Icon svgPath={mdiChevronRight} className="mr-2" aria-label="Expand run." />
                     )}
-                </span>
-            </Button>
 
+                    {hasError ? (
+                        <Icon
+                            aria-hidden={true}
+                            className={classNames(styles.errorIcon, 'mr-2')}
+                            svgPath={mdiAlertCircle}
+                        />
+                    ) : (
+                        <span />
+                    )}
+
+                    <span>
+                        {triggerEvent.status === EventStatus.PENDING ? 'Scheduled' : 'Ran'}{' '}
+                        <Timestamp date={triggerEvent.timestamp} noAbout={true} now={now} />
+                    </span>
+                </Button>
+                {triggerEvent.query && (
+                    <Link
+                        to={`/search?${buildSearchURLQuery(triggerEvent.query, SearchPatternType.literal, false)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="font-weight-normal ml-2"
+                    >
+                        {triggerEvent.resultCount} new {pluralize('result', triggerEvent.resultCount)}{' '}
+                        <Icon aria-label=". Open in a new tab" svgPath={mdiOpenInNew} />
+                    </Link>
+                )}
+            </div>
             {expanded && (
                 <ConnectionList>
                     <CollapsibleDetailsWithStatus

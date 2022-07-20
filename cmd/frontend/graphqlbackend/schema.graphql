@@ -6065,10 +6065,6 @@ type AnalyticsCodeIntelResult {
     """
     codeHostEvents: AnalyticsStatItem!
     """
-    Browser extension installs
-    """
-    browserExtensionInstalls: AnalyticsStatItem!
-    """
     Search based events
     """
     searchBasedEvents: AnalyticsStatItem!

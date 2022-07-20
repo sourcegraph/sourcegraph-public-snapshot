@@ -82,7 +82,8 @@
             icon="/icons/sourcegraphLogo.svg">
         </action>
 
-        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph">
+        <group id="SourcegraphEditor" icon="/icons/sourcegraphLogo.svg" popup="true" text="Sourcegraph"
+               searchable="false">
             <reference ref="sourcegraph.openFindPopup"/>
             <reference ref="sourcegraph.searchSelection"/>
             <reference ref="sourcegraph.searchRepository"/>

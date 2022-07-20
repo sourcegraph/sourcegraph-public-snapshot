@@ -142,6 +142,7 @@ Base pipeline (more steps might be included based on branch changes):
 - **CI script tests**: test-trace-command.sh
 - **Integration tests**: Backend integration tests, Code Intel QA
 - **End-to-end tests**: Sourcegraph E2E, Sourcegraph QA, Sourcegraph Cluster (deploy-sourcegraph) QA, Sourcegraph Upgrade
+- Build and upload sourcemaps to Sentry
 - **Publish images**: alpine-3.14, cadvisor, codeinsights-db, codeintel-db, frontend, github-proxy, gitserver, grafana, indexed-searcher, jaeger-agent, jaeger-all-in-one, minio, postgres-12-alpine, postgres_exporter, precise-code-intel-worker, prometheus, redis-cache, redis-store, redis_exporter, repo-updater, search-indexer, searcher, symbols, syntax-highlighter, worker, migrator, executor, server, sg, Publish executor image, Publish docker registry mirror image
 - Upload build trace
 

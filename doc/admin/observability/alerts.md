@@ -5899,6 +5899,40 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## executor: executor_processor_error_rate
+
+<p class="subtitle">handler operation error rate over 5m</p>
+
+**Descriptions**
+
+- <span class="badge badge-critical">critical</span> executor: 100%+ handler operation error rate over 5m for 1h0m0s
+
+<details>
+<summary>Technical details</summary>
+
+Custom alert query: `last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))[5h:]) / (last_over_time(sum(increase(src_executor_processor_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))[5h:]) + last_over_time(sum(increase(src_executor_processor_errors_total{queue=~"${queue:regex}",job=~"^(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors).*"}[5m]))[5h:])) * 100`
+
+</details>
+
+**Next steps**
+
+- Determine the cause of failure from the auto-indexing job logs in the site-admin page.
+- This alert fires if all executor jobs have been failing for the past hour. The alert will continue for up
+to 5 hours until the error rate is no longer 100%, even if there are no running jobs in that time, as the
+problem is not know to be resolved until jobs start succeeding again.
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#executor-executor-processor-error-rate).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "critical_executor_executor_processor_error_rate"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Code intelligence team](https://handbook.sourcegraph.com/departments/engineering/teams/code-intelligence).*</sub>
+
+<br />
+
 ## executor: go_goroutines
 
 <p class="subtitle">maximum active goroutines</p>

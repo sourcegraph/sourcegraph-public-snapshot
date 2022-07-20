@@ -23,7 +23,7 @@ const PARSED_TEST_SERIES_DISPLAY_OPTIONS: SeriesDisplayOptionsInputRequired = {
 describe('BackendInsight', () => {
     describe('parseSeriesDisplayOptions', () => {
         it('returns given object when provided complete values', () => {
-            const parsed = parseSeriesDisplayOptions(10, TEST_SERIES_DISPLAY_OPTIONS)
+            const parsed = parseSeriesDisplayOptions(TEST_SERIES_DISPLAY_OPTIONS)
             expect(parsed).toEqual(PARSED_TEST_SERIES_DISPLAY_OPTIONS)
         })
     })

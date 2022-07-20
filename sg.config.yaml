@@ -383,7 +383,6 @@ commands:
       go install github.com/google/zoekt/cmd/zoekt-sourcegraph-indexserver
     checkBinary: .bin/zoekt-sourcegraph-indexserver
     env: &zoektenv
-      GOGC: 25
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
 
   zoekt-index-0:
@@ -522,10 +521,11 @@ commands:
 
   jaeger:
     cmd: |
+      echo "Jaeger will be available on http://localhost:16686/-/debug/jaeger/search"
       .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
     install_func: installJaeger
     env:
-      JAEGER_VERSION: 1.30.0
+      JAEGER_VERSION: 1.36.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
       JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
