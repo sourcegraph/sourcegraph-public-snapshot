@@ -34,17 +34,18 @@ type want struct {
 }
 
 func Test_matchOnly(t *testing.T) {
+	content := "abcdefgh\n123\n!@#"
 	data := &result.FileMatch{
 		File: result.File{Path: "bedge", Repo: types.MinimalRepo{
 			ID:   5,
 			Name: "codehost.com/myorg/myrepo",
 		}},
 		ChunkMatches: result.ChunkMatches{{
-			Content:      "abcdefgh",
-			ContentStart: result.Location{Line: 1},
+			Content:      content,
+			ContentStart: result.Location{Offset: 0, Line: 1, Column: 0},
 			Ranges: result.Ranges{{
-				Start: result.Location{Line: 1},
-				End:   result.Location{Line: 1},
+				Start: result.Location{Offset: 0, Line: 1, Column: 0},
+				End:   result.Location{Offset: len(content), Line: 1, Column: len(content)},
 			}},
 		}},
 	}
@@ -66,6 +67,8 @@ func Test_matchOnly(t *testing.T) {
 		{input: "(lasvegans)|abcdefgh", serializer: environment},
 		{input: "a(b(c))(de)f(g)h", serializer: match},
 		{input: "([ag])", serializer: match},
+		{input: "g(h(?:(?:.|\n)+)@)#", serializer: match},
+		{input: "g(h\n1)23\n!@", serializer: match},
 	}
 
 	for _, c := range cases {
