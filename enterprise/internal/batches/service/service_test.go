@@ -179,6 +179,7 @@ func TestServicePermissionLevels(t *testing.T) {
 				_, err := svc.CreateBatchSpecFromRaw(currentUserCtx, CreateBatchSpecFromRawOpts{
 					RawSpec:         ct.TestRawBatchSpecYAML,
 					NamespaceUserID: tc.batchChangeAuthor,
+					BatchChangeID:   batchChange.ID,
 				})
 				tc.assertFunc(t, err)
 			})
@@ -1555,10 +1556,45 @@ changesetTemplate:
 
 	t.Run("CreateBatchSpecFromRaw", func(t *testing.T) {
 		adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
-		t.Run("success", func(t *testing.T) {
+		t.Run("success - without batch change ID", func(t *testing.T) {
 			newSpec, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
 				RawSpec:         ct.TestRawBatchSpecYAML,
 				NamespaceUserID: admin.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !newSpec.CreatedFromRaw {
+				t.Fatalf("batchSpec not createdFromRaw: %t", newSpec.CreatedFromRaw)
+			}
+
+			resolutionJob, err := s.GetBatchSpecResolutionJob(ctx, store.GetBatchSpecResolutionJobOpts{
+				BatchSpecID: newSpec.ID,
+			})
+			if err != nil {
+				t.Fatal(err)
+			}
+			if want, have := btypes.BatchSpecResolutionJobStateQueued, resolutionJob.State; have != want {
+				t.Fatalf("resolution job has wrong state. want=%s, have=%s", want, have)
+			}
+		})
+
+		t.Run("success - with batch change ID", func(t *testing.T) {
+			spec := testBatchSpec(admin.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(admin.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			newSpec, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
+				RawSpec:         ct.TestRawBatchSpecYAML,
+				NamespaceUserID: admin.ID,
+				BatchChangeID:   batchChange.ID,
 			})
 			if err != nil {
 				t.Fatal(err)
