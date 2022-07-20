@@ -210,7 +210,7 @@ func canonicalizeQuery(query string) string {
 	}
 
 	// Strip outermost transactions
-	return strings.TrimSpace(
+	stripped := strings.TrimSpace(
 		strings.TrimSuffix(
 			strings.TrimPrefix(
 				strings.TrimSpace(query),
@@ -219,6 +219,13 @@ func canonicalizeQuery(query string) string {
 			"COMMIT;",
 		),
 	)
+
+	replacer := strings.NewReplacer(
+		"-- Increment tally counting tables.\n", "",
+		"-- Decrement tally counting tables.\n", "",
+	)
+
+	return replacer.Replace(stripped)
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)

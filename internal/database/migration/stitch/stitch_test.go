@@ -1,9 +1,12 @@
 package stitch
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"os"
+	"os/exec"
 	"strings"
 	"testing"
 
@@ -81,12 +84,12 @@ func TestStitchAndApplyFrontendDefinitions(t *testing.T) {
 	}
 	t.Parallel()
 
-	testStitchApplication(t, "frontend", 41, 42, nil)
-	testStitchApplication(t, "frontend", 40, 42, nil)
-	testStitchApplication(t, "frontend", 38, 42, nil)
-	testStitchApplication(t, "frontend", 37, 42, nil)
-	testStitchApplication(t, "frontend", 35, 42, nil)
-	testStitchApplication(t, "frontend", 29, 42, nil)
+	testStitchApplication(t, "frontend", 41, 42)
+	testStitchApplication(t, "frontend", 40, 42)
+	testStitchApplication(t, "frontend", 38, 42)
+	testStitchApplication(t, "frontend", 37, 42)
+	testStitchApplication(t, "frontend", 35, 42)
+	testStitchApplication(t, "frontend", 29, 42)
 }
 
 func TestStitchAndApplyCodeintelDefinitions(t *testing.T) {
@@ -95,12 +98,12 @@ func TestStitchAndApplyCodeintelDefinitions(t *testing.T) {
 	}
 	t.Parallel()
 
-	testStitchApplication(t, "codeintel", 41, 42, nil)
-	testStitchApplication(t, "codeintel", 40, 42, nil)
-	testStitchApplication(t, "codeintel", 38, 42, nil)
-	testStitchApplication(t, "codeintel", 37, 42, nil)
-	testStitchApplication(t, "codeintel", 35, 42, nil)
-	testStitchApplication(t, "codeintel", 29, 42, nil)
+	testStitchApplication(t, "codeintel", 41, 42)
+	testStitchApplication(t, "codeintel", 40, 42)
+	testStitchApplication(t, "codeintel", 38, 42)
+	testStitchApplication(t, "codeintel", 37, 42)
+	testStitchApplication(t, "codeintel", 35, 42)
+	testStitchApplication(t, "codeintel", 29, 42)
 }
 
 func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
@@ -109,14 +112,16 @@ func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
 	}
 	t.Parallel()
 
-	testStitchApplication(t, "codeinsights", 41, 42, nil)
-	testStitchApplication(t, "codeinsights", 40, 42, nil)
-	testStitchApplication(t, "codeinsights", 38, 42, nil)
-	testStitchApplication(t, "codeinsights", 37, 42, nil)
-	testStitchApplication(t, "codeinsights", 35, 42, nil)
-	testStitchApplication(t, "codeinsights", 29, 42, nil)
+	testStitchApplication(t, "codeinsights", 41, 42)
+	testStitchApplication(t, "codeinsights", 40, 42)
+	testStitchApplication(t, "codeinsights", 38, 42)
+	testStitchApplication(t, "codeinsights", 37, 42)
+	testStitchApplication(t, "codeinsights", 35, 42)
+	testStitchApplication(t, "codeinsights", 29, 42)
 }
 
+// testStitchGraphShape stitches the migrations bewteen the given minor version ranges, then
+// asserts that the resulting graph has the expected root and leaf values.
 func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int) {
 	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {
 		t.Parallel()
@@ -140,7 +145,10 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 	})
 }
 
-func testStitchApplication(t *testing.T, schemaName string, from, to int, payload any) {
+// testStitchApplication stitches the migrations bewteen the given minor version ranges, then
+// runs the resulting migrations over a test database instance. The resulting database is then
+// compared against the target version's description (in the git-tree).
+func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 	t.Run(fmt.Sprintf("upgrade 3.%d -> 3.%d", from, to), func(t *testing.T) {
 		t.Parallel()
 
@@ -152,20 +160,19 @@ func testStitchApplication(t *testing.T, schemaName string, from, to int, payloa
 		ctx := context.Background()
 		logger := logtest.Scoped(t)
 		db := dbtest.NewRawDB(logger, t)
+		migrationsTableName := "testing"
+
+		store := connections.NewStoreShim(store.NewWithDB(db, migrationsTableName, store.NewOperations(&observation.TestContext)))
+		if err := store.EnsureSchemaTable(ctx); err != nil {
+			t.Fatalf("failed to prepare store: %s", err)
+		}
 
 		migrationRunner := runner.NewRunnerWithSchemas(logger, map[string]runner.StoreFactory{
-			schemaName: func(ctx context.Context) (runner.Store, error) {
-				shim := connections.NewStoreShim(store.NewWithDB(db, "testing", store.NewOperations(&observation.TestContext)))
-				if err := shim.EnsureSchemaTable(ctx); err != nil {
-					return nil, err
-				}
-
-				return shim, nil
-			},
+			schemaName: func(ctx context.Context) (runner.Store, error) { return store, nil },
 		}, []*schemas.Schema{
 			{
 				Name:                schemaName,
-				MigrationsTableName: "testing",
+				MigrationsTableName: migrationsTableName,
 				Definitions:         definitions,
 			},
 		})
@@ -179,6 +186,30 @@ func testStitchApplication(t *testing.T, schemaName string, from, to int, payloa
 			},
 		}); err != nil {
 			t.Fatalf("failed to upgrade: %s", err)
+		}
+
+		if err := migrationRunner.Validate(ctx, schemaName); err != nil {
+			t.Fatalf("failed to validate: %s", err)
+		}
+
+		fileSuffix := ""
+		if schemaName != "frontend" {
+			fileSuffix = "." + schemaName
+		}
+		expectedSchema := expectedSchema(
+			t,
+			fmt.Sprintf("v3.%d.0", to),
+			fmt.Sprintf("internal/database/schema%s.json", fileSuffix),
+		)
+
+		schemas, err := store.Describe(ctx)
+		if err != nil {
+			t.Fatalf("failed to describe database: %s", err)
+		}
+		schema := canonicalize(schemas["public"])
+
+		if diff := cmp.Diff(expectedSchema, schema); diff != "" {
+			t.Fatalf("unexpected schema (-want +got):\n%s", diff)
 		}
 	})
 }
@@ -199,4 +230,33 @@ func makeRange(from, to int) []string {
 	}
 
 	return revs
+}
+
+func expectedSchema(t *testing.T, rev, filename string) (schemaDescription schemas.SchemaDescription) {
+	cmd := exec.Command("git", "show", fmt.Sprintf("%s^:%s", rev, filename))
+	cmd.Dir = repositoryRoot(t)
+
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("failed to read file: %s", err)
+	}
+
+	if err := json.NewDecoder(bytes.NewReader(out)).Decode(&schemaDescription); err != nil {
+		t.Fatalf("failed to decode json: %s", err)
+	}
+
+	return canonicalize(schemaDescription)
+}
+
+// copied from the drift command
+func canonicalize(schemaDescription schemas.SchemaDescription) schemas.SchemaDescription {
+	schemas.Canonicalize(schemaDescription)
+
+	for i, table := range schemaDescription.Tables {
+		for j := range table.Columns {
+			schemaDescription.Tables[i].Columns[j].Index = -1
+		}
+	}
+
+	return schemaDescription
 }
