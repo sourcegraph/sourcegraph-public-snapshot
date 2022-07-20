@@ -251,11 +251,11 @@ func Cmd(command string) StepOpt {
 type AnnotationType string
 
 const (
-	// We opt not to allow 'success' and 'info' type annotations for now to encourage
-	// steps to only provide annotations that help debug failure cases. In the future
-	// we can revisit this if there is a need.
+	// We opt not to allow 'success' type annotations for now to encourage steps to only
+	// provide annotations that help debug failure cases. In the future we can revisit
+	// this if there is a need.
 	// AnnotationTypeSuccess AnnotationType = "success"
-	// AnnotationTypeInfo    AnnotationType = "info"
+	AnnotationTypeInfo    AnnotationType = "info"
 	AnnotationTypeWarning AnnotationType = "warning"
 	AnnotationTypeError   AnnotationType = "error"
 )

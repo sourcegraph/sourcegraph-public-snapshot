@@ -39,11 +39,6 @@ export const CODEINTEL_STATISTICS = gql`
                             totalCount
                         }
                     }
-                    browserExtensionInstalls {
-                        summary {
-                            totalRegisteredUsers
-                        }
-                    }
                     searchBasedEvents {
                         summary {
                             totalCount
