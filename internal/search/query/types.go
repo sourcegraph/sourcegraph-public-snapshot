@@ -326,6 +326,7 @@ func (p Parameters) IncludeExcludeValues(field string) (include, exclude []strin
 			// Skip predicates
 			return
 		}
+
 		if negated {
 			exclude = append(exclude, v)
 		} else {
@@ -379,6 +380,18 @@ func (p Parameters) RepoHasFileContent() (res []RepoHasFileContentArgs) {
 	})
 
 	return res
+}
+
+func (p Parameters) FileContainsContent() (include []string) {
+	nodes := toNodes(p)
+	VisitTypedPredicate(nodes, func(pred *FileContainsContentPredicate, negated bool) {
+		if negated {
+			// Negated is file contains predicates are not supported
+		} else {
+			include = append(include, pred.Pattern)
+		}
+	})
+	return include
 }
 
 func (p Parameters) RepoContainsCommitAfter() (value string) {

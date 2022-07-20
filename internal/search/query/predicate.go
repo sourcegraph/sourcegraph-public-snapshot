@@ -356,20 +356,7 @@ func (f FileContainsContentPredicate) Field() string { return FieldFile }
 func (f FileContainsContentPredicate) Name() string  { return "contains.content" }
 
 func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
-	nodes := make([]Node, 0, 3)
-	nodes = append(nodes, Parameter{
-		Field: FieldCount,
-		Value: "99999",
-	}, Parameter{
-		Field: FieldType,
-		Value: "file",
-	}, Pattern{
-		Value:      f.Pattern,
-		Annotation: Annotation{Labels: Regexp},
-	})
-
-	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return BuildPlan(nodes), nil
+	return nil, nil
 }
 
 /* file:has.owner(pattern) */
