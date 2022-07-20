@@ -124,16 +124,18 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 
 	if args.Repo != nil {
-		repoQuery := `iv.id in (SELECT insight_view_id FROM insight_view_series
-			JOIN insight_series ON insight_view_series.insight_series_id = insight_series.id
-			WHERE
-				insight_series.series_id IN(
-				SELECT DISTINCT(series_id) FROM series_points sp
-					JOIN repo_names rn on sp.repo_name_id = rn.id
-					WHERE rn.name = %s
-				)
-			)`
-		preds = append(preds, sqlf.Sprintf(repoQuery, *args.Repo))
+		// TODO the double SELECT from repo names seems costly. a performance improvement might be
+		// to separate this whole operation in its own query.
+		// after the prototype we could also have an insight store cache where we store common repos
+		// in memory.
+		repoQuery := `i.series_id IN(
+			SELECT series_id FROM series_points sp
+			WHERE sp.repo_name_id IN(SELECT id FROM repo_names WHERE name = %s)
+			UNION
+			SELECT series_id FROM series_points_snapshots sps
+			WHERE sps.repo_name_id IN(SELECT id FROM repo_names WHERE name = %s)
+		)`
+		preds = append(preds, sqlf.Sprintf(repoQuery, *args.Repo, *args.Repo))
 	}
 
 	limit := sqlf.Sprintf("")
