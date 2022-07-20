@@ -127,7 +127,7 @@ export const FormTriggerArea: React.FunctionComponent<React.PropsWithChildren<Tr
 
     const [queryState, setQueryState] = useState<QueryState>({ query: query || '' })
 
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
 
     useEffect(() => {
         const value = queryState.query
