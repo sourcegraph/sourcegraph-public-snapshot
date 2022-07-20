@@ -210,7 +210,9 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
 
     const [visibleCount, totalCount] = useMemo<[number, number] | [null, null]>(() => {
         if (shouldShowConnection) {
-            if (cachedWorkspacesPreview && (showCached || !connection?.nodes.length)) {
+            // Show cached count when showCached is true AND the connection has no data. Else, the count will not match
+            // the actual.
+            if (cachedWorkspacesPreview && showCached && !connection?.nodes.length) {
                 return [cachedWorkspacesPreview.nodes.length, cachedWorkspacesPreview.totalCount ?? 0]
             }
             if (connection) {
