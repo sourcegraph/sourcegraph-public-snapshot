@@ -1,4 +1,4 @@
-import { ReactElement, useMemo, useState, SVGProps, CSSProperties } from 'react'
+import { ReactElement, useMemo, useState, SVGProps, CSSProperties, useRef } from 'react'
 
 import { AxisScale, TickFormatter } from '@visx/axis/lib/types'
 import { Group } from '@visx/group'
@@ -85,6 +85,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
         ...attributes
     } = props
 
+    const rootReference = useRef<SVGSVGElement>(null)
     const [activePoint, setActivePoint] = useState<Point<D> & { element?: Element }>()
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
@@ -164,14 +165,14 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 setActivePoint(closestPoint.data)
             }
         },
-        onPointerLeave: () => setActivePoint(undefined),
-        onFocusOut: () => setActivePoint(undefined),
         onClick: event => {
             if (activePoint?.linkUrl) {
                 onDatumClick(event)
                 window.open(activePoint.linkUrl)
             }
         },
+        onPointerLeave: () => setActivePoint(undefined),
+        onFocusOut: () => setActivePoint(undefined),
     })
 
     const activeSeriesId = activePoint?.seriesId ?? ''
@@ -188,6 +189,7 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
 
     return (
         <svg
+            ref={rootReference}
             width={outerWidth}
             height={outerHeight}
             className={classNames(styles.root, className, { [styles.rootWithHoveredLinkPoint]: activePoint?.linkUrl })}
@@ -265,8 +267,8 @@ export function LineChart<D>(props: LineChartProps<D>): ReactElement | null {
                 )}
             </Group>
 
-            {activePoint && (
-                <Tooltip>
+            {activePoint && rootReference.current && (
+                <Tooltip containerElement={rootReference.current} activeElement={activePoint.element as HTMLElement}>
                     <TooltipContent series={activeSeries} activePoint={activePoint} stacked={stacked} />
                 </Tooltip>
             )}
