@@ -473,6 +473,7 @@ describe('Batches', () => {
             allBatchChanges: {
                 totalCount: 1,
             },
+            maxUnlicensedChangesets: 5,
         }),
     }
     const batchChangesListResults = {
