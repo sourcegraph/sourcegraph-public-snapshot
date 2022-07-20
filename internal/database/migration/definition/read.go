@@ -220,6 +220,9 @@ func canonicalizeQuery(query string) string {
 		),
 	)
 
+	// Strip comments that give extra grief to drift detection. This
+	// isn't the idea place for this type of special casing, but a bit
+	// of debt here is unblocking great value in upgrade tooling.
 	replacer := strings.NewReplacer(
 		"-- Increment tally counting tables.\n", "",
 		"-- Decrement tally counting tables.\n", "",
