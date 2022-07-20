@@ -706,7 +706,9 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
 			// Building Docker image located under $REPO_ROOT/docker-images/
-			cmds = append(cmds, bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
+			cmds = append(cmds,
+				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
+				bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
