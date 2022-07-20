@@ -99,7 +99,8 @@ type PermsStore interface {
 	// SetRepoPermissionsUnrestricted sets the unrestricted on the
 	// repo_permissions table for all the provided repos. Either all or non
 	// are updated. If the repository ID is not in repo_permissions yet, a row
-	// is inserted for read permission and an empty array of user ids.
+	// is inserted for read permission and an empty array of user ids. ids
+	// must not contain duplicates.
 	SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error
 	// TouchRepoPermissions only updates the value of both `updated_at` and
 	// `synced_at` columns of the `repo_permissions` table without modifying the
