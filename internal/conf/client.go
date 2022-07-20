@@ -43,8 +43,8 @@ func DefaultClient() *client {
 	return defaultClientVal
 }
 
-// MockClient returns a client in the same basic configuration as the DefaultClient, but allows multiple instances. This is useful to mock configuration in tests
-// without race conditions modifying values when running tests in parallel.
+// MockClient returns a client in the same basic configuration as the DefaultClient, but is not limited to a global singleton.
+// This is useful to mock configuration in tests without race conditions modifying values when running tests in parallel.
 func MockClient() *client {
 	return &client{store: newStore()}
 }
