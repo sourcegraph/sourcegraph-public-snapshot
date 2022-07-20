@@ -9,7 +9,6 @@ import (
 	"github.com/grafana/regexp"
 	"github.com/hexops/autogold"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
@@ -51,23 +50,25 @@ train(commuter, lightrail)`).
 		}))
 }
 
-func fileMatch(content string) result.Match {
-	gitserver.Mocks.ReadFile = func(_ api.CommitID, _ string) ([]byte, error) {
-		return []byte(content), nil
-	}
-	return &result.FileMatch{
-		File: result.File{
-			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
-			Path: "my/awesome/path.ml",
-		},
-		ChunkMatches: result.ChunkMatches{{
+func fileMatch(chunks ...string) result.Match {
+	matches := make([]result.ChunkMatch, 0, len(chunks))
+	for _, content := range chunks {
+		matches = append(matches, result.ChunkMatch{
 			Content:      content,
 			ContentStart: result.Location{Offset: 0, Line: 1, Column: 0},
 			Ranges: result.Ranges{{
 				Start: result.Location{Offset: 0, Line: 1, Column: 0},
 				End:   result.Location{Offset: len(content), Line: 1, Column: len(content)},
 			}},
-		}},
+		})
+	}
+
+	return &result.FileMatch{
+		File: result.File{
+			Repo: types.MinimalRepo{Name: "my/awesome/repo"},
+			Path: "my/awesome/path.ml",
+		},
+		ChunkMatches: result.ChunkMatches(matches),
 	}
 }
 
@@ -119,6 +120,11 @@ func TestRun(t *testing.T) {
 		"template substitution regexp with commit author",
 		"bob: (1)\nbob: (2)\nbob: (3)\n").
 		Equal(t, test(`content:output((\d) -> $author: ($1))`, commitMatch("a 1 b 2 c 3")))
+
+	autogold.Want(
+		"works with boundary assertions",
+		"test\nstring\n").
+		Equal(t, test(`content:output((\b\w+\b) -> $1)`, fileMatch("test", "string")))
 
 	// If we are not on CI skip the test if comby is not installed.
 	if os.Getenv("CI") == "" && !comby.Exists() {
