@@ -7,6 +7,7 @@ import com.intellij.openapi.Disposable;
 import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.ui.Splitter;
@@ -25,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.StringSelection;
 import java.util.Date;
 
@@ -103,10 +103,7 @@ public class FindPopupPanel extends BorderLayoutPanel implements Disposable {
         AnAction copyEmailAddressAction = new DumbAwareAction("Copy Support Email Address") {
             @Override
             public void actionPerformed(@NotNull AnActionEvent anActionEvent) {
-                String supportEmailAddress = "support@sourcegraph.com";
-                StringSelection selection = new StringSelection(supportEmailAddress);
-                Clipboard clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-                clipboard.setContents(selection, selection);
+                CopyPasteManager.getInstance().setContents(new StringSelection("support@sourcegraph.com"));
                 notification.expire();
             }
         };
