@@ -33,3 +33,26 @@ func CreateBatchSpec(t *testing.T, ctx context.Context, store CreateBatchSpecer,
 
 	return s
 }
+
+func CreateBatchSpecWithBatchChangeID(t *testing.T, ctx context.Context, store CreateBatchSpecer, name string, userID int32, bcID int64) *btypes.BatchSpec {
+	t.Helper()
+
+	s := &btypes.BatchSpec{
+		UserID:          userID,
+		NamespaceUserID: userID,
+		Spec: &batcheslib.BatchSpec{
+			Name:        name,
+			Description: "the description",
+			ChangesetTemplate: &batcheslib.ChangesetTemplate{
+				Branch: "branch-name",
+			},
+		},
+		BatchChangeID: bcID,
+	}
+
+	if err := store.CreateBatchSpec(ctx, s); err != nil {
+		t.Fatal(err)
+	}
+
+	return s
+}

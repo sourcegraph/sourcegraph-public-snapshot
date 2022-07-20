@@ -768,17 +768,34 @@ func TestService(t *testing.T) {
 			t.Fatalf("failed to create batch change: %s\n", err)
 		}
 
-		haveBatchChange, err = svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
-		if err != nil {
-			t.Fatalf("unexpected error: %s\n", err)
-		}
-		if haveBatchChange == nil {
-			t.Fatalf("expected to have matching batch change, but got nil")
-		}
+		t.Run("BatchChangeID is not provided", func(t *testing.T) {
+			haveBatchChange, err = svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec)
+			if err != nil {
+				t.Fatalf("unexpected error: %s\n", err)
+			}
+			if haveBatchChange == nil {
+				t.Fatalf("expected to have matching batch change, but got nil")
+			}
 
-		if diff := cmp.Diff(matchingBatchChange, haveBatchChange); diff != "" {
-			t.Fatalf("wrong batch change was matched (-want +got):\n%s", diff)
-		}
+			if diff := cmp.Diff(matchingBatchChange, haveBatchChange); diff != "" {
+				t.Fatalf("wrong batch change was matched (-want +got):\n%s", diff)
+			}
+		})
+
+		t.Run("BatchChangeID is provided", func(t *testing.T) {
+			batchSpec2 := ct.CreateBatchSpecWithBatchChangeID(t, ctx, s, "matching-batch-spec", admin.ID, matchingBatchChange.ID)
+			haveBatchChange, err = svc.GetBatchChangeMatchingBatchSpec(ctx, batchSpec2)
+			if err != nil {
+				t.Fatalf("unexpected error: %s\n", err)
+			}
+			if haveBatchChange == nil {
+				t.Fatalf("expected to have matching batch change, but got nil")
+			}
+
+			if diff := cmp.Diff(matchingBatchChange, haveBatchChange); diff != "" {
+				t.Fatalf("wrong batch change was matched (-want +got):\n%s", diff)
+			}
+		})
 	})
 
 	t.Run("GetNewestBatchSpec", func(t *testing.T) {
