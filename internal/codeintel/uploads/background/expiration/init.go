@@ -2,7 +2,6 @@ package expiration
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/sourcegraph/log"
 
@@ -15,11 +14,6 @@ func NewExpirer(uploadSvc UploadService, policySvc PolicyService, policyMatcher 
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
 		metrics:       metrics,
-		logger: log.Scoped("NewExpirer", "").With(
-			log.String("uploadSvc", fmt.Sprintf("%v", uploadSvc)),
-			log.String("policySvc", fmt.Sprintf("%v", policySvc)),
-			log.String("policyMatcher", fmt.Sprintf("%v", policyMatcher)),
-			log.String("metrics", fmt.Sprintf("%v", metrics)),
-		),
+		logger:        log.Scoped("Expirer", ""),
 	})
 }
