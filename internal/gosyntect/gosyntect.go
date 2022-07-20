@@ -110,6 +110,7 @@ type rangesresponse struct {
 	response
 
 	// Successful response fields.
+	// This is a list of [number, number, string] tuples
 	Data      [][]interface{} `json:"data"`
 }
 

@@ -194,8 +194,11 @@ fn close_row(s: &mut String) {
 pub struct RangesGenerator<'a> {
     syntax_set: &'a SyntaxSet,
     parse_state: ParseState,
+    // This keeps track of the start position of a scope. When the scope is removed from the stack,
+    // we can generate an entry in data with (start, end, scope)
     position_stack: Vec<(Scope, usize)>,
     stack: ScopeStack,
+    // A list of (start, end, scope) tuples
     data: Vec<(usize, usize, Scope)>,
     code: &'a str,
     max_line_len: Option<usize>,
@@ -224,8 +227,8 @@ impl<'a> RangesGenerator<'a> {
         let mut file_offset = 0;
         for (_i, line) in LinesWithEndings::from(self.code).enumerate() {
             if self.max_line_len.map_or(false, |n| line.len() > n) {
-                // TODO: Not sure what should happen here... close all open
-                // scopes?
+                // TODO: Not sure what should happen here... maybe close all open scopes? But that
+                // could mess up the position information for scopes following that line.
             } else {
                 self.write_data_for_tokens(line, file_offset);
             }
