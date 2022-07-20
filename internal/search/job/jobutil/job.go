@@ -60,15 +60,16 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		children = append(children, j)
 	}
 
+	// Modify the input query if the user specified `file:contains.content()`
 	fileContainsPatterns := b.FileContainsContent()
-	originalPattern := b.Pattern
+	fileContainsOriginalPattern := b.Pattern
 	if len(fileContainsPatterns) > 0 {
 		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
 		for _, pat := range fileContainsPatterns {
 			newNodes = append(newNodes, query.Pattern{Value: pat})
 		}
-		if originalPattern != nil {
-			newNodes = append(newNodes, originalPattern)
+		if fileContainsOriginalPattern != nil {
+			newNodes = append(newNodes, fileContainsOriginalPattern)
 		}
 		b.Pattern = query.Operator{Operands: newNodes, Kind: query.And}
 	}
@@ -174,7 +175,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 
 	{ // Apply file:contains() post-filter
 		if len(fileContainsPatterns) > 0 {
-			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalPattern, b.IsCaseSensitive(), basicJob)
+			basicJob = NewFileContainsFilterJob(fileContainsPatterns, fileContainsOriginalPattern, b.IsCaseSensitive(), basicJob)
 		}
 	}
 
