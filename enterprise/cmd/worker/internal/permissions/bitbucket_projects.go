@@ -173,7 +173,10 @@ func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Co
 		repoIntIDs[i] = int32(id)
 	}
 
-	logger.Info("Setting bitbucket repositories to unrestricted", log.String("project_key", projectKey))
+	logger.Info("Setting bitbucket repositories to unrestricted",
+		log.String("project_key", projectKey),
+		log.Int("repo_ids_len", len(repoIDs)),
+	)
 
 	err := h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIntIDs, true)
 	if err != nil {
