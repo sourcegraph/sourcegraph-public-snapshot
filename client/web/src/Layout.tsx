@@ -280,7 +280,13 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
             </ErrorBoundary>
             {parseQueryAndHash(props.location.search, props.location.hash).viewState &&
                 props.location.pathname !== PageRoutes.SignIn && (
-                    <Panel className={styles.panel} position="bottom" defaultSize={350} storageKey="panel-size">
+                    <Panel
+                        className={styles.panel}
+                        position="bottom"
+                        defaultSize={350}
+                        storageKey="panel-size"
+                        ariaLabel="References panel"
+                    >
                         <TabbedPanelContent
                             {...props}
                             {...themeProps}
