@@ -1,18 +1,73 @@
 package resolvers
 
 import (
-	"github.com/sourcegraph/log"
+	"context"
+	"fmt"
+
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type relatedInsightsResolver struct {
-	baseInsightResolver
+var _ graphqlbackend.RelatedInsightsInlineResolver = &relatedInsightsInlineResolver{}
 
-	logger log.Logger
+func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsInlineArgs) (graphqlbackend.RelatedInsightsInlineResolver, error) {
+	validator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+	validator.loadUserContext(ctx)
+
+	allSeries, err := r.insightStore.GetAll(ctx, store.InsightQueryArgs{
+		Repo:   &args.Input.Repo,
+		UserID: validator.userIds,
+		OrgID:  validator.orgIds,
+	})
+
+	if err != nil {
+		return nil, errors.Wrap(err, "GetAll")
+	}
+	fmt.Printf("found %d total series\n", len(allSeries))
+
+	for _, series := range allSeries {
+		// TODO I tried to test this with a revision but it's not finding matches. Maybe I have the wrong string? Or maybe
+		// we don't need a revision string if it's the current index?
+
+		decoder, tabulationResult := streaming.MetadataDecoder()
+		modifiedQuery, err := querybuilder.SingleFileQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.File, nil, querybuilder.CodeInsightsQueryDefaults(false))
+		if err != nil {
+			return nil, errors.Wrap(err, "SingleFileQuery")
+		}
+		fmt.Printf("query: %s\n", series.Query)
+		fmt.Printf("modified query: %s\n", modifiedQuery.String())
+
+		err = streaming.Search(ctx, modifiedQuery.String(), decoder)
+		if err != nil {
+			return nil, errors.Wrap(err, "streaming.Search")
+		}
+
+		// Other error handling?
+
+		tr := *tabulationResult
+		for _, match := range tr.Matches {
+			for _, lineMatch := range match.LineMatches {
+				fmt.Println("Found a match!")
+				fmt.Println(lineMatch.Line)
+				fmt.Println(lineMatch.LineNumber)
+				fmt.Println(lineMatch.OffsetAndLengths)
+			}
+		}
+	}
+
+	// TODO format the results and return them. Also possible all of this should go below in the Insights resolver.
+
+	return &relatedInsightsInlineResolver{series: "HI"}, nil
 }
 
-// in resolver:
-// fetch all relevant insights from db (using `GetAll` and the Repo arg)
-// for each insight query, append repo and revision, call query.TabulationDecoder (we can make our own RepoTabulationDecoder too)
-// group series to line matches
-// return information in useful format
-func (r *relatedInsightsResolver) 
+type relatedInsightsInlineResolver struct {
+	series string
+	baseInsightResolver
+}
+
+func (r *relatedInsightsInlineResolver) Insights(ctx context.Context) ([]string, error) {
+	return nil, nil
+}

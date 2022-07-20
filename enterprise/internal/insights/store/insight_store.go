@@ -125,15 +125,14 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 
 	if args.Repo != nil {
 		repoQuery := `iv.id in (SELECT insight_view_id FROM insight_view_series
-JOIN insight_series ON insight_view_series.insight_series_id = insight_series.id
-WHERE
-	insight_series.series_id IN(
-	SELECT
-		series_id FROM series_points sp
-		JOIN repo_names rn on sp.repo_id = rn.id
-		WHERE rn.name = %s;
-	)
-)`
+			JOIN insight_series ON insight_view_series.insight_series_id = insight_series.id
+			WHERE
+				insight_series.series_id IN(
+				SELECT DISTINCT(series_id) FROM series_points sp
+					JOIN repo_names rn on sp.repo_name_id = rn.id
+					WHERE rn.name = %s
+				)
+			)`
 		preds = append(preds, sqlf.Sprintf(repoQuery, *args.Repo))
 	}
 
@@ -147,6 +146,10 @@ WHERE
 		visibleViewsQuery(args.UserID, args.OrgID),
 		sqlf.Join(preds, "AND"),
 		limit)
+
+	// fmt.Println(q.Query(sqlf.PostgresBindVar))
+	// fmt.Println(q.Args())
+
 	insightIds, err := scanInsightViewIds(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
@@ -161,6 +164,11 @@ WHERE
 	}
 
 	q = sqlf.Sprintf(getInsightsWithSeriesSql, sqlf.Join(insightIdElems, ","))
+
+	// fmt.Println("second query")
+	// fmt.Println(q.Query(sqlf.PostgresBindVar))
+	// fmt.Println(q.Args())
+
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 
