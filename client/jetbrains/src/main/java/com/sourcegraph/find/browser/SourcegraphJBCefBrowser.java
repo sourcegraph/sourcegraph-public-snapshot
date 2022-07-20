@@ -1,4 +1,4 @@
-package com.sourcegraph.browser;
+package com.sourcegraph.find.browser;
 
 import com.intellij.openapi.util.Disposer;
 import com.intellij.ui.jcef.JBCefBrowser;

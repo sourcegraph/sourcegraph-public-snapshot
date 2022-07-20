@@ -4,7 +4,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent;
 import org.jetbrains.annotations.NotNull;
 
 
-public class SearchRepository extends SearchActionBase {
+public class SearchRepositoryAction extends SearchActionBase {
     @Override
     public void actionPerformed(@NotNull AnActionEvent event) {
         super.actionPerformedMode(event, Scope.REPOSITORY);
