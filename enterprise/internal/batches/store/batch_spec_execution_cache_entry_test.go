@@ -91,8 +91,8 @@ func testStoreBatchSpecExecutionCacheEntries(t *testing.T, ctx context.Context, 
 		}
 
 		reloaded, err := s.ListBatchSpecExecutionCacheEntries(ctx, ListBatchSpecExecutionCacheEntriesOpts{
-			UserID: keyConflibt.UserID,
-			Keys:   []string{keyConflibt.Key},
+			UserID: keyConflict.UserID,
+			Keys:   []string{keyConflict.Key},
 		})
 		if err != nil {
 			t.Fatal(err)
