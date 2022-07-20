@@ -197,7 +197,7 @@ export const JoinOpenBetaPage: React.FunctionComponent<React.PropsWithChildren<P
                 </H3>
                 <div>
                     Sourcegraph Cloud for small teams is in open beta. During this time, it’s free to use for 30 days.{' '}
-                    <Link to="https://docs.sourcegraph.com/cloud/organizations/beta-operations">
+                    <Link to="https://docs.sourcegraph.com/">
                         Learn more about beta limitations
                     </Link>
                     .
