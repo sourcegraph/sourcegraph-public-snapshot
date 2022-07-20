@@ -32,6 +32,7 @@ import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { TreeNode } from './Tree'
+import { TreeContext } from './TreeContext'
 import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
 const errorWidth = (width?: string): { width: string } => ({
@@ -207,18 +208,23 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                                         </div>
                                     ) : (
                                         treeOrError && (
-                                            <ChildTreeLayer
-                                                {...this.props}
-                                                parent={this.node}
-                                                depth={-1 as number}
-                                                entries={treeOrError.entries}
-                                                treeUrl={treeOrError.url}
-                                                singleChildTreeEntry={singleChildTreeEntry}
-                                                childrenEntries={singleChildTreeEntry.children}
-                                                onHover={this.fetchChildContents}
-                                                setChildNodes={this.setChildNode}
-                                                fileDecorationsByPath={this.state.fileDecorationsByPath}
-                                            />
+                                            <TreeContext.Provider
+                                                value={{
+                                                    rootTreeUrl: treeOrError.url,
+                                                }}
+                                            >
+                                                <ChildTreeLayer
+                                                    {...this.props}
+                                                    parent={this.node}
+                                                    depth={-1 as number}
+                                                    entries={treeOrError.entries}
+                                                    singleChildTreeEntry={singleChildTreeEntry}
+                                                    childrenEntries={singleChildTreeEntry.children}
+                                                    onHover={this.fetchChildContents}
+                                                    setChildNodes={this.setChildNode}
+                                                    fileDecorationsByPath={this.state.fileDecorationsByPath}
+                                                />
+                                            </TreeContext.Provider>
                                         )
                                     )}
                                 </TreeLayerCell>

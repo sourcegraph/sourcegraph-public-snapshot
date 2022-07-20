@@ -43,7 +43,6 @@ export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
     entryInfo: TreeEntryInfo
     fileDecorations?: FileDecoration[]
     onHover: (filePath: string) => void
-    treeUrl: string
 }
 
 const LOADING = 'loading' as const

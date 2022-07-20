@@ -92,7 +92,7 @@ export function hasSingleChild(tree: TreeEntryInfo[]): boolean {
     return tree[0]?.isSingleChild
 }
 
-interface ComparisonTreeRootProps extends Omit<TreeRootProps, 'sizeKey'> { }
+interface ComparisonTreeRootProps extends Omit<TreeRootProps, 'sizeKey'> {}
 
 export function compareTreeProps(a: ComparisonTreeRootProps, b: ComparisonTreeRootProps): boolean {
     return (
