@@ -2,7 +2,7 @@
 #
 # Variables:
 #
-# - $JAEGER_AGENT_HOST
+# - $JAEGER_HOST
 
 receivers:
   otlp:
@@ -12,7 +12,7 @@ receivers:
 exporters:
   jaeger:
     # Default Jaeger GRPC server
-    endpoint: "$JAEGER_AGENT_HOST:14250"
+    endpoint: "$JAEGER_HOST:14250"
     tls:
       insecure: true
 
