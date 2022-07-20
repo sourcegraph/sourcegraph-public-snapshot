@@ -273,7 +273,7 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 			// given the frontend enough time to initialize (in case other services start up before
 			// the frontend), to reduce log spam.
 			if time.Since(start) > opts.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
-				opts.logger.Error("received error during background config update", log.Error(err))
+				logger.Error("received error during background config update", log.Error(err))
 			}
 		} else {
 			// We successfully fetched the config, we reset the timer to give
