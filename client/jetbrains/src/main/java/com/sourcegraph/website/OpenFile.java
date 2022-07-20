@@ -1,5 +1,6 @@
 package com.sourcegraph.website;
 
+import com.intellij.openapi.project.Project;
 import com.sourcegraph.common.BrowserErrorNotification;
 import org.jetbrains.annotations.NotNull;
 
@@ -9,13 +10,13 @@ import java.net.URI;
 
 public class OpenFile extends FileActionBase {
     @Override
-    protected void handleFileUri(@NotNull String url) {
+    protected void handleFileUri(@NotNull Project project, @NotNull String url) {
         URI uri = URI.create(url);
 
         try {
             Desktop.getDesktop().browse(uri);
         } catch (IOException | UnsupportedOperationException e) {
-            BrowserErrorNotification.show(uri);
+            BrowserErrorNotification.show(project, uri);
         }
     }
 }

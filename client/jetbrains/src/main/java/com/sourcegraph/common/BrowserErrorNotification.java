@@ -7,6 +7,7 @@ import com.intellij.openapi.actionSystem.AnAction;
 import com.intellij.openapi.actionSystem.AnActionEvent;
 import com.intellij.openapi.ide.CopyPasteManager;
 import com.intellij.openapi.project.DumbAwareAction;
+import com.intellij.openapi.project.Project;
 import com.sourcegraph.Icons;
 import org.jetbrains.annotations.NotNull;
 
@@ -14,7 +15,7 @@ import java.awt.datatransfer.StringSelection;
 import java.net.URI;
 
 public class BrowserErrorNotification {
-    public static void show(URI uri) {
+    public static void show(Project project, URI uri) {
         Notification notification = new Notification("Sourcegraph errors", "Sourcegraph",
             "Opening an external browser is not supported. You can still copy the URL to your clipboard and open it manually.", NotificationType.WARNING);
         AnAction copyUrlAction = new DumbAwareAction("Copy URL") {
@@ -34,5 +35,6 @@ public class BrowserErrorNotification {
         notification.addAction(copyUrlAction);
         notification.addAction(dismissAction);
         Notifications.Bus.notify(notification);
+        notification.notify(project);
     }
 }

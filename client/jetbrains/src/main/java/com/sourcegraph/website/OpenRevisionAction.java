@@ -88,7 +88,7 @@ public class OpenRevisionAction extends DumbAwareAction {
         try {
             Desktop.getDesktop().browse(uri);
         } catch (IOException | UnsupportedOperationException e) {
-            BrowserErrorNotification.show(uri);
+            BrowserErrorNotification.show(project, uri);
         }
     }
 

@@ -93,7 +93,7 @@ public class NotificationActivity implements StartupActivity.DumbAware {
                 try {
                     Desktop.getDesktop().browse(uri);
                 } catch (IOException | UnsupportedOperationException e) {
-                    BrowserErrorNotification.show(uri);
+                    BrowserErrorNotification.show(project, uri);
                 }
             }
         };
