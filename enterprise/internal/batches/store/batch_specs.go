@@ -587,8 +587,8 @@ SELECT
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'completed') AS completed,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = FALSE) AS processing,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'queued') AS queued,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = FALSE) AS failed,
-	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed' AND jobs.cancel = TRUE) AS canceled,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'failed') AS failed,
+	COUNT(jobs.id) FILTER (WHERE jobs.state = 'canceled') AS canceled,
 	COUNT(jobs.id) FILTER (WHERE jobs.state = 'processing' AND jobs.cancel = TRUE) AS canceling
 FROM batch_specs
 LEFT JOIN batch_spec_resolution_jobs res_job ON res_job.batch_spec_id = batch_specs.id

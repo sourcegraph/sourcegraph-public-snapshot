@@ -31,7 +31,7 @@ import { requestGraphQL } from '../backend/graphql'
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
 import { TreeNode } from './Tree'
-import { hasSingleChild, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
+import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
 const maxEntries = 2500
 
@@ -89,15 +89,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.props.setChildNodes(this.node, this.node.index)
 
         const treeOrErrors = this.componentUpdates.pipe(
-            distinctUntilChanged(
-                (a, b) =>
-                    a.repoName === b.repoName &&
-                    a.revision === b.revision &&
-                    a.commitID === b.commitID &&
-                    a.parentPath === b.parentPath &&
-                    a.isExpanded === b.isExpanded &&
-                    a.location === b.location
-            ),
+            distinctUntilChanged(compareTreeProps),
             filter(props => props.isExpanded),
             switchMap(props => {
                 const treeFetch = fetchTreeEntries({
@@ -177,7 +169,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
         this.subscriptions.unsubscribe()
     }
 
-    public render(): JSX.Element | null {
+    public render(): JSX.Element {
         const { treeOrError } = this.state
 
         let singleChildTreeEntry = {} as SingleChildGitTree

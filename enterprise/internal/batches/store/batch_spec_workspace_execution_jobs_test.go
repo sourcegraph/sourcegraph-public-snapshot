@@ -296,7 +296,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatal(err)
 				}
 				record := records[0]
-				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateFailed; have != want {
+				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateCanceled; have != want {
 					t.Errorf("invalid state: have=%q want=%q", have, want)
 				}
 				if have, want := record.Cancel, true; have != want {
@@ -375,7 +375,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatal(err)
 				}
 
-				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
+				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID, UserID: spec.UserID}
 				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
@@ -393,7 +393,7 @@ func testStoreBatchSpecWorkspaceExecutionJobs(t *testing.T, ctx context.Context,
 					t.Fatal(err)
 				}
 				record := records[0]
-				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateFailed; have != want {
+				if have, want := record.State, btypes.BatchSpecWorkspaceExecutionJobStateCanceled; have != want {
 					t.Errorf("invalid state: have=%q want=%q", have, want)
 				}
 				if have, want := record.Cancel, true; have != want {

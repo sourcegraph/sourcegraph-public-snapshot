@@ -157,12 +157,32 @@ func TestApplySubRepoFiltering(t *testing.T) {
 			},
 		},
 		{
-			name: "should filter commit matches",
+			name: "should filter commit matches where the user doesn't have access to any file in the ModifiedFiles",
 			args: args{
 				ctxActor: actor.FromUser(userWithSubRepoPerms),
 				matches: []result.Match{
 					&result.CommitMatch{
 						ModifiedFiles: []string{unauthorizedFileName},
+					},
+					&result.CommitMatch{
+						ModifiedFiles: []string{unauthorizedFileName, "another-file.txt"},
+					},
+				},
+			},
+			wantMatches: []result.Match{
+				&result.CommitMatch{
+					ModifiedFiles: []string{unauthorizedFileName, "another-file.txt"},
+				},
+			},
+		},
+		{
+			name: "should filter commit matches where the diff is empty",
+			args: args{
+				ctxActor: actor.FromUser(userWithSubRepoPerms),
+				matches: []result.Match{
+					&result.CommitMatch{
+						ModifiedFiles: []string{unauthorizedFileName, "another-file.txt"},
+						DiffPreview:   &result.MatchedString{Content: ""},
 					},
 				},
 			},

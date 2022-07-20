@@ -27,7 +27,8 @@ func TestBitbucketProjectPermissionsEnqueue(t *testing.T) {
 	ctx := context.Background()
 
 	check := func(jobID int, projectKey string, permissions []types.UserPermission, unrestricted bool) {
-		rows, err := db.QueryContext(ctx, `SELECT * FROM explicit_permissions_bitbucket_projects_jobs WHERE id = $1`, jobID)
+		q := sqlf.Sprintf("SELECT %s FROM explicit_permissions_bitbucket_projects_jobs WHERE id = %s", sqlf.Join(BitbucketProjectPermissionsColumnExpressions, ","), jobID)
+		rows, err := db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 		require.NoError(t, err)
 
 		job, ok, err := ScanFirstBitbucketProjectPermissionsJob(rows, nil)
@@ -152,7 +153,8 @@ func TestScanFirstBitbucketProjectPermissionsJob(t *testing.T) {
 	`)
 	require.NoError(t, err)
 
-	rows, err := db.QueryContext(ctx, `SELECT * FROM explicit_permissions_bitbucket_projects_jobs WHERE id = 1`)
+	q := sqlf.Sprintf("SELECT %s FROM explicit_permissions_bitbucket_projects_jobs WHERE id = 1", sqlf.Join(BitbucketProjectPermissionsColumnExpressions, ","))
+	rows, err := db.QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
 	require.NoError(t, err)
 
 	record, ok, err := ScanFirstBitbucketProjectPermissionsJob(rows, nil)

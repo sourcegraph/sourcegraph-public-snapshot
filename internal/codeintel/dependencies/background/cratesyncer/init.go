@@ -12,6 +12,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -32,7 +33,7 @@ type syncer struct {
 	db                    database.DB
 	dbStore               *dbstore.Store
 	externalServicesStore database.ExternalServiceStore
-	gitClient             *gitserver.ClientImplementor
+	gitClient             gitserver.Client
 	interval              time.Duration
 }
 

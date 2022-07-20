@@ -25,7 +25,7 @@ func UpdateCompose(path string, creds credentials.Credentials, pinTag string) er
 			return nil
 		}
 		if !strings.Contains(d.Name(), "docker-compose.yaml") {
-			return nil
+			std.Out.WriteWarningf("%s is not a docker-compose.yaml file but we will still try to update it anyway", path)
 		}
 
 		std.Out.WriteNoticef("Checking %q", path)

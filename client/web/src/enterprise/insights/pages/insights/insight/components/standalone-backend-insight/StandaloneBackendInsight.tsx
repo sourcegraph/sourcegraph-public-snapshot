@@ -166,7 +166,6 @@ export const StandaloneBackendInsight: React.FunctionComponent<StandaloneBackend
                         onFiltersChange={handleFilterChange}
                         onFilterSave={handleFilterSave}
                         onCreateInsightRequest={() => setStep(DrillDownFiltersStep.ViewCreation)}
-                        seriesCount={insight.seriesCount}
                     />
                 )}
 

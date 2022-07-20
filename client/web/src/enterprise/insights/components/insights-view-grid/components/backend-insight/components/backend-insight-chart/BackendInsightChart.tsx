@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { FC, useMemo } from 'react'
 
 import { ParentSize } from '@visx/responsive'
 import classNames from 'classnames'
@@ -58,6 +58,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
     const hasEnoughXSpace = width >= MINIMAL_HORIZONTAL_LAYOUT_WIDTH
 
     const isHorizontalMode = hasViewManySeries && hasEnoughXSpace
+    const isEmptyDataset = useMemo(() => hasNoData(data), [data])
 
     return (
         <div ref={ref} className={classNames(className, styles.root, { [styles.rootHorizontal]: isHorizontalMode })}>
@@ -71,7 +72,7 @@ export function BackendInsightChart<Datum>(props: BackendInsightChartProps<Datum
                         {parent => (
                             <>
                                 <BackendAlertOverlay
-                                    hasNoData={hasData(data)}
+                                    hasNoData={isEmptyDataset}
                                     isFetchingHistoricalData={isFetchingHistoricalData}
                                     className={styles.alertOverlay}
                                 />
@@ -116,12 +117,16 @@ const isManyKeysInsight = (data: InsightContent<any>): boolean => {
     return data.content.data.length > MINIMAL_SERIES_FOR_ASIDE_LEGEND
 }
 
-const hasData = (data: InsightContent<any>): boolean => {
+const hasNoData = (data: InsightContent<any>): boolean => {
     if (data.type === InsightContentType.Series) {
         return data.content.series.every(series => series.data.length === 0)
     }
 
-    return data.content.data.length === 0
+    // If all datum have zero matches render no data layout. We need to
+    // handle it explicitly on the frontend since backend returns manually
+    // defined series with empty points in case of no matches for generated
+    // series.
+    return data.content.data.every(datum => datum.value === 0)
 }
 
 interface SeriesLegendsProps {

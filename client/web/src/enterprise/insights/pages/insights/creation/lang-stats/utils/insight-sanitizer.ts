@@ -12,5 +12,4 @@ export const getSanitizedLangStatsInsight = (values: LangStatsCreationFormFields
     otherThreshold: values.threshold / 100,
     seriesDisplayOptions: {},
     dashboards: [],
-    seriesCount: 0,
 })
