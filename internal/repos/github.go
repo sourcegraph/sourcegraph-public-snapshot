@@ -294,7 +294,14 @@ func newGithubSource(
 		searchClient:     searchClient,
 		originalHostname: originalHostname,
 		useGitHubApp:     useGitHubApp,
-		logger:           logger,
+		logger: logger.With(
+			log.Object("GitHubSource",
+				log.Bool("excludeForks", excludeForks),
+				log.Bool("githubDotCom", githubDotCom),
+				log.String("originalHostname", originalHostname),
+				log.Bool("useGitHubApp", useGitHubApp),
+			),
+		),
 	}, nil
 }
 
