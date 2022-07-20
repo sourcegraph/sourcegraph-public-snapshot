@@ -17,6 +17,7 @@ import { Key } from 'ts-key-enum'
 import { ContributableMenu, Contributions, Evaluated } from '@sourcegraph/client-api'
 import { memoizeObservable } from '@sourcegraph/common'
 import { Button, ButtonProps, LoadingSpinner, Icon, Label, Input } from '@sourcegraph/wildcard'
+import { useKeyboardShortcut } from '../keyboardShortcuts/useKeyboardShortcut'
 
 import { ActionItem, ActionItemAction } from '../actions/ActionItem'
 import { wrapRemoteObservable } from '../api/client/api/common'
@@ -25,7 +26,6 @@ import { haveInitialExtensionsLoaded } from '../api/features'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
-import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -364,9 +364,7 @@ export interface CommandListPopoverButtonProps
     extends CommandListProps,
         CommandListPopoverButtonClassProps,
         CommandListClassProps,
-        Pick<ButtonProps, 'variant'> {
-    keyboardShortcutForShow?: KeyboardShortcut
-}
+        Pick<ButtonProps, 'variant'> {}
 
 export const CommandListPopoverButton: React.FunctionComponent<
     React.PropsWithChildren<CommandListPopoverButtonProps>
@@ -377,10 +375,10 @@ export const CommandListPopoverButton: React.FunctionComponent<
     showCaret = true,
     popoverClassName,
     popoverInnerClassName,
-    keyboardShortcutForShow,
     variant,
     ...props
 }) => {
+    const showCommandPaletteShortcut = useKeyboardShortcut('commandPalette')
     const [isOpen, setIsOpen] = useState(false)
     // Capture active element on open in order to restore focus on close.
     const originallyFocusedElement = useMemo(() => {
@@ -435,7 +433,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
             >
                 <CommandList {...props} onSelect={close} />
             </TooltipPopoverWrapper>
-            {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
+            {showCommandPaletteShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}
         </Button>

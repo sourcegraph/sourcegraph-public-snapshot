@@ -2,6 +2,7 @@ import { ShortcutProvider } from '@slimsag/react-shortcuts'
 import { fireEvent, waitFor, screen } from '@testing-library/react'
 
 import { renderWithBrandedContext } from '../testing'
+import { KEYBOARD_SHORTCUTS } from './keyboardShortcuts'
 
 import { KeyboardShortcutsHelp } from './KeyboardShortcutsHelp'
 
@@ -9,20 +10,7 @@ describe('KeyboardShortcutsHelp', () => {
     test('is triggered correctly', async () => {
         renderWithBrandedContext(
             <ShortcutProvider>
-                <KeyboardShortcutsHelp
-                    keyboardShortcuts={[
-                        {
-                            id: 'x',
-                            title: 't',
-                            keybindings: [{ ordered: ['x'] }],
-                        },
-                    ]}
-                    keyboardShortcutForShow={{
-                        id: 'x',
-                        title: 't',
-                        keybindings: [{ ordered: ['x'] }],
-                    }}
-                />
+                <KeyboardShortcutsHelp keyboardShortcuts={KEYBOARD_SHORTCUTS} isOpen={true} onDismiss={() => null} />
             </ShortcutProvider>
         )
 
