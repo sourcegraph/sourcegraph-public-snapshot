@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
@@ -42,9 +44,16 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 			return nil, errors.Wrap(err, "streaming.Search")
 		}
 
-		// Other error handling?
-
 		mr := *metadataResult
+		if len(mr.Errors) > 0 {
+			log15.Warn("related insights errors", mr.Errors)
+		}
+		if len(mr.Alerts) > 0 {
+			log15.Warn("related insights alerts", mr.Alerts)
+		}
+		if len(mr.SkippedReasons) > 0 {
+			log15.Warn("related insights skipped", mr.SkippedReasons)
+		}
 		for _, match := range mr.Matches {
 			for _, lineMatch := range match.LineMatches {
 				fmt.Println("Found a match!")
