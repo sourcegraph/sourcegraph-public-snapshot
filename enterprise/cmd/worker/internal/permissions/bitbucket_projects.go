@@ -14,6 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -69,8 +70,10 @@ func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, logger log.
 
 	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(logger)
 
+	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+
 	return []goroutine.BackgroundRoutine{
-		newBitbucketProjectPermissionsWorker(db, ConfigInst, bbProjectMetrics),
+		newBitbucketProjectPermissionsWorker(rootContext, db, ConfigInst, bbProjectMetrics),
 		newBitbucketProjectPermissionsResetter(db, ConfigInst, bbProjectMetrics),
 	}, nil
 }
@@ -189,9 +192,6 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 		return IDs, nil
 	}
 
-	specs := make([]api.ExternalRepoSpec, 0, count)
-	extSvcType := extsvc.KindToType(svc.Kind)
-
 	// unmarshalling external service config
 	var cfg schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &cfg); err != nil {
@@ -204,7 +204,9 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 		return nil, errors.Errorf("error during parsing external service URL", err)
 	}
 
+	extSvcType := extsvc.KindToType(svc.Kind)
 	extSvcID := extsvc.NormalizeBaseURL(parsedURL).String()
+	specs := make([]api.ExternalRepoSpec, 0, count)
 	for _, repo := range repos {
 		// using external ID, external service type and external service ID of the repo to find it
 		spec := api.ExternalRepoSpec{
@@ -342,7 +344,7 @@ func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, rep
 
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
-func newBitbucketProjectPermissionsWorker(db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
+func newBitbucketProjectPermissionsWorker(rootContext context.Context, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
 		NumHandlers:       cfg.WorkerConcurrency,
@@ -351,7 +353,7 @@ func newBitbucketProjectPermissionsWorker(db edb.EnterpriseDB, cfg *config, metr
 		Metrics:           metrics.workerMetrics,
 	}
 
-	return dbworker.NewWorker(context.Background(), createBitbucketProjectPermissionsStore(db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
+	return dbworker.NewWorker(rootContext, createBitbucketProjectPermissionsStore(db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
