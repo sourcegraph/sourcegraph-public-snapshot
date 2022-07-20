@@ -1574,6 +1574,9 @@ func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
 		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
 			conds = append(conds, sqlf.Sprintf("TRUE"))
 		} else {
+			// NOTE: We add anchors to each element of `exact`, store the resulting contents in `exactWithAnchors`,
+			// then pass `exactWithAnchors` into the query condition, because using `~* ANY (%s)` is more efficient
+			// than `IN (%s)`.
 			exactWithAnchors := make([]string, len(exact))
 			for i, v := range exact {
 				exactWithAnchors[i] = "^" + v + "$"
