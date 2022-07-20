@@ -4,8 +4,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Extension, RangeSetBuilder } from '@codemirror/state'
-import { Decoration, EditorView, ViewPlugin } from '@codemirror/view'
+import { Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
+import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
 import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
@@ -14,6 +14,76 @@ import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfNecessary } from './Blob'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './CodeMirrorLineNumbers'
+
+const setRanges = StateEffect.define<[number, number, string][]>()
+const syntaxHighlighting = StateField.define<[number, number, string][]>({
+    create() {
+        return []
+    },
+    update(value, update) {
+        for (const effect of update.effects) {
+            if (effect.is(setRanges)) {
+                return effect.value
+            }
+        }
+        return value
+    },
+    provide: field =>
+        ViewPlugin.fromClass(
+            class {
+                decorationCache: Record<string, Decoration> = {}
+                decorations: DecorationSet = Decoration.none
+
+                constructor(view: EditorView) {
+                    this.decorations = this.computeDecorations(view)
+                }
+
+                update(update: ViewUpdate) {
+                    if (update.docChanged) {
+                        this.decorationCache = {}
+                    }
+
+                    if (
+                        update.viewportChanged ||
+                        update.transactions.some(transaction =>
+                            transaction.effects.some(effect => effect.is(setRanges))
+                        )
+                    ) {
+                        console.log(update)
+                        this.decorations = this.computeDecorations(update.view)
+                    }
+                }
+
+                computeDecorations(view: EditorView): DecorationSet {
+                    const { from, to } = view.viewport
+                    const ranges = view.state.field(field)
+                    const rangeIndex = rangeIndexOf(ranges, from)
+
+                    if (rangeIndex === -1) {
+                        return Decoration.none
+                    }
+                    const builder = new RangeSetBuilder<Decoration>()
+
+                    for (let index = rangeIndex; index < ranges.length && ranges[index][0] <= to; index++) {
+                        const [start, end, spec] = ranges[index]
+                        const cls = spec
+                            .split('.')
+                            .map(cls => `hl-${cls}`)
+                            .sort()
+                            .join(' ')
+                        builder.add(
+                            start,
+                            end,
+                            this.decorationCache[cls] || (this.decorationCache[cls] = Decoration.mark({ class: cls }))
+                        )
+                    }
+
+                    return builder.finish()
+                }
+            },
+            { decorations: plugin => plugin.decorations }
+        ),
+})
 
 const staticExtensions: Extension = [
     EditorView.editable.of(false),
@@ -28,56 +98,11 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-selection-bg)',
         },
     }),
+    syntaxHighlighting,
 ]
 
 export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, wrapCode, isLightTheme }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
-
-    const syntaxHighlighting = useMemo(() => {
-        // When CodeMirror is enabled, blobInfo.html contains a JSON blob
-        // encoding ranges as [start, end, CSS class] (unless there is no syntax
-        // highlighting)
-        if (blobInfo.html.includes('<table>')) {
-            return []
-        }
-        const builder = new RangeSetBuilder<Decoration>()
-        const decorations: Record<string, Decoration> = {}
-
-        for (const [start, end, spec] of parseAndSortRangesJSON(blobInfo.html)) {
-            // Creating a single CSS class string (and thus a single span)
-            // appears to be more performant than creating a separate decoration
-            // for each class
-            // TODO: Consider using a ViewPlugin to only create decorations for
-            // lines that are rendered
-            const cls = spec
-                .split('.')
-                .map(cls => `hl-${cls}`)
-                .sort()
-                .join(' ')
-            builder.add(start, end, decorations[cls] || (decorations[cls] = Decoration.mark({ class: cls })))
-        }
-        // This is implemented as a ViewPlugin because of how CodeMirror gets
-        // updated atm: The value and the syntax decorations are updated in two
-        // separate transactions (value first then syntax highlighting). This
-        // causes CodeMirror to throw an error because a lot of decorations will
-        // be out of range.
-        // We therefore clear the decorations when the document changes.
-        // The base hook needs to be refactored so that multiple parts of the
-        // editor's state can be updated at the same time when the value changes
-        return ViewPlugin.define(
-            () => ({
-                decorations: builder.finish(),
-                update(update) {
-                    if (update.docChanged) {
-                        // False positive?
-                        // eslint-disable-next-line react/no-this-in-sfc
-                        this.decorations = Decoration.none
-                    }
-                },
-            }),
-            { decorations: value => value.decorations }
-        )
-    }, [blobInfo.html])
 
     const settings = useMemo(
         () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
@@ -85,7 +110,6 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
     )
 
     const [settingsCompartment, updateSettingsCompartment] = useCompartment(settings)
-    const [syntaxHighlightingCompartment, updateSyntaxHighlightingCompartment] = useCompartment(syntaxHighlighting)
 
     const history = useHistory()
     const location = useLocation()
@@ -120,15 +144,10 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         )
     }, [])
 
-    const extensions = useMemo(
-        () => [
-            staticExtensions,
-            settingsCompartment,
-            syntaxHighlightingCompartment,
-            selectableLineNumbers({ onSelection }),
-        ],
-        [settingsCompartment, syntaxHighlightingCompartment, onSelection]
-    )
+    const extensions = useMemo(() => [staticExtensions, settingsCompartment, selectableLineNumbers({ onSelection })], [
+        settingsCompartment,
+        onSelection,
+    ])
 
     const editor = useCodeMirror(container, blobInfo.content, extensions)
 
@@ -140,9 +159,9 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
 
     useEffect(() => {
         if (editor) {
-            updateSyntaxHighlightingCompartment(editor, syntaxHighlighting)
+            editor.dispatch({ effects: setRanges.of(parseAndSortRangesJSON(blobInfo.html)) })
         }
-    }, [editor, updateSyntaxHighlightingCompartment, syntaxHighlighting])
+    }, [editor, blobInfo.html])
 
     // Update selected lines when URL changes
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])
@@ -163,5 +182,27 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
 }
 
 function parseAndSortRangesJSON(ranges: string): [number, number, string][] {
-    return (JSON.parse(ranges) as [number, number, string][]).sort(([startA], [startB]) => startA - startB)
+    return (JSON.parse(ranges) as [number, number, string][]).sort(([startA, endA], [startB, endB]) =>
+        startA === startB ? endA - endB : startA - startB
+    )
+}
+
+// Performs a binary search to find the left most range whose end is start or
+// the right most element whose end is < start.
+// It uses the end of the range for comparison because we want all decorations
+// that are applicable at a certain position.
+function rangeIndexOf(ranges: [number, number, string][], start: number): number | -1 {
+    let low = 0
+    let high = ranges.length
+
+    while (low < high) {
+        const middle = Math.floor((low + high) / 2)
+        if (ranges[middle][1] < start) {
+            low = middle + 1
+        } else {
+            high = middle
+        }
+    }
+
+    return ranges[low] === undefined ? -1 : low
 }
