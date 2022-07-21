@@ -14,7 +14,6 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/joho/godotenv"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -851,10 +850,6 @@ var repoName = "ghe.sgdev.org/milton/test"
 
 func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 	ctx := context.Background()
-	err := godotenv.Load("./.env")
-	if err != nil {
-		t.Fatal(err)
-	}
 	token := os.Getenv("ACCESS_TOKEN")
 
 	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
@@ -889,8 +884,8 @@ func TestSyncWebhook_urlBuilderPlain(t *testing.T) {
 
 	testCases := map[string]testCase{
 		"github.com": {
-			repoName:    "github.com/susantoscott/Task-Tracker",
-			expectedUrl: "https://api.github.com/repos/susantoscott/Task-Tracker/hooks",
+			repoName:    "github.com/USCtrojan/awesome-repo",
+			expectedUrl: "https://api.github.com/repos/USCtrojan/awesome-repo/hooks",
 		},
 		"enterprise": {
 			repoName:    "ghe.sgdev.org/milton/test",
@@ -921,9 +916,9 @@ func TestSyncWebhook_urlBuilderWithID(t *testing.T) {
 
 	testCases := map[string]testCase{
 		"github.com": {
-			repoName:    "github.com/susantoscott/Task-Tracker",
+			repoName:    "github.com/USCtrojan/awesome-repo",
 			id:          42,
-			expectedUrl: "https://api.github.com/repos/susantoscott/Task-Tracker/hooks/42",
+			expectedUrl: "https://api.github.com/repos/USCtrojan/awesome-repo/hooks/42",
 		},
 		"enterprise": {
 			repoName:    "ghe.sgdev.org/milton/test",
