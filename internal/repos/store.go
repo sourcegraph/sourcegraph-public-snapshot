@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"sort"
 	"time"
 
@@ -846,11 +845,7 @@ WHERE NOT EXISTS (
 	)
 )
 `, repoID, repoName, timeutil.Now(), kind, repoID)
-	err = s.Exec(ctx, q)
-	if err != nil {
-		fmt.Println("singleWh:", err)
-	}
-	return err
+	return s.Exec(ctx, q)
 }
 
 func scanWebhookBuildJobs(rows *sql.Rows) ([]WebhookBuildJob, error) {

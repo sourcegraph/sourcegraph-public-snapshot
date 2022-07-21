@@ -77,6 +77,7 @@ func TestIntegration_WebhookBuilder(t *testing.T) {
 		test func(repos.Store) func(*testing.T)
 	}{
 		{"EnqueueSingleWebhookBuildJob", testStoreEnqueueSingleWebhookBuildJob},
+		{"WebhookBuilder/WebhookBuilderPlumbing", testWebhookBuilderPlumbing},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
