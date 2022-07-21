@@ -251,8 +251,6 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             disabled={loading}
                             autoComplete="new-password"
                             minLength={
-                                passwordPolicyReference?.enabled !== undefined &&
-                                passwordPolicyReference.enabled &&
                                 minPasswordLen
                             }
                             placeholder=" "
