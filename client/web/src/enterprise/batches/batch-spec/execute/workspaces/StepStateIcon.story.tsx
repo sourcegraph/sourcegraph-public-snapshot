@@ -24,6 +24,8 @@ const options = {
 }
 
 export const StepStateIconStory: Story = () => (
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
     <WebStory>{props => <StepStateIcon step={select('State', options, options.Success)} {...props} />}</WebStory>
 )
 
