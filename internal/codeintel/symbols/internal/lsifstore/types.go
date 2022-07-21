@@ -14,3 +14,8 @@ type QualifiedMonikerLocations struct {
 	DumpID int
 	precise.MonikerLocations
 }
+
+type QualifiedDocumentData struct {
+	UploadID int
+	precise.KeyedDocumentData
+}

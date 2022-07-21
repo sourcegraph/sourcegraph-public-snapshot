@@ -5,13 +5,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
-
-	"github.com/sourcegraph/sourcegraph/internal/actor"
-	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -19,75 +16,53 @@ const slowDiagnosticsRequestThreshold = time.Second
 
 // Diagnostics returns the diagnostics for documents with the given path prefix.
 func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDiagnostics []AdjustedDiagnostic, _ int, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.diagnostics, slowDiagnosticsRequestThreshold, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", r.repositoryID),
-			log.String("commit", r.commit),
-			log.String("path", r.path),
-			log.Int("numUploads", len(r.inMemoryUploads)),
-			log.String("uploads", uploadIDsToString(r.inMemoryUploads)),
-			log.Int("limit", limit),
-		},
-	})
-	defer endObservation()
-
-	adjustedUploads, err := r.adjustUploadPaths(ctx)
+	args := shared.RequestArgs{
+		RepositoryID: r.repositoryID,
+		Commit:       r.commit,
+		Path:         r.path,
+		Limit:        limit,
+	}
+	diag, cursor, err := r.symbolsResolver.Diagnostics(ctx, args)
 	if err != nil {
 		return nil, 0, err
 	}
 
-	totalCount := 0
+	adjustedDiag := sharedDiagnosticAtUploadToAdjustedDiagnostic(diag)
 
-	checkerEnabled := authz.SubRepoEnabled(r.checker)
-	var a *actor.Actor
-	if checkerEnabled {
-		a = actor.FromContext(ctx)
-	}
-	for i := range adjustedUploads {
-		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
+	return adjustedDiag, cursor, nil
+}
 
-		diagnostics, count, err := r.lsifStore.Diagnostics(
-			ctx,
-			adjustedUploads[i].Upload.ID,
-			adjustedUploads[i].AdjustedPathInBundle,
-			limit-len(adjustedDiagnostics),
-			0,
-		)
-		if err != nil {
-			return nil, 0, errors.Wrap(err, "lsifStore.Diagnostics")
+func sharedDiagnosticAtUploadToAdjustedDiagnostic(shared []shared.DiagnosticAtUpload) []AdjustedDiagnostic {
+	adjustedDiagnostics := make([]AdjustedDiagnostic, 0, len(shared))
+	for _, diag := range shared {
+		diagnosticData := precise.DiagnosticData{
+			Severity:       diag.Severity,
+			Code:           diag.Code,
+			Message:        diag.Message,
+			Source:         diag.Source,
+			StartLine:      diag.StartLine,
+			StartCharacter: diag.StartCharacter,
+			EndLine:        diag.EndLine,
+			EndCharacter:   diag.EndCharacter,
+		}
+		lsifDiag := lsifstore.Diagnostic{
+			DiagnosticData: diagnosticData,
+			DumpID:         diag.DumpID,
+			Path:           diag.Path,
 		}
 
-		for _, diagnostic := range diagnostics {
-			adjustedDiagnostic, err := r.adjustDiagnostic(ctx, adjustedUploads[i], diagnostic)
-			if err != nil {
-				return nil, 0, err
-			}
-
-			if !checkerEnabled {
-				adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)
-				continue
-			}
-
-			// sub-repo checker is enabled, proceeding with check
-			if include, err := authz.FilterActorPath(ctx, r.checker, a, api.RepoName(adjustedDiagnostic.Dump.RepositoryName), adjustedDiagnostic.Path); err != nil {
-				return nil, 0, err
-			} else if include {
-				adjustedDiagnostics = append(adjustedDiagnostics, adjustedDiagnostic)
-			}
+		adjusted := AdjustedDiagnostic{
+			Diagnostic:     lsifDiag,
+			Dump:           store.Dump(diag.Dump),
+			AdjustedCommit: diag.AdjustedCommit,
+			AdjustedRange: lsifstore.Range{
+				Start: lsifstore.Position(diag.AdjustedRange.Start),
+				End:   lsifstore.Position(diag.AdjustedRange.End),
+			},
 		}
-
-		totalCount += count
+		adjustedDiagnostics = append(adjustedDiagnostics, adjusted)
 	}
-
-	if len(adjustedDiagnostics) > limit {
-		adjustedDiagnostics = adjustedDiagnostics[:limit]
-	}
-	trace.Log(
-		log.Int("totalCount", totalCount),
-		log.Int("numDiagnostics", len(adjustedDiagnostics)),
-	)
-
-	return adjustedDiagnostics, totalCount, nil
+	return adjustedDiagnostics
 }
 
 // adjustUploadPaths adjusts the current target path for each upload visible from the current target
@@ -111,41 +86,4 @@ func (r *queryResolver) adjustUploadPaths(ctx context.Context) ([]adjustedUpload
 	}
 
 	return adjustedUploads, nil
-}
-
-// adjustDiagnostic translates a diagnostic (relative to the indexed commit) into an equivalent diagnostic
-// in the requested commit.
-func (r *queryResolver) adjustDiagnostic(ctx context.Context, adjustedUpload adjustedUpload, diagnostic lsifstore.Diagnostic) (AdjustedDiagnostic, error) {
-	rn := lsifstore.Range{
-		Start: lsifstore.Position{
-			Line:      diagnostic.StartLine,
-			Character: diagnostic.StartCharacter,
-		},
-		End: lsifstore.Position{
-			Line:      diagnostic.EndLine,
-			Character: diagnostic.EndCharacter,
-		},
-	}
-
-	// Adjust path in diagnostic before reading it. This value is used in the adjustRange
-	// call below, and is also reflected in the embedded diagnostic value in the return.
-	diagnostic.Path = adjustedUpload.Upload.Root + diagnostic.Path
-
-	adjustedCommit, adjustedRange, _, err := r.adjustRange(
-		ctx,
-		adjustedUpload.Upload.RepositoryID,
-		adjustedUpload.Upload.Commit,
-		diagnostic.Path,
-		rn,
-	)
-	if err != nil {
-		return AdjustedDiagnostic{}, err
-	}
-
-	return AdjustedDiagnostic{
-		Diagnostic:     diagnostic,
-		Dump:           adjustedUpload.Upload,
-		AdjustedCommit: adjustedCommit,
-		AdjustedRange:  adjustedRange,
-	}, nil
 }

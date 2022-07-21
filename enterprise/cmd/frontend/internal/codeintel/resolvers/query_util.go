@@ -12,6 +12,7 @@ import (
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -293,4 +294,11 @@ func sliceContains(slice []string, str string) bool {
 		}
 	}
 	return false
+}
+
+func sharedRangeTolsifstoreRange(r shared.Range) lsifstore.Range {
+	return lsifstore.Range{
+		Start: lsifstore.Position(r.Start),
+		End:   lsifstore.Position(r.End),
+	}
 }

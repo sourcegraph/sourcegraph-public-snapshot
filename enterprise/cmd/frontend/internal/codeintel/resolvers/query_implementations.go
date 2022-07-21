@@ -30,7 +30,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		return nil, "", err
 	}
 
-	adjustedLoc := adjustedLocationToUploadLocations(impl)
+	adjustedLoc := uploadLocationToAdjustedLocations(impl)
 
 	return adjustedLoc, cursor, nil
 }
@@ -62,7 +62,7 @@ func symbolDumpToStoreDump(symbolDumps []shared.Dump) []store.Dump {
 	return dumps
 }
 
-func adjustedLocationToUploadLocations(location []shared.UploadLocation) []AdjustedLocation {
+func uploadLocationToAdjustedLocations(location []shared.UploadLocation) []AdjustedLocation {
 	uploadLocation := make([]AdjustedLocation, 0, len(location))
 	for _, loc := range location {
 		dump := store.Dump{

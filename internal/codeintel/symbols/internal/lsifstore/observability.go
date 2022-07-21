@@ -8,12 +8,17 @@ import (
 )
 
 type operations struct {
-	getReferences         *observation.Operation
-	getImplementations    *observation.Operation
-	getDefinitions        *observation.Operation
-	getMonikersByPosition *observation.Operation
-	getPackageInformation *observation.Operation
-	getBulkMonikerResults *observation.Operation
+	getReferences          *observation.Operation
+	getImplementations     *observation.Operation
+	getHover               *observation.Operation
+	getDefinitions         *observation.Operation
+	getDiagnostics         *observation.Operation
+	getRanges              *observation.Operation
+	getStencil             *observation.Operation
+	getMonikersByPosition  *observation.Operation
+	getPackageInformation  *observation.Operation
+	getBulkMonikerResults  *observation.Operation
+	getLocationsWithinFile *observation.Operation
 
 	locations *observation.Operation
 }
@@ -44,12 +49,17 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		getReferences:         op("GetReferences"),
-		getImplementations:    op("GetImplementations"),
-		getDefinitions:        op("GetDefinitions"),
-		getMonikersByPosition: op("GetMonikersByPosition"),
-		getPackageInformation: op("GetPackageInformation"),
-		getBulkMonikerResults: op("GetBulkMonikerResults"),
+		getReferences:          op("GetReferences"),
+		getImplementations:     op("GetImplementations"),
+		getHover:               op("GetHover"),
+		getDefinitions:         op("GetDefinitions"),
+		getDiagnostics:         op("GetDiagnostics"),
+		getRanges:              op("GetRanges"),
+		getStencil:             op("GetStencil"),
+		getMonikersByPosition:  op("GetMonikersByPosition"),
+		getPackageInformation:  op("GetPackageInformation"),
+		getBulkMonikerResults:  op("GetBulkMonikerResults"),
+		getLocationsWithinFile: op("GetLocationsWithinFile"),
 
 		locations: subOp("locations"),
 	}

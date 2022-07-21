@@ -13,9 +13,12 @@ import (
 )
 
 type service interface {
+	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
 	GetReferences(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error)
 	GetImplementations(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error)
 	GetDefinitions(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error)
+	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error)
+	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error)
 
 	GetMonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error)
 	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, _ int, err error)
@@ -56,6 +59,14 @@ func (s *Service) Symbol(ctx context.Context, opts SymbolOpts) (symbols []Symbol
 	return nil, errors.Newf("unimplemented: symbols.Symbol")
 }
 
+// GetHover returns the set of locations defining the symbol at the given position.
+func (s *Service) GetHover(ctx context.Context, uploadID int, path string, line int, character int) (_ string, _ shared.Range, _ bool, err error) {
+	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.GetHover(ctx, uploadID, path, line, character)
+}
+
 // GetReferences returns the list of source locations that reference the symbol at the given position.
 func (s *Service) GetReferences(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error) {
 	ctx, _, endObservation := s.operations.getReferences.With(ctx, &err, observation.Args{})
@@ -78,6 +89,28 @@ func (s *Service) GetDefinitions(ctx context.Context, uploadID int, path string,
 	defer endObservation(1, observation.Args{})
 
 	return s.lsifstore.GetDefinitionLocations(ctx, uploadID, path, line, character, limit, offset)
+}
+
+func (s *Service) GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error) {
+	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.GetDiagnostics(ctx, bundleID, prefix, limit, offset)
+}
+
+func (s *Service) GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error) {
+	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.GetRanges(ctx, bundleID, path, startLine, endLine)
+}
+
+// GetStencil returns the set of locations defining the symbol at the given position.
+func (s *Service) GetStencil(ctx context.Context, uploadID int, path string) (_ []shared.Range, err error) {
+	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	return s.lsifstore.GetStencil(ctx, uploadID, path)
 }
 
 func (s *Service) GetMonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error) {

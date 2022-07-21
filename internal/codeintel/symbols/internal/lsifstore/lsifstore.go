@@ -11,6 +11,9 @@ import (
 )
 
 type LsifStore interface {
+	// Hover
+	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
+
 	// References
 	GetReferenceLocations(ctx context.Context, uploadID int, path string, line, character, limit, offset int) (_ []shared.Location, _ int, err error)
 
@@ -26,6 +29,15 @@ type LsifStore interface {
 
 	// Packages
 	GetPackageInformation(ctx context.Context, uploadID int, path, packageInformationID string) (_ precise.PackageInformationData, _ bool, err error)
+
+	// Diagnostics
+	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error)
+
+	// Stencil
+	GetStencil(ctx context.Context, bundleID int, path string) (_ []shared.Range, err error)
+
+	// Ranges
+	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error)
 }
 
 type store struct {

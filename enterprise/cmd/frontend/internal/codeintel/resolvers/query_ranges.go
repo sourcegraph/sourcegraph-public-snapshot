@@ -4,11 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/opentracing/opentracing-go/log"
-
+	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 )
 
 const slowRangesRequestThreshold = time.Second
@@ -17,84 +15,80 @@ const slowRangesRequestThreshold = time.Second
 // results are partial and do not include references outside the current file, or any location that
 // requires cross-linking of bundles (cross-repo or cross-root).
 func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (adjustedRanges []AdjustedCodeIntelligenceRange, err error) {
-	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.ranges, slowRangesRequestThreshold, observation.Args{
-		LogFields: []log.Field{
-			log.Int("repositoryID", r.repositoryID),
-			log.String("commit", r.commit),
-			log.String("path", r.path),
-			log.Int("numUploads", len(r.inMemoryUploads)),
-			log.String("uploads", uploadIDsToString(r.inMemoryUploads)),
-			log.Int("startLine", startLine),
-			log.Int("endLine", endLine),
-		},
-	})
-	defer endObservation()
-
-	adjustedUploads, err := r.adjustUploadPaths(ctx)
+	args := shared.RequestArgs{
+		RepositoryID: r.repositoryID,
+		Commit:       r.commit,
+		Path:         r.path,
+	}
+	rngs, err := r.symbolsResolver.Ranges(ctx, args, startLine, endLine)
 	if err != nil {
 		return nil, err
 	}
 
-	for i := range adjustedUploads {
-		trace.Log(log.Int("uploadID", adjustedUploads[i].Upload.ID))
-
-		ranges, err := r.lsifStore.Ranges(
-			ctx,
-			adjustedUploads[i].Upload.ID,
-			adjustedUploads[i].AdjustedPathInBundle,
-			startLine, // TODO - adjust these as well
-			endLine,   // TODO - adjust these as well
-		)
-		if err != nil {
-			return nil, errors.Wrap(err, "lsifStore.Ranges")
-		}
-
-		for _, rn := range ranges {
-			adjustedRange, ok, err := r.adjustCodeIntelligenceRange(ctx, adjustedUploads[i], rn)
-			if err != nil {
-				return nil, err
-			}
-			if !ok {
-				continue
-			}
-
-			adjustedRanges = append(adjustedRanges, adjustedRange)
-		}
-	}
-	trace.Log(log.Int("numRanges", len(adjustedRanges)))
+	adjustedRanges = sharedRangeToAdjustedRange(rngs)
 
 	return adjustedRanges, nil
 }
 
-// adjustCodeIntelligenceRange translates a range summary (relative to the indexed commit) into an
-// equivalent range summary in the requested commit. If the translation fails, a false-valued flag
-// is returned.
-func (r *queryResolver) adjustCodeIntelligenceRange(ctx context.Context, upload adjustedUpload, rn lsifstore.CodeIntelligenceRange) (AdjustedCodeIntelligenceRange, bool, error) {
-	_, adjustedRange, ok, err := r.adjustRange(ctx, upload.Upload.RepositoryID, upload.Upload.Commit, upload.AdjustedPath, rn.Range)
-	if err != nil || !ok {
-		return AdjustedCodeIntelligenceRange{}, false, err
+func sharedRangeToAdjustedRange(rng []shared.AdjustedCodeIntelligenceRange) []AdjustedCodeIntelligenceRange {
+	adjustedRange := make([]AdjustedCodeIntelligenceRange, 0, len(rng))
+	for _, r := range rng {
+
+		definitions := make([]AdjustedLocation, 0, len(r.Definitions))
+		for _, d := range r.Definitions {
+			def := AdjustedLocation{
+				Dump:           store.Dump(d.Dump),
+				Path:           d.Path,
+				AdjustedCommit: d.TargetCommit,
+				AdjustedRange: lsifstore.Range{
+					Start: lsifstore.Position(d.TargetRange.Start),
+					End:   lsifstore.Position(d.TargetRange.End),
+				},
+			}
+			definitions = append(definitions, def)
+		}
+
+		references := make([]AdjustedLocation, 0, len(r.References))
+		for _, d := range r.References {
+			ref := AdjustedLocation{
+				Dump:           store.Dump(d.Dump),
+				Path:           d.Path,
+				AdjustedCommit: d.TargetCommit,
+				AdjustedRange: lsifstore.Range{
+					Start: lsifstore.Position(d.TargetRange.Start),
+					End:   lsifstore.Position(d.TargetRange.End),
+				},
+			}
+			references = append(references, ref)
+		}
+
+		implementations := make([]AdjustedLocation, 0, len(r.Implementations))
+		for _, d := range r.Implementations {
+			impl := AdjustedLocation{
+				Dump:           store.Dump(d.Dump),
+				Path:           d.Path,
+				AdjustedCommit: d.TargetCommit,
+				AdjustedRange: lsifstore.Range{
+					Start: lsifstore.Position(d.TargetRange.Start),
+					End:   lsifstore.Position(d.TargetRange.End),
+				},
+			}
+			implementations = append(implementations, impl)
+		}
+
+		adj := AdjustedCodeIntelligenceRange{
+			Range: lsifstore.Range{
+				Start: lsifstore.Position(r.Range.Start),
+				End:   lsifstore.Position(r.Range.End),
+			},
+			Definitions:     definitions,
+			References:      references,
+			Implementations: implementations,
+			HoverText:       r.HoverText,
+		}
+
+		adjustedRange = append(adjustedRange, adj)
 	}
 
-	adjustedDefinitions, err := r.adjustLocations(ctx, rn.Definitions)
-	if err != nil {
-		return AdjustedCodeIntelligenceRange{}, false, err
-	}
-
-	adjustedReferences, err := r.adjustLocations(ctx, rn.References)
-	if err != nil {
-		return AdjustedCodeIntelligenceRange{}, false, err
-	}
-
-	adjustedImplementations, err := r.adjustLocations(ctx, rn.Implementations)
-	if err != nil {
-		return AdjustedCodeIntelligenceRange{}, false, err
-	}
-
-	return AdjustedCodeIntelligenceRange{
-		Range:           adjustedRange,
-		Definitions:     adjustedDefinitions,
-		References:      adjustedReferences,
-		Implementations: adjustedImplementations,
-		HoverText:       rn.HoverText,
-	}, true, nil
+	return adjustedRange
 }

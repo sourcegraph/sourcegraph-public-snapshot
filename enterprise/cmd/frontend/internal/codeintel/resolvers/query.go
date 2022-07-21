@@ -45,11 +45,11 @@ type AdjustedCodeIntelligenceRange struct {
 // in this package's graphql subpackage, which is exposed directly by the API.
 type QueryResolver interface {
 	LSIFUploads(ctx context.Context) ([]store.Upload, error)
-	Stencil(ctx context.Context) ([]lsifstore.Range, error)
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
-	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
-	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 
+	Stencil(ctx context.Context) ([]lsifstore.Range, error)
+	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
+	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
 	Definitions(ctx context.Context, line, character int) ([]AdjustedLocation, error)
 	References(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)
 	Implementations(ctx context.Context, line, character, limit int, rawCursor string) ([]AdjustedLocation, string, error)

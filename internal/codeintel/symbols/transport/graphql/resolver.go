@@ -19,8 +19,13 @@ type Resolver interface {
 	SetLocalCommitCache(client shared.GitserverClient)
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
 
+	Hover(ctx context.Context, args shared.RequestArgs) (_ string, _ shared.Range, _ bool, err error)
+	Definitions(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, err error)
 	References(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error)
 	Implementations(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error)
+	Diagnostics(ctx context.Context, args shared.RequestArgs) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error)
+	Stencil(ctx context.Context, args shared.RequestArgs) (adjustedRanges []shared.Range, err error)
+	Ranges(ctx context.Context, args shared.RequestArgs, startLine, endLine int) (adjustedRanges []shared.AdjustedCodeIntelligenceRange, err error)
 
 	// temporarily needed until we move all the methods to the new resolver
 	GetUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]shared.Dump, error)

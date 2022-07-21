@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type Symbol struct {
@@ -46,6 +47,23 @@ type UploadLocation struct {
 	Path         string
 	TargetCommit string
 	TargetRange  Range
+}
+
+// DiagnosticAtUpload is a diagnostic from within a particular upload. The adjusted commit denotes
+// the target commit for which the location was adjusted (the originally requested commit).
+type DiagnosticAtUpload struct {
+	Diagnostic
+	Dump           Dump
+	AdjustedCommit string
+	AdjustedRange  Range
+}
+
+// Diagnostic describes diagnostic information attached to a location within a
+// particular dump.
+type Diagnostic struct {
+	DumpID int
+	Path   string
+	precise.DiagnosticData
 }
 
 // Dump is a subset of the lsif_uploads table (queried via the lsif_dumps_with_repository_name view)
@@ -91,4 +109,24 @@ func scanDump(s dbutil.Scanner) (dump Dump, err error) {
 		&dbutil.NullString{S: &dump.IndexerVersion},
 		&dump.AssociatedIndexID,
 	)
+}
+
+// AdjustedCodeIntelligenceRange stores definition, reference, and hover information for all ranges
+// within a block of lines. The definition and reference locations have been adjusted to fit the
+// target (originally requested) commit.
+type AdjustedCodeIntelligenceRange struct {
+	Range           Range
+	Definitions     []UploadLocation
+	References      []UploadLocation
+	Implementations []UploadLocation
+	HoverText       string
+}
+
+// CodeIntelligenceRange pairs a range with its definitions, references, implementations, and hover text.
+type CodeIntelligenceRange struct {
+	Range           Range
+	Definitions     []Location
+	References      []Location
+	Implementations []Location
+	HoverText       string
 }

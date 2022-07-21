@@ -14,8 +14,12 @@ import (
 
 type operations struct {
 	symbol      *observation.Operation
+	hover       *observation.Operation
 	definitions *observation.Operation
 	references  *observation.Operation
+	diagnostics *observation.Operation
+	stencil     *observation.Operation
+	ranges      *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -39,6 +43,8 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		definitions: op("Definitions"),
 		references:  op("References"),
+		diagnostics: op("Diagnostics"),
+		ranges:      op("Ranges"),
 	}
 }
 
