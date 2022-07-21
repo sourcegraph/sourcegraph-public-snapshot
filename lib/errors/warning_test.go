@@ -7,13 +7,17 @@ import (
 )
 
 func TestWarningError(t *testing.T) {
-	err := errors.New("foo")
-	w := NewWarningError(err)
-	if _, ok := w.(Warning); !ok {
-		t.Error(`Expected variable "w" to be of type Warning`)
+	err := New("foo")
+	var ref Warning
+
+	// Ensure that all errors are not a warning type error.
+	if errors.As(err, &ref) {
+		t.Error(`Expected error "err" to NOT be of type warning`)
 	}
 
-	if errors.Is(err, &warning{}) {
-		t.Error(`Expected variable "err" to not be of type Warning`)
+	// Ensure that all warning type errors are indeed a Warning type error.
+	w := NewWarningError(err)
+	if !errors.As(w, &ref) {
+		t.Error(`Expected error "w" to be of type warning`)
 	}
 }
