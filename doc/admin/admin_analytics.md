@@ -26,7 +26,7 @@ We designed this to be configurable by you because we want to...
  - help admins understand the value that is being seen by their organization today. 
  - be customizable so admins can explore what changes will best increase developer time saved.
 
-These calculators exist on the Search, Code Intel, Batch Changes, and Notebooks analytics pages. Each calculator looks different as they include metrics specifically designed for that part of the application. Please note that the calculator configuration does not save and will return to the default if you navigate away from 
+These calculators exist on the Search, Code Intel, Batch Changes, and Notebooks analytics pages. Each calculator looks different as they include metrics specifically designed for that part of the application. Please note that the calculator configuration does not save and will return to the default if you navigate away from the page.
 
 If you have questions about how this works or about how to convey this value to leaders within your organization, please do not hesitate to reach out to your customer engineer. 
 
