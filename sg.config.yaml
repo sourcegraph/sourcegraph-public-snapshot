@@ -327,6 +327,7 @@ commands:
     install: yarn --no-progress
 
   web:
+    description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
     env:
