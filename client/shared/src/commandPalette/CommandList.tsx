@@ -77,8 +77,6 @@ export interface CommandListProps
     onSelect?: () => void
 
     location: H.Location
-
-    keyboardShortcutForShow?: KeyboardShortcut
 }
 
 interface State {
@@ -366,7 +364,9 @@ export interface CommandListPopoverButtonProps
     extends CommandListProps,
         CommandListPopoverButtonClassProps,
         CommandListClassProps,
-        Pick<ButtonProps, 'variant'> {}
+        Pick<ButtonProps, 'variant'> {
+    keyboardShortcutForShow?: KeyboardShortcut
+}
 
 export const CommandListPopoverButton: React.FunctionComponent<
     React.PropsWithChildren<CommandListPopoverButtonProps>
