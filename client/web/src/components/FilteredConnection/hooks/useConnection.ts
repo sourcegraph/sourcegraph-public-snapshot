@@ -58,10 +58,10 @@ export const useConnection = <TResult, TVariables, TData>({
     options,
 }: UseConnectionParameters<TResult, TVariables, TData>): UseConnectionResult<TData> => {
     const searchParameters = useSearchParameters()
-    const isFetchingMore = useRef(false);
+    const isFetchingMore = useRef<boolean>(false);
+    const recentlyFetchedConnection = useRef<Connection<TData> | undefined>(undefined);
 
     const { first = DEFAULT_FIRST, after = DEFAULT_AFTER } = variables
-    console.log('variables', variables,)
     const firstReference = useRef({
         /**
          * The number of results that we will typically want to load in the next request (unless `visible` is used).
@@ -120,7 +120,7 @@ export const useConnection = <TResult, TVariables, TData>({
         return getConnectionFromGraphQLResult(result)
     }
 
-    const connection = data ? getConnection({ data, error }) : undefined
+    const connection = data ? getConnection({ data, error }) : recentlyFetchedConnection.current;
 
     useConnectionUrl({
         enabled: options?.useURL,
@@ -130,11 +130,6 @@ export const useConnection = <TResult, TVariables, TData>({
 
     const fetchMoreData = async (): Promise<void> => {
         const cursor = connection?.pageInfo?.endCursor
-        console.log('FETCH MORE', {
-            ...variables,
-            // Use cursor paging if possible, otherwise fallback to multiplying `first`
-            ...(cursor ? { after: cursor } : { first: firstReference.current.actual * 2 }),
-        })
         await fetchMore({
             variables: {
                 ...variables,
@@ -154,13 +149,17 @@ export const useConnection = <TResult, TVariables, TData>({
                     // don't know the exact response structure
                     // some funk
                     const previousNodes = getConnection({ data: previousResult }).nodes
-                    getConnection({ data: fetchMoreResult }).nodes.unshift(...previousNodes)
+                    const newConnection =  getConnection({ data: fetchMoreResult })
+                    newConnection.nodes.unshift(...previousNodes)
+
+                    // peserves the connection and prevents that spinner for the next refetchAll after
+                    recentlyFetchedConnection.current = newConnection;
                 } else {
                     // With batch-based pagination, we have all the results already in `fetchMoreResult`,
                     // we just need to update `first` to fetch more results next time
                     firstReference.current.actual *= 2
                 }
-                console.log(previousResult, fetchMoreResult, 'FETCH MORE')
+
                 return fetchMoreResult
             },
         })
@@ -168,12 +167,8 @@ export const useConnection = <TResult, TVariables, TData>({
 
     const refetchAll = useCallback(async (): Promise<void> => {
         const first = connection?.nodes.length || firstReference.current.actual
-        console.log('REFETCH', {
-            ...variables,
-            first,
-        })
         if (isFetchingMore.current) {
-            console.log('SKIPPED')
+            // prevents refetchAll from overwriritn active Fetch
             return;
 
         }
@@ -181,6 +176,7 @@ export const useConnection = <TResult, TVariables, TData>({
             ...variables,
             first,
         })
+        recentlyFetchedConnection.current = undefined;
     }, [connection?.nodes.length, refetch, variables])
 
     // We use `refetchAll` to poll for all of the nodes currently loaded in the
@@ -188,17 +184,9 @@ export const useConnection = <TResult, TVariables, TData>({
     // would only poll for the first page of results.
     const { startExecution, stopExecution } = useInterval(refetchAll, options?.pollInterval || -1)
 
-    console.log(connection && loading, 'loading')
-
-    let isLoading = false;
-    if (loading) {
-        isLoading = true
-    } else if (isFetchingMore.current) {
-        isLoading = true;
-    }
     return {
-        connection,
-        loading: isLoading,
+        connection: recentlyFetchedConnection.current ? undefined: connection, // will force a loader downstream if fetchMore is happening
+        loading,
         error,
         fetchMore: () => {
              /* this pauses existing intervals otherwise slow connections may override. fetchMore doesn't work well with polling :(
