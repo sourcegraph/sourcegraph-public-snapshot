@@ -116,7 +116,7 @@ env:
 
 commands:
   server:
-    description: Run a server image
+    description: Run an all-in-one sourcegraph/server image
     cmd: ./dev/run-server-image.sh
     env:
       TAG: insiders
