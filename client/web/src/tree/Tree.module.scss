@@ -108,3 +108,7 @@ $row-vertical-spacing: 0.25rem;
     padding-top: $row-vertical-spacing;
     padding-bottom: $row-vertical-spacing;
 }
+
+.tree-icon {
+    color: var(--icon-color);
+}

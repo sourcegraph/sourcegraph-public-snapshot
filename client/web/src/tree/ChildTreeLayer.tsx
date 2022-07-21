@@ -84,6 +84,7 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                 linkRowClick={() => props.telemetryService.log('FileTreeClick')}
                                                 isActive={false}
                                                 isSelected={false}
+                                                renderDirectoryIcon={true}
                                             />
                                         )}
                                     </TreeRootContext.Consumer>
