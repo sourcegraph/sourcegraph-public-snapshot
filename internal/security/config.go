@@ -17,7 +17,7 @@ type GenericPasswordPolicy struct {
 // passwordPolicyEnabled reports whether the PasswordPolicy feature is enabled (per site config).
 func passwordPolicyEnabled() bool {
 	pc := getPasswordPolicy()
-	return pc.Enabled == true
+	return pc.Enabled
 }
 
 // getPasswordPolicyConfig fetches the possible password policies as defined in the site config
