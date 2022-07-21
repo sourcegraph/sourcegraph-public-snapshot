@@ -5,9 +5,13 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 )
 
 func TestProductLicenses_Create(t *testing.T) {
@@ -16,49 +20,42 @@ func TestProductLicenses_Create(t *testing.T) {
 	ctx := context.Background()
 
 	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	require.NoError(t, err)
 
-	ps0, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")
-	if err != nil {
-		t.Fatal(err)
-	}
+	ps, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")
+	require.NoError(t, err)
 
-	pl0, err := dbLicenses{db: db}.Create(ctx, ps0, "k")
-	if err != nil {
-		t.Fatal(err)
+	now := timeutil.Now()
+	info := license.Info{
+		Tags:      []string{"true-up"},
+		UserCount: 10,
+		ExpiresAt: now,
 	}
+	pl, err := dbLicenses{db: db}.Create(ctx, ps, "k", 1, info)
+	require.NoError(t, err)
 
-	got, err := dbLicenses{db: db}.GetByID(ctx, pl0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := pl0; got.ID != want {
-		t.Errorf("got %v, want %v", got.ID, want)
-	}
-	if want := ps0; got.ProductSubscriptionID != want {
-		t.Errorf("got %v, want %v", got.ProductSubscriptionID, want)
-	}
-	if want := "k"; got.LicenseKey != want {
-		t.Errorf("got %q, want %q", got.LicenseKey, want)
-	}
+	got, err := dbLicenses{db: db}.GetByID(ctx, pl)
+	require.NoError(t, err)
+	assert.Equal(t, pl, got.ID)
+	assert.Equal(t, ps, got.ProductSubscriptionID)
+	assert.Equal(t, "k", got.LicenseKey)
 
-	ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps0})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := 1; len(ts) != want {
-		t.Errorf("got %d product licenses, want %d", len(ts), want)
-	}
+	require.NotNil(t, got.LicenseVersion)
+	assert.Equal(t, 1, *got.LicenseVersion)
+	require.NotNil(t, got.LicenseTags)
+	assert.Equal(t, info.Tags, got.LicenseTags)
+	require.NotNil(t, got.LicenseUserCount)
+	assert.Equal(t, int(info.UserCount), *got.LicenseUserCount)
+	require.NotNil(t, got.LicenseExpiresAt)
+	assert.Equal(t, info.ExpiresAt, *got.LicenseExpiresAt)
+
+	ts, err := dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: ps})
+	require.NoError(t, err)
+	assert.Len(t, ts, 1)
 
 	ts, err = dbLicenses{db: db}.List(ctx, dbLicensesListOptions{ProductSubscriptionID: "69da12d5-323c-4e42-9d44-cc7951639bca" /* invalid */})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := 0; len(ts) != want {
-		t.Errorf("got %d product licenses, want %d", len(ts), want)
-	}
+	require.NoError(t, err)
+	assert.Len(t, ts, 0)
 }
 
 func TestProductLicenses_List(t *testing.T) {
@@ -83,11 +80,11 @@ func TestProductLicenses_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = dbLicenses{db: db}.Create(ctx, ps0, "k")
+	_, err = dbLicenses{db: db}.Create(ctx, ps0, "k", 1, license.Info{})
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = dbLicenses{db: db}.Create(ctx, ps0, "n1")
+	_, err = dbLicenses{db: db}.Create(ctx, ps0, "n1", 1, license.Info{})
 	if err != nil {
 		t.Fatal(err)
 	}
