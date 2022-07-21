@@ -24,6 +24,7 @@ import (
 func TestInitializeJob(t *testing.T) {
 	ctx := context.Background()
 	logger := log.Scoped("", "")
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	confClient = conf.MockClient()
 
@@ -63,7 +64,7 @@ func TestInitializeJob(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			job := NewTelemetryJob()
+			job := NewTelemetryJob(db)
 			routines, err := job.Routines(ctx, logger)
 			if err != nil {
 				t.Error(err)
@@ -122,7 +123,9 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			handler := telemetryHandler{logger: logger}
+			handler := newTelemetryHandler(logger, database.NewMockEventLogStore(), func(ctx context.Context, event []*types.Event) error {
+				return nil
+			})
 			err := handler.Handle(ctx)
 			if err != nil {
 				if !errors.Is(err, disabledErr) {
@@ -145,10 +148,9 @@ func TestHandlerLoadsEvents(t *testing.T) {
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true}}})
 
-	handler := telemetryHandler{
-		logger:        logger,
-		eventLogStore: db.EventLogs(),
-	}
+	handler := newTelemetryHandler(logger, db.EventLogs(), func(ctx context.Context, event []*types.Event) error {
+		return nil
+	})
 
 	t.Run("loads no events when table is empty", func(t *testing.T) {
 		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event) error {

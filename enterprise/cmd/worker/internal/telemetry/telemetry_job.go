@@ -6,7 +6,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/types"
 
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -22,10 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type telemetryJob struct{}
+type telemetryJob struct {
+	db database.DB
+}
 
-func NewTelemetryJob() *telemetryJob {
-	return &telemetryJob{}
+func NewTelemetryJob(db database.DB) *telemetryJob {
+	return &telemetryJob{
+		db: db,
+	}
 }
 
 func (t *telemetryJob) Description() string {
@@ -42,12 +45,7 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 	}
 	logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	db, err := workerdb.Init()
-	if err != nil {
-		return nil, err
-	}
-
-	eventLogStore := database.NewDB(logger, db).EventLogs()
+	eventLogStore := t.db.EventLogs()
 
 	return []goroutine.BackgroundRoutine{
 		newBackgroundTelemetryJob(logger, eventLogStore),
@@ -61,19 +59,23 @@ func newBackgroundTelemetryJob(logger log.Logger, eventLogStore database.EventLo
 	}
 	operation := observationContext.Operation(observation.Op{})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, &telemetryHandler{
-		logger:        logger,
-		eventLogStore: eventLogStore,
-		sendEventsCallback: func(ctx context.Context, event []*types.Event) error {
-			return nil // noop at the moment
-		},
-	}, operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, newTelemetryHandler(logger, eventLogStore, func(ctx context.Context, event []*types.Event) error {
+		return nil
+	}), operation)
 }
 
 type telemetryHandler struct {
 	logger             log.Logger
 	eventLogStore      database.EventLogStore
 	sendEventsCallback func(ctx context.Context, event []*types.Event) error
+}
+
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, sendEventsCallback func(ctx context.Context, event []*types.Event) error) *telemetryHandler {
+	return &telemetryHandler{
+		logger:             logger,
+		eventLogStore:      store,
+		sendEventsCallback: sendEventsCallback,
+	}
 }
 
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
