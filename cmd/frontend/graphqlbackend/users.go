@@ -2,7 +2,6 @@ package graphqlbackend
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	"github.com/sourcegraph/log"
@@ -109,8 +108,7 @@ func (r *userConnectionResolver) Nodes(ctx context.Context) ([]*UserResolver, er
 			user: user,
 			logger: log.Scoped("userResolver", "resolves a specific user").With(
 				log.Object("repo",
-					log.String("db", fmt.Sprintf("%v", r.db)),
-					log.String("user", fmt.Sprintf("%v ", user)))),
+					log.String("user", user.Username))),
 		})
 	}
 	return l, nil

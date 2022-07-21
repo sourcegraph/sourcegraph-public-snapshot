@@ -69,7 +69,7 @@ func NewRepositoryResolver(db database.DB, repo *types.Repo) *RepositoryResolver
 		logger: log.Scoped("repositoryResolver", "resolve a specific repository").
 			With(log.Object("repo",
 				log.String("name", string(name)),
-				log.String("id", string(id)))),
+				log.Int32("id", int32(id)))),
 	}
 }
 
