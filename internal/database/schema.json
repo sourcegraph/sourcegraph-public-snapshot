@@ -77,6 +77,10 @@
   ],
   "Functions": [
     {
+      "Name": "batch_spec_workspace_execution_last_dequeues_upsert",
+      "Definition": "CREATE OR REPLACE FUNCTION public.batch_spec_workspace_execution_last_dequeues_upsert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        batch_spec_workspace_execution_last_dequeues\n    SELECT\n        user_id,\n        MAX(started_at) as latest_dequeue\n    FROM\n        newtab\n    GROUP BY\n        user_id\n    ON CONFLICT (user_id) DO UPDATE SET\n        latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);\n\n    RETURN NULL;\nEND $function$\n"
+    },
+    {
       "Name": "delete_batch_change_reference_on_changesets",
       "Definition": "CREATE OR REPLACE FUNCTION public.delete_batch_change_reference_on_changesets()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE\n          changesets\n        SET\n          batch_change_ids = changesets.batch_change_ids - OLD.id::text\n        WHERE\n          changesets.batch_change_ids ? OLD.id::text;\n\n        RETURN OLD;\n    END;\n$function$\n"
     },
@@ -1518,8 +1522,21 @@
           "Name": "batch_spec_id",
           "Index": 2,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -1687,7 +1704,7 @@
           "Name": "state",
           "Index": 3,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "'queued'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -1771,7 +1788,7 @@
           "Name": "batch_spec_workspace_id",
           "Index": 2,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -1940,7 +1957,7 @@
           "Name": "state",
           "Index": 3,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "'queued'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -1966,7 +1983,7 @@
           "Name": "user_id",
           "Index": 18,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -2050,6 +2067,69 @@
           "ConstraintDefinition": "FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE"
         }
       ],
+      "Triggers": [
+        {
+          "Name": "batch_spec_workspace_execution_last_dequeues_insert",
+          "Definition": "CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert()"
+        },
+        {
+          "Name": "batch_spec_workspace_execution_last_dequeues_update",
+          "Definition": "CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert()"
+        }
+      ]
+    },
+    {
+      "Name": "batch_spec_workspace_execution_last_dequeues",
+      "Comment": "",
+      "Columns": [
+        {
+          "Name": "latest_dequeue",
+          "Index": 2,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "user_id",
+          "Index": 1,
+          "TypeName": "integer",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        }
+      ],
+      "Indexes": [
+        {
+          "Name": "batch_spec_workspace_execution_last_dequeues_pkey",
+          "IsPrimaryKey": true,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX batch_spec_workspace_execution_last_dequeues_pkey ON batch_spec_workspace_execution_last_dequeues USING btree (user_id)",
+          "ConstraintType": "p",
+          "ConstraintDefinition": "PRIMARY KEY (user_id)"
+        }
+      ],
+      "Constraints": [
+        {
+          "Name": "batch_spec_workspace_execution_last_dequeues_user_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "users",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED"
+        }
+      ],
       "Triggers": []
     },
     {
@@ -2060,7 +2140,7 @@
           "Name": "batch_spec_id",
           "Index": 2,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -2099,7 +2179,7 @@
           "Name": "changeset_spec_ids",
           "Index": 3,
           "TypeName": "jsonb",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "'{}'::jsonb",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -2203,7 +2283,7 @@
           "Name": "repo_id",
           "Index": 4,
           "TypeName": "integer",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -2710,6 +2790,19 @@
           "Comment": ""
         },
         {
+          "Name": "cancel",
+          "Index": 21,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "changeset_id",
           "Index": 5,
           "TypeName": "integer",
@@ -2895,7 +2988,7 @@
           "Name": "state",
           "Index": 8,
           "TypeName": "text",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "'queued'::text",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -3315,6 +3408,19 @@
           "TypeName": "jsonb",
           "IsNullable": false,
           "Default": "'{}'::jsonb",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cancel",
+          "Index": 40,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -3980,6 +4086,19 @@
       "Name": "cm_action_jobs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 18,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "email",
           "Index": 2,
@@ -5102,6 +5221,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 19,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 16,
           "TypeName": "json[]",
@@ -5320,6 +5452,16 @@
           "IndexDefinition": "CREATE UNIQUE INDEX cm_trigger_jobs_pkey ON cm_trigger_jobs USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
+        },
+        {
+          "Name": "cm_trigger_jobs_finished_at",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finished_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
         },
         {
           "Name": "cm_trigger_jobs_state_idx",
@@ -7213,6 +7355,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 11,
           "TypeName": "json[]",
@@ -7645,6 +7800,19 @@
       "Name": "external_service_sync_jobs",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 15,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "execution_logs",
           "Index": 11,
@@ -8476,6 +8644,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 17,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "delete_source",
           "Index": 16,
           "TypeName": "boolean",
@@ -8931,6 +9112,19 @@
       "Name": "insights_query_runner_jobs",
       "Comment": "See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job\u0026patternType=literal)",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 19,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "cost",
           "Index": 16,
@@ -9815,6 +10009,19 @@
       "Comment": "",
       "Columns": [
         {
+          "Name": "cancel",
+          "Index": 16,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "execution_logs",
           "Index": 10,
           "TypeName": "json[]",
@@ -10119,6 +10326,19 @@
       "Name": "lsif_dependency_syncing_jobs",
       "Comment": "Tracks jobs that scan imports of indexes to schedule auto-index jobs.",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 14,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "execution_logs",
           "Index": 10,
@@ -10501,6 +10721,19 @@
       "Name": "lsif_indexes",
       "Comment": "Stores metadata about a code intel index job.",
       "Columns": [
+        {
+          "Name": "cancel",
+          "Index": 23,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "commit",
           "Index": 2,
@@ -11423,6 +11656,19 @@
           "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "cancel",
+          "Index": 29,
+          "TypeName": "boolean",
+          "IsNullable": false,
+          "Default": "false",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
@@ -13860,10 +14106,62 @@
           "Comment": ""
         },
         {
+          "Name": "license_expires_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "license_key",
           "Index": 3,
           "TypeName": "text",
           "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "license_tags",
+          "Index": 6,
+          "TypeName": "text[]",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "license_user_count",
+          "Index": 7,
+          "TypeName": "integer",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
+          "Name": "license_version",
+          "Index": 5,
+          "TypeName": "integer",
+          "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
@@ -13913,6 +14211,19 @@
       "Name": "product_subscriptions",
       "Comment": "",
       "Columns": [
+        {
+          "Name": "account_number",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
         {
           "Name": "archived_at",
           "Index": 6,
@@ -17650,7 +17961,7 @@
     },
     {
       "Name": "batch_spec_workspace_execution_queue",
-      "Definition": " WITH user_queues AS (\n         SELECT exec.user_id,\n            max(exec.started_at) AS latest_dequeue\n           FROM batch_spec_workspace_execution_jobs exec\n          GROUP BY exec.user_id\n        ), queue_candidates AS (\n         SELECT exec.id,\n            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue\n           FROM (batch_spec_workspace_execution_jobs exec\n             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))\n          WHERE (exec.state = 'queued'::text)\n          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST\n        )\n SELECT queue_candidates.id,\n    row_number() OVER () AS place_in_global_queue,\n    queue_candidates.place_in_user_queue\n   FROM queue_candidates;"
+      "Definition": " WITH queue_candidates AS (\n         SELECT exec.id,\n            rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue\n           FROM (batch_spec_workspace_execution_jobs exec\n             JOIN batch_spec_workspace_execution_last_dequeues queue ON ((queue.user_id = exec.user_id)))\n          WHERE (exec.state = 'queued'::text)\n          ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST\n        )\n SELECT queue_candidates.id,\n    row_number() OVER () AS place_in_global_queue,\n    queue_candidates.place_in_user_queue\n   FROM queue_candidates;"
     },
     {
       "Name": "branch_changeset_specs_and_changesets",

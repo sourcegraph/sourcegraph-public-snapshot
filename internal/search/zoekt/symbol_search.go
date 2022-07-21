@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -95,7 +94,7 @@ func (s *GlobalSymbolSearchJob) Run(ctx context.Context, clients job.RuntimeClie
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	userPrivateRepos := repos.PrivateReposForActor(ctx, clients.Logger, clients.DB, s.RepoOpts)
+	userPrivateRepos := privateReposForActor(ctx, clients.Logger, clients.DB, s.RepoOpts)
 	s.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	s.ZoektArgs.Query = s.GlobalZoektQuery.Generate()
 

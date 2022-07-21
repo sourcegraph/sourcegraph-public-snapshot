@@ -68,7 +68,6 @@ export const INSIGHT_VIEW_FRAGMENT = gql`
                 title
             }
         }
-        seriesCount
         ...InsightViewSeries
     }
 

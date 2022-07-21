@@ -169,8 +169,9 @@ func (c *Client) MarkFailed(ctx context.Context, queueName string, jobID int, er
 	return c.client.DoAndDrop(ctx, req)
 }
 
-func (c *Client) Canceled(ctx context.Context, queueName string) (canceledIDs []int, err error) {
-	req, err := c.makeRequest("POST", fmt.Sprintf("%s/canceled", queueName), executor.CanceledRequest{
+func (c *Client) CanceledJobs(ctx context.Context, queueName string, knownIDs []int) (canceledIDs []int, err error) {
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/canceledJobs", queueName), executor.CanceledJobsRequest{
+		KnownJobIDs:  knownIDs,
 		ExecutorName: c.options.ExecutorName,
 	})
 	if err != nil {

@@ -122,6 +122,8 @@ export interface BlobProps
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
     nav?: (url: string) => void
+    role?: string
+    ariaLabel?: string
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -204,6 +206,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         blobInfo,
         platformContext,
         settingsCascade,
+        role,
+        ariaLabel,
         'data-testid': dataTestId,
     } = props
 
@@ -313,7 +317,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     withLatestFrom(urlSearchParameters),
                     tap(([, parameters]) => {
                         parameters.delete('popover')
-                        updateBrowserHistoryIfNecessary(props.history, location, parameters)
+                        updateBrowserHistoryIfChanged(props.history, location, parameters)
                     })
                 ),
             [location, popoverCloses, props.history, urlSearchParameters]
@@ -391,6 +395,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
                         const position = locateTarget(event.target as HTMLElement, domFunctions)
                         let query: string | undefined
+                        let replace = false
                         if (
                             position &&
                             event.shiftKey &&
@@ -410,6 +415,19 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                             })
                         } else {
                             query = toPositionOrRangeQueryParameter({ position })
+
+                            // Replace the current history entry instead of
+                            // adding a new one if the newly selected line is
+                            // within 10 lines of the currently selected one.
+                            // If the current position is a range a new entry
+                            // will always be added.
+                            const currentPosition = parseQueryAndHash(location.search, location.hash)
+                            replace = Boolean(
+                                position &&
+                                    currentPosition.line &&
+                                    !currentPosition.endLine &&
+                                    Math.abs(position.line - currentPosition.line) < 11
+                            )
                         }
 
                         const parameters = new URLSearchParams(location.search)
@@ -418,10 +436,11 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         if (position && !('character' in position)) {
                             // Only change the URL when clicking on blank space on the line (not on
                             // characters). Otherwise, this would interfere with go to definition.
-                            updateBrowserHistoryIfNecessary(
+                            updateBrowserHistoryIfChanged(
                                 props.history,
                                 location,
-                                addLineRangeQueryParameter(parameters, query)
+                                addLineRangeQueryParameter(parameters, query),
+                                replace
                             )
                         }
                     }),
@@ -738,7 +757,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 const context = { position: point, range }
                 const search = new URLSearchParams(location.search)
                 search.set('popover', 'pinned')
-                updateBrowserHistoryIfNecessary(
+                updateBrowserHistoryIfChanged(
                     props.history,
                     location,
                     addLineRangeQueryParameter(search, toPositionOrRangeQueryParameter(context))
@@ -797,6 +816,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 className={classNames(props.className, styles.blob)}
                 ref={nextBlobElement}
                 tabIndex={-1}
+                role={role}
+                aria-label={ariaLabel}
             >
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
@@ -866,10 +887,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
  * from the current ones. This prevents adding a new entry when e.g. the user
  * clicks the same line multiple times.
  */
-export function updateBrowserHistoryIfNecessary(
+export function updateBrowserHistoryIfChanged(
     history: H.History,
     location: H.Location,
-    newSearchParameters: URLSearchParams
+    newSearchParameters: URLSearchParams,
+    /** If set to true replace the current history entry instead of adding a new one. */
+    replace: boolean = false
 ): void {
     const currentSearchParameters = [...new URLSearchParams(location.search).entries()]
 
@@ -883,10 +906,15 @@ export function updateBrowserHistoryIfNecessary(
         currentSearchParameters.some(([key, value]) => newSearchParameters.get(key) !== value)
 
     if (needsUpdate) {
-        history.push({
+        const entry = {
             ...location,
             search: formatSearchParameters(newSearchParameters),
-        })
+        }
+        if (replace) {
+            history.replace(entry)
+        } else {
+            history.push(entry)
+        }
     }
 }
 

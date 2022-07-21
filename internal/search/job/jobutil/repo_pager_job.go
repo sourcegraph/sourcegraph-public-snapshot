@@ -7,7 +7,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
-	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -17,7 +16,6 @@ import (
 
 type repoPagerJob struct {
 	repoOpts         search.RepoOptions
-	useIndex         query.YesNoOnly               // whether to include indexed repos
 	containsRefGlobs bool                          // whether to include repositories with refs
 	child            job.PartialJob[resolvedRepos] // child job tree that need populating a repos field to run
 }
@@ -85,7 +83,7 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 
 	var maxAlerter search.MaxAlerter
 
-	repoResolver := repos.NewResolver(clients.DB)
+	repoResolver := repos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
 	pager := func(page *repos.Resolved) error {
 		indexed, unindexed, err := zoekt.PartitionRepos(
 			ctx,
@@ -93,7 +91,7 @@ func (p *repoPagerJob) Run(ctx context.Context, clients job.RuntimeClients, stre
 			page.RepoRevs,
 			clients.Zoekt,
 			search.TextRequest,
-			p.useIndex,
+			p.repoOpts.UseIndex,
 			p.containsRefGlobs,
 		)
 		if err != nil {
@@ -123,7 +121,6 @@ func (p *repoPagerJob) Fields(v job.Verbosity) (res []otlog.Field) {
 	case job.VerbosityBasic:
 		res = append(res,
 			trace.Scoped("repoOpts", p.repoOpts.Tags()...),
-			otlog.String("useIndex", string(p.useIndex)),
 		)
 	}
 	return res

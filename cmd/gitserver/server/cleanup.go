@@ -22,13 +22,14 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/fileutil"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -171,14 +172,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	defer janitorRunning.Set(0)
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
 
-	isKnownGitServerShard := false
+	knownGitServerShard := false
 	for _, addr := range gitServerAddrs {
 		if s.hostnameMatch(addr) {
-			isKnownGitServerShard = true
+			knownGitServerShard = true
 			break
 		}
 	}
-	if !isKnownGitServerShard {
+	if !knownGitServerShard {
 		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
 	}
 
@@ -218,8 +219,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
-			if isKnownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
+			if knownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
+				s.Logger.Info(
+					"removing repo cloned on the wrong shard",
+					log.String("dir", string(dir)),
+					log.String("target-shard", addr),
+					log.String("current-shard", s.Hostname),
+					log.Int64("size-bytes", size),
+				)
 				if err := s.removeRepoDirectory(dir); err != nil {
 					return false, err
 				}
@@ -355,12 +362,12 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		var multi error
 
 		// config.lock should be held for a very short amount of time.
-		if err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
+		if _, err := removeFileOlderThan(gitDir.Path("config.lock"), time.Minute); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// packed-refs can be held for quite a while, so we are conservative
 		// with the age.
-		if err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
+		if _, err := removeFileOlderThan(gitDir.Path("packed-refs.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
 		}
 		// we use the same conservative age for locks inside of refs
@@ -373,7 +380,8 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 				return nil
 			}
 
-			return removeFileOlderThan(path, time.Hour)
+			_, err := removeFileOlderThan(path, time.Hour)
+			return err
 		}); err != nil {
 			multi = errors.Append(multi, err)
 		}
@@ -382,8 +390,20 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		// call for a 5GB bare repository takes less than 1 min. The lock is only held
 		// during a short period during this time. A 1-hour grace period is very
 		// conservative.
-		if err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
+		if _, err := removeFileOlderThan(gitDir.Path("objects", "info", "commit-graph.lock"), time.Hour); err != nil {
 			multi = errors.Append(multi, err)
+		}
+
+		// gc.pid is set by git gc and our sg maintenance script. 24 hours is twice the
+		// time git gc uses internally.
+		gcPIDMaxAge := 24 * time.Hour
+		if foundStale, err := removeFileOlderThan(gitDir.Path(gcLockFile), gcPIDMaxAge); err != nil {
+			multi = errors.Append(multi, err)
+		} else if foundStale {
+			cleanupLogger.Warn(
+				"removeStaleLocks found a stale gc.pid lockfile and removed it. This should not happen and points to a problem with garbage collection. Monitor the repo for possible corruption and verify if this error reoccurs",
+				log.String("path", string(gitDir)),
+				log.Duration("age", gcPIDMaxAge))
 		}
 
 		return false, multi
@@ -1109,6 +1129,17 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 
 	cmd.Stdin = strings.NewReader(sgMaintenanceScript)
 
+	err, unlock := lockRepoForGC(dir)
+	if err != nil {
+		logger.Debug(
+			"could not lock repository for sg maintenance",
+			log.String("dir", string(dir)),
+			log.Error(err),
+		)
+		return nil
+	}
+	defer unlock()
+
 	b, err := cmd.CombinedOutput()
 	if err != nil {
 		if err := writeSGMLog(dir, b); err != nil {
@@ -1120,6 +1151,41 @@ func sgMaintenance(logger log.Logger, dir GitDir) (err error) {
 	// Remove the log file after a successful run.
 	_ = os.Remove(dir.Path(sgmLog))
 	return nil
+}
+
+const gcLockFile = "gc.pid"
+
+func lockRepoForGC(dir GitDir) (error, func() error) {
+	// Setting permissions to 644 to mirror the permissions that git gc sets for gc.pid.
+	f, err := os.OpenFile(dir.Path(gcLockFile), os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0644)
+	if err != nil {
+		content, err1 := os.ReadFile(dir.Path(gcLockFile))
+		if err1 != nil {
+			return err, nil
+		}
+		pidMachine := strings.Split(string(content), " ")
+		if len(pidMachine) < 2 {
+			return err, nil
+		}
+		return errors.Wrapf(err, "process %s on machine %s is already running a gc operation", pidMachine[0], pidMachine[1]), nil
+	}
+
+	// We cut the hostname to 256 bytes, just like git gc does. See HOST_NAME_MAX in
+	// github.com/git/git.
+	name := hostname.Get()
+	hostNameMax := 256
+	if len(name) > hostNameMax {
+		name = name[0:hostNameMax]
+	}
+
+	_, err = fmt.Fprintf(f, "%d %s", os.Getpid(), name)
+	if err1 := f.Close(); err1 != nil && err == nil {
+		err = err1
+	}
+
+	return err, func() error {
+		return os.Remove(dir.Path(gcLockFile))
+	}
 }
 
 // We run git-prune only if there are enough loose objects. This approach is
@@ -1353,19 +1419,20 @@ func wrapCmdError(cmd *exec.Cmd, err error) error {
 }
 
 // removeFileOlderThan removes path if its mtime is older than maxAge. If the
-// file is missing, no error is returned.
-func removeFileOlderThan(path string, maxAge time.Duration) error {
+// file is missing, no error is returned. The first argument indicates whether a
+// stale file was present.
+func removeFileOlderThan(path string, maxAge time.Duration) (bool, error) {
 	fi, err := os.Stat(filepath.Clean(path))
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil
+			return false, nil
 		}
-		return err
+		return false, err
 	}
 
 	age := time.Since(fi.ModTime())
 	if age < maxAge {
-		return nil
+		return false, nil
 	}
 
 	logger := log.Scoped("removeFileOlderThan", "removes path if its mtime is older than maxAge.")
@@ -1373,7 +1440,7 @@ func removeFileOlderThan(path string, maxAge time.Duration) error {
 	logger.Debug("removing stale lock file", log.String("path", path), log.Duration("age", age))
 	err = os.Remove(path)
 	if err != nil && !os.IsNotExist(err) {
-		return err
+		return true, err
 	}
-	return nil
+	return true, nil
 }
