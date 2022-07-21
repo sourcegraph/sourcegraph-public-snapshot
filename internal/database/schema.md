@@ -2855,6 +2855,24 @@ Contains security-relevant events with a long time horizon for storage.
 
 **version**: The version of Sourcegraph which generated the event.
 
+# Table "public.service_registry"
+```
+     Column     |           Type           | Collation | Nullable | Default 
+----------------+--------------------------+-----------+----------+---------
+ ip             | text                     |           | not null | 
+ port           | integer                  |           | not null | 
+ hostname       | text                     |           | not null | 
+ service        | text                     |           | not null | 
+ last_heartbeat | timestamp with time zone |           |          | now()
+Indexes:
+    "service_registry_pkey" PRIMARY KEY, btree (ip, port)
+
+```
+
+Records services that register with the service registry in frontend.
+
+**last_heartbeat**: The last time the service sent a renewal request to the service registry.
+
 # Table "public.settings"
 ```
      Column     |           Type           | Collation | Nullable |               Default                

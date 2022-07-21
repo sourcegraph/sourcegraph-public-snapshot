@@ -145,6 +145,16 @@ func Main(enterpriseSetupHook func(database.DB, conftypes.UnifiedWatchable) ente
 	}
 	db := database.NewDB(logger, sqlDB)
 
+	servicesStore := db.Services()
+	go func() {
+		for {
+			time.Sleep(60 * time.Second)
+			if err := servicesStore.Invalidate(ctx, 90*time.Second); err != nil {
+				logger.Warn("error while invalidating service registry", sglog.Error(err))
+			}
+		}
+	}()
+
 	if os.Getenv("SRC_DISABLE_OOBMIGRATION_VALIDATION") != "" {
 		log15.Warn("Skipping out-of-band migrations check")
 	} else {

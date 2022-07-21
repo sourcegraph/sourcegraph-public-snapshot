@@ -32,6 +32,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -209,6 +210,10 @@ func NewInternalHandler(
 	m.Get(apirouter.ComputeStream).Handler(trace.Route(newComputeStreamHandler()))
 
 	m.Get(apirouter.LSIFUpload).Handler(trace.Route(newCodeIntelUploadHandler(false)))
+
+	m.Get(apirouter.ServiceRegister).Handler(trace.Route(requestclient.HTTPMiddleware(http.HandlerFunc(newServiceRegisterHandler(db)))))
+	m.Get(apirouter.ServiceDeregister).Handler(trace.Route(http.HandlerFunc(newServiceDeregisterHandler(db))))
+	m.Get(apirouter.ServiceRenew).Handler(trace.Route(http.HandlerFunc(newServiceRenewHandler(db))))
 
 	m.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		log.Printf("API no route: %s %s from %s", r.Method, r.URL, r.Referer())

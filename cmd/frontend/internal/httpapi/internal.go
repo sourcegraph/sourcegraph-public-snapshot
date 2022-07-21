@@ -3,7 +3,9 @@ package httpapi
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"net/netip"
 	"net/url"
 	"path"
 
@@ -14,7 +16,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
+	"github.com/sourcegraph/sourcegraph/internal/requestclient"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/internal/txemail/txtypes"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -148,4 +152,85 @@ func handlePing(w http.ResponseWriter, r *http.Request) {
 	}
 
 	_, _ = w.Write([]byte("pong"))
+}
+
+func newServiceRegisterHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		client := requestclient.FromContext(r.Context())
+		if client == nil {
+			http.Error(w, "could not extract IP address", http.StatusBadRequest)
+			return
+		}
+
+		ip, err := netip.ParseAddr(client.IP)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("cloud not parse client IP %s: %s", client.IP, err.Error()), http.StatusBadRequest)
+			return
+		}
+
+		args := database.ServiceArgs{}
+
+		err = json.NewDecoder(r.Body).Decode(&args)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusBadRequest)
+			return
+		}
+
+		// Check required args.
+		if args.Port == 0 {
+			http.Error(w, "missing port", http.StatusBadRequest)
+			return
+		}
+
+		if args.Hostname == "" {
+			http.Error(w, "missing hostname", http.StatusBadRequest)
+		}
+
+		// Hydrate ip. We extracted the ip from the request headers and not the body.
+		args.IP = ip
+
+		vars := mux.Vars(r)
+		id, err := db.Services().Register(r.Context(), vars["name"], args)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		// Return ID to caller.
+		w.Write([]byte(id))
+	}
+}
+
+func newServiceRenewHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		err := db.Services().Renew(r.Context(), vars["name"], vars["instanceID"])
+		if err != nil {
+			if errcode.IsNotFound(err) {
+				http.Error(w, err.Error(), http.StatusNotFound)
+			} else {
+				http.Error(w, err.Error(), http.StatusInternalServerError)
+			}
+			return
+		}
+	}
+}
+
+func newServiceDeregisterHandler(db database.DB) func(w http.ResponseWriter, r *http.Request) {
+	return func(w http.ResponseWriter, r *http.Request) {
+		vars := mux.Vars(r)
+
+		err := db.Services().Deregister(r.Context(), vars["name"], vars["instanceID"])
+		if err != nil {
+			if err != nil {
+				if errcode.IsNotFound(err) {
+					http.Error(w, err.Error(), http.StatusNotFound)
+				} else {
+					http.Error(w, err.Error(), http.StatusInternalServerError)
+				}
+				return
+			}
+		}
+	}
 }

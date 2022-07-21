@@ -6910,6 +6910,9 @@ type MockEnterpriseDB struct {
 	// SecurityEventLogsFunc is an instance of a mock function object
 	// controlling the behavior of the method SecurityEventLogs.
 	SecurityEventLogsFunc *EnterpriseDBSecurityEventLogsFunc
+	// ServicesFunc is an instance of a mock function object controlling the
+	// behavior of the method Services.
+	ServicesFunc *EnterpriseDBServicesFunc
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *EnterpriseDBSettingsFunc
@@ -7109,6 +7112,11 @@ func NewMockEnterpriseDB() *MockEnterpriseDB {
 		},
 		SecurityEventLogsFunc: &EnterpriseDBSecurityEventLogsFunc{
 			defaultHook: func() (r0 database.SecurityEventLogsStore) {
+				return
+			},
+		},
+		ServicesFunc: &EnterpriseDBServicesFunc{
+			defaultHook: func() (r0 database.ServicesStore) {
 				return
 			},
 		},
@@ -7339,6 +7347,11 @@ func NewStrictMockEnterpriseDB() *MockEnterpriseDB {
 				panic("unexpected invocation of MockEnterpriseDB.SecurityEventLogs")
 			},
 		},
+		ServicesFunc: &EnterpriseDBServicesFunc{
+			defaultHook: func() database.ServicesStore {
+				panic("unexpected invocation of MockEnterpriseDB.Services")
+			},
+		},
 		SettingsFunc: &EnterpriseDBSettingsFunc{
 			defaultHook: func() database.SettingsStore {
 				panic("unexpected invocation of MockEnterpriseDB.Settings")
@@ -7502,6 +7515,9 @@ func NewMockEnterpriseDBFrom(i EnterpriseDB) *MockEnterpriseDB {
 		},
 		SecurityEventLogsFunc: &EnterpriseDBSecurityEventLogsFunc{
 			defaultHook: i.SecurityEventLogs,
+		},
+		ServicesFunc: &EnterpriseDBServicesFunc{
+			defaultHook: i.Services,
 		},
 		SettingsFunc: &EnterpriseDBSettingsFunc{
 			defaultHook: i.Settings,
@@ -10776,6 +10792,105 @@ func (c EnterpriseDBSecurityEventLogsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c EnterpriseDBSecurityEventLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// EnterpriseDBServicesFunc describes the behavior when the Services method
+// of the parent MockEnterpriseDB instance is invoked.
+type EnterpriseDBServicesFunc struct {
+	defaultHook func() database.ServicesStore
+	hooks       []func() database.ServicesStore
+	history     []EnterpriseDBServicesFuncCall
+	mutex       sync.Mutex
+}
+
+// Services delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockEnterpriseDB) Services() database.ServicesStore {
+	r0 := m.ServicesFunc.nextHook()()
+	m.ServicesFunc.appendCall(EnterpriseDBServicesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Services method of
+// the parent MockEnterpriseDB instance is invoked and the hook queue is
+// empty.
+func (f *EnterpriseDBServicesFunc) SetDefaultHook(hook func() database.ServicesStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Services method of the parent MockEnterpriseDB instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *EnterpriseDBServicesFunc) PushHook(hook func() database.ServicesStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *EnterpriseDBServicesFunc) SetDefaultReturn(r0 database.ServicesStore) {
+	f.SetDefaultHook(func() database.ServicesStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *EnterpriseDBServicesFunc) PushReturn(r0 database.ServicesStore) {
+	f.PushHook(func() database.ServicesStore {
+		return r0
+	})
+}
+
+func (f *EnterpriseDBServicesFunc) nextHook() func() database.ServicesStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *EnterpriseDBServicesFunc) appendCall(r0 EnterpriseDBServicesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of EnterpriseDBServicesFuncCall objects
+// describing the invocations of this function.
+func (f *EnterpriseDBServicesFunc) History() []EnterpriseDBServicesFuncCall {
+	f.mutex.Lock()
+	history := make([]EnterpriseDBServicesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// EnterpriseDBServicesFuncCall is an object that describes an invocation of
+// method Services on an instance of MockEnterpriseDB.
+type EnterpriseDBServicesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 database.ServicesStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c EnterpriseDBServicesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c EnterpriseDBServicesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

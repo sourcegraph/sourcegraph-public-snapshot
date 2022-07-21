@@ -3711,6 +3711,9 @@ type MockDB struct {
 	// SecurityEventLogsFunc is an instance of a mock function object
 	// controlling the behavior of the method SecurityEventLogs.
 	SecurityEventLogsFunc *DBSecurityEventLogsFunc
+	// ServicesFunc is an instance of a mock function object controlling the
+	// behavior of the method Services.
+	ServicesFunc *DBServicesFunc
 	// SettingsFunc is an instance of a mock function object controlling the
 	// behavior of the method Settings.
 	SettingsFunc *DBSettingsFunc
@@ -3900,6 +3903,11 @@ func NewMockDB() *MockDB {
 		},
 		SecurityEventLogsFunc: &DBSecurityEventLogsFunc{
 			defaultHook: func() (r0 SecurityEventLogsStore) {
+				return
+			},
+		},
+		ServicesFunc: &DBServicesFunc{
+			defaultHook: func() (r0 ServicesStore) {
 				return
 			},
 		},
@@ -4120,6 +4128,11 @@ func NewStrictMockDB() *MockDB {
 				panic("unexpected invocation of MockDB.SecurityEventLogs")
 			},
 		},
+		ServicesFunc: &DBServicesFunc{
+			defaultHook: func() ServicesStore {
+				panic("unexpected invocation of MockDB.Services")
+			},
+		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: func() SettingsStore {
 				panic("unexpected invocation of MockDB.Settings")
@@ -4276,6 +4289,9 @@ func NewMockDBFrom(i DB) *MockDB {
 		},
 		SecurityEventLogsFunc: &DBSecurityEventLogsFunc{
 			defaultHook: i.SecurityEventLogs,
+		},
+		ServicesFunc: &DBServicesFunc{
+			defaultHook: i.Services,
 		},
 		SettingsFunc: &DBSettingsFunc{
 			defaultHook: i.Settings,
@@ -7326,6 +7342,104 @@ func (c DBSecurityEventLogsFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c DBSecurityEventLogsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// DBServicesFunc describes the behavior when the Services method of the
+// parent MockDB instance is invoked.
+type DBServicesFunc struct {
+	defaultHook func() ServicesStore
+	hooks       []func() ServicesStore
+	history     []DBServicesFuncCall
+	mutex       sync.Mutex
+}
+
+// Services delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockDB) Services() ServicesStore {
+	r0 := m.ServicesFunc.nextHook()()
+	m.ServicesFunc.appendCall(DBServicesFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Services method of
+// the parent MockDB instance is invoked and the hook queue is empty.
+func (f *DBServicesFunc) SetDefaultHook(hook func() ServicesStore) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Services method of the parent MockDB instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *DBServicesFunc) PushHook(hook func() ServicesStore) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *DBServicesFunc) SetDefaultReturn(r0 ServicesStore) {
+	f.SetDefaultHook(func() ServicesStore {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *DBServicesFunc) PushReturn(r0 ServicesStore) {
+	f.PushHook(func() ServicesStore {
+		return r0
+	})
+}
+
+func (f *DBServicesFunc) nextHook() func() ServicesStore {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *DBServicesFunc) appendCall(r0 DBServicesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of DBServicesFuncCall objects describing the
+// invocations of this function.
+func (f *DBServicesFunc) History() []DBServicesFuncCall {
+	f.mutex.Lock()
+	history := make([]DBServicesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// DBServicesFuncCall is an object that describes an invocation of method
+// Services on an instance of MockDB.
+type DBServicesFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 ServicesStore
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c DBServicesFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c DBServicesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
