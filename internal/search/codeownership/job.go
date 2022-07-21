@@ -2,6 +2,7 @@ package codeownership
 
 import (
 	"context"
+	"strings"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -46,10 +47,21 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 }
 
 func (s *codeownershipJob) Name() string {
-	return "codeownershipJob"
+	return "CodeOwnershipFilterJob"
 }
 
-func (s *codeownershipJob) Fields(job.Verbosity) []otlog.Field { return nil }
+func (s *codeownershipJob) Fields(v job.Verbosity) (res []otlog.Field) {
+	switch v {
+	case job.VerbosityMax:
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			otlog.String("fileOwnersMustInclude", strings.Join(s.fileOwnersMustInclude, ",")),
+			otlog.String("fileOwnersMustExclude", strings.Join(s.fileOwnersMustExclude, ",")),
+		)
+	}
+	return res
+}
 
 func (s *codeownershipJob) Children() []job.Describer {
 	return []job.Describer{s.child}

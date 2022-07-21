@@ -563,7 +563,9 @@ func TestNewPlanJob(t *testing.T) {
     (timeout . 20s)
     (LIMIT
       (limit . 500)
-      (CODEOWNERSHIP
+      (CODEOWNERSHIPFILTER
+        (fileOwnersMustInclude . @sqs)
+        (fileOwnersMustExclude . )
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . substr:"example")
