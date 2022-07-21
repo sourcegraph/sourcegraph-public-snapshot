@@ -727,59 +727,6 @@ RETURNING
   %s
 `
 
-// UpdateChangesetBatchChanges updates only the `batch_changes` & `updated_at`
-// columns of the given Changeset.
-func (s *Store) UpdateChangesetBatchChanges(
-	ctx context.Context,
-	cs *btypes.Changeset,
-	batchChangeIDs []int64,
-) (err error) {
-	ctx, _, endObservation := s.operations.updateChangesetBatchChanges.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("ID", int(cs.ID)),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	if len(batchChangeIDs) == 0 {
-		return nil
-	}
-
-	values := make([]*sqlf.Query, 0, len(batchChangeIDs))
-	for _, id := range batchChangeIDs {
-		values = append(values, sqlf.Sprintf("(%s, %s)", id, cs.ID))
-	}
-
-	q := sqlf.Sprintf(updateChangesetBatchChangesFmtstr, sqlf.Join(values, ","), cs.ID)
-	return s.Store.Exec(ctx, q)
-}
-
-const updateChangesetBatchChangesFmtstr = `
--- source: changesets.go:UpdateChangesetBatchChanges
-WITH
-  data (batch_change_id, changeset_id)
-    AS (VALUES %s),
-  changed AS (
-    INSERT INTO
-      batch_change_changesets
-      (batch_change_id, changeset_id)
-    SELECT
-      batch_change_id, changeset_id
-    FROM
-      data
-    ON CONFLICT (batch_change_id, changeset_id)
-      DO NOTHING
-  )
-DELETE FROM
-  batch_change_changesets
-WHERE
-  changeset_id = %s
-  AND batch_change_id NOT IN (
-    SELECT
-      batch_change_id
-    FROM
-      data
-  )
-`
-
 // UpdateChangesetUiPublicationState updates only the `ui_publication_state` &
 // `updated_at` columns of the given Changeset.
 func (s *Store) UpdateChangesetUiPublicationState(ctx context.Context, cs *btypes.Changeset) (err error) {

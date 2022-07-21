@@ -85,6 +85,10 @@ func (s *Store) GetBatchChangeChangesetAssociation(
 	}); err != nil {
 		return nil, err
 	}
+	if assoc.BatchChangeID == 0 {
+		return nil, ErrNoResults
+	}
+
 	return assoc, nil
 }
 

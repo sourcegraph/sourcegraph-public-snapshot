@@ -127,30 +127,20 @@ func (b *bulkProcessor) comment(ctx context.Context, job *btypes.ChangesetJob) e
 }
 
 func (b *bulkProcessor) detach(ctx context.Context, job *btypes.ChangesetJob) error {
-	// Try to detach the changeset from the batch change of the job.
-	var detached bool
-	for i, assoc := range b.ch.BatchChanges {
-		if assoc.BatchChangeID == job.BatchChangeID {
-			if !b.ch.BatchChanges[i].Detach {
-				b.ch.BatchChanges[i].Detach = true
-				detached = true
-			}
-		}
-	}
-
-	if !detached {
+	assoc, err := b.tx.GetBatchChangeChangesetAssociation(
+		ctx,
+		job.BatchChangeID,
+		b.ch.ID,
+	)
+	if err == store.ErrNoResults {
 		return nil
+	} else if err != nil {
+		return errors.Wrap(err, "getting changeset association")
 	}
 
-	// If we successfully marked the record as to-be-detached, we save the
-	// updated associations and trigger a reconciler run with two `UPDATE`
-	// queries:
-	// 1. Update only the changeset's BatchChanges in the database, trying not
-	//    to overwrite any other data.
-	// 2. Updates only the worker/reconciler-related columns to enqueue the
-	//    changeset.
-	if err := b.tx.UpdateChangesetBatchChanges(ctx, b.ch); err != nil {
-		return err
+	assoc.Detach = true
+	if err := b.tx.UpdateBatchChangeChangesetAssociation(ctx, assoc); err != nil {
+		return errors.Wrap(err, "updating changeset association")
 	}
 
 	return b.tx.EnqueueChangeset(ctx, b.ch, global.DefaultReconcilerEnqueueState(), "")
