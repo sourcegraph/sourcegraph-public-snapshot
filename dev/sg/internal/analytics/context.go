@@ -56,12 +56,6 @@ func WithContext(ctx context.Context, sgVersion string) (context.Context, error)
 	}), nil
 }
 
-const (
-	sgAnalyticsVersionResourceKey = "sg.analytics_version"
-	// Increment to make breaking changes to spans and discard old spans
-	sgAnalyticsVersion = "v1"
-)
-
 // newResource adapts sourcegraph/log.Resource into the OpenTelemetry package's Resource
 // type.
 func newResource(r log.Resource) *resource.Resource {
