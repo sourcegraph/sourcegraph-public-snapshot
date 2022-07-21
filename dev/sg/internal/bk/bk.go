@@ -68,7 +68,7 @@ func retrieveToken(ctx context.Context, out *std.Output) (string, error) {
 
 // getTokenFromUser prompts the user for a slack OAuth token.
 func getTokenFromUser(out *std.Output) (string, error) {
-	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StylePending, `Please create and copy a new token from https://buildkite.com/user/api-access-tokens with the following scopes:
+	out.WriteLine(output.Linef(output.EmojiLightbulb, output.StyleSuggestion, `Please create and copy a new token from %shttps://buildkite.com/user/api-access-tokens%s with the following scopes:
 
 - Organization access to %q
 - read_artifacts
@@ -78,7 +78,7 @@ func getTokenFromUser(out *std.Output) (string, error) {
 - (optional) write_builds
 
 To use functionality that manipulates builds, you must also have the 'write_builds' scope.
-`, BuildkiteOrg))
+`, output.StyleOrange, output.StyleSuggestion, BuildkiteOrg))
 	return out.PromptPasswordf(os.Stdin, "Paste your token here:")
 }
 
