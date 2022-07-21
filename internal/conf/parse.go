@@ -63,9 +63,9 @@ var requireRestart = []string{
 	"permissions.syncUsersMaxConcurrency",
 }
 
-// NeedRestartToApply determines if a restart is needed to apply the changes
+// needRestartToApply determines if a restart is needed to apply the changes
 // between the two configurations.
-func NeedRestartToApply(before, after *Unified) bool {
+func needRestartToApply(before, after *Unified) bool {
 	// Check every option that changed to determine whether or not a server
 	// restart is required.
 	for option := range diff(before, after) {
