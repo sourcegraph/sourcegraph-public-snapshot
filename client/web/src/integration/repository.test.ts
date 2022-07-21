@@ -485,19 +485,17 @@ describe('Repository', () => {
                 }),
             })
 
-            const fileSelector = `.test-tree-file-link[href="${fileUrl}"]`
-
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}/github.com/ggilmore/q-test/-/tree/Geoffrey's%20random%20queries.32r242442bf`
             )
-            await driver.page.waitForSelector(fileSelector)
+            await driver.page.waitForSelector('.test-tree-file-link[href="/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql]')
             assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelector(fileSelector)?.textContent),
+                await driver.page.evaluate(() => document.querySelector('.test-tree-file-link[href="/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql]')?.textContent),
                 fileName
             )
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
-            await driver.page.$eval(fileSelector, linkElement => (linkElement as HTMLElement).click())
+            await driver.page.$eval('.test-tree-file-link[href="/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql]', linkElement => (linkElement as HTMLElement).click())
             await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
@@ -1003,9 +1001,8 @@ describe('Repository', () => {
                                             return {
                                                 uri: file.uri,
                                                 after: {
-                                                    contentText: `${
-                                                        name.split('').filter(char => vowels.includes(char)).length
-                                                    } vowels`,
+                                                    contentText: `${name.split('').filter(char => vowels.includes(char)).length
+                                                        } vowels`,
                                                     color: file.isDirectory ? 'red' : 'blue',
                                                 },
                                                 meter: {
