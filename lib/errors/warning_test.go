@@ -13,7 +13,7 @@ func TestWarningError(t *testing.T) {
 		t.Error(`Expected variable "w" to be of type Warning`)
 	}
 
-	if _, ok := err.(Warning); ok {
+	if errors.Is(err, &warning{}) {
 		t.Error(`Expected variable "err" to not be of type Warning`)
 	}
 }
