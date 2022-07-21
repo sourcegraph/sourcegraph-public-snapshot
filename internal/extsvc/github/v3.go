@@ -791,6 +791,9 @@ type PayloadConfig struct {
 	Digest       string `json:"digest,omitempty"`
 }
 
+// CreateSyncWebhooks returns the id of the newly created webhook, or 0 if there was an error
+//
+// API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
 func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, secret string) (int, error) {
 	url, err := webhookURLBuilder(repoName)
 	if err != nil {
@@ -817,13 +820,16 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, s
 		return 0, err
 	}
 
-	if resp.statusCode < 200 || resp.statusCode >= 300 {
-		return 0, errors.Wrap(err, "non-2xx status code")
+	if resp.statusCode != 201 {
+		return 0, errors.Newf("expected 201 status code, got %d", resp.statusCode)
 	}
 
 	return result.ID, nil
 }
 
+// ListSyncWebhooks returns an array of WebhookPayloads
+//
+// API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
 func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
 	url, err := webhookURLBuilder(repoName)
 	if err != nil {
@@ -836,13 +842,14 @@ func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Web
 		return nil, err
 	}
 
-	if resp.statusCode < 200 || resp.statusCode >= 300 {
-		return nil, errors.Wrap(err, "non-2xx status code")
+	if resp.statusCode != 200 {
+		return nil, errors.Newf("expected 200 status code, got %d", resp.statusCode)
 	}
 
 	return results, nil
 }
 
+// FindSyncWebhook looks for any webhook with the targetURL ending in /github-webhooks
 func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, bool) {
 	payloads, err := c.ListSyncWebhooks(ctx, repoName)
 	if err != nil {
@@ -860,6 +867,9 @@ func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, b
 	return 0, false
 }
 
+// DeleteSyncWebhook returns a boolean answer as to whether the target repo was deleted or not
+//
+// API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
 func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
 	url, err := webhookURLBuilderWithID(repoName, hookID)
 	if err != nil {
@@ -872,13 +882,17 @@ func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookI
 		return false, err
 	}
 
-	if resp.statusCode < 200 || resp.statusCode >= 300 {
-		return false, errors.Wrap(err, "non-2xx status code")
+	if resp.statusCode != 204 {
+		return false, errors.Newf("expected 204 status code, got %d", resp.statusCode)
 	}
 
 	return true, nil
 }
 
+// TestPushWebhook returns a boolean answer as to whether GitHub successfully pinged the target repo
+// This API call replicates a GitHub push event
+//
+// API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#test-the-push-repository-webhook
 func (c *V3Client) TestPushSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
 	u, err := webhookURLBuilderWithID(repoName, hookID)
 	if err != nil {
@@ -892,13 +906,14 @@ func (c *V3Client) TestPushSyncWebhook(ctx context.Context, repoName string, hoo
 		return false, err
 	}
 
-	if resp.statusCode < 200 || resp.statusCode >= 300 {
-		return false, errors.Wrap(err, "non-2xx status code")
+	if resp.statusCode != 204 {
+		return false, errors.Newf("expected 204 status code, got %d", resp.statusCode)
 	}
 
 	return true, nil
 }
 
+// webhookURLBuilder builds the URL to interface with the GitHub Webhooks API
 func webhookURLBuilder(repoName string) (string, error) {
 	repoName = fmt.Sprintf("//%s", repoName)
 	u, err := url.Parse(repoName)
@@ -912,6 +927,7 @@ func webhookURLBuilder(repoName string) (string, error) {
 	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks", u.Host, u.Path), nil
 }
 
+// webhookURLBuilder builds the URL to interface with the GitHub Webhooks API but with a hook ID
 func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
 	repoName = fmt.Sprintf("//%s", repoName)
 	u, err := url.Parse(repoName)

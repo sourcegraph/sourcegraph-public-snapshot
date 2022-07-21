@@ -846,53 +846,56 @@ func TestClient_ListRepositoriesForSearch_incomplete(t *testing.T) {
 	}
 }
 
-var repoName = "ghe.sgdev.org/milton/test"
+type testCase struct {
+	repoName    string
+	expectedUrl string
+}
+
+var testCases = map[string]testCase{
+	"github.com": {
+		repoName:    "github.com/sd9/sourcegraph",
+		expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks",
+	},
+	"enterprise": {
+		repoName:    "ghe.sgdev.org/milton/test",
+		expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks",
+	},
+}
 
 func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 	ctx := context.Background()
-	token := os.Getenv("ACCESS_TOKEN")
 
 	client, save := newV3TestClient(t, "CreateListFindDeleteWebhooks")
-	client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
 	defer save()
 
-	id, err := client.CreateSyncWebhook(ctx, repoName, "https://target-url.com", "secret")
-	if err != nil {
-		t.Fatal(err)
-	}
+	for name, tc := range testCases {
+		t.Run(name, func(t *testing.T) {
+			token := os.Getenv(fmt.Sprintf("%s_ACCESS_TOKEN", name))
+			client = client.WithAuthenticator(&auth.OAuthBearerToken{Token: token})
 
-	_, found := client.FindSyncWebhook(ctx, repoName)
-	if !found {
-		t.Fatal(`Could not find webhook with "/github-webhooks" endpoint`)
-	}
+			id, err := client.CreateSyncWebhook(ctx, tc.repoName, "https://target-url.com", "secret")
+			if err != nil {
+				t.Fatal(err)
+			}
 
-	deleted, err := client.DeleteSyncWebhook(ctx, repoName, id)
-	if err != nil {
-		t.Fatal(err)
-	}
+			_, found := client.FindSyncWebhook(ctx, tc.repoName)
+			if !found {
+				t.Fatal(`Could not find webhook with "/github-webhooks" endpoint`)
+			}
 
-	if !deleted {
-		t.Fatal("Could not delete created repo")
+			deleted, err := client.DeleteSyncWebhook(ctx, tc.repoName, id)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			if !deleted {
+				t.Fatal("Could not delete created repo")
+			}
+		})
 	}
 }
 
-func TestSyncWebhook_urlBuilderPlain(t *testing.T) {
-	type testCase struct {
-		repoName    string
-		expectedUrl string
-	}
-
-	testCases := map[string]testCase{
-		"github.com": {
-			repoName:    "github.com/USCtrojan/awesome-repo",
-			expectedUrl: "https://api.github.com/repos/USCtrojan/awesome-repo/hooks",
-		},
-		"enterprise": {
-			repoName:    "ghe.sgdev.org/milton/test",
-			expectedUrl: "https://ghe.sgdev.org/api/v3/repos/milton/test/hooks",
-		},
-	}
-
+func TestSyncWebhook_webhookURLBuilderPlain(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			want := tc.expectedUrl
@@ -907,18 +910,18 @@ func TestSyncWebhook_urlBuilderPlain(t *testing.T) {
 	}
 }
 
-func TestSyncWebhook_urlBuilderWithID(t *testing.T) {
-	type testCase struct {
+func TestSyncWebhook_webhookURLBuilderWithID(t *testing.T) {
+	type testCaseWithID struct {
 		repoName    string
 		id          int
 		expectedUrl string
 	}
 
-	testCases := map[string]testCase{
+	testCases := map[string]testCaseWithID{
 		"github.com": {
-			repoName:    "github.com/USCtrojan/awesome-repo",
+			repoName:    "github.com/sd9/sourcegraph",
 			id:          42,
-			expectedUrl: "https://api.github.com/repos/USCtrojan/awesome-repo/hooks/42",
+			expectedUrl: "https://api.github.com/repos/sd9/sourcegraph/hooks/42",
 		},
 		"enterprise": {
 			repoName:    "ghe.sgdev.org/milton/test",
