@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func New(child job.Job, includeOwners []string, excludeOwners []string) job.Job {
+func New(child job.Job, includeOwners, excludeOwners []string) job.Job {
 	return &codeownershipJob{
 		child:         child,
 		includeOwners: includeOwners,
@@ -73,7 +73,7 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-func applyCodeOwnershipFiltering(ctx context.Context, includeOwners []string, excludeOwners []string, matches []result.Match) ([]result.Match, error) {
+func applyCodeOwnershipFiltering(ctx context.Context, includeOwners, excludeOwners []string, matches []result.Match) ([]result.Match, error) {
 	filtered := matches[:0]
 
 	// We currently don't have a way to access file ownership information, so no
