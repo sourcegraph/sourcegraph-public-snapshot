@@ -175,7 +175,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                   aria-checked="true"
                   class="toggle mr-2 inlineCenter"
                   role="switch"
-                  title="Toggle keyboard shortcuts"
+                  title="Toggle character key shortcuts"
                   type="button"
                   value="1"
                 >
@@ -186,7 +186,7 @@ exports[`KeyboardShortcutsHelp is triggered correctly 1`] = `
                     class="knob knobOn"
                   />
                 </button>
-                Keyboard shortcuts 
+                Character key shortcuts 
                 enabled 
               </label>
             </div>
