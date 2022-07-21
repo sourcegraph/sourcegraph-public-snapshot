@@ -9,8 +9,9 @@ import (
 )
 
 type RepoMatch struct {
-	Name api.RepoName
-	ID   api.RepoID
+	Name               api.RepoName
+	ID                 api.RepoID
+	DescriptionMatches []Range
 
 	// rev optionally specifies a revision to go to for search results.
 	Rev string

@@ -394,6 +394,7 @@ var minimalRepoColumns = []string{
 	"repo.name",
 	"repo.private",
 	"repo.stars",
+	"repo.description",
 }
 
 var repoColumns = []string{
@@ -756,7 +757,7 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 	err = s.list(ctx, tr, opt, func(rows *sql.Rows) error {
 		var r types.MinimalRepo
 		var private bool
-		err := rows.Scan(&r.ID, &r.Name, &private, &dbutil.NullInt{N: &r.Stars})
+		err := rows.Scan(&r.ID, &r.Name, &private, &dbutil.NullInt{N: &r.Stars}, &dbutil.NullString{S: &r.Description})
 		if err != nil {
 			return err
 		}

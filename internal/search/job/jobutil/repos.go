@@ -2,6 +2,7 @@ package jobutil
 
 import (
 	"context"
+	"github.com/grafana/regexp"
 
 	"github.com/opentracing/opentracing-go/log"
 
@@ -27,7 +28,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(page.RepoRevs),
+			Results: repoRevsToRepoMatches(page.RepoRevs, s.RepoOpts.DescriptionPatterns),
 		})
 
 		return nil
@@ -58,15 +59,47 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 func (s *RepoSearchJob) Children() []job.Describer       { return nil }
 func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func repoRevsToRepoMatches(repos []*search.RepositoryRevisions) []result.Match {
+func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, descriptionPatterns []string) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
 	for _, r := range repos {
 		for _, rev := range r.Revs {
-			matches = append(matches, &result.RepoMatch{
+			rm := &result.RepoMatch{
 				Name: r.Repo.Name,
 				ID:   r.Repo.ID,
 				Rev:  rev,
-			})
+			}
+
+			if len(descriptionPatterns) > 0 {
+				dms := make([]result.Range, 0)
+				for _, dp := range descriptionPatterns {
+					rg, err := regexp.Compile(`(?i)` + dp)
+					if err != nil {
+						// `dp` is invalid regex, skip this pattern
+						continue
+					}
+
+					submatches := rg.FindAllStringSubmatchIndex(r.Repo.Description, -1)
+					if len(submatches) > 0 {
+						for _, sm := range submatches {
+							dms = append(dms, result.Range{
+								Start: result.Location{
+									Offset: sm[0],
+									Line:   0,
+									Column: sm[0],
+								},
+								End: result.Location{
+									Offset: sm[1],
+									Line:   0,
+									Column: sm[1],
+								},
+							})
+						}
+					}
+				}
+				rm.DescriptionMatches = dms
+			}
+
+			matches = append(matches, rm)
 		}
 	}
 	return matches
