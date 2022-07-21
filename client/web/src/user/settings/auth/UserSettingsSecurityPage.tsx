@@ -20,6 +20,7 @@ import {
     MinExternalAccountsVariables,
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
+import { getPasswordPolicy} from '../../../util/security'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword, createPassword } from '../backend'
 
@@ -183,11 +184,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
 
     public getPasswordRequirements(): JSX.Element {
         let requirements = ''
-        let passwordPolicyReference = window.context.authPasswordPolicy
-
-        if (!passwordPolicyReference) {
-            passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
-        }
+        let passwordPolicyReference = getPasswordPolicy()
 
         const minPasswordLen = (window.context.authMinPasswordLength > 0) ? window.context.authMinPasswordLength : 12
 

@@ -27,6 +27,7 @@ import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './Sign
 import { SignupEmailField } from './SignupEmailField'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
+import {getPasswordPolicy} from "../util/security";
 
 export interface SignUpArguments {
     email: string
@@ -57,11 +58,7 @@ export function getPasswordRequirements(
     context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
 ): string {
     let requirements = ''
-    let passwordPolicyReference = context.authPasswordPolicy
-
-    if (!passwordPolicyReference) {
-        passwordPolicyReference = context.experimentalFeatures.passwordPolicy
-    }
+    let passwordPolicyReference = getPasswordPolicy()
 
     const minPasswordLen = (window.context.authMinPasswordLength > 0) ? window.context.authMinPasswordLength : 12
 
@@ -135,13 +132,8 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
         signUpFieldValidators.password
     )
 
-    let passwordPolicyReference = context.authPasswordPolicy
-
-    if (!passwordPolicyReference) {
-        passwordPolicyReference = context.experimentalFeatures.passwordPolicy
-    }
-
     const minPasswordLen = window.context.authMinPasswordLength
+    let passwordPolicyReference = getPasswordPolicy()
 
     const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
 
@@ -383,11 +375,7 @@ function validatePassword(
     password: string
 ): string | undefined {
 
-    let passwordPolicyReference = context.authPasswordPolicy
-
-    if (!passwordPolicyReference) {
-        passwordPolicyReference = context.experimentalFeatures.passwordPolicy
-    }
+    let passwordPolicyReference = getPasswordPolicy()
 
     const minPasswordLen = context.authMinPasswordLength
 

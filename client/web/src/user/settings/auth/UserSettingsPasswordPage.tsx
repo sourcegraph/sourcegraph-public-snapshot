@@ -16,6 +16,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
 
 import styles from './UserSettingsPasswordPage.module.scss'
+import {getPasswordPolicy} from "../../../util/security";
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
@@ -91,7 +92,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
 
     public getPasswordRequirements(): JSX.Element {
         let requirements = ''
-        const passwordPolicyReference = window.context.experimentalFeatures.passwordPolicy
+        let passwordPolicyReference = getPasswordPolicy()
 
         if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
             if (passwordPolicyReference.minimumLength && passwordPolicyReference.minimumLength > 0) {
