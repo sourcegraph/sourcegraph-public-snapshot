@@ -4,6 +4,8 @@ import (
 	"context"
 	"testing"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/hexops/autogold"
 	"github.com/hexops/valast"
 
@@ -15,15 +17,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 func TestInitializeJob(t *testing.T) {
 	ctx := context.Background()
-	logger := log.Scoped("", "")
+	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	confClient = conf.MockClient()
@@ -65,7 +65,7 @@ func TestInitializeJob(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
 			job := NewTelemetryJob(db)
-			routines, err := job.Routines(ctx, logger)
+			routines, err := job.Routines(ctx, logtest.Scoped(t))
 			if err != nil {
 				t.Error(err)
 			}
@@ -85,7 +85,6 @@ func TestInitializeJob(t *testing.T) {
 
 func TestHandlerEnabledDisabled(t *testing.T) {
 	ctx := context.Background()
-	logger := log.Scoped("", "")
 
 	tests := []struct {
 		name         string
@@ -123,7 +122,7 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			handler := newTelemetryHandler(logger, database.NewMockEventLogStore(), func(ctx context.Context, event []*types.Event) error {
+			handler := newTelemetryHandler(logtest.Scoped(t), database.NewMockEventLogStore(), func(ctx context.Context, event []*types.Event) error {
 				return nil
 			})
 			err := handler.Handle(ctx)
@@ -141,24 +140,21 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 }
 
 func TestHandlerLoadsEvents(t *testing.T) {
-	logger := log.Scoped("", "")
+	logger := logtest.Scoped(t)
 	dbHandle := dbtest.NewDB(logger, t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true}}})
 
-	handler := newTelemetryHandler(logger, db.EventLogs(), func(ctx context.Context, event []*types.Event) error {
-		return nil
-	})
-
 	t.Run("loads no events when table is empty", func(t *testing.T) {
-		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event) error {
 			if len(event) != 0 {
 				t.Errorf("expected empty events but got event array with size: %d", len(event))
 			}
 			return nil
-		}
+		})
+
 		err := handler.Handle(ctx)
 		if err != nil {
 			t.Fatal(err)
@@ -177,17 +173,18 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			Source: "test",
 		},
 	}
-	err := handler.eventLogStore.BulkInsert(ctx, want)
+	err := db.EventLogs().BulkInsert(ctx, want)
 	if err != nil {
 		t.Fatal(err)
 	}
 
 	t.Run("loads events without error", func(t *testing.T) {
 		var got []*types.Event
-		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event) error {
 			got = event
 			return nil
-		}
+		})
+
 		err := handler.Handle(ctx)
 		if err != nil {
 			t.Fatal(err)
@@ -216,10 +213,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true, BatchSize: 1}}})
 
 		var got []*types.Event
-		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event) error {
 			got = event
 			return nil
-		}
+		})
 		err := handler.Handle(ctx)
 		if err != nil {
 			t.Fatal(err)
