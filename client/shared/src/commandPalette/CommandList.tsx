@@ -377,6 +377,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
     showCaret = true,
     popoverClassName,
     popoverInnerClassName,
+    keyboardShortcutForShow,
     variant,
     ...props
 }) => {
