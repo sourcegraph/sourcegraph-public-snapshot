@@ -11,6 +11,64 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
+type CountBatchChangeChangesetAssociationsOpts struct {
+	BatchChangeID   int64
+	ChangesetID     int64
+	OnlyArchived    bool
+	IncludeArchived bool
+}
+
+func (opts CountBatchChangeChangesetAssociationsOpts) preds() []*sqlf.Query {
+	preds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
+
+	if opts.BatchChangeID != 0 {
+		preds = append(preds, sqlf.Sprintf("batch_change_id = %s", opts.BatchChangeID))
+	}
+	if opts.ChangesetID != 0 {
+		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
+	}
+	if opts.OnlyArchived {
+		preds = append(preds, sqlf.Sprintf("archived = %s", btypes.BatchChangeChangesetArchived))
+	}
+	if !opts.IncludeArchived {
+		preds = append(preds, sqlf.Sprintf("archived IS NULL"))
+	}
+
+	return preds
+}
+
+func (s *Store) CountBatchChangeChangesetAssociations(
+	ctx context.Context,
+	opts CountBatchChangeChangesetAssociationsOpts,
+) (count int64, err error) {
+	ctx, _, endObservation := s.operations.countBatchChangeChangesetAssociations.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := countBatchChangeChangesetAssociationsQuery(opts)
+
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
+		return sc.Scan(&count)
+	})
+	return
+}
+
+func countBatchChangeChangesetAssociationsQuery(opts CountBatchChangeChangesetAssociationsOpts) *sqlf.Query {
+	return sqlf.Sprintf(
+		countBatchChangeChangesetAssociationsFmtstr,
+		sqlf.Join(opts.preds(), " AND "),
+	)
+}
+
+const countBatchChangeChangesetAssociationsFmtstr = `
+-- source: batch_change_changesets.go:CountBatchChangeChangesetAssociations
+SELECT
+  COUNT(*)
+FROM
+  batch_change_changesets
+WHERE
+  %s
+`
+
 func (s *Store) CreateBatchChangeChangesetAssociation(
 	ctx context.Context,
 	assoc *btypes.BatchChangeChangesetAssociation,
@@ -141,20 +199,12 @@ func (s *Store) ListBatchChangeChangesetAssociations(
 }
 
 func listBatchChangeChangesetAssociationsQuery(opts ListBatchChangeChangesetAssociationsOpts) *sqlf.Query {
-	preds := []*sqlf.Query{sqlf.Sprintf("TRUE")}
-
-	if opts.BatchChangeID != 0 {
-		preds = append(preds, sqlf.Sprintf("batch_change_id = %s", opts.BatchChangeID))
-	}
-	if opts.ChangesetID != 0 {
-		preds = append(preds, sqlf.Sprintf("changeset_id = %s", opts.ChangesetID))
-	}
-	if opts.OnlyArchived {
-		preds = append(preds, sqlf.Sprintf("archived = %s", btypes.BatchChangeChangesetArchived))
-	}
-	if !opts.IncludeArchived {
-		preds = append(preds, sqlf.Sprintf("archived IS NULL"))
-	}
+	preds := CountBatchChangeChangesetAssociationsOpts{
+		BatchChangeID:   opts.BatchChangeID,
+		ChangesetID:     opts.ChangesetID,
+		OnlyArchived:    opts.OnlyArchived,
+		IncludeArchived: opts.IncludeArchived,
+	}.preds()
 
 	var offset string
 	if opts.Cursor != 0 {

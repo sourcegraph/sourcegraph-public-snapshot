@@ -196,9 +196,16 @@ func (r *changesetApplyPreviewConnectionResolver) Stats(ctx context.Context) (gr
 			stats.added++
 		}
 		if _, ok := targets.ToVisibleApplyPreviewTargetsUpdate(); ok {
-			if len(ops) > 0 && len(mapping.Changeset.BatchChanges) > 0 {
+			count, err := r.store.CountBatchChangeChangesetAssociations(
+				ctx,
+				store.CountBatchChangeChangesetAssociationsOpts{ChangesetID: mapping.Changeset.ID},
+			)
+			if err != nil {
+				return nil, errors.Wrap(err, "counting associated batch changes")
+			}
+			if len(ops) > 0 && count > 0 {
 				stats.modified++
-			} else if len(mapping.Changeset.BatchChanges) == 0 {
+			} else if count == 0 {
 				stats.added++
 			}
 		}

@@ -236,6 +236,7 @@ func (s ChangesetCheckState) Valid() bool {
 }
 
 // BatchChangeAssoc stores the details of a association to a BatchChange.
+// TODO: remove
 type BatchChangeAssoc struct {
 	BatchChangeID int64 `json:"-"`
 	Detach        bool  `json:"detach,omitempty"`
@@ -289,7 +290,7 @@ type Changeset struct {
 	NumFailures      int64
 	SyncErrorMessage *string
 
-	// Closing is set to true (along with the ReocncilerState) when the
+	// Closing is set to true (along with the ReconcilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
 }
