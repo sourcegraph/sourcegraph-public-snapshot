@@ -13,19 +13,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func New(child job.Job, fileOwnersMustInclude []string, fileOwnersMustExclude []string) job.Job {
+func New(child job.Job, includeOwners []string, excludeOwners []string) job.Job {
 	return &codeownershipJob{
-		child:                 child,
-		fileOwnersMustInclude: fileOwnersMustInclude,
-		fileOwnersMustExclude: fileOwnersMustExclude,
+		child:         child,
+		includeOwners: includeOwners,
+		excludeOwners: excludeOwners,
 	}
 }
 
 type codeownershipJob struct {
 	child job.Job
 
-	fileOwnersMustInclude []string
-	fileOwnersMustExclude []string
+	includeOwners []string
+	excludeOwners []string
 }
 
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -35,7 +35,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	var errs error
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event.Results, _ = applyCodeOwnershipFiltering(ctx, s.fileOwnersMustInclude, s.fileOwnersMustExclude, event.Results)
+		event.Results, _ = applyCodeOwnershipFiltering(ctx, s.includeOwners, s.excludeOwners, event.Results)
 		stream.Send(event)
 	})
 
@@ -56,8 +56,8 @@ func (s *codeownershipJob) Fields(v job.Verbosity) (res []otlog.Field) {
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			otlog.String("fileOwnersMustInclude", strings.Join(s.fileOwnersMustInclude, ",")),
-			otlog.String("fileOwnersMustExclude", strings.Join(s.fileOwnersMustExclude, ",")),
+			otlog.String("includeOwners", strings.Join(s.includeOwners, ",")),
+			otlog.String("excludeOwners", strings.Join(s.excludeOwners, ",")),
 		)
 	}
 	return res
@@ -73,13 +73,13 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-func applyCodeOwnershipFiltering(ctx context.Context, fileOwnersMustInclude []string, fileOwnersMustExclude []string, matches []result.Match) ([]result.Match, error) {
+func applyCodeOwnershipFiltering(ctx context.Context, includeOwners []string, excludeOwners []string, matches []result.Match) ([]result.Match, error) {
 	filtered := matches[:0]
 
 	// We currently don't have a way to access file ownership information, so no
 	// file currently has any owner. A search to include any owner will
 	// therefore return no results.
-	if len(fileOwnersMustInclude) == 0 {
+	if len(includeOwners) == 0 {
 		filtered = matches
 	}
 
