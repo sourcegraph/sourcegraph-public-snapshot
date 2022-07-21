@@ -95,7 +95,7 @@ func constructRunCmdLongHelp() string {
 	var names []string
 	for name, command := range config.Commands {
 		if command.Description != "" {
-			name = fmt.Sprintf("%s (%s)", name, command.Description)
+			name = fmt.Sprintf("%s: %s", name, command.Description)
 		}
 		names = append(names, name)
 	}
