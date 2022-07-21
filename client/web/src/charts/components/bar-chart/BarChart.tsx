@@ -159,7 +159,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                 />
             )}
 
-            {activeSegment && rootRef.current &&  (
+            {activeSegment && rootRef.current && (
                 <Tooltip containerElement={rootRef.current}>
                     <BarTooltipContent
                         category={activeSegment.category}
