@@ -33,15 +33,16 @@ func TestDefinitions(t *testing.T) {
 	mockPositionAdjuster := noopPositionAdjuster()
 	mockSymbolsResolver := NewMockSymbolsResolver()
 
-	locations := []shared.UploadLocation{
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: range1},
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: range2},
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: range3},
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: range4},
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: range5},
+	locations := []lsifstore.Location{
+		{DumpID: 51, Path: "a.go", Range: testRange1},
+		{DumpID: 51, Path: "b.go", Range: testRange2},
+		{DumpID: 51, Path: "a.go", Range: testRange3},
+		{DumpID: 51, Path: "b.go", Range: testRange4},
+		{DumpID: 51, Path: "c.go", Range: testRange5},
 	}
 
-	mockSymbolsResolver.DefinitionsFunc.PushReturn(locations, nil)
+	mockLSIFStore.DefinitionsFunc.PushReturn(nil, 0, nil)
+	mockLSIFStore.DefinitionsFunc.PushReturn(locations, len(locations), nil)
 
 	uploads := []dbstore.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
@@ -89,15 +90,15 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	mockPositionAdjuster := noopPositionAdjuster()
 	mockSymbolsResolver := NewMockSymbolsResolver()
 
-	locations := []shared.UploadLocation{
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: range1},
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: range2},
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/a.go", TargetCommit: "deadbeef", TargetRange: range3},
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/b.go", TargetCommit: "deadbeef", TargetRange: range4},
-		{Dump: shared.Dump{ID: 51, Commit: "deadbeef", Root: "sub2/"}, Path: "sub2/c.go", TargetCommit: "deadbeef", TargetRange: range5},
+	locations := []lsifstore.Location{
+		{DumpID: 51, Path: "a.go", Range: testRange1},
+		{DumpID: 51, Path: "b.go", Range: testRange2},
+		{DumpID: 51, Path: "a.go", Range: testRange3},
+		{DumpID: 51, Path: "b.go", Range: testRange4},
+		{DumpID: 51, Path: "c.go", Range: testRange5},
 	}
-	// mockSymbolsResolver.DefinitionsFunc.PushReturn(nil, 0, nil)
-	mockSymbolsResolver.DefinitionsFunc.PushReturn(locations, nil)
+	mockLSIFStore.DefinitionsFunc.PushReturn(nil, 0, nil)
+	mockLSIFStore.DefinitionsFunc.PushReturn(locations, len(locations), nil)
 
 	uploads := []dbstore.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},

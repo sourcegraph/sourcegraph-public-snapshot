@@ -12,6 +12,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+var _ service = (*Service)(nil)
+
 type service interface {
 	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
 	GetReferences(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error)
@@ -19,6 +21,7 @@ type service interface {
 	GetDefinitions(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error)
 	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error)
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error)
+	GetStencil(ctx context.Context, uploadID int, path string) (_ []shared.Range, err error)
 
 	GetMonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) (_ [][]precise.MonikerData, err error)
 	GetBulkMonikerLocations(ctx context.Context, tableName string, uploadIDs []int, monikers []precise.MonikerData, limit, offset int) (_ []shared.Location, _ int, err error)

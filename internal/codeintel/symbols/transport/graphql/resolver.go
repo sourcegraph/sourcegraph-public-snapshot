@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	symbols "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -32,7 +31,7 @@ type Resolver interface {
 }
 
 type resolver struct {
-	svc                            *symbols.Service
+	svc                            Service
 	requestArgs                    *requestArgs
 	gitTreeTranslator              GitTreeTranslator
 	maximumIndexesPerMonikerSearch int
@@ -46,7 +45,7 @@ type resolver struct {
 	operations *operations
 }
 
-func New(svc *symbols.Service, hunkCacheSize int, observationContext *observation.Context) Resolver {
+func New(svc Service, hunkCacheSize int, observationContext *observation.Context) Resolver {
 	return &resolver{
 		svc:           svc,
 		operations:    newOperations(observationContext),

@@ -158,6 +158,11 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/internal/store
   interfaces:
     - Store
+- filename: internal/codeintel/symbols/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/transport/graphql
+  interfaces:
+    - Service
+    - GitserverClient
 - filename: internal/codeintel/uploads/background/cleanup/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   interfaces:
