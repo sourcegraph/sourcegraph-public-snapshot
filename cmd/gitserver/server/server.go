@@ -157,6 +157,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 	// Wait for command to exit or context to be done
 	select {
 	case <-ctx.Done():
+		logger.Debug("context cancelled, sending SIGINT")
 		// Attempt to send SIGINT
 		if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
 			logger.Warn("Sending SIGINT to command", log.Error(err))
@@ -167,8 +168,10 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 		timer := time.NewTimer(2 * time.Second)
 		select {
 		case <-done:
+			logger.Debug("process exited after SIGINT sent")
 			timer.Stop()
 		case <-timer.C:
+			logger.Debug("timed out, killing process")
 			_ = cmd.Process.Kill()
 		}
 		if cmd.ProcessState != nil { // is nil if process failed to start
