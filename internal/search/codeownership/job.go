@@ -2,9 +2,12 @@ package codeownership
 
 import (
 	"context"
+	"fmt"
+	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -32,10 +35,20 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	var errs error
+	var (
+		mu    sync.Mutex
+		errs  error
+		rules map[string]Ruleset = make(map[string]Ruleset)
+	)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-		event.Results, _ = applyCodeOwnershipFiltering(ctx, s.includeOwners, s.excludeOwners, event.Results)
+		var err error
+		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.DB, &mu, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		if err != nil {
+			mu.Lock()
+			errs = errors.Append(errs, err)
+			mu.Unlock()
+		}
 		stream.Send(event)
 	})
 
@@ -73,15 +86,58 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-func applyCodeOwnershipFiltering(ctx context.Context, includeOwners, excludeOwners []string, matches []result.Match) ([]result.Match, error) {
+func applyCodeOwnershipFiltering(
+	ctx context.Context,
+	db database.DB,
+	mu *sync.Mutex,
+	rules *map[string]Ruleset,
+	includeOwners,
+	excludeOwners []string,
+	matches []result.Match) ([]result.Match, error) {
+	var errs error
+
 	filtered := matches[:0]
 
-	// We currently don't have a way to access file ownership information, so no
-	// file currently has any owner. A search to include any owner will
-	// therefore return no results.
-	if len(includeOwners) == 0 {
-		filtered = matches
+matchesLoop:
+	for _, m := range matches {
+		switch mm := m.(type) {
+		case *result.FileMatch:
+			cachekey := fmt.Sprintf("%s@%s", mm.Repo.Name, mm.CommitID)
+
+			mu.Lock()
+			ruleset, ok := (*rules)[cachekey]
+			if !ok {
+				var err error
+				ruleset, err = NewRuleset(db, mm.Repo.Name, mm.CommitID)
+				if err != nil {
+					errs = errors.Append(errs, err)
+				}
+				(*rules)[cachekey] = ruleset
+			}
+			owners, _ := ruleset.Match(mm.File.Path)
+			mu.Unlock()
+
+			for _, owner := range includeOwners {
+				if !contains(owners, owner) {
+					continue matchesLoop
+				}
+			}
+
+			filtered = append(filtered, m)
+		default:
+			// Code ownership is currently only implemented for files.
+			continue matchesLoop
+		}
 	}
 
-	return filtered, nil
+	return filtered, errs
+}
+
+func contains(s []string, str string) bool {
+	for _, v := range s {
+		if v == str {
+			return true
+		}
+	}
+	return false
 }
