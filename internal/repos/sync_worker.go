@@ -121,18 +121,21 @@ func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
 	}
 }
 
+const cleanSyncJobsQueryFmtstr = `
+-- source: internal/repos/sync_worker.go:runJobCleaner
+DELETE FROM external_service_sync_jobs
+WHERE
+	finished_at < NOW() - INTERVAL '1 day'
+  	AND
+  	state IN ('completed', 'failed')
+`
+
 func runJobCleaner(ctx context.Context, handle basestore.TransactableHandle, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
 
 	for {
-		_, err := handle.ExecContext(ctx, `
--- source: internal/repos/sync_worker.go:runJobCleaner
-DELETE FROM external_service_sync_jobs
-WHERE
-  finished_at < now() - INTERVAL '1 day'
-  AND state IN ('completed', 'errored')
-`)
+		_, err := handle.ExecContext(ctx, cleanSyncJobsQueryFmtstr)
 		if err != nil && err != context.Canceled {
 			log15.Error("error while running job cleaner", "err", err)
 		}
