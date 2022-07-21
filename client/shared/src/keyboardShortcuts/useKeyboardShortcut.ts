@@ -25,5 +25,5 @@ export function useKeyboardShortcut(key: KeyboardShortcutKey): KeyboardShortcut 
         return filteredKeybindings.length ? { ...shortcut, keybindings: filteredKeybindings } : undefined
     }
 
-    return KEYBOARD_SHORTCUTS[key]
+    return shortcut
 }
