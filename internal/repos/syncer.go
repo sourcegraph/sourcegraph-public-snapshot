@@ -191,7 +191,7 @@ func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record 
 		}
 
 		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, cli)
-		gh := NewGithubWebhookAPI(client)
+		gh := NewGitHubWebhookAPI(client)
 
 		id, foundWebhook := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
 		if !foundWebhook {

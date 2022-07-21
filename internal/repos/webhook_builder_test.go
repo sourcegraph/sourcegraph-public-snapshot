@@ -182,7 +182,7 @@ func testWebhookBuilder(store repos.Store, db database.DB) func(*testing.T) {
 		}
 
 		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token}, doer)
-		gh := repos.NewGithubWebhookAPI(client)
+		gh := repos.NewGitHubWebhookAPI(client)
 
 		success, err := gh.Client.TestPushSyncWebhook(ctx, repoName, id)
 		if err != nil || !success {
@@ -477,7 +477,7 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 		}
 
 		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, *h.doer)
-		gh := repos.NewGithubWebhookAPI(client)
+		gh := repos.NewGitHubWebhookAPI(client)
 
 		id, foundSyncWebhook := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
 		if !foundSyncWebhook {
