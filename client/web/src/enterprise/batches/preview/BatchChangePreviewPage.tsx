@@ -14,6 +14,7 @@ import { BatchSpecByIDResult, BatchSpecByIDVariables } from '../../../graphql-op
 import { Description } from '../Description'
 import { SupersedingBatchSpecAlert } from '../detail/SupersedingBatchSpecAlert'
 import { MultiSelectContextProvider } from '../MultiSelectContext'
+import { useBatchChangesLicense } from '../useBatchChangesLicense'
 
 import { BATCH_SPEC_BY_ID, queryApplyPreviewStats as _queryApplyPreviewStats } from './backend'
 import { BatchChangePreviewContextProvider } from './BatchChangePreviewContext'
@@ -23,7 +24,6 @@ import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import { PreviewList } from './list/PreviewList'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
-import { useBatchChangesLicense } from '../useBatchChangesLicense'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
