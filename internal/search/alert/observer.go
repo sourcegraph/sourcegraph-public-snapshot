@@ -301,9 +301,9 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	if errors.As(err, &lErr) {
 		return &search.Alert{
 			PrometheusType:  "lucky_search_notice",
-			Title:           "Showing additional results for similar queries",
+			Title:           "Also showing additional results",
 			Kind:            string(luckySearchQueries),
-			Description:     "We returned all the results for your query. We also added results you might be interested in for similar queries. Below are similar queries we ran.",
+			Description:     "We returned all the results for your query. We also added results for similar queries that might interest you.",
 			ProposedQueries: lErr.ProposedQueries,
 		}, nil
 	}
