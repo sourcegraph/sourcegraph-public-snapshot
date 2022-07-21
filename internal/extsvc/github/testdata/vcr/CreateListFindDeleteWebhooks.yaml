@@ -11,6 +11,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
     url: https://api.github.com/repos/sd9/sourcegraph/hooks
     method: POST
   response:
@@ -202,6 +205,7 @@ interactions:
       - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
+<<<<<<< HEAD
     url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
     method: POST
   response:
@@ -212,6 +216,12 @@ interactions:
   response:
     body: '{"type":"Repository","id":107,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T01:02:13Z","created_at":"2022-07-21T01:02:13Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/deliveries","last_response":{"code":null,"status":"unused","message":null}}'
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
+    method: POST
+  response:
+    body: '{"type":"Repository","id":108,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T14:55:07Z","created_at":"2022-07-21T14:55:07Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/deliveries","last_response":{"code":null,"status":"unused","message":null}}'
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -230,6 +240,7 @@ interactions:
       - application/json; charset=utf-8
       Date:
 <<<<<<< HEAD
+<<<<<<< HEAD
       - Thu, 21 Jul 2022 14:55:07 GMT
       Etag:
       - '"04f7a1ae8725f6e1072e13b8292d8bf844df11e8f8434cd5da18455c826d346c"'
@@ -237,11 +248,18 @@ interactions:
       - https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108
 =======
       - Thu, 21 Jul 2022 01:02:13 GMT
+=======
+      - Thu, 21 Jul 2022 14:55:07 GMT
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
       Etag:
-      - '"431794567b4ada35220fad33af0155af87d0fdd7ccbeb0767dd9d9c40d474e1e"'
+      - '"04f7a1ae8725f6e1072e13b8292d8bf844df11e8f8434cd5da18455c826d346c"'
       Location:
+<<<<<<< HEAD
       - https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+      - https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -261,6 +279,7 @@ interactions:
         format=json
       X-Github-Request-Id:
 <<<<<<< HEAD
+<<<<<<< HEAD
       - 40409338-5955-435a-8514-476ca1e80fd5
       X-Runtime-Rack:
       - "0.128348"
@@ -269,6 +288,11 @@ interactions:
       X-Runtime-Rack:
       - "0.114445"
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+      - 40409338-5955-435a-8514-476ca1e80fd5
+      X-Runtime-Rack:
+      - "0.128348"
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
       X-Xss-Protection:
       - "0"
     status: 201 Created
@@ -287,10 +311,14 @@ interactions:
     method: GET
   response:
 <<<<<<< HEAD
+<<<<<<< HEAD
     body: '[{"type":"Repository","id":108,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T14:55:07Z","created_at":"2022-07-21T14:55:07Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/deliveries","last_response":{"code":500,"status":"hookshot_error","message":"no
 =======
     body: '[{"type":"Repository","id":107,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T01:02:13Z","created_at":"2022-07-21T01:02:13Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/deliveries","last_response":{"code":500,"status":"hookshot_error","message":"no
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+    body: '[{"type":"Repository","id":108,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T14:55:07Z","created_at":"2022-07-21T14:55:07Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/deliveries","last_response":{"code":500,"status":"hookshot_error","message":"no
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
       such host"}}]'
     headers:
       Access-Control-Allow-Origin:
@@ -308,6 +336,7 @@ interactions:
       - application/json; charset=utf-8
       Date:
 <<<<<<< HEAD
+<<<<<<< HEAD
       - Thu, 21 Jul 2022 14:55:08 GMT
       Etag:
       - W/"c0a03ccc1e71e4311d2c1c769e2d31c3fc99b8d342759a7cc9b29f7d705ffa8f"
@@ -316,6 +345,11 @@ interactions:
       Etag:
       - W/"e609d8be5bfb61a662b9db2b1b6dfa1e4e6779392f52c5129c26693344d27385"
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+      - Thu, 21 Jul 2022 14:55:08 GMT
+      Etag:
+      - W/"c0a03ccc1e71e4311d2c1c769e2d31c3fc99b8d342759a7cc9b29f7d705ffa8f"
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -335,6 +369,7 @@ interactions:
         format=json
       X-Github-Request-Id:
 <<<<<<< HEAD
+<<<<<<< HEAD
       - 892e6765-6630-438d-84e5-d6db9ce6a534
       X-Runtime-Rack:
       - "0.061894"
@@ -343,6 +378,11 @@ interactions:
       X-Runtime-Rack:
       - "0.050665"
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+      - 892e6765-6630-438d-84e5-d6db9ce6a534
+      X-Runtime-Rack:
+      - "0.061894"
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -360,10 +400,14 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
 <<<<<<< HEAD
+<<<<<<< HEAD
     url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108
 =======
     url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
     method: DELETE
   response:
     body: ""
@@ -379,10 +423,14 @@ interactions:
       - default-src 'none'
       Date:
 <<<<<<< HEAD
+<<<<<<< HEAD
       - Thu, 21 Jul 2022 14:55:08 GMT
 =======
       - Thu, 21 Jul 2022 01:02:14 GMT
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+      - Thu, 21 Jul 2022 14:55:08 GMT
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -400,6 +448,7 @@ interactions:
         format=json
       X-Github-Request-Id:
 <<<<<<< HEAD
+<<<<<<< HEAD
       - 275b3ac5-6acf-46f6-91a7-459a3641de13
       X-Runtime-Rack:
       - "0.059548"
@@ -408,6 +457,11 @@ interactions:
       X-Runtime-Rack:
       - "0.048520"
 >>>>>>> 8e241d5419 (Change to v3.go)
+=======
+      - 275b3ac5-6acf-46f6-91a7-459a3641de13
+      X-Runtime-Rack:
+      - "0.059548"
+>>>>>>> 6b26f2707a (Rename functions, add test for github.com, remove github_handler, add docstring)
       X-Xss-Protection:
       - "0"
     status: 204 No Content
