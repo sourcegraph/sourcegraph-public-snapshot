@@ -20,7 +20,6 @@ import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../..
 
 import { eventLogger } from '../../tracking/eventLogger'
 
-
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import {
     getCodeMonitoringCreateAction,
