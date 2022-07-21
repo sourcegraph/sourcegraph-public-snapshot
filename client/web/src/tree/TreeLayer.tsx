@@ -25,6 +25,7 @@ import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerCell, TreeLayerTable, TreeRowAlert } from './components'
+import { MAX_TREE_ENTRIES } from './constants'
 import { Directory } from './Directory'
 import { File } from './File'
 import { TreeNode } from './Tree'
@@ -32,7 +33,6 @@ import { TreeRootProps } from './TreeRoot'
 import {
     compareTreeProps,
     hasSingleChild,
-    maxEntries,
     singleChildEntriesToGitTree,
     SingleChildGitTree,
     TreeEntryInfo,
@@ -86,7 +86,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                     revision: props.revision,
                     commitID: props.commitID,
                     filePath: props.parentPath || '',
-                    first: maxEntries,
+                    first: MAX_TREE_ENTRIES,
                     requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
                 }).pipe(
                     catchError(error => [asError(error)]),
@@ -149,7 +149,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                             revision: this.props.revision,
                             commitID: this.props.commitID,
                             filePath: path,
-                            first: maxEntries,
+                            first: MAX_TREE_ENTRIES,
                             requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
                         }).pipe(catchError(error => [asError(error)]))
                     )
@@ -279,7 +279,6 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                     depth={this.props.depth}
                                     index={this.props.index}
                                     isLightTheme={this.props.isLightTheme}
-                                    maxEntries={maxEntries}
                                     loading={treeOrError === LOADING}
                                     handleTreeClick={this.handleTreeClick}
                                     noopRowClick={this.noopRowClick}
@@ -323,7 +322,6 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 depth={this.props.depth}
                                 index={this.props.index}
                                 isLightTheme={this.props.isLightTheme}
-                                maxEntries={maxEntries}
                                 handleTreeClick={this.handleTreeClick}
                                 noopRowClick={this.noopRowClick}
                                 linkRowClick={this.linkRowClick}
