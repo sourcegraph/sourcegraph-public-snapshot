@@ -17,7 +17,6 @@ import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
-
 import { eventLogger } from '../../tracking/eventLogger'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
