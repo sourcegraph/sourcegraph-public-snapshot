@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -10,16 +11,20 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/thanhpk/randstr"
+	"github.com/tidwall/gjson"
 	"golang.org/x/sync/singleflight"
 
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/external/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -157,28 +162,44 @@ func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record 
 
 	switch wbj.ExtsvcKind {
 	case "GITHUB":
+		svcs, err := wb.store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{}) // some namespace
+		if err != nil || len(svcs) != 1 {
+			return errors.Wrap(err, "get external service")
+		}
+		svc := svcs[0]
+
+		baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
+		if err != nil {
+			return errors.Wrap(err, "parse base URL")
+		}
+
 		accounts, err := wb.store.UserExternalAccountsStore().List(ctx, database.ExternalAccountsListOptions{})
 		if err != nil {
-			return errors.Errorf("error getting accounts", err)
+			return errors.Wrap(err, "get accounts")
 		}
 
 		_, token, err := github.GetExternalAccountData(&accounts[0].AccountData)
 		if err != nil {
-			return errors.Errorf("error getting token", err)
+			return errors.Wrap(err, "get token")
 		}
 
-		gh, err := NewGithubWebhookAPI()
+		cf := httpcli.ExternalClientFactory
+		opts := []httpcli.Opt{}
+		cli, err := cf.Doer(opts...)
 		if err != nil {
-			return err
+			return errors.Wrap(err, "create client")
 		}
 
-		id, foundSyncWebhook := gh.FindSyncWebhook(ctx, wbj.RepoName, token.AccessToken)
-		if !foundSyncWebhook {
+		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, cli)
+		gh := NewGithubWebhookAPI(client)
+
+		id, foundWebhook := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
+		if !foundWebhook {
 			secret := randstr.Hex(32)
 			// store it somewhere [org : secret]
-			id, err = gh.CreateSyncWebhook(ctx, wbj.RepoName, "https://fcba-116-15-22-254.ap.ngrok.io", secret, token.AccessToken)
+			id, err = gh.Client.CreateSyncWebhook(ctx, wbj.RepoName, globals.ExternalURL().Host, secret)
 			if err != nil {
-				return errors.Errorf("creation error:", err)
+				return errors.Wrap(err, "create webhook")
 			}
 		}
 		fmt.Println("ID:", id)
@@ -662,13 +683,12 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 
-		svc.SyncUsingWebhooks = false
+		svc.SyncUsingWebhooks = true
 		if svc.SyncUsingWebhooks {
 			err = s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name), svc.Kind)
 			if err != nil && s.Logger != nil {
-				s.Logger.Error("enqueuing webhook creation jobs", log.Error(err))
+				s.Logger.Error("enqueue webhook creation jobs", log.Error(err))
 			}
-			// need to check for nil results
 		}
 		// no hardcode
 

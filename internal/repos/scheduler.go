@@ -529,8 +529,8 @@ func (q *updateQueue) reset() {
 	schedUpdateQueueLength.Set(0)
 }
 
-var notifyyy = func(ch chan struct{}) {
-	fmt.Println("notifyyyyyyying...")
+var newNotify = func(ch chan struct{}) {
+	fmt.Println("newNotify...")
 	select {
 	case ch <- struct{}{}:
 	default:
@@ -559,7 +559,7 @@ func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 			Repo:     repo,
 			Priority: p,
 		})
-		notify(q.notifyEnqueue)
+		newNotify(q.notifyEnqueue)
 		return false
 	}
 

@@ -139,21 +139,6 @@ func (s *Server) handleRepoLookup(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleEnqueueRepoUpdateUsingWebhooks(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("ENQUEUE REPO UPDATE WEBHOOKS ENDPOINT")
-	// if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-	// 	s.respond(w, http.StatusBadRequest, err)
-	// 	return
-	// }
-	result, status, err := s.enqueueRepoUpdate(r.Context(), &protocol.RepoUpdateRequest{Repo: api.RepoName("ghe.sgdev.org/milton/test")})
-	if err != nil {
-		// s.Logger.Error("enqueueRepoUpdate failed", log.String("req", fmt.Sprint(req)), log.Error(err))
-		s.respond(w, status, err)
-		return
-	}
-	s.respond(w, status, result)
-}
-
 func (s *Server) handleEnqueueRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	var req protocol.RepoUpdateRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
@@ -194,7 +179,6 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	}
 
 	repo := rs[0]
-	fmt.Printf("Repo:%+v\n", repo)
 	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,

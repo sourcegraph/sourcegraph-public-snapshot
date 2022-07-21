@@ -11,12 +11,12 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/keegancsmith/sqlf"
 	"github.com/thanhpk/randstr"
 
 	"github.com/sourcegraph/log"
@@ -29,9 +29,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
+	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
 	"github.com/sourcegraph/sourcegraph/internal/ratelimit"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -40,7 +43,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var updateThis = flag.Bool("updateThis", false, "update testdata for webhook build worker integration test")
+var updateWebhooks = flag.Bool("updateWebhooks", false, "update testdata for webhook build worker integration test")
 
 func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
@@ -69,16 +72,16 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 		}
 
 		config := string(bs)
-		testSvc := &types.ExternalService{
+		svc := &types.ExternalService{
 			Kind:        extsvc.KindGitHub,
-			DisplayName: "testingTesting123",
+			DisplayName: "TestService",
 			Config:      config,
 		}
-		if err := esStore.Upsert(ctx, testSvc); err != nil {
+		if err := esStore.Upsert(ctx, svc); err != nil {
 			t.Fatal(err)
 		}
 
-		testRepo := &types.Repo{
+		repo := &types.Repo{
 			ID:       1,
 			Name:     api.RepoName(repoName),
 			Metadata: &github.Repository{},
@@ -88,11 +91,11 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 				ServiceType: extsvc.TypeGitHub,
 			},
 		}
-		if err := repoStore.Create(ctx, testRepo); err != nil {
+		if err := repoStore.Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
 
-		sourcer := repos.NewFakeSourcer(nil, repos.NewFakeSource(testSvc, nil, testRepo))
+		sourcer := repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, repo))
 		syncer := &repos.Syncer{
 			Logger:  logger,
 			Sourcer: sourcer,
@@ -100,7 +103,7 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 			Now:     time.Now,
 		}
 
-		if err := syncer.SyncExternalService(ctx, testSvc.ID, time.Millisecond); err != nil {
+		if err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond); err != nil {
 			t.Fatal(err)
 		}
 
@@ -137,9 +140,19 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
+		testName := "sync-webhook-integration"
+		cf, save := httptestutil.NewGitHubRecorderFactory(t, *updateWebhooks, testName)
+		defer save()
+
+		doer, err := cf.Doer()
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		jobChan := make(chan int)
 		whBuildHandler := &fakeWhBuildHandler{
 			store:              store,
+			doer:               &doer,
 			jobChan:            jobChan,
 			minWhBuildInterval: func() time.Duration { return time.Minute },
 		}
@@ -156,54 +169,37 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 	loop:
 		select {
 		case id = <-jobChan:
-			fmt.Println("Created webhook:", id)
 			break loop
 		case <-time.After(5 * time.Second):
 			t.Fatal("Timeout")
 		}
 
-		type event struct {
-			PayloadType string
-			Data        json.RawMessage
-		}
-
-		gh, err := repos.NewGithubWebhookAPI()
+		// this is in response to line 1514 in
+		// internal/extsvc/github/common.go
+		baseURL, err := url.Parse("")
 		if err != nil {
 			t.Fatal(err)
 		}
-		gh.Client = repos.NewTestClient(t, "webhook-integration", updateThis)
 
-		success, err := gh.TestPushSyncWebhook(ctx, repoName, id, token)
-		if err != nil {
+		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token}, doer)
+		gh := repos.NewGithubWebhookAPI(client)
+
+		success, err := gh.Client.TestPushSyncWebhook(ctx, repoName, id)
+		if err != nil || !success {
 			t.Fatal(err)
-		}
-		if !success {
-			t.Fatal("failed")
-		} else {
-			fmt.Println("Successfully tested:", id, ",", repoName)
 		}
 
 		defer func() {
-			deleted, err := gh.DeleteSyncWebhook(ctx, repoName, id, token)
-			if err != nil {
+			deleted, err := gh.Client.DeleteSyncWebhook(ctx, repoName, id)
+			if err != nil || !deleted {
 				t.Fatal(err)
 			}
-			if !deleted {
-				t.Fatal("not deleted")
-			} else {
-				fmt.Println("Successfully deleted:", id, ",", repoName)
-			}
 		}()
-
-		hook, err := repos.NewGithubWebhookAPI()
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		handler := webhooks.GitHubWebhook{
 			ExternalServices: store.ExternalServiceStore(),
 		}
-		hook.Register(&handler)
+		gh.Register(&handler)
 
 		payloadData := []byte(`
 		{
@@ -401,6 +397,8 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 		  }
 		`)
 
+		// setting up the internal server
+		// that repoupdater listens to
 		server := &repoupdater.Server{
 			Logger:                logger,
 			Store:                 store,
@@ -421,6 +419,8 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 			defer httpSrv.Stop()
 		}()
 
+		// mock the Github PushEvent
+		// e.g. user makes a commit
 		url := fmt.Sprintf("%s/github-webhooks", globals.ExternalURL())
 		req, err := http.NewRequest("POST", url, bytes.NewReader(payloadData))
 		if err != nil {
@@ -432,7 +432,6 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 		resp := rec.Result()
-		fmt.Printf("resp:%+v\n", resp)
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			t.Fatalf("Non-200 status code: %v", resp.StatusCode)
@@ -442,12 +441,12 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 
 type fakeWhBuildHandler struct {
 	store              repos.Store
+	doer               *httpcli.Doer
 	jobChan            chan int
 	minWhBuildInterval func() time.Duration
 }
 
 func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	fmt.Println("in FakeHandler")
 	wbj, ok := record.(*repos.WhBuildJob)
 	if !ok {
 		h.jobChan <- -1
@@ -456,71 +455,42 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 
 	switch wbj.ExtsvcKind {
 	case "GITHUB":
+		svcs, err := h.store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{})
+		if err != nil || len(svcs) != 1 {
+			return errors.Wrap(err, "get external service")
+		}
+		svc := svcs[0]
+
+		baseURL, err := url.Parse("")
+		if err != nil {
+			return errors.Wrap(err, "parse base URL")
+		}
+
 		accts, err := h.store.UserExternalAccountsStore().List(ctx, database.ExternalAccountsListOptions{})
 		if err != nil {
-			return errors.Newf("Error getting user accounts,", err)
+			return errors.Wrap(err, "get accounts")
 		}
 
 		_, token, err := github.GetExternalAccountData(&accts[0].AccountData)
 		if err != nil {
-			fmt.Println("token error:", err)
+			return errors.Wrap(err, "get token")
 		}
 
-		gh, err := repos.NewGithubWebhookAPI()
-		if err != nil {
-			return err
-		}
+		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, *h.doer)
+		gh := repos.NewGithubWebhookAPI(client)
 
-		id, foundSyncWebhook := gh.FindSyncWebhook(ctx, wbj.RepoName, token.AccessToken)
+		id, foundSyncWebhook := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
 		if !foundSyncWebhook {
 			secret := randstr.Hex(32)
-			id, err = gh.CreateSyncWebhook(ctx, wbj.RepoName, "https://fcba-116-15-22-254.ap.ngrok.io", secret, token.AccessToken)
+			id, err = gh.Client.CreateSyncWebhook(ctx, wbj.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret)
 			if err != nil {
-				return errors.Errorf("creation error:", err)
+				return errors.Wrap(err, "create webhook")
 			}
 		}
 		h.jobChan <- id
 	}
 
 	return nil
-}
-
-func PrintRows(s repos.Store, ctx context.Context) {
-	fmt.Println("Printing rows...")
-	q := sqlf.Sprintf(`select * from webhook_build_jobs;`)
-	rows, err := s.RepoStore().Handle().QueryContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...)
-	if err != nil {
-		fmt.Println("error printing rows")
-	}
-	var jobs []repos.WhBuildJob
-
-	for rows.Next() {
-		var job repos.WhBuildJob
-		var executionLogs *[]any
-		rows.Scan(
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			&executionLogs,
-			&job.RepoID,
-			&job.RepoName,
-			&job.QueuedAt,
-		)
-		jobs = append(jobs, job)
-	}
-	if err := rows.Err(); err != nil {
-		fmt.Println("err printing:", err)
-	}
-
-	fmt.Println("Len:", len(jobs))
-	for _, j := range jobs {
-		fmt.Printf("Job:%+v\n", j)
-	}
 }
 
 func sign(t *testing.T, message, secret []byte) string {

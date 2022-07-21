@@ -74,7 +74,7 @@ func TestIntegration_WebhookSync(t *testing.T) {
 		name string
 		test func(repos.Store, database.DB) func(*testing.T)
 	}{
-		// {"Syncer/SyncWebhookWorker", testSyncWebhookWorker},
+		{"Syncer/SyncWebhookWorker", testSyncWebhookWorker},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			db := database.NewDB(dbtest.NewDB(t))
