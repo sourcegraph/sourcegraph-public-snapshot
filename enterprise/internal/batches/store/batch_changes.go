@@ -2,7 +2,6 @@ package store
 
 import (
 	"context"
-	"strconv"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go/log"
@@ -275,8 +274,7 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 	}
 
 	if opts.ChangesetID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT"))
-		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
+		preds = append(preds, sqlf.Sprintf("EXISTS (SELECT 1 FROM batch_change_changesets WHERE changeset_id = %s)", opts.ChangesetID))
 	}
 
 	if len(opts.States) > 0 {
@@ -327,8 +325,9 @@ func countBatchChangesQuery(opts *CountBatchChangesOpts, repoAuthzConds *sqlf.Qu
 		preds = append(preds, sqlf.Sprintf(`EXISTS(
 			SELECT * FROM changesets
 			INNER JOIN repo ON changesets.repo_id = repo.id
+      INNER JOIN batch_change_changesets bcc ON bcc.changeset_id = changesets.id
 			WHERE
-				changesets.batch_change_ids ? batch_changes.id::TEXT AND
+        bcc.batch_change_id = batch_changes.id AND
 				changesets.repo_id = %s AND
 				repo.deleted_at IS NULL AND
 				-- authz conditions:
@@ -459,15 +458,16 @@ SELECT
 FROM
 	changesets
 INNER JOIN repo ON changesets.repo_id = repo.id
+INNER JOIN batch_change_changesets bcc ON bcc.changeset_id = changesets.id
 WHERE
-	changesets.batch_change_ids ? %s AND
+  bcc.batch_change_id = %s AND
 	repo.deleted_at IS NULL AND
 	-- authz conditions:
 	%s
 `
 
 func getBatchChangeDiffStatQuery(opts GetBatchChangeDiffStatOpts, authzConds *sqlf.Query) *sqlf.Query {
-	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, strconv.Itoa(int(opts.BatchChangeID)), authzConds)
+	return sqlf.Sprintf(getBatchChangeDiffStatQueryFmtstr, opts.BatchChangeID, authzConds)
 }
 
 func (s *Store) GetRepoDiffStat(ctx context.Context, repoID api.RepoID) (stat *diff.Stat, err error) {
@@ -582,8 +582,7 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 	}
 
 	if opts.ChangesetID != 0 {
-		joins = append(joins, sqlf.Sprintf("INNER JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT"))
-		preds = append(preds, sqlf.Sprintf("changesets.id = %s", opts.ChangesetID))
+		preds = append(preds, sqlf.Sprintf("EXISTS (SELECT 1 FROM batch_change_changesets WHERE changeset_id = %s)", opts.ChangesetID))
 	}
 
 	if len(opts.States) > 0 {
@@ -633,8 +632,9 @@ func listBatchChangesQuery(opts *ListBatchChangesOpts, repoAuthzConds *sqlf.Quer
 		preds = append(preds, sqlf.Sprintf(`EXISTS(
 			SELECT * FROM changesets
 			INNER JOIN repo ON changesets.repo_id = repo.id
+      INNER JOIN batch_change_changesets bcc ON bcc.changeset_id = changesets.id
 			WHERE
-				changesets.batch_change_ids ? batch_changes.id::TEXT AND
+        bcc.batch_change_id = batch_changes.id AND
 				changesets.repo_id = %s AND
 				repo.deleted_at IS NULL AND
 				-- authz conditions:

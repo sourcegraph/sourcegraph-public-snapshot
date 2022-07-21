@@ -205,23 +205,45 @@ func TestGetBatchChangesUsageStatistics(t *testing.T) {
 	// missing diffstat shouldn't happen anymore (due to migration), but it's still a nullable field.
 	_, err = db.ExecContext(context.Background(), `
 		INSERT INTO changesets
-			(id, repo_id, external_service_type, owned_by_batch_change_id, batch_change_ids, external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
+			(id, repo_id, external_service_type, owned_by_batch_change_id,  external_state, publication_state, diff_stat_added, diff_stat_changed, diff_stat_deleted)
 		VALUES
-		    -- tracked
-			($2, $1, 'github', NULL, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 9, 7, 5),
-			($3, $1, 'github', NULL, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 7, 9, 5),
+      -- tracked
+			($2,  $1, 'github', NULL, 'OPEN',   'PUBLISHED', 9, 7, 5),
+			($3,  $1, 'github', NULL, 'MERGED', 'PUBLISHED', 7, 9, 5),
 			-- created by batch change
-			($4,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', 5, 7, 9),
-			($5,  $1, 'github', 1, '{"1": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
-			($6,  $1, 'github', 1, '{"1": {"detached": false}}', 'DRAFT',  'PUBLISHED', NULL, NULL, NULL),
-			(7,  $1, 'github', 2, '{"2": {"detached": false}}',  NULL,    'UNPUBLISHED', 9, 7, 5),
-			(8,  $1, 'github', 2, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', 9, 7, 5),
-			(9,  $1, 'github', 2, '{"2": {"detached": false}}', 'MERGED', 'PUBLISHED', NULL, NULL, NULL),
-			(10, $1, 'github', 2, '{"2": {"detached": false}}',  NULL,    'UNPUBLISHED', 9, 7, 5),
-			(11, $1, 'github', 2, '{"2": {"detached": false}}', 'CLOSED', 'PUBLISHED', NULL, NULL, NULL),
-			(12, $1, 'github', 3, '{"3": {"detached": false}}', 'OPEN',   'PUBLISHED', 5, 7, 9),
-			(13, $1, 'github', 3, '{"3": {"detached": false}}', 'OPEN',   'PUBLISHED', NULL, NULL, NULL)
+			($4,  $1, 'github', 1, 'OPEN',   'PUBLISHED', 5, 7, 9),
+			($5,  $1, 'github', 1, 'OPEN',   'PUBLISHED', NULL, NULL, NULL),
+			($6,  $1, 'github', 1, 'DRAFT',  'PUBLISHED', NULL, NULL, NULL),
+			(7,   $1, 'github', 2,  NULL,    'UNPUBLISHED', 9, 7, 5),
+			(8,   $1, 'github', 2, 'MERGED', 'PUBLISHED', 9, 7, 5),
+			(9,   $1, 'github', 2, 'MERGED', 'PUBLISHED', NULL, NULL, NULL),
+			(10,  $1, 'github', 2,  NULL,    'UNPUBLISHED', 9, 7, 5),
+			(11,  $1, 'github', 2, 'CLOSED', 'PUBLISHED', NULL, NULL, NULL),
+			(12,  $1, 'github', 3, 'OPEN',   'PUBLISHED', 5, 7, 9),
+			(13,  $1, 'github', 3, 'OPEN',   'PUBLISHED', NULL, NULL, NULL)
 	`, repo.ID, changesetIDOne, changesetIDTwo, changesetIDFour, changesetIDFive, changesetIDSix)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Attach the changesets to batch changes.
+	_, err = db.ExecContext(context.Background(), `
+    INSERT INTO batch_change_changesets
+      (batch_change_id, changeset_id)
+    VALUES
+      (1, %s),
+      (2, %s),
+      (1, %s),
+      (1, %s),
+      (1, %s),
+      (2, 7),
+      (2, 8),
+      (2, 9),
+      (2, 10),
+      (2, 11),
+      (3, 12),
+      (3, 13),
+  `, changesetIDOne, changesetIDTwo, changesetIDFour, changesetIDFive, changesetIDSix)
 	if err != nil {
 		t.Fatal(err)
 	}

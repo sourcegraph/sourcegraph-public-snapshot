@@ -97,17 +97,17 @@ SELECT
 FROM (
 	SELECT
 		CASE
-			WHEN COUNT(changesets.id) BETWEEN 0 AND 9 THEN '0-9 changesets'
-			WHEN COUNT(changesets.id) BETWEEN 10 AND 49 THEN '10-49 changesets'
-			WHEN COUNT(changesets.id) BETWEEN 50 AND 99 THEN '50-99 changesets'
-			WHEN COUNT(changesets.id) BETWEEN 100 AND 199 THEN '100-199 changesets'
-			WHEN COUNT(changesets.id) BETWEEN 200 AND 999 THEN '200-999 changesets'
+			WHEN COUNT(bcc.id) BETWEEN 0 AND 9 THEN '0-9 changesets'
+			WHEN COUNT(bcc.id) BETWEEN 10 AND 49 THEN '10-49 changesets'
+			WHEN COUNT(bcc.id) BETWEEN 50 AND 99 THEN '50-99 changesets'
+			WHEN COUNT(bcc.id) BETWEEN 100 AND 199 THEN '100-199 changesets'
+			WHEN COUNT(bcc.id) BETWEEN 200 AND 999 THEN '200-999 changesets'
 			ELSE '1000+ changesets'
 		END AS range,
 		batch_specs.created_from_raw
 	FROM batch_changes
 	LEFT JOIN batch_specs AS batch_specs ON batch_changes.batch_spec_id = batch_specs.id
-	LEFT JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT
+  LEFT JOIN batch_change_changesets bcc ON bcc.batch_change_id = batch_changes.id
 	GROUP BY batch_changes.id, batch_specs.created_from_raw
 ) AS batch_changes_range
 GROUP BY batch_changes_range.range, created_from_raw;
@@ -228,7 +228,8 @@ changeset_counts AS (
     COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id = cohort_batch_changes.id AND external_state = 'MERGED') AS changesets_published_merged,
     COUNT(changesets) FILTER (WHERE changesets.owned_by_batch_change_id = cohort_batch_changes.id AND external_state = 'CLOSED') AS changesets_published_closed
   FROM changesets
-  JOIN cohort_batch_changes ON changesets.batch_change_ids ? cohort_batch_changes.id::text
+  JOIN batch_change_changesets bcc ON bcc.changeset_id = changesets.id
+  WHERE bcc.batch_change_id = cohort_batch_changes.id
   GROUP BY cohort_batch_changes.creation_week
 ),
 batch_change_counts AS (
@@ -295,7 +296,8 @@ SELECT
 	COUNT(distinct batch_changes.id) AS batch_changes_count
 FROM batch_changes
 INNER JOIN batch_specs ON batch_specs.id = batch_changes.batch_spec_id
-LEFT JOIN changesets ON changesets.batch_change_ids ? batch_changes.id::TEXT
+LEFT JOIN batch_change_changesets bcc ON bcc.batch_change_id = batch_changes.id
+LEFT JOIN changesets ON changesets.id = bcc.changeset_id
 WHERE changesets.publication_state = 'PUBLISHED'
 GROUP BY batch_specs.created_from_raw;
 `

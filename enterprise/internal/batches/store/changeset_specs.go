@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"encoding/json"
-	"strconv"
 
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -711,8 +710,8 @@ func getRewirerMappingsQuery(opts GetRewirerMappingsOpts) (*sqlf.Query, error) {
 		opts.BatchSpecID,
 		opts.BatchChangeID,
 		opts.BatchSpecID,
-		strconv.Itoa(int(opts.BatchChangeID)),
-		strconv.Itoa(int(opts.BatchChangeID)),
+		opts.BatchChangeID,
+		btypes.BatchChangeChangesetArchived,
 		detachTextSearch,
 		currentState,
 		opts.LimitOffset.SQL(),
@@ -835,6 +834,7 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 	SELECT 0 as changeset_spec_id, changesets.id as changeset_id, changesets.repo_id as repo_id
 	FROM changesets
 	INNER JOIN repo ON changesets.repo_id = repo.id
+  INNER JOIN batch_change_changesets bcc ON bcc.changeset_id = changesets.id
 	WHERE
 		repo.deleted_at IS NULL AND
 		changesets.id NOT IN (
@@ -853,9 +853,8 @@ SELECT mappings.changeset_spec_id, mappings.changeset_id, mappings.repo_id FROM 
 					batch_spec_id = %s
 				GROUP BY changeset_spec_id, repo_id
 		) AND
-		changesets.batch_change_ids ? %s
-		AND
-		NOT COALESCE((changesets.batch_change_ids->%s->>'isArchived')::bool, false)
+    bcc.batch_change_id = %s AND
+    bcc.archived <> %s
 		%s -- text search query, if provided
 		%s -- current state, if provided
 ) AS mappings
