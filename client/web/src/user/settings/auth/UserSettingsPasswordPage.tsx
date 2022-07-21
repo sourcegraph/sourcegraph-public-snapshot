@@ -257,7 +257,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
             let message = validatePassword(window.context, password)
 
             if (message !== undefined) {
-                this.newPasswordConfirmationField?.setCustomValidity(mesasge)
+                this.newPasswordConfirmationField?.setCustomValidity(message)
             } else {
                 this.newPasswordConfirmationField?.setCustomValidity('')
             }
