@@ -6,7 +6,7 @@ import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, H4, Icon, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
+import { Alert, Button, H4, Icon, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -14,7 +14,7 @@ import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
-import { LicenseAlert } from '../../../LicenseAlert'
+import { useBatchChangesLicense } from '../../../useBatchChangesLicense'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
@@ -232,6 +232,8 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
         [visibleCount, totalCount]
     )
 
+    const { maxUnlicensedChangesets, exceedsLicense } = useBatchChangesLicense()
+
     return (
         <div className={styles.container}>
             <WorkspacesListHeader>
@@ -251,16 +253,19 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                 {totalCountDisplay}
             </WorkspacesListHeader>
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
-            <div className="d-flex flex-column align-items-center w-100 mb-3">
-                <LicenseAlert
-                    totalChangesetCount={
-                        (totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0)
-                    }
-                >
-                    If more than 5 changesets are generated, you won't be able to apply the batch change and actually
-                    publish the changesets to the code host.
-                </LicenseAlert>
-            </div>
+            {exceedsLicense((totalCount ?? 0) + (importingChangesetsConnection?.connection?.totalCount ?? 0)) && (
+                <div className="d-flex flex-column align-items-center w-100 mb-3">
+                    <Alert variant="info">
+                        <div className="mb-2">
+                            <strong>
+                                Your license only allows for {maxUnlicensedChangesets} changesets per batch change
+                            </strong>
+                        </div>
+                        If more than {maxUnlicensedChangesets} changesets are generated, you won't be able to apply the
+                        batch change and actually publish the changesets to the code host.
+                    </Alert>
+                </div>
+            )}
             {/* We wrap this section in its own div to prevent margin collapsing within the flex column */}
             {!isReadOnly && (
                 <div className="d-flex flex-column align-items-center w-100 mb-3">

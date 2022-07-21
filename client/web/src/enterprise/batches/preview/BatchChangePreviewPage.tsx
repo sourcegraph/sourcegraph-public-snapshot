@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect } from 'react'
 
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useHistory, useLocation } from 'react-router'
@@ -23,6 +23,7 @@ import { BatchSpecInfoByline } from './BatchSpecInfoByline'
 import { CreateUpdateBatchChangeAlert } from './CreateUpdateBatchChangeAlert'
 import { PreviewList } from './list/PreviewList'
 import { MissingCredentialsAlert } from './MissingCredentialsAlert'
+import { useBatchChangesLicense } from '../useBatchChangesLicense'
 
 export type PreviewPageAuthenticatedUser = Pick<AuthenticatedUser, 'url' | 'displayName' | 'username' | 'email'>
 
@@ -137,11 +138,11 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
         pollInterval: 5000,
     })
 
-    const [exceedsLicense, setExceedsLicense] = useState(false)
-
     useEffect(() => {
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
+
+    const { exceedsLicense } = useBatchChangesLicense()
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -175,7 +176,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         diffStat={spec.diffStat!}
                         queryApplyPreviewStats={queryApplyPreviewStats}
                     />
-                    {!exceedsLicense && (
+                    {!exceedsLicense(spec.applyPreview.totalCount) && (
                         <CreateUpdateBatchChangeAlert
                             history={history}
                             specID={spec.id}
@@ -192,7 +193,6 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                         authenticatedUser={authenticatedUser}
                         isLightTheme={isLightTheme}
                         totalCount={spec.applyPreview.totalCount}
-                        onLicenseExceeded={() => setExceedsLicense(true)}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}
