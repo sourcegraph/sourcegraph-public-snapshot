@@ -2173,6 +2173,10 @@ Indexes:
  product_subscription_id | uuid                     |           | not null | 
  license_key             | text                     |           | not null | 
  created_at              | timestamp with time zone |           | not null | now()
+ license_version         | integer                  |           |          | 
+ license_tags            | text[]                   |           |          | 
+ license_user_count      | integer                  |           |          | 
+ license_expires_at      | timestamp with time zone |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -2190,6 +2194,7 @@ Foreign-key constraints:
  created_at              | timestamp with time zone |           | not null | now()
  updated_at              | timestamp with time zone |           | not null | now()
  archived_at             | timestamp with time zone |           |          | 
+ account_number          | text                     |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:

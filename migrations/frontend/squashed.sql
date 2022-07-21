@@ -2594,7 +2594,11 @@ CREATE TABLE product_licenses (
     id uuid NOT NULL,
     product_subscription_id uuid NOT NULL,
     license_key text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    license_version integer,
+    license_tags text[],
+    license_user_count integer,
+    license_expires_at timestamp with time zone
 );
 
 CREATE TABLE product_subscriptions (
@@ -2603,7 +2607,8 @@ CREATE TABLE product_subscriptions (
     billing_subscription_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    archived_at timestamp with time zone
+    archived_at timestamp with time zone,
+    account_number text
 );
 
 CREATE TABLE query_runner_state (
