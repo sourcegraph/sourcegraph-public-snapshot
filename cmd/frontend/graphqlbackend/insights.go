@@ -460,7 +460,7 @@ type RelatedInsightsArgs struct {
 type RelatedInsightsInput struct {
 	Repo     string
 	File     string
-	Revision *string
+	Revision string
 }
 
 type RelatedInsightsInlineResolver interface {

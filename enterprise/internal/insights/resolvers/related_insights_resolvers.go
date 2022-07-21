@@ -105,7 +105,7 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 	validator.loadUserContext(ctx)
 
 	allSeries, err := r.insightStore.GetAll(ctx, store.InsightQueryArgs{
-		Repo:   &args.Input.Repo,
+		Repo:   args.Input.Repo,
 		UserID: validator.userIds,
 		OrgID:  validator.orgIds,
 	})

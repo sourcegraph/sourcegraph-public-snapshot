@@ -55,7 +55,7 @@ type InsightQueryArgs struct {
 	Limit    int
 	IsFrozen *bool
 
-	Repo *string
+	Repo string
 
 	// This field will disable user level authorization checks on the insight views. This should only be used
 	// when fetching insights from a container that also has authorization checks, such as a dashboard.
@@ -123,7 +123,7 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		}
 	}
 
-	if args.Repo != nil {
+	if len(args.Repo) > 0 {
 		// TODO the double SELECT from repo names seems costly. a performance improvement might be
 		// to separate this whole operation in its own query.
 		// after the prototype we could also have an insight store cache where we store common repos
@@ -135,7 +135,7 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 			SELECT series_id FROM series_points_snapshots sps
 			WHERE sps.repo_name_id IN(SELECT id FROM repo_names WHERE name = %s)
 		)`
-		preds = append(preds, sqlf.Sprintf(repoQuery, *args.Repo, *args.Repo))
+		preds = append(preds, sqlf.Sprintf(repoQuery, args.Repo, args.Repo))
 	}
 
 	limit := sqlf.Sprintf("")

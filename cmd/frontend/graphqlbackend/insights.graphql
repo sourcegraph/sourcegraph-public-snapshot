@@ -232,7 +232,7 @@ input RelatedInsightsInput {
     """
     The revision number
     """
-    revision: String
+    revision: String!
     """
     The path to the file
     """
