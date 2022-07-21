@@ -896,7 +896,7 @@ func TestSyncWebhook_urlBuilderPlain(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			want := tc.expectedUrl
-			have, err := urlBuilder(tc.repoName)
+			have, err := webhookURLBuilder(tc.repoName)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -930,7 +930,7 @@ func TestSyncWebhook_urlBuilderWithID(t *testing.T) {
 	for name, tc := range testCases {
 		t.Run(name, func(t *testing.T) {
 			want := tc.expectedUrl
-			have, err := urlBuilderWithID(tc.repoName, tc.id)
+			have, err := webhookURLBuilderWithID(tc.repoName, tc.id)
 			if err != nil {
 				t.Fatal(err)
 			}

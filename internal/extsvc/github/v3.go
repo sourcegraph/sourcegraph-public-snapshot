@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -772,16 +773,16 @@ func (c *V3Client) GetUserInstallations(ctx context.Context) ([]github.Installat
 	return resultStruct.Installations, nil
 }
 
-type Payload struct {
-	Name   string   `json:"name"`
-	ID     int      `json:"id,omitempty"`
-	Config Config   `json:"config"`
-	Events []string `json:"events"`
-	Active bool     `json:"active"`
-	URL    string   `json:"url"`
+type WebhookPayload struct {
+	Name          string        `json:"name"`
+	ID            int           `json:"id,omitempty"`
+	PayloadConfig PayloadConfig `json:"config"`
+	Events        []string      `json:"events"`
+	Active        bool          `json:"active"`
+	URL           string        `json:"url"`
 }
 
-type Config struct {
+type PayloadConfig struct {
 	Url          string `json:"url"`
 	Content_type string `json:"content_type"`
 	Secret       string `json:"secret"`
@@ -791,15 +792,15 @@ type Config struct {
 }
 
 func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, secret string) (int, error) {
-	url, err := urlBuilder(repoName)
+	url, err := webhookURLBuilder(repoName)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
-	payload := Payload{
+	payload := WebhookPayload{
 		Name:   "web",
 		Active: true,
-		Config: Config{
+		PayloadConfig: PayloadConfig{
 			Url:          fmt.Sprintf("%s/github-webhooks", targetURL),
 			Content_type: "json",
 			Secret:       secret,
@@ -810,26 +811,26 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, s
 		},
 	}
 
-	var result Payload
+	var result WebhookPayload
 	resp, err := c.post(ctx, url, payload, &result)
 	if err != nil {
-		return -1, err
+		return 0, err
 	}
 
 	if resp.statusCode < 200 || resp.statusCode >= 300 {
-		return -1, errors.Wrap(err, "non-2xx status code")
+		return 0, errors.Wrap(err, "non-2xx status code")
 	}
 
 	return result.ID, nil
 }
 
-func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Payload, error) {
-	url, err := urlBuilder(repoName)
+func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
+	url, err := webhookURLBuilder(repoName)
 	if err != nil {
 		return nil, err
 	}
 
-	var results []Payload
+	var results []WebhookPayload
 	resp, err := c.get(ctx, url, &results)
 	if err != nil {
 		return nil, err
@@ -845,29 +846,29 @@ func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Pay
 func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, bool) {
 	payloads, err := c.ListSyncWebhooks(ctx, repoName)
 	if err != nil {
-		return -1, false
+		return 0, false
 	}
 
 	for _, payload := range payloads {
-		endpoint := payload.Config.Url
+		endpoint := payload.PayloadConfig.Url
 		parts := strings.Split(endpoint, "/")
 		if parts[len(parts)-1] == "github-webhooks" {
 			return payload.ID, true
 		}
 	}
 
-	return -1, false
+	return 0, false
 }
 
 func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
-	url, err := urlBuilderWithID(repoName, hookID)
+	url, err := webhookURLBuilderWithID(repoName, hookID)
 	if err != nil {
 		return false, err
 	}
 
 	var result any
 	resp, err := c.delete(ctx, url, "", &result)
-	if err != nil && err.Error() != "EOF" {
+	if err != nil && err != io.EOF {
 		return false, err
 	}
 
@@ -879,15 +880,15 @@ func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookI
 }
 
 func (c *V3Client) TestPushSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
-	u, err := urlBuilderWithID(repoName, hookID)
+	u, err := webhookURLBuilderWithID(repoName, hookID)
 	if err != nil {
 		return false, err
 	}
 	url := fmt.Sprintf("%s/tests", u)
 
-	var result Payload
+	var result WebhookPayload
 	resp, err := c.post(ctx, url, nil, result)
-	if err != nil && err.Error() != "EOF" {
+	if err != nil && err != io.EOF {
 		return false, err
 	}
 
@@ -898,7 +899,7 @@ func (c *V3Client) TestPushSyncWebhook(ctx context.Context, repoName string, hoo
 	return true, nil
 }
 
-func urlBuilder(repoName string) (string, error) {
+func webhookURLBuilder(repoName string) (string, error) {
 	repoName = fmt.Sprintf("//%s", repoName)
 	u, err := url.Parse(repoName)
 	if err != nil {
@@ -911,7 +912,7 @@ func urlBuilder(repoName string) (string, error) {
 	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks", u.Host, u.Path), nil
 }
 
-func urlBuilderWithID(repoName string, hookID int) (string, error) {
+func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
 	repoName = fmt.Sprintf("//%s", repoName)
 	u, err := url.Parse(repoName)
 	if err != nil {
