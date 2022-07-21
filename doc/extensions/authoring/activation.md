@@ -1,5 +1,7 @@
 # Sourcegraph extension activation
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 Sourcegraph selectively activates each extension based on the `activationEvents` array in its `package.json`. This improves performance by only using the network and CPU for extensions when necessary.
 
 There are two types of activation events:

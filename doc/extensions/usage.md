@@ -1,5 +1,7 @@
 # Using Sourcegraph extensions
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 ## Usage
 
 To view all available extensions on your Sourcegraph instance, click **User menu > Extensions** in the top navigation bar.

@@ -1,5 +1,7 @@
 # Status bar item tutorial
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 ![Status bar](img/status-bar.png)
 
 Extensions can display information in the status bar adjacent to code editors. The status bar UI elements contributed by extensions are called status bar items.

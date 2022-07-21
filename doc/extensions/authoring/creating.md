@@ -1,5 +1,7 @@
 # Creating a Sourcegraph extension
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 First, [set up your development environment](development_environment.md) so you're ready for creating and publishing.
 
 ## What is a Sourcegraph extension?

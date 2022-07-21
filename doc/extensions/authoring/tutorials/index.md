@@ -1,5 +1,7 @@
 # Extension authoring tutorials
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 - [Hello world](hello_world.md)
 - [Buttons and custom commands](button_custom_commands.md)
 - [Building a language specific extension](lang_specific_extension_tutorial.md)

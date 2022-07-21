@@ -1,5 +1,7 @@
 # Building a language-specific extension tutorial
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 ![Sourcegraph extension button](img/python-button.png)
 
 Extensions can be configured to activate and contribute UI elements only upon the presence of a specific language, languages or glob pattern. This improves performance by only using the network and CPU for extensions that are needed.

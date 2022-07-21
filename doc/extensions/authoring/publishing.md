@@ -1,5 +1,7 @@
 # Publishing a Sourcegraph extension
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 Publishing a Sourcegraph extension is fast and easy. It involves building (compiling and bundling) one or more TypeScript files into a single JavaScript file.
 
 When [setting up your development environment](development_environment.md), you'll already have:

@@ -1,5 +1,7 @@
 # Sourcegraph extension manifest - package.json
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 Sourcegraph extensions use a `package.json` file for metadata and configuration.
 
 ## Fields

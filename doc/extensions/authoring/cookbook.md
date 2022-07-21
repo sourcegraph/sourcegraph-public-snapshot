@@ -1,5 +1,7 @@
 # Cookbook for writing Sourcegraph extensions
 
+> NOTE: Sourcegraph extensions are being deprecated with the upcoming Sourcegraph 4.0 release. Learn more.
+
 ## Provide hover
 
 ```typescript
