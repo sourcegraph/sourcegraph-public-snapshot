@@ -3,28 +3,39 @@ package repos
 import (
 	"context"
 	"fmt"
+	"regexp/syntax"
 	"sort"
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
+	"github.com/google/zoekt/stream"
 	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
+	otlog "github.com/opentracing/opentracing-go/log"
+	"github.com/sourcegraph/log"
 	"golang.org/x/sync/errgroup"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+	searchzoekt "github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -45,16 +56,22 @@ func (r *Resolved) String() string {
 	return fmt.Sprintf("Resolved{RepoRevs=%d, MissingRepoRevs=%d}", len(r.RepoRevs), len(r.MissingRepoRevs))
 }
 
-func NewResolver(db database.DB) *Resolver {
+func NewResolver(logger log.Logger, db database.DB, searcher *endpoint.Map, zoekt zoekt.Streamer) *Resolver {
 	return &Resolver{
+		logger:    logger,
 		db:        db,
 		gitserver: gitserver.NewClient(db),
+		zoekt:     zoekt,
+		searcher:  searcher,
 	}
 }
 
 type Resolver struct {
+	logger    log.Logger
 	db        database.DB
 	gitserver gitserver.Client
+	zoekt     zoekt.Streamer
+	searcher  *endpoint.Map
 }
 
 func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle func(*Resolved) error) (err error) {
@@ -225,13 +242,24 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	normalized, normalizedMissingRepoRevs, err := r.normalizeRefs(ctx, associatedRepoRevs)
 	missingRepoRevs = append(missingRepoRevs, normalizedMissingRepoRevs...)
 	if err != nil {
-		return Resolved{}, err
+		return Resolved{}, errors.Wrap(err, "normalize refs")
 	}
 	tr.LazyPrintf("finished glob expansion")
 
 	tr.LazyPrintf("starting rev filtering")
 	filteredRepoRevs, err := r.filterHasCommitAfter(ctx, normalized, op)
+	if err != nil {
+		return Resolved{}, errors.Wrap(err, "filter has commit after")
+	}
 	tr.LazyPrintf("completed rev filtering")
+
+	tr.LazyPrintf("starting contains filtering")
+	filteredRepoRevs, missingHasFileContentRevs, err := r.filterRepoHasFileContent(ctx, filteredRepoRevs, op)
+	missingRepoRevs = append(missingRepoRevs, missingHasFileContentRevs...)
+	if err != nil {
+		return Resolved{}, errors.Wrap(err, "filter has file content")
+	}
+	tr.LazyPrintf("finished contains filtering")
 
 	if len(missingRepoRevs) > 0 {
 		err = errors.Append(err, &MissingRepoRevsError{Missing: missingRepoRevs})
@@ -481,6 +509,237 @@ func (r *Resolver) filterHasCommitAfter(
 	}
 
 	return filteredRepoRevs, nil
+}
+
+// filterRepoHasFileContent filters a page of repos to only those that match the
+// given contains predicates in RepoOptions.HasFileContent.
+// Brief overview of the method:
+// 1) We partition the set of repos into indexed and unindexed
+// 2) We kick off a single zoekt search that handles all the indexed revs
+// 3) We kick off a searcher job for the product of every rev * every contains predicate
+// 4) We collect the set of revisions that matched all contains predicates and return them.
+func (r *Resolver) filterRepoHasFileContent(
+	ctx context.Context,
+	repoRevs []*search.RepositoryRevisions,
+	op search.RepoOptions,
+) (
+	_ []*search.RepositoryRevisions,
+	_ []RepoRevSpecs,
+	err error,
+) {
+	tr, ctx := trace.New(ctx, "Resolve.FilterHasFileContent", "")
+	tr.LogFields(otlog.Int("inputRevCount", len(repoRevs)))
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	// Early return if there are no filters
+	if len(op.HasFileContent) == 0 {
+		return repoRevs, nil, nil
+	}
+
+	indexed, unindexed, err := searchzoekt.PartitionRepos(
+		ctx,
+		r.logger,
+		repoRevs,
+		r.zoekt,
+		search.TextRequest,
+		op.UseIndex,
+		false,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	minimalRepoMap := make(map[api.RepoID]types.MinimalRepo, len(repoRevs))
+	for _, repoRev := range repoRevs {
+		minimalRepoMap[repoRev.Repo.ID] = repoRev.Repo
+	}
+
+	var (
+		mu         sync.Mutex
+		filtered   = map[api.RepoID]*search.RepositoryRevisions{}
+		addRepoRev = func(id api.RepoID, rev string) {
+			mu.Lock()
+			defer mu.Unlock()
+			repoRev := filtered[id]
+			if repoRev == nil {
+				minimalRepo, ok := minimalRepoMap[id]
+				if !ok {
+					// Skip any repos that weren't in our requested repos.
+					// This should never happen.
+					return
+				}
+				repoRev = &search.RepositoryRevisions{
+					Repo: minimalRepo,
+				}
+			}
+			repoRev.Revs = append(repoRev.Revs, rev)
+			filtered[id] = repoRev
+		}
+	)
+
+	var (
+		missingMu  sync.Mutex
+		missing    []RepoRevSpecs
+		addMissing = func(rs RepoRevSpecs) {
+			missingMu.Lock()
+			missing = append(missing, rs)
+			missingMu.Unlock()
+		}
+	)
+
+	g := group.New().WithContext(ctx).WithMaxConcurrency(16)
+
+	{ // Use zoekt for indexed revs
+		g.Go(func(ctx context.Context) error {
+			type repoAndRev struct {
+				id  api.RepoID
+				rev string
+			}
+			var revsMatchingAllPredicates Set[repoAndRev]
+			for i, opt := range op.HasFileContent {
+				q := zoektQueryForFileContentArgs(opt, op.CaseSensitiveRepoFilters)
+				q = zoektquery.NewAnd(&zoektquery.BranchesRepos{List: indexed.BranchRepos()}, q)
+
+				foundRevs := Set[repoAndRev]{}
+				onMatch := func(res *zoekt.SearchResult) {
+					for _, file := range res.Files {
+						// Reverse lookup the inputRev from the returned branches
+						inputRevs := indexed.RepoRevs[api.RepoID(int32(file.RepositoryID))].Revs
+						for _, branch := range file.Branches {
+							for _, inputRev := range inputRevs {
+								if branch == inputRev || (branch == "HEAD" && inputRev == "") {
+									foundRevs.Add(repoAndRev{id: api.RepoID(file.RepositoryID), rev: inputRev})
+								}
+							}
+						}
+					}
+				}
+
+				err := r.zoekt.StreamSearch(ctx, q, &zoekt.SearchOptions{ShardMaxMatchCount: 1}, stream.SenderFunc(onMatch))
+				if err != nil {
+					return err
+				}
+				if i == 0 {
+					revsMatchingAllPredicates = foundRevs
+				} else {
+					revsMatchingAllPredicates.IntersectWith(foundRevs)
+				}
+			}
+
+			for rr := range revsMatchingAllPredicates {
+				addRepoRev(rr.id, rr.rev)
+			}
+			return nil
+		})
+	}
+
+	{ // Use searcher for unindexed revs
+		for _, repoRevs := range unindexed {
+			for _, rev := range repoRevs.Revs {
+				repo, rev := repoRevs.Repo, rev
+
+				g.Go(func(ctx context.Context) error {
+					for _, arg := range op.HasFileContent {
+						commitID, err := r.gitserver.ResolveRevision(ctx, repo.Name, rev, gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+						if err != nil {
+							if errors.Is(err, context.DeadlineExceeded) || errors.HasType(err, gitdomain.BadCommitError{}) {
+								return err
+							}
+							addMissing(RepoRevSpecs{Repo: repo, Revs: []search.RevisionSpecifier{{RevSpec: rev}}})
+							return nil
+						}
+
+						foundMatches, err := r.repoHasFileContentAtCommit(ctx, repo, commitID, arg)
+						if err != nil {
+							return err
+						}
+						if !foundMatches {
+							return nil
+						}
+					}
+
+					// If we made it here, we found a match for each of the contains filters.
+					addRepoRev(repo.ID, rev)
+					return nil
+				})
+			}
+		}
+	}
+
+	if err := g.Wait(); err != nil {
+		return nil, nil, err
+	}
+
+	// Filter the input revs to only those that matched all the contains conditions
+	matchedRepoRevs := repoRevs[:0]
+	for _, repoRev := range repoRevs {
+		if matched, ok := filtered[repoRev.Repo.ID]; ok {
+			matchedRepoRevs = append(matchedRepoRevs, matched)
+		}
+	}
+
+	tr.LogFields(otlog.Int("filteredRevCount", len(matchedRepoRevs)))
+	return matchedRepoRevs, missing, nil
+}
+
+func zoektQueryForFileContentArgs(opt query.RepoHasFileContentArgs, caseSensitive bool) zoektquery.Q {
+	var children []zoektquery.Q
+	if opt.Path != "" {
+		re, _ := syntax.Parse(opt.Path, 0)
+		children = append(children, &zoektquery.Regexp{Regexp: re, FileName: true, CaseSensitive: caseSensitive})
+	}
+	if opt.Content != "" {
+		re, _ := syntax.Parse(opt.Content, 0)
+		children = append(children, &zoektquery.Regexp{Regexp: re, Content: true, CaseSensitive: caseSensitive})
+	}
+	q := zoektquery.NewAnd(children...)
+	if opt.Negated {
+		q = &zoektquery.Not{Child: q}
+	}
+	q = zoektquery.Simplify(q)
+	return q
+}
+
+func (r *Resolver) repoHasFileContentAtCommit(ctx context.Context, repo types.MinimalRepo, commitID api.CommitID, args query.RepoHasFileContentArgs) (bool, error) {
+	patternInfo := search.TextPatternInfo{
+		Pattern:               args.Content,
+		IsNegated:             args.Negated,
+		IsRegExp:              true,
+		IsCaseSensitive:       false,
+		FileMatchLimit:        1,
+		PatternMatchesContent: true,
+	}
+
+	if args.Path != "" {
+		patternInfo.IncludePatterns = []string{args.Path}
+		patternInfo.PatternMatchesPath = true
+	}
+
+	foundMatches := false
+	onMatches := func(fms []*protocol.FileMatch) {
+		if len(fms) > 0 {
+			foundMatches = true
+		}
+	}
+
+	_, err := searcher.Search(
+		ctx,
+		r.searcher,
+		repo.Name,
+		repo.ID,
+		"", // not using zoekt, don't need branch
+		commitID,
+		false, // not using zoekt, don't need indexing
+		&patternInfo,
+		time.Hour,         // depend on context for timeout
+		nil,               // not using zoekt, don't need indexing
+		search.Features{}, // not using any search features
+		onMatches,
+	)
+	return foundMatches, err
 }
 
 // computeExcludedRepos computes the ExcludedRepos that the given RepoOptions would not match. This is
@@ -959,4 +1218,20 @@ func (r *RepoRevSpecs) RevSpecs() []string {
 		}
 	}
 	return res
+}
+
+// Set is a small helper utility for a unique set of objects
+type Set[T comparable] map[T]struct{}
+
+func (s Set[T]) Add(t T) {
+	s[t] = struct{}{}
+}
+
+// IntersectWith mutates `s`, removing any elements not in `other`
+func (s Set[T]) IntersectWith(other Set[T]) {
+	for k := range s {
+		if _, ok := other[k]; !ok {
+			delete(s, k)
+		}
+	}
 }

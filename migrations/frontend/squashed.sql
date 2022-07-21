@@ -816,6 +816,7 @@ CREATE TABLE changesets (
     external_fork_namespace citext,
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
+    detached_at timestamp with time zone,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -2594,7 +2595,11 @@ CREATE TABLE product_licenses (
     id uuid NOT NULL,
     product_subscription_id uuid NOT NULL,
     license_key text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    license_version integer,
+    license_tags text[],
+    license_user_count integer,
+    license_expires_at timestamp with time zone
 );
 
 CREATE TABLE product_subscriptions (
@@ -2603,7 +2608,8 @@ CREATE TABLE product_subscriptions (
     billing_subscription_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    archived_at timestamp with time zone
+    archived_at timestamp with time zone,
+    account_number text
 );
 
 CREATE TABLE query_runner_state (
@@ -2677,7 +2683,8 @@ CREATE VIEW reconciler_changesets AS
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
-    c.external_fork_namespace
+    c.external_fork_namespace,
+    c.detached_at
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
@@ -3579,6 +3586,8 @@ CREATE INDEX changesets_batch_change_ids ON changesets USING gin (batch_change_i
 CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets USING btree (((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text)));
 
 CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id);
+
+CREATE INDEX changesets_detached_at ON changesets USING btree (detached_at);
 
 CREATE INDEX changesets_external_state_idx ON changesets USING btree (external_state);
 

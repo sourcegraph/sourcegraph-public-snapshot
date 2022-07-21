@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -1570,23 +1571,19 @@ func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
 		otlog.String("pattern", pattern))
 
 	var conds []*sqlf.Query
-	if exact != nil {
-		if len(exact) == 0 || (len(exact) == 1 && exact[0] == "") {
-			conds = append(conds, sqlf.Sprintf("TRUE"))
-		} else {
-			// NOTE: We add anchors to each element of `exact`, store the resulting contents in `exactWithAnchors`,
-			// then pass `exactWithAnchors` into the query condition, because using `~* ANY (%s)` is more efficient
-			// than `IN (%s)` as it uses the trigram index on `description`.
-			// Equality support for `gin_trgm_ops` was added in Postgres v14, we are currently on v12. If we upgrade our
-			//  min pg version, then this block should be able to be simplified to just pass `exact` directly into
-			// `lower(description) IN (%s)`.
-			// Discussion: https://github.com/sourcegraph/sourcegraph/pull/39117#discussion_r925131158
-			exactWithAnchors := make([]string, len(exact))
-			for i, v := range exact {
-				exactWithAnchors[i] = "^" + v + "$"
-			}
-			conds = append(conds, sqlf.Sprintf("lower(description) ~* ANY (%s)", pq.Array(exactWithAnchors)))
+	if len(exact) > 0 {
+		// NOTE: We add anchors to each element of `exact`, store the resulting contents in `exactWithAnchors`,
+		// then pass `exactWithAnchors` into the query condition, because using `~* ANY (%s)` is more efficient
+		// than `IN (%s)` as it uses the trigram index on `description`.
+		// Equality support for `gin_trgm_ops` was added in Postgres v14, we are currently on v12. If we upgrade our
+		//  min pg version, then this block should be able to be simplified to just pass `exact` directly into
+		// `lower(description) IN (%s)`.
+		// Discussion: https://github.com/sourcegraph/sourcegraph/pull/39117#discussion_r925131158
+		exactWithAnchors := make([]string, len(exact))
+		for i, v := range exact {
+			exactWithAnchors[i] = "^" + regexp.QuoteMeta(v) + "$"
 		}
+		conds = append(conds, sqlf.Sprintf("lower(description) ~* ANY (%s)", pq.Array(exactWithAnchors)))
 	}
 	for _, v := range like {
 		conds = append(conds, sqlf.Sprintf(`lower(description) LIKE %s`, strings.ToLower(v)))

@@ -3,12 +3,14 @@ package productsubscription
 import (
 	"context"
 	"database/sql"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -20,6 +22,7 @@ type dbSubscription struct {
 	BillingSubscriptionID *string // this subscription's ID in the billing system
 	CreatedAt             time.Time
 	ArchivedAt            *time.Time
+	AccountNumber         *string
 }
 
 var emailQueries = sqlf.Sprintf(`all_primary_emails AS (
@@ -38,22 +41,29 @@ type dbSubscriptions struct {
 	db database.DB
 }
 
-// Create creates a new product subscription entry given a license key.
-func (s dbSubscriptions) Create(ctx context.Context, userID int32) (id string, err error) {
+// Create creates a new product subscription entry for the given user. It also
+// attempts to extract the Salesforce account number from the username following
+// the format "<name>-<account number>".
+func (s dbSubscriptions) Create(ctx context.Context, userID int32, username string) (id string, err error) {
 	if mocks.subscriptions.Create != nil {
 		return mocks.subscriptions.Create(userID)
 	}
 
+	var accountNumber string
+	if i := strings.LastIndex(username, "-"); i > -1 {
+		accountNumber = username[i+1:]
+	}
+
 	uuid, err := uuid.NewRandom()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "new UUID")
 	}
-	if err := s.db.QueryRowContext(ctx, `
-INSERT INTO product_subscriptions(id, user_id) VALUES($1, $2) RETURNING id
+	if err = s.db.QueryRowContext(ctx, `
+INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3) RETURNING id
 `,
-		uuid, userID,
+		uuid, userID, dbutil.NewNullString(accountNumber),
 	).Scan(&id); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "insert")
 	}
 	return id, nil
 }
@@ -109,7 +119,13 @@ func (s dbSubscriptions) List(ctx context.Context, opt dbSubscriptionsListOption
 func (s dbSubscriptions) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbSubscription, error) {
 	q := sqlf.Sprintf(`
 WITH %s
-SELECT product_subscriptions.id, product_subscriptions.user_id, billing_subscription_id, product_subscriptions.created_at, product_subscriptions.archived_at
+SELECT
+	product_subscriptions.id,
+	product_subscriptions.user_id,
+	billing_subscription_id,
+	product_subscriptions.created_at,
+	product_subscriptions.archived_at,
+	product_subscriptions.account_number
 FROM product_subscriptions
 LEFT OUTER JOIN users ON product_subscriptions.user_id = users.id
 LEFT OUTER JOIN primary_emails ON users.id = primary_emails.user_id
@@ -130,7 +146,7 @@ ORDER BY archived_at DESC NULLS FIRST, created_at DESC
 	var results []*dbSubscription
 	for rows.Next() {
 		var v dbSubscription
-		if err := rows.Scan(&v.ID, &v.UserID, &v.BillingSubscriptionID, &v.CreatedAt, &v.ArchivedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.UserID, &v.BillingSubscriptionID, &v.CreatedAt, &v.ArchivedAt, &v.AccountNumber); err != nil {
 			return nil, err
 		}
 		results = append(results, &v)

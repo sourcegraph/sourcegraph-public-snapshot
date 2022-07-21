@@ -46,7 +46,7 @@ const {
   SENTRY_UPLOAD_SOURCE_MAPS,
   COMMIT_SHA,
   RELEASE_CANDIDATE_VERSION,
-  SENTRY_AUTH_TOKEN,
+  SENTRY_DOT_COM_AUTH_TOKEN,
   SENTRY_ORGANIZATION,
   SENTRY_PROJECT,
 } = ENVIRONMENT_CONFIG
@@ -189,7 +189,7 @@ const config = {
       new SentryWebpackPlugin({
         org: SENTRY_ORGANIZATION,
         project: SENTRY_PROJECT,
-        authToken: SENTRY_AUTH_TOKEN,
+        authToken: SENTRY_DOT_COM_AUTH_TOKEN,
         release: `frontend@${RELEASE_CANDIDATE_VERSION}`,
         include: path.join(STATIC_ASSETS_PATH, 'scripts'),
       }),
