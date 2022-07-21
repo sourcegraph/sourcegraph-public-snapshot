@@ -142,16 +142,19 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 		span.Finish()
 	}()
 
-	exitStatus := -10810 // sentinel value to indicate not set
+	exitCode = -10810 // sentinel value to indicate not set
 	err = cmd.Start()
 	if err != nil {
-		return exitStatus, err
+		return exitCode, err
 	}
 
-	done := make(chan struct{}, 1)
+	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		err = cmd.Wait()
+		if err != nil {
+			logger.Error("running command", log.Error(err))
+		}
 	}()
 
 	// Wait for command to exit or context to be done
@@ -161,8 +164,10 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 		// Attempt to send SIGINT
 		if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
 			logger.Warn("Sending SIGINT to command", log.Error(err))
-			_ = cmd.Process.Kill()
-			return exitStatus, err
+			if err := cmd.Process.Kill(); err != nil {
+				logger.Warn("killing process", log.Error(err))
+			}
+			return exitCode, err
 		}
 		// Now, continue waiting for command for up to two seconds before killing it
 		timer := time.NewTimer(2 * time.Second)
@@ -170,22 +175,34 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 		case <-done:
 			logger.Debug("process exited after SIGINT sent")
 			timer.Stop()
+			if err == nil {
+				exitCode = 0
+			}
 		case <-timer.C:
 			logger.Debug("timed out, killing process")
-			_ = cmd.Process.Kill()
+			if err := cmd.Process.Kill(); err != nil {
+				logger.Warn("killing process", log.Error(err))
+			}
+			// Wait again to ensure we can access cmd.ProcessState below
+			<-done
 		}
-		if cmd.ProcessState != nil { // is nil if process failed to start
-			exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+
+		if exitError, ok := err.(*exec.ExitError); ok {
+			exitCode = exitError.ExitCode()
 		}
-		return exitStatus, ctx.Err()
+		err = ctx.Err()
+		return exitCode, err
 	case <-done:
 		// Happy path, command exits
 	}
 
-	if cmd.ProcessState != nil { // is nil if process failed to start
-		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
+	if exitError, ok := err.(*exec.ExitError); ok {
+		exitCode = exitError.ExitCode()
 	}
-	return exitStatus, err
+	if err == nil {
+		exitCode = 0
+	}
+	return exitCode, err
 }
 
 // cloneJob abstracts away a repo and necessary metadata to clone it. In the future it may be
