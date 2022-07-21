@@ -17,7 +17,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -33,7 +32,7 @@ import (
 )
 
 func printConfigValidation() {
-	messages, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+	messages, err := conf.Validate(conf.Raw())
 	if err != nil {
 		log.Printf("Warning: Unable to validate Sourcegraph site configuration: %s", err)
 		return

@@ -531,9 +531,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			ctx2, cancel := s.serverContext()
-			defer cancel()
-			s.setLastErrorNonFatal(ctx2, job.repo, err)
+			s.setLastErrorNonFatal(s.ctx, job.repo, err)
 		}(j)
 	}
 }
@@ -1922,9 +1920,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We always want to store whether there was an error cloning the repo
 	defer func() {
 		// Use a different context in case we failed because the original context failed.
-		ctx2, cancel := s.serverContext()
-		defer cancel()
-		s.setLastErrorNonFatal(ctx2, repo, err)
+		s.setLastErrorNonFatal(s.ctx, repo, err)
 	}()
 
 	dir := s.dir(repo)
@@ -2083,7 +2079,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	go readCloneProgress(newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
+	if output, err := runWith(ctx, cmd, true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2385,9 +2381,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec st
 			if err != nil {
 				s.Logger.Error("performing background repo update", log.Error(err))
 			}
-			ctx, cancel := s.serverContext()
-			defer cancel()
-			s.setLastErrorNonFatal(ctx, repo, err)
+			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})
 	}()
 
@@ -2548,7 +2542,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runWithRemoteOpts(ctx, cmd, nil)
+	output, err := runWith(ctx, cmd, true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")

@@ -208,3 +208,7 @@
   path: github.com/sourcegraph/sourcegraph/enterprise/internal/authz/github
   interfaces:
     - client
+- filename: internal/conf/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/conf
+  interfaces:
+    - ConfigurationSource

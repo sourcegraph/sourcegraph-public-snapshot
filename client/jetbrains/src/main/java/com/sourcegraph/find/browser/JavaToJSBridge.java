@@ -1,4 +1,4 @@
-package com.sourcegraph.browser;
+package com.sourcegraph.find.browser;
 
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;

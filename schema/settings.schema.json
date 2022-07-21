@@ -325,6 +325,14 @@
             "pointer": true
           }
         },
+        "extensionsAsCoreFeatures": {
+          "description": "Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
+        },
         "codeInsightsCompute": {
           "description": "Enables Compute powered Code Insights",
           "type": "boolean",
