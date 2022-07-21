@@ -71,9 +71,9 @@ func main() {
 		})
 	}
 
+	director := httputil.NewSingleHostReverseProxy(backend).Director
 	for _, opt := range opts {
 		opt := opt
-		director := httputil.NewSingleHostReverseProxy(backend).Director
 		rp := &httputil.ReverseProxy{
 			Director: func(req *http.Request) {
 				director(req)
