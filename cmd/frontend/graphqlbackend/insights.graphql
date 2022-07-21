@@ -214,6 +214,11 @@ extend type Query {
     Returns insights that have matches in this file. This query is experimental and should be considered unstable in the API.
     """
     relatedInsightsInline(input: RelatedInsightsInput!): [RelatedInsightInline!]!
+
+    """
+    Returns insights that match the given file. This query is experimental and should be considered unstable in the API.
+    """
+    relatedInsightsForFile(input: RelatedInsightsInput!): [RelatedInsightForFile!]!
 }
 
 """
@@ -250,6 +255,21 @@ type RelatedInsightInline {
     An array of line numbers where matches are found
     """
     lineNumbers: [Int!]!
+}
+
+type RelatedInsightForFile {
+    """
+    Insight view id
+    """
+    viewId: String!
+    """
+    Insight title
+    """
+    title: String!
+    """
+    The filepath this insight is matching
+    """
+    file: String!
 }
 
 extend type Mutation {
