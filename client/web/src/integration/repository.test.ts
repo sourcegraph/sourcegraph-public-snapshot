@@ -451,6 +451,8 @@ describe('Repository', () => {
             const fileName = '% token.4288249258.sql'
             const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
+            const fileUrl =
+                '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql'
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
@@ -472,8 +474,7 @@ describe('Repository', () => {
                                         name: fileName,
                                         path: filePath,
                                         isDirectory: false,
-                                        url:
-                                            '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
+                                        url: fileUrl,
                                         submodule: null,
                                         isSingleChild: false,
                                     },
@@ -484,19 +485,19 @@ describe('Repository', () => {
                 }),
             })
 
+            const fileSelector = `.test-tree-file-link[href="${fileUrl}"]`
+
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}/github.com/ggilmore/q-test/-/tree/Geoffrey's%20random%20queries.32r242442bf`
             )
-            await driver.page.waitForSelector('.test-tree-file-link')
+            await driver.page.waitForSelector(fileSelector)
             assert.strictEqual(
-                await driver.page.evaluate(() => document.querySelectorAll('.test-tree-file-link')?.[1].textContent),
+                await driver.page.evaluate(() => document.querySelector(fileSelector)?.textContent),
                 fileName
             )
 
             // page.click() fails for some reason with Error: Node is either not visible or not an HTMLElement
-            await driver.page.$eval('.test-tree-file-link', (linkElements: HTMLElement[]) => {
-                linkElements[1].click()
-            })
+            await driver.page.$eval(fileSelector, linkElement => (linkElement as HTMLElement).click())
             await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             await driver.page.waitForSelector('.test-breadcrumb')
@@ -1002,8 +1003,9 @@ describe('Repository', () => {
                                             return {
                                                 uri: file.uri,
                                                 after: {
-                                                    contentText: `${name.split('').filter(char => vowels.includes(char)).length
-                                                        } vowels`,
+                                                    contentText: `${
+                                                        name.split('').filter(char => vowels.includes(char)).length
+                                                    } vowels`,
                                                     color: file.isDirectory ? 'red' : 'blue',
                                                 },
                                                 meter: {
