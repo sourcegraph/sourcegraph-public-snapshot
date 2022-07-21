@@ -22,7 +22,7 @@ type SearchMatch struct {
 	RepositoryName string
 	MatchCount     int
 	LineMatches    []streamhttp.EventLineMatch
-	Path           *string
+	Path           string
 }
 
 type TabulationResult struct {
@@ -127,6 +127,8 @@ func MetadataDecoder() (streamhttp.FrontendStreamDecoder, *MetadataResult) {
 				// Should be extended when we care about repo and file results.
 				case *streamhttp.EventContentMatch:
 					mr.Matches = append(mr.Matches, &SearchMatch{LineMatches: match.LineMatches})
+				case *streamhttp.EventPathMatch:
+					mr.Matches = append(mr.Matches, &SearchMatch{Path: match.Path})
 				}
 			}
 		},

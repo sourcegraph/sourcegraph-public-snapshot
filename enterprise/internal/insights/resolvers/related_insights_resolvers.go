@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/inconshreveable/log15"
 
@@ -21,7 +22,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 	validator.loadUserContext(ctx)
 
 	allSeries, err := r.insightStore.GetAll(ctx, store.InsightQueryArgs{
-		Repo:   &args.Input.Repo,
+		Repo:   args.Input.Repo,
 		UserID: validator.userIds,
 		OrgID:  validator.orgIds,
 	})
@@ -29,7 +30,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		return nil, errors.Wrap(err, "GetAll")
 	}
 
-	seriesMatches := map[string]*relatedInsightMetadata{}
+	seriesMatches := map[string]*relatedInsightInlineMetadata{}
 	for _, series := range allSeries {
 		decoder, metadataResult := streaming.MetadataDecoder()
 		modifiedQuery, err := querybuilder.SingleFileQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.File, args.Input.Revision, querybuilder.CodeInsightsQueryDefaults(false))
@@ -54,7 +55,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		for _, match := range mr.Matches {
 			for _, lineMatch := range match.LineMatches {
 				if seriesMatches[series.UniqueID] == nil {
-					seriesMatches[series.UniqueID] = &relatedInsightMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}}
+					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}}
 				} else {
 					// Since insights can have multiple series, we might get duplicate matches.
 					if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
@@ -75,7 +76,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 	return resolvers, nil
 }
 
-type relatedInsightMetadata struct {
+type relatedInsightInlineMetadata struct {
 	title       string
 	lineNumbers []int32
 }
@@ -105,16 +106,23 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 	validator.loadUserContext(ctx)
 
 	allSeries, err := r.insightStore.GetAll(ctx, store.InsightQueryArgs{
-		Repo:   args.Input.Repo,
-		UserID: validator.userIds,
-		OrgID:  validator.orgIds,
+		Repo:                     args.Input.Repo,
+		ContainingQuerySubstring: "select:file",
+		UserID:                   validator.userIds,
+		OrgID:                    validator.orgIds,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "GetAll")
 	}
 
-	seriesMatches := map[string]*relatedInsightMetadata{}
+	var resolvers []graphqlbackend.RelatedInsightsForFileResolver
+	matchedInsightViews := map[string]bool{}
 	for _, series := range allSeries {
+		// We stop processing if we have matched on this insight view before.
+		if _, ok := matchedInsightViews[series.UniqueID]; ok {
+			continue
+		}
+
 		decoder, metadataResult := streaming.MetadataDecoder()
 		modifiedQuery, err := querybuilder.SingleFileQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.File, args.Input.Revision, querybuilder.CodeInsightsQueryDefaults(false))
 		if err != nil {
@@ -136,26 +144,13 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 		}
 
 		for _, match := range mr.Matches {
-			for _, lineMatch := range match.LineMatches {
-				if seriesMatches[series.UniqueID] == nil {
-					seriesMatches[series.UniqueID] = &relatedInsightMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}}
-				} else {
-					// Since insights can have multiple series, we might get duplicate matches.
-					if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
-						seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
-					}
-				}
+			if len(match.Path) > 0 && strings.EqualFold(match.Path, args.Input.File) {
+				matchedInsightViews[series.UniqueID] = true
+				resolvers = append(resolvers, &relatedInsightsForFileResolver{viewID: series.UniqueID, title: series.Title, file: match.Path})
 			}
 		}
 	}
 
-	var resolvers []graphqlbackend.RelatedInsightsForFileResolver
-	for insightId, metadata := range seriesMatches {
-		sort.SliceStable(metadata.lineNumbers, func(i, j int) bool {
-			return metadata.lineNumbers[i] < metadata.lineNumbers[j]
-		})
-		resolvers = append(resolvers, &relatedInsightsForFileResolver{viewID: insightId, title: metadata.title, file: args.Input.File})
-	}
 	return resolvers, nil
 }
 
