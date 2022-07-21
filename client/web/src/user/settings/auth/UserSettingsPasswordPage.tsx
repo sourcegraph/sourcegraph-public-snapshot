@@ -16,7 +16,7 @@ import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword } from '../backend'
 
 import styles from './UserSettingsPasswordPage.module.scss'
-import {getPasswordPolicy, minPasswordLen, validatePassword} from "../../../util/security";
+import {minPasswordLen, validatePassword, getPasswordRequirements} from "../../../util/security";
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
@@ -90,42 +90,6 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public getPasswordRequirements(): JSX.Element {
-        let requirements = ''
-        let passwordPolicyReference = getPasswordPolicy()
-
-        if (passwordPolicyReference && passwordPolicyReference.enabled === true) {
-            if (minPasswordLen && minPasswordLen > 0) {
-                requirements +=
-                    'Your password must include at least ' +
-                    minPasswordLen.toString() +
-                    ' characters'
-            }
-            if (
-                passwordPolicyReference.numberOfSpecialCharacters &&
-                passwordPolicyReference.numberOfSpecialCharacters > 0
-            ) {
-                requirements +=
-                    ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
-            }
-            if (
-                passwordPolicyReference.requireAtLeastOneNumber &&
-                passwordPolicyReference.requireAtLeastOneNumber
-            ) {
-                requirements += ', at least one number'
-            }
-            if (
-                passwordPolicyReference.requireUpperandLowerCase &&
-                passwordPolicyReference.requireUpperandLowerCase
-            ) {
-                requirements += ', at least one uppercase letter'
-            }
-        } else {
-            requirements += 'At least ' + minPasswordLen.toString() + ' characters.'
-        }
-
-        return <small>{requirements}</small>
-    }
 
     public render(): JSX.Element | null {
         return (
@@ -189,7 +153,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         autoComplete="new-password"
                                         className={styles.userSettingsPasswordPageInput}
                                     />
-                                    {this.getPasswordRequirements()}
+                                    {<small>{getPasswordRequirements(window.context)}</small>}
                                 </div>
                                 <div className="form-group mb-0">
                                     <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>

@@ -82,7 +82,7 @@ type JSContext struct {
 
 	ExternalServicesUserMode string `json:"externalServicesUserMode"`
 
-	AuthMinPasswordLength int                       `json:"authMinPasswordLength""`
+	AuthMinPasswordLength int                       `json:"authMinPasswordLength"`
 	AuthPasswordPolicy    schema.AuthPasswordPolicy `json:"authPasswordPolicy"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`

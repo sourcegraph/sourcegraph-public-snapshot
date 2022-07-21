@@ -27,7 +27,7 @@ import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './Sign
 import { SignupEmailField } from './SignupEmailField'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
-import {getPasswordPolicy, validatePassword, minPasswordLen} from "../util/security";
+import {minPasswordLen, validatePassword, getPasswordRequirements} from "../util/security";
 
 export interface SignUpArguments {
     email: string
@@ -54,41 +54,6 @@ interface SignUpFormProps {
 }
 
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
-
-export function getPasswordRequirements(
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures' |
-        'authPasswordPolicy'>
-): string {
-    let requirements = ''
-    let passwordPolicyReference = getPasswordPolicy()
-
-    if (passwordPolicyReference && passwordPolicyReference.enabled) {
-        console.log('Using enhanced password policy.')
-        requirements += 'Your password must include at least ' + minPasswordLen.toString() + ' characters'
-
-        if (
-            passwordPolicyReference.numberOfSpecialCharacters &&
-            passwordPolicyReference.numberOfSpecialCharacters > 0
-        ) {
-            requirements += ', ' + String(passwordPolicyReference.numberOfSpecialCharacters) + ' special characters'
-        }
-        if (
-            passwordPolicyReference.requireAtLeastOneNumber &&
-            passwordPolicyReference.requireAtLeastOneNumber
-        ) {
-            requirements += ', at least one number'
-        }
-        if (
-            passwordPolicyReference.requireUpperandLowerCase &&
-            passwordPolicyReference.requireUpperandLowerCase
-        ) {
-            requirements += ', at least one uppercase letter'
-        }
-    } else {
-        requirements += 'At least ' + minPasswordLen.toString() + ' characters'
-    }
-    return requirements
-}
 
 /**
  * The form for creating an account
