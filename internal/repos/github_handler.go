@@ -43,7 +43,7 @@ func (g *GitHubWebhookAPI) CreateSyncWebhook(ctx context.Context, repoName, targ
 	return g.client.CreateSyncWebhook(ctx, repoName, targetURL, secret)
 }
 
-func (g *GitHubWebhookAPI) ListSyncWebhooks(ctx context.Context, repoName string) ([]github.Payload, error) {
+func (g *GitHubWebhookAPI) ListSyncWebhooks(ctx context.Context, repoName string) ([]github.WebhookPayload, error) {
 	return g.client.ListSyncWebhooks(ctx, repoName)
 }
 
