@@ -20,7 +20,7 @@ These graphs pull directly from the event log table within the Sourcegraph insta
 
 ## Value Calculators
 
-Each page also includes calculators to help administrators measure the value that Sourcegraph is bringing to their organization. These calculators pull relevant information from your events table (ex: number of precise code intel events such as a go-to-definition) and multiply by the number of minutes saved per event (configurable by you!). 
+Each page also includes a total time saved value which can be used to measure the value Sourcegraph is bringing to your organization. This metric is derived from the configurable calculators below the total time saved value. Each calculator multiplies event log data (ex: number of precise code intel events such as a go-to-definition) by a configurable number of minutes saved per event to arrive at a time saved by the feature.
 
 We designed this to be configurable by you because we want to... 
  - help admins understand the value that is being seen by their organization today. 
