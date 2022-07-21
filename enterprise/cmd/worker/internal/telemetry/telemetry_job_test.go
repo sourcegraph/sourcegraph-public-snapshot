@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -14,7 +14,6 @@ import (
 
 func TestInitializeJob(t *testing.T) {
 	ctx := context.Background()
-	logger := log.Scoped("", "")
 
 	confClient = conf.MockClient()
 
@@ -55,7 +54,7 @@ func TestInitializeJob(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
 			job := NewTelemetryJob()
-			routines, err := job.Routines(ctx, logger)
+			routines, err := job.Routines(ctx, logtest.Scoped(t))
 			if err != nil {
 				t.Error(err)
 			}
@@ -75,7 +74,6 @@ func TestInitializeJob(t *testing.T) {
 
 func TestHandler(t *testing.T) {
 	ctx := context.Background()
-	logger := log.Scoped("", "")
 
 	tests := []struct {
 		name         string
@@ -113,7 +111,7 @@ func TestHandler(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			handler := telemetryHandler{logger: logger}
+			handler := telemetryHandler{logger: logtest.Scoped(t)}
 			err := handler.Handle(ctx)
 			if err != nil {
 				if !errors.Is(err, disabledErr) {
