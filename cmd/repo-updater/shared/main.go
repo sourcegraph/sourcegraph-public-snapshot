@@ -120,7 +120,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// bit more to do in this method, though, and the process will be marked ready
 	// further down this function.
 
-	repos.MustRegisterMetrics(log.Scoped("shared.Main", ""), db, envvar.SourcegraphDotComMode())
+	repos.MustRegisterMetrics(log.Scoped("MustRegisterMetrics", ""), db, envvar.SourcegraphDotComMode())
 
 	store := repos.NewStore(logger.Scoped("store", "repo store"), db)
 	{
@@ -138,7 +138,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 		depsSvc := livedependencies.GetService(db, nil)
 		obsLogger := logger.Scoped("ObservedSource", "")
-		src = repos.NewSourcer(log.Scoped("shared.Main", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
+		src = repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
@@ -195,7 +195,7 @@ func Main(enterpriseInit EnterpriseInit) {
 		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
 	}
 
-	go repos.RunPhabricatorRepositorySyncWorker(ctx, log.Scoped("shared.Main", ""), store)
+	go repos.RunPhabricatorRepositorySyncWorker(ctx, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
 
 	// git-server repos purging thread
 	var purgeTTL time.Duration

@@ -49,7 +49,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 	if err := backend.CheckExternalServiceAccess(ctx, db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
-	return &externalServiceResolver{logger: log.Scoped("externalServiceByID", ""), db: db, externalService: es}, nil
+	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
 }
 
 func MarshalExternalServiceID(id int64) graphql.ID {
