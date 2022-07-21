@@ -451,8 +451,6 @@ describe('Repository', () => {
             const fileName = '% token.4288249258.sql'
             const directoryName = "Geoffrey's random queries.32r242442bf"
             const filePath = path.posix.join(directoryName, fileName)
-            const fileUrl =
-                '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql'
 
             testContext.overrideGraphQL({
                 ...commonWebGraphQlResults,
@@ -474,7 +472,8 @@ describe('Repository', () => {
                                         name: fileName,
                                         path: filePath,
                                         isDirectory: false,
-                                        url: fileUrl,
+                                        url:
+                                            '/github.com/ggilmore/q-test/-/blob/Geoffrey%27s%20random%20queries.32r242442bf/%25%20token.4288249258.sql',
                                         submodule: null,
                                         isSingleChild: false,
                                     },
@@ -1009,8 +1008,9 @@ describe('Repository', () => {
                                             return {
                                                 uri: file.uri,
                                                 after: {
-                                                    contentText: `${name.split('').filter(char => vowels.includes(char)).length
-                                                        } vowels`,
+                                                    contentText: `${
+                                                        name.split('').filter(char => vowels.includes(char)).length
+                                                    } vowels`,
                                                     color: file.isDirectory ? 'red' : 'blue',
                                                 },
                                                 meter: {
