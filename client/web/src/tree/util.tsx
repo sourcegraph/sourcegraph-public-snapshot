@@ -51,6 +51,8 @@ export const treePadding = (depth: number, isTree: boolean, isDirectory = false)
     paddingRight: '1rem',
 })
 
+export const maxEntries = 2500
+
 // Utility functions to handle single-child directories:
 
 /**
