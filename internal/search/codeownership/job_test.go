@@ -39,27 +39,6 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			},
 			wantMatches: []result.Match{},
 		},
-		{
-			name: "forwards all matches if we include no owners",
-			args: args{
-				fileOwnersMustInclude: []string{},
-				fileOwnersMustExclude: []string{},
-				matches: []result.Match{
-					&result.FileMatch{
-						File: result.File{
-							Path: "README.md",
-						},
-					},
-				},
-			},
-			wantMatches: []result.Match{
-				&result.FileMatch{
-					File: result.File{
-						Path: "README.md",
-					},
-				},
-			},
-		},
 	}
 
 	for _, tt := range tests {
