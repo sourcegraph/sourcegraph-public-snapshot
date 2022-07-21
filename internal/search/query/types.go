@@ -371,9 +371,7 @@ func (p Parameters) RepoContainsCommitAfter() (value string) {
 }
 
 func (p Parameters) FileHasOwner() (include, exclude []string) {
-	nodes := toNodes(p)
-
-	VisitTypedPredicate(nodes, func(pred *FileHasOwnerPredicate, negated bool) {
+	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate, negated bool) {
 		if negated {
 			exclude = append(exclude, pred.Owner)
 		} else {
