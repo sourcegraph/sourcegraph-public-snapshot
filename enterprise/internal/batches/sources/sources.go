@@ -441,7 +441,7 @@ func extractCloneURL(ctx context.Context, s database.ExternalServiceStore, repo 
 	for _, svc := range svcs {
 		// build the clone url using the external service config instead of using
 		// the source CloneURL field
-		cloneURL, err := repos.CloneURL(log.Scoped("sources.extractCloneURL", ""), svc.Kind, svc.Config, repo)
+		cloneURL, err := repos.CloneURL(log.Scoped("CloneURL", ""), svc.Kind, svc.Config, repo)
 		if err != nil {
 			return "", err
 		}

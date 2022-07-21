@@ -202,7 +202,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	if envvar.SourcegraphDotComMode() {
 		purgeTTL = 14 * 24 * time.Hour // two weeks
 	}
-	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("shared.Main", ""), db, purgeTTL)
+	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("RepositoryPurgeWorker", ""), db, purgeTTL)
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)
@@ -362,7 +362,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 				return
 			}
 		}
-		err = repos.PurgeOldestRepos(log.Scoped("shared.Main", ""), db, limit, perSecond)
+		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos", ""), db, limit, perSecond)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
 			return
