@@ -132,7 +132,7 @@ func (s *Server) Start() {
 
 				// Update global "needs restart" state.
 				newConfig := Get()
-				if NeedRestartToApply(oldConfig, newConfig) {
+				if needRestartToApply(oldConfig, newConfig) {
 					s.markNeedServerRestart()
 				}
 
