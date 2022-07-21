@@ -6,6 +6,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -13,19 +14,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func New(child job.Job, includeOwners, excludeOwners []string) job.Job {
+func New(child job.Job, includeOwners, excludeOwners []string, db database.DB) job.Job {
 	return &codeownershipJob{
 		child:         child,
 		includeOwners: includeOwners,
 		excludeOwners: excludeOwners,
+		db:            db,
 	}
 }
 
 type codeownershipJob struct {
-	child job.Job
-
+	child         job.Job
 	includeOwners []string
 	excludeOwners []string
+	db            database.DB
 }
 
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
