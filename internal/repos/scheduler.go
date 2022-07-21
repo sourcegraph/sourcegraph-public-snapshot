@@ -572,8 +572,8 @@ func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 		})
 		fmt.Println("before notifying...")
 		fmt.Println("type:", reflect.TypeOf(notify))
-		// newNotify(q.notifyEnqueue)
-		notify(q.notifyEnqueue)
+		newNotify(q.notifyEnqueue)
+		// notify(q.notifyEnqueue)
 		fmt.Println("after notify")
 		return false
 	}

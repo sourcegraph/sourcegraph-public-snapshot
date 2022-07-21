@@ -104,11 +104,11 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 	go syncResetter.Start()
 	defer syncResetter.Stop()
 
-	whBuildWorker, whBuildResetter := NewWhBuildWorker(ctx, store.Handle(), &whBuildHandler{
+	whBuildWorker, whBuildResetter := NewWebhookBuildWorker(ctx, store.Handle(), &whBuildHandler{
 		store: store,
 		// userAccountsDB: store.With(),
 		minWhBuildInterval: opts.MinSyncInterval, // to change
-	}, WhBuildOptions{
+	}, WebhookBuildOptions{
 		WorkerInterval:       opts.DequeueInterval,
 		NumHandlers:          3,
 		PrometheusRegisterer: s.Registerer,
@@ -155,7 +155,7 @@ type whBuildHandler struct {
 }
 
 func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (err error) {
-	wbj, ok := record.(*WhBuildJob)
+	wbj, ok := record.(*WebhookBuildJob)
 	if !ok {
 		return errors.Errorf("expected repos.WhBuildJob, got %T", record)
 	}
@@ -684,7 +684,7 @@ func (s *Syncer) SyncExternalService(
 		}
 
 		// svc.SyncUsingWebhooks = conf.ExperimentalFeatures().EnableWebhookSyncing
-		svc.SyncUsingWebhooks = true // also use conf.Mock
+		svc.SyncUsingWebhooks = true
 		if svc.SyncUsingWebhooks {
 			err = s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name), svc.Kind)
 			if err != nil && s.Logger != nil {

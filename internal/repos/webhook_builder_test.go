@@ -45,7 +45,7 @@ import (
 
 var updateWebhooks = flag.Bool("updateWebhooks", false, "update testdata for webhook build worker integration test")
 
-func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
+func testWebhookBuilder(store repos.Store, db database.DB) func(*testing.T) {
 	return func(t *testing.T) {
 		ctx := context.Background()
 		logger := logtest.Scoped(t)
@@ -157,7 +157,7 @@ func testSyncWebhookWorker(store repos.Store, db database.DB) func(*testing.T) {
 			minWhBuildInterval: func() time.Duration { return time.Minute },
 		}
 
-		whBuildWorker, _ := repos.NewWhBuildWorker(ctx, store.Handle(), whBuildHandler, repos.WhBuildOptions{
+		whBuildWorker, _ := repos.NewWebhookBuildWorker(ctx, store.Handle(), whBuildHandler, repos.WebhookBuildOptions{
 			NumHandlers:    3,
 			WorkerInterval: 1 * time.Millisecond,
 		})
@@ -447,7 +447,7 @@ type fakeWhBuildHandler struct {
 }
 
 func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	wbj, ok := record.(*repos.WhBuildJob)
+	wbj, ok := record.(*repos.WebhookBuildJob)
 	if !ok {
 		h.jobChan <- -1
 		return errors.Errorf("expected repos.WhBuildJob, got %T", record)

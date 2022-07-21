@@ -796,13 +796,13 @@ WHERE NOT EXISTS (
 	return err
 }
 
-func scanWhBuildJobs(rows *sql.Rows) ([]WhBuildJob, error) {
-	var jobs []WhBuildJob
+func scanWebhookBuildJobs(rows *sql.Rows) ([]WebhookBuildJob, error) {
+	var jobs []WebhookBuildJob
 
 	for rows.Next() {
 		var executionLogs *[]any
 
-		var job WhBuildJob
+		var job WebhookBuildJob
 		if err := rows.Scan(
 			&job.ID,
 			&job.State,
