@@ -31,6 +31,7 @@ type Command struct {
 
 	ExternalSecrets map[string]secrets.ExternalSecret `yaml:"external_secrets"`
 	Description     string                            `yaml:"description"`
+
 	// ATTENTION: If you add a new field here, be sure to also handle that
 	// field in `Merge` (below).
 }
