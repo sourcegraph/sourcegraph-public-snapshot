@@ -42,6 +42,10 @@ type MockStore struct {
 	// EnqueueSingleSyncJobFunc is an instance of a mock function object
 	// controlling the behavior of the method EnqueueSingleSyncJob.
 	EnqueueSingleSyncJobFunc *StoreEnqueueSingleSyncJobFunc
+	// EnqueueSingleWebhookBuildJobFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// EnqueueSingleWebhookBuildJob.
+	EnqueueSingleWebhookBuildJobFunc *StoreEnqueueSingleWebhookBuildJobFunc
 	// EnqueueSyncJobsFunc is an instance of a mock function object
 	// controlling the behavior of the method EnqueueSyncJobs.
 	EnqueueSyncJobsFunc *StoreEnqueueSyncJobsFunc
@@ -81,9 +85,10 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// UpdateExternalServiceRepo.
 	UpdateExternalServiceRepoFunc *StoreUpdateExternalServiceRepoFunc
-	// UpdateRepoFunc is an instance of a mock function object controlling
-	// the behavior of the method UpdateRepo.
-	UpdateRepoFunc *StoreUpdateRepoFunc
+	// UserExternalAccountsStoreFunc is an instance of a mock function
+	// object controlling the behavior of the method
+	// UserExternalAccountsStore.
+	UserExternalAccountsStoreFunc *StoreUserExternalAccountsStoreFunc
 	// WithFunc is an instance of a mock function object controlling the
 	// behavior of the method With.
 	WithFunc *StoreWithFunc
@@ -120,6 +125,11 @@ func NewMockStore() *MockStore {
 		},
 		EnqueueSingleSyncJobFunc: &StoreEnqueueSingleSyncJobFunc{
 			defaultHook: func(context.Context, int64) (r0 error) {
+				return
+			},
+		},
+		EnqueueSingleWebhookBuildJobFunc: &StoreEnqueueSingleWebhookBuildJobFunc{
+			defaultHook: func(context.Context, int64, string, string) (r0 error) {
 				return
 			},
 		},
@@ -183,8 +193,8 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
-		UpdateRepoFunc: &StoreUpdateRepoFunc{
-			defaultHook: func(context.Context, *types.Repo) (r0 *types.Repo, r1 error) {
+		UserExternalAccountsStoreFunc: &StoreUserExternalAccountsStoreFunc{
+			defaultHook: func() (r0 database.UserExternalAccountsStore) {
 				return
 			},
 		},
@@ -228,6 +238,11 @@ func NewStrictMockStore() *MockStore {
 		EnqueueSingleSyncJobFunc: &StoreEnqueueSingleSyncJobFunc{
 			defaultHook: func(context.Context, int64) error {
 				panic("unexpected invocation of MockStore.EnqueueSingleSyncJob")
+			},
+		},
+		EnqueueSingleWebhookBuildJobFunc: &StoreEnqueueSingleWebhookBuildJobFunc{
+			defaultHook: func(context.Context, int64, string, string) error {
+				panic("unexpected invocation of MockStore.EnqueueSingleWebhookBuildJob")
 			},
 		},
 		EnqueueSyncJobsFunc: &StoreEnqueueSyncJobsFunc{
@@ -290,9 +305,9 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.UpdateExternalServiceRepo")
 			},
 		},
-		UpdateRepoFunc: &StoreUpdateRepoFunc{
-			defaultHook: func(context.Context, *types.Repo) (*types.Repo, error) {
-				panic("unexpected invocation of MockStore.UpdateRepo")
+		UserExternalAccountsStoreFunc: &StoreUserExternalAccountsStoreFunc{
+			defaultHook: func() database.UserExternalAccountsStore {
+				panic("unexpected invocation of MockStore.UserExternalAccountsStore")
 			},
 		},
 		WithFunc: &StoreWithFunc{
@@ -324,6 +339,9 @@ func NewMockStoreFrom(i Store) *MockStore {
 		},
 		EnqueueSingleSyncJobFunc: &StoreEnqueueSingleSyncJobFunc{
 			defaultHook: i.EnqueueSingleSyncJob,
+		},
+		EnqueueSingleWebhookBuildJobFunc: &StoreEnqueueSingleWebhookBuildJobFunc{
+			defaultHook: i.EnqueueSingleWebhookBuildJob,
 		},
 		EnqueueSyncJobsFunc: &StoreEnqueueSyncJobsFunc{
 			defaultHook: i.EnqueueSyncJobs,
@@ -361,8 +379,8 @@ func NewMockStoreFrom(i Store) *MockStore {
 		UpdateExternalServiceRepoFunc: &StoreUpdateExternalServiceRepoFunc{
 			defaultHook: i.UpdateExternalServiceRepo,
 		},
-		UpdateRepoFunc: &StoreUpdateRepoFunc{
-			defaultHook: i.UpdateRepo,
+		UserExternalAccountsStoreFunc: &StoreUserExternalAccountsStoreFunc{
+			defaultHook: i.UserExternalAccountsStore,
 		},
 		WithFunc: &StoreWithFunc{
 			defaultHook: i.With,
@@ -1019,6 +1037,120 @@ func (c StoreEnqueueSingleSyncJobFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreEnqueueSingleSyncJobFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreEnqueueSingleWebhookBuildJobFunc describes the behavior when the
+// EnqueueSingleWebhookBuildJob method of the parent MockStore instance is
+// invoked.
+type StoreEnqueueSingleWebhookBuildJobFunc struct {
+	defaultHook func(context.Context, int64, string, string) error
+	hooks       []func(context.Context, int64, string, string) error
+	history     []StoreEnqueueSingleWebhookBuildJobFuncCall
+	mutex       sync.Mutex
+}
+
+// EnqueueSingleWebhookBuildJob delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) EnqueueSingleWebhookBuildJob(v0 context.Context, v1 int64, v2 string, v3 string) error {
+	r0 := m.EnqueueSingleWebhookBuildJobFunc.nextHook()(v0, v1, v2, v3)
+	m.EnqueueSingleWebhookBuildJobFunc.appendCall(StoreEnqueueSingleWebhookBuildJobFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// EnqueueSingleWebhookBuildJob method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreEnqueueSingleWebhookBuildJobFunc) SetDefaultHook(hook func(context.Context, int64, string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// EnqueueSingleWebhookBuildJob method of the parent MockStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *StoreEnqueueSingleWebhookBuildJobFunc) PushHook(hook func(context.Context, int64, string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreEnqueueSingleWebhookBuildJobFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int64, string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreEnqueueSingleWebhookBuildJobFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int64, string, string) error {
+		return r0
+	})
+}
+
+func (f *StoreEnqueueSingleWebhookBuildJobFunc) nextHook() func(context.Context, int64, string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreEnqueueSingleWebhookBuildJobFunc) appendCall(r0 StoreEnqueueSingleWebhookBuildJobFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreEnqueueSingleWebhookBuildJobFuncCall
+// objects describing the invocations of this function.
+func (f *StoreEnqueueSingleWebhookBuildJobFunc) History() []StoreEnqueueSingleWebhookBuildJobFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreEnqueueSingleWebhookBuildJobFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreEnqueueSingleWebhookBuildJobFuncCall is an object that describes an
+// invocation of method EnqueueSingleWebhookBuildJob on an instance of
+// MockStore.
+type StoreEnqueueSingleWebhookBuildJobFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int64
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreEnqueueSingleWebhookBuildJobFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreEnqueueSingleWebhookBuildJobFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
@@ -2260,34 +2392,36 @@ func (c StoreUpdateExternalServiceRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// StoreUpdateRepoFunc describes the behavior when the UpdateRepo method of
-// the parent MockStore instance is invoked.
-type StoreUpdateRepoFunc struct {
-	defaultHook func(context.Context, *types.Repo) (*types.Repo, error)
-	hooks       []func(context.Context, *types.Repo) (*types.Repo, error)
-	history     []StoreUpdateRepoFuncCall
+// StoreUserExternalAccountsStoreFunc describes the behavior when the
+// UserExternalAccountsStore method of the parent MockStore instance is
+// invoked.
+type StoreUserExternalAccountsStoreFunc struct {
+	defaultHook func() database.UserExternalAccountsStore
+	hooks       []func() database.UserExternalAccountsStore
+	history     []StoreUserExternalAccountsStoreFuncCall
 	mutex       sync.Mutex
 }
 
-// UpdateRepo delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockStore) UpdateRepo(v0 context.Context, v1 *types.Repo) (*types.Repo, error) {
-	r0, r1 := m.UpdateRepoFunc.nextHook()(v0, v1)
-	m.UpdateRepoFunc.appendCall(StoreUpdateRepoFuncCall{v0, v1, r0, r1})
-	return r0, r1
+// UserExternalAccountsStore delegates to the next hook function in the
+// queue and stores the parameter and result values of this invocation.
+func (m *MockStore) UserExternalAccountsStore() database.UserExternalAccountsStore {
+	r0 := m.UserExternalAccountsStoreFunc.nextHook()()
+	m.UserExternalAccountsStoreFunc.appendCall(StoreUserExternalAccountsStoreFuncCall{r0})
+	return r0
 }
 
-// SetDefaultHook sets function that is called when the UpdateRepo method of
-// the parent MockStore instance is invoked and the hook queue is empty.
-func (f *StoreUpdateRepoFunc) SetDefaultHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
+// SetDefaultHook sets function that is called when the
+// UserExternalAccountsStore method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreUserExternalAccountsStoreFunc) SetDefaultHook(hook func() database.UserExternalAccountsStore) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// UpdateRepo method of the parent MockStore instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreUpdateRepoFunc) PushHook(hook func(context.Context, *types.Repo) (*types.Repo, error)) {
+// UserExternalAccountsStore method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreUserExternalAccountsStoreFunc) PushHook(hook func() database.UserExternalAccountsStore) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -2295,20 +2429,20 @@ func (f *StoreUpdateRepoFunc) PushHook(hook func(context.Context, *types.Repo) (
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *StoreUpdateRepoFunc) SetDefaultReturn(r0 *types.Repo, r1 error) {
-	f.SetDefaultHook(func(context.Context, *types.Repo) (*types.Repo, error) {
-		return r0, r1
+func (f *StoreUserExternalAccountsStoreFunc) SetDefaultReturn(r0 database.UserExternalAccountsStore) {
+	f.SetDefaultHook(func() database.UserExternalAccountsStore {
+		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *StoreUpdateRepoFunc) PushReturn(r0 *types.Repo, r1 error) {
-	f.PushHook(func(context.Context, *types.Repo) (*types.Repo, error) {
-		return r0, r1
+func (f *StoreUserExternalAccountsStoreFunc) PushReturn(r0 database.UserExternalAccountsStore) {
+	f.PushHook(func() database.UserExternalAccountsStore {
+		return r0
 	})
 }
 
-func (f *StoreUpdateRepoFunc) nextHook() func(context.Context, *types.Repo) (*types.Repo, error) {
+func (f *StoreUserExternalAccountsStoreFunc) nextHook() func() database.UserExternalAccountsStore {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -2321,50 +2455,42 @@ func (f *StoreUpdateRepoFunc) nextHook() func(context.Context, *types.Repo) (*ty
 	return hook
 }
 
-func (f *StoreUpdateRepoFunc) appendCall(r0 StoreUpdateRepoFuncCall) {
+func (f *StoreUserExternalAccountsStoreFunc) appendCall(r0 StoreUserExternalAccountsStoreFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreUpdateRepoFuncCall objects describing
-// the invocations of this function.
-func (f *StoreUpdateRepoFunc) History() []StoreUpdateRepoFuncCall {
+// History returns a sequence of StoreUserExternalAccountsStoreFuncCall
+// objects describing the invocations of this function.
+func (f *StoreUserExternalAccountsStoreFunc) History() []StoreUserExternalAccountsStoreFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreUpdateRepoFuncCall, len(f.history))
+	history := make([]StoreUserExternalAccountsStoreFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreUpdateRepoFuncCall is an object that describes an invocation of
-// method UpdateRepo on an instance of MockStore.
-type StoreUpdateRepoFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 *types.Repo
+// StoreUserExternalAccountsStoreFuncCall is an object that describes an
+// invocation of method UserExternalAccountsStore on an instance of
+// MockStore.
+type StoreUserExternalAccountsStoreFuncCall struct {
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *types.Repo
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
+	Result0 database.UserExternalAccountsStore
 }
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreUpdateRepoFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+func (c StoreUserExternalAccountsStoreFuncCall) Args() []interface{} {
+	return []interface{}{}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreUpdateRepoFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
+func (c StoreUserExternalAccountsStoreFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreWithFunc describes the behavior when the With method of the parent

@@ -191,7 +191,6 @@ func testStoreEnqueueSyncJobs(store repos.Store) func(*testing.T) {
 
 func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
@@ -214,7 +213,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &service)
+		err := database.ExternalServicesWith(logtest.Scoped(t), store).Create(ctx, confGet, &service)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -299,9 +298,78 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 	}
 }
 
+func testStoreEnqueueSingleWebhookBuildJob(store repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+		t.Cleanup(func() {
+			q := sqlf.Sprintf("DELETE FROM webhook_build_jobs;")
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		ghRepo := &types.Repo{
+			ID:   1,
+			Name: "github.com/susantoscott/hi-mom",
+		}
+
+		err := store.RepoStore().Create(ctx, ghRepo)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		assertCount := func(t *testing.T, want int) {
+			t.Helper()
+			var count int
+			q := sqlf.Sprintf("SELECT COUNT(*) FROM webhook_build_jobs")
+			if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+				t.Fatal(err)
+			}
+			if count != want {
+				t.Fatalf("Expected %d rows, got %d", want, count)
+			}
+		}
+		assertCount(t, 0)
+
+		err = store.EnqueueSingleWebhookBuildJob(ctx, int64(ghRepo.ID), string(ghRepo.Name), "GITHUB")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertCount(t, 1)
+
+		// Doing it again should not fail or add a new row
+		err = store.EnqueueSingleWebhookBuildJob(ctx, int64(ghRepo.ID), string(ghRepo.Name), "GITHUB")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertCount(t, 1)
+
+		// If we change status to processing it should not add a new row
+		q := sqlf.Sprintf("UPDATE webhook_build_jobs SET state='processing'")
+		if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			t.Fatal(err)
+		}
+		err = store.EnqueueSingleWebhookBuildJob(ctx, int64(ghRepo.ID), string(ghRepo.Name), "GITHUB")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertCount(t, 1)
+
+		// If we change status to completed we should be able to enqueue another one
+		q = sqlf.Sprintf("UPDATE webhook_build_jobs SET state='completed'")
+		if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+			t.Fatal(err)
+		}
+		err = store.EnqueueSingleWebhookBuildJob(ctx, int64(ghRepo.ID), string(ghRepo.Name), "GITHUB")
+		if err != nil {
+			t.Fatal(err)
+		}
+		assertCount(t, 2)
+	}
+}
+
 func testStoreListExternalServiceUserIDsByRepoID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf(`
@@ -330,7 +398,7 @@ DELETE FROM users;
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
+		err := database.ExternalServicesWith(logtest.Scoped(t), store).Create(ctx, confGet, &svc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -370,7 +438,6 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 
 func testStoreListExternalServicePrivateRepoIDsByUserID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
-		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf(`
@@ -399,7 +466,7 @@ DELETE FROM users;
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
+		err := database.ExternalServicesWith(logtest.Scoped(t), store).Create(ctx, confGet, &svc)
 		if err != nil {
 			t.Fatal(err)
 		}

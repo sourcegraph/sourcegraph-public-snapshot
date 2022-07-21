@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 	"sort"
 	"time"
 
@@ -17,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -31,6 +33,9 @@ type Store interface {
 	// ExternalServiceStore returns a database.ExternalServiceStore using the same
 	// database handle.
 	ExternalServiceStore() database.ExternalServiceStore
+	// UserExternalAccountsStore returns a database.UserExternalAccountsStore using
+	// the same database handle.
+	UserExternalAccountsStore() database.UserExternalAccountsStore
 
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
@@ -77,10 +82,6 @@ type Store interface {
 	// external service, respectively in the repo and external_service_repos table.
 	// The associated external service must already exist.
 	UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error)
-	// UpdateRepo updates a single repo without updating its association to an
-	// external service. This must only be used when updating metadata on a repo
-	// that cannot affect its associations.
-	UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error)
 	// EnqueueSingleSyncJob enqueues a single sync job for the given external service
 	// if it is not already queued or processing. Additionally, it also skips
 	// queueing up a sync job for cloud_default external services. This is done to
@@ -97,6 +98,8 @@ type Store interface {
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
 	// ListSyncJobs returns all sync jobs.
 	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
+	// Enqueues webhook build jobs for external services that requests syncing using webhooks.
+	EnqueueSingleWebhookBuildJob(ctx context.Context, repoID int64, repoName string, kind string) (err error)
 }
 
 // A Store exposes methods to read and write repos and external services.
@@ -134,6 +137,10 @@ func (s *store) GitserverReposStore() database.GitserverRepoStore {
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s.Logger, s)
+}
+
+func (s *store) UserExternalAccountsStore() database.UserExternalAccountsStore {
+	return database.ExternalAccountsWith(s.Logger, s)
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
@@ -550,59 +557,6 @@ WHERE
 	external_service_repos.org_id    != excluded.org_id
 `
 
-func (s *store) UpdateRepo(ctx context.Context, r *types.Repo) (saved *types.Repo, err error) {
-	tr, ctx := s.trace(ctx, "Store.UpdateRepo")
-	tr.LogFields(
-		otlog.String("name", string(r.Name)),
-		otlog.Int32("id", int32(r.ID)),
-	)
-	logger := trace.Logger(ctx, s.Logger).With(
-		log.Int32("id", int32(r.ID)),
-		log.String("name", string(r.Name)),
-	)
-
-	defer func(began time.Time) {
-		secs := time.Since(began).Seconds()
-
-		s.Metrics.UpdateRepo.Observe(secs, 1, &err)
-		if err != nil {
-			logger.Error("store.update-repo", log.Error(err))
-		}
-
-		tr.SetError(err)
-		tr.Finish()
-	}(time.Now())
-
-	if r.ID == 0 {
-		return nil, errors.New("empty repo id in update")
-	}
-
-	metadata, err := metadataColumn(r.Metadata)
-	if err != nil {
-		return nil, errors.Wrap(err, "metadata marshalling failed")
-	}
-
-	q := sqlf.Sprintf(updateRepoQuery,
-		r.Name,
-		r.URI,
-		r.Description,
-		r.ExternalRepo.ServiceType,
-		r.ExternalRepo.ServiceID,
-		r.ExternalRepo.ID,
-		r.Archived,
-		r.Fork,
-		r.Stars,
-		r.Private,
-		metadata,
-		r.ID,
-	)
-
-	if err = s.QueryRow(ctx, q).Scan(&r.UpdatedAt); err != nil {
-		return nil, err
-	}
-	return r, nil
-}
-
 func (s *store) UpdateExternalServiceRepo(ctx context.Context, svc *types.ExternalService, r *types.Repo) (err error) {
 	tr, ctx := s.trace(ctx, "Store.UpdateExternalServiceRepo")
 	tr.LogFields(
@@ -805,6 +759,64 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 			&executionLogs,
 			&job.ExternalServiceID,
 			&job.NextSyncAt,
+		); err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, job)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return jobs, nil
+}
+
+func (s *store) EnqueueSingleWebhookBuildJob(ctx context.Context,
+	repoID int64,
+	repoName string,
+	kind string) (err error) {
+	q := sqlf.Sprintf(`
+INSERT INTO webhook_build_jobs (repo_id, repo_name, queued_at, extsvc_kind)
+SELECT %s, %s, %s, %s
+WHERE NOT EXISTS (
+	SELECT
+	FROM repo r
+	LEFT JOIN webhook_build_jobs j ON r.id = j.repo_id
+	WHERE r.id = %s
+	AND (
+		j.state IN ('queued', 'processing')
+	)
+)
+`, repoID, repoName, timeutil.Now(), kind, repoID)
+	err = s.Exec(ctx, q)
+	if err != nil {
+		fmt.Println("singleWh:", err)
+	}
+	return err
+}
+
+func scanWebhookBuildJobs(rows *sql.Rows) ([]WebhookBuildJob, error) {
+	var jobs []WebhookBuildJob
+
+	for rows.Next() {
+		var executionLogs *[]any
+
+		var job WebhookBuildJob
+		if err := rows.Scan(
+			&job.ID,
+			&job.State,
+			&job.FailureMessage,
+			&job.StartedAt,
+			&job.FinishedAt,
+			&job.ProcessAfter,
+			&job.NumResets,
+			&job.NumFailures,
+			&executionLogs,
+			&job.RepoID,
+			&job.RepoName,
+			&job.ExtsvcKind,
+			&job.QueuedAt,
 		); err != nil {
 			return nil, err
 		}
