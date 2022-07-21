@@ -27,7 +27,7 @@ type Sourcer func(context.Context, *types.ExternalService) (Source, error)
 // The provided decorator functions will be applied to the Source.
 func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(ctx context.Context, svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(ctx, logger, db, svc, cf)
+		src, err := NewSource(ctx, logger.Scoped("source", ""), db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -46,19 +46,19 @@ func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *type
 
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(logger, externalServicesStore, svc, cf)
+		return NewGithubSource(logger.Scoped("GithubSource", ""), externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(ctx, logger, db, svc, cf)
+		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", ""), db, svc, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(svc, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(logger, svc, cf)
+		return NewBitbucketServerSource(logger.Scoped("BitbucketServerSource", ""), svc, cf)
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(logger, svc, cf)
+		return NewBitbucketCloudSource(logger.Scoped("BitbucketCloudSource", ""), svc, cf)
 	case extsvc.KindGitolite:
 		return NewGitoliteSource(db, svc, cf)
 	case extsvc.KindPhabricator:
-		return NewPhabricatorSource(logger, svc, cf)
+		return NewPhabricatorSource(logger.Scoped("PhabricatorSource", ""), svc, cf)
 	case extsvc.KindAWSCodeCommit:
 		return NewAWSCodeCommitSource(svc, cf)
 	case extsvc.KindPerforce:

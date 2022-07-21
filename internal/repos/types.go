@@ -141,7 +141,7 @@ func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db 
 	if svc.IsSiteOwned() || (svc.Kind != extsvc.KindGitHub && svc.Kind != extsvc.KindGitLab) {
 		return nil, nil
 	}
-	src, err := NewSource(ctx, logger, db, svc, nil)
+	src, err := NewSource(ctx, logger.Scoped("Source", ""), db, svc, nil)
 	if err != nil {
 		return nil, errors.Wrap(err, "creating source")
 	}
@@ -161,7 +161,7 @@ func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db 
 		}
 
 		// Slow path
-		src, err := NewGithubSource(logger, externalServicesStore, svc, nil)
+		src, err := NewGithubSource(logger.Scoped("GithubSource", ""), externalServicesStore, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}
@@ -190,7 +190,7 @@ func GrantedScopes(ctx context.Context, logger log.Logger, cache ScopeCache, db 
 		}
 
 		// Slow path
-		src, err := NewGitLabSource(ctx, logger, db, svc, nil)
+		src, err := NewGitLabSource(ctx, logger.Scoped("GitLabSource", ""), db, svc, nil)
 		if err != nil {
 			return nil, errors.Wrap(err, "creating source")
 		}
