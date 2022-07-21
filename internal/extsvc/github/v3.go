@@ -859,7 +859,7 @@ func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, b
 	for _, payload := range payloads {
 		endpoint := payload.PayloadConfig.Url
 		parts := strings.Split(endpoint, "/")
-		if parts[len(parts)-1] == "github-webhooks" {
+		if len(parts) > 0 && parts[len(parts)-1] == "github-webhooks" {
 			return payload.ID, true
 		}
 	}
