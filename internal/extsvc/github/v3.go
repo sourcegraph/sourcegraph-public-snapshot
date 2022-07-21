@@ -163,6 +163,22 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	return c.request(ctx, req, result)
 }
 
+func (c *V3Client) delete(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
+	body, err := json.Marshal(payload)
+	if err != nil {
+		return nil, errors.Wrap(err, "marshalling payload")
+	}
+
+	req, err := http.NewRequest("DELETE", requestURI, bytes.NewReader(body))
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", "application/json")
+
+	return c.request(ctx, req, result)
+}
+
 func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
 	// Include node_id (GraphQL ID) in response. See
 	// https://developer.github.com/changes/2017-12-19-graphql-node-id/.
@@ -754,4 +770,156 @@ func (c *V3Client) GetUserInstallations(ctx context.Context) ([]github.Installat
 	}
 
 	return resultStruct.Installations, nil
+}
+
+type Payload struct {
+	Name   string   `json:"name"`
+	ID     int      `json:"id,omitempty"`
+	Config Config   `json:"config"`
+	Events []string `json:"events"`
+	Active bool     `json:"active"`
+	URL    string   `json:"url"`
+}
+
+type Config struct {
+	Url          string `json:"url"`
+	Content_type string `json:"content_type"`
+	Secret       string `json:"secret"`
+	Insecure_ssl string `json:"insecure_ssl"`
+	Token        string `json:"token"`
+	Digest       string `json:"digest,omitempty"`
+}
+
+func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, secret string) (int, error) {
+	url, err := urlBuilder(repoName)
+	if err != nil {
+		return -1, err
+	}
+
+	payload := Payload{
+		Name:   "web",
+		Active: true,
+		Config: Config{
+			Url:          fmt.Sprintf("%s/github-webhooks", targetURL),
+			Content_type: "json",
+			Secret:       secret,
+			Insecure_ssl: "0",
+		},
+		Events: []string{
+			"push",
+		},
+	}
+
+	var result Payload
+	resp, err := c.post(ctx, url, payload, &result)
+	if err != nil {
+		return -1, err
+	}
+
+	if resp.statusCode < 200 || resp.statusCode >= 300 {
+		return -1, errors.Wrap(err, "non-2xx status code")
+	}
+
+	return result.ID, nil
+}
+
+func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Payload, error) {
+	url, err := urlBuilder(repoName)
+	if err != nil {
+		return nil, err
+	}
+
+	var results []Payload
+	resp, err := c.get(ctx, url, &results)
+	if err != nil {
+		return nil, err
+	}
+
+	if resp.statusCode < 200 || resp.statusCode >= 300 {
+		return nil, errors.Wrap(err, "non-2xx status code")
+	}
+
+	return results, nil
+}
+
+func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, bool) {
+	payloads, err := c.ListSyncWebhooks(ctx, repoName)
+	if err != nil {
+		return -1, false
+	}
+
+	for _, payload := range payloads {
+		endpoint := payload.Config.Url
+		parts := strings.Split(endpoint, "/")
+		if parts[len(parts)-1] == "github-webhooks" {
+			return payload.ID, true
+		}
+	}
+
+	return -1, false
+}
+
+func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
+	url, err := urlBuilderWithID(repoName, hookID)
+	if err != nil {
+		return false, err
+	}
+
+	var result any
+	resp, err := c.delete(ctx, url, "", &result)
+	if err != nil && err.Error() != "EOF" {
+		return false, err
+	}
+
+	if resp.statusCode < 200 || resp.statusCode >= 300 {
+		return false, errors.Wrap(err, "non-2xx status code")
+	}
+
+	return true, nil
+}
+
+func (c *V3Client) TestPushSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
+	u, err := urlBuilderWithID(repoName, hookID)
+	if err != nil {
+		return false, err
+	}
+	url := fmt.Sprintf("%s/tests", u)
+
+	var result Payload
+	resp, err := c.post(ctx, url, nil, result)
+	if err != nil && err.Error() != "EOF" {
+		return false, err
+	}
+
+	if resp.statusCode < 200 || resp.statusCode >= 300 {
+		return false, errors.Wrap(err, "non-2xx status code")
+	}
+
+	return true, nil
+}
+
+func urlBuilder(repoName string) (string, error) {
+	repoName = fmt.Sprintf("//%s", repoName)
+	u, err := url.Parse(repoName)
+	if err != nil {
+		return "", errors.Newf("error parsing URL:", err)
+	}
+
+	if u.Host == "github.com" {
+		return fmt.Sprintf("https://api.github.com/repos%s/hooks", u.Path), nil
+	}
+	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks", u.Host, u.Path), nil
+}
+
+func urlBuilderWithID(repoName string, hookID int) (string, error) {
+	repoName = fmt.Sprintf("//%s", repoName)
+	u, err := url.Parse(repoName)
+	if err != nil {
+		return "", errors.Newf("error parsing URL:", err)
+	}
+
+	if u.Host == "github.com" {
+		return fmt.Sprintf("https://api.github.com/repos%s/hooks/%d", u.Path, hookID), nil
+	}
+	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks/%d", u.Host, u.Path, hookID), nil
 }
