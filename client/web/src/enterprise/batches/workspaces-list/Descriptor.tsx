@@ -34,10 +34,13 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
         <div className="flex-1">
             <H4 className={styles.name}>{workspace?.repository.name ?? 'Workspace in hidden repository'}</H4>
             {workspace && workspace.path !== '' && workspace.path !== '/' ? (
-                <span className={styles.path}>{workspace?.path}</span>
+                <>
+                    {/* <VisuallyHidden>Workspace path: </VisuallyHidden> */}
+                    <span className={styles.path}>{workspace?.path}</span>
+                </>
             ) : null}
             {workspace && (
-                <div className={classNames(styles.workspaceDetails, '.text-monospace')}>
+                <div className={classNames(styles.workspaceDetails, 'text-monospace')}>
                     {workspace.ignored && (
                         <Badge
                             className={styles.badge}
@@ -57,7 +60,10 @@ export const Descriptor = <Workspace extends WorkspaceBaseFields>({
                         </Badge>
                     )}
                     <Icon aria-hidden={true} className="mr-1" svgPath={mdiSourceBranch} />
-                    <small>{workspace.branch.displayName}</small>
+                    <small>
+                        {/* <VisuallyHidden>Workspace branch: </VisuallyHidden> */}
+                        {workspace.branch.displayName}
+                    </small>
                 </div>
             )}
         </div>

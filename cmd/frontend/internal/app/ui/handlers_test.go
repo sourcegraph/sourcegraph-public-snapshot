@@ -37,7 +37,7 @@ func TestRedirects(t *testing.T) {
 		t.Helper()
 
 		gss := database.NewMockGlobalStateStore()
-		gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+		gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
 		db := database.NewMockDB()
 		db.GlobalStateFunc.SetDefaultReturn(gss)
@@ -178,7 +178,7 @@ func TestNewCommon_repo_error(t *testing.T) {
 			}
 
 			gss := database.NewMockGlobalStateStore()
-			gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+			gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
 			db := database.NewMockDB()
 			db.GlobalStateFunc.SetDefaultReturn(gss)
@@ -433,7 +433,7 @@ func TestRedirectTreeOrBlob(t *testing.T) {
 func init() {
 	globals.ConfigurationServerFrontendOnly = &conf.Server{}
 	gss := database.NewMockGlobalStateStore()
-	gss.GetFunc.SetDefaultReturn(&database.GlobalState{SiteID: "a"}, nil)
+	gss.GetFunc.SetDefaultReturn(database.GlobalState{SiteID: "a"}, nil)
 
 	db := database.NewMockDB()
 	db.GlobalStateFunc.SetDefaultReturn(gss)

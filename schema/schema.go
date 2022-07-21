@@ -1067,6 +1067,8 @@ type JVMPackagesConnection struct {
 
 // Log description: Configuration for logging and alerting, including to external services.
 type Log struct {
+	// GitserverAccessLogs description: Enable gitserver access logging.
+	GitserverAccessLogs bool `json:"gitserver.accessLogs,omitempty"`
 	// Sentry description: Configuration for Sentry
 	Sentry *Sentry `json:"sentry,omitempty"`
 }
@@ -1710,6 +1712,8 @@ type SettingsExperimentalFeatures struct {
 	CodeInsights *bool `json:"codeInsights,omitempty"`
 	// CodeInsightsAllRepos description: DEPRECATED: Enables the experimental ability to run an insight over all repositories on the instance.
 	CodeInsightsAllRepos *bool `json:"codeInsightsAllRepos,omitempty"`
+	// CodeInsightsCompute description: Enables Compute powered Code Insights
+	CodeInsightsCompute *bool `json:"codeInsightsCompute,omitempty"`
 	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
 	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
@@ -1725,6 +1729,8 @@ type SettingsExperimentalFeatures struct {
 	CopyQueryButton *bool `json:"copyQueryButton,omitempty"`
 	// Editor description: Specifies which (code) editor to use for query and text input
 	Editor *string `json:"editor,omitempty"`
+	// EnableCodeMirrorFileView description: Uses CodeMirror to display files. In this first iteration not all features of the current file view are available.
+	EnableCodeMirrorFileView *bool `json:"enableCodeMirrorFileView,omitempty"`
 	// EnableExtensionsDecorationsColumnView description: If extension supports column view show its decorations in a separate column in the blob view.
 	EnableExtensionsDecorationsColumnView *bool `json:"enableExtensionsDecorationsColumnView,omitempty"`
 	// EnableFastResultLoading description: Enables optimized search result loading (syntax highlighting / file contents fetching)
@@ -1733,6 +1739,8 @@ type SettingsExperimentalFeatures struct {
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
+	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
+	ExtensionsAsCoreFeatures *bool `json:"extensionsAsCoreFeatures,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding

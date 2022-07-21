@@ -3,6 +3,7 @@
 const path = require('path')
 
 const ReactRefreshWebpackPlugin = require('@pmmmwh/react-refresh-webpack-plugin')
+const SentryWebpackPlugin = require('@sentry/webpack-plugin')
 const CompressionPlugin = require('compression-webpack-plugin')
 const CssMinimizerWebpackPlugin = require('css-minimizer-webpack-plugin')
 const mapValues = require('lodash/mapValues')
@@ -12,6 +13,7 @@ const { WebpackManifestPlugin } = require('webpack-manifest-plugin')
 
 const {
   ROOT_PATH,
+  STATIC_ASSETS_PATH,
   getBabelLoader,
   getCacheConfig,
   getMonacoWebpackPlugin,
@@ -41,6 +43,12 @@ const {
   WEBPACK_SERVE_INDEX,
   WEBPACK_BUNDLE_ANALYZER,
   WEBPACK_USE_NAMED_CHUNKS,
+  SENTRY_UPLOAD_SOURCE_MAPS,
+  COMMIT_SHA,
+  RELEASE_CANDIDATE_VERSION,
+  SENTRY_DOT_COM_AUTH_TOKEN,
+  SENTRY_ORGANIZATION,
+  SENTRY_PROJECT,
 } = ENVIRONMENT_CONFIG
 
 const IS_PERSISTENT_CACHE_ENABLED = IS_DEVELOPMENT && !IS_CI
@@ -50,6 +58,8 @@ const RUNTIME_ENV_VARIABLES = {
   NODE_ENV,
   ENABLE_MONITORING,
   INTEGRATION_TESTS,
+  COMMIT_SHA,
+  RELEASE_CANDIDATE_VERSION,
   ...(WEBPACK_SERVE_INDEX && { SOURCEGRAPH_API_URL }),
 }
 
@@ -114,7 +124,7 @@ const config = {
     ...(IS_EMBED_ENTRY_POINT_ENABLED && { embed: path.join(enterpriseDirectory, 'embed', 'main.tsx') }),
   },
   output: {
-    path: path.join(ROOT_PATH, 'ui', 'assets'),
+    path: STATIC_ASSETS_PATH,
     // Do not [hash] for development -- see https://github.com/webpack/webpack-dev-server/issues/377#issuecomment-241258405
     // Note: [name] will vary depending on the Webpack chunk. If specified, it will use a provided chunk name, otherwise it will fallback to a deterministic id.
     filename:
@@ -173,6 +183,15 @@ const config = {
          * We can fall back to dynamic gzip for these.
          */
         threshold: 10240,
+      }),
+    RELEASE_CANDIDATE_VERSION &&
+      SENTRY_UPLOAD_SOURCE_MAPS &&
+      new SentryWebpackPlugin({
+        org: SENTRY_ORGANIZATION,
+        project: SENTRY_PROJECT,
+        authToken: SENTRY_DOT_COM_AUTH_TOKEN,
+        release: `frontend@${RELEASE_CANDIDATE_VERSION}`,
+        include: path.join(STATIC_ASSETS_PATH, 'scripts'),
       }),
   ].filter(Boolean),
   resolve: {

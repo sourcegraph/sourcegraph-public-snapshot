@@ -41,6 +41,7 @@ export const EditSearchBasedInsight: FC<EditSearchBasedInsightProps> = props => 
         return onSubmit({
             ...sanitizedInsight,
             filters: insight.filters,
+            seriesDisplayOptions: insight.seriesDisplayOptions,
         })
     }
 

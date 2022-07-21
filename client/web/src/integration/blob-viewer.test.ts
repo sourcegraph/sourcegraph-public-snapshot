@@ -72,9 +72,9 @@ describe('Blob viewer', () => {
     describe('general layout for viewing a file', () => {
         it('populates editor content and FILES tab', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
             const blobContent = await driver.page.evaluate(
-                () => document.querySelector<HTMLElement>('.test-repo-blob')?.textContent
+                () => document.querySelector<HTMLElement>('[data-testid="repo-blob"]')?.textContent
             )
 
             // editor shows the return string content from Blob request
@@ -144,13 +144,13 @@ describe('Blob viewer', () => {
 
         it('should redirect from line number hash to query parameter', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}#2`)
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
             await driver.assertWindowLocation(`/${repositoryName}/-/blob/${fileName}?L2`)
         })
 
         it('should redirect from line range hash to query parameter', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}#1-3`)
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
             await driver.assertWindowLocation(`/${repositoryName}/-/blob/${fileName}?L1-3`)
         })
     })
@@ -271,7 +271,7 @@ describe('Blob viewer', () => {
             await driver.page.goto(
                 `${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/this_is_a_long_file_path/apps/rest-showcase/src/main/java/org/demo/rest/example/OrdersController.java`
             )
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
             await driver.page.waitForSelector('.test-breadcrumb')
             // Uncomment this snapshot once https://github.com/sourcegraph/sourcegraph/issues/15126 is resolved
             // await percySnapshot(driver.page, this.test!.fullTitle())
@@ -279,7 +279,7 @@ describe('Blob viewer', () => {
 
         it.skip('shows a hover overlay from a hover provider when a token is hovered', async () => {
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/${repositoryName}/-/blob/${fileName}`)
-            await driver.page.waitForSelector('.test-repo-blob')
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
             // TODO
         })
 
@@ -513,7 +513,7 @@ describe('Blob viewer', () => {
                         response.type('application/javascript; charset=utf-8').send(extensionBundleString)
                     })
             }
-            const timeout = 5000
+            const timeout = 10000
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
 
             // Wait for some line decoration attachment portal
@@ -785,6 +785,7 @@ describe('Blob viewer', () => {
 
             const timeout = 5000
             await driver.page.goto(`${driver.sourcegraphBaseUrl}/github.com/sourcegraph/test/-/blob/test.ts`)
+            await driver.page.waitForSelector('[data-testid="repo-blob"]')
 
             // File 1 (test.ts). Only line two contains 'word'
             try {
@@ -1072,7 +1073,7 @@ describe('Blob viewer', () => {
                 await driver.page.waitForFunction(
                     () =>
                         document
-                            .querySelector('.test-repo-blob [data-line="1"]')
+                            .querySelector('[data-testid="repo-blob"] [data-line="1"]')
                             ?.nextElementSibling?.textContent?.includes('file path: test spaces.ts'),
                     { timeout: 5000 }
                 )

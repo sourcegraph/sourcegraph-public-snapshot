@@ -214,3 +214,26 @@ func scanCommitGraphView(rows *sql.Rows, queryErr error) (_ *commitgraph.CommitG
 
 	return commitGraphView, nil
 }
+
+func scanRepoNames(rows *sql.Rows, queryErr error) (_ map[int]string, err error) {
+	if queryErr != nil {
+		return nil, queryErr
+	}
+	defer func() { err = basestore.CloseRows(rows, err) }()
+
+	names := map[int]string{}
+
+	for rows.Next() {
+		var (
+			id   int
+			name string
+		)
+		if err := rows.Scan(&id, &name); err != nil {
+			return nil, err
+		}
+
+		names[id] = name
+	}
+
+	return names, nil
+}

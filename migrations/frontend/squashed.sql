@@ -99,6 +99,24 @@ CREATE TYPE persistmode AS ENUM (
     'snapshot'
 );
 
+CREATE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+    INSERT INTO
+        batch_spec_workspace_execution_last_dequeues
+    SELECT
+        user_id,
+        MAX(started_at) as latest_dequeue
+    FROM
+        newtab
+    GROUP BY
+        user_id
+    ON CONFLICT (user_id) DO UPDATE SET
+        latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);
+
+    RETURN NULL;
+END $$;
+
 CREATE FUNCTION delete_batch_change_reference_on_changesets() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -587,8 +605,8 @@ ALTER SEQUENCE batch_spec_execution_cache_entries_id_seq OWNED BY batch_spec_exe
 
 CREATE TABLE batch_spec_resolution_jobs (
     id bigint NOT NULL,
-    batch_spec_id integer,
-    state text DEFAULT 'queued'::text,
+    batch_spec_id integer NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,
@@ -601,7 +619,8 @@ CREATE TABLE batch_spec_resolution_jobs (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    initiator_id integer NOT NULL
+    initiator_id integer NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_resolution_jobs_id_seq
@@ -615,8 +634,8 @@ ALTER SEQUENCE batch_spec_resolution_jobs_id_seq OWNED BY batch_spec_resolution_
 
 CREATE TABLE batch_spec_workspace_execution_jobs (
     id bigint NOT NULL,
-    batch_spec_workspace_id integer,
-    state text DEFAULT 'queued'::text,
+    batch_spec_workspace_id integer NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,
@@ -630,7 +649,7 @@ CREATE TABLE batch_spec_workspace_execution_jobs (
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
     cancel boolean DEFAULT false NOT NULL,
     queued_at timestamp with time zone DEFAULT now(),
-    user_id integer
+    user_id integer NOT NULL
 );
 
 CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
@@ -642,17 +661,17 @@ CREATE SEQUENCE batch_spec_workspace_execution_jobs_id_seq
 
 ALTER SEQUENCE batch_spec_workspace_execution_jobs_id_seq OWNED BY batch_spec_workspace_execution_jobs.id;
 
+CREATE TABLE batch_spec_workspace_execution_last_dequeues (
+    user_id integer NOT NULL,
+    latest_dequeue timestamp with time zone
+);
+
 CREATE VIEW batch_spec_workspace_execution_queue AS
- WITH user_queues AS (
-         SELECT exec.user_id,
-            max(exec.started_at) AS latest_dequeue
-           FROM batch_spec_workspace_execution_jobs exec
-          GROUP BY exec.user_id
-        ), queue_candidates AS (
+ WITH queue_candidates AS (
          SELECT exec.id,
             rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
            FROM (batch_spec_workspace_execution_jobs exec
-             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
+             JOIN batch_spec_workspace_execution_last_dequeues queue ON ((queue.user_id = exec.user_id)))
           WHERE (exec.state = 'queued'::text)
           ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
         )
@@ -686,9 +705,9 @@ CREATE VIEW batch_spec_workspace_execution_jobs_with_rank AS
 
 CREATE TABLE batch_spec_workspaces (
     id bigint NOT NULL,
-    batch_spec_id integer,
-    changeset_spec_ids jsonb DEFAULT '{}'::jsonb,
-    repo_id integer,
+    batch_spec_id integer NOT NULL,
+    changeset_spec_ids jsonb DEFAULT '{}'::jsonb NOT NULL,
+    repo_id integer NOT NULL,
     branch text NOT NULL,
     commit text NOT NULL,
     path text NOT NULL,
@@ -796,6 +815,7 @@ CREATE TABLE changesets (
     last_heartbeat_at timestamp with time zone,
     external_fork_namespace citext,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     detached_at timestamp with time zone,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
@@ -875,7 +895,7 @@ CREATE TABLE changeset_jobs (
     changeset_id integer NOT NULL,
     job_type text NOT NULL,
     payload jsonb DEFAULT '{}'::jsonb,
-    state text DEFAULT 'queued'::text,
+    state text DEFAULT 'queued'::text NOT NULL,
     failure_message text,
     started_at timestamp with time zone,
     finished_at timestamp with time zone,
@@ -888,6 +908,7 @@ CREATE TABLE changeset_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT changeset_jobs_payload_check CHECK ((jsonb_typeof(payload) = 'object'::text))
 );
 
@@ -936,6 +957,7 @@ CREATE TABLE cm_action_jobs (
     webhook bigint,
     slack_webhook bigint,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT cm_action_jobs_only_one_action_type CHECK ((((
 CASE
     WHEN (email IS NULL) THEN 0
@@ -1105,6 +1127,7 @@ CREATE TABLE cm_trigger_jobs (
     execution_logs json[],
     search_results jsonb,
     queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT search_results_is_array CHECK ((jsonb_typeof(search_results) = 'array'::text))
 );
 
@@ -1451,6 +1474,7 @@ CREATE TABLE explicit_permissions_bitbucket_projects_jobs (
     external_service_id integer NOT NULL,
     permissions json[],
     unrestricted boolean DEFAULT false NOT NULL,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT explicit_permissions_bitbucket_projects_jobs_check CHECK ((((permissions IS NOT NULL) AND (unrestricted IS FALSE)) OR ((permissions IS NULL) AND (unrestricted IS TRUE))))
 );
 
@@ -1494,7 +1518,8 @@ CREATE TABLE external_service_sync_jobs (
     execution_logs json[],
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE external_services (
@@ -1601,7 +1626,8 @@ CREATE TABLE gitserver_relocator_jobs (
     repo_id integer NOT NULL,
     source_hostname text NOT NULL,
     dest_hostname text NOT NULL,
-    delete_source boolean DEFAULT false NOT NULL
+    delete_source boolean DEFAULT false NOT NULL,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 CREATE SEQUENCE gitserver_relocator_jobs_id_seq
@@ -1669,7 +1695,8 @@ CREATE TABLE insights_query_runner_jobs (
     priority integer DEFAULT 1 NOT NULL,
     cost integer DEFAULT 500 NOT NULL,
     persist_mode persistmode DEFAULT 'record'::persistmode NOT NULL,
-    queued_at timestamp with time zone DEFAULT now()
+    queued_at timestamp with time zone DEFAULT now(),
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE insights_query_runner_jobs IS 'See [enterprise/internal/insights/background/queryrunner/worker.go:Job](https://sourcegraph.com/search?q=repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:enterprise/internal/insights/background/queryrunner/worker.go+type+Job&patternType=literal)';
@@ -1823,7 +1850,8 @@ CREATE TABLE lsif_dependency_indexing_jobs (
     worker_hostname text DEFAULT ''::text NOT NULL,
     upload_id integer,
     external_service_kind text DEFAULT ''::text NOT NULL,
-    external_service_sync timestamp with time zone
+    external_service_sync timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON COLUMN lsif_dependency_indexing_jobs.external_service_kind IS 'Filter the external services for this kind to wait to have synced. If empty, external_service_sync is ignored and no external services are polled for their last sync time.';
@@ -1843,7 +1871,8 @@ CREATE TABLE lsif_dependency_syncing_jobs (
     execution_logs json[],
     upload_id integer,
     worker_hostname text DEFAULT ''::text NOT NULL,
-    last_heartbeat_at timestamp with time zone
+    last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL
 );
 
 COMMENT ON TABLE lsif_dependency_syncing_jobs IS 'Tracks jobs that scan imports of indexes to schedule auto-index jobs.';
@@ -1931,6 +1960,7 @@ CREATE TABLE lsif_uploads (
     reference_count integer,
     indexer_version text,
     queued_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2068,6 +2098,7 @@ CREATE TABLE lsif_indexes (
     commit_last_checked_at timestamp with time zone,
     worker_hostname text DEFAULT ''::text NOT NULL,
     last_heartbeat_at timestamp with time zone,
+    cancel boolean DEFAULT false NOT NULL,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 
@@ -2564,7 +2595,11 @@ CREATE TABLE product_licenses (
     id uuid NOT NULL,
     product_subscription_id uuid NOT NULL,
     license_key text NOT NULL,
-    created_at timestamp with time zone DEFAULT now() NOT NULL
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    license_version integer,
+    license_tags text[],
+    license_user_count integer,
+    license_expires_at timestamp with time zone
 );
 
 CREATE TABLE product_subscriptions (
@@ -2573,7 +2608,8 @@ CREATE TABLE product_subscriptions (
     billing_subscription_id text,
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     updated_at timestamp with time zone DEFAULT now() NOT NULL,
-    archived_at timestamp with time zone
+    archived_at timestamp with time zone,
+    account_number text
 );
 
 CREATE TABLE query_runner_state (
@@ -3210,6 +3246,9 @@ ALTER TABLE ONLY batch_spec_resolution_jobs
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs
     ADD CONSTRAINT batch_spec_workspace_execution_jobs_pkey PRIMARY KEY (id);
 
+ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
+    ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_pkey PRIMARY KEY (user_id);
+
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_pkey PRIMARY KEY (id);
 
@@ -3562,6 +3601,8 @@ CREATE INDEX cm_action_jobs_state_idx ON cm_action_jobs USING btree (state);
 
 CREATE INDEX cm_slack_webhooks_monitor ON cm_slack_webhooks USING btree (monitor);
 
+CREATE INDEX cm_trigger_jobs_finished_at ON cm_trigger_jobs USING btree (finished_at);
+
 CREATE INDEX cm_trigger_jobs_state_idx ON cm_trigger_jobs USING btree (state);
 
 CREATE INDEX cm_webhooks_monitor ON cm_webhooks USING btree (monitor);
@@ -3816,6 +3857,10 @@ CREATE INDEX webhook_logs_received_at_idx ON webhook_logs USING btree (received_
 
 CREATE INDEX webhook_logs_status_code_idx ON webhook_logs USING btree (status_code);
 
+CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
+
+CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
+
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
 
 CREATE TRIGGER trig_delete_repo_ref_on_external_service_repos AFTER UPDATE OF deleted_at ON repo FOR EACH ROW EXECUTE FUNCTION delete_repo_ref_on_external_service_repos();
@@ -3872,6 +3917,9 @@ ALTER TABLE ONLY batch_spec_resolution_jobs
 
 ALTER TABLE ONLY batch_spec_workspace_execution_jobs
     ADD CONSTRAINT batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY batch_spec_workspace_execution_last_dequeues
+    ADD CONSTRAINT batch_spec_workspace_execution_last_dequeues_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED;
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;

@@ -45,6 +45,7 @@ var DefaultPredicateRegistry = PredicateRegistry{
 	FieldFile: {
 		"contains.content": func() Predicate { return &FileContainsContentPredicate{} },
 		"contains":         func() Predicate { return &FileContainsContentPredicate{} },
+		"has.owner":        func() Predicate { return &FileHasOwnerPredicate{} },
 	},
 }
 
@@ -167,31 +168,7 @@ func (f *RepoContainsPredicate) parseNode(n Node) error {
 func (f *RepoContainsPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsPredicate) Name() string  { return "contains" }
 func (f *RepoContainsPredicate) Plan(parent Basic) (Plan, error) {
-	nodes := make([]Node, 0, 3)
-	nodes = append(nodes, Parameter{
-		Field: FieldSelect,
-		Value: "repo",
-	}, Parameter{
-		Field: FieldCount,
-		Value: "99999",
-	})
-
-	if f.File != "" {
-		nodes = append(nodes, Parameter{
-			Field: FieldFile,
-			Value: f.File,
-		})
-	}
-
-	if f.Content != "" {
-		nodes = append(nodes, Pattern{
-			Value:      f.Content,
-			Annotation: Annotation{Labels: Regexp},
-		})
-	}
-
-	nodes = append(nodes, nonPredicateRepos(parent)...)
-	return BuildPlan(nodes), nil
+	return nil, nil
 }
 
 /* repo:contains.content(pattern) */
@@ -214,8 +191,7 @@ func (f *RepoContainsContentPredicate) ParseParams(params string) error {
 func (f *RepoContainsContentPredicate) Field() string { return FieldRepo }
 func (f *RepoContainsContentPredicate) Name() string  { return "contains.content" }
 func (f *RepoContainsContentPredicate) Plan(parent Basic) (Plan, error) {
-	contains := RepoContainsPredicate{File: "", Content: f.Pattern}
-	return contains.Plan(parent)
+	return nil, nil
 }
 
 /* repo:contains.file(pattern) */
@@ -342,7 +318,7 @@ func (f *RepoHasDescriptionPredicate) Plan(parent Basic) (Plan, error) {
 	return nil, nil
 }
 
-/* repo:contains.content(pattern) */
+/* file:contains.content(pattern) */
 
 type FileContainsContentPredicate struct {
 	Pattern string
@@ -377,6 +353,28 @@ func (f *FileContainsContentPredicate) Plan(parent Basic) (Plan, error) {
 
 	nodes = append(nodes, nonPredicateRepos(parent)...)
 	return BuildPlan(nodes), nil
+}
+
+/* file:has.owner(pattern) */
+
+type FileHasOwnerPredicate struct {
+	Owner string
+}
+
+func (f *FileHasOwnerPredicate) ParseParams(params string) error {
+	if params == "" {
+		return errors.Errorf("file:has.owner argument should not be empty")
+	}
+	f.Owner = params
+	return nil
+}
+
+func (f FileHasOwnerPredicate) Field() string { return FieldFile }
+func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
+func (f *FileHasOwnerPredicate) Plan(parent Basic) (Plan, error) {
+	// Filtering by file owner is handled by the codeownership.Job post-search
+	// filter job.
+	return nil, nil
 }
 
 // nonPredicateRepos returns the repo nodes in a query that aren't predicates,

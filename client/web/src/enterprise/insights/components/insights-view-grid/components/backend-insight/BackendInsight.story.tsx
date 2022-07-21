@@ -8,7 +8,7 @@ import { MockedTestProvider } from '@sourcegraph/shared/src/testing/apollo'
 import { H2 } from '@sourcegraph/wildcard'
 
 import { WebStory } from '../../../../../../components/WebStory'
-import { GetInsightViewResult } from '../../../../../../graphql-operations'
+import { GetInsightViewResult, SeriesSortDirection, SeriesSortMode } from '../../../../../../graphql-operations'
 import {
     SeriesChartContent,
     SearchBasedInsight,
@@ -44,10 +44,27 @@ const INSIGHT_CONFIGURATION_MOCK: SearchBasedInsight = {
     type: InsightType.SearchBased,
     executionType: InsightExecutionType.Backend,
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
-    seriesDisplayOptions: {},
+    seriesDisplayOptions: {
+        limit: 20,
+        sortOptions: {
+            direction: SeriesSortDirection.DESC,
+            mode: SeriesSortMode.RESULT_COUNT,
+        },
+    },
     dashboards: [],
 }
 
@@ -152,8 +169,11 @@ const mockInsightAPIResponse = ({
                         id: 'searchInsights.insight.mock_backend_insight_id',
                         filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                         seriesDisplayOptions: {
-                            limit: undefined,
-                            sortOptions: undefined,
+                            limit: 20,
+                            sortOptions: {
+                                direction: SeriesSortDirection.DESC,
+                                mode: SeriesSortMode.RESULT_COUNT,
+                            },
                         },
                     },
                 },
@@ -170,8 +190,11 @@ const mockInsightAPIResponse = ({
                     id: 'searchInsights.insight.mock_backend_insight_id',
                     filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
                     seriesDisplayOptions: {
-                        limit: undefined,
-                        sortOptions: undefined,
+                        limit: 20,
+                        sortOptions: {
+                            direction: SeriesSortDirection.DESC,
+                            mode: SeriesSortMode.RESULT_COUNT,
+                        },
                     },
                 },
             },
@@ -235,7 +258,18 @@ const COMPONENT_MIGRATION_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         { id: '003', name: 'shared', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
@@ -253,7 +287,18 @@ const DATA_FETCHING_INSIGHT_CONFIGURATION: SearchBasedInsight = {
         { id: '003', name: 'useMutation | useQuery | useConnection hooks', query: '', stroke: 'red' },
     ],
     step: { weeks: 2 },
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     repositories: [],
@@ -268,7 +313,18 @@ const TERRAFORM_INSIGHT_CONFIGURATION: CaptureGroupInsight = {
     step: { weeks: 2 },
     repositories: [],
     query: '',
-    filters: { excludeRepoRegexp: '', includeRepoRegexp: '', context: '' },
+    filters: {
+        excludeRepoRegexp: '',
+        includeRepoRegexp: '',
+        context: '',
+        seriesDisplayOptions: {
+            limit: '20',
+            sortOptions: {
+                direction: SeriesSortDirection.DESC,
+                mode: SeriesSortMode.RESULT_COUNT,
+            },
+        },
+    },
     dashboardReferenceCount: 0,
     isFrozen: false,
     dashboards: [],
@@ -281,8 +337,11 @@ const BACKEND_INSIGHT_COMPONENT_MIGRATION_MOCK: MockedResponse<GetInsightViewRes
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },
@@ -547,8 +606,11 @@ const BACKEND_INSIGHT_DATA_FETCHING_MOCK: MockedResponse<GetInsightViewResult> =
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },
@@ -813,8 +875,11 @@ const BACKEND_INSIGHT_TERRAFORM_AWS_VERSIONS_MOCK: MockedResponse<GetInsightView
             id: 'backend-mock',
             filters: { includeRepoRegex: '', excludeRepoRegex: '', searchContexts: [''] },
             seriesDisplayOptions: {
-                limit: undefined,
-                sortOptions: undefined,
+                limit: 20,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
             },
         },
     },

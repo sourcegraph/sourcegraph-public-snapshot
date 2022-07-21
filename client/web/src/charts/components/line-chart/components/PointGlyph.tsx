@@ -10,13 +10,14 @@ interface PointGlyphProps {
     color: string
     active: boolean
     linkURL?: string
+    tabIndex?: number
     onClick: MouseEventHandler<Element>
-    onFocus: FocusEventHandler<Element>
-    onBlur: FocusEventHandler<Element>
+    onFocus?: FocusEventHandler<Element>
+    onBlur?: FocusEventHandler<Element>
 }
 
 export const PointGlyph: React.FunctionComponent<React.PropsWithChildren<PointGlyphProps>> = props => {
-    const { top, left, color, active, linkURL, onFocus, onBlur, onClick } = props
+    const { top, left, color, active, linkURL, tabIndex = 0, onFocus, onBlur, onClick } = props
 
     return (
         <MaybeLink
@@ -26,11 +27,12 @@ export const PointGlyph: React.FunctionComponent<React.PropsWithChildren<PointGl
             onClick={onClick}
             onFocus={onFocus}
             onBlur={onBlur}
+            tabIndex={tabIndex}
             role={linkURL ? 'link' : 'graphics-dataunit'}
             aria-label={linkURL ? 'Click to view data point detail' : 'Data point'}
         >
             <GlyphDot
-                tabIndex={linkURL ? -1 : 0}
+                tabIndex={linkURL ? -1 : tabIndex}
                 onFocus={onFocus}
                 onBlur={onBlur}
                 cx={left}

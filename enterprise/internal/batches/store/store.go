@@ -150,7 +150,7 @@ func (s *Store) ExternalServices() database.ExternalServiceStore {
 
 // UserCredentials returns a database.UserCredentialsStore using the same connection as this store.
 func (s *Store) UserCredentials() database.UserCredentialsStore {
-	return database.UserCredentialsWith(s, s.key)
+	return database.UserCredentialsWith(s.logger, s, s.key)
 }
 
 func (s *Store) query(ctx context.Context, q *sqlf.Query, sc scanFunc) error {
@@ -255,6 +255,7 @@ type operations struct {
 	listBatchSpecWorkspaces        *observation.Operation
 	countBatchSpecWorkspaces       *observation.Operation
 	markSkippedBatchSpecWorkspaces *observation.Operation
+	listRetryBatchSpecWorkspaces   *observation.Operation
 
 	createBatchSpecWorkspaceExecutionJobs              *observation.Operation
 	createBatchSpecWorkspaceExecutionJobsForWorkspaces *observation.Operation
@@ -390,6 +391,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			listBatchSpecWorkspaces:        op("ListBatchSpecWorkspaces"),
 			countBatchSpecWorkspaces:       op("CountBatchSpecWorkspaces"),
 			markSkippedBatchSpecWorkspaces: op("MarkSkippedBatchSpecWorkspaces"),
+			listRetryBatchSpecWorkspaces:   op("ListRetryBatchSpecWorkspaces"),
 
 			createBatchSpecWorkspaceExecutionJobs:              op("CreateBatchSpecWorkspaceExecutionJobs"),
 			createBatchSpecWorkspaceExecutionJobsForWorkspaces: op("CreateBatchSpecWorkspaceExecutionJobsForWorkspaces"),

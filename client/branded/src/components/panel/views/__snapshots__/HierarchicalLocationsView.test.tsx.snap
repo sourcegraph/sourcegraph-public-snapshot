@@ -46,6 +46,7 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -125,65 +126,68 @@ exports[`<HierarchicalLocationsView /> displays a single location when complete 
                 </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
                 <div>
                   <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
+                    class="fileMatchChildren"
+                    data-testid="file-match-children"
                   >
-                    <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
-                    >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                    <div>
+                      <div
+                        class="test-file-match-children-item-wrapper itemCodeWrapper"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <div
+                          class="test-file-match-children-item item itemClickable"
+                          data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                          data-testid="file-match-children-item"
+                          role="link"
+                          tabindex="0"
+                        >
+                          <code
+                            class="code codeExcerpt"
+                            data-testid="code-excerpt"
+                          >
+                            <table>
+                              <tbody>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="1"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="2"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="3"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </code>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -205,7 +209,9 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
       data-testid="hierarchical-locations-view"
     >
       <div
+        aria-label="Hierarchical locations sidebar"
         class="panel panelLeft panelRelative"
+        role="region"
         style="width: 200px;"
       >
         <div
@@ -315,6 +321,7 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -396,89 +403,90 @@ exports[`<HierarchicalLocationsView /> displays multiple locations grouped by fi
                 </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
                 <div>
                   <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
+                    class="fileMatchChildren"
+                    data-testid="file-match-children"
                   >
-                    <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
-                    >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                    <div>
+                      <div
+                        class="test-file-match-children-item-wrapper itemCodeWrapper"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                4
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                5
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <div
+                          class="test-file-match-children-item item itemClickable"
+                          data-href="/github.com/foo/bar/-/blob/file1.txt?L2:1&subtree=true"
+                          data-testid="file-match-children-item"
+                          role="link"
+                          tabindex="0"
+                        >
+                          <code
+                            class="code codeExcerpt"
+                            data-testid="code-excerpt"
+                          >
+                            <table>
+                              <tbody>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="1"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="2"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="3"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="4"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="5"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </code>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -538,6 +546,7 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
         <div>
           <div
             class="test-search-result resultContainer resultContainer"
+            data-collapsible="false"
             data-result-type="content"
             data-testid="result-container"
           >
@@ -617,65 +626,68 @@ exports[`<HierarchicalLocationsView /> displays partial locations before complet
                 </span>
               </div>
               <div
-                class="fileMatchChildren"
-                data-testid="file-match-children"
+                class=""
               >
                 <div>
                   <div
-                    class="test-file-match-children-item-wrapper itemCodeWrapper"
+                    class="fileMatchChildren"
+                    data-testid="file-match-children"
                   >
-                    <div
-                      class="test-file-match-children-item item itemClickable"
-                      data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
-                      data-testid="file-match-children-item"
-                      role="link"
-                      tabindex="0"
-                    >
-                      <code
-                        class="code codeExcerpt"
-                        data-testid="code-excerpt"
+                    <div>
+                      <div
+                        class="test-file-match-children-item-wrapper itemCodeWrapper"
                       >
-                        <table>
-                          <tbody>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                1
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                2
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                            <tr>
-                              <td
-                                class="line"
-                              >
-                                3
-                              </td>
-                              <td
-                                class="code"
-                              >
-                                 
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
-                      </code>
+                        <div
+                          class="test-file-match-children-item item itemClickable"
+                          data-href="/github.com/foo/bar/-/blob/?L2:1&subtree=true"
+                          data-testid="file-match-children-item"
+                          role="link"
+                          tabindex="0"
+                        >
+                          <code
+                            class="code codeExcerpt"
+                            data-testid="code-excerpt"
+                          >
+                            <table>
+                              <tbody>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="1"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="2"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                                <tr>
+                                  <td
+                                    class="line"
+                                    data-line="3"
+                                  />
+                                  <td
+                                    class="code"
+                                  >
+                                     
+                                  </td>
+                                </tr>
+                              </tbody>
+                            </table>
+                          </code>
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>

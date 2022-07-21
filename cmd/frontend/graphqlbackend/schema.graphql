@@ -6057,9 +6057,13 @@ type AnalyticsCodeIntelResult {
     """
     definitionClicks: AnalyticsStatItem!
     """
-    Browser extension installs
+    Code Intel events made from web
     """
-    browserExtensionInstalls: AnalyticsStatItem!
+    inAppEvents: AnalyticsStatItem!
+    """
+    Code Intel events made from code host
+    """
+    codeHostEvents: AnalyticsStatItem!
     """
     Search based events
     """

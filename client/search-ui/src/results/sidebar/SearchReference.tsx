@@ -404,7 +404,7 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
     const [collapsed, setCollapsed] = useState(true)
     const collapseIcon = collapsed ? mdiChevronLeft : mdiChevronDown
 
-    const handleOpenChange = useCallback(collapsed => setCollapsed(!collapsed), [])
+    const handleOpenChange = useCallback((collapsed: boolean) => setCollapsed(!collapsed), [])
 
     let buttonTextPrefix: ReactElement | null = null
     if (isFilterInfo(searchReference)) {
@@ -440,49 +440,51 @@ const SearchReferenceEntry = <T extends SearchReferenceInfo>({
                     </CollapseHeader>
                 </span>
                 <CollapsePanel>
-                    <div className={styles.description}>
-                        {searchReference.description && (
-                            <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
-                        )}
-                        {searchReference.alias && (
-                            <Text>
-                                Alias:{' '}
-                                <span className="text-code search-filter-keyword">
-                                    {searchReference.alias}
-                                    {isFilterInfo(searchReference) ? ':' : ''}
-                                </span>
-                            </Text>
-                        )}
-                        {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
-                            <Text>
-                                Negation:{' '}
-                                <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
-                                {searchReference.alias && (
-                                    <>
-                                        {' '}
-                                        |{' '}
-                                        <span className="test-code search-filter-keyword">
-                                            -{searchReference.alias}:
-                                        </span>
-                                    </>
-                                )}
-                                <br />
-                                <span className={styles.placeholder}>(opt + click filter in reference list)</span>
-                            </Text>
-                        )}
-                        {searchReference.examples && (
-                            <>
-                                <div className="font-weight-medium">Examples</div>
-                                <div className={classNames('text-code', styles.examples)}>
-                                    {searchReference.examples.map(example => (
-                                        <Text key={example}>
-                                            <SearchReferenceExample example={example} onClick={onExampleClick} />
-                                        </Text>
-                                    ))}
-                                </div>
-                            </>
-                        )}
-                    </div>
+                    {!collapsed && (
+                        <div className={styles.description}>
+                            {searchReference.description && (
+                                <Markdown dangerousInnerHTML={renderMarkdown(searchReference.description)} />
+                            )}
+                            {searchReference.alias && (
+                                <Text>
+                                    Alias:{' '}
+                                    <span className="text-code search-filter-keyword">
+                                        {searchReference.alias}
+                                        {isFilterInfo(searchReference) ? ':' : ''}
+                                    </span>
+                                </Text>
+                            )}
+                            {isFilterInfo(searchReference) && isNegatableFilter(searchReference.field) && (
+                                <Text>
+                                    Negation:{' '}
+                                    <span className="test-code search-filter-keyword">-{searchReference.field}:</span>
+                                    {searchReference.alias && (
+                                        <>
+                                            {' '}
+                                            |{' '}
+                                            <span className="test-code search-filter-keyword">
+                                                -{searchReference.alias}:
+                                            </span>
+                                        </>
+                                    )}
+                                    <br />
+                                    <span className={styles.placeholder}>(opt + click filter in reference list)</span>
+                                </Text>
+                            )}
+                            {searchReference.examples && (
+                                <>
+                                    <div className="font-weight-medium">Examples</div>
+                                    <div className={classNames('text-code', styles.examples)}>
+                                        {searchReference.examples.map(example => (
+                                            <Text key={example}>
+                                                <SearchReferenceExample example={example} onClick={onExampleClick} />
+                                            </Text>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
+                        </div>
+                    )}
                 </CollapsePanel>
             </Collapse>
         </li>
@@ -620,6 +622,6 @@ const SearchReference = React.memo(
 
 export function getSearchReferenceFactory(
     props: Omit<SearchReferenceProps, 'filter'>
-): (filter: string) => ReactElement {
+): (filter: string) => React.ReactNode {
     return (filter: string) => <SearchReference {...props} filter={filter} />
 }

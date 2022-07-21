@@ -166,7 +166,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     } = props
 
     const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) => {
+        (isFirst: boolean, startLine: number, endLine: number) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
@@ -300,7 +300,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             ))}
 
             {/* Line matches */}
-            {grouped && (
+            {grouped.length > 0 && (
                 <div>
                     {grouped.map((group, index) => (
                         <div

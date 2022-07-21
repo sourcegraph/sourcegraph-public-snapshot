@@ -82,7 +82,7 @@ func (s *Search) FileOpens() (*AnalyticsFetcher, error) {
 }
 
 func (s *Search) CacheAll(ctx context.Context) error {
-	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.Searches, s.FileViews, s.FileOpens}
+	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.Searches, s.FileViews, s.FileOpens, s.ResultClicks}
 	for _, buildFetcher := range fetcherBuilders {
 		fetcher, err := buildFetcher()
 		if err != nil {

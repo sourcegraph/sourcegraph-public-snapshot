@@ -8,18 +8,26 @@ import (
 	"reflect"
 	"sort"
 	"testing"
+	"time"
 
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/zoekt"
+	zoektquery "github.com/google/zoekt/query"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -30,8 +38,8 @@ func TestMain(m *testing.M) {
 }
 
 func TestRevisionValidation(t *testing.T) {
-	// mocks a repo repoFoo with revisions revBar and revBas
-	gitserver.Mocks.ResolveRevision = func(spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
+	mockGitserver := gitserver.NewMockClient()
+	mockGitserver.ResolveRevisionFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName, spec string, opt gitserver.ResolveRevisionOptions) (api.CommitID, error) {
 		// trigger errors
 		if spec == "bad_commit" {
 			return "", gitdomain.BadCommitError{}
@@ -49,75 +57,48 @@ func TestRevisionValidation(t *testing.T) {
 			return "", nil
 		}
 		return "", &gitdomain.RevisionNotFoundError{Repo: "repoFoo", Spec: spec}
-	}
-	defer func() { gitserver.Mocks.ResolveRevision = nil }()
+	})
+	mockGitserver.ListRefsFunc.SetDefaultHook(func(_ context.Context, _ api.RepoName) ([]gitdomain.Ref, error) {
+		return []gitdomain.Ref{{
+			Name: "refs/heads/revBar",
+		}, {
+			Name: "refs/heads/revBas",
+		}}, nil
+	})
 
 	tests := []struct {
 		repoFilters              []string
 		wantRepoRevs             []*search.RepositoryRevisions
-		wantMissingRepoRevisions []*search.RepositoryRevisions
+		wantMissingRepoRevisions []RepoRevSpecs
 		wantErr                  error
 	}{
 		{
 			repoFilters: []string{"repoFoo@revBar:^revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "revBar",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-					{
-						RevSpec:        "^revBas",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-				},
+				Revs: []string{"revBar", "^revBas"},
 			}},
-			wantMissingRepoRevisions: []*search.RepositoryRevisions{},
+			wantMissingRepoRevisions: []RepoRevSpecs{},
 		},
 		{
-			repoFilters: []string{"repoFoo@*revBar:*!revBas"},
+			repoFilters: []string{"repoFoo@*refs/heads/*:*!refs/heads/revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "",
-						RefGlob:        "revBar",
-						ExcludeRefGlob: "",
-					},
-					{
-						RevSpec:        "",
-						RefGlob:        "",
-						ExcludeRefGlob: "revBas",
-					},
-				},
+				Revs: []string{"revBar"},
 			}},
-			wantMissingRepoRevisions: []*search.RepositoryRevisions{},
+			wantMissingRepoRevisions: []RepoRevSpecs{},
 		},
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "revBar",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-				},
-				ListRefs: nil,
+				Revs: []string{"revBar"},
 			}},
-			wantMissingRepoRevisions: []*search.RepositoryRevisions{{
+			wantMissingRepoRevisions: []RepoRevSpecs{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "^revQux",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-				},
+				Revs: []search.RevisionSpecifier{{
+					RevSpec: "^revQux",
+				}},
 			}},
 			wantErr: &MissingRepoRevsError{},
 		},
@@ -143,15 +124,9 @@ func TestRevisionValidation(t *testing.T) {
 			repoFilters: []string{"repoFoo"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
 				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []search.RevisionSpecifier{
-					{
-						RevSpec:        "",
-						RefGlob:        "",
-						ExcludeRefGlob: "",
-					},
-				},
+				Revs: []string{""},
 			}},
-			wantMissingRepoRevisions: []*search.RepositoryRevisions{},
+			wantMissingRepoRevisions: []RepoRevSpecs{},
 			wantErr:                  nil,
 		},
 	}
@@ -164,17 +139,18 @@ func TestRevisionValidation(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			op := search.RepoOptions{RepoFilters: tt.repoFilters}
-			repositoryResolver := NewResolver(db)
+			repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil)
+			repositoryResolver.gitserver = mockGitserver
 			resolved, err := repositoryResolver.Resolve(context.Background(), op)
+			if !errors.Is(err, tt.wantErr) {
+				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
+			}
 
 			if diff := cmp.Diff(tt.wantRepoRevs, resolved.RepoRevs); diff != "" {
 				t.Error(diff)
 			}
 			if diff := cmp.Diff(tt.wantMissingRepoRevisions, resolved.MissingRepoRevs); diff != "" {
 				t.Error(diff)
-			}
-			if !errors.Is(err, tt.wantErr) {
-				t.Errorf("got: %v, expected: %v", err, tt.wantErr)
 			}
 			mockrequire.Called(t, repos.ListMinimalReposFunc)
 		})
@@ -320,7 +296,7 @@ func TestResolverPaginate(t *testing.T) {
 		}
 	}
 
-	all, err := NewResolver(db).Resolve(ctx, search.RepoOptions{})
+	all, err := NewResolver(logtest.Scoped(t), db, nil, nil).Resolve(ctx, search.RepoOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -344,7 +320,7 @@ func TestResolverPaginate(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs:        all.RepoRevs[:3],
-					MissingRepoRevs: []*search.RepositoryRevisions{},
+					MissingRepoRevs: []RepoRevSpecs{},
 					Next: types.MultiCursor{
 						{Column: "stars", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.Stars)},
 						{Column: "id", Direction: "prev", Value: fmt.Sprint(all.RepoRevs[3].Repo.ID)},
@@ -352,7 +328,7 @@ func TestResolverPaginate(t *testing.T) {
 				},
 				{
 					RepoRevs:        all.RepoRevs[3:],
-					MissingRepoRevs: []*search.RepositoryRevisions{},
+					MissingRepoRevs: []RepoRevSpecs{},
 				},
 			},
 		},
@@ -368,13 +344,13 @@ func TestResolverPaginate(t *testing.T) {
 			pages: []Resolved{
 				{
 					RepoRevs:        all.RepoRevs[3:],
-					MissingRepoRevs: []*search.RepositoryRevisions{},
+					MissingRepoRevs: []RepoRevSpecs{},
 				},
 			},
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			r := NewResolver(db)
+			r := NewResolver(logtest.Scoped(t), db, nil, nil)
 
 			var pages []Resolved
 			err := r.Paginate(ctx, tc.opts, func(page *Resolved) error {
@@ -450,7 +426,7 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "@" + wantName,
 	}
-	repositoryResolver := NewResolver(db)
+	repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil)
 	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
@@ -476,14 +452,6 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 
 	mockrequire.Called(t, ns.GetByNameFunc)
 	mockrequire.Called(t, repos.ListMinimalReposFunc)
-}
-
-func stringSliceToRevisionSpecifiers(revisions []string) []search.RevisionSpecifier {
-	revisionSpecs := make([]search.RevisionSpecifier, 0, len(revisions))
-	for _, revision := range revisions {
-		revisionSpecs = append(revisionSpecs, search.RevisionSpecifier{RevSpec: revision})
-	}
-	return revisionSpecs
 }
 
 func TestResolveRepositoriesWithSearchContext(t *testing.T) {
@@ -528,16 +496,167 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 	op := search.RepoOptions{
 		SearchContextSpec: "searchcontext",
 	}
-	repositoryResolver := NewResolver(db)
+	repositoryResolver := NewResolver(logtest.Scoped(t), db, nil, nil)
 	resolved, err := repositoryResolver.Resolve(context.Background(), op)
 	if err != nil {
 		t.Fatal(err)
 	}
 	wantRepositoryRevisions := []*search.RepositoryRevisions{
-		{Repo: repoA, Revs: stringSliceToRevisionSpecifiers(searchContextRepositoryRevisions[0].Revisions)},
-		{Repo: repoB, Revs: stringSliceToRevisionSpecifiers(searchContextRepositoryRevisions[1].Revisions)},
+		{Repo: repoA, Revs: searchContextRepositoryRevisions[0].Revisions},
+		{Repo: repoB, Revs: searchContextRepositoryRevisions[1].Revisions},
 	}
 	if !reflect.DeepEqual(resolved.RepoRevs, wantRepositoryRevisions) {
 		t.Errorf("got repository revisions %+v, want %+v", resolved.RepoRevs, wantRepositoryRevisions)
+	}
+}
+
+func TestRepoHasFileContent(t *testing.T) {
+	repoA := types.MinimalRepo{ID: 1, Name: "example.com/1"}
+	repoB := types.MinimalRepo{ID: 2, Name: "example.com/2"}
+	repoC := types.MinimalRepo{ID: 3, Name: "example.com/3"}
+	repoD := types.MinimalRepo{ID: 4, Name: "example.com/4"}
+
+	mkHead := func(repo types.MinimalRepo) *search.RepositoryRevisions {
+		return &search.RepositoryRevisions{
+			Repo: repo,
+			Revs: []string{""},
+		}
+	}
+
+	repos := database.NewMockRepoStore()
+	repos.ListMinimalReposFunc.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
+		return []types.MinimalRepo{repoA, repoB, repoC, repoD}, nil
+	})
+
+	db := database.NewMockDB()
+	db.ReposFunc.SetDefaultReturn(repos)
+
+	unindexedCorpus := map[string]map[string]map[string]struct{}{
+		string(repoC.Name): {
+			"pathC": {
+				"lineC": {},
+				"line1": {},
+				"line2": {},
+			},
+		},
+		string(repoD.Name): {
+			"pathD": {
+				"lineD": {},
+				"line1": {},
+				"line2": {},
+			},
+		},
+	}
+	searcher.MockSearch = func(ctx context.Context, repo api.RepoName, repoID api.RepoID, commit api.CommitID, p *search.TextPatternInfo, fetchTimeout time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
+		if r, ok := unindexedCorpus[string(repo)]; ok {
+			for path, lines := range r {
+				if len(p.IncludePatterns) == 0 || p.IncludePatterns[0] == path {
+					for line := range lines {
+						if p.Pattern == line || p.Pattern == "" {
+							onMatches([]*protocol.FileMatch{{}})
+						}
+					}
+				}
+			}
+		}
+		return false, nil
+	}
+
+	// Only repos A and B are indexed
+	mockZoekt := NewMockStreamer()
+	mockZoekt.ListFunc.SetDefaultReturn(&zoekt.RepoList{
+		Minimal: map[uint32]*zoekt.MinimalRepoListEntry{
+			uint32(repoA.ID): {
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
+			},
+			uint32(repoB.ID): {
+				Branches: []zoekt.RepositoryBranch{{Name: "HEAD"}},
+			},
+		},
+	},
+		nil,
+	)
+
+	cases := []struct {
+		name       string
+		filters    []query.RepoHasFileContentArgs
+		zoektFiles []zoekt.FileMatch
+		expected   []*search.RepositoryRevisions
+	}{{
+		name:       "no filters",
+		filters:    nil,
+		zoektFiles: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoA),
+			mkHead(repoB),
+			mkHead(repoC),
+			mkHead(repoD),
+		},
+	}, {
+		name: "bad path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path: "bad path",
+		}},
+		zoektFiles: nil,
+		expected:   []*search.RepositoryRevisions{},
+	}, {
+		name: "one indexed path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path: "pathB",
+		}},
+		zoektFiles: []zoekt.FileMatch{{
+			Repository:   "repoB",
+			RepositoryID: 2,
+			Branches:     []string{"HEAD"},
+		}},
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoB),
+		},
+	}, {
+		name: "one unindexed path",
+		filters: []query.RepoHasFileContentArgs{{
+			Path: "pathC",
+		}},
+		zoektFiles: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoC),
+		},
+	}, {
+		name: "path but no content",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:    "pathC",
+			Content: "lineB",
+		}},
+		zoektFiles: nil,
+		expected:   []*search.RepositoryRevisions{},
+	}, {
+		name: "path and content",
+		filters: []query.RepoHasFileContentArgs{{
+			Path:    "pathC",
+			Content: "lineC",
+		}},
+		zoektFiles: nil,
+		expected: []*search.RepositoryRevisions{
+			mkHead(repoC),
+		},
+	}}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			mockZoekt.StreamSearchFunc.SetDefaultHook(func(_ context.Context, _ zoektquery.Q, _ *zoekt.SearchOptions, s zoekt.Sender) error {
+				s.Send(&zoekt.SearchResult{
+					Files: tc.zoektFiles,
+				})
+				return nil
+			})
+			res := NewResolver(logtest.Scoped(t), db, endpoint.Static("test"), mockZoekt)
+			resolved, err := res.Resolve(context.Background(), search.RepoOptions{
+				RepoFilters:    []string{".*"},
+				HasFileContent: tc.filters,
+			})
+			require.NoError(t, err)
+
+			require.Equal(t, tc.expected, resolved.RepoRevs)
+		})
 	}
 }

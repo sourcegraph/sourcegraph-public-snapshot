@@ -3,7 +3,7 @@ import React, { FunctionComponent, useCallback, useEffect, useMemo } from 'react
 import { useApolloClient } from '@apollo/client'
 import { mdiChevronRight } from '@mdi/js'
 import classNames from 'classnames'
-import { RouteComponentProps, useHistory } from 'react-router'
+import { RouteComponentProps, useHistory, useLocation } from 'react-router'
 import { Subject } from 'rxjs'
 
 import { GitObjectType } from '@sourcegraph/shared/src/graphql-operations'
@@ -81,6 +81,7 @@ export const CodeIntelConfigurationPage: FunctionComponent<
     useEffect(() => telemetryService.logViewEvent('CodeIntelConfiguration'), [telemetryService])
 
     const history = useHistory()
+    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryPoliciesCallback = useCallback(
@@ -92,26 +93,24 @@ export const CodeIntelConfigurationPage: FunctionComponent<
 
     return (
         <>
-            <PageTitle title="Precise code intelligence configuration" />
+            <PageTitle title="Code graph data configuration" />
             <CodeIntelConfigurationPageHeader>
                 <PageHeader
                     headingElement="h2"
                     path={[
                         {
-                            text: <>Precise code intelligence configuration</>,
+                            text: <>Code graph data configuration</>,
                         },
                     ]}
                     description={`Rules that control data retention${
                         indexingEnabled ? ' and auto-indexing' : ''
-                    } behavior for precise code intelligence.`}
+                    } behavior for code graph data.`}
                     className="mb-3"
                 />
                 {authenticatedUser?.siteAdmin && <PolicyListActions history={history} />}
             </CodeIntelConfigurationPageHeader>
 
-            {history.location.state && (
-                <FlashMessage state={history.location.state.modal} message={history.location.state.message} />
-            )}
+            {location.state && <FlashMessage state={location.state.modal} message={location.state.message} />}
             <Container>
                 <FilteredConnection<CodeIntelligenceConfigurationPolicyFields, {}>
                     listComponent="div"

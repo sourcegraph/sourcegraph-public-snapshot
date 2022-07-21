@@ -326,8 +326,8 @@ export const ActionItemsToggle: React.FunctionComponent<React.PropsWithChildren<
                 <div className={classNames(styles.toggleContainer, isOpen && styles.toggleContainerOpen)}>
                     <Tooltip content={`${isOpen ? 'Close' : 'Open'} extensions panel`}>
                         {/**
-                         * This <ButtonLink> must be wrapped with an additional span, since the tooltip needs to use "ref" to work properly.
-                         * Without the extra span, the tooltip was writing over the ref needed for the toggle behavior to function correctly, breaking toggling.
+                         * This <ButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+                         * break its onClick handler and it will no longer prevent the default page reload (with no href).
                          */}
                         <span>
                             <ButtonLink

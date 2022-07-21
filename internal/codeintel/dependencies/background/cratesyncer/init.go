@@ -12,6 +12,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -32,7 +33,8 @@ type syncer struct {
 	db                    database.DB
 	dbStore               *dbstore.Store
 	externalServicesStore database.ExternalServiceStore
-	gitClient             *gitserver.ClientImplementor
+	gitClient             gitserver.Client
+	interval              time.Duration
 }
 
 var _ goroutine.Handler = &syncer{}
@@ -55,11 +57,18 @@ func (s *syncer) Handle(ctx context.Context) error {
 		return nil
 	}
 
-	// TODO: automatically fetch the latest commit before syncing https://github.com/sourcegraph/sourcegraph/issues/37690
+	repoName := api.RepoName(config.IndexRepositoryName)
+	update, err := s.gitClient.RequestRepoUpdate(ctx, repoName, s.interval)
+	if err != nil {
+		return err
+	}
+	if update != nil && update.Error != "" {
+		return errors.Newf("failed to update repo %s, error %s", repoName, update.Error)
+	}
 	reader, err := s.gitClient.ArchiveReader(
 		ctx,
 		nil,
-		api.RepoName(config.IndexRepositoryName),
+		repoName,
 		gitserver.ArchiveOptions{
 			Treeish:   "HEAD",
 			Format:    "tar",
@@ -160,6 +169,7 @@ func NewCratesSyncer(db database.DB) goroutine.BackgroundRoutine {
 		dbStore:               dbstore.NewWithDB(db, observationContext),
 		externalServicesStore: extSvcStore,
 		gitClient:             gitserver.NewClient(db),
+		interval:              interval,
 	})
 }
 

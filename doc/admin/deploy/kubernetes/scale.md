@@ -4,22 +4,14 @@ Sourcegraph can be configured to scale to very large codebases and large numbers
 users. If you notice latency for search or code intelligence is higher than desired, changing these
 parameters can yield a drastic improvement in performance.
 
+See [Scaling Overview for Services](../scale.md) for more information about scaling.
+
 > For assistance when scaling and tuning Sourcegraph, [contact us](https://about.sourcegraph.com/contact/). We're happy to help!
 
 ## Tuning replica counts for horizontal scalability
 
 By default, your cluster has a single pod for each of `sourcegraph-frontend`, `searcher`, and `gitserver`. You can
 increase the number of replicas of each of these services to handle higher scale.
-
-We recommend setting the `sourcegraph-frontend`, `searcher`, and `gitserver` replica counts according to the following tables:
-
-| Users      | Number of `sourcegraph-frontend` replicas |
-| ---------- | ----------------------------------------- |
-| 10-500     | 1                                         |
-| 500-2000   | 2                                         |
-| 2000-4000  | 6                                         |
-| 4000-10000 | 18                                        |
-| 10000+     | 28                                        |
 
 _You can change the replica count of `sourcegraph-frontend` by editing [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml)._
 

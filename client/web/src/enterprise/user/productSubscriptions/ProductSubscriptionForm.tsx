@@ -80,7 +80,7 @@ interface Props extends ThemeProps {
     primaryButtonTextNoPaymentRequired?: string
 
     /** A fragment to render below the form's primary button. */
-    afterPrimaryButton?: React.ReactFragment
+    afterPrimaryButton?: React.ReactNode
 
     history: H.History
 }

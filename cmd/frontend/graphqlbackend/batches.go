@@ -229,9 +229,7 @@ type PublishChangesetsArgs struct {
 }
 
 type ResolveWorkspacesForBatchSpecArgs struct {
-	BatchSpec        string
-	AllowIgnored     bool
-	AllowUnsupported bool
+	BatchSpec string
 }
 
 type ListImportingChangesetsArgs struct {
@@ -291,6 +289,8 @@ type BatchChangesResolver interface {
 
 	BatchSpecs(cx context.Context, args *ListBatchSpecArgs) (BatchSpecConnectionResolver, error)
 	AvailableBulkOperations(ctx context.Context, args *AvailableBulkOperationsArgs) ([]string, error)
+
+	ResolveWorkspacesForBatchSpec(ctx context.Context, args *ResolveWorkspacesForBatchSpecArgs) ([]ResolvedBatchSpecWorkspaceResolver, error)
 
 	CheckBatchChangesCredential(ctx context.Context, args *CheckBatchChangesCredentialArgs) (*EmptyResponse, error)
 
@@ -845,6 +845,16 @@ type VisibleBatchSpecWorkspaceResolver interface {
 	SearchResultPaths() []string
 	ChangesetSpecs(ctx context.Context) (*[]VisibleChangesetSpecResolver, error)
 	Executor(ctx context.Context) (*gql.ExecutorResolver, error)
+}
+
+type ResolvedBatchSpecWorkspaceResolver interface {
+	OnlyFetchWorkspace() bool
+	Ignored() bool
+	Unsupported() bool
+	Repository(ctx context.Context) *RepositoryResolver
+	Branch(ctx context.Context) *GitRefResolver
+	Path() string
+	SearchResultPaths() []string
 }
 
 type BatchSpecWorkspaceStagesResolver interface {

@@ -302,7 +302,7 @@ func (s *UpdateScheduler) UpdateFromDiff(diff Diff) {
 	for _, r := range diff.Added {
 		s.upsert(r, true)
 	}
-	for _, r := range diff.Modified {
+	for _, r := range diff.Modified.Repos() {
 		s.upsert(r, true)
 	}
 

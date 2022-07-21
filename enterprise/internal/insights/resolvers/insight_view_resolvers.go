@@ -606,28 +606,13 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
 		} else {
-			// If it's a frontend series, we can just update it.
-			existingRepos := getExistingSeriesRepositories(*series.SeriesId, views[0].Series)
-			if len(series.RepositoryScope.Repositories) > 0 && len(existingRepos) > 0 {
-				err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
-					SeriesID:          *series.SeriesId,
-					Query:             series.Query,
-					Repositories:      series.RepositoryScope.Repositories,
-					StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-					StepIntervalValue: int(series.TimeScope.StepInterval.Value),
-				})
-				if err != nil {
-					return nil, errors.Wrap(err, "UpdateFrontendSeries")
-				}
-			} else {
-				err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
-				if err != nil {
-					return nil, errors.Wrap(err, "RemoveViewSeries")
-				}
-				_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
-				if err != nil {
-					return nil, errors.Wrap(err, "createAndAttachSeries")
-				}
+			err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "RemoveViewSeries")
+			}
+			_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
+			if err != nil {
+				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
 
 			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{
@@ -1017,12 +1002,10 @@ func createAndAttachSeries(ctx context.Context, tx *store.InsightStore, scopedBa
 		dynamic = *series.GeneratedFromCaptureGroups
 	}
 
-	var groupBy *string
+	groupBy := lowercaseGroupBy(series.GroupBy)
 	var nextRecordingAfter time.Time
 	var oldestHistoricalAt time.Time
 	if series.GroupBy != nil {
-		temp := strings.ToLower(*series.GroupBy)
-		groupBy = &temp
 		// We want to disable interval recording for compute types.
 		// December 31, 9999 is the maximum possible date in postgres.
 		nextRecordingAfter = time.Date(9999, 12, 31, 0, 0, 0, 0, time.UTC)
@@ -1317,4 +1300,12 @@ func minInt(a, b int32) int32 {
 		return a
 	}
 	return b
+}
+
+func lowercaseGroupBy(groupBy *string) *string {
+	if groupBy != nil {
+		temp := strings.ToLower(*groupBy)
+		return &temp
+	}
+	return groupBy
 }

@@ -9,7 +9,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button, Code, H3, Text, Tooltip, Icon } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button, Code, H3, Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
