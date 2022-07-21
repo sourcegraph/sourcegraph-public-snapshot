@@ -508,7 +508,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
 
         return outputLines
     }, [step.exitCode, step.outputLines])
-
+    const tabsNames=['logs','output','diff', 'files_env', 'cmd_container'];
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
             <CollapseHeader
@@ -538,7 +538,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 size="small"
                                 behavior="forceRender"
                                 onChange={index =>
-                                    eventLogger.log(`batch_change_execution:workspace_tab_${index}:clicked`)
+                                    eventLogger.log(`batch_change_execution:workspace_tab_${tabsNames[index]}:clicked`)
                                 }
                             >
                                 <TabList>
