@@ -8,7 +8,7 @@ import (
 )
 
 func setMockPasswordPolicyConfig(policyEnabled bool, authPolicyEnabled bool, authMinPasswordLength int,
-	policyMinLength int, authPolicyLength int, authPolicySpChr int, reqNumber bool, reqCase bool) {
+	authPolicySpChr int, reqNumber bool, reqCase bool) {
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
@@ -35,8 +35,8 @@ func TestGetPasswordPolicy(t *testing.T) {
 
 	authPolicyLength := 12
 
-	setMockPasswordPolicyConfig(false, true, 10, 12, authPolicyLength,
-		2, true, true)
+	setMockPasswordPolicyConfig(false, true, authPolicyLength, 2, true,
+		true)
 
 	t.Run("Policy retrieved is correct.", func(t *testing.T) {
 		p := getPasswordPolicy()

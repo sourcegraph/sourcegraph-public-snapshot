@@ -1,6 +1,6 @@
 import {SourcegraphContext} from "../jscontext";
 
-export const minPasswordLen = (window.context.authMinPasswordLength > 0) ? window.context.authMinPasswordLength : 12
+export const minPasswordLen = (window.context.authMinPasswordLength !== undefined && window.context.authMinPasswordLength > 0) ? window.context.authMinPasswordLength : 12
 
 export function getPasswordPolicy(): any {
     let passwordPolicyReference = window.context.authPasswordPolicy
@@ -13,17 +13,15 @@ export function getPasswordPolicy(): any {
 }
 
 export function validatePassword(
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>,
+    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures' |
+        'authPasswordPolicy'>,
     password: string
 ): string | undefined {
 
     let passwordPolicyReference = getPasswordPolicy()
 
-    const minPasswordLen = context.authMinPasswordLength
-
-    if (passwordPolicy?.enabled) {
+    if (passwordPolicyReference?.enabled) {
         if (
-            context.authMinPasswordLength &&
             password.length < minPasswordLen
         ) {
             return (

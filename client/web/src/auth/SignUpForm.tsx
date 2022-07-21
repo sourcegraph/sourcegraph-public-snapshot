@@ -46,7 +46,8 @@ interface SignUpFormProps {
     onSignUp: (args: SignUpArguments) => Promise<void>
 
     buttonLabel?: string
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
+    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures' |
+        'authPasswordPolicy'>
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
     experimental?: boolean
@@ -55,7 +56,8 @@ interface SignUpFormProps {
 const preventDefault = (event: React.FormEvent): void => event.preventDefault()
 
 export function getPasswordRequirements(
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>
+    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures' |
+        'authPasswordPolicy'>
 ): string {
     let requirements = ''
     let passwordPolicyReference = getPasswordPolicy()
@@ -129,8 +131,6 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
     const [passwordState, nextPasswordFieldChange, passwordInputReference] = useInputValidation(
         signUpFieldValidators.password
     )
-
-    let passwordPolicyReference = getPasswordPolicy()
 
     const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
 
