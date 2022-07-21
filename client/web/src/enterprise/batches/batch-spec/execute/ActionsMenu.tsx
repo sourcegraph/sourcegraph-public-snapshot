@@ -149,7 +149,15 @@ const MemoizedActionsMenu: React.FunctionComponent<
             <CancelExecutionModal
                 isOpen={showCancelModal}
                 onCancel={() => setShowCancelModal(false)}
-                onConfirm={cancelModalType === 'cancel' ? cancelBatchSpecExecution : cancelAndEdit}
+                onConfirm={
+                    cancelModalType === 'cancel' ?
+                    () => {
+                        eventLogger.log('batch_change_execution:actions_execution_cancel:clicked')
+                        return cancelBatchSpecExecution()
+                    } : ()=>{
+                        eventLogger.log('batch_change_execution:actions_execution_cancel_and_edit:clicked')
+                        return cancelAndEdit()
+                }}
                 modalHeader={cancelModalType === 'cancel' ? 'Cancel execution' : 'The execution is still running'}
                 modalBody={
                     <Text>
