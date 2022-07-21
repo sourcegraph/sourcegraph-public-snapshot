@@ -4,6 +4,15 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hexops/autogold"
+	"github.com/hexops/valast"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
+
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/log"
@@ -73,7 +82,7 @@ func TestInitializeJob(t *testing.T) {
 	}
 }
 
-func TestHandler(t *testing.T) {
+func TestHandlerEnabledDisabled(t *testing.T) {
 	ctx := context.Background()
 	logger := log.Scoped("", "")
 
@@ -126,4 +135,102 @@ func TestHandler(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestHandlerLoadsEvents(t *testing.T) {
+	logger := log.Scoped("", "")
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+
+	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true}}})
+
+	handler := telemetryHandler{
+		logger:        logger,
+		eventLogStore: db.EventLogs(),
+	}
+
+	t.Run("loads no events when table is empty", func(t *testing.T) {
+		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event) error {
+			if len(event) != 0 {
+				t.Errorf("expected empty events but got event array with size: %d", len(event))
+			}
+			return nil
+		}
+		err := handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+
+	want := []*database.Event{
+		{
+			Name:   "event1",
+			UserID: 1,
+			Source: "test",
+		},
+		{
+			Name:   "event2",
+			UserID: 2,
+			Source: "test",
+		},
+	}
+	err := handler.eventLogStore.BulkInsert(ctx, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("loads events without error", func(t *testing.T) {
+		var got []*types.Event
+		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event) error {
+			got = event
+			return nil
+		}
+		err := handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("loads events without error", []*types.Event{
+			{
+				ID:       1,
+				Name:     "event1",
+				UserID:   valast.Addr(int32(1)).(*int32),
+				Argument: "{}",
+				Source:   "test",
+				Version:  "0.0.0+dev",
+			},
+			{
+				ID:       2,
+				Name:     "event2",
+				UserID:   valast.Addr(int32(2)).(*int32),
+				Argument: "{}",
+				Source:   "test",
+				Version:  "0.0.0+dev",
+			},
+		}).Equal(t, got)
+	})
+
+	t.Run("loads using specified batch size from settings", func(t *testing.T) {
+		confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true, BatchSize: 1}}})
+
+		var got []*types.Event
+		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event) error {
+			got = event
+			return nil
+		}
+		err := handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		autogold.Want("loads using specified batch size from settings", []*types.Event{
+			{
+				ID:       1,
+				Name:     "event1",
+				UserID:   valast.Addr(int32(1)).(*int32),
+				Argument: "{}",
+				Source:   "test",
+				Version:  "0.0.0+dev",
+			},
+		}).Equal(t, got)
+	})
 }

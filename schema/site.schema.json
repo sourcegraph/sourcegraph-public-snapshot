@@ -73,6 +73,12 @@
           "description": "Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.",
           "type": "boolean",
           "default": false
+        },
+        "batchSize": {
+          "description": "Maximum number of events scraped from the events table in a single scrape.",
+          "type": "integer",
+          "default": 5000,
+          "minimum": 1
         }
       }
     },
