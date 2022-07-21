@@ -508,7 +508,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
 
         return outputLines
     }, [step.exitCode, step.outputLines])
-    const tabsNames=['logs','output','diff', 'files_env', 'cmd_container'];
+    const tabsNames = ['logs', 'output', 'diff', 'files_env', 'cmd_container']
     return (
         <Collapse isOpen={isExpanded} onOpenChange={setIsExpanded}>
             <CollapseHeader
@@ -532,7 +532,6 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 <Card className={classNames('mt-2', styles.stepCard)}>
                     <CardBody>
                         {!step.skipped && (
-                            // TODO: get tab name instead of index
                             <Tabs
                                 className={styles.stepTabs}
                                 size="small"
