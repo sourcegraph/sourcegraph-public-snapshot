@@ -215,7 +215,6 @@ export class Tree extends React.PureComponent<Props, State> {
     constructor(props: Props) {
         super(props)
 
-        const parentPath = dotPathAsUndefined(props.activePathIsDir ? props.activePath : dirname(props.activePath))
         this.node = {
             index: 0,
             parent: null,
@@ -225,7 +224,7 @@ export class Tree extends React.PureComponent<Props, State> {
         }
 
         this.state = {
-            parentPath,
+            parentPath: dotPathAsUndefined(props.activePathIsDir ? props.activePath : dirname(props.activePath)),
             resolveTo: [],
             selectedNode: this.node,
             activeNode: this.node,
