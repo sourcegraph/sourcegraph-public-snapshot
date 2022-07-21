@@ -16,25 +16,25 @@ import (
 type Ruleset struct {
 	codeownersRuleset codeowners.Ruleset
 }
-type Owners []string
+type Owners map[string]struct{}
 
 func (r *Ruleset) Match(path string) (Owners, error) {
+	owners := Owners{}
 	if r.codeownersRuleset == nil {
-		return []string{}, nil
+		return owners, nil
 	}
 
 	rule, err := r.codeownersRuleset.Match(path)
 	if err != nil {
-		return []string{}, err
+		return owners, err
 	}
 
 	if rule == nil {
-		return []string{}, nil
+		return owners, nil
 	}
 
-	owners := make(Owners, len(rule.Owners))
-	for i, owner := range rule.Owners {
-		owners[i] = owner.String()
+	for _, owner := range rule.Owners {
+		owners[owner.String()] = struct{}{}
 	}
 	return owners, nil
 }

@@ -118,7 +118,7 @@ matchesLoop:
 			mu.Unlock()
 
 			for _, owner := range includeOwners {
-				if !contains(owners, owner) {
+				if _, ok := owners[owner]; !ok {
 					continue matchesLoop
 				}
 			}
@@ -131,13 +131,4 @@ matchesLoop:
 	}
 
 	return filtered, errs
-}
-
-func contains(s []string, str string) bool {
-	for _, v := range s {
-		if v == str {
-			return true
-		}
-	}
-	return false
 }
