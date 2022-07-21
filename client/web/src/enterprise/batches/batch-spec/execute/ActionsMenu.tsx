@@ -26,6 +26,7 @@ import {
     RetryBatchSpecExecutionResult,
     RetryBatchSpecExecutionVariables,
 } from '../../../../graphql-operations'
+import { eventLogger } from '../../../../tracking/eventLogger'
 import { BatchSpecContextState, useBatchSpecContext } from '../BatchSpecContext'
 
 import { CANCEL_BATCH_SPEC_EXECUTION, RETRY_BATCH_SPEC_EXECUTION } from './backend'
@@ -101,6 +102,7 @@ const MemoizedActionsMenu: React.FunctionComponent<
                     as={Link}
                     className={styles.previewButton}
                     style={{ width: menuWidth }}
+                    onClick={()=>{eventLogger.log('batch_change_execution:preview:clicked')}}
                 >
                     Preview
                 </Button>

@@ -62,6 +62,7 @@ import {
     Scalars,
     VisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
+import { eventLogger } from '../../../../../tracking/eventLogger'
 import { queryChangesetSpecFileDiffs as _queryChangesetSpecFileDiffs } from '../../../preview/list/backend'
 import { ChangesetSpecFileDiffConnection } from '../../../preview/list/ChangesetSpecFileDiffConnection'
 import {
@@ -175,7 +176,11 @@ const WorkspaceHeader: React.FunctionComponent<React.PropsWithChildren<Workspace
                 </span>
             )}
             {toggleShowTimeline && !workspace.cachedResultFound && workspace.state !== BatchSpecWorkspaceState.SKIPPED && (
-                <Button className={styles.workspaceDetail} onClick={toggleShowTimeline} variant="link">
+                <Button className={styles.workspaceDetail}
+                    onClick={()=>{
+                        toggleShowTimeline()
+                        eventLogger.log('batch_change_execution:workspace_timeline:clicked')}}
+                    variant="link">
                     Timeline
                 </Button>
             )}
@@ -524,7 +529,8 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                 <Card className={classNames('mt-2', styles.stepCard)}>
                     <CardBody>
                         {!step.skipped && (
-                            <Tabs className={styles.stepTabs} size="small" behavior="forceRender">
+                            // TODO: get tab name instead of index
+                            <Tabs className={styles.stepTabs} size="small" behavior="forceRender" onChange={index=>eventLogger.log(`batch_change_execution:workspace_tab_${index}:clicked`)}>
                                 <TabList>
                                     <Tab key="logs">
                                         <span className="text-content" data-tab-content="Logs">
