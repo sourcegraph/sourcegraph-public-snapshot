@@ -11,10 +11,10 @@ use syntect::{
 mod sg_treesitter;
 pub use sg_treesitter::dump_document;
 pub use sg_treesitter::dump_document_range;
-pub use sg_treesitter::index_language as lsif_index;
-pub use sg_treesitter::index_language_with_config as lsif_index_with_config;
-pub use sg_treesitter::lsif_highlight;
+pub use sg_treesitter::index_language as scip_index;
+pub use sg_treesitter::index_language_with_config as scip_index_with_config;
 pub use sg_treesitter::make_highlight_config;
+pub use sg_treesitter::scip_highlight;
 pub use sg_treesitter::FileRange as DocumentFileRange;
 pub use sg_treesitter::PackedRange as LsifPackedRange;
 

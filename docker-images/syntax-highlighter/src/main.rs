@@ -19,9 +19,20 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     }
 }
 
+// TODO: Once we're confident we don't need this anymore, we can remove this entirely
+// and just have the `scip` endpoint. But I figured I would make it available at least
+// for now, since I'm working on doing that.
 #[post("/lsif", format = "application/json", data = "<q>")]
 fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
-    match sg_syntax::lsif_highlight(q.into_inner()) {
+    match sg_syntax::scip_highlight(q.into_inner()) {
+        Ok(v) => v,
+        Err(err) => err,
+    }
+}
+
+#[post("/scip", format = "application/json", data = "<q>")]
+fn scip(q: Json<SourcegraphQuery>) -> JsonValue {
+    match sg_syntax::scip_highlight(q.into_inner()) {
         Ok(v) => v,
         Err(err) => err,
     }
@@ -46,6 +57,6 @@ fn rocket() -> _ {
     };
 
     rocket::build()
-        .mount("/", routes![syntect, lsif, health])
+        .mount("/", routes![syntect, lsif, scip, health])
         .register("/", catchers![not_found])
 }

@@ -1,8 +1,7 @@
 ---
 source: crates/sg-syntax/src/sg_treesitter.rs
-assertion_line: 491
+assertion_line: 502
 expression: "dump_document(&document, &contents)"
-
 ---
   // Original:
 //^^^^^^^^^^^^ Comment
@@ -11,67 +10,67 @@ expression: "dump_document(&document, &contents)"
   
   using AngleSharp.Dom;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^^^^^ IdentifierModule
+//      ^^^^^^^^^^ IdentifierNamespace
 //                ^ PunctuationDelimiter
-//                 ^^^ IdentifierModule
+//                 ^^^ IdentifierNamespace
 //                    ^ PunctuationDelimiter
   using Bunit;
 //^^^^^ IdentifierKeyword
-//      ^^^^^ IdentifierModule
+//      ^^^^^ IdentifierNamespace
 //           ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^^^^ IdentifierModule
+//      ^^^^^^^^^ IdentifierNamespace
 //               ^ PunctuationDelimiter
-//                ^^^^^^^^^^ IdentifierModule
+//                ^^^^^^^^^^ IdentifierNamespace
 //                          ^ PunctuationDelimiter
-//                           ^^^^^^^^^^ IdentifierModule
+//                           ^^^^^^^^^^ IdentifierNamespace
 //                                     ^ PunctuationDelimiter
   using Microsoft.AspNetCore.Components.Rendering;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^^^^ IdentifierModule
+//      ^^^^^^^^^ IdentifierNamespace
 //               ^ PunctuationDelimiter
-//                ^^^^^^^^^^ IdentifierModule
+//                ^^^^^^^^^^ IdentifierNamespace
 //                          ^ PunctuationDelimiter
-//                           ^^^^^^^^^^ IdentifierModule
+//                           ^^^^^^^^^^ IdentifierNamespace
 //                                     ^ PunctuationDelimiter
-//                                      ^^^^^^^^^ IdentifierModule
+//                                      ^^^^^^^^^ IdentifierNamespace
 //                                               ^ PunctuationDelimiter
   using System;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierModule
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
   using System.Collections.Generic;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierModule
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
-//             ^^^^^^^^^^^ IdentifierModule
+//             ^^^^^^^^^^^ IdentifierNamespace
 //                        ^ PunctuationDelimiter
-//                         ^^^^^^^ IdentifierModule
+//                         ^^^^^^^ IdentifierNamespace
 //                                ^ PunctuationDelimiter
   using System.Linq;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierModule
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
-//             ^^^^ IdentifierModule
+//             ^^^^ IdentifierNamespace
 //                 ^ PunctuationDelimiter
   using System.Text.RegularExpressions;
 //^^^^^ IdentifierKeyword
-//      ^^^^^^ IdentifierModule
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationDelimiter
-//             ^^^^ IdentifierModule
+//             ^^^^ IdentifierNamespace
 //                 ^ PunctuationDelimiter
-//                  ^^^^^^^^^^^^^^^^^^ IdentifierModule
+//                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace
 //                                    ^ PunctuationDelimiter
   using Xunit;
 //^^^^^ IdentifierKeyword
-//      ^^^^^ IdentifierModule
+//      ^^^^^ IdentifierNamespace
 //           ^ PunctuationDelimiter
   namespace Radzen.Blazor.
 //^^^^^^^^^ IdentifierKeyword
-//          ^^^^^^ IdentifierModule
+//          ^^^^^^ IdentifierNamespace
 //                ^ PunctuationDelimiter
-//                 ^^^^^^ IdentifierModule
+//                 ^^^^^^ IdentifierNamespace
 //                       ^ PunctuationDelimiter
   {
       public class DataGridTests

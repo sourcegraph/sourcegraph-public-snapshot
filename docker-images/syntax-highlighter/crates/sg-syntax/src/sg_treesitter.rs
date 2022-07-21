@@ -9,7 +9,7 @@ use rocket::serde::json::Value as JsonValue;
 use tree_sitter_highlight::{HighlightConfiguration, Highlighter as TSHighlighter};
 
 use crate::SourcegraphQuery;
-use sg_lsif::{Document, Occurrence, SyntaxKind};
+use scip::types::{Document, Occurrence, SyntaxKind};
 use sg_macros::include_project_file_optional;
 
 #[rustfmt::skip]
@@ -108,15 +108,18 @@ pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
 }
 
-pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
+pub fn scip_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     let filetype = q
         .filetype
-        .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
+        .ok_or_else(|| json!({"error": "Must pass a filetype for /scip" }))?
         .to_lowercase();
 
     match index_language(&filetype, &q.code) {
         Ok(document) => {
-            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+            // let encoded = document.write_to_bytes().map_err(jsonify_err)?;
+            // let encoded: Vec<u8> = document.into();
+            // let encoded = protobuf::Message::write_to_bytes(&document).map_err(jsonify_err)?;
+            let encoded = document.write_to_bytes().unwrap();
 
             Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
         }
@@ -172,7 +175,7 @@ pub fn index_language_with_config(
         CONFIGURATIONS.get(l)
     })?;
 
-    let mut emitter = LsifEmitter::new();
+    let mut emitter = ScipEmitter::new();
     emitter.render(highlights, &code, &get_syntax_kind_for_hl)
 }
 
@@ -299,14 +302,14 @@ impl Ord for PackedRange {
 }
 
 /// Converts a general-purpose syntax highlighting iterator into a sequence of lines of HTML.
-pub struct LsifEmitter {}
+pub struct ScipEmitter {}
 
 /// Our version of `tree_sitter_highlight::HtmlRenderer`, which emits stuff as a table.
 ///
 /// You can see the original version in the tree_sitter_highlight crate.
-impl LsifEmitter {
+impl ScipEmitter {
     pub fn new() -> Self {
-        LsifEmitter {}
+        ScipEmitter {}
     }
 
     pub fn render<F>(
@@ -340,7 +343,8 @@ impl LsifEmitter {
                 } => {
                     let mut occurrence = Occurrence::new();
                     occurrence.range = line_manager.range(start_byte, end_byte);
-                    occurrence.syntax_kind = get_syntax_kind_for_hl(*highlights.last().unwrap());
+                    occurrence.syntax_kind =
+                        get_syntax_kind_for_hl(*highlights.last().unwrap()).into();
 
                     doc.occurrences.push(occurrence);
                 }
@@ -361,7 +365,7 @@ pub struct FileRange {
 }
 
 pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<FileRange>) -> String {
-    let mut occurrences = doc.get_occurrences().to_owned();
+    let mut occurrences = doc.occurrences.clone();
     occurrences.sort_by_key(|o| PackedRange::from_vec(&o.range));
     let mut occurrences = VecDeque::from(occurrences);
 
@@ -384,7 +388,7 @@ pub fn dump_document_range(doc: &Document, source: &str, file_range: &Option<Fil
         result += "\n";
 
         while let Some(occ) = occurrences.pop_front() {
-            if occ.syntax_kind == SyntaxKind::UnspecifiedSyntaxKind {
+            if occ.syntax_kind.enum_value_or_default() == SyntaxKind::UnspecifiedSyntaxKind {
                 continue;
             }
 
