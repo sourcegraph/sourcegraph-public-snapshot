@@ -134,8 +134,14 @@ func Watch(f func()) {
 // will be recomputed every time the config is updated.
 //
 // IMPORTANT: The first call to wrapped will block on config initialization.
-func Cached(f func() any) (wrapped func() any) {
-	return DefaultClient().Cached(f)
+func Cached[T any](f func() T) (wrapped func() T) {
+	g := func() any {
+		return f()
+	}
+	h := DefaultClient().Cached(g)
+	return func() T {
+		return h().(T)
+	}
 }
 
 // Watch calls the given function in a separate goroutine whenever the
