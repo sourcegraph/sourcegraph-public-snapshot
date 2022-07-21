@@ -321,7 +321,11 @@ type Parameters []Parameter
 // IncludeExcludeValues partitions multiple values of a field into positive
 // (include) and negated (exclude) values.
 func (p Parameters) IncludeExcludeValues(field string) (include, exclude []string) {
-	VisitField(toNodes(p), field, func(v string, negated bool, _ Annotation) {
+	VisitField(toNodes(p), field, func(v string, negated bool, ann Annotation) {
+		if ann.Labels.IsSet(IsPredicate) {
+			// Skip predicates
+			return
+		}
 		if negated {
 			exclude = append(exclude, v)
 		} else {
@@ -364,6 +368,18 @@ func (p Parameters) RepoContainsCommitAfter() (value string) {
 	})
 
 	return value
+}
+
+func (p Parameters) FileHasOwner() (include, exclude []string) {
+	VisitTypedPredicate(toNodes(p), func(pred *FileHasOwnerPredicate, negated bool) {
+		if negated {
+			exclude = append(exclude, pred.Owner)
+		} else {
+			include = append(include, pred.Owner)
+		}
+	})
+
+	return include, exclude
 }
 
 // Exists returns whether a parameter exists in the query (whether negated or not).

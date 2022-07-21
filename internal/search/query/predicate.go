@@ -397,6 +397,8 @@ func (f *FileHasOwnerPredicate) ParseParams(params string) error {
 func (f FileHasOwnerPredicate) Field() string { return FieldFile }
 func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
 func (f *FileHasOwnerPredicate) Plan(parent Basic) (Plan, error) {
+	// Filtering by file owner is handled by the codeownership.Job post-search
+	// filter job.
 	return nil, nil
 }
 

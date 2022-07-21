@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -160,6 +161,12 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	}
 
 	basicJob := NewParallelJob(children...)
+
+	{ // Apply code ownership post-search filter
+		if includeOwners, excludeOwners := b.FileHasOwner(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
+			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
+		}
+	}
 
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
