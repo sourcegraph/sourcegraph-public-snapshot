@@ -25,7 +25,7 @@ import { haveInitialExtensionsLoaded } from '../api/features'
 import { HighlightedMatches } from '../components/HighlightedMatches'
 import { getContributedActionItems } from '../contributions/contributions'
 import { ExtensionsControllerProps } from '../extensions/controller'
-import { useKeyboardShortcut } from '../keyboardShortcuts/useKeyboardShortcut'
+import { KeyboardShortcut } from '../keyboardShortcuts'
 import { PlatformContextProps } from '../platform/context'
 import { SettingsCascadeOrError } from '../settings/settings'
 import { TelemetryProps } from '../telemetry/telemetryService'
@@ -77,6 +77,8 @@ export interface CommandListProps
     onSelect?: () => void
 
     location: H.Location
+
+    keyboardShortcutForShow?: KeyboardShortcut
 }
 
 interface State {
@@ -378,7 +380,6 @@ export const CommandListPopoverButton: React.FunctionComponent<
     variant,
     ...props
 }) => {
-    const showCommandPaletteShortcut = useKeyboardShortcut('commandPalette')
     const [isOpen, setIsOpen] = useState(false)
     // Capture active element on open in order to restore focus on close.
     const originallyFocusedElement = useMemo(() => {
@@ -433,7 +434,7 @@ export const CommandListPopoverButton: React.FunctionComponent<
             >
                 <CommandList {...props} onSelect={close} />
             </TooltipPopoverWrapper>
-            {showCommandPaletteShortcut?.keybindings.map((keybinding, index) => (
+            {keyboardShortcutForShow?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={toggleIsOpen} />
             ))}
         </Button>
