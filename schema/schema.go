@@ -86,8 +86,6 @@ type AuthLockout struct {
 type AuthPasswordPolicy struct {
 	// Enabled description: Enables password policy
 	Enabled bool `json:"enabled,omitempty"`
-	// MinimumLength description: The minimum length required for a password
-	MinimumLength int `json:"minimumLength,omitempty"`
 	// NumberOfSpecialCharacters description: The required number of special characters
 	NumberOfSpecialCharacters int `json:"numberOfSpecialCharacters,omitempty"`
 	// RequireAtLeastOneNumber description: Does the password require a number
