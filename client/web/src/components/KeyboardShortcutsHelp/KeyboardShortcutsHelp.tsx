@@ -39,8 +39,8 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
     isOpen,
     onDismiss,
 }) => {
-    const [keyboardShortcutsEnabled, setKeyboardShortcutsEnabled] = useTemporarySetting(
-        'keyboardShortcuts.enabled',
+    const [characterKeyShortcutsEnabled, setCharacterKeyShortcutsEnabled] = useTemporarySetting(
+        'characterKeyShortcuts.enabled',
         true
     )
 
@@ -83,12 +83,12 @@ export const KeyboardShortcutsHelp: React.FunctionComponent<React.PropsWithChild
                 </ul>
                 <Label className={styles.modalFooter}>
                     <Toggle
-                        value={keyboardShortcutsEnabled}
-                        onToggle={() => setKeyboardShortcutsEnabled(previous => !previous)}
-                        title="Toggle keyboard shortcuts"
+                        value={characterKeyShortcutsEnabled}
+                        onToggle={() => setCharacterKeyShortcutsEnabled(previous => !previous)}
+                        title="Toggle character key shortcuts"
                         className="mr-2"
                     />
-                    Keyboard shortcuts {keyboardShortcutsEnabled ? 'enabled ' : 'disabled'}
+                    Character key shortcuts {characterKeyShortcutsEnabled ? 'enabled ' : 'disabled'}
                 </Label>
             </div>
         </Modal>
