@@ -393,6 +393,12 @@
           "default": false,
           "!go": { "pointer": false }
         },
+        "enableWebhookSyncing": {
+          "description": "Enables consumers to sync repositories using webhooks to subscribe to GihHub push events",
+          "type": "boolean",
+          "default": false,
+          "!go": { "pointer": false }
+        },
         "enablePostSignupFlow": {
           "description": "Enables post sign-up user flow to add code hosts and sync code",
           "type": "boolean",

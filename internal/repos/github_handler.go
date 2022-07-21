@@ -14,19 +14,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GithubWebhookAPI struct {
+type GitHubWebhookAPI struct {
 	Client *github.V3Client
 }
 
-func NewGithubWebhookAPI(client *github.V3Client) *GithubWebhookAPI {
-	return &GithubWebhookAPI{Client: client}
+func NewGitHubWebhookAPI(client *github.V3Client) *GitHubWebhookAPI {
+	return &GitHubWebhookAPI{Client: client}
 }
 
-func (g *GithubWebhookAPI) Register(router *webhooks.GitHubWebhook) {
+func (g *GitHubWebhookAPI) Register(router *webhooks.GitHubWebhook) {
 	router.Register(g.handleGitHubWebhook, "push")
 }
 
-func (g *GithubWebhookAPI) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
+func (g *GitHubWebhookAPI) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Errorf("expected GitHub.PushEvent, got %s", reflect.TypeOf(event))

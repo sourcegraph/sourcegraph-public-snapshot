@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
+	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -537,6 +538,16 @@ var newNotify = func(ch chan struct{}) {
 	}
 }
 
+// notify performs a non-blocking send on the channel.
+// The channel should be buffered.
+var notify = func(ch chan struct{}) {
+	fmt.Println("old notify")
+	select {
+	case ch <- struct{}{}:
+	default:
+	}
+}
+
 // enqueue adds the repo to the queue with the given priority.
 //
 // If the repo is already in the queue and it isn't yet updating,
@@ -559,7 +570,11 @@ func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 			Repo:     repo,
 			Priority: p,
 		})
-		newNotify(q.notifyEnqueue)
+		fmt.Println("before notifying...")
+		fmt.Println("type:", reflect.TypeOf(notify))
+		// newNotify(q.notifyEnqueue)
+		notify(q.notifyEnqueue)
+		fmt.Println("after notify")
 		return false
 	}
 
@@ -933,15 +948,6 @@ func (s *schedule) Pop() any {
 	delete(s.index, item.Repo.ID)
 	schedKnownRepos.Dec()
 	return item
-}
-
-// notify performs a non-blocking send on the channel.
-// The channel should be buffered.
-var notify = func(ch chan struct{}) {
-	select {
-	case ch <- struct{}{}:
-	default:
-	}
 }
 
 // Mockable time functions for testing.

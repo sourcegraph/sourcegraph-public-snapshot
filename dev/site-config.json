@@ -11,6 +11,7 @@
   "experimentalFeatures": {
     "passwordPolicy": {
       "enabled": true,
+      "enableWebhookSyncing": true,
       "minimumLength": 12,
       "numberOfSpecialCharacters": 1,
       "requireAtLeastOneNumber": true,
