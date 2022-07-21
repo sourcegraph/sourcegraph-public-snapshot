@@ -40,6 +40,9 @@ func testWebhookBuilderPlumbing(store repos.Store) func(t *testing.T) {
 			t.Fatal(err)
 		}
 		rowsAffected, err := result.RowsAffected()
+		if err != nil {
+			t.Fatal(err)
+		}
 		if rowsAffected != 1 {
 			t.Fatalf("Expected 1 row to be affected, got %d", rowsAffected)
 		}
