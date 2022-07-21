@@ -10,6 +10,7 @@ interactions:
       - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
+<<<<<<< HEAD
     url: https://api.github.com/repos/sd9/sourcegraph/hooks
     method: POST
   response:
@@ -205,6 +206,12 @@ interactions:
     method: POST
   response:
     body: '{"type":"Repository","id":108,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T14:55:07Z","created_at":"2022-07-21T14:55:07Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/deliveries","last_response":{"code":null,"status":"unused","message":null}}'
+=======
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
+    method: POST
+  response:
+    body: '{"type":"Repository","id":107,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T01:02:13Z","created_at":"2022-07-21T01:02:13Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/deliveries","last_response":{"code":null,"status":"unused","message":null}}'
+>>>>>>> 8e241d5419 (Change to v3.go)
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -222,11 +229,19 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
+<<<<<<< HEAD
       - Thu, 21 Jul 2022 14:55:07 GMT
       Etag:
       - '"04f7a1ae8725f6e1072e13b8292d8bf844df11e8f8434cd5da18455c826d346c"'
       Location:
       - https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108
+=======
+      - Thu, 21 Jul 2022 01:02:13 GMT
+      Etag:
+      - '"431794567b4ada35220fad33af0155af87d0fdd7ccbeb0767dd9d9c40d474e1e"'
+      Location:
+      - https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107
+>>>>>>> 8e241d5419 (Change to v3.go)
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -245,9 +260,15 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
+<<<<<<< HEAD
       - 40409338-5955-435a-8514-476ca1e80fd5
       X-Runtime-Rack:
       - "0.128348"
+=======
+      - bdee2fba-4ef9-41a1-bbbd-c3dc730e0b6e
+      X-Runtime-Rack:
+      - "0.114445"
+>>>>>>> 8e241d5419 (Change to v3.go)
       X-Xss-Protection:
       - "0"
     status: 201 Created
@@ -265,7 +286,11 @@ interactions:
     url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
     method: GET
   response:
+<<<<<<< HEAD
     body: '[{"type":"Repository","id":108,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T14:55:07Z","created_at":"2022-07-21T14:55:07Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108/deliveries","last_response":{"code":500,"status":"hookshot_error","message":"no
+=======
+    body: '[{"type":"Repository","id":107,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T01:02:13Z","created_at":"2022-07-21T01:02:13Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107/deliveries","last_response":{"code":500,"status":"hookshot_error","message":"no
+>>>>>>> 8e241d5419 (Change to v3.go)
       such host"}}]'
     headers:
       Access-Control-Allow-Origin:
@@ -282,9 +307,15 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
+<<<<<<< HEAD
       - Thu, 21 Jul 2022 14:55:08 GMT
       Etag:
       - W/"c0a03ccc1e71e4311d2c1c769e2d31c3fc99b8d342759a7cc9b29f7d705ffa8f"
+=======
+      - Thu, 21 Jul 2022 01:02:14 GMT
+      Etag:
+      - W/"e609d8be5bfb61a662b9db2b1b6dfa1e4e6779392f52c5129c26693344d27385"
+>>>>>>> 8e241d5419 (Change to v3.go)
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -303,9 +334,15 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
+<<<<<<< HEAD
       - 892e6765-6630-438d-84e5-d6db9ce6a534
       X-Runtime-Rack:
       - "0.061894"
+=======
+      - 4cb4f128-5a3c-4876-aecb-ed9bd9f52fce
+      X-Runtime-Rack:
+      - "0.050665"
+>>>>>>> 8e241d5419 (Change to v3.go)
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -322,7 +359,11 @@ interactions:
       - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
+<<<<<<< HEAD
     url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/108
+=======
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/107
+>>>>>>> 8e241d5419 (Change to v3.go)
     method: DELETE
   response:
     body: ""
@@ -337,7 +378,11 @@ interactions:
       Content-Security-Policy:
       - default-src 'none'
       Date:
+<<<<<<< HEAD
       - Thu, 21 Jul 2022 14:55:08 GMT
+=======
+      - Thu, 21 Jul 2022 01:02:14 GMT
+>>>>>>> 8e241d5419 (Change to v3.go)
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -354,9 +399,15 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
+<<<<<<< HEAD
       - 275b3ac5-6acf-46f6-91a7-459a3641de13
       X-Runtime-Rack:
       - "0.059548"
+=======
+      - 73b6f6cf-2d76-4d69-82bd-5d3e6b08415a
+      X-Runtime-Rack:
+      - "0.048520"
+>>>>>>> 8e241d5419 (Change to v3.go)
       X-Xss-Protection:
       - "0"
     status: 204 No Content
