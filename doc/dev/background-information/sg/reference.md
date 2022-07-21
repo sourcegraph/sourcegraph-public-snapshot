@@ -86,10 +86,10 @@ Available commands in `sg.config.yaml`:
 * caddy
 * codeintel-executor
 * codeintel-worker
-* debug-env
-* docsite
+* debug-env (Debug env vars)
+* docsite (Docsite instance serving the docs)
 * executor-template
-* frontend
+* frontend (Enterprise frontend)
 * github-proxy
 * gitserver
 * grafana
@@ -100,19 +100,19 @@ Available commands in `sg.config.yaml`:
 * oss-frontend
 * oss-repo-updater
 * oss-symbols
-* oss-web
+* oss-web (Open source version of the web app)
 * oss-worker
-* otel-collector
+* otel-collector (OpenTelemetry collector)
 * postgres_exporter
 * prometheus
 * redis-postgres
 * repo-updater
 * searcher
-* server
+* server (Run a server image)
 * storybook
 * symbols
 * syntax-highlighter
-* web
+* web (Enterprise version of the web app)
 * web-standalone-http
 * web-standalone-http-prod
 * worker
