@@ -191,6 +191,7 @@ func testStoreEnqueueSyncJobs(store repos.Store) func(*testing.T) {
 
 func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		clock := timeutil.NewFakeClock(time.Now(), 0)
 		now := clock.Now()
 
@@ -213,7 +214,7 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(logtest.Scoped(t), store).Create(ctx, confGet, &service)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &service)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -370,6 +371,7 @@ func testStoreEnqueueSingleWebhookBuildJob(store repos.Store) func(*testing.T) {
 
 func testStoreListExternalServiceUserIDsByRepoID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf(`
@@ -398,7 +400,7 @@ DELETE FROM users;
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(logtest.Scoped(t), store).Create(ctx, confGet, &svc)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -438,6 +440,7 @@ INSERT INTO external_service_repos (external_service_id, repo_id, clone_url, use
 
 func testStoreListExternalServicePrivateRepoIDsByUserID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
+		logger := logtest.Scoped(t)
 		ctx := context.Background()
 		t.Cleanup(func() {
 			q := sqlf.Sprintf(`
@@ -466,7 +469,7 @@ DELETE FROM users;
 		confGet := func() *conf.Unified {
 			return &conf.Unified{}
 		}
-		err := database.ExternalServicesWith(logtest.Scoped(t), store).Create(ctx, confGet, &svc)
+		err := database.ExternalServicesWith(logger, store).Create(ctx, confGet, &svc)
 		if err != nil {
 			t.Fatal(err)
 		}
