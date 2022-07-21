@@ -1,6 +1,6 @@
 # Sourcegraph OpenTelemetry collector
 
-This distribution of the [OpenTelemetry collector](https://opentelemetry.io/docs/collector/) provides some basic collector configuration that can be used out-of-the-box in `/etc/otel-collector/configs` with the `--config` flag.
+This distribution of the [OpenTelemetry collector](https://opentelemetry.io/docs/collector/)'s [full `contrib` distribution](https://github.com/open-telemetry/opentelemetry-collector-contrib#opentelemetry-collector-contrib) provides some basic collector configuration that can be used out-of-the-box in `/etc/otel-collector/configs` with the `--config` flag.
 You can also mount your own configuration to provide to the `--config` flag.
 
 In the out-of-the-box configurations, debug pages ("zPages") are available at port 55679 by default - see [Exposed zPages routes](https://github.com/open-telemetry/opentelemetry-collector/blob/main/extension/zpagesextension/README.md#exposed-zpages-routes).
