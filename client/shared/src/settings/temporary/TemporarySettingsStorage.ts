@@ -12,6 +12,7 @@ import { TemporarySettings } from './TemporarySettings'
 export class TemporarySettingsStorage {
     private settingsBackend: SettingsBackend = new LocalStorageSettingsBackend()
     private settings: TemporarySettings = {}
+    private initialized = false
 
     private onChange = new ReplaySubject<TemporarySettings>(1)
 
@@ -43,6 +44,17 @@ export class TemporarySettingsStorage {
         this.settingsBackend = backend
 
         this.loadSubscription = this.settingsBackend.load().subscribe(settings => {
+            // Issue: after each mutation, this callback will be called (from `cache.writeQuery` below`
+            // this will cause issue when the `set` method is called multiple times before getting query responses
+            // for each caching process, so the `settings` arg doens't contain the last changed settings
+            // This is root reason of issue `https://github.com/sourcegraph/sourcegraph/issues/39018`
+            // We can fix it by ignoring emited items from cache processes (current changes)
+            // or remove `cache.writeQuery` since this class seems the only one use this query
+            if (this.initialized) {
+                return
+            }
+
+            this.initialized = true
             this.settings = settings
             this.onChange.next(settings)
         })
