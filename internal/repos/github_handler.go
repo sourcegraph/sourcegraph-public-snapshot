@@ -15,11 +15,11 @@ import (
 )
 
 type GitHubWebhookAPI struct {
-	Client *github.V3Client
+	client *github.V3Client
 }
 
 func NewGitHubWebhookAPI(client *github.V3Client) *GitHubWebhookAPI {
-	return &GitHubWebhookAPI{Client: client}
+	return &GitHubWebhookAPI{client: client}
 }
 
 func (g *GitHubWebhookAPI) Register(router *webhooks.GitHubWebhook) {
@@ -37,4 +37,24 @@ func (g *GitHubWebhookAPI) handleGitHubWebhook(ctx context.Context, extSvc *type
 	repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, name)
 
 	return nil
+}
+
+func (g *GitHubWebhookAPI) CreateSyncWebhook(ctx context.Context, repoName, targetURL, secret string) (int, error) {
+	return g.client.CreateSyncWebhook(ctx, repoName, targetURL, secret)
+}
+
+func (g *GitHubWebhookAPI) ListSyncWebhooks(ctx context.Context, repoName string) ([]github.Payload, error) {
+	return g.client.ListSyncWebhooks(ctx, repoName)
+}
+
+func (g *GitHubWebhookAPI) FindSyncWebhook(ctx context.Context, repoName string) (int, bool) {
+	return g.client.FindSyncWebhook(ctx, repoName)
+}
+
+func (g *GitHubWebhookAPI) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
+	return g.client.DeleteSyncWebhook(ctx, repoName, hookID)
+}
+
+func (g *GitHubWebhookAPI) TestPushSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
+	return g.client.TestPushSyncWebhook(ctx, repoName, hookID)
 }
