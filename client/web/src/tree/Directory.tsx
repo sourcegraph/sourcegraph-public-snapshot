@@ -15,7 +15,6 @@ import {
     TreeRowLabelLink,
     TreeRow,
 } from './components'
-import { MAX_TREE_ENTRIES } from './constants'
 import { FileDecorator } from './FileDecorator'
 import { TreeEntryInfo, treePadding } from './util'
 
@@ -25,6 +24,7 @@ interface DirectoryProps extends ThemeProps {
     className?: string
     entryInfo: TreeEntryInfo
     isExpanded: boolean
+    maxEntries: number
     loading: boolean
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
@@ -88,7 +88,7 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
                     </div>
                 )}
             </TreeLayerRowContents>
-            {props.index === MAX_TREE_ENTRIES - 1 && (
+            {props.index === props.maxEntries - 1 && (
                 <TreeRowAlert
                     variant="warning"
                     style={treePadding(props.depth, true, true)}
