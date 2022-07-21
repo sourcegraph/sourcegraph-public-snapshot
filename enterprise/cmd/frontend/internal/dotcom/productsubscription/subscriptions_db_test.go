@@ -18,15 +18,29 @@ func TestProductSubscriptions_Create(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
+	t.Run("no account number", func(t *testing.T) {
+		u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
+		require.NoError(t, err)
+
+		sub, err := dbSubscriptions{db: db}.Create(ctx, u.ID, u.Username)
+		require.NoError(t, err)
+
+		got, err := dbSubscriptions{db: db}.GetByID(ctx, sub)
+		require.NoError(t, err)
+		assert.Equal(t, sub, got.ID)
+		assert.Equal(t, u.ID, got.UserID)
+		assert.Nil(t, got.AccountNumber)
+	})
+
 	u, err := db.Users().Create(ctx, database.NewUser{Username: "u-11223344"})
 	require.NoError(t, err)
 
-	sub0, err := dbSubscriptions{db: db}.Create(ctx, u.ID, u.Username)
+	sub, err := dbSubscriptions{db: db}.Create(ctx, u.ID, u.Username)
 	require.NoError(t, err)
 
-	got, err := dbSubscriptions{db: db}.GetByID(ctx, sub0)
+	got, err := dbSubscriptions{db: db}.GetByID(ctx, sub)
 	require.NoError(t, err)
-	assert.Equal(t, sub0, got.ID)
+	assert.Equal(t, sub, got.ID)
 	assert.Equal(t, u.ID, got.UserID)
 	assert.Nil(t, got.BillingSubscriptionID)
 

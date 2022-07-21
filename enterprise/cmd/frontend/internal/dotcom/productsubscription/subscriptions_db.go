@@ -10,6 +10,7 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -60,7 +61,7 @@ func (s dbSubscriptions) Create(ctx context.Context, userID int32, username stri
 	if err = s.db.QueryRowContext(ctx, `
 INSERT INTO product_subscriptions(id, user_id, account_number) VALUES($1, $2, $3) RETURNING id
 `,
-		uuid, userID, accountNumber,
+		uuid, userID, dbutil.NewNullString(accountNumber),
 	).Scan(&id); err != nil {
 		return "", errors.Wrap(err, "insert")
 	}
