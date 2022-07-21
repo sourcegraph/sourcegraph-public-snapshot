@@ -48,6 +48,7 @@ const PROPS: React.ComponentProps<typeof GlobalNavbar> = {
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    showKeyboardShortcutsHelp: () => undefined,
 }
 
 describe('GlobalNavbar', () => {

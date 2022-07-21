@@ -8,8 +8,8 @@ import copy from 'copy-to-clipboard'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
-import { Button, Icon, DeprecatedTooltipController, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
 import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
+import { Button, Icon, DeprecatedTooltipController, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string

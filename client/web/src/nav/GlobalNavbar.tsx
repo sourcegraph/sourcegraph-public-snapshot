@@ -95,6 +95,7 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
+    showKeyboardShortcutsHelp: () => void
 }
 
 /**
