@@ -42,9 +42,7 @@ type Query struct {
 	// have any use case for these anymore (and haven't for awhile).
 	CSS bool `json:"css"`
 
-	// If set to true instructs the syntax highlight to not return HTML but to
-	// include a list of [start, end, class] tuples.
-	OnlyRanges bool `json:"onlyranges"`
+	UseTreesitter bool `json:"usetreesitter"`
 
 	// LineLengthLimit is the maximum length of line that will be highlighted if set.
 	// Defaults to no max if zero.
@@ -153,9 +151,10 @@ func (c *Client) IsTreesitterSupported(filetype string) bool {
 // automatically do this via the query or something else. It feels a bit goofy
 // to be a separate param. But I need to clean up these other deprecated
 // options later, so it's OK for the first iteration.
-func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*Response, error) {
+func (c *Client) Highlight(ctx context.Context, q *Query) (*Response, error) {
 	// Normalize filetype
 	q.Filetype = normalizeFiletype(q.Filetype)
+	useTreeSitter := q.UseTreesitter
 
 	if useTreeSitter && !c.IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
@@ -169,7 +168,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 
 	var url string
 	if useTreeSitter {
-		url = "/lsif"
+		url = "/scip"
 	} else {
 		url = "/"
 	}

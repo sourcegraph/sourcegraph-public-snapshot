@@ -6,7 +6,7 @@ extern crate rocket;
 use rocket::serde::json::{json, Json, Value as JsonValue};
 use sg_syntax::SourcegraphQuery;
 
-#[post("/", format = "application/json", data = "<q>")]
+#[post("/html", format = "application/json", data = "<q>")]
 fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     // TODO(slimsag): In an ideal world we wouldn't be relying on catch_unwind
     // and instead Syntect would return Result types when failures occur. This
@@ -19,11 +19,20 @@ fn syntect(q: Json<SourcegraphQuery>) -> JsonValue {
     }
 }
 
-#[post("/lsif", format = "application/json", data = "<q>")]
+#[post("/scip", format = "application/json", data = "<q>")]
 fn lsif(q: Json<SourcegraphQuery>) -> JsonValue {
-    match sg_syntax::lsif_highlight(q.into_inner()) {
-        Ok(v) => v,
-        Err(err) => err,
+    let query = q.into_inner();
+
+    if q.usetreesitter {
+        match sg_syntax::scip_syntect_highlight(query) {
+            Ok(v) => v,
+            Err(err) => err,
+        }
+    } else {
+        match sg_syntax::scip_treesitter_highlight(query) {
+            Ok(v) => v,
+            Err(err) => err,
+        }
     }
 }
 

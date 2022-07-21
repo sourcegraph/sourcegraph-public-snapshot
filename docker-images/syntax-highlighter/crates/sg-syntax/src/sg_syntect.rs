@@ -7,6 +7,7 @@ use syntect::{
     },
     util::LinesWithEndings,
 };
+use crate::sg_treesitter::OffsetManager;
 
 /// The ClassedTableGenerator generates HTML tables of the following form:
 /// <table>
@@ -199,8 +200,9 @@ pub struct RangesGenerator<'a> {
     position_stack: Vec<(Scope, usize)>,
     stack: ScopeStack,
     // A list of (start, end, scope) tuples
-    data: Vec<(usize, usize, Scope)>,
+    data: Vec<sg_lsif::Occurrence>,
     code: &'a str,
+    offset_manager: OffsetManager,
     max_line_len: Option<usize>,
 }
 
@@ -219,20 +221,21 @@ impl<'a> RangesGenerator<'a> {
             data: vec![],
             position_stack: vec![],
             max_line_len,
+            offset_manager: OffsetManager::new(code).unwrap(),
         }
     }
 
     // generate takes ownership of self so that it can't be re-used
-    pub fn generate(mut self) -> Vec<(usize, usize, Scope)> {
-        let mut file_offset = 0;
-        for (_i, line) in LinesWithEndings::from(self.code).enumerate() {
+    pub fn generate(mut self) -> Vec<sg_lsif::Occurrence> {
+        let mut file_byte_offset = 0;
+        for (i, line) in LinesWithEndings::from(self.code).enumerate() {
             if self.max_line_len.map_or(false, |n| line.len() > n) {
                 // TODO: Not sure what should happen here... maybe close all open scopes? But that
                 // could mess up the position information for scopes following that line.
             } else {
-                self.write_data_for_tokens(line, file_offset);
+                self.write_data_for_tokens(line, file_byte_offset);
             }
-            file_offset += line.chars().count()
+            file_byte_offset += line.len()
         }
         self.data
     }
@@ -242,17 +245,17 @@ impl<'a> RangesGenerator<'a> {
     // that are unclosed at the end of the line.
     //
     // This is modified from highlight::tokens_to_classed_spans
-    fn write_data_for_tokens(&mut self, line: &str, file_offset: usize) {
+    fn write_data_for_tokens(&mut self, line: &str, file_byte_offset: usize) {
         let parsed_line = self.parse_state.parse_line(line, self.syntax_set);
 
         for &(i, ref op) in parsed_line.as_slice() {
             let mut stack = self.stack.clone();
             stack.apply_with_hook(op, |basic_op, _| match basic_op {
                 BasicScopeStackOp::Push(scope) => {
-                    self.open_scope(&scope, file_offset + unsafe { line.get_unchecked(0..i).chars().count() });
+                    self.open_scope(&scope, file_byte_offset + i)
                 }
                 BasicScopeStackOp::Pop => {
-                    self.close_scope(file_offset + unsafe { line.get_unchecked(0..i).chars().count() });
+                    self.close_scope(file_byte_offset + i)
                 }
             });
             self.stack = stack;
@@ -266,7 +269,12 @@ impl<'a> RangesGenerator<'a> {
     fn close_scope(&mut self, end: usize) {
         let entry = self.position_stack.pop();
         match entry {
-            Some((scope, start)) => self.data.push((start, end, scope)),
+            Some((scope, start)) => {
+                let mut occurence = sg_lsif::Occurrence::new();
+                occurence.range = self.offset_manager.range(start, end);
+                occurence.syntax_kind = sg_lsif::SyntaxKind::Identifier;
+                self.data.push(occurence);
+            }
             None => ()
         }
     }

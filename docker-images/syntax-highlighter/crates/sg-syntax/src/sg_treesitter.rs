@@ -108,7 +108,7 @@ pub fn jsonify_err(e: impl ToString) -> JsonValue {
     json!({"error": e.to_string()})
 }
 
-pub fn lsif_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
+pub fn scip_treesitter_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
     let filetype = q
         .filetype
         .ok_or_else(|| json!({"error": "Must pass a filetype for /lsif" }))?
@@ -176,13 +176,13 @@ pub fn index_language_with_config(
     emitter.render(highlights, &code, &get_syntax_kind_for_hl)
 }
 
-struct OffsetManager {
+pub struct OffsetManager {
     source: String,
     offsets: Vec<usize>,
 }
 
 impl OffsetManager {
-    fn new(s: &str) -> Result<Self, Error> {
+    pub fn new(s: &str) -> Result<Self, Error> {
         if s.is_empty() {
             // TODO: Make an error here
             // Error(
@@ -204,7 +204,7 @@ impl OffsetManager {
         Ok(Self { source, offsets })
     }
 
-    fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
+    pub fn line_and_col(&self, offset_byte: usize) -> (usize, usize) {
         // let offset_char = self.source.bytes
         let mut line = 0;
         for window in self.offsets.windows(2) {
@@ -231,7 +231,7 @@ impl OffsetManager {
     }
 
     // range takes in start and end offsets and returns start/end line/column.
-    fn range(&self, start_byte: usize, end_byte: usize) -> Vec<i32> {
+    pub fn range(&self, start_byte: usize, end_byte: usize) -> Vec<i32> {
         let start_pos = self.line_and_col(start_byte);
         let end_pos = self.line_and_col(end_byte);
 

@@ -56,10 +56,8 @@ pub struct SourcegraphQuery {
     #[serde(default)]
     pub css: bool,
 
-    // If onlyranges is set return a list of [start, end, CSS class] tuples instead of annotated
-    // HTML.
     #[serde(default)]
-    pub onlyranges: bool,
+    pub usetreesitter: bool,
 
     // line_length_limit is ignored if css is false
     pub line_length_limit: Option<usize>,
@@ -194,34 +192,19 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
         };
 
         if q.css {
-            if q.onlyranges {
-                let output = RangesGenerator::new(
-                    syntax_set,
-                    syntax_def,
-                    &q.code,
-                    q.line_length_limit,
-                )
-                    .generate();
-
-                json!({
-                    "data": output,
-                    "plaintext": syntax_def.name == "Plain Text",
-                })
-            } else {
-                let output = ClassedTableGenerator::new(
-                    syntax_set,
-                    syntax_def,
-                    &q.code,
-                    q.line_length_limit,
-                    ClassStyle::SpacedPrefixed { prefix: "hl-" },
-                )
+            let output = ClassedTableGenerator::new(
+                syntax_set,
+                syntax_def,
+                &q.code,
+                q.line_length_limit,
+                ClassStyle::SpacedPrefixed { prefix: "hl-" },
+            )
                 .generate();
 
-                json!({
-                    "data": output,
-                    "plaintext": syntax_def.name == "Plain Text",
-                })
-            }
+            json!({
+                "data": output,
+                "plaintext": syntax_def.name == "Plain Text",
+            })
         } else {
             // TODO(slimsag): return the theme's background color (and other info??) to caller?
             // https://github.com/trishume/syntect/blob/c8b47758a3872d478c7fc740782cd468b2c0a96b/examples/synhtml.rs#L24
@@ -243,6 +226,29 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
     })
 }
 
+pub fn scip_syntect_highlight(q: SourcegraphQuery) -> JsonValue {
+    SYNTAX_SET.with(|syntax_set| {
+        // Determine syntax definition by extension.
+        let syntax_def = match determine_language(&q, syntax_set) {
+            Ok(v) => v,
+            Err(e) => return e,
+        };
+
+        let output = RangesGenerator::new(
+            syntax_set,
+            syntax_def,
+            &q.code,
+            q.line_length_limit,
+        )
+            .generate();
+
+        json!({
+            "data": output,
+            "plaintext": syntax_def.name == "Plain Text",
+        })
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -257,7 +263,7 @@ mod tests {
             filetype: None,
             code: "%".to_string(),
             css: false,
-            onlyranges: false,
+            usetreesitter: false,
             line_length_limit: None,
             extension: String::new(),
             theme: String::new(),
@@ -274,7 +280,7 @@ mod tests {
             filetype: None,
             code: "/**".to_string(),
             css: false,
-            onlyranges: false,
+            usetreesitter: false,
             line_length_limit: None,
             extension: String::new(),
             theme: String::new(),

@@ -406,6 +406,8 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		maxLineLength = 2000
 	}
 
+	useTreesitter := filetypeQuery.Engine == EngineTreeSitter
+
 	query := &gosyntect.Query{
 		Code:             code,
 		Filepath:         p.Filepath,
@@ -413,7 +415,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		Tracer:           ot.GetTracer(ctx),
 		LineLengthLimit:  maxLineLength,
 		CSS:              true,
-		OnlyRanges:       true,
+		UseTreesitter:    useTreesitter,
 	}
 
 	// Set the Filetype part of the command if:
@@ -422,11 +424,11 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	//       whatever we were calculating before)
 	//    2. We are using treesitter. Always have syntect use the language provided in that
 	//       case to make sure that we have normalized the names of the language by then.
-	if filetypeQuery.LanguageOverride || filetypeQuery.Engine == EngineTreeSitter {
+	if filetypeQuery.LanguageOverride || useTreesitter {
 		query.Filetype = filetypeQuery.Language
 	}
 
-	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
+	resp, err := client.Highlight(ctx, query)
 
 	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
 		errCollector.Collect(&err)
