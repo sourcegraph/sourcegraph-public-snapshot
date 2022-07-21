@@ -22,6 +22,15 @@ func TestProductLicenses_Create(t *testing.T) {
 	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
 	require.NoError(t, err)
 
+	t.Run("empty license info", func(t *testing.T) {
+		ps, err := dbSubscriptions{db: db}.Create(ctx, u.ID, u.Username)
+		require.NoError(t, err)
+
+		// This should not happen in practice but just in case to check it won't blow up
+		_, err = dbLicenses{db: db}.Create(ctx, ps, "k", 1, license.Info{})
+		require.NoError(t, err)
+	})
+
 	ps, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")
 	require.NoError(t, err)
 
