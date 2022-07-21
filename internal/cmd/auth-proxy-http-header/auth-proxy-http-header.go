@@ -28,15 +28,17 @@ type Option struct {
 
 func main() {
 	flag.Usage = func() {
-		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n\n%s\n", os.Args[0], strings.TrimSpace(usage))
+		fmt.Fprintf(flag.CommandLine.Output(), "Usage of %s:\n\n%s\n\n", os.Args[0], strings.TrimSpace(usage))
 		flag.PrintDefaults()
 	}
 
 	basePort := flag.Int("base-port", 10810, "the first port to listen on.")
 	numUsers := flag.Int("num-users", 5, "the number of additional users to proxy.")
-	backendRaw := flag.String("backend", "http://127.0.0.1:3080", "the sourcegraph instance to proxy to. Defaults to your devserver (http://127.0.0.1:3080).")
+	backendRaw := flag.String("backend", "http://127.0.0.1:3080", "the sourcegraph instance to proxy to. Defaults to your devserver.")
 	user := flag.String("user", os.Getenv("USER"), "your username on the instance.")
 	email := flag.String("email", os.Getenv("USER")+"@sourcegraph.com", "your email on the instance.")
+
+	flag.Parse()
 
 	backend, err := url.Parse(*backendRaw)
 	if err != nil {
