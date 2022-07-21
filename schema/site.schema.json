@@ -563,6 +563,12 @@
       "group": "BatchChanges",
       "default": false
     },
+    "batchChanges.changesetsRetention": {
+      "description": "How long changesets will be retained after they have been detached from a batch change.",
+      "type": "string",
+      "group": "BatchChanges",
+      "examples": ["336h", "48h", "5h30m40s"]
+    },
     "codeIntelAutoIndexing.enabled": {
       "description": "Enables/disables the code intel auto-indexing feature. Currently experimental.",
       "type": "boolean",

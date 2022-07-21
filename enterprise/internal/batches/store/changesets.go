@@ -66,6 +66,7 @@ var changesetColumns = []*sqlf.Query{
 	sqlf.Sprintf("changesets.num_failures"),
 	sqlf.Sprintf("changesets.closing"),
 	sqlf.Sprintf("changesets.syncer_error"),
+	sqlf.Sprintf("changesets.detached_at"),
 }
 
 // changesetInsertColumns is the list of changeset columns that are modified in
@@ -76,6 +77,7 @@ var changesetInsertColumns = []*sqlf.Query{
 	sqlf.Sprintf("updated_at"),
 	sqlf.Sprintf("metadata"),
 	sqlf.Sprintf("batch_change_ids"),
+	sqlf.Sprintf("detached_at"),
 	sqlf.Sprintf("external_id"),
 	sqlf.Sprintf("external_service_type"),
 	sqlf.Sprintf("external_branch"),
@@ -159,6 +161,7 @@ func (s *Store) changesetWriteQuery(q string, includeID bool, c *btypes.Changese
 		c.UpdatedAt,
 		metadata,
 		batchChanges,
+		nullTimeColumn(c.DetachedAt),
 		nullStringColumn(c.ExternalID),
 		c.ExternalServiceType,
 		nullStringColumn(c.ExternalBranch),
@@ -230,7 +233,7 @@ func (s *Store) CreateChangeset(ctx context.Context, c *btypes.Changeset) (err e
 var createChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store/changesets.go:CreateChangeset
 INSERT INTO changesets (%s)
-VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 RETURNING %s
 `
 
@@ -733,7 +736,7 @@ func (s *Store) UpdateChangeset(ctx context.Context, cs *btypes.Changeset) (err 
 var updateChangesetQueryFmtstr = `
 -- source: enterprise/internal/batches/store_changesets.go:UpdateChangeset
 UPDATE changesets
-SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+SET (%s) = (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
 WHERE id = %s
 RETURNING
   %s
@@ -1171,6 +1174,7 @@ func scanChangeset(t *btypes.Changeset, s dbutil.Scanner) error {
 		&t.NumFailures,
 		&t.Closing,
 		&dbutil.NullString{S: &syncErrorMessage},
+		&dbutil.NullTime{Time: &t.DetachedAt},
 	)
 	if err != nil {
 		return errors.Wrap(err, "scanning changeset")
@@ -1467,3 +1471,18 @@ func uiPublicationStateColumn(c *btypes.Changeset) *string {
 	}
 	return uiPublicationState
 }
+
+// CleanDetachedChangesets deletes changesets that have been detached after duration specified.
+func (s *Store) CleanDetachedChangesets(ctx context.Context, retention time.Duration) (err error) {
+	ctx, _, endObservation := s.operations.cleanDetachedChangesets.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.String("Retention", retention.String()),
+	}})
+	defer endObservation(1, observation.Args{})
+
+	return s.Exec(ctx, sqlf.Sprintf(cleanDetachedChangesetsFmtstr, retention/time.Second))
+}
+
+const cleanDetachedChangesetsFmtstr = `
+-- source: enterprise/internal/batches/store/changesets.go:CleanDetachedChangesets
+DELETE FROM changesets WHERE detached_at < (NOW() - (%s * interval '1 second'));
+`

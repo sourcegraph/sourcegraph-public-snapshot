@@ -239,6 +239,7 @@ type operations struct {
 	getRepoChangesetsStats            *observation.Operation
 	enqueueNextScheduledChangeset     *observation.Operation
 	getChangesetPlaceInSchedulerQueue *observation.Operation
+	cleanDetachedChangesets           *observation.Operation
 
 	listCodeHosts         *observation.Operation
 	getExternalServiceIDs *observation.Operation
@@ -374,6 +375,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getRepoChangesetsStats:            op("GetRepoChangesetsStats"),
 			enqueueNextScheduledChangeset:     op("EnqueueNextScheduledChangeset"),
 			getChangesetPlaceInSchedulerQueue: op("GetChangesetPlaceInSchedulerQueue"),
+			cleanDetachedChangesets:           op("CleanDetachedChangesets"),
 
 			listCodeHosts:         op("ListCodeHosts"),
 			getExternalServiceIDs: op("GetExternalServiceIDs"),
