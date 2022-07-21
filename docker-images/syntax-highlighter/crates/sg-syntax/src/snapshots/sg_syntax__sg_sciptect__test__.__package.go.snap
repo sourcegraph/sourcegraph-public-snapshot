@@ -1,0 +1,9 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 234
+expression: "dump_document(&document, &contents)"
+---
+  package main
+//^^^^^^^ IdentifierKeyword
+//        ^^^^ Identifier
+

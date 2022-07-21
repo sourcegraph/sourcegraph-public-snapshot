@@ -21,6 +21,10 @@ pub use sg_treesitter::PackedRange as LsifPackedRange;
 mod sg_syntect;
 use sg_syntect::ClassedTableGenerator;
 
+// TODO: Don't name it this, just wanted a different file
+mod sg_sciptect;
+// use sg_sciptect::DocumentGenerator;
+
 thread_local! {
     pub(crate) static SYNTAX_SET: SyntaxSet = SyntaxSet::load_defaults_newlines();
 }
@@ -32,7 +36,7 @@ lazy_static::lazy_static! {
 /// Struct from: internal/gosyntect/gosyntect.go
 ///
 /// Keep in sync with that struct.
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct SourcegraphQuery {
     // Deprecated field with a default empty string value, kept for backwards
     // compatability with old clients.

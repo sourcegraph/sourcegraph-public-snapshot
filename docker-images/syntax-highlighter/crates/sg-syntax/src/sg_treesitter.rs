@@ -116,10 +116,7 @@ pub fn scip_highlight(q: SourcegraphQuery) -> Result<JsonValue, JsonValue> {
 
     match index_language(&filetype, &q.code) {
         Ok(document) => {
-            // let encoded = document.write_to_bytes().map_err(jsonify_err)?;
-            // let encoded: Vec<u8> = document.into();
-            // let encoded = protobuf::Message::write_to_bytes(&document).map_err(jsonify_err)?;
-            let encoded = document.write_to_bytes().unwrap();
+            let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
             Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
         }
