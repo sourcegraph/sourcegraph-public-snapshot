@@ -2,7 +2,6 @@ package codeownership
 
 import (
 	"context"
-	"strings"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
@@ -10,6 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -56,8 +56,8 @@ func (s *codeownershipJob) Fields(v job.Verbosity) (res []otlog.Field) {
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			otlog.String("includeOwners", strings.Join(s.includeOwners, ",")),
-			otlog.String("excludeOwners", strings.Join(s.excludeOwners, ",")),
+			trace.Strings("includeOwners", s.includeOwners),
+			trace.Strings("excludeOwners", s.excludeOwners),
 		)
 	}
 	return res

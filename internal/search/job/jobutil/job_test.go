@@ -564,8 +564,8 @@ func TestNewPlanJob(t *testing.T) {
     (LIMIT
       (limit . 500)
       (CODEOWNERSHIPFILTER
-        (includeOwners . @sqs)
-        (excludeOwners . )
+        (includeOwners.0 . @sqs)
+
         (PARALLEL
           (ZOEKTGLOBALTEXTSEARCH
             (query . substr:"example")
