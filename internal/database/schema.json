@@ -3469,7 +3469,7 @@
         },
         {
           "Name": "detached_at",
-          "Index": 40,
+          "Index": 41,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
