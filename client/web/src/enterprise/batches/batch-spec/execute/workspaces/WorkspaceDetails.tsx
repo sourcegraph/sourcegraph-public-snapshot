@@ -536,7 +536,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                 className={styles.stepTabs}
                                 size="small"
                                 behavior="forceRender"
-                                onChange={index =>
+                            onChange={index =>
                                     eventLogger.log(`batch_change_execution:workspace_tab_${tabsNames[index]}:clicked`)
                                 }
                             >
