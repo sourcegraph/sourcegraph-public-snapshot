@@ -106,30 +106,6 @@ export const ExtensionRegistrySidenav: React.FunctionComponent<
                     </MenuItem>
                 </MenuList>
             </Menu>
-
-            <ExtensionSidenavBanner />
         </div>
     )
 }
-
-const ExtensionSidenavBanner: React.FunctionComponent<React.PropsWithChildren<unknown>> = () => (
-    <div className={classNames(styles.banner, 'mx-2')}>
-        <img className={classNames(styles.bannerIcon, 'mb-2')} src={extensionBannerIconURL} alt="" />
-        {/* Override h4 font-weight */}
-        <H4 as={H3} className="mt-2 font-weight-bold">
-            Create custom extensions!
-        </H4>
-        <small>
-            You can improve your workflow by creating custom extensions. See{' '}
-            <Link
-                to="https://docs.sourcegraph.com/extensions/authoring"
-                // eslint-disable-next-line react/jsx-no-target-blank
-                target="_blank"
-                rel="noreferrer"
-            >
-                Sourcegraph Docs
-            </Link>{' '}
-            for details about writing and publishing.
-        </small>
-    </div>
-)
