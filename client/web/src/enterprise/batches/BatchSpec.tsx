@@ -73,7 +73,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             target="_blank"
             rel="noopener noreferrer"
             className={className}
-            onClick={()=>eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
         >
             {children}
         </Button>
@@ -82,7 +82,7 @@ export const BatchSpecDownloadLink: React.FunctionComponent<
             download={getFileName(name)}
             to={'data:text/plain;charset=utf-8,' + encodeURIComponent(originalInput)}
             className={className}
-            onClick={()=>eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
+            onClick={() => eventLogger.log('batch_change_editor:download_for_src_cli:clicked')}
         >
             {children}
         </Link>

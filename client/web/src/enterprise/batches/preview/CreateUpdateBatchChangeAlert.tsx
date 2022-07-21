@@ -103,13 +103,14 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                                 'test-batches-confirm-apply-btn text-nowrap',
                                 isLoading === true || (!viewerCanAdminister && 'disabled')
                             )}
-                            onClick={()=>{
-                                if (batchChange){
+                            onClick={() => {
+                                if (batchChange) {
                                     eventLogger.log('batch_change_execution_preview:apply_update:clicked')
                                 } else {
                                     eventLogger.log('batch_change_execution_preview:apply:clicked')
                                 }
-                                return onApply()}}
+                                return onApply()
+                            }}
                             disabled={!canApply}
                         >
                             Apply

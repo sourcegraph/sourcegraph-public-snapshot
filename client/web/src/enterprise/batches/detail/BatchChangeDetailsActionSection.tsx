@@ -74,7 +74,15 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
     return (
         <div className="d-flex">
             {showEditButton && (
-                <Button to={`${batchChangeURL}/edit`} className="mr-2" variant="secondary" as={Link} onClick={()=>{eventLogger.log('batch_change_details:edit:clicked')}}>
+                <Button
+                    to={`${batchChangeURL}/edit`}
+                    className="mr-2"
+                    variant="secondary"
+                    as={Link}
+                    onClick={() => {
+                        eventLogger.log('batch_change_details:edit:clicked')
+                    }}
+                >
                     <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit
                 </Button>
             )}
@@ -85,7 +93,9 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                     variant="danger"
                     outline={true}
                     as={Link}
-                    onClick={()=>{eventLogger.log('batch_change_details:close:clicked')}}
+                    onClick={() => {
+                        eventLogger.log('batch_change_details:close:clicked')
+                    }}
                 >
                     <Icon aria-hidden={true} svgPath={mdiDelete} /> Close
                 </Button>

@@ -102,7 +102,9 @@ const MemoizedActionsMenu: React.FunctionComponent<
                     as={Link}
                     className={styles.previewButton}
                     style={{ width: menuWidth }}
-                    onClick={()=>{eventLogger.log('batch_change_execution:preview:clicked')}}
+                    onClick={() => {
+                        eventLogger.log('batch_change_execution:preview:clicked')
+                    }}
                 >
                     Preview
                 </Button>
@@ -150,14 +152,16 @@ const MemoizedActionsMenu: React.FunctionComponent<
                 isOpen={showCancelModal}
                 onCancel={() => setShowCancelModal(false)}
                 onConfirm={
-                    cancelModalType === 'cancel' ?
-                    () => {
-                        eventLogger.log('batch_change_execution:actions_execution_cancel:clicked')
-                        return cancelBatchSpecExecution()
-                    } : ()=>{
-                        eventLogger.log('batch_change_execution:actions_execution_cancel_and_edit:clicked')
-                        return cancelAndEdit()
-                }}
+                    cancelModalType === 'cancel'
+                        ? () => {
+                              eventLogger.log('batch_change_execution:actions_execution_cancel:clicked')
+                              return cancelBatchSpecExecution()
+                          }
+                        : () => {
+                              eventLogger.log('batch_change_execution:actions_execution_cancel_and_edit:clicked')
+                              return cancelAndEdit()
+                          }
+                }
                 modalHeader={cancelModalType === 'cancel' ? 'Cancel execution' : 'The execution is still running'}
                 modalBody={
                     <Text>

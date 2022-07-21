@@ -108,7 +108,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
         if (selectedItem && !('isReadOnly' in props && props.isReadOnly)) {
             const templateName = selectedItem.name
             const codeWithName = insertNameIntoLibraryItem(selectedItem.code, name)
-            eventLogger.log('batch_change_editor:template:loaded',{'template':templateName})
+            eventLogger.log('batch_change_editor:template:loaded', { template: templateName })
             props.onReplaceItem(codeWithName)
             setSelectedItem(undefined)
         }
@@ -163,7 +163,7 @@ export const LibraryPane: React.FunctionComponent<React.PropsWithChildren<Librar
                             target="_blank"
                             rel="noopener noreferrer"
                             to="https://github.com/sourcegraph/batch-change-examples"
-                            onClick={()=>eventLogger.log('batch_change_editor:view_more_examples:clicked')}
+                            onClick={() => eventLogger.log('batch_change_editor:view_more_examples:clicked')}
                         >
                             View more examples <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                         </Link>

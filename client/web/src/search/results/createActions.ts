@@ -100,6 +100,6 @@ export function getBatchChangeCreateAction(
         icon: BatchChangesIcon,
         label: 'Create Batch Change',
         tooltip: 'Create a batch change based on this query',
-        eventToLog: 'search_result_page:create_batch_change:clicked'
+        eventToLog: 'search_result_page:create_batch_change:clicked',
     }
 }

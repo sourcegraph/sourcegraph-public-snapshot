@@ -379,7 +379,13 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                             outline={true}
                                             size="sm"
                                             // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-                                            onClick={createActionButton.eventToLog ? ()=>{eventLogger.log(createActionButton.eventToLog!)} : undefined}
+                                            onClick={
+                                                createActionButton.eventToLog
+                                                    ? () => {
+                                                          eventLogger.log(createActionButton.eventToLog!)
+                                                      }
+                                                    : undefined
+                                            }
                                         >
                                             <Icon
                                                 aria-hidden={true}

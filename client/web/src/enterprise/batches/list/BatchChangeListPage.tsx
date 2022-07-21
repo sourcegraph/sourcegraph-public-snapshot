@@ -310,7 +310,7 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                     <Link
                         to=""
                         onClick={event => {
-                            onSelectGettingStarted(event);
+                            onSelectGettingStarted(event)
                             eventLogger.log('batch_change_homepage:getting_started:clicked')
                         }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
