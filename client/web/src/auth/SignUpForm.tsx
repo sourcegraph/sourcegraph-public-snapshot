@@ -27,7 +27,7 @@ import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './Sign
 import { SignupEmailField } from './SignupEmailField'
 
 import signInSignUpCommonStyles from './SignInSignUpCommon.module.scss'
-import {getPasswordPolicy} from "../util/security";
+import {getPasswordPolicy, validatePassword, minPasswordLen} from "../util/security";
 
 export interface SignUpArguments {
     email: string
@@ -59,8 +59,6 @@ export function getPasswordRequirements(
 ): string {
     let requirements = ''
     let passwordPolicyReference = getPasswordPolicy()
-
-    const minPasswordLen = (window.context.authMinPasswordLength > 0) ? window.context.authMinPasswordLength : 12
 
     if (passwordPolicyReference && passwordPolicyReference.enabled) {
         console.log('Using enhanced password policy.')
@@ -132,7 +130,6 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
         signUpFieldValidators.password
     )
 
-    const minPasswordLen = window.context.authMinPasswordLength
     let passwordPolicyReference = getPasswordPolicy()
 
     const canRegister = emailState.kind === 'VALID' && usernameState.kind === 'VALID' && passwordState.kind === 'VALID'
@@ -368,73 +365,4 @@ function isUsernameUnique(username: string): Observable<string | undefined> {
         }),
         catchError(() => of('Unknown error validating username'))
     )
-}
-
-function validatePassword(
-    context: Pick<SourcegraphContext, 'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures'>,
-    password: string
-): string | undefined {
-
-    let passwordPolicyReference = getPasswordPolicy()
-
-    const minPasswordLen = context.authMinPasswordLength
-
-    if (passwordPolicy?.enabled) {
-        if (
-            context.authMinPasswordLength &&
-            password.length < minPasswordLen
-        ) {
-            return (
-                'Password must be greater than ' +
-                minPasswordLen.toString() +
-                ' characters.'
-            )
-        }
-        if (
-            passwordPolicyReference?.numberOfSpecialCharacters &&
-            passwordPolicyReference.numberOfSpecialCharacters > 0
-        ) {
-            const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
-            // This must be kept in sync with the security.go checks
-            const count = (password.match(specialCharacters) || []).length
-            if (
-                passwordPolicyReference.numberOfSpecialCharacters &&
-                count < passwordPolicyReference.numberOfSpecialCharacters
-            ) {
-                return (
-                    'Password must contain ' +
-                    passwordPolicyReference.numberOfSpecialCharacters.toString() +
-                    ' special character(s).'
-                )
-            }
-        }
-
-        if (
-            passwordPolicyReference.requireAtLeastOneNumber &&
-            passwordPolicyReference.requireAtLeastOneNumber
-        ) {
-            const validRequireAtLeastOneNumber = /\d+/
-            if (password.match(validRequireAtLeastOneNumber) === null) {
-                return 'Password must contain at least one number.'
-            }
-        }
-
-        if (
-            passwordPolicyReference.requireUpperandLowerCase &&
-            passwordPolicyReference.requireUpperandLowerCase
-        ) {
-            const validUseUpperCase = new RegExp('[A-Z]+')
-            if (!validUseUpperCase.test(password)) {
-                return 'Password must contain at least one uppercase letter.'
-            }
-        }
-
-        return undefined
-    }
-
-    if (password.length < minPasswordLen) {
-        return 'Password must be at least ' + minPasswordLen.toString() + ' characters.'
-    }
-
-    return undefined
 }

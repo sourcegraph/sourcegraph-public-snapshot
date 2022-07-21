@@ -20,7 +20,7 @@ import {
     MinExternalAccountsVariables,
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
-import { getPasswordPolicy} from '../../../util/security'
+import { getPasswordPolicy, minPasswordLen} from '../../../util/security'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { updatePassword, createPassword } from '../backend'
 
@@ -186,8 +186,6 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         let requirements = ''
         let passwordPolicyReference = getPasswordPolicy()
 
-        const minPasswordLen = (window.context.authMinPasswordLength > 0) ? window.context.authMinPasswordLength : 12
-
         if (passwordPolicyReference && passwordPolicyReference.enabled) {
            requirements += 'Your password must include at least ' + minPasswordLen.toString() + ' characters'
             if (
@@ -293,8 +291,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         <Label htmlFor="oldPassword">Old password</Label>
                                         <PasswordInput
                                             value={this.state.oldPassword}
-                                            onChange={this.onOldPasswordFieldChange}
-                                            disabled={this.state.loading}
+                                            onChange={this.onOldPasswordFieldChange} disabled={this.state.loading}
                                             id="oldPassword"
                                             name="oldPassword"
                                             aria-label="old password"
