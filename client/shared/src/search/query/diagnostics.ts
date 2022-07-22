@@ -13,7 +13,7 @@ import {
     DataMapper,
     MatchContext,
 } from './patternMatcher'
-import { CharacterRange, Filter, Token } from './token'
+import { CharacterRange, Filter, Pattern, Token } from './token'
 
 export interface ChangeSpec {
     from: number
@@ -93,11 +93,11 @@ interface PatternData {
     revFilter?: Filter
 }
 
-function filterDiagnosticCreator(
+function diagnosticCreator(
     message: string,
     severity: Diagnostic['severity'] = 'error'
 ): (token: Token) => Diagnostic[] {
-    return token => [createDiagnostic(message, token as Filter, severity)]
+    return token => [createDiagnostic(message, token, severity)]
 }
 
 function addDiagnostic<T>(
@@ -240,10 +240,50 @@ const rules: PatternOf<Token[], PatternData>[] = [
         some({
             field: { value: 'type' },
             $data: addDiagnostic(
-                filterDiagnosticCreator(
+                diagnosticCreator(
                     'Structural search syntax only applies to searching file contents and is not compatible with `type:`. Remove this filter or switch to a different search type.'
                 )
             ),
+        })
+    ),
+
+    // Adds a hint to patterns that contain quotes
+    allOf(
+        (_tokens, context) =>
+            context.data.searchPatternType === SearchPatternType.literal ||
+            context.data.searchPatternType === SearchPatternType.lucky,
+        each({
+            type: 'pattern',
+            value: value => typeof value === 'string' && /^("|').|.("|')$/.test(value),
+            $data: addDiagnostic(token => {
+                let message = 'This pattern is interpreted literally, including the quotation marks.'
+                const { value } = token as Pattern
+                const actions: Action[] = [
+                    {
+                        label: 'Remove quotation marks',
+                        change: {
+                            from: token.range.start,
+                            to: token.range.end,
+                            insert: value.replace(/^("|')|("|')$/g, ''),
+                        },
+                    },
+                ]
+
+                if (/^("|').+\1$/.test(value)) {
+                    message +=
+                        ' Use the `content:` filter if you want to "escape" terms that would otherwise be interpreted as query keywords.'
+                    actions.push({
+                        label: 'Replace with content:"..."',
+                        change: {
+                            from: token.range.start,
+                            to: token.range.end,
+                            insert: `content:${value}`,
+                        },
+                    })
+                }
+
+                return [createDiagnostic(message, token, 'info', actions)]
+            }),
         })
     ),
 ]
