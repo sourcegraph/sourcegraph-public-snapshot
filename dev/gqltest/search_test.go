@@ -97,6 +97,8 @@ func TestSearch(t *testing.T) {
 	// Adding and deleting the dependency repos external services in between all other tests is
 	// flaky since deleting an external service doesn't cancel a running external
 	// service sync job for it.
+
+	// 2022-07-22 - This test is skipped as it is flakey
 	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
 }
 
