@@ -383,12 +383,14 @@ Referenced by:
  queued_at                | timestamp with time zone                     |           |          | now()
  cancel                   | boolean                                      |           | not null | false
  detached_at              | timestamp with time zone                     |           |          | 
+ computed_state           | text                                         |           | not null | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
     "changesets_batch_change_ids" gin (batch_change_ids)
     "changesets_bitbucket_cloud_metadata_source_commit_idx" btree ((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text))
     "changesets_changeset_specs" btree (current_spec_id, previous_spec_id)
+    "changesets_computed_state" btree (computed_state)
     "changesets_detached_at" btree (detached_at)
     "changesets_external_state_idx" btree (external_state)
     "changesets_external_title_idx" btree (external_title)
@@ -408,6 +410,8 @@ Foreign-key constraints:
 Referenced by:
     TABLE "changeset_events" CONSTRAINT "changeset_events_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_changeset_id_fkey" FOREIGN KEY (changeset_id) REFERENCES changesets(id) ON DELETE CASCADE DEFERRABLE
+Triggers:
+    changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure()
 
 ```
 
@@ -2866,7 +2870,8 @@ Foreign-key constraints:
     changeset_specs.title AS changeset_name,
     changesets.external_state,
     changesets.publication_state,
-    changesets.reconciler_state
+    changesets.reconciler_state,
+    changesets.computed_state
    FROM ((changeset_specs
      LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1
            FROM changeset_specs changeset_specs_1
@@ -3077,6 +3082,7 @@ Foreign-key constraints:
     c.publication_state,
     c.owned_by_batch_change_id,
     c.reconciler_state,
+    c.computed_state,
     c.failure_message,
     c.started_at,
     c.finished_at,
@@ -3125,7 +3131,8 @@ Foreign-key constraints:
     COALESCE((changesets.metadata ->> 'Title'::text), (changesets.metadata ->> 'title'::text)) AS changeset_name,
     changesets.external_state,
     changesets.publication_state,
-    changesets.reconciler_state
+    changesets.reconciler_state,
+    changesets.computed_state
    FROM ((changeset_specs
      LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
