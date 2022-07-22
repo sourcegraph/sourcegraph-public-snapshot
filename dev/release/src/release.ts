@@ -4,6 +4,7 @@ import * as path from 'path'
 import commandExists from 'command-exists'
 import { addMinutes } from 'date-fns'
 import execa from 'execa'
+import { fs } from 'mz'
 
 import * as batchChanges from './batchChanges'
 import * as changelog from './changelog'
@@ -25,6 +26,7 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
+import * as update from './update'
 import {
     cacheFolder,
     formatDate,
@@ -45,6 +47,7 @@ export type StepID =
     | 'tracking:issues'
     // branch cut
     | 'changelog:cut'
+    | 'update:cut'
     | 'release:branch-cut'
     // release
     | 'release:status'
@@ -302,6 +305,36 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         },
     },
     {
+        id: 'update:cut',
+        description: 'update update guides',
+        run: async config => {
+        const { upcoming: release, previous } = await releaseVersions(config)
+        const updateDirectory = '../../doc/admin/updates'
+        const notPatchRelease = release.patch === 0
+        fs.readdirSync(updateDirectory).forEach(file => {
+            const fullPath = path.join(updateDirectory, file)
+            let updateContents = readFileSync(fullPath
+                ).toString()
+        if (notPatchRelease) {
+            const releaseHeader = `## ${previous.format()} -> ${release.format()}`
+            const unreleasedHeader = '## Unreleased'
+            updateContents = updateContents.replace(unreleasedHeader,releaseHeader)
+            updateContents = updateContents.replace(
+                update.divider,
+                update.releaseTemplate
+            )
+
+        }else {
+            const previousString = previous.format()
+            updateContents = updateContents.replace(previousString, release.format());
+        }
+        console.log(file, updateContents)
+
+        });
+
+        }
+    },
+    {
         id: 'release:branch-cut',
         description: 'Create release branch',
         run: async config => {
@@ -500,9 +533,10 @@ cc @${config.captainGitHubUsername}
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
 
                             // Add a stub to add upgrade guide entries
-                            notPatchRelease
-                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n${upgradeGuideEntry}' doc/admin/updates/*.md`
-                                : 'echo "Skipping upgrade guide entries on patch release"',
+
+                            // notPatchRelease
+                            //     ? `doc/admin/updates/*.md`
+                            //     : 'echo "Skipping upgrade guide entries on patch release"',
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
