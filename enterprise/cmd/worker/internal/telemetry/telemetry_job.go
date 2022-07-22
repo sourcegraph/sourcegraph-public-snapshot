@@ -49,8 +49,7 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 		return nil, err
 	}
 
-	db := database.NewDB(log.Scoped("worker.telemetryJob", ""), sqlDB)
-
+	db := database.NewDB(logger, sqlDB)
 	eventLogStore := db.EventLogs()
 
 	return []goroutine.BackgroundRoutine{
