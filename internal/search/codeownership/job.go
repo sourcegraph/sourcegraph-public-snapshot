@@ -7,7 +7,7 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -43,7 +43,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.DB, &mu, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.Gitserver, &mu, &rules, s.includeOwners, s.excludeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -88,7 +88,7 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
-	db database.DB,
+	gitserver gitserver.Client,
 	mu *sync.Mutex,
 	rules *map[string]Ruleset,
 	includeOwners,
@@ -106,19 +106,23 @@ matchesLoop:
 
 			mu.Lock()
 			ruleset, ok := (*rules)[cachekey]
+			var err error
 			if !ok {
-				var err error
-				ruleset, err = NewRuleset(db, mm.Repo.Name, mm.CommitID)
+				ruleset, err = NewRuleset(ctx, gitserver, mm.Repo.Name, mm.CommitID)
 				if err != nil {
 					errs = errors.Append(errs, err)
 				}
 				(*rules)[cachekey] = ruleset
 			}
-			owners, _ := ruleset.Match(mm.File.Path)
+			var owners Owners
+			owners, err = ruleset.Match(mm.File.Path)
 			mu.Unlock()
+			if err != nil {
+				errs = errors.Append(errs, err)
+			}
 
 			for _, owner := range includeOwners {
-				if _, ok := owners[owner]; !ok {
+				if !containsOwner(owners, owner) {
 					continue matchesLoop
 				}
 			}
@@ -131,4 +135,13 @@ matchesLoop:
 	}
 
 	return filtered, errs
+}
+
+func containsOwner(owners Owners, owner string) bool {
+	for _, o := range owners {
+		if o.String() == owner {
+			return true
+		}
+	}
+	return false
 }

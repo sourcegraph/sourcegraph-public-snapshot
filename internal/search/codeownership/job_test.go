@@ -90,7 +90,7 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 				rules map[string]Ruleset = make(map[string]Ruleset)
 			)
 
-			matches, _ := applyCodeOwnershipFiltering(ctx, db, &mu, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
+			matches, _ := applyCodeOwnershipFiltering(ctx, gitserver.NewClient(db), &mu, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
 
 			tt.want.Equal(t, matches)
 		})
