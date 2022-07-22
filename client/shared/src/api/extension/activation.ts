@@ -55,10 +55,15 @@ export function observeActiveExtensions(
 }
 
 /**
- * List of insight-like extension ids. These insights worked via extensions before,
- * but at the moment they work via insight built-in data-fetchers.
+ * List of extension IDs migrated to the core workflow:
+ * - insight-like extensions migrated to the insight built-in data-fetchers
+ * - Sourcegraph default extensions implemented as separate core product fetures.
  */
-const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'sourcegraph/search-insights'])
+const DEPRECATED_EXTENSION_IDS = new Set([
+    'sourcegraph/code-stats-insights',
+    'sourcegraph/search-insights',
+    'sourcegraph/git-extras',
+])
 
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
@@ -98,7 +103,13 @@ export function activateExtensions(
     const previouslyActivatedExtensions = new Set<string>()
     const extensionContributions = new Map<string, Contributions>()
     const contributionsToAdd = new Map<string, Contributions>()
-    const extensionsSubscription = combineLatest([state.activeExtensions, getScriptURLs(null)])
+    const extensionsSubscription = combineLatest([
+        state.activeExtensions
+            .pipe
+            // map(extensions => extensions.filter(({ id }) => !id.includes('sourcegraph/git-extras')))
+            (),
+        getScriptURLs(null),
+    ])
         .pipe(
             concatMap(([activeExtensions, getScriptURLs]) => {
                 const toDeactivate = new Set<string>()
