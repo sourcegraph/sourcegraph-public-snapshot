@@ -139,12 +139,11 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
     const externalAuthProviders = context.authProviders.filter(provider => !provider.isBuiltin)
 
     const onClickExternalAuthSignup = useCallback(
-        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLButtonElement> =>
-            () => {
-                // TODO: Log events with keepalive=true to ensure they always outlive the webpage
-                // https://github.com/sourcegraph/sourcegraph/issues/19174
-                eventLogger.log('SignupInitiated', { type }, { type })
-            },
+        (type: AuthProvider['serviceType']): React.MouseEventHandler<HTMLButtonElement> => () => {
+            // TODO: Log events with keepalive=true to ensure they always outlive the webpage
+            // https://github.com/sourcegraph/sourcegraph/issues/19174
+            eventLogger.log('SignupInitiated', { type }, { type })
+        },
         []
     )
 
