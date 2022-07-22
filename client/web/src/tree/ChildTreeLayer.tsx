@@ -33,6 +33,7 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
         expandedTrees: props.expandedTrees,
         parent: props.parent,
         repoName: props.repoName,
+        repoID: props.repoID,
         revision: props.revision,
         onToggleExpand: props.onToggleExpand,
         onHover: props.onHover,

@@ -19,6 +19,7 @@ import { TreeRoot } from './TreeRoot'
 import { getDomElement, scrollIntoView } from './util'
 
 import styles from './Tree.module.scss'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     history: H.History
@@ -32,6 +33,7 @@ interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, Tel
     activePathIsDir: boolean
     /** The localStorage key that stores the current size of the (resizable) RepoRevisionSidebar. */
     sizeKey: string
+    repoID: Scalars['ID']
 }
 
 interface State {
@@ -325,6 +327,7 @@ export class Tree extends React.PureComponent<Props, State> {
                     activePath={this.props.activePath}
                     depth={0}
                     location={this.props.location}
+                    repoID={this.props.repoID}
                     repoName={this.props.repoName}
                     revision={this.props.revision}
                     commitID={this.props.commitID}
