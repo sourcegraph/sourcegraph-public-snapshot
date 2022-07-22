@@ -6,7 +6,6 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -31,24 +30,20 @@ type codeownershipJob struct {
 	excludeOwners []string
 }
 
-type RulesKey struct {
-	repoName api.RepoName
-	commitID api.CommitID
-}
-
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
 	var (
-		mu    sync.Mutex
-		errs  error
-		rules map[RulesKey]Ruleset = make(map[RulesKey]Ruleset)
+		mu   sync.Mutex
+		errs error
 	)
+
+	rules := NewRulesCache()
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
 		var err error
-		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.Gitserver, &mu, &rules, s.includeOwners, s.excludeOwners, event.Results)
+		event.Results, err = applyCodeOwnershipFiltering(ctx, clients.Gitserver, &rules, s.includeOwners, s.excludeOwners, event.Results)
 		if err != nil {
 			mu.Lock()
 			errs = errors.Append(errs, err)
@@ -94,8 +89,7 @@ func (s *codeownershipJob) MapChildren(fn job.MapFunc) job.Job {
 func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	gitserver gitserver.Client,
-	mu *sync.Mutex,
-	rules *map[RulesKey]Ruleset,
+	rules *RulesCache,
 	includeOwners,
 	excludeOwners []string,
 	matches []result.Match) ([]result.Match, error) {
@@ -107,21 +101,13 @@ matchesLoop:
 	for _, m := range matches {
 		switch mm := m.(type) {
 		case *result.FileMatch:
-			key := RulesKey{mm.Repo.Name, mm.CommitID}
-
-			mu.Lock()
-			ruleset, ok := (*rules)[key]
-			var err error
-			if !ok {
-				ruleset, err = NewRuleset(ctx, gitserver, mm.Repo.Name, mm.CommitID)
-				if err != nil {
-					errs = errors.Append(errs, err)
-				}
-				(*rules)[key] = ruleset
+			ruleset, err := rules.GetFromCacheOrFetch(ctx, gitserver, mm.Repo.Name, mm.CommitID)
+			if err != nil {
+				errs = errors.Append(errs, err)
 			}
+
 			var owners Owners
 			owners, err = ruleset.Match(mm.File.Path)
-			mu.Unlock()
 			if err != nil {
 				errs = errors.Append(errs, err)
 			}

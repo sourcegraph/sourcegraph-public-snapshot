@@ -2,7 +2,6 @@ package codeownership
 
 import (
 	"context"
-	"sync"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -75,6 +74,7 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			ctx := context.Background()
 			db := database.NewMockDB()
+			rules := NewRulesCache()
 
 			gitserver.Mocks.ReadFile = func(_ api.CommitID, file string) ([]byte, error) {
 				content, ok := tt.args.repoContent[file]
@@ -85,12 +85,7 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			}
 			t.Cleanup(func() { gitserver.Mocks.ReadFile = nil })
 
-			var (
-				mu    sync.Mutex
-				rules map[RulesKey]Ruleset = make(map[RulesKey]Ruleset)
-			)
-
-			matches, _ := applyCodeOwnershipFiltering(ctx, gitserver.NewClient(db), &mu, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
+			matches, _ := applyCodeOwnershipFiltering(ctx, gitserver.NewClient(db), &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
 
 			tt.want.Equal(t, matches)
 		})
