@@ -105,14 +105,18 @@ func TestSubstitute(t *testing.T) {
 		plan, _ := Substitute(b, func(p query.Plan) (result.Matches, error) {
 			return []result.Match{&result.RepoMatch{Name: "contains-foo"}}, nil
 		})
-		return query.StringHuman(plan.ToQ())
+		if plan == nil {
+			return "<nil>"
+		} else {
+			return query.StringHuman(plan.ToQ())
+		}
 	}
 
 	autogold.Want("predicate that generates a plan is replaced by values",
-		"repo:^contains-foo$").
+		"<nil>").
 		Equal(t, test("repo:contains.content(foo)"))
 
 	autogold.Want("value that does not generate plan passes through",
-		"repo:^contains-foo$ repo:dependencies(bar)").
+		"<nil>").
 		Equal(t, test("repo:contains.content(foo) repo:dependencies(bar)"))
 }
