@@ -22,11 +22,10 @@ import (
 )
 
 func TestInitializeJob(t *testing.T) {
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
 	confClient = conf.MockClient()
+	defer func() {
+		confClient = conf.DefaultClient()
+	}()
 
 	tests := []struct {
 		name         string
@@ -64,20 +63,8 @@ func TestInitializeJob(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			job := NewTelemetryJob(db)
-			routines, err := job.Routines(ctx, logtest.Scoped(t))
-			if err != nil {
-				t.Error(err)
-			}
-
-			if test.shouldInit {
-				if len(routines) != 1 {
-					t.Error("expected one routine")
-				}
-			} else {
-				if len(routines) != 0 {
-					t.Error("expected no routines")
-				}
+			if have, want := isEnabled(), test.shouldInit; have != want {
+				t.Errorf("unexpected isEnabled return value have=%t want=%t", have, want)
 			}
 		})
 	}
