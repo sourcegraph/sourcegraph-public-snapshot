@@ -11,15 +11,19 @@ exports[`SignInPage renders sign in page (cloud) 1`] = `
       class="heroPage lessPadding"
     >
       <div
-        class="icon bg-transparent"
+        class="iconWrapper bg-transparent"
       >
         <a
+          aria-label="/search"
           class="anchorLink"
           href="/search"
         >
           <svg
+            aria-hidden="true"
+            class="mdi-icon iconInline icon"
             fill="none"
             height="64"
+            role="img"
             viewBox="0 0 52 52"
             width="65"
             xmlns="http://www.w3.org/2000/svg"
@@ -189,11 +193,14 @@ exports[`SignInPage renders sign in page (server) 1`] = `
       class="heroPage lessPadding"
     >
       <div
-        class="icon bg-transparent"
+        class="iconWrapper bg-transparent"
       >
         <svg
+          aria-hidden="true"
+          class="mdi-icon iconInline icon"
           fill="none"
           height="64"
+          role="img"
           viewBox="0 0 52 52"
           width="65"
           xmlns="http://www.w3.org/2000/svg"
