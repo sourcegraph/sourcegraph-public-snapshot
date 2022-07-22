@@ -107,6 +107,14 @@ func (rb *IndexedRepoRevs) add(reporev *search.RepositoryRevisions, repo *zoekt.
 	return unindexed
 }
 
+func (rb *IndexedRepoRevs) BranchRepos() []zoektquery.BranchRepos {
+	brs := make([]zoektquery.BranchRepos, 0, len(rb.branchRepos))
+	for _, br := range rb.branchRepos {
+		brs = append(brs, *br)
+	}
+	return brs
+}
+
 // getRepoInputRev returns the repo and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, inputRevs []string) {
 	repoRev, ok := rb.RepoRevs[api.RepoID(file.RepositoryID)]
@@ -272,10 +280,7 @@ func zoektSearch(ctx context.Context, repos *IndexedRepoRevs, q zoektquery.Q, ty
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	brs := make([]zoektquery.BranchRepos, 0, len(repos.branchRepos))
-	for _, br := range repos.branchRepos {
-		brs = append(brs, *br)
-	}
+	brs := repos.BranchRepos()
 
 	finalQuery := zoektquery.NewAnd(&zoektquery.BranchesRepos{List: brs}, q)
 

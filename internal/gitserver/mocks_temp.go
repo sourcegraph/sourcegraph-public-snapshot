@@ -110,9 +110,6 @@ type MockClient struct {
 	// ListBranchesFunc is an instance of a mock function object controlling
 	// the behavior of the method ListBranches.
 	ListBranchesFunc *ClientListBranchesFunc
-	// ListClonedFunc is an instance of a mock function object controlling
-	// the behavior of the method ListCloned.
-	ListClonedFunc *ClientListClonedFunc
 	// ListDirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDirectoryChildren.
 	ListDirectoryChildrenFunc *ClientListDirectoryChildrenFunc
@@ -337,11 +334,6 @@ func NewMockClient() *MockClient {
 		},
 		ListBranchesFunc: &ClientListBranchesFunc{
 			defaultHook: func(context.Context, api.RepoName, BranchesOptions) (r0 []*gitdomain.Branch, r1 error) {
-				return
-			},
-		},
-		ListClonedFunc: &ClientListClonedFunc{
-			defaultHook: func(context.Context) (r0 []string, r1 error) {
 				return
 			},
 		},
@@ -627,11 +619,6 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.ListBranches")
 			},
 		},
-		ListClonedFunc: &ClientListClonedFunc{
-			defaultHook: func(context.Context) ([]string, error) {
-				panic("unexpected invocation of MockClient.ListCloned")
-			},
-		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
 			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, []string) (map[string][]string, error) {
 				panic("unexpected invocation of MockClient.ListDirectoryChildren")
@@ -857,9 +844,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		ListBranchesFunc: &ClientListBranchesFunc{
 			defaultHook: i.ListBranches,
-		},
-		ListClonedFunc: &ClientListClonedFunc{
-			defaultHook: i.ListCloned,
 		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
 			defaultHook: i.ListDirectoryChildren,
@@ -4085,110 +4069,6 @@ func (c ClientListBranchesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientListBranchesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientListClonedFunc describes the behavior when the ListCloned method of
-// the parent MockClient instance is invoked.
-type ClientListClonedFunc struct {
-	defaultHook func(context.Context) ([]string, error)
-	hooks       []func(context.Context) ([]string, error)
-	history     []ClientListClonedFuncCall
-	mutex       sync.Mutex
-}
-
-// ListCloned delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) ListCloned(v0 context.Context) ([]string, error) {
-	r0, r1 := m.ListClonedFunc.nextHook()(v0)
-	m.ListClonedFunc.appendCall(ClientListClonedFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListCloned method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientListClonedFunc) SetDefaultHook(hook func(context.Context) ([]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListCloned method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientListClonedFunc) PushHook(hook func(context.Context) ([]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientListClonedFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientListClonedFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context) ([]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientListClonedFunc) nextHook() func(context.Context) ([]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientListClonedFunc) appendCall(r0 ClientListClonedFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientListClonedFuncCall objects describing
-// the invocations of this function.
-func (f *ClientListClonedFunc) History() []ClientListClonedFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientListClonedFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientListClonedFuncCall is an object that describes an invocation of
-// method ListCloned on an instance of MockClient.
-type ClientListClonedFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientListClonedFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientListClonedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
