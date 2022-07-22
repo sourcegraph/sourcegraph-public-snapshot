@@ -3,7 +3,6 @@ package repos
 import (
 	"container/heap"
 	"context"
-	"fmt"
 	"math/rand"
 	"strings"
 	"sync"
@@ -537,7 +536,6 @@ func (q *updateQueue) reset() {
 // If the given priority is higher than the one in the queue,
 // the repo's position in the queue is updated accordingly.
 func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
-	fmt.Printf("enqueuing repo:%+v\n", repo)
 	if repo.ID == 0 {
 		panic("repo.id is zero")
 	}
@@ -551,9 +549,7 @@ func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 			Repo:     repo,
 			Priority: p,
 		})
-		fmt.Println("notify?", notify == nil)
 		notify(q.notifyEnqueue)
-		fmt.Println("after notify")
 		return false
 	}
 
@@ -929,12 +925,6 @@ func (s *schedule) Pop() any {
 	return item
 }
 
-// Mockable time functions for testing.
-var (
-	timeNow       = time.Now
-	timeAfterFunc = time.AfterFunc
-)
-
 // notify performs a non-blocking send on the channel.
 // The channel should be buffered.
 var notify = func(ch chan struct{}) {
@@ -943,3 +933,9 @@ var notify = func(ch chan struct{}) {
 	default:
 	}
 }
+
+// Mockable time functions for testing.
+var (
+	timeNow       = time.Now
+	timeAfterFunc = time.AfterFunc
+)

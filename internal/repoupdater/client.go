@@ -12,6 +12,7 @@ import (
 	"github.com/opentracing/opentracing-go/ext"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -21,15 +22,13 @@ import (
 // DefaultClient is the default Client. Unless overwritten, it is
 // connected to the server specified by the REPO_UPDATER_URL
 // environment variable.
-var DefaultClient = NewClient("http://127.0.0.1:8080")
-
-// var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
+var DefaultClient = NewClient(env.Get("REPO_UPDATER_URL", "http://repo-updater:3182", "repo-updater server URL"))
 
 var defaultDoer, _ = httpcli.NewInternalClientFactory("repoupdater").Doer()
 
 // Client is a repoupdater client.
 type Client struct {
-	// URL to repoupdater servr.
+	// URL to repoupdater server.
 	URL string
 
 	// HTTP client to use

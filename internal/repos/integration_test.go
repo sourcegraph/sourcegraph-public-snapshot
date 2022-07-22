@@ -24,7 +24,7 @@ func TestIntegration(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
+	// t.Parallel()
 
 	for _, tc := range []struct {
 		name string
@@ -36,11 +36,11 @@ func TestIntegration(t *testing.T) {
 		{"EnqueueSingleWebhookBuildJob", testStoreEnqueueSingleWebhookBuildJob},
 		{"ListExternalServiceUserIDsByRepoID", testStoreListExternalServiceUserIDsByRepoID},
 		{"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
-		// {"Syncer/SyncWorker", testSyncWorkerPlumbing},
-		// {"Syncer/Sync", testSyncerSync},
-		// {"Syncer/SyncRepo", testSyncRepo}, // PROBLEM WITHOUT foreign key
+		{"Syncer/SyncWorker", testSyncWorkerPlumbing},
+		{"Syncer/Sync", testSyncerSync},
+		{"Syncer/SyncRepo", testSyncRepo}, // PROBLEM WITHOUT foreign key
 		{"Syncer/Run", testSyncRun},
-		// {"Syncer/MultipleServices", testSyncerMultipleServices}, // PROBLEM with syncer.go
+		{"Syncer/MultipleServices", testSyncerMultipleServices}, // PROBLEM with syncer.go
 		{"Syncer/OrphanedRepos", testOrphanedRepo},
 		{"Syncer/CloudDefaultExternalServicesDontSync", testCloudDefaultExternalServicesDontSync},
 		{"Syncer/DeleteExternalService", testDeleteExternalService},
@@ -69,7 +69,7 @@ func TestIntegration_WebhookBuilder(t *testing.T) {
 		t.Skip()
 	}
 
-	t.Parallel()
+	// t.Parallel()
 
 	for _, tc := range []struct {
 		name string

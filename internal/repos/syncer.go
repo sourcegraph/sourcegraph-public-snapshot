@@ -683,15 +683,16 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 
-		svc.SyncUsingWebhooks = conf.ExperimentalFeatures().EnableWebhookSyncing
+		if conf.Get() != nil && conf.Get().ExperimentalFeatures != nil {
+			svc.SyncUsingWebhooks = conf.Get().ExperimentalFeatures.EnableWebhookSyncing
+		}
 		if svc.SyncUsingWebhooks {
-			fmt.Println("Syncing...")
+			// fmt.Println("Syncing...")
 			err = s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name), svc.Kind)
 			if err != nil && s.Logger != nil {
 				s.Logger.Error("enqueue webhook creation jobs", log.Error(err))
 			}
 		}
-		// no hardcode
 
 		for _, r := range diff.Repos() {
 			seen[r.ID] = struct{}{}
