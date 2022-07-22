@@ -306,41 +306,23 @@ type GenericPasswordPolicy struct {
 // AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
 func AuthPasswordPolicy() GenericPasswordPolicy {
 
-	var p interface{}
-
-	p = Get().AuthPasswordPolicy
-
-	if p == (*schema.AuthPasswordPolicy)(nil) {
-		p = ExperimentalFeatures().PasswordPolicy
-	}
-
-	var gp GenericPasswordPolicy
-
-	if p == (*schema.PasswordPolicy)(nil) {
-		gp = GenericPasswordPolicy{
-			Enabled:                   false,
-			MinimumLength:             0,
-			NumberOfSpecialCharacters: 0,
-			RequireAtLeastOneNumber:   false,
-			RequireUpperandLowerCase:  false,
-		}
-
-		return gp
-	}
-
+	p := Get().AuthPasswordPolicy
 	ml := Get().AuthMinPasswordLength
 
-	switch p := p.(type) {
-	case *schema.AuthPasswordPolicy:
-		gp = GenericPasswordPolicy{
-			Enabled:                   p.Enabled,
-			MinimumLength:             ml,
-			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
-			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
-			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+	if p == nil {
+		ep := ExperimentalFeatures().PasswordPolicy
+
+		if ep != nil {
+			return GenericPasswordPolicy{
+				Enabled:                   ep.Enabled,
+				MinimumLength:             ml,
+				NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
+				RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
+				RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
+			}
 		}
-	case *schema.PasswordPolicy:
-		gp = GenericPasswordPolicy{
+	} else {
+		return GenericPasswordPolicy{
 			Enabled:                   p.Enabled,
 			MinimumLength:             ml,
 			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
@@ -349,7 +331,13 @@ func AuthPasswordPolicy() GenericPasswordPolicy {
 		}
 	}
 
-	return gp
+	return GenericPasswordPolicy{
+		Enabled:                   false,
+		MinimumLength:             0,
+		NumberOfSpecialCharacters: 0,
+		RequireAtLeastOneNumber:   false,
+		RequireUpperandLowerCase:  false,
+	}
 }
 
 func PasswordPolicyEnabled() bool {

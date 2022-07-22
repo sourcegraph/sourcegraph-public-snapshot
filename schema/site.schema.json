@@ -83,9 +83,9 @@
       }
     },
     "auth.passwordPolicy": {
-      "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
       "type": "object",
       "additionalProperties": false,
+      "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
       "properties": {
         "enabled": {
           "description": "Enables password policy",
