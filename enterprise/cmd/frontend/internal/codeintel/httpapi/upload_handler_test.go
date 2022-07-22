@@ -13,8 +13,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
@@ -36,7 +37,7 @@ import (
 func TestMain(m *testing.M) {
 	flag.Parse()
 	if !testing.Verbose() {
-		log15.Root().SetHandler(log15.DiscardHandler())
+		logtest.InitWithLevel(m, log.LevelNone)
 	}
 	os.Exit(m.Run())
 }
@@ -451,6 +452,7 @@ func TestHandleEnqueueMultipartFinalizeIncompleteUpload(t *testing.T) {
 		dbStore:     mockDBStore,
 		uploadStore: mockUploadStore,
 		operations:  NewOperations(&observation.TestContext),
+		logger:      logtest.Scoped(t),
 	}
 	h.handleEnqueue(w, r)
 

@@ -42,8 +42,8 @@ export const ENVIRONMENT_CONFIG = {
     RELEASE_CANDIDATE_VERSION: process.env.RELEASE_CANDIDATE_VERSION,
     // Should sourcemaps be uploaded to Sentry.
     SENTRY_UPLOAD_SOURCE_MAPS: getEnvironmentBoolean('SENTRY_UPLOAD_SOURCE_MAPS'),
-    // Sentry authentication token
-    SENTRY_AUTH_TOKEN: process.env.SENTRY_AUTH_TOKEN,
+    // Sentry's Dotcom project's authentication token
+    SENTRY_DOT_COM_AUTH_TOKEN: process.env.SENTRY_DOT_COM_AUTH_TOKEN,
     // Sentry organization
     SENTRY_ORGANIZATION: process.env.SENTRY_ORGANIZATION,
     // Sentry project

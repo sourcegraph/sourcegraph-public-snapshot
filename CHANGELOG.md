@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Changesets that are not associated with any batch changes can have a retention period set using the site configuration `batchChanges.changesetsRetention`. [#36188](https://github.com/sourcegraph/sourcegraph/pull/36188)
 
 ### Changed
 

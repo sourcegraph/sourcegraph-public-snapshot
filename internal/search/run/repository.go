@@ -15,30 +15,16 @@ import (
 )
 
 type RepoSearchJob struct {
-	RepoOpts                     search.RepoOptions
-	FilePatternsReposMustInclude []string
-	FilePatternsReposMustExclude []string
-	Features                     search.Features
-
-	Mode search.GlobalSearchMode
+	RepoOpts search.RepoOptions
 }
 
 func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	tr, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := searchrepos.NewResolver(clients.DB)
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
 	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
-
-		// Filter the repos if there is a repohasfile: or -repohasfile field.
-		if len(s.FilePatternsReposMustExclude) > 0 || len(s.FilePatternsReposMustInclude) > 0 {
-			// Fallback to batch for reposToAdd
-			page.RepoRevs, err = s.reposToAdd(ctx, clients, page.RepoRevs)
-			if err != nil {
-				return err
-			}
-		}
 
 		stream.Send(streaming.SearchEvent{
 			Results: repoRevsToRepoMatches(page.RepoRevs),
@@ -60,16 +46,10 @@ func (*RepoSearchJob) Name() string {
 func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
-		res = append(res,
-			log.Bool("contentBasedLangFilters", s.Features.ContentBasedLangFilters),
-			trace.Strings("filePatternsReposMustInclude", s.FilePatternsReposMustInclude),
-			trace.Strings("filePatternsReposMustExclude", s.FilePatternsReposMustExclude),
-		)
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
 			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
-			trace.Stringer("mode", s.Mode),
 		)
 	}
 	return res
@@ -90,16 +70,4 @@ func repoRevsToRepoMatches(repos []*search.RepositoryRevisions) []result.Match {
 		}
 	}
 	return matches
-}
-
-func matchesToFileMatches(matches []result.Match) ([]*result.FileMatch, error) {
-	fms := make([]*result.FileMatch, 0, len(matches))
-	for _, match := range matches {
-		fm, ok := match.(*result.FileMatch)
-		if !ok {
-			return nil, errors.Errorf("expected only file match results")
-		}
-		fms = append(fms, fm)
-	}
-	return fms, nil
 }
