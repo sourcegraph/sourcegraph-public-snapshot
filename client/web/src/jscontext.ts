@@ -127,18 +127,18 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** What the minimum length for a password should be. */
     authMinPasswordLength?: number
 
-    authPasswordPolicy?:    {
+    authPasswordPolicy?: {
         /** Whether password policy is enabled or not */
-       enabled?: boolean
+        enabled?: boolean
 
         /** Mandatory amount of special characters in password */
-       numberOfSpecialCharacters?: number
+        numberOfSpecialCharacters?: number
 
         /** Require at least one number in password */
-       requireAtLeastOneNumber?: boolean
+        requireAtLeastOneNumber?: boolean
 
         /** Require at least an upper and a lowercase character password */
-       requireUpperandLowerCase?: boolean
+        requireUpperandLowerCase?: boolean
     }
 
     /** Custom branding for the homepage and search icon. */

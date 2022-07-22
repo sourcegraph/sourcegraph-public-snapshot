@@ -20,8 +20,8 @@ import {
     MinExternalAccountsVariables,
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
-import { getPasswordPolicy, minPasswordLen} from '../../../util/security'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { minPasswordLength, getPasswordRequirements } from '../../../util/security'
 import { updatePassword, createPassword } from '../backend'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
@@ -182,38 +182,6 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-    public getPasswordRequirements(): JSX.Element {
-        let requirements = ''
-        let passwordPolicyReference = getPasswordPolicy()
-
-        if (passwordPolicyReference && passwordPolicyReference.enabled) {
-           requirements += 'Your password must include at least ' + minPasswordLen.toString() + ' characters'
-            if (
-                passwordPolicyReference.numberOfSpecialCharacters &&
-                passwordPolicyReference.numberOfSpecialCharacters > 0
-            ) {
-                requirements +=
-                    ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
-            }
-            if (
-                passwordPolicyReference.requireAtLeastOneNumber &&
-                passwordPolicyReference.requireAtLeastOneNumber
-            ) {
-                requirements += ', at least one number'
-            }
-            if (
-                passwordPolicyReference.requireUpperandLowerCase &&
-                passwordPolicyReference.requireUpperandLowerCase
-            ) {
-                requirements += ', at least one uppercase letter'
-            }
-        } else {
-            requirements += 'At least ' + minPasswordLen?.toString() + ' characters.'
-        }
-
-        return <small className="form-help text-muted">{requirements}</small>
-    }
-
     public render(): JSX.Element | null {
         return (
             <>
@@ -291,7 +259,8 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         <Label htmlFor="oldPassword">Old password</Label>
                                         <PasswordInput
                                             value={this.state.oldPassword}
-                                            onChange={this.onOldPasswordFieldChange} disabled={this.state.loading}
+                                            onChange={this.onOldPasswordFieldChange}
+                                            disabled={this.state.loading}
                                             id="oldPassword"
                                             name="oldPassword"
                                             aria-label="old password"
@@ -310,13 +279,13 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
-                                        minLength={
-                                            minPasswordLen
-                                        }
+                                        minLength={minPasswordLength}
                                         placeholder=" "
                                         autoComplete="new-password"
                                     />
-                                    {this.getPasswordRequirements()}
+                                    <small className="form-help text-muted">
+                                        {getPasswordRequirements(window.context)}
+                                    </small>
                                 </div>
                                 <div className="form-group">
                                     <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
@@ -328,9 +297,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
-                                        minLength={
-                                            minPasswordLen
-                                        }
+                                        minLength={minPasswordLength}
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                     />

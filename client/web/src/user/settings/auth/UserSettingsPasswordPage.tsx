@@ -13,10 +13,10 @@ import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
+import { minPasswordLength, validatePassword, getPasswordRequirements } from '../../../util/security'
 import { updatePassword } from '../backend'
 
 import styles from './UserSettingsPasswordPage.module.scss'
-import {minPasswordLen, validatePassword, getPasswordRequirements} from "../../../util/security";
 
 interface Props extends RouteComponentProps<{}> {
     user: UserAreaUserFields
@@ -90,7 +90,6 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
         this.subscriptions.unsubscribe()
     }
 
-
     public render(): JSX.Element | null {
         return (
             <div className="user-settings-password-page">
@@ -146,14 +145,12 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
-                                        minLength={
-                                            minPasswordLen
-                                        }
+                                        minLength={minPasswordLength}
                                         placeholder=" "
                                         autoComplete="new-password"
                                         className={styles.userSettingsPasswordPageInput}
                                     />
-                                    {<small>{getPasswordRequirements(window.context)}</small>}
+                                    <small>{getPasswordRequirements(window.context)}</small>
                                 </div>
                                 <div className="form-group mb-0">
                                     <Label htmlFor="newPasswordConfirmation">Confirm new password</Label>
@@ -165,9 +162,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
-                                        minLength={
-                                            minPasswordLen
-                                        }
+                                        minLength={minPasswordLength}
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                         className={styles.userSettingsPasswordPageInput}
@@ -217,15 +212,13 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
     }
 
     private validatePassword(password: string): void {
+        const message = validatePassword(window.context, password)
 
-            let message = validatePassword(window.context, password)
-
-            if (message !== undefined) {
-                this.newPasswordConfirmationField?.setCustomValidity(message)
-            } else {
-                this.newPasswordConfirmationField?.setCustomValidity('')
-            }
-
+        if (message !== undefined) {
+            this.newPasswordConfirmationField?.setCustomValidity(message)
+        } else {
+            this.newPasswordConfirmationField?.setCustomValidity('')
+        }
     }
 
     private handleSubmit = (event: React.FormEvent<HTMLFormElement>): void => {
