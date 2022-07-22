@@ -7,10 +7,9 @@ import (
 )
 
 type Notebooks struct {
-	DateRange  string
-	DB         database.DB
-	Cache      bool
-	NoSetCache *bool
+	DateRange string
+	DB        database.DB
+	Cache     bool
 }
 
 func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {
@@ -26,7 +25,6 @@ func (s *Notebooks) Creations() (*AnalyticsFetcher, error) {
 		summaryQuery: summaryQuery,
 		group:        "Notebooks:Creations",
 		cache:        s.Cache,
-		noSetCache:   s.NoSetCache,
 	}, nil
 }
 
