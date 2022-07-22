@@ -54,11 +54,8 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 			for _, lineMatch := range match.LineMatches {
 				if seriesMatches[series.UniqueID] == nil {
 					seriesMatches[series.UniqueID] = &relatedInsightMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}}
-				} else {
-					// Since insights can have multiple series, we might get duplicate matches.
-					if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
-						seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
-					}
+				} else if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
+					seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
 				}
 			}
 		}
