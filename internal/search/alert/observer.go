@@ -299,11 +299,17 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	if errors.As(err, &lErr) {
+		title := "Also showing additional results"
+		description := "We returned all the results for your query. We also added results for similar queries that might interest you."
+		if lErr.Type == LuckyAlertPure {
+			title = "No results for original query. Showing related results instead"
+			description = "The original query returned no results. Below are results for similar queries that might interest you."
+		}
 		return &search.Alert{
 			PrometheusType:  "lucky_search_notice",
-			Title:           "Also showing additional results",
+			Title:           title,
 			Kind:            string(luckySearchQueries),
-			Description:     "We returned all the results for your query. We also added results for similar queries that might interest you.",
+			Description:     description,
 			ProposedQueries: lErr.ProposedQueries,
 		}, nil
 	}
@@ -383,12 +389,20 @@ func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
 }
 
+type LuckyAlertType int
+
+const (
+	LuckyAlertAdded LuckyAlertType = iota
+	LuckyAlertPure
+)
+
 type ErrLuckyQueries struct {
+	Type            LuckyAlertType
 	ProposedQueries []*search.ProposedQuery
 }
 
 func (e *ErrLuckyQueries) Error() string {
-	return "We were able to find more results by slightly modifying your query"
+	return "Showing results for lucky search"
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err
