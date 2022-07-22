@@ -120,7 +120,7 @@ func Main(enterpriseInit EnterpriseInit) {
 	// bit more to do in this method, though, and the process will be marked ready
 	// further down this function.
 
-	repos.MustRegisterMetrics(db, envvar.SourcegraphDotComMode())
+	repos.MustRegisterMetrics(log.Scoped("MustRegisterMetrics", ""), db, envvar.SourcegraphDotComMode())
 
 	store := repos.NewStore(logger.Scoped("store", "repo store"), db)
 	{
@@ -138,7 +138,7 @@ func Main(enterpriseInit EnterpriseInit) {
 
 		depsSvc := livedependencies.GetService(db, nil)
 		obsLogger := logger.Scoped("ObservedSource", "")
-		src = repos.NewSourcer(db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
+		src = repos.NewSourcer(logger.Scoped("repos.Sourcer", ""), db, cf, repos.WithDependenciesService(depsSvc), repos.ObservedSource(obsLogger, m))
 	}
 
 	updateScheduler := repos.NewUpdateScheduler(logger, db)
@@ -194,14 +194,14 @@ func Main(enterpriseInit EnterpriseInit) {
 		go syncer.RunSyncReposWithLastErrorsWorker(ctx, rateLimiter)
 	}
 
-	go repos.RunPhabricatorRepositorySyncWorker(ctx, store)
+	go repos.RunPhabricatorRepositorySyncWorker(ctx, log.Scoped("PhabricatorRepositorySyncWorker", ""), store)
 
 	// git-server repos purging thread
 	var purgeTTL time.Duration
 	if envvar.SourcegraphDotComMode() {
 		purgeTTL = 14 * 24 * time.Hour // two weeks
 	}
-	go repos.RunRepositoryPurgeWorker(ctx, db, purgeTTL)
+	go repos.RunRepositoryPurgeWorker(ctx, log.Scoped("RepositoryPurgeWorker", ""), db, purgeTTL)
 
 	// Git fetches scheduler
 	go repos.RunScheduler(ctx, logger, updateScheduler)
@@ -361,7 +361,7 @@ func manualPurgeHandler(db database.DB) http.HandlerFunc {
 				return
 			}
 		}
-		err = repos.PurgeOldestRepos(db, limit, perSecond)
+		err = repos.PurgeOldestRepos(log.Scoped("PurgeOldestRepos", ""), db, limit, perSecond)
 		if err != nil {
 			http.Error(w, fmt.Sprintf("starting manual purge: %v", err), http.StatusInternalServerError)
 			return
