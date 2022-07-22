@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"math/rand"
-	"reflect"
 	"strings"
 	"sync"
 	"time"
@@ -530,24 +529,6 @@ func (q *updateQueue) reset() {
 	schedUpdateQueueLength.Set(0)
 }
 
-var newNotify = func(ch chan struct{}) {
-	fmt.Println("newNotify...")
-	select {
-	case ch <- struct{}{}:
-	default:
-	}
-}
-
-// notify performs a non-blocking send on the channel.
-// The channel should be buffered.
-var notify = func(ch chan struct{}) {
-	fmt.Println("old notify")
-	select {
-	case ch <- struct{}{}:
-	default:
-	}
-}
-
 // enqueue adds the repo to the queue with the given priority.
 //
 // If the repo is already in the queue and it isn't yet updating,
@@ -570,10 +551,8 @@ func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 			Repo:     repo,
 			Priority: p,
 		})
-		fmt.Println("before notifying...")
-		fmt.Println("type:", reflect.TypeOf(notify))
-		newNotify(q.notifyEnqueue)
-		// notify(q.notifyEnqueue)
+		fmt.Println("notify?", notify == nil)
+		notify(q.notifyEnqueue)
 		fmt.Println("after notify")
 		return false
 	}
@@ -955,3 +934,12 @@ var (
 	timeNow       = time.Now
 	timeAfterFunc = time.AfterFunc
 )
+
+// notify performs a non-blocking send on the channel.
+// The channel should be buffered.
+var notify = func(ch chan struct{}) {
+	select {
+	case ch <- struct{}{}:
+	default:
+	}
+}

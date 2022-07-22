@@ -64,7 +64,7 @@ func TestIntegration(t *testing.T) {
 	}
 }
 
-func TestIntegration_WebhookSync(t *testing.T) {
+func TestIntegration_WebhookBuilder(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}

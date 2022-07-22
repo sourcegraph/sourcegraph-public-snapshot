@@ -683,8 +683,7 @@ func (s *Syncer) SyncExternalService(
 			continue
 		}
 
-		// svc.SyncUsingWebhooks = conf.ExperimentalFeatures().EnableWebhookSyncing
-		svc.SyncUsingWebhooks = true
+		svc.SyncUsingWebhooks = conf.ExperimentalFeatures().EnableWebhookSyncing
 		if svc.SyncUsingWebhooks {
 			err = s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name), svc.Kind)
 			if err != nil && s.Logger != nil {

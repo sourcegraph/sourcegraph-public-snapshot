@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -24,6 +25,7 @@ import (
 var defaultTime = time.Date(2000, 1, 1, 1, 1, 1, 1, time.UTC)
 
 func init() {
+	fmt.Println("init() called")
 	timeNow = nil
 	notify = nil
 	timeAfterFunc = nil

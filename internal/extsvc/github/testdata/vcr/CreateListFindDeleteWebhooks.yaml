@@ -10,10 +10,201 @@ interactions:
       - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
+    url: https://api.github.com/repos/sd9/sourcegraph/hooks
+    method: POST
+  response:
+    body: '{"type":"Repository","id":369938390,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-22T04:31:01Z","created_at":"2022-07-22T04:31:01Z","url":"https://api.github.com/repos/sd9/sourcegraph/hooks/369938390","test_url":"https://api.github.com/repos/sd9/sourcegraph/hooks/369938390/test","ping_url":"https://api.github.com/repos/sd9/sourcegraph/hooks/369938390/pings","deliveries_url":"https://api.github.com/repos/sd9/sourcegraph/hooks/369938390/deliveries","last_response":{"code":null,"status":"unused","message":null}}'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Length:
+      - "654"
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 22 Jul 2022 04:31:01 GMT
+      Etag:
+      - '"bafd85013c06fab006337eea74ccf06631234ac99a752255829d2103eb7f92fd"'
+      Location:
+      - https://api.github.com/repos/sd9/sourcegraph/hooks/369938390
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - F2F3:1C02:1BD160:1F9432:62DA2805
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4999"
+      X-Ratelimit-Reset:
+      - "1658467861"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "1"
+      X-Xss-Protection:
+      - "0"
+    status: 201 Created
+    code: 201
+    duration: ""
+- request:
+    body: ""
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sd9/sourcegraph/hooks
+    method: GET
+  response:
+    body: '[{"type":"Repository","id":369938390,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-22T04:31:01Z","created_at":"2022-07-22T04:31:01Z","url":"https://api.github.com/repos/sd9/sourcegraph/hooks/369938390","test_url":"https://api.github.com/repos/sd9/sourcegraph/hooks/369938390/test","ping_url":"https://api.github.com/repos/sd9/sourcegraph/hooks/369938390/pings","deliveries_url":"https://api.github.com/repos/sd9/sourcegraph/hooks/369938390/deliveries","last_response":{"code":null,"status":"unused","message":null}}]'
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Cache-Control:
+      - private, max-age=60, s-maxage=60
+      Content-Security-Policy:
+      - default-src 'none'
+      Content-Type:
+      - application/json; charset=utf-8
+      Date:
+      - Fri, 22 Jul 2022 04:31:01 GMT
+      Etag:
+      - W/"44e1fc5203ac96181d6e297ee631de184eb7cf857a35af23ba7f4117e7a8f2e3"
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept, Authorization, Cookie, X-GitHub-OTP
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - F2F3:1C02:1BD170:1F9448:62DA2805
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4998"
+      X-Ratelimit-Reset:
+      - "1658467861"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "2"
+      X-Varied-Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      X-Xss-Protection:
+      - "0"
+    status: 200 OK
+    code: 200
+    duration: ""
+- request:
+    body: '""'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
+    url: https://api.github.com/repos/sd9/sourcegraph/hooks/369938390
+    method: DELETE
+  response:
+    body: ""
+    headers:
+      Access-Control-Allow-Origin:
+      - '*'
+      Access-Control-Expose-Headers:
+      - ETag, Link, Location, Retry-After, X-GitHub-OTP, X-RateLimit-Limit, X-RateLimit-Remaining,
+        X-RateLimit-Used, X-RateLimit-Resource, X-RateLimit-Reset, X-OAuth-Scopes,
+        X-Accepted-OAuth-Scopes, X-Poll-Interval, X-GitHub-Media-Type, X-GitHub-SSO,
+        X-GitHub-Request-Id, Deprecation, Sunset
+      Content-Security-Policy:
+      - default-src 'none'
+      Date:
+      - Fri, 22 Jul 2022 04:31:02 GMT
+      Referrer-Policy:
+      - origin-when-cross-origin, strict-origin-when-cross-origin
+      Server:
+      - GitHub.com
+      Strict-Transport-Security:
+      - max-age=31536000; includeSubdomains; preload
+      Vary:
+      - Accept-Encoding, Accept, X-Requested-With
+      X-Content-Type-Options:
+      - nosniff
+      X-Frame-Options:
+      - deny
+      X-Github-Media-Type:
+      - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
+        format=json
+      X-Github-Request-Id:
+      - F2F3:1C02:1BD17C:1F9457:62DA2805
+      X-Ratelimit-Limit:
+      - "5000"
+      X-Ratelimit-Remaining:
+      - "4997"
+      X-Ratelimit-Reset:
+      - "1658467861"
+      X-Ratelimit-Resource:
+      - core
+      X-Ratelimit-Used:
+      - "3"
+      X-Xss-Protection:
+      - "0"
+    status: 204 No Content
+    code: 204
+    duration: ""
+- request:
+    body: '{"name":"web","config":{"url":"https://target-url.com/github-webhooks","content_type":"json","secret":"secret","insecure_ssl":"0","token":""},"events":["push"],"active":true,"url":""}'
+    form: {}
+    headers:
+      Accept:
+      - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
+      - application/vnd.github.machine-man-preview+json
+      Content-Type:
+      - application/json; charset=utf-8
     url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
     method: POST
   response:
-    body: '{"type":"Repository","id":91,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T00:21:35Z","created_at":"2022-07-21T00:21:35Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91/deliveries","last_response":{"code":null,"status":"unused","message":null}}'
+    body: '{"type":"Repository","id":109,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-22T04:31:03Z","created_at":"2022-07-22T04:31:03Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109/deliveries","last_response":{"code":null,"status":"unused","message":null}}'
     headers:
       Access-Control-Allow-Origin:
       - '*'
@@ -25,17 +216,17 @@ interactions:
       Cache-Control:
       - private, max-age=60, s-maxage=60
       Content-Length:
-      - "627"
+      - "632"
       Content-Security-Policy:
       - default-src 'none'
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 21 Jul 2022 00:21:35 GMT
+      - Fri, 22 Jul 2022 04:31:03 GMT
       Etag:
-      - '"65da02195c287a3f0ebfec0a330672e5b242e8411bd5d0903b6828c87d04d788"'
+      - '"82f3e73da8ad472e6637d8cd06c47b313bfa73144b2b1ee90b1da52253e9e768"'
       Location:
-      - https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91
+      - https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -54,9 +245,9 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 5e9d6f39-7b4d-4ed8-adc1-0d25f549ac00
+      - 2c45601d-1ef1-4cf8-b8b7-ccb48dd8d3f4
       X-Runtime-Rack:
-      - "0.110547"
+      - "0.107112"
       X-Xss-Protection:
       - "0"
     status: 201 Created
@@ -74,7 +265,7 @@ interactions:
     url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks
     method: GET
   response:
-    body: '[{"type":"Repository","id":91,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-21T00:21:35Z","created_at":"2022-07-21T00:21:35Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91/deliveries","last_response":{"code":500,"status":"hookshot_error","message":"no
+    body: '[{"type":"Repository","id":109,"name":"web","active":true,"events":["push"],"config":{"content_type":"json","insecure_ssl":"0","secret":"********","url":"https://target-url.com/github-webhooks"},"updated_at":"2022-07-22T04:31:03Z","created_at":"2022-07-22T04:31:03Z","url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109","test_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109/test","ping_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109/pings","deliveries_url":"https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109/deliveries","last_response":{"code":500,"status":"hookshot_error","message":"no
       such host"}}]'
     headers:
       Access-Control-Allow-Origin:
@@ -91,9 +282,9 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 21 Jul 2022 00:21:36 GMT
+      - Fri, 22 Jul 2022 04:31:04 GMT
       Etag:
-      - W/"0ed30c53de173a7ba9e0e1c22800a5c44400144c10d76934a4ab1ebb6c370b58"
+      - W/"e4de616564bfbbb8e502bd266c813f0c0aba3e2b1c0c34db31eb51f195f64526"
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -112,9 +303,9 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 9089087d-55b5-4c80-a017-64dbf29b7d0b
+      - 66711599-9b01-453c-8dca-416176352898
       X-Runtime-Rack:
-      - "0.043611"
+      - "0.046883"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -131,7 +322,7 @@ interactions:
       - application/vnd.github.machine-man-preview+json
       Content-Type:
       - application/json; charset=utf-8
-    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/91
+    url: https://ghe.sgdev.org/api/v3/repos/milton/test/hooks/109
     method: DELETE
   response:
     body: ""
@@ -146,7 +337,7 @@ interactions:
       Content-Security-Policy:
       - default-src 'none'
       Date:
-      - Thu, 21 Jul 2022 00:21:36 GMT
+      - Fri, 22 Jul 2022 04:31:04 GMT
       Referrer-Policy:
       - origin-when-cross-origin, strict-origin-when-cross-origin
       Server:
@@ -163,9 +354,9 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - a94bfb8b-a90b-458f-8f90-e6d64455407c
+      - 74f6b65c-586d-4874-8909-632763170be6
       X-Runtime-Rack:
-      - "0.068911"
+      - "0.069988"
       X-Xss-Protection:
       - "0"
     status: 204 No Content

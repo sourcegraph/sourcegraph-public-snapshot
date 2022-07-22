@@ -27,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -103,6 +104,7 @@ func testWebhookBuilder(store repos.Store, db database.DB) func(*testing.T) {
 			Now:     time.Now,
 		}
 
+		conf.Get().ExperimentalFeatures.EnableWebhookSyncing = true
 		if err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond); err != nil {
 			t.Fatal(err)
 		}

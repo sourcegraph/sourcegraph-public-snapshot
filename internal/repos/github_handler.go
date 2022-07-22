@@ -32,6 +32,13 @@ func (g *GitHubWebhookAPI) handleGitHubWebhook(ctx context.Context, extSvc *type
 		return errors.Errorf("expected GitHub.PushEvent, got %s", reflect.TypeOf(event))
 	}
 
+	notify = func(ch chan struct{}) {
+		select {
+		case ch <- struct{}{}:
+		default:
+		}
+	}
+
 	repoName := *event.Repo.URL
 	name := api.RepoName(repoName[8:])
 	repoupdater.DefaultClient.EnqueueRepoUpdate(ctx, name)
