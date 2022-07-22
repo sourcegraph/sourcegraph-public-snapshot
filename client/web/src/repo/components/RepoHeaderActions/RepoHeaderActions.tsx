@@ -80,13 +80,7 @@ export const RepoHeaderActionMenuLink = React.forwardRef((props: RepoHeaderActio
     const { children, className, file, ...rest } = props
 
     return (
-        <MenuLink
-            className={classNames(file ? styles.fileAction : styles.action, className)}
-            ref={reference}
-            // keep Menu open on select (mouse only)
-            onMouseUp={event => event.preventDefault()}
-            {...rest}
-        >
+        <MenuLink className={classNames(file ? styles.fileAction : styles.action, className)} ref={reference} {...rest}>
             {children}
         </MenuLink>
     )
@@ -108,14 +102,7 @@ export const RepoHeaderActionMenuItem = React.forwardRef((props: RepoHeaderActio
         <MenuItem
             className={classNames(file ? styles.fileAction : styles.action, className)}
             ref={reference}
-            // keep Menu open on select (mouse only)
-            onMouseUp={event => event.preventDefault()}
-            // we still need `onSelect` binding for keyboard users
-            // but we don't know how to keep Menu open in this case
             onSelect={onSelect}
-            // `onClick` will be triggered when using mouse
-            // instead of `onSelect` because we already catch `onMouseUp`
-            onClick={onSelect}
             {...rest}
         >
             {children}
