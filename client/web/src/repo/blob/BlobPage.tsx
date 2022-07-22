@@ -380,6 +380,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     location={props.location}
                     disableStatusBar={false}
                     disableDecorations={false}
+                    role="region"
+                    ariaLabel="File blob"
                 />
             )}
         </>

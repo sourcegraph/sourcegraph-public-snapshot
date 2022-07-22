@@ -214,7 +214,7 @@ export interface Filter {
     label: string
     count: number
     limitHit: boolean
-    kind: string
+    kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
 export type AlertKind = 'lucky-search-queries'

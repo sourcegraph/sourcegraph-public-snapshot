@@ -6,8 +6,10 @@ import (
 
 	"github.com/inconshreveable/log15"
 
-	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policiesEnterprise "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
+	policyShared "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
+	uploadShared "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/shared"
 	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -24,9 +26,9 @@ func (e *expirer) HandleUploadExpirer(ctx context.Context) (err error) {
 	// the backlog. Note that this set of repositories require a fresh commit graph, so we're not trying to
 	// process records that have been uploaded but the commits from which they are visible have yet to be
 	// determined (and appearing as if they are visible to no commit).
-	repositories, err := e.dbStore.SelectRepositoriesForRetentionScan(ctx, ConfigInst.RepositoryProcessDelay, ConfigInst.RepositoryBatchSize)
+	repositories, err := e.uploadSvc.SetRepositoriesForRetentionScan(ctx, ConfigInst.RepositoryProcessDelay, ConfigInst.RepositoryBatchSize)
 	if err != nil {
-		return errors.Wrap(err, "dbstore.SelectRepositoriesForRetentionScan")
+		return errors.Wrap(err, "uploadSvc.SelectRepositoriesForRetentionScan")
 	}
 	if len(repositories) == 0 {
 		// All repositories updated recently enough
@@ -86,7 +88,7 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 		// out new uploads that would happen to be visible to no commits since they were never
 		// installed into the commit graph.
 
-		uploads, _, err := e.dbStore.GetUploads(ctx, dbstore.GetUploadsOptions{
+		uploads, _, err := e.uploadSvc.GetUploads(ctx, uploadShared.GetUploadsOptions{
 			State:                   "completed",
 			RepositoryID:            repositoryID,
 			AllowExpired:            false,
@@ -110,22 +112,22 @@ func (e *expirer) handleRepository(ctx context.Context, repositoryID int, now ti
 
 // buildCommitMap will iterate the complete set of configuration policies that apply to a particular
 // repository and build a map from commits to the policies that apply to them.
-func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time.Time) (map[string][]policies.PolicyMatch, error) {
+func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time.Time) (map[string][]policiesEnterprise.PolicyMatch, error) {
 	var (
 		offset   int
-		policies []dbstore.ConfigurationPolicy
+		policies []policyShared.ConfigurationPolicy
 	)
 
 	for {
 		// Retrieve the complete set of configuration policies that affect data retention for this repository
-		policyBatch, totalCount, err := e.dbStore.GetConfigurationPolicies(ctx, dbstore.GetConfigurationPoliciesOptions{
+		policyBatch, totalCount, err := e.policySvc.GetConfigurationPolicies(ctx, policyShared.GetConfigurationPoliciesOptions{
 			RepositoryID:     repositoryID,
 			ForDataRetention: true,
 			Limit:            ConfigInst.PolicyBatchSize,
 			Offset:           offset,
 		})
 		if err != nil {
-			return nil, errors.Wrap(err, "dbstore.GetConfigurationPolicies")
+			return nil, errors.Wrap(err, "policySvc.GetConfigurationPolicies")
 		}
 
 		offset += len(policyBatch)
@@ -136,14 +138,16 @@ func (e *expirer) buildCommitMap(ctx context.Context, repositoryID int, now time
 		}
 	}
 
+	cp := convertConfigPolicies(policies)
+
 	// Get the set of commits within this repository that match a data retention policy
-	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, policies, now)
+	return e.policyMatcher.CommitsDescribedByPolicy(ctx, repositoryID, cp, now)
 }
 
 func (e *expirer) handleUploads(
 	ctx context.Context,
-	commitMap map[string][]policies.PolicyMatch,
-	uploads []dbstore.Upload,
+	commitMap map[string][]policiesEnterprise.PolicyMatch,
+	uploads []uploadShared.Upload,
 	now time.Time,
 ) (err error) {
 	// Categorize each upload as protected or expired
@@ -178,8 +182,8 @@ func (e *expirer) handleUploads(
 	// records with the given expired identifiers so that the expiredUploadDeleter process can remove then once
 	// they are no longer referenced.
 
-	if updateErr := e.dbStore.UpdateUploadRetention(ctx, protectedUploadIDs, expiredUploadIDs); updateErr != nil {
-		if updateErr := errors.Wrap(err, "dbstore.UpdateUploadRetention"); err == nil {
+	if updateErr := e.uploadSvc.UpdateUploadRetention(ctx, protectedUploadIDs, expiredUploadIDs); updateErr != nil {
+		if updateErr := errors.Wrap(err, "uploadSvc.UpdateUploadRetention"); err == nil {
 			err = updateErr
 		} else {
 			err = errors.Append(err, updateErr)
@@ -196,8 +200,8 @@ func (e *expirer) handleUploads(
 
 func (e *expirer) isUploadProtectedByPolicy(
 	ctx context.Context,
-	commitMap map[string][]policies.PolicyMatch,
-	upload dbstore.Upload,
+	commitMap map[string][]policiesEnterprise.PolicyMatch,
+	upload uploadShared.Upload,
 	now time.Time,
 ) (bool, error) {
 	e.metrics.numUploadsScanned.Inc()
@@ -215,9 +219,9 @@ func (e *expirer) isUploadProtectedByPolicy(
 		//
 		// We check the set of commits visible to an upload in batches as in some cases it can be very large; for
 		// example, a single historic commit providing code intelligence for all descendants.
-		commits, nextToken, err := e.dbStore.CommitsVisibleToUpload(ctx, upload.ID, ConfigInst.CommitBatchSize, token)
+		commits, nextToken, err := e.uploadSvc.GetCommitsVisibleToUpload(ctx, upload.ID, ConfigInst.CommitBatchSize, token)
 		if err != nil {
-			return false, errors.Wrap(err, "dbstore.CommitsVisibleToUpload")
+			return false, errors.Wrap(err, "uploadSvc.CommitsVisibleToUpload")
 		}
 		token = nextToken
 
@@ -235,4 +239,28 @@ func (e *expirer) isUploadProtectedByPolicy(
 	}
 
 	return false, nil
+}
+
+func convertConfigPolicies(configs []policyShared.ConfigurationPolicy) []dbstore.ConfigurationPolicy {
+	configPolicy := make([]dbstore.ConfigurationPolicy, 0, len(configs))
+	for _, c := range configs {
+		configPolicy = append(configPolicy, dbstore.ConfigurationPolicy{
+			ID:                        c.ID,
+			RepositoryID:              c.RepositoryID,
+			RepositoryPatterns:        c.RepositoryPatterns,
+			Name:                      c.Name,
+			Type:                      dbstore.GitObjectType(c.Type),
+			Pattern:                   c.Pattern,
+			Protected:                 c.Protected,
+			RetentionEnabled:          c.RetentionEnabled,
+			RetentionDuration:         c.RetentionDuration,
+			RetainIntermediateCommits: c.RetainIntermediateCommits,
+			IndexingEnabled:           c.IndexingEnabled,
+			IndexCommitMaxAge:         c.IndexCommitMaxAge,
+			IndexIntermediateCommits:  c.IndexIntermediateCommits,
+			LockfileIndexingEnabled:   c.LockfileIndexingEnabled,
+		})
+	}
+
+	return configPolicy
 }

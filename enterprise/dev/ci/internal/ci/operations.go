@@ -696,9 +696,19 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			bk.Env("VERSION", version),
 		}
 
+		// Allow all build scripts to emit info annotations
+		buildAnnotationOptions := bk.AnnotatedCmdOpts{
+			Annotations: &bk.AnnotationOpts{
+				Type:         bk.AnnotationTypeInfo,
+				IncludeNames: true,
+			},
+		}
+
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
 			// Building Docker image located under $REPO_ROOT/docker-images/
-			cmds = append(cmds, bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
+			cmds = append(cmds,
+				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
+				bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {
@@ -710,9 +720,10 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 			}()
 			preBuildScript := cmdDir + "/pre-build.sh"
 			if _, err := os.Stat(preBuildScript); err == nil {
-				cmds = append(cmds, bk.Cmd(preBuildScript))
+				// Allow all
+				cmds = append(cmds, bk.AnnotatedCmd(preBuildScript, buildAnnotationOptions))
 			}
-			cmds = append(cmds, bk.Cmd(cmdDir+"/build.sh"))
+			cmds = append(cmds, bk.AnnotatedCmd(cmdDir+"/build.sh", buildAnnotationOptions))
 		}
 
 		devImage := images.DevRegistryImage(app, tag)

@@ -127,6 +127,7 @@ func TestBatchSpecWorkspaceResolver(t *testing.T) {
 	t.Run("Queued", func(t *testing.T) {
 		job := &btypes.BatchSpecWorkspaceExecutionJob{
 			BatchSpecWorkspaceID: workspace.ID,
+			UserID:               userID,
 		}
 		if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, bstore, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 			t.Fatal(err)

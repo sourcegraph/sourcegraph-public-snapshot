@@ -1,7 +1,5 @@
 import React, { FunctionComponent } from 'react'
 
-import classNames from 'classnames'
-
 import { Link, H3, Code } from '@sourcegraph/wildcard'
 
 import { LockfileIndexFields } from '../../../../graphql-operations'
@@ -18,7 +16,7 @@ export const CodeIntelLockfileNode: FunctionComponent<React.PropsWithChildren<Co
     <>
         <span className={styles.separator} />
 
-        <div className={classNames(styles.information, 'd-flex flex-column')}>
+        <div className="d-flex flex-column">
             <div className="m-0">
                 <H3 className="m-0 d-block d-md-inline">
                     <Link to={node.repository.url}>{node.repository.name}</Link>

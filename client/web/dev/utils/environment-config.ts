@@ -33,10 +33,11 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_SERVE_INDEX: getEnvironmentBoolean('WEBPACK_SERVE_INDEX'),
     // Enables `StatoscopeWebpackPlugin` that allows to analyze application bundle.
     WEBPACK_BUNDLE_ANALYZER: getEnvironmentBoolean('WEBPACK_BUNDLE_ANALYZER'),
-
     // Allow overriding default Webpack naming behavior for debugging
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
 
+    // The commit SHA the client bundle was built with.
+    COMMIT_SHA: process.env.COMMIT_SHA,
     // New release candidate version.
     RELEASE_CANDIDATE_VERSION: process.env.RELEASE_CANDIDATE_VERSION,
     // Should sourcemaps be uploaded to Sentry.

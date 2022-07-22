@@ -309,7 +309,7 @@ const completedSteps: LsifIndexStepsFields = {
             stdout:    \\u001b[?25h\\u001b[?25lfile: dump.lsif
             stdout:    \\u001b[?25h\\u001b[?25lindexer: lsif-go
             stdout:    \\u001b[?25h
-            stdout: \\u001b[?25h\\u001b[?25l💡 View processing status at https://sourcegraph.com/github.com/kubernetes/kubernetes/-/code-intelligence/uploads/TFNJRlVwbG9hZDoiNTUyNzg3Ig==
+            stdout: \\u001b[?25h\\u001b[?25l💡 View processing status at https://sourcegraph.com/github.com/kubernetes/kubernetes/-/code-graph/uploads/TFNJRlVwbG9hZDoiNTUyNzg3Ig==
             stdout: \\u001b[?25h
         `),
         durationMilliseconds: 1265,

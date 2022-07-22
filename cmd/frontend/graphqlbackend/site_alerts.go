@@ -11,7 +11,6 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/updatecheck"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -127,7 +126,7 @@ func init() {
 			return nil
 		}
 
-		problems, err := conf.Validate(globals.ConfigurationServerFrontendOnly.Raw())
+		problems, err := conf.Validate(conf.Raw())
 		if err != nil {
 			return []*Alert{
 				{

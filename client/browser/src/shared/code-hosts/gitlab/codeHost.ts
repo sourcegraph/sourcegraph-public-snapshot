@@ -82,7 +82,7 @@ const resolveView: ViewResolver<CodeView>['resolveView'] = (element: HTMLElement
     if (element.classList.contains('discussion-wrapper')) {
         // This is a commented snippet in a merge request discussion timeline
         // (a snippet where somebody added a review comment on a piece of code in the MR),
-        // we don't support adding code intelligence on those.
+        // we don't support adding code navigation on those.
         return null
     }
     const { pageKind } = getPageInfo()

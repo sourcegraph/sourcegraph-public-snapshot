@@ -53,7 +53,7 @@ export const CodeIntelAssociatedUpload: FunctionComponent<React.PropsWithChildre
                     </span>
                     <span>
                         <Link
-                            to={`/${node.projectRoot.repository.name}/-/code-intelligence/uploads/${node.associatedUpload.id}`}
+                            to={`/${node.projectRoot.repository.name}/-/code-graph/uploads/${node.associatedUpload.id}`}
                         >
                             <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
                         </Link>

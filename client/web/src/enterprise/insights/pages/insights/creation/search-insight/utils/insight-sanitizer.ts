@@ -30,7 +30,6 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
                     },
                 },
             },
-            seriesCount: 0,
         }
     }
 
@@ -54,6 +53,5 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
                 },
             },
         },
-        seriesCount: 0,
     }
 }

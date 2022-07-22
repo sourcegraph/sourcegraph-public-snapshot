@@ -97,24 +97,24 @@ const businessGroup: SiteAdminSideBarGroup = {
 }
 
 const codeIntelGroup: SiteAdminSideBarGroup = {
-    header: { label: 'Code intelligence', icon: BrainIcon },
+    header: { label: 'Code graph', icon: BrainIcon },
     items: [
         {
-            to: '/site-admin/code-intelligence/uploads',
+            to: '/site-admin/code-graph/uploads',
             label: 'Uploads',
         },
         {
-            to: '/site-admin/code-intelligence/indexes',
+            to: '/site-admin/code-graph/indexes',
             label: 'Auto-indexing',
             condition: () => Boolean(window.context?.codeIntelAutoIndexingEnabled),
         },
         {
-            to: '/site-admin/code-intelligence/lockfiles',
+            to: '/site-admin/code-graph/lockfiles',
             label: 'Lockfiles',
             condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
         },
         {
-            to: '/site-admin/code-intelligence/configuration',
+            to: '/site-admin/code-graph/configuration',
             label: 'Configuration',
         },
     ],

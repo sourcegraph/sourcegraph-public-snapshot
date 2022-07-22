@@ -2,12 +2,13 @@ package conf
 
 import (
 	"context"
-	"log"
 	"math/rand"
 	"net"
 	"sync"
 	"sync/atomic"
 	"time"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
@@ -20,6 +21,12 @@ type client struct {
 	passthrough ConfigurationSource
 	watchersMu  sync.Mutex
 	watchers    []chan struct{}
+
+	// sourceUpdates receives events that indicate the configuration source has been
+	// updated. It should prompt the client to update the store, and the received channel
+	// should be closed when future queries to the client returns the most up to date
+	// configuration.
+	sourceUpdates <-chan chan struct{}
 }
 
 var _ conftypes.UnifiedQuerier = &client{}
@@ -175,7 +182,7 @@ func (c *client) Cached(f func() any) (wrapped func() any) {
 }
 
 // notifyWatchers runs all the callbacks registered via client.Watch() whenever
-// the configuration has changed.
+// the configuration has changed. It does not block on individual sends.
 func (c *client) notifyWatchers() {
 	c.watchersMu.Lock()
 	defer c.watchersMu.Unlock()
@@ -199,8 +206,8 @@ type continuousUpdateOptions struct {
 	// contact the frontend for configuration) start up before the frontend.
 	delayBeforeUnreachableLog time.Duration
 
-	log   func(format string, v ...any) // log.Printf equivalent
-	sleep func()                        // sleep between updates
+	logger              log.Logger
+	sleepBetweenUpdates func() // sleep between updates
 }
 
 // continuouslyUpdate runs (*client).fetchAndUpdate in an infinite loop, with error logging and
@@ -209,16 +216,16 @@ type continuousUpdateOptions struct {
 // The optOnlySetByTests parameter is ONLY customized by tests. All callers in main code should pass
 // nil (so that the same defaults are used).
 func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) {
-	opt := optOnlySetByTests
-	if opt == nil {
+	opts := optOnlySetByTests
+	if opts == nil {
 		// Apply defaults.
-		opt = &continuousUpdateOptions{
+		opts = &continuousUpdateOptions{
 			// This needs to be long enough to allow the frontend to fully migrate the PostgreSQL
 			// database in most cases, to avoid log spam when running sourcegraph/server for the
 			// first time.
 			delayBeforeUnreachableLog: 15 * time.Second,
-			log:                       log.Printf,
-			sleep: func() {
+			logger:                    log.Scoped("conf.client", "configuration client"),
+			sleepBetweenUpdates: func() {
 				jitter := time.Duration(rand.Int63n(5 * int64(time.Second)))
 				time.Sleep(jitter)
 			},
@@ -230,15 +237,43 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 		return errors.As(err, &e) && e.Op == "dial"
 	}
 
+	waitForSleep := func() <-chan struct{} {
+		c := make(chan struct{}, 1)
+		go func() {
+			opts.sleepBetweenUpdates()
+			close(c)
+		}()
+		return c
+	}
+
+	// Make an initial fetch an update - this is likely to error, so just discard the
+	// error on this initial attempt.
+	_ = c.fetchAndUpdate(opts.logger)
+
 	start := time.Now()
 	for {
-		err := c.fetchAndUpdate()
+		logger := opts.logger
+
+		// signalDoneReading, if set, indicates that we were prompted to update because
+		// the source has been updated.
+		var signalDoneReading chan struct{}
+		select {
+		case signalDoneReading = <-c.sourceUpdates:
+			// Config was changed at source, so let's check now
+			logger = logger.With(log.String("triggered_by", "sourceUpdates"))
+		case <-waitForSleep():
+			// File possibly changed at source, so check now.
+			logger = logger.With(log.String("triggered_by", "waitForSleep"))
+		}
+
+		logger.Debug("checking for updates")
+		err := c.fetchAndUpdate(logger)
 		if err != nil {
 			// Suppress log messages for errors caused by the frontend being unreachable until we've
 			// given the frontend enough time to initialize (in case other services start up before
 			// the frontend), to reduce log spam.
-			if time.Since(start) > opt.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
-				opt.log("received error during background config update, err: %s", err)
+			if time.Since(start) > opts.delayBeforeUnreachableLog || !isFrontendUnreachableError(err) {
+				logger.Error("received error during background config update", log.Error(err))
 			}
 		} else {
 			// We successfully fetched the config, we reset the timer to give
@@ -246,13 +281,17 @@ func (c *client) continuouslyUpdate(optOnlySetByTests *continuousUpdateOptions) 
 			start = time.Now()
 		}
 
-		opt.sleep()
+		// Indicate that we are done reading, if we were prompted to update by the updates
+		// channel
+		if signalDoneReading != nil {
+			close(signalDoneReading)
+		}
 	}
 }
 
-func (c *client) fetchAndUpdate() error {
-	ctx := context.Background()
+func (c *client) fetchAndUpdate(logger log.Logger) error {
 	var (
+		ctx       = context.Background()
 		newConfig conftypes.RawUnified
 		err       error
 	)
@@ -271,7 +310,11 @@ func (c *client) fetchAndUpdate() error {
 	}
 
 	if configChange.Changed {
+		logger.Info("config changed, notifying watchers",
+			log.Int("watchers", len(c.watchers)))
 		c.notifyWatchers()
+	} else {
+		logger.Debug("no config changes detected")
 	}
 
 	return nil
