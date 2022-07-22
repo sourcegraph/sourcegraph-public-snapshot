@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -97,6 +98,8 @@ type Store interface {
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
 	// ListSyncJobs returns all sync jobs.
 	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
+	// Enqueues webhook build jobs for external services that requests syncing using webhooks.
+	EnqueueSingleWebhookBuildJob(ctx context.Context, repoID int64, repoName string, kind string) (err error)
 }
 
 // A Store exposes methods to read and write repos and external services.
@@ -805,6 +808,60 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 			&executionLogs,
 			&job.ExternalServiceID,
 			&job.NextSyncAt,
+		); err != nil {
+			return nil, err
+		}
+
+		jobs = append(jobs, job)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return jobs, nil
+}
+
+func (s *store) EnqueueSingleWebhookBuildJob(ctx context.Context,
+	repoID int64,
+	repoName string,
+	kind string) (err error) {
+	q := sqlf.Sprintf(`
+INSERT INTO webhook_build_jobs (repo_id, repo_name, queued_at, extsvc_kind)
+SELECT %s, %s, %s, %s
+WHERE NOT EXISTS (
+	SELECT
+	FROM repo r
+	LEFT JOIN webhook_build_jobs j ON r.id = j.repo_id
+	WHERE r.id = %s
+	AND (
+		j.state IN ('queued', 'processing')
+	)
+)
+`, repoID, repoName, timeutil.Now(), kind, repoID)
+	return s.Exec(ctx, q)
+}
+
+func scanWebhookBuildJobs(rows *sql.Rows) ([]WebhookBuildJob, error) {
+	var jobs []WebhookBuildJob
+
+	for rows.Next() {
+		var executionLogs *[]any
+
+		var job WebhookBuildJob
+		if err := rows.Scan(
+			&job.ID,
+			&job.State,
+			&job.FailureMessage,
+			&job.StartedAt,
+			&job.FinishedAt,
+			&job.ProcessAfter,
+			&job.NumResets,
+			&job.NumFailures,
+			&executionLogs,
+			&job.RepoID,
+			&job.RepoName,
+			&job.ExtsvcKind,
+			&job.QueuedAt,
 		); err != nil {
 			return nil, err
 		}

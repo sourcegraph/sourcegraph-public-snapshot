@@ -299,6 +299,91 @@ func testStoreEnqueueSingleSyncJob(store repos.Store) func(*testing.T) {
 	}
 }
 
+func testStoreEnqueueSingleWebhookBuildJob(store repos.Store) func(*testing.T) {
+	return func(t *testing.T) {
+		ctx := context.Background()
+		t.Cleanup(func() {
+			q := sqlf.Sprintf("DELETE FROM webhook_build_jobs;")
+			if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+				t.Fatal(err)
+			}
+		})
+
+		type testCase struct {
+			kind string
+			repo *types.Repo
+		}
+
+		testCases := []testCase{
+			{
+				kind: "GITHUB",
+				repo: &types.Repo{
+					ID:   1,
+					Name: "github.com/susantoscott/hi-mom",
+				},
+			},
+		}
+
+		for _, tc := range testCases {
+			t.Run(tc.kind, func(t *testing.T) {
+				err := store.RepoStore().Create(ctx, tc.repo)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				assertCount := func(t *testing.T, want int) {
+					t.Helper()
+					var count int
+					q := sqlf.Sprintf("SELECT COUNT(*) FROM webhook_build_jobs")
+					if err := store.Handle().QueryRowContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...).Scan(&count); err != nil {
+						t.Fatal(err)
+					}
+					if count != want {
+						t.Fatalf("Expected %d rows, got %d", want, count)
+					}
+				}
+				assertCount(t, 0)
+
+				err = store.EnqueueSingleWebhookBuildJob(ctx, int64(tc.repo.ID), string(tc.repo.Name), tc.kind)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assertCount(t, 1)
+
+				// Doing it again should not fail or add a new row
+				err = store.EnqueueSingleWebhookBuildJob(ctx, int64(tc.repo.ID), string(tc.repo.Name), tc.kind)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assertCount(t, 1)
+
+				// If we change status to processing it should not add a new row
+				q := sqlf.Sprintf("UPDATE webhook_build_jobs SET state='processing'")
+				if _, err := store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+					t.Fatal(err)
+				}
+				err = store.EnqueueSingleWebhookBuildJob(ctx, int64(tc.repo.ID), string(tc.repo.Name), tc.kind)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assertCount(t, 1)
+
+				// If we change status to completed we should be able to enqueue another one
+				q = sqlf.Sprintf("UPDATE webhook_build_jobs SET state='completed'")
+				if _, err = store.Handle().ExecContext(ctx, q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
+					t.Fatal(err)
+				}
+				err = store.EnqueueSingleWebhookBuildJob(ctx, int64(tc.repo.ID), string(tc.repo.Name), tc.kind)
+				if err != nil {
+					t.Fatal(err)
+				}
+				assertCount(t, 2)
+			})
+		}
+
+	}
+}
+
 func testStoreListExternalServiceUserIDsByRepoID(store repos.Store) func(*testing.T) {
 	return func(t *testing.T) {
 		logger := logtest.Scoped(t)
