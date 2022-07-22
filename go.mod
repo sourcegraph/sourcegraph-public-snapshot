@@ -148,7 +148,7 @@ require (
 	github.com/sourcegraph/scip v0.1.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/temoto/robotstxt v1.1.2
@@ -197,11 +197,15 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
+require (
+	github.com/XSAM/otelsql v0.15.0
+	go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
+)
 
 require (
 	github.com/go-sql-driver/mysql v1.6.0 // indirect
 	github.com/onsi/ginkgo v1.16.4 // indirect
+	go.opentelemetry.io/otel/metric v0.31.0 // indirect
 )
 
 require (
@@ -379,7 +383,6 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cobra v1.4.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.3.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
@@ -457,3 +460,5 @@ replace (
 	github.com/russross/blackfriday => github.com/russross/blackfriday v1.5.2
 	golang.org/x/oauth2 => github.com/sourcegraph/oauth2 v0.0.0-20210825125341-77c1d99ece3c
 )
+
+replace github.com/XSAM/otelsql => /Users/tech/gohack/github.com/XSAM/otelsql

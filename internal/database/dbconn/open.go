@@ -2,17 +2,17 @@ package dbconn
 
 import (
 	"database/sql"
+	"fmt"
 	"log"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
 
+	"github.com/XSAM/otelsql"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
-	"github.com/qustavo/sqlhooks/v2"
+	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -70,18 +70,20 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 }
 
 func registerPostgresProxy() {
-	m := promauto.NewCounterVec(prometheus.CounterOpts{
-		Name: "src_pgsql_request_total",
-		Help: "Total number of SQL requests to the database.",
-	}, []string{"type"})
+	// m := promauto.NewCounterVec(prometheus.CounterOpts{
+	// 	Name: "src_pgsql_request_total",
+	// 	Help: "Total number of SQL requests to the database.",
+	// }, []string{"type"})
+	//
+	// sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
+	// 	&metricHooks{
+	// 		metricSQLSuccessTotal: m.WithLabelValues("success"),
+	// 		metricSQLErrorTotal:   m.WithLabelValues("error"),
+	// 	},
+	// 	&tracingHooks{},
+	// )))
 
-	sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
-		&metricHooks{
-			metricSQLSuccessTotal: m.WithLabelValues("success"),
-			metricSQLErrorTotal:   m.WithLabelValues("error"),
-		},
-		&tracingHooks{},
-	)))
+	sql.Register("postgres-proxy", stdlib.GetDefaultDriver())
 }
 
 var registerOnce sync.Once
@@ -89,7 +91,13 @@ var registerOnce sync.Once
 func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	registerOnce.Do(registerPostgresProxy)
 
-	db, err := sql.Open("postgres-proxy", stdlib.RegisterConnConfig(cfg))
+	fmt.Printf("---\n%v\n----\n", otel.GetTracerProvider())
+
+	db, err := otelsql.Open(
+		"postgres-proxy",
+		stdlib.RegisterConnConfig(cfg),
+		otelsql.WithTracerProvider(otel.GetTracerProvider()),
+	)
 	if err != nil {
 		return nil, errors.Wrap(err, "postgresql open")
 	}
