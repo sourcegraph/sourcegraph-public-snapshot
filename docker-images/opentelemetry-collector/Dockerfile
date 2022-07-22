@@ -4,7 +4,7 @@ FROM golang:1.18.1-alpine@sha256:42d35674864fbb577594b60b84ddfba1be52b4d4298c961
 ARG OTEL_COLLECTOR_VERSION
 ENV OTEL_COLLECTOR_VERSION=${OTEL_COLLECTOR_VERSION}
 
-RUN apk add gettext git gcc
+RUN apk add gettext git gcc g++
 
 COPY ./builder.template.yaml ./builder.template.yaml
 RUN envsubst <./builder.template.yaml >./builder.yaml
