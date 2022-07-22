@@ -18,7 +18,7 @@
       "group": "Search"
     },
     "search.index.enabled": {
-      "description": "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
+      "description": "Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Search"
@@ -126,7 +126,7 @@
           "default": "enabled"
         },
         "passwordPolicy": {
-          "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+          "description": "DEPRECATED: this is now a standard feature see: auth.passwordPolicy",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -136,7 +136,7 @@
               "default": true
             },
             "minimumLength": {
-              "description": "The minimum length required for a password",
+              "description": "DEPRECATED: replaced by auth.minPasswordLength",
               "type": "integer",
               "default": 12
             },
