@@ -49,7 +49,7 @@ func externalServiceByID(ctx context.Context, db database.DB, gqlID graphql.ID) 
 	if err := backend.CheckExternalServiceAccess(ctx, db, es.NamespaceUserID, es.NamespaceOrgID); err != nil {
 		return nil, err
 	}
-	return &externalServiceResolver{db: db, externalService: es}, nil
+	return &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: db, externalService: es}, nil
 }
 
 func MarshalExternalServiceID(id int64) graphql.ID {
@@ -187,7 +187,7 @@ func (r *externalServiceResolver) NextSyncAt() *DateTime {
 var scopeCache = rcache.New("extsvc_token_scope")
 
 func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string, error) {
-	scopes, err := repos.GrantedScopes(ctx, scopeCache, r.db, r.externalService)
+	scopes, err := repos.GrantedScopes(ctx, r.logger.Scoped("GrantedScopes", ""), scopeCache, r.db, r.externalService)
 	if err != nil {
 		// It's possible that we fail to fetch scope from the code host, in this case we
 		// don't want the entire resolver to fail.
