@@ -2,45 +2,62 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"net/url"
 	"strings"
 	"text/template"
 	"time"
 
+	"github.com/google/go-github/v41/github"
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-type SlackClient struct {
-	slack.Client
+type NotificationClient struct {
+	slack   slack.Client
+	team    team.TeammateResolver
 	logger  log.Logger
 	Channel string
 }
 
-func NewSlackClient(logger log.Logger, token string) *SlackClient {
-	return &SlackClient{
-		logger:  logger.Scoped("slack", "client which interacts with Slack's webhook API"),
-		Client:  *slack.New(token),
-		Channel: "#william-buildchecker-webhook-test",
+func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
+	slack := slack.New(slackToken)
+	githubClient := github.NewClient(http.DefaultClient)
+	teamResolver := team.NewTeammateResolver(githubClient, slack)
+
+	return &NotificationClient{
+		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
+		slack:   *slack,
+		team:    teamResolver,
+		Channel: channel,
 	}
 }
 
-func (c *SlackClient) sendNotification(build *Build) error {
+func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
+	name := build.Author.Name
+	return c.team.ResolveByName(context.Background(), name)
+}
+
+func (c *NotificationClient) sendNotification(build *Build) error {
 	c.logger.Debug("creating slack json", log.Int("buildNumber", *build.Number))
 
-	user, err := c.GetUserInfo(build.Author.Email)
+	teammate, err := c.getTeammateForBuild(build)
 	if err != nil {
-		c.logger.Error("failed to get slack user", log.Error(err), log.String("Author.Email", build.Author.Email))
+		teammate = &team.Teammate{}
+		c.logger.Error("failed to resolve team mate", log.String("Name", build.Author.Name), log.Error(err))
 	}
-	blocks, err := createMessageBlocks(c.logger, user, build)
+
+	blocks, err := createMessageBlocks(c.logger, teammate, build)
 	if err != nil {
 		return err
 	}
 
 	c.logger.Debug("sending notification", log.Int("buildNumber", *build.Number), log.String("channel", c.Channel))
-	_, _, err = c.PostMessage(c.Channel, slack.MsgOptionBlocks(blocks...))
+	_, _, err = c.slack.PostMessage(c.Channel, slack.MsgOptionBlocks(blocks...))
 	if err != nil {
 		c.logger.Error("failed to post message", log.Int("buildNumber", *build.Number), log.Error(err))
 		return err
@@ -127,7 +144,7 @@ func commitLink(commit string) string {
 	return fmt.Sprintf("<%s|%s>", sgURL, commit[:10])
 }
 
-func createMessageBlocks(logger log.Logger, user *slack.User, build *Build) ([]slack.Block, error) {
+func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
 	failedJobs := "*Failed jobs:*\n"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
@@ -141,10 +158,6 @@ func createMessageBlocks(logger log.Logger, user *slack.User, build *Build) ([]s
 
 	if build.Number == nil {
 		return nil, fmt.Errorf("cannot create message blocks for nil Build Number")
-	}
-
-	if user != nil {
-		logger.Info("slack user", log.String("ID", user.ID), log.String("Name", user.Name))
 	}
 
 	blocks := []slack.Block{
@@ -161,7 +174,7 @@ func createMessageBlocks(logger log.Logger, user *slack.User, build *Build) ([]s
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n%s", build.Author.Name)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n%s", teammate.SlackID)},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline*\n%s", build.PipelineName())},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit*\n%s", commitLink(*build.Commit))},
 			},

@@ -19,19 +19,44 @@ var ErrInvalidToken = fmt.Errorf("buildkite token is invalid")
 var ErrInvalidHeader = fmt.Errorf("Header of request is invalid")
 var ErrUnwantedEvent = fmt.Errorf("Unwanted event received")
 
+const DEFAULT_CHANNEL = "#william-buildchecker-webhook-test"
+
 type BuildTrackingServer struct {
-	logger  log.Logger
-	store   *BuildStore
-	bkToken string
-	slack   *SlackClient
+	logger       log.Logger
+	store        *BuildStore
+	bkToken      string
+	notifyClient *NotificationClient
 }
 
-func NewBuildTrackingServer(logger log.Logger, buildkiteToken, slackToken string) (*BuildTrackingServer, error) {
+type token struct {
+	Buildkite string
+	Slack     string
+	Github    string
+}
+
+func mustEnvVar(name string) string {
+	value, exists := os.LookupEnv(name)
+	if !exists {
+		panic(fmt.Sprintf("%s not found in environment", name))
+	}
+
+	return value
+}
+
+func MustGetTokenFromEnv() token {
+	return token{
+		Buildkite: mustEnvVar("BUILDKITE_WEBHOOK_TOKEN"),
+		Slack:     mustEnvVar("SLACK_TOKEN"),
+		Github:    mustEnvVar("GITHUB_TOKEN"),
+	}
+}
+
+func NewBuildTrackingServer(logger log.Logger, token token, channel string) (*BuildTrackingServer, error) {
 	return &BuildTrackingServer{
-		logger:  logger,
-		store:   NewBuildStore(logger),
-		bkToken: buildkiteToken,
-		slack:   NewSlackClient(logger, slackToken),
+		logger:       logger.Scoped("server", "Build Tracking Server which tracks events received from Buildkite and sends notifications on failrues")
+		store:        NewBuildStore(logger),
+		bkToken:      token.Buildkite,
+		notifyClient: NewNotificationClient(logger, token.Slack, token.Github, channel),
 	}, nil
 }
 
@@ -138,7 +163,7 @@ func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 func (s *BuildTrackingServer) notifyIfFailed(build *Build) error {
 	if s.isFailed(build) {
 		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", *build.Number))
-		return s.slack.sendNotification(build)
+		return s.notifyClient.sendNotification(build)
 	}
 
 	s.logger.Info("build has not failed", log.Int("buildNumber", *build.Number))
@@ -204,27 +229,14 @@ func (s *BuildTrackingServer) Serve() error {
 	return http.ListenAndServe(":8080", nil)
 }
 
-func MustEnvVar(name string) string {
-	value, exists := os.LookupEnv(name)
-	if !exists {
-		panic(fmt.Sprintf("%s not found in environment", name))
-	}
-
-	return value
-}
-
 func main() {
-	slackToken := MustEnvVar("SLACK_TOKEN")
-	buildkiteToken := MustEnvVar("BUILDKITE_WEBHOOK_TOKEN")
-
 	sync := log.Init(log.Resource{
 		Name:      "BuildTracker",
 		Namespace: "CI",
 	})
 	defer sync.Sync()
 
-	logger := log.Scoped("server", "Server that tracks completed builds")
-	server, err := NewBuildTrackingServer(logger, buildkiteToken, slackToken)
+	server, err := NewBuildTrackingServer(logger, MustGetTokenFromEnv(), DEFAULT_CHANNEL)
 	if err != nil {
 		log.Scoped("BuildTracker.main", "main entrypoint for BuildTracker").Fatal(
 			"failed to create BuildTracking server", log.Error(err),

@@ -24,9 +24,9 @@ func TestSlack(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	token := MustEnvVar("SLACK_TOKEN")
+	tokens := MustGetTokenFromEnv()
 
-	client := NewSlackClient(logger, token)
+	client := NewNotificationClient(logger, tokens.Slack, tokens.Github, DEFAULT_CHANNEL)
 
 	num := 160000
 	url := "http://www.google.com"
@@ -54,11 +54,11 @@ func TestSlack(t *testing.T) {
 				URL:    &url,
 				Commit: &commit,
 			},
-			Jobs: []buildkite.Job{
-				*newJob(":one: fake step", exit),
-				*newJob(":two: fake step", exit),
-				*newJob(":three: fake step", exit),
-				*newJob(":four: fake step", exit),
+			Jobs: map[string]buildkite.Job{
+				":one: fake step":   *newJob(":one: fake step", exit),
+				":two: fake step":   *newJob(":two: fake step", exit),
+				":three: fake step": *newJob(":three: fake step", exit),
+				":four: fake step":  *newJob(":four: fake step", exit),
 			},
 		},
 	)
