@@ -125,7 +125,7 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     authProviders: AuthProvider[]
 
     /** What the minimum length for a password should be. */
-    authMinPasswordLength?: number
+    authMinPasswordLength: number
 
     authPasswordPolicy?: {
         /** Whether password policy is enabled or not */

@@ -21,7 +21,7 @@ import { LoaderButton } from '../components/LoaderButton'
 import { AuthProvider, SourcegraphContext } from '../jscontext'
 import { ANONYMOUS_USER_ID_KEY, eventLogger, FIRST_SOURCE_URL_KEY, LAST_SOURCE_URL_KEY } from '../tracking/eventLogger'
 import { enterpriseTrial } from '../util/features'
-import { minPasswordLength, validatePassword, getPasswordRequirements } from '../util/security'
+import { validatePassword, getPasswordRequirements } from '../util/security'
 
 import { OrDivider } from './OrDivider'
 import { maybeAddPostSignUpRedirect, PasswordInput, UsernameInput } from './SignInSignUpCommon'
@@ -48,7 +48,11 @@ interface SignUpFormProps {
     buttonLabel?: string
     context: Pick<
         SourcegraphContext,
-        'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures' | 'authPasswordPolicy'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'experimentalFeatures'
+        | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
     >
 
     // For use in ExperimentalSignUpPage. Modifies styling and removes terms of service and trial section.
@@ -218,7 +222,7 @@ export const SignUpForm: React.FunctionComponent<React.PropsWithChildren<SignUpF
                             required={true}
                             disabled={loading}
                             autoComplete="new-password"
-                            minLength={minPasswordLength}
+                            minLength={context.authMinPasswordLength}
                             placeholder=" "
                             onInvalid={preventDefault}
                             inputRef={passwordInputReference}

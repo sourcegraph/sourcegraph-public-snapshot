@@ -21,7 +21,7 @@ import {
 } from '../../../graphql-operations'
 import { AuthProvider, SourcegraphContext } from '../../../jscontext'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { minPasswordLength, getPasswordRequirements } from '../../../util/security'
+import { getPasswordRequirements } from '../../../util/security'
 import { updatePassword, createPassword } from '../backend'
 
 import { ExternalAccountsSignIn } from './ExternalAccountsSignIn'
@@ -279,7 +279,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
-                                        minLength={minPasswordLength}
+                                        minLength={window.context.authMinPasswordLength}
                                         placeholder=" "
                                         autoComplete="new-password"
                                     />
@@ -297,7 +297,7 @@ export class UserSettingsSecurityPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
-                                        minLength={minPasswordLength}
+                                        minLength={window.context.authMinPasswordLength}
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                     />

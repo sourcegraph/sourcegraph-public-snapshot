@@ -1,28 +1,28 @@
 import { SourcegraphContext } from '../jscontext'
 
-// make sure we always have a minPasswordLen
-export const minPasswordLength =
-    window.context.authMinPasswordLength !== undefined && window.context.authMinPasswordLength > 0
-        ? window.context.authMinPasswordLength
-        : 12
-
 export function validatePassword(
     context: Pick<
         SourcegraphContext,
-        'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures' | 'authPasswordPolicy'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'experimentalFeatures'
+        | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
     >,
     password: string
 ): string | undefined {
     // minPasswordLen always has a value so we do it first
-    if (password.length < minPasswordLength) {
-        return 'Password must be at least ' + minPasswordLength.toString() + ' characters.'
+    if (password.length < context.authMinPasswordLength) {
+        return 'Password must be at least ' + context.authMinPasswordLength.toString() + ' characters.'
     }
 
     const passwordPolicyReference = context.authPasswordPolicy
 
     if (passwordPolicyReference?.enabled) {
-        if (passwordPolicyReference.numberOfSpecialCharacters &&
-            passwordPolicyReference.numberOfSpecialCharacters > 0) {
+        if (
+            passwordPolicyReference.numberOfSpecialCharacters &&
+            passwordPolicyReference.numberOfSpecialCharacters > 0
+        ) {
             const specialCharacters = /[!"#$%&'()*+,./:;<=>?@[\]^_`{|}~-]/
             // This must be kept in sync with the security.go checks
             const count = (password.match(specialCharacters) || []).length
@@ -61,19 +61,25 @@ export function validatePassword(
 export function getPasswordRequirements(
     context: Pick<
         SourcegraphContext,
-        'authProviders' | 'sourcegraphDotComMode' | 'experimentalFeatures' | 'authPasswordPolicy'
+        | 'authProviders'
+        | 'sourcegraphDotComMode'
+        | 'experimentalFeatures'
+        | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
     >
 ): string {
     const passwordPolicyReference = context.authPasswordPolicy
 
-    let requirements: string = 'Your password must include at least ' + minPasswordLength.toString() + ' characters'
+    let requirements: string = 'At least ' + context.authMinPasswordLength.toString() + ' characters'
 
     if (passwordPolicyReference?.enabled) {
         console.log('Using enhanced password policy.')
 
-        if (passwordPolicyReference.numberOfSpecialCharacters &&
-            passwordPolicyReference.numberOfSpecialCharacters > 0) {
-            requirements += ', ' + String(passwordPolicyReference.numberOfSpecialCharacters) + ' special characters'
+        if (
+            passwordPolicyReference.numberOfSpecialCharacters &&
+            passwordPolicyReference.numberOfSpecialCharacters > 0
+        ) {
+            requirements += ', ' + passwordPolicyReference.numberOfSpecialCharacters.toString() + ' special characters'
         }
         if (passwordPolicyReference.requireAtLeastOneNumber) {
             requirements += ', at least one number'

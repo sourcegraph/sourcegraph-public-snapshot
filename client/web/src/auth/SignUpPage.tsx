@@ -31,6 +31,7 @@ export interface SignUpPageProps extends ThemeProps, TelemetryProps {
         | 'sourcegraphDotComMode'
         | 'xhrHeaders'
         | 'authPasswordPolicy'
+        | 'authMinPasswordLength'
     >
 }
 

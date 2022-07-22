@@ -13,7 +13,7 @@ import { PasswordInput } from '../../../auth/SignInSignUpCommon'
 import { PageTitle } from '../../../components/PageTitle'
 import { UserAreaUserFields } from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
-import { minPasswordLength, validatePassword, getPasswordRequirements } from '../../../util/security'
+import { validatePassword, getPasswordRequirements } from '../../../util/security'
 import { updatePassword } from '../backend'
 
 import styles from './UserSettingsPasswordPage.module.scss'
@@ -145,7 +145,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         id="newPassword"
                                         name="newPassword"
                                         aria-label="new password"
-                                        minLength={minPasswordLength}
+                                        minLength={window.context.authMinPasswordLength}
                                         placeholder=" "
                                         autoComplete="new-password"
                                         className={styles.userSettingsPasswordPageInput}
@@ -162,7 +162,7 @@ export class UserSettingsPasswordPage extends React.Component<Props, State> {
                                         name="newPasswordConfirmation"
                                         aria-label="new password confirmation"
                                         placeholder=" "
-                                        minLength={minPasswordLength}
+                                        minLength={window.context.authMinPasswordLength}
                                         inputRef={this.setNewPasswordConfirmationField}
                                         autoComplete="new-password"
                                         className={styles.userSettingsPasswordPageInput}
