@@ -190,7 +190,7 @@ describe('Repository component', () => {
         test('selects the current file', async () => {
             await driver.page.goto(
                 sourcegraphBaseUrl +
-                    '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/blob/async.go'
+                '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/blob/async.go'
             )
             await driver.page.waitForSelector('[data-tree-row-active="true"] [data-tree-path="async.go"]', {
                 visible: true,
@@ -200,12 +200,12 @@ describe('Repository component', () => {
         test('shows partial tree when opening directory', async () => {
             await driver.page.goto(
                 sourcegraphBaseUrl +
-                    '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
+                '/github.com/sourcegraph/jsonrpc2@c6c7b9aa99fb76ee5460ccd3912ba35d419d493d/-/tree/websocket'
             )
             await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true })
             expect(
                 await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]').length)
-            ).toEqual(1)
+            ).toEqual(2)
         })
 
         test('responds to keyboard shortcuts', async () => {
@@ -218,7 +218,7 @@ describe('Repository component', () => {
             }
             await driver.page.goto(
                 sourcegraphBaseUrl +
-                    '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/.travis.yml'
+                '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/.travis.yml'
             )
             await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true }) // waitForSelector for tree to render
 
@@ -499,7 +499,7 @@ describe('Repository component', () => {
             test('gets displayed and updates URL when hovering over a token', async () => {
                 await driver.page.goto(
                     sourcegraphBaseUrl +
-                        '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
+                    '/github.com/gorilla/mux@15a353a636720571d19e37b34a14499c3afa9991/-/blob/mux.go'
                 )
                 await driver.page.waitForSelector(blobTableSelector)
 
@@ -521,7 +521,7 @@ describe('Repository component', () => {
                 test('noops when on the definition', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                     )
                     await clickHoverJ2D(29, 6)
                     await driver.assertWindowLocation(
@@ -532,7 +532,7 @@ describe('Repository component', () => {
                 test('does navigation (same repo, same file)', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L25:10'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L25:10'
                     )
                     await clickHoverJ2D(25, 10)
                     await driver.assertWindowLocation(
@@ -543,7 +543,7 @@ describe('Repository component', () => {
                 test.skip('does navigation (same repo, different file)', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go?L13:31'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/print.go?L13:31'
                     )
                     await clickHoverJ2D(13, 31)
                     await driver.assertWindowLocation(
@@ -564,7 +564,7 @@ describe('Repository component', () => {
                 test.skip('does navigation (external repo)', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
-                            '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go?L27:30'
+                        '/github.com/sourcegraph/vcsstore@267289226b15e5b03adedc9746317455be96e44c/-/blob/server/diff.go?L27:30'
                     )
                     await clickHoverJ2D(27, 30)
                     await driver.assertWindowLocation(
@@ -581,7 +581,7 @@ describe('Repository component', () => {
 
                     await driver.page.goto(
                         sourcegraphBaseUrl +
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L29:6'
                     )
                     await clickHoverFindReferences(29, 6)
                     await driver.assertWindowLocation(
@@ -620,7 +620,7 @@ describe('Repository component', () => {
                 test.skip('opens widget and fetches external references', async () => {
                     await driver.page.goto(
                         sourcegraphBaseUrl +
-                            '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L32:16#tab=references'
+                        '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L32:16#tab=references'
                     )
 
                     // verify some external refs are fetched (we cannot assert how many, but we can check that the matched results
