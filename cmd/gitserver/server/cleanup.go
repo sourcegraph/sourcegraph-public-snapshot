@@ -172,14 +172,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	defer janitorRunning.Set(0)
 	cleanupLogger := s.Logger.Scoped("cleanup", "cleanup operation")
 
-	isKnownGitServerShard := false
+	knownGitServerShard := false
 	for _, addr := range gitServerAddrs {
 		if s.hostnameMatch(addr) {
-			isKnownGitServerShard = true
+			knownGitServerShard = true
 			break
 		}
 	}
-	if !isKnownGitServerShard {
+	if !knownGitServerShard {
 		s.Logger.Warn("current shard is not included in the list of known gitserver shards, will not delete repos", log.String("current-hostname", s.Hostname), log.Strings("all-shards", gitServerAddrs))
 	}
 
@@ -219,8 +219,14 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		if !s.hostnameMatch(addr) {
 			wrongShardRepoCount++
 			wrongShardRepoSize += size
-			if isKnownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
-				s.Logger.Info("removing repo cloned on the wrong shard", log.String("dir", string(dir)), log.String("target-shard", addr), log.String("current-shard", s.Hostname), log.Int64("size-bytes", size))
+			if knownGitServerShard && wrongShardReposDeleteLimit > 0 && wrongShardReposDeleted < int64(wrongShardReposDeleteLimit) {
+				s.Logger.Info(
+					"removing repo cloned on the wrong shard",
+					log.String("dir", string(dir)),
+					log.String("target-shard", addr),
+					log.String("current-shard", s.Hostname),
+					log.Int64("size-bytes", size),
+				)
 				if err := s.removeRepoDirectory(dir); err != nil {
 					return false, err
 				}
