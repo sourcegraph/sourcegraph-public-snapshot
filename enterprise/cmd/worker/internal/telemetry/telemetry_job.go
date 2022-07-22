@@ -4,6 +4,10 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/types"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
+
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -17,10 +21,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-type telemetryJob struct{}
+type telemetryJob struct {
+	db database.DB
+}
 
-func NewTelemetryJob() *telemetryJob {
-	return &telemetryJob{}
+func NewTelemetryJob(db database.DB) *telemetryJob {
+	return &telemetryJob{
+		db: db,
+	}
 }
 
 func (t *telemetryJob) Description() string {
@@ -37,34 +45,63 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 	}
 	logger.Info("Usage telemetry export enabled - initializing background routine")
 
+	eventLogStore := t.db.EventLogs()
+
 	return []goroutine.BackgroundRoutine{
-		newBackgroundTelemetryJob(logger),
+		newBackgroundTelemetryJob(logger, eventLogStore),
 	}, nil
 }
 
-func newBackgroundTelemetryJob(logger log.Logger) goroutine.BackgroundRoutine {
+func newBackgroundTelemetryJob(logger log.Logger, eventLogStore database.EventLogStore) goroutine.BackgroundRoutine {
 	observationContext := &observation.Context{
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.NewRegistry(),
 	}
 	operation := observationContext.Operation(observation.Op{})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, &telemetryHandler{logger: logger}, operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, newTelemetryHandler(logger, eventLogStore, func(ctx context.Context, event []*types.Event) error {
+		return nil
+	}), operation)
 }
 
 type telemetryHandler struct {
-	logger log.Logger
+	logger             log.Logger
+	eventLogStore      database.EventLogStore
+	sendEventsCallback func(ctx context.Context, event []*types.Event) error
+}
+
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, sendEventsCallback func(ctx context.Context, event []*types.Event) error) *telemetryHandler {
+	return &telemetryHandler{
+		logger:             logger,
+		eventLogStore:      store,
+		sendEventsCallback: sendEventsCallback,
+	}
 }
 
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
+
+const MaxEventsCountDefault = 5000
 
 func (t *telemetryHandler) Handle(ctx context.Context) error {
 	if !isEnabled() {
 		return disabledErr
 	}
 
-	t.logger.Info("telemetryHandler executed")
-	return nil
+	batchSize := getBatchSize()
+	all, err := t.eventLogStore.ListExportableEvents(ctx, database.LimitOffset{
+		Limit:  batchSize,
+		Offset: 0, // currently static, will become dynamic with https://github.com/sourcegraph/sourcegraph/issues/39089
+	})
+	if err != nil {
+		return errors.Wrap(err, "eventLogStore.ListExportableEvents")
+	}
+	if len(all) == 0 {
+		return nil
+	}
+
+	maxId := int(all[len(all)-1].ID)
+	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
+	return t.sendEventsCallback(ctx, all)
 }
 
 // This package level client is to prevent race conditions when mocking this configuration in tests.
@@ -77,4 +114,12 @@ func isEnabled() bool {
 	}
 
 	return false
+}
+
+func getBatchSize() int {
+	val := confClient.Get().ExportUsageTelemetry.BatchSize
+	if val <= 0 {
+		val = MaxEventsCountDefault
+	}
+	return val
 }
