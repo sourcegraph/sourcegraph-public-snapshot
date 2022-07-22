@@ -640,4 +640,173 @@ describe('getDiagnostics()', () => {
             ).toMatchInlineSnapshot('[]')
         })
     })
+
+    describe('patterns with quotation marks', () => {
+        test('detects patterns starting or ending with a quotation mark', () => {
+            expect(parseAndDiagnose(`"test 'test test" test'`, SearchPatternType.literal)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": "info",
+                    "message": "This pattern is interpreted literally, including the quotation marks.",
+                    "range": {
+                      "start": 0,
+                      "end": 5
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove quotation marks",
+                        "change": {
+                          "from": 0,
+                          "to": 5,
+                          "insert": "test"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "severity": "info",
+                    "message": "This pattern is interpreted literally, including the quotation marks.",
+                    "range": {
+                      "start": 6,
+                      "end": 11
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove quotation marks",
+                        "change": {
+                          "from": 6,
+                          "to": 11,
+                          "insert": "test"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "severity": "info",
+                    "message": "This pattern is interpreted literally, including the quotation marks.",
+                    "range": {
+                      "start": 12,
+                      "end": 17
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove quotation marks",
+                        "change": {
+                          "from": 12,
+                          "to": 17,
+                          "insert": "test"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "severity": "info",
+                    "message": "This pattern is interpreted literally, including the quotation marks.",
+                    "range": {
+                      "start": 18,
+                      "end": 23
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove quotation marks",
+                        "change": {
+                          "from": 18,
+                          "to": 23,
+                          "insert": "test"
+                        }
+                      }
+                    ]
+                  }
+                ]
+            `)
+        })
+
+        test('detects patterns starting and ending with a quotation mark', () => {
+            expect(parseAndDiagnose(`"test" 'test' "test'`, SearchPatternType.literal)).toMatchInlineSnapshot(`
+                [
+                  {
+                    "severity": "info",
+                    "message": "This pattern is interpreted literally, including the quotation marks. Use the \`content:\` filter if you want to \\"escape\\" terms that would otherwise be interpreted as query keywords.",
+                    "range": {
+                      "start": 0,
+                      "end": 6
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove quotation marks",
+                        "change": {
+                          "from": 0,
+                          "to": 6,
+                          "insert": "test"
+                        }
+                      },
+                      {
+                        "label": "Replace with content:\\"...\\"",
+                        "change": {
+                          "from": 0,
+                          "to": 6,
+                          "insert": "content:\\"test\\""
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "severity": "info",
+                    "message": "This pattern is interpreted literally, including the quotation marks. Use the \`content:\` filter if you want to \\"escape\\" terms that would otherwise be interpreted as query keywords.",
+                    "range": {
+                      "start": 7,
+                      "end": 13
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove quotation marks",
+                        "change": {
+                          "from": 7,
+                          "to": 13,
+                          "insert": "test"
+                        }
+                      },
+                      {
+                        "label": "Replace with content:\\"...\\"",
+                        "change": {
+                          "from": 7,
+                          "to": 13,
+                          "insert": "content:'test'"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "severity": "info",
+                    "message": "This pattern is interpreted literally, including the quotation marks.",
+                    "range": {
+                      "start": 14,
+                      "end": 20
+                    },
+                    "actions": [
+                      {
+                        "label": "Remove quotation marks",
+                        "change": {
+                          "from": 14,
+                          "to": 20,
+                          "insert": "test"
+                        }
+                      }
+                    ]
+                  }
+                ]
+            `)
+        })
+
+        test('ignores patterns containing a quotation mark', () => {
+            expect(parseAndDiagnose(`no'match no"match`, SearchPatternType.literal)).toMatchInlineSnapshot(`[]`)
+        })
+
+        test('ignores patterns in regexp or structural modes', () => {
+            expect(parseAndDiagnose(`"test 'test test" test'`, SearchPatternType.regexp)).toMatchInlineSnapshot(`[]`)
+            expect(parseAndDiagnose(`"test 'test test" test'`, SearchPatternType.structural)).toMatchInlineSnapshot(
+                `[]`
+            )
+        })
+    })
 })
