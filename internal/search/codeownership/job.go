@@ -2,11 +2,11 @@ package codeownership
 
 import (
 	"context"
-	"fmt"
 	"sync"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -31,6 +31,11 @@ type codeownershipJob struct {
 	excludeOwners []string
 }
 
+type RulesKey struct {
+	repoName api.RepoName
+	commitID api.CommitID
+}
+
 func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
@@ -38,7 +43,7 @@ func (s *codeownershipJob) Run(ctx context.Context, clients job.RuntimeClients, 
 	var (
 		mu    sync.Mutex
 		errs  error
-		rules map[string]Ruleset = make(map[string]Ruleset)
+		rules map[RulesKey]Ruleset = make(map[RulesKey]Ruleset)
 	)
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
@@ -90,7 +95,7 @@ func applyCodeOwnershipFiltering(
 	ctx context.Context,
 	gitserver gitserver.Client,
 	mu *sync.Mutex,
-	rules *map[string]Ruleset,
+	rules *map[RulesKey]Ruleset,
 	includeOwners,
 	excludeOwners []string,
 	matches []result.Match) ([]result.Match, error) {
@@ -102,17 +107,17 @@ matchesLoop:
 	for _, m := range matches {
 		switch mm := m.(type) {
 		case *result.FileMatch:
-			cachekey := fmt.Sprintf("%s@%s", mm.Repo.Name, mm.CommitID)
+			key := RulesKey{mm.Repo.Name, mm.CommitID}
 
 			mu.Lock()
-			ruleset, ok := (*rules)[cachekey]
+			ruleset, ok := (*rules)[key]
 			var err error
 			if !ok {
 				ruleset, err = NewRuleset(ctx, gitserver, mm.Repo.Name, mm.CommitID)
 				if err != nil {
 					errs = errors.Append(errs, err)
 				}
-				(*rules)[cachekey] = ruleset
+				(*rules)[key] = ruleset
 			}
 			var owners Owners
 			owners, err = ruleset.Match(mm.File.Path)

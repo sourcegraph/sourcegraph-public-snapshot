@@ -87,7 +87,7 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 
 			var (
 				mu    sync.Mutex
-				rules map[string]Ruleset = make(map[string]Ruleset)
+				rules map[RulesKey]Ruleset = make(map[RulesKey]Ruleset)
 			)
 
 			matches, _ := applyCodeOwnershipFiltering(ctx, gitserver.NewClient(db), &mu, &rules, tt.args.includeOwners, tt.args.excludeOwners, tt.args.matches)
