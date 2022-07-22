@@ -4,7 +4,7 @@ import (
 	"context"
 	"sort"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
@@ -41,13 +41,13 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		}
 		mr := *metadataResult
 		if len(mr.Errors) > 0 {
-			log15.Warn("related insights errors", mr.Errors)
+			r.logger.Warn("related insights errors", log.Strings("errors", mr.Errors))
 		}
 		if len(mr.Alerts) > 0 {
-			log15.Warn("related insights alerts", mr.Alerts)
+			r.logger.Warn("related insights alerts", log.Strings("alerts", mr.Alerts))
 		}
 		if len(mr.SkippedReasons) > 0 {
-			log15.Warn("related insights skipped", mr.SkippedReasons)
+			r.logger.Warn("related insights skipped", log.Strings("reasons", mr.SkippedReasons))
 		}
 
 		for _, match := range mr.Matches {
