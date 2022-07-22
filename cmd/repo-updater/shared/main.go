@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -147,7 +146,6 @@ func Main(enterpriseInit EnterpriseInit) {
 		Logger:                logger,
 		Store:                 store,
 		Scheduler:             updateScheduler,
-		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
 	}
