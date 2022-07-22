@@ -266,10 +266,6 @@ type RelatedInsightForFile {
     Insight title
     """
     title: String!
-    """
-    The filepath this insight is matching
-    """
-    file: String!
 }
 
 extend type Mutation {

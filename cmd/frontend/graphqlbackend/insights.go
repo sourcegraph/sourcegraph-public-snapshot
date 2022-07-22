@@ -472,5 +472,4 @@ type RelatedInsightsInlineResolver interface {
 type RelatedInsightsForFileResolver interface {
 	ViewID() string
 	Title() string
-	File() string
 }

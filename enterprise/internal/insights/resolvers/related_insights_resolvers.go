@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -143,7 +144,7 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 		for _, match := range mr.Matches {
 			if len(match.Path) > 0 && strings.EqualFold(match.Path, args.Input.File) {
 				matchedInsightViews[series.UniqueID] = true
-				resolvers = append(resolvers, &relatedInsightsForFileResolver{viewID: series.UniqueID, title: series.Title, file: match.Path})
+				resolvers = append(resolvers, &relatedInsightsForFileResolver{viewID: series.UniqueID, title: series.Title})
 			}
 		}
 	}
@@ -154,7 +155,6 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 type relatedInsightsForFileResolver struct {
 	viewID string
 	title  string
-	file   string
 
 	baseInsightResolver
 }
@@ -165,10 +165,6 @@ func (r *relatedInsightsForFileResolver) ViewID() string {
 
 func (r *relatedInsightsForFileResolver) Title() string {
 	return r.title
-}
-
-func (r *relatedInsightsForFileResolver) File() string {
-	return r.file
 }
 
 func containsInt(array []int32, findElement int32) bool {
