@@ -9,10 +9,8 @@ import { isLegacyFragment, parseQueryAndHash, toRepoURL } from '@sourcegraph/sha
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { ActionItemsBar } from '../extensions/components/ActionItemsBar'
 import { GettingStartedTour } from '../tour/GettingStartedTour'
-import { useExtensionsAsCoreFeaturesFromSettings } from '../util/settings'
 import { formatHash, formatLineOrPositionOrRange } from '../util/url'
 
-import { ActionItemsBar as NewActionItemsBar } from './ActionItemsBar'
 import { BlobPage } from './blob/BlobPage'
 import { BlobStatusBarContainer } from './blob/ui/BlobStatusBarContainer'
 import { RepoRevisionContainerContext } from './RepoRevisionContainer'
@@ -42,8 +40,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         globbing,
         ...context
     } = props
-
-    const extensionsAsCoreFeatures = useExtensionsAsCoreFeaturesFromSettings(context.settingsCascade)
 
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
@@ -137,17 +133,14 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 </BlobStatusBarContainer>
             )}
 
-            {extensionsAsCoreFeatures ? (
-                <NewActionItemsBar useActionItemsBar={context.useActionItemsBar} location={context.location} />
-            ) : (
-                <ActionItemsBar
-                    useActionItemsBar={context.useActionItemsBar}
-                    location={context.location}
-                    extensionsController={context.extensionsController}
-                    platformContext={context.platformContext}
-                    telemetryService={context.telemetryService}
-                />
-            )}
+            <ActionItemsBar
+                useActionItemsBar={context.useActionItemsBar}
+                location={context.location}
+                extensionsController={context.extensionsController}
+                platformContext={context.platformContext}
+                telemetryService={context.telemetryService}
+                settingsCascade={context.settingsCascade}
+            />
         </>
     )
 }

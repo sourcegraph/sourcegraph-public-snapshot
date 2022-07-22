@@ -8,8 +8,7 @@ import { Button, Icon } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../components/ErrorBoundary'
 import { useCarousel } from '../components/useCarousel'
-
-import { GitBlameButton } from './GitBlameButton'
+import { GitBlameButton } from '../extensions/git/GitBlameButton'
 
 import styles from './ActionItemsBar.module.scss'
 

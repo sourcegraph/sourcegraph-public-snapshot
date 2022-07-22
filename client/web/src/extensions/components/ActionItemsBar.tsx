@@ -17,11 +17,14 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
+import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { ErrorBoundary } from '../../components/ErrorBoundary'
 import { useCarousel } from '../../components/useCarousel'
+import { useExtensionsAsCoreFeaturesFromSettings } from '../../util/settings'
+import { GitBlameButton } from '../git/GitBlameButton'
 
 import styles from './ActionItemsBar.module.scss'
 
@@ -170,7 +173,11 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
     }
 }
 
-export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
+export interface ActionItemsBarProps
+    extends ExtensionsControllerProps,
+        TelemetryProps,
+        PlatformContextProps,
+        SettingsCascadeProps {
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
 }
@@ -185,6 +192,8 @@ const actionItemClassName = classNames(
  */
 export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionItemsBar(props) {
     const { isOpen, barReference } = props.useActionItemsBar()
+
+    const extensionsAsCoreFeatures = useExtensionsAsCoreFeaturesFromSettings(props.settingsCascade)
 
     const {
         carouselReference,
@@ -229,6 +238,11 @@ export const ActionItemsBar = React.memo<ActionItemsBarProps>(function ActionIte
                 >
                     {items => (
                         <ul className={classNames('list-unstyled m-0', styles.list)} ref={carouselReference}>
+                            {extensionsAsCoreFeatures && (
+                                <li className={styles.listItem}>
+                                    <GitBlameButton />
+                                </li>
+                            )}
                             {items.map((item, index) => {
                                 const hasIconURL = !!item.action.actionItem?.iconURL
                                 const className = classNames(
