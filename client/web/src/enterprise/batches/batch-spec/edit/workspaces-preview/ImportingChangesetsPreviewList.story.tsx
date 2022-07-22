@@ -4,6 +4,7 @@ import { WebStory } from '../../../../../components/WebStory'
 import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { mockImportingChangesets } from '../../batch-spec.mock'
 import { boolean, number, withKnobs } from '@storybook/addon-knobs'
+import { action } from '@storybook/addon-actions'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
@@ -33,7 +34,7 @@ export const ImportingChangesetsPreviewListStory: Story = () => {
                             },
                         },
                         hasNextPage: boolean('Has Next Page', false),
-                        fetchMore: () => {},
+                        fetchMore: action('Fetch More'),
                         loading: boolean('Loading', false),
                     }}
                     isStale={boolean('Is State', false)}
