@@ -84,8 +84,6 @@ func main() {
 
 	env.Lock()
 	env.HandleHelpFlag()
-
-	conf.Init()
 	logging.Init()
 
 	liblog := log.Init(log.Resource{
@@ -94,6 +92,8 @@ func main() {
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
+
+	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
@@ -127,6 +127,11 @@ func main() {
 	err = keyring.Init(ctx)
 	if err != nil {
 		logger.Fatal("failed to initialise keyring", zap.Error(err))
+	}
+
+	authz.DefaultSubRepoPermsChecker, err = authz.NewSubRepoPermsClient(db.SubRepoPerms())
+	if err != nil {
+		logger.Fatal("Failed to create sub-repo client", zap.Error(err))
 	}
 
 	gitserver := server.Server{

@@ -228,15 +228,15 @@ func main() {
 	env.Lock()
 	env.HandleHelpFlag()
 	stdlog.SetFlags(0)
-	conf.Init()
 	logging.Init()
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
-
 	defer liblog.Sync()
+
+	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
 	trace.Init()

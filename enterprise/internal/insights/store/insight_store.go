@@ -125,10 +125,6 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 
 	if len(args.Repo) > 0 {
-		// TODO the double SELECT from repo names seems costly. a performance improvement might be
-		// to separate this whole operation in its own query.
-		// after the prototype we could also have an insight store cache where we store common repos
-		// in memory.
 		repoQuery := `i.series_id IN(
 			SELECT series_id FROM series_points sp
 			WHERE sp.repo_name_id IN(SELECT id FROM repo_names WHERE name = %s)
@@ -152,10 +148,6 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		visibleViewsQuery(args.UserID, args.OrgID),
 		sqlf.Join(preds, "AND"),
 		limit)
-
-	// fmt.Println(q.Query(sqlf.PostgresBindVar))
-	// fmt.Println(q.Args())
-
 	insightIds, err := scanInsightViewIds(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
@@ -170,11 +162,6 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 	}
 
 	q = sqlf.Sprintf(getInsightsWithSeriesSql, sqlf.Join(insightIdElems, ","))
-
-	// fmt.Println("second query")
-	// fmt.Println(q.Query(sqlf.PostgresBindVar))
-	// fmt.Println(q.Args())
-
 	return scanInsightViewSeries(s.Query(ctx, q))
 }
 

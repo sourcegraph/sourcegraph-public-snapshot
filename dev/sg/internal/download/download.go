@@ -17,43 +17,43 @@ import (
 
 // Executable downloads a binary from the given URL, updates the given path if different, and
 // makes the downloaded file executable.
-func Executable(ctx context.Context, url string, path string) error {
+func Executable(ctx context.Context, url string, path string) (bool, error) {
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
-		return err
+		return false, err
 	}
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return err
+		return false, err
 	}
 	defer resp.Body.Close()
 
 	// Sometimes the release is available, but the binaries are not
 	if resp.StatusCode == http.StatusNotFound {
-		return nil
+		return false, nil
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return errors.Newf("downloading %s: status %d",
+		return false, errors.Newf("downloading %s: status %d",
 			url, resp.StatusCode)
 	}
 
 	content := &bytes.Buffer{}
 	if n, err := content.ReadFrom(resp.Body); err != nil {
-		return errors.Wrap(err, "reading response")
+		return false, errors.Wrap(err, "reading response")
 	} else if n == 0 {
-		return errors.New("got empty response")
+		return false, errors.New("got empty response")
 	}
 
 	updated, err := fileutil.UpdateFileIfDifferent(path, content.Bytes())
 	if err != nil {
-		return errors.Wrapf(err, "saving to %q", path)
+		return false, errors.Wrapf(err, "saving to %q", path)
 	}
 	if updated {
-		return exec.CommandContext(ctx, "chmod", "+x", path).Run()
+		return true, exec.CommandContext(ctx, "chmod", "+x", path).Run()
 	}
 
-	return nil
+	return false, nil
 }
 
 // ArchivedExecutable downloads an executable that's in an archive and extracts

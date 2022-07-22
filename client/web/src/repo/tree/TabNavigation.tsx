@@ -42,12 +42,12 @@ export const TabNavigation: React.FunctionComponent<React.PropsWithChildren<TabN
         </Button>
         {codeIntelligenceEnabled && (
             <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                to={`/${encodeURIPathComponent(repo.name)}/-/code-graph`}
                 variant="secondary"
                 outline={true}
                 as={Link}
             >
-                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Intelligence
+                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Graph
             </Button>
         )}
         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}

@@ -142,12 +142,12 @@ const filters: Filter[] = [
         kind: 'file',
     },
 
-    ...['typescript', 'javascript', 'c++', 'c', 'c#', 'python', 'ruby', 'haskell', 'java'].map(lang => ({
-        label: `lang:${lang}`,
-        value: `lang:${lang}`,
+    ...['TypeScript', 'JavaScript', 'C++', 'C', 'C#', 'Python', 'Ruby', 'Haskell', 'Java'].map(lang => ({
+        label: lang,
+        value: `lang:${lang.toLowerCase()}`,
         count: 10,
         limitHit: true,
-        kind: 'lang',
+        kind: 'lang' as Filter['kind'],
     })),
 ]
 

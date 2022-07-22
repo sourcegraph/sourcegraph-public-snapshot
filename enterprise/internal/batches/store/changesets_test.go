@@ -1058,6 +1058,8 @@ func testStoreChangesets(t *testing.T, ctx context.Context, s *Store, clock ct.C
 			c.NumResets = 987
 			c.NumFailures = 789
 
+			c.DetachedAt = clock.Now()
+
 			clone := c.Clone()
 			have = append(have, clone)
 
@@ -2468,5 +2470,86 @@ func TestEnqueueChangesetsToClose(t *testing.T) {
 		want.OwnedByBatchChange = batchChange.ID
 		want.AttachedTo = []int64{batchChange.ID}
 		ct.ReloadAndAssertChangeset(t, ctx, s, changeset, want)
+	}
+}
+
+func TestCleanDetachedChangesets(t *testing.T) {
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	s := New(db, &observation.TestContext, nil)
+	rs := database.ReposWith(logger, s)
+	es := database.ExternalServicesWith(logger, s)
+
+	repo := ct.TestRepo(t, es, extsvc.KindGitHub)
+	err := rs.Create(ctx, repo)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name        string
+		cs          *btypes.Changeset
+		wantDeleted bool
+	}{
+		{
+			name: "old detached changeset deleted",
+			cs: &btypes.Changeset{
+				RepoID:              repo.ID,
+				ExternalID:          fmt.Sprintf("foobar-%d", 42),
+				ExternalServiceType: extsvc.TypeGitHub,
+				ExternalBranch:      "refs/heads/batch-changes/test",
+				// Set beyond the retention period
+				DetachedAt: time.Now().Add(-48 * time.Hour),
+			},
+			wantDeleted: true,
+		},
+		{
+			name: "new detached changeset not deleted",
+			cs: &btypes.Changeset{
+				RepoID:              repo.ID,
+				ExternalID:          fmt.Sprintf("foobar-%d", 42),
+				ExternalServiceType: extsvc.TypeGitHub,
+				ExternalBranch:      "refs/heads/batch-changes/test",
+				// Set to now, within the retention period
+				DetachedAt: time.Now(),
+			},
+			wantDeleted: false,
+		},
+		{
+			name: "regular changeset not deleted",
+			cs: &btypes.Changeset{
+				RepoID:              repo.ID,
+				ExternalID:          fmt.Sprintf("foobar-%d", 42),
+				ExternalServiceType: extsvc.TypeGitHub,
+				ExternalBranch:      "refs/heads/batch-changes/test",
+			},
+			wantDeleted: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			// Create the changeset
+			err = s.CreateChangeset(ctx, test.cs)
+			require.NoError(t, err)
+
+			// Attempt to delete old changesets
+			err = s.CleanDetachedChangesets(ctx, 24*time.Hour)
+			assert.NoError(t, err)
+
+			// check if deleted
+			actual, err := s.GetChangesetByID(ctx, test.cs.ID)
+
+			if test.wantDeleted {
+				assert.Error(t, err)
+				assert.Nil(t, actual)
+			} else {
+				assert.NoError(t, err)
+				assert.NotNil(t, actual)
+			}
+
+			// cleanup for next test
+			err = s.DeleteChangeset(ctx, test.cs.ID)
+			require.NoError(t, err)
+		})
 	}
 }

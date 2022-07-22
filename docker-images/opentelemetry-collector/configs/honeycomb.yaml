@@ -1,0 +1,33 @@
+# Export traces to Honeycomb.
+#
+# Variables:
+#
+# - $HONEYCOMB_API_KEY
+# - $HONEYCOMB_DATASET
+#
+# Learn more: https://docs.honeycomb.io/getting-data-in/otel-collector/
+
+receivers:
+  otlp:
+    protocols:
+      grpc:
+
+exporters:
+  otlp:
+    endpoint: "api.honeycomb.io:443"
+    headers:
+      "x-honeycomb-team": "$HONEYCOMB_API_KEY"
+      "x-honeycomb-dataset": "$HONEYCOMB_DATASET"
+
+extensions:
+  health_check:
+    port: 13133
+  zpages:
+   endpoint: "localhost:55679"
+
+service:
+  extensions: [health_check,zpages]
+  pipelines:
+    traces:
+      receivers: [otlp]
+      exporters: [otlp]

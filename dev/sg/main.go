@@ -141,10 +141,16 @@ var sg = &cli.App{
 			return nil
 		}
 
-		var (
-			start            = time.Now()
-			disableAnalytics = cmd.Bool("disable-analytics")
-		)
+		// Lots of setup happens in Before - we want to make sure anything that
+		// we collect a generate a helpful message here if anything goes wrong.
+		defer func() {
+			if p := recover(); p != nil {
+				std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
+					sgBugReportTemplate)
+				message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
+				err = cli.NewExitError(message, 1)
+			}
+		}()
 
 		// Let sg components register pre-interrupt hooks
 		interrupt.Listen()
@@ -152,35 +158,28 @@ var sg = &cli.App{
 		// Configure global output
 		std.Out = std.NewOutput(cmd.App.Writer, verbose)
 
-		// Initialize context
+		// Set up analytics and hooks for each command - do this as the first context
+		// setup
+		if !cmd.Bool("disable-analytics") {
+			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
+			if err != nil {
+				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+			}
+
+			// Ensure analytics are persisted
+			interrupt.Register(func() { analytics.Persist(cmd.Context) })
+
+			// Add analytics to each command
+			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
+		}
+
+		// Initialize context after analytics are set up
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
 		}
 		cmd.Context = background.Context(cmd.Context, verbose)
 		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
-
-		// Set up analytics and hooks for each command.
-		if !disableAnalytics {
-			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
-			addAnalyticsHooks(start, []string{"sg"}, cmd.App.Commands)
-
-			// Lots of setup happens in Before - we want to make sure anything that
-			// happens here is tracked. We set this up here after setting up output and
-			// some initial safe setup.
-			defer func() {
-				if p := recover(); p != nil {
-					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
-						sgBugReportTemplate)
-					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
-					err = cli.NewExitError(message, 1)
-
-					event := analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
-					event.Properties["error_details"] = err.Error()
-					analytics.Persist(cmd.Context, "sg", cmd.FlagNames())
-				}
-			}()
-		}
 
 		// Configure logger, for commands that use components that use loggers
 		os.Setenv("SRC_DEVELOPMENT", "true")
@@ -233,6 +232,8 @@ var sg = &cli.App{
 		if !bashCompletionsMode {
 			// Wait for background jobs to finish up, iff not in autocomplete mode
 			background.Wait(cmd.Context, std.Out)
+			// Persist analytics
+			analytics.Persist(cmd.Context)
 		}
 
 		return nil

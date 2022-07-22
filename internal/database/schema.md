@@ -103,8 +103,8 @@ Foreign-key constraints:
       Column       |           Type           | Collation | Nullable |                        Default                         
 -------------------+--------------------------+-----------+----------+--------------------------------------------------------
  id                | bigint                   |           | not null | nextval('batch_spec_resolution_jobs_id_seq'::regclass)
- batch_spec_id     | integer                  |           |          | 
- state             | text                     |           |          | 'queued'::text
+ batch_spec_id     | integer                  |           | not null | 
+ state             | text                     |           | not null | 'queued'::text
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
  finished_at       | timestamp with time zone |           |          | 
@@ -133,8 +133,8 @@ Foreign-key constraints:
          Column          |           Type           | Collation | Nullable |                             Default                             
 -------------------------+--------------------------+-----------+----------+-----------------------------------------------------------------
  id                      | bigint                   |           | not null | nextval('batch_spec_workspace_execution_jobs_id_seq'::regclass)
- batch_spec_workspace_id | integer                  |           |          | 
- state                   | text                     |           |          | 'queued'::text
+ batch_spec_workspace_id | integer                  |           | not null | 
+ state                   | text                     |           | not null | 'queued'::text
  failure_message         | text                     |           |          | 
  started_at              | timestamp with time zone |           |          | 
  finished_at             | timestamp with time zone |           |          | 
@@ -157,6 +157,22 @@ Indexes:
     "batch_spec_workspace_execution_jobs_state" btree (state)
 Foreign-key constraints:
     "batch_spec_workspace_execution_job_batch_spec_workspace_id_fkey" FOREIGN KEY (batch_spec_workspace_id) REFERENCES batch_spec_workspaces(id) ON DELETE CASCADE DEFERRABLE
+Triggers:
+    batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert()
+    batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert()
+
+```
+
+# Table "public.batch_spec_workspace_execution_last_dequeues"
+```
+     Column     |           Type           | Collation | Nullable | Default 
+----------------+--------------------------+-----------+----------+---------
+ user_id        | integer                  |           | not null | 
+ latest_dequeue | timestamp with time zone |           |          | 
+Indexes:
+    "batch_spec_workspace_execution_last_dequeues_pkey" PRIMARY KEY, btree (user_id)
+Foreign-key constraints:
+    "batch_spec_workspace_execution_last_dequeues_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
 
 ```
 
@@ -165,9 +181,9 @@ Foreign-key constraints:
         Column        |           Type           | Collation | Nullable |                      Default                      
 ----------------------+--------------------------+-----------+----------+---------------------------------------------------
  id                   | bigint                   |           | not null | nextval('batch_spec_workspaces_id_seq'::regclass)
- batch_spec_id        | integer                  |           |          | 
- changeset_spec_ids   | jsonb                    |           |          | '{}'::jsonb
- repo_id              | integer                  |           |          | 
+ batch_spec_id        | integer                  |           | not null | 
+ changeset_spec_ids   | jsonb                    |           | not null | '{}'::jsonb
+ repo_id              | integer                  |           | not null | 
  branch               | text                     |           | not null | 
  commit               | text                     |           | not null | 
  path                 | text                     |           | not null | 
@@ -258,7 +274,7 @@ Foreign-key constraints:
  changeset_id      | integer                  |           | not null | 
  job_type          | text                     |           | not null | 
  payload           | jsonb                    |           |          | '{}'::jsonb
- state             | text                     |           |          | 'queued'::text
+ state             | text                     |           | not null | 'queued'::text
  failure_message   | text                     |           |          | 
  started_at        | timestamp with time zone |           |          | 
  finished_at       | timestamp with time zone |           |          | 
@@ -366,12 +382,14 @@ Referenced by:
  external_fork_namespace  | citext                                       |           |          | 
  queued_at                | timestamp with time zone                     |           |          | now()
  cancel                   | boolean                                      |           | not null | false
+ detached_at              | timestamp with time zone                     |           |          | 
 Indexes:
     "changesets_pkey" PRIMARY KEY, btree (id)
     "changesets_repo_external_id_unique" UNIQUE CONSTRAINT, btree (repo_id, external_id)
     "changesets_batch_change_ids" gin (batch_change_ids)
     "changesets_bitbucket_cloud_metadata_source_commit_idx" btree ((((metadata -> 'source'::text) -> 'commit'::text) ->> 'hash'::text))
     "changesets_changeset_specs" btree (current_spec_id, previous_spec_id)
+    "changesets_detached_at" btree (detached_at)
     "changesets_external_state_idx" btree (external_state)
     "changesets_external_title_idx" btree (external_title)
     "changesets_publication_state_idx" btree (publication_state)
@@ -2157,6 +2175,10 @@ Indexes:
  product_subscription_id | uuid                     |           | not null | 
  license_key             | text                     |           | not null | 
  created_at              | timestamp with time zone |           | not null | now()
+ license_version         | integer                  |           |          | 
+ license_tags            | text[]                   |           |          | 
+ license_user_count      | integer                  |           |          | 
+ license_expires_at      | timestamp with time zone |           |          | 
 Indexes:
     "product_licenses_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -2174,6 +2196,7 @@ Foreign-key constraints:
  created_at              | timestamp with time zone |           | not null | now()
  updated_at              | timestamp with time zone |           | not null | now()
  archived_at             | timestamp with time zone |           |          | 
+ account_number          | text                     |           |          | 
 Indexes:
     "product_subscriptions_pkey" PRIMARY KEY, btree (id)
 Foreign-key constraints:
@@ -2696,6 +2719,7 @@ Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_execution_cache_entries" CONSTRAINT "batch_spec_execution_cache_entries_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "batch_spec_resolution_jobs" CONSTRAINT "batch_spec_resolution_jobs_initiator_id_fkey" FOREIGN KEY (initiator_id) REFERENCES users(id) ON UPDATE CASCADE DEFERRABLE
+    TABLE "batch_spec_workspace_execution_last_dequeues" CONSTRAINT "batch_spec_workspace_execution_last_dequeues_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE DEFERRABLE INITIALLY DEFERRED
     TABLE "batch_specs" CONSTRAINT "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changeset_specs" CONSTRAINT "changeset_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
@@ -2814,16 +2838,11 @@ Foreign-key constraints:
 ## View query:
 
 ```sql
- WITH user_queues AS (
-         SELECT exec.user_id,
-            max(exec.started_at) AS latest_dequeue
-           FROM batch_spec_workspace_execution_jobs exec
-          GROUP BY exec.user_id
-        ), queue_candidates AS (
+ WITH queue_candidates AS (
          SELECT exec.id,
             rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id) AS place_in_user_queue
            FROM (batch_spec_workspace_execution_jobs exec
-             JOIN user_queues queue ON ((queue.user_id = exec.user_id)))
+             JOIN batch_spec_workspace_execution_last_dequeues queue ON ((queue.user_id = exec.user_id)))
           WHERE (exec.state = 'queued'::text)
           ORDER BY (rank() OVER (PARTITION BY queue.user_id ORDER BY exec.created_at, exec.id)), queue.latest_dequeue NULLS FIRST
         )
@@ -3072,7 +3091,8 @@ Foreign-key constraints:
     c.worker_hostname,
     c.ui_publication_state,
     c.last_heartbeat_at,
-    c.external_fork_namespace
+    c.external_fork_namespace,
+    c.detached_at
    FROM (changesets c
      JOIN repo r ON ((r.id = c.repo_id)))
   WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1
