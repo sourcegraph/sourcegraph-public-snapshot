@@ -10,6 +10,9 @@ Each section comprehensively describes the changes needed in Docker images, envi
 
 ## Unreleased
 
+## 3.41.0 -> 3.42.0
+To upgrade, please perform the changes in the following diff: [[https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8bfd70892c1bf56c5a88db0329826800c7a1097b](https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/a189e495813bc33d544b302eb98c197d70eacc87)]
+
 ## 3.40.2 -> 3.41.0
 
 To upgrade, please perform the changes in the following diff: [https://github.com/sourcegraph/deploy-sourcegraph-docker/commit/8bfd70892c1bf56c5a88db0329826800c7a1097b]
