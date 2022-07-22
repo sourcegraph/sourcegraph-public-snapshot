@@ -19,7 +19,7 @@ const maxPasswordRunes = 256
 // ValidatePassword: Validates that a password meets the required criteria
 func ValidatePassword(passwd string) error {
 
-	if passwordPolicyEnabled() {
+	if conf.PasswordPolicyEnabled() {
 		return validatePasswordUsingPolicy(passwd)
 	}
 
@@ -75,7 +75,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 	}
 
 	// Get a reference to the password policy
-	policy := GetPasswordPolicy()
+	policy := conf.AuthPasswordPolicy()
 
 	// Minimum Length Check
 	if chars < policy.MinimumLength {

@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -295,8 +294,67 @@ func AuthMinPasswordLength() int {
 	return val
 }
 
-func AuthPasswordPolicy() security.GenericPasswordPolicy {
-	return security.GetPasswordPolicy()
+// GenericPasswordPolicy a generic password policy that holds password requirements
+type GenericPasswordPolicy struct {
+	Enabled                   bool
+	MinimumLength             int
+	NumberOfSpecialCharacters int
+	RequireAtLeastOneNumber   bool
+	RequireUpperandLowerCase  bool
+}
+
+// AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
+func AuthPasswordPolicy() GenericPasswordPolicy {
+
+	var p interface{}
+
+	p = Get().AuthPasswordPolicy
+
+	if p == (*schema.AuthPasswordPolicy)(nil) {
+		p = ExperimentalFeatures().PasswordPolicy
+	}
+
+	var gp GenericPasswordPolicy
+
+	if p == (*schema.PasswordPolicy)(nil) {
+		gp = GenericPasswordPolicy{
+			Enabled:                   false,
+			MinimumLength:             0,
+			NumberOfSpecialCharacters: 0,
+			RequireAtLeastOneNumber:   false,
+			RequireUpperandLowerCase:  false,
+		}
+
+		return gp
+	}
+
+	ml := Get().AuthMinPasswordLength
+
+	switch p := p.(type) {
+	case *schema.AuthPasswordPolicy:
+		gp = GenericPasswordPolicy{
+			Enabled:                   p.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+		}
+	case *schema.PasswordPolicy:
+		gp = GenericPasswordPolicy{
+			Enabled:                   p.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+		}
+	}
+
+	return gp
+}
+
+func PasswordPolicyEnabled() bool {
+	pc := AuthPasswordPolicy()
+	return pc.Enabled
 }
 
 // By default, password reset links are valid for 4 hours.
