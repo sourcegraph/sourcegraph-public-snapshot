@@ -753,6 +753,13 @@ type Mutation {
     Only administrators can use this API.
     """
     sendTestEmail(to: String!): String!
+
+    """
+    Enqueues a sync for the external service. It will be picked up in the background.
+
+    Site-admin or owner of the external service only.
+    """
+    syncExternalService(id: ID!): EmptyResponse!
 }
 
 """
@@ -2342,38 +2349,47 @@ type ExternalService implements Node {
     The external service's unique ID.
     """
     id: ID!
+
     """
     The kind of external service.
     """
     kind: ExternalServiceKind!
+
     """
     The display name of the external service.
     """
     displayName: String!
+
     """
     The JSON configuration of the external service.
     """
     config: JSONCString!
+
     """
     When the external service was created.
     """
     createdAt: DateTime!
+
     """
     When the external service was last updated.
     """
     updatedAt: DateTime!
+
     """
     The namespace this external service belongs to.
     """
     namespace: Namespace
+
     """
     The number of repos synced by the external service.
     """
     repoCount: Int!
+
     """
     An optional URL that will be populated when webhooks have been configured for the external service.
     """
     webhookURL: String
+
     """
     This is an optional field that's populated when we ran into errors on the
     backend side when trying to create/update an ExternalService, but the
@@ -2382,16 +2398,19 @@ type ExternalService implements Node {
     not break the API and stay backwards compatible.
     """
     warning: String
+
     """
     External services are synced with code hosts in the background. This optional field
     will contain any errors that occured during the most recent completed sync.
     """
     lastSyncError: String
+
     """
     LastSyncAt is the time the last sync job was run for this code host. Null if it
     has never been synced so far.
     """
     lastSyncAt: DateTime
+
     """
     The timestamp of the next sync job. Null if not scheduled for a re-sync.
     """
@@ -2400,6 +2419,7 @@ type ExternalService implements Node {
     """
     Returns a list of scopes granted by the code host. It is based on the token used
     when configuring the external service.
+
     NOTE: Currently only GitHub is supported and the request consumes rate limit tokens
     so it should be used sparingly.
     """
@@ -2450,6 +2470,97 @@ type ExternalService implements Node {
     reaches out to the code host directly which is wasteful if repositories are already cloned.
     """
     invitableCollaborators: [Person!]!
+
+    """
+    The list of recent sync jobs for this external service.
+    """
+    syncJobs(first: Int): ExternalServiceSyncJobConnection!
+}
+
+"""
+A list of external service sync jobs.
+"""
+type ExternalServiceSyncJobConnection {
+    """
+    A list of sync jobs.
+    """
+    nodes: [ExternalServiceSyncJob!]!
+
+    """
+    The total number of jobs in the connection.
+    """
+    totalCount: Int!
+
+    """
+    Pagination information.
+    """
+    pageInfo: PageInfo!
+}
+
+"""
+The possible states of an external service sync job.
+"""
+enum ExternalServiceSyncJobState {
+    """
+    Not yet started. Will be picked up by a worker eventually.
+    """
+    QUEUED
+
+    """
+    Currently syncing.
+    """
+    PROCESSING
+
+    """
+    An error occured while syncing. Will be retried eventually.
+    """
+    ERRORED
+
+    """
+    A fatal error occured while syncing. No retries will be made.
+    """
+    FAILED
+
+    """
+    Sync finished successfully.
+    """
+    COMPLETED
+}
+
+"""
+An external service sync job represents one sync with the code host. It's a background
+job that will eventually be run by the repo syncer.
+"""
+type ExternalServiceSyncJob implements Node {
+    """
+    The unique identifier of the sync job.
+    """
+    id: ID!
+
+    """
+    The current state of the sync job.
+    """
+    state: ExternalServiceSyncJobState!
+
+    """
+    When the sync job was added to the queue.
+    """
+    queuedAt: DateTime!
+
+    """
+    Set when sync begins.
+    """
+    startedAt: DateTime
+
+    """
+    Set when sync finished.
+    """
+    finishedAt: DateTime
+
+    """
+    Error message, if the sync failed.
+    """
+    failureMessage: String
 }
 
 """

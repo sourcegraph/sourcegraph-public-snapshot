@@ -13,6 +13,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"github.com/tidwall/gjson"
@@ -56,14 +57,14 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		{
 			name:      "only one kind: GitHub",
 			kinds:     []string{extsvc.KindGitHub},
-			wantQuery: "deleted_at IS NULL AND kind IN ($1)",
-			wantArgs:  []any{extsvc.KindGitHub},
+			wantQuery: "deleted_at IS NULL AND kind = ANY($1)",
+			wantArgs:  []any{pq.Array([]string{extsvc.KindGitHub})},
 		},
 		{
 			name:      "two kinds: GitHub and GitLab",
 			kinds:     []string{extsvc.KindGitHub, extsvc.KindGitLab},
-			wantQuery: "deleted_at IS NULL AND kind IN ($1 , $2)",
-			wantArgs:  []any{extsvc.KindGitHub, extsvc.KindGitLab},
+			wantQuery: "deleted_at IS NULL AND kind = ANY($1)",
+			wantArgs:  []any{pq.Array([]string{extsvc.KindGitHub, extsvc.KindGitLab})},
 		},
 		{
 			name:            "has namespace user ID",
@@ -2060,7 +2061,7 @@ func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	have, err := db.ExternalServices().GetSyncJobs(ctx)
+	have, err := db.ExternalServices().GetSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -2073,7 +2074,7 @@ func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
 		State:             "queued",
 		ExternalServiceID: es.ID,
 	}
-	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID")); diff != "" {
+	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
 		t.Fatal(diff)
 	}
 }
