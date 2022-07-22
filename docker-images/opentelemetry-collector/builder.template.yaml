@@ -1,0 +1,21 @@
+dist:
+  module: github.com/sourcegraph/sourcegraph/docker-images/opentelemetry-collector
+  name: otelcol-sourcegraph
+  description: "Sourcegrpah OpenTelemetry Collector distribution"
+  otelcol_version: "$OTEL_COLLECTOR_VERSION"
+
+exporters:
+  # OpenTelemetry exporters - go.opentelemetry.io/collector/exporter
+  - import: go.opentelemetry.io/collector/exporter/otlpexporter
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+  - import: go.opentelemetry.io/collector/exporter/otlphttpexporter
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+
+  # Contrib exporters - github.com/open-telemetry/opentelemetry-collector-contrib/exporter
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter v$OTEL_COLLECTOR_VERSION"
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v$OTEL_COLLECTOR_VERSION"
+
+receivers:
+  # OpenTelemetry receivers - go.opentelemetry.io/collector/receiver
+  - import: go.opentelemetry.io/collector/receiver/otlpreceiver
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
