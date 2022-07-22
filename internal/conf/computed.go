@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
+	"github.com/sourcegraph/sourcegraph/internal/security"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -294,14 +295,8 @@ func AuthMinPasswordLength() int {
 	return val
 }
 
-func AuthPasswordPolicy() schema.AuthPasswordPolicy {
-	pol := Get().AuthPasswordPolicy
-
-	if pol == nil {
-		return schema.AuthPasswordPolicy{}
-	}
-
-	return *pol
+func AuthPasswordPolicy() security.GenericPasswordPolicy {
+	return security.GetPasswordPolicy()
 }
 
 // By default, password reset links are valid for 4 hours.

@@ -75,7 +75,7 @@ func validatePasswordUsingPolicy(passwd string) error {
 	}
 
 	// Get a reference to the password policy
-	policy := getPasswordPolicy()
+	policy := GetPasswordPolicy()
 
 	// Minimum Length Check
 	if chars < policy.MinimumLength {

@@ -18,9 +18,10 @@ func setMockPasswordPolicyConfig(policyEnabled bool, authPolicyEnabled bool, aut
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
 				PasswordPolicy: &schema.PasswordPolicy{
 					Enabled:                   policyEnabled,
-					NumberOfSpecialCharacters: authPolicySpChr,
-					RequireUpperandLowerCase:  reqNumber,
-					RequireAtLeastOneNumber:   reqCase,
+					NumberOfSpecialCharacters: 3,
+					// invert reqNumber and reqCase so it differs AuthPasswordPolicy
+					RequireUpperandLowerCase: !reqNumber,
+					RequireAtLeastOneNumber:  !reqCase,
 				},
 			},
 			AuthPasswordPolicy: &schema.AuthPasswordPolicy{
@@ -42,7 +43,7 @@ func TestGetPasswordPolicy(t *testing.T) {
 		authPolicyLength, authPolicySpChr, true, true)
 
 	t.Run("Fetch correct policy.", func(t *testing.T) {
-		p := getPasswordPolicy()
+		p := conf.AuthPasswordPolicy()
 
 		assert.True(t, p.Enabled)
 		assert.Equal(t, p.MinimumLength, authPolicyLength)
@@ -63,7 +64,7 @@ func TestGetPasswordPolicy(t *testing.T) {
 			},
 		})
 
-		p = getPasswordPolicy()
+		p = conf.AuthPasswordPolicy()
 
 		assert.True(t, p.Enabled)
 		assert.Equal(t, p.MinimumLength, authPolicyLength)
@@ -82,7 +83,7 @@ func TestFetchPasswordPolicy_nil(t *testing.T) {
 	})
 
 	t.Run("When no policy is defined, only check password length ", func(t *testing.T) {
-		p := getPasswordPolicy()
+		p := GetPasswordPolicy()
 		assert.False(t, p.Enabled)
 
 		assert.Nil(t, ValidatePassword("idontneedanythingspecial"))
