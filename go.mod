@@ -198,7 +198,7 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
-require github.com/hmarr/codeowners v0.4.0 // indirect
+require github.com/hmarr/codeowners v0.4.0
 
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
