@@ -23,8 +23,6 @@ import (
 
 func TestInitializeJob(t *testing.T) {
 	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 
 	confClient = conf.MockClient()
 
@@ -64,7 +62,7 @@ func TestInitializeJob(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			job := NewTelemetryJob(db)
+			job := NewTelemetryJob()
 			routines, err := job.Routines(ctx, logtest.Scoped(t))
 			if err != nil {
 				t.Error(err)
