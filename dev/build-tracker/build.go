@@ -10,12 +10,25 @@ import (
 
 type Build struct {
 	buildkite.Build
-	Jobs []buildkite.Job
+	Jobs map[string]buildkite.Job
 }
 
-func (b *Build) HasFailed() bool {
-	for _, j := range b.Jobs {
-		if j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0 {
+func (b *Build) HasFailed(logger log.Logger) bool {
+	state := ""
+	if b.State != nil {
+		state = *b.State
+	}
+
+	// no need to check the jobs if the overall build hasn't failed
+	if state != "failed" {
+		logger.Debug("build state not failed", log.String("State", state))
+		return false
+	}
+
+	for n, j := range b.Jobs {
+		failed := j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0
+		logger.Debug("checking job", log.String("Name", n), log.Bool("failed", failed))
+		if failed {
 			return true
 		}
 	}
@@ -64,7 +77,7 @@ func (b *Build) PipelineName() string {
 func NewBuildFrom(event *BuildEvent) *Build {
 	return &Build{
 		Build: event.Build,
-		Jobs:  make([]buildkite.Job, 0),
+		Jobs:  make(map[string]buildkite.Job),
 	}
 }
 
@@ -87,7 +100,7 @@ func (b *BuildEvent) BuildNumber() int {
 
 func (b *BuildEvent) JobName() string {
 	if b.Job.Name == nil {
-		return "N/A"
+		return ""
 	}
 	return *b.Job.Name
 }
@@ -118,7 +131,10 @@ func (s *BuildStore) Add(event *BuildEvent) {
 	if event.IsBuildFinished() {
 		build.Build = event.Build
 	}
-	build.Jobs = append(build.Jobs, event.Job)
+
+	if event.JobName() != "" {
+		build.Jobs[event.JobName()] = event.Job
+	}
 
 	s.logger.Debug("job added", log.Int("buildNumber", event.BuildNumber()), log.Int("totalJobs", len(build.Jobs)))
 }
@@ -137,7 +153,7 @@ func (s *BuildStore) DelByBuildNumber(buildNumbers ...int) {
 	for _, num := range buildNumbers {
 		delete(s.builds, num)
 	}
-	s.logger.Info("deleted builds", log.Int("length", len(buildNumbers)))
+	s.logger.Info("deleted builds", log.Int("totalBuilds", len(buildNumbers)))
 }
 
 func (s *BuildStore) AllFinishedBuilds() []*Build {
@@ -147,7 +163,7 @@ func (s *BuildStore) AllFinishedBuilds() []*Build {
 	finished := make([]*Build, 0)
 	for _, v := range s.builds {
 		if v.IsFinished() {
-			s.logger.Debug("build is finished", log.Int("Number", *v.Number), log.String("State", *v.State))
+			s.logger.Debug("build is finished", log.Int("buildNumber", *v.Number), log.String("State", *v.State))
 			finished = append(finished, v)
 		}
 	}

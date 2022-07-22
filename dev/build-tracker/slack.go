@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/url"
+	"strings"
 	"text/template"
 	"time"
 
@@ -28,7 +29,12 @@ func NewSlackClient(logger log.Logger, token string) *SlackClient {
 
 func (c *SlackClient) sendNotification(build *Build) error {
 	c.logger.Debug("creating slack json", log.Int("buildNumber", *build.Number))
-	blocks, err := createMessageBlocks(c.logger, build)
+
+	user, err := c.GetUserInfo(build.Author.Email)
+	if err != nil {
+		c.logger.Error("failed to get slack user", log.Error(err), log.String("Author.Email", build.Author.Email))
+	}
+	blocks, err := createMessageBlocks(c.logger, user, build)
 	if err != nil {
 		return err
 	}
@@ -50,8 +56,8 @@ type GrafanaQuery struct {
 }
 
 type GrafanaRange struct {
-	From int64 `json:"From"`
-	To   int64 `json:"To"`
+	From string `json:"from"`
+	To   string `json:"to"`
 }
 
 type GrafanaPayload struct {
@@ -62,15 +68,13 @@ type GrafanaPayload struct {
 
 func grafanaURLFor(logger log.Logger, build *Build) string {
 	logger = logger.Scoped("grafana", "generates grafana links")
-	base, _ := url.Parse("http://sourcegraph.grafana.net/explore")
+	base, _ := url.Parse("https://sourcegraph.grafana.net/explore")
 	queryData := struct {
 		Build int
 	}{
 		Build: *build.Number,
 	}
-	tmplt := template.Must(template.New("Expression").Parse(`{app="buildkite", build="{{.Build}}", branch="main", state="failed"} # to search the whole build remove job here!
-    |~ "(?i)failed|panic" # this is a case insensitive regular expression, feel free to unleash your regex-fu!
-    `))
+	tmplt := template.Must(template.New("Expression").Parse(`{app="buildkite", build="{{.Build}}", state="failed"} |~ "(?i)failed|panic|error|FAIL \\|"`))
 
 	var buf bytes.Buffer
 	if err := tmplt.Execute(&buf, queryData); err != nil {
@@ -78,11 +82,9 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 	}
 	var expression = buf.String()
 
-	logger.Debug("---->", log.String("expression", expression))
-
 	buf.Reset()
-	begin := time.Now().Add(-(1 * time.Hour)).UnixNano()
-	end := time.Now().Add(5 * time.Minute).UnixNano()
+	begin := time.Now().Add(-(2 * time.Hour)).UnixMilli()
+	end := time.Now().Add(15 * time.Minute).UnixMilli()
 
 	data := GrafanaPayload{
 		DataSource: "grafanacloud-sourcegraph-logs",
@@ -93,8 +95,8 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 			},
 		},
 		Range: GrafanaRange{
-			From: begin,
-			To:   end,
+			From: fmt.Sprintf("%d", begin),
+			To:   fmt.Sprintf("%d", end),
 		},
 	}
 
@@ -103,22 +105,37 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 		logger.Error("failed to marshall GrafanaPayload", log.Error(err))
 	}
 
-	logger.Debug("---->", log.String("GrafanaPayload", (string(result))))
-	var values = make(url.Values)
-	values.Add("orgId", "1")
-	values.Add("left", string(result))
+	query := url.PathEscape(string(result))
+	// default query escapes ":", which we  don't want since it is json. Query and Path escape
+	// escape a few characters incorrectly so we fix it with this replacer.
+	// Got the idea from https://sourcegraph.com/github.com/kubernetes/kubernetes/-/blob/vendor/github.com/PuerkitoBio/urlesc/urlesc.go?L115-121
+	replacer := strings.NewReplacer(
+		"+", "%20",
+		"%28", "(",
+		"%29", ")",
+		"=", "%3D",
+		"%2C", ",",
+	)
+	query = replacer.Replace(query)
 
-	base.RawQuery = values.Encode()
-	logger.Debug("---->", log.String("url params", base.RawQuery))
-
-	return base.String()
+	return base.String() + "?orgId=1&left=" + query
 }
 
-func createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error) {
-	failedStepsMarkdown := "The following steps have failed"
+func commitLink(commit string) string {
+	repo := "http://github.com/sourcegraph/sourcegraph"
+	sgURL := fmt.Sprintf("%s/commit/%s", repo, commit)
+	return fmt.Sprintf("<%s|%s>", sgURL, commit[:10])
+}
+
+func createMessageBlocks(logger log.Logger, user *slack.User, build *Build) ([]slack.Block, error) {
+	failedJobs := "*Failed jobs:*\n"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
-			failedStepsMarkdown += fmt.Sprintf("* %s\n", *j.Name)
+			failedJobs += fmt.Sprintf("• %s", *j.Name)
+			if j.WebURL != "" {
+				failedJobs += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+			}
+			failedJobs += "\n"
 		}
 	}
 
@@ -126,31 +143,29 @@ func createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error)
 		return nil, fmt.Errorf("cannot create message blocks for nil Build Number")
 	}
 
+	if user != nil {
+		logger.Info("slack user", log.String("ID", user.ID), log.String("Name", user.Name))
+	}
+
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
-			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf("Build %d failed", *build.Number), true, false),
+			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf(":red_circle: Build %d failed", *build.Number), true, false),
 		),
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,
 		},
-		slack.NewSectionBlock(
-			&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedStepsMarkdown, Emoji: true},
-			nil,
-			nil,
-		),
+		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedJobs}, nil, nil),
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,
 		},
 		slack.NewSectionBlock(
-			&slack.TextBlockObject{Type: slack.MarkdownType, Text: fmt.Sprintf("<%s|%s>", *build.WebURL, *build.Message)},
+			nil,
 			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Author*\n%s", build.Author.Name)},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline*\n%s", build.PipelineName())},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Commit*\n`%s`", *build.Commit)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n%s", build.Author.Name)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline*\n%s", build.PipelineName())},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit*\n%s", commitLink(*build.Commit))},
 			},
-			slack.NewAccessory(
-				slack.NewImageBlockElement(fmt.Sprintf("%s", build.AvatarURL()), "avatar"),
-			),
+			nil,
 		),
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,
@@ -161,7 +176,7 @@ func createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error)
 				&slack.ButtonBlockElement{
 					Type:  slack.METButton,
 					Style: slack.StylePrimary,
-					URL:   *build.URL,
+					URL:   *build.WebURL,
 					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Go to build"},
 				},
 				&slack.ButtonBlockElement{
@@ -173,7 +188,7 @@ func createMessageBlocks(logger log.Logger, build *Build) ([]slack.Block, error)
 					Type:  slack.METButton,
 					Style: slack.StyleDanger,
 					URL:   grafanaURLFor(logger, build),
-					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a Flake ?"},
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake ?"},
 				},
 			}...,
 		),

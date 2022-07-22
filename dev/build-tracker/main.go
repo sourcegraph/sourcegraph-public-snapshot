@@ -35,6 +35,28 @@ func NewBuildTrackingServer(logger log.Logger, buildkiteToken, slackToken string
 	}, nil
 }
 
+func (s *BuildTrackingServer) isFailed(b *Build) bool {
+	state := ""
+	if b.State != nil {
+		state = *b.State
+	}
+
+	// no need to check the jobs if the overall build hasn't failed
+	if state != "failed" {
+		s.logger.Debug("build state not failed", log.String("State", state))
+		return false
+	}
+
+	for n, j := range b.Jobs {
+		failed := j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0
+		s.logger.Debug("checking job", log.String("Name", n), log.Bool("failed", failed))
+		if failed {
+			return true
+		}
+	}
+	return false
+}
+
 func (s *BuildTrackingServer) processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, error) {
 	h, ok := req.Header["X-Buildkite-Token"]
 	if !ok || len(h) == 0 {
@@ -98,7 +120,6 @@ func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Reque
 
 func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 	data, err := ioutil.ReadAll(req.Body)
-	logger.Debug("read body of request", log.String("data", string(data)))
 	if err != nil {
 		logger.Error("failed to read request body", log.Error(err))
 		return ErrRequestBody
@@ -115,12 +136,12 @@ func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful not notifcation is sent
 func (s *BuildTrackingServer) notifyIfFailed(build *Build) error {
-	if build.HasFailed() {
+	if s.isFailed(build) {
 		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", *build.Number))
 		return s.slack.sendNotification(build)
 	}
 
-	s.logger.Info("build successful", log.Int("buildNumber", *build.Number))
+	s.logger.Info("build has not failed", log.Int("buildNumber", *build.Number))
 	return nil
 }
 
@@ -139,6 +160,7 @@ func (s *BuildTrackingServer) startOldBuildCleaner(every, window time.Duration) 
 						finishedAt := *b.FinishedAt
 						delta := now.Sub(finishedAt.Time)
 						if delta >= window {
+							s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
 							oldBuilds = append(oldBuilds, *b.Number)
 						}
 					}
@@ -182,15 +204,18 @@ func (s *BuildTrackingServer) Serve() error {
 	return http.ListenAndServe(":8080", nil)
 }
 
+func MustEnvVar(name string) string {
+	value, exists := os.LookupEnv(name)
+	if !exists {
+		panic(fmt.Sprintf("%s not found in environment", name))
+	}
+
+	return value
+}
+
 func main() {
-	slackToken := os.Getenv("SLACK_TOKEN")
-	if slackToken == "" {
-		panic("SLACK_TOKEN cannot be empty")
-	}
-	buildkiteToken := os.Getenv("BK_WEBHOOK_TOKEN")
-	if buildkiteToken == "" {
-		panic("BK_WEBHOOK_TOKEN cannot be empty")
-	}
+	slackToken := MustEnvVar("SLACK_TOKEN")
+	buildkiteToken := MustEnvVar("BUILDKITE_WEBHOOK_TOKEN")
 
 	sync := log.Init(log.Resource{
 		Name:      "BuildTracker",

@@ -2,7 +2,6 @@ FROM golang:1.18.1-alpine@sha256:42d35674864fbb577594b60b84ddfba1be52b4d4298c961
 
 WORKDIR /go/src/build-tracker
 COPY . .
-RUN go mod init build-tracker
 RUN go get ./...
 RUN CGO_ENABLED=0 go install .
 
