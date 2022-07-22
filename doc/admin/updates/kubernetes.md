@@ -12,7 +12,7 @@
 
 ## 3.41 -> 3.42
 
-TODO
+Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
 
