@@ -2,7 +2,6 @@ import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
 
 import classNames from 'classnames'
 import * as H from 'history'
-import { maxBy } from 'lodash'
 import { useHistory } from 'react-router'
 import { Observable } from 'rxjs'
 import { map } from 'rxjs/operators'
@@ -24,7 +23,7 @@ import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegr
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
-import { getSymbolTag, SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
+import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
@@ -276,19 +275,6 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
 
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
-    // To avoid complicated a layout we calculate the approximate min width of the tag column in symbol results.
-    const symbolsTagWidth = useMemo(() => {
-        if (result.type !== 'symbol' || !result.symbols) {
-            return 0
-        }
-        const maxSymbol = maxBy(result.symbols, symbol => getSymbolTag(symbol.kind).length)
-        if (!maxSymbol) {
-            return 0
-        }
-        const pixelsPerCharacter = 7
-        return getSymbolTag(maxSymbol.kind).length * pixelsPerCharacter
-    }, [result])
-
     return (
         <div
             className={classNames(styles.fileMatchChildren, result.type === 'symbol' && styles.symbols)}
@@ -324,8 +310,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                     key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
                     className={styles.symbol}
                 >
-                    {/* eslint-disable-next-line react/forbid-dom-props */}
-                    <div className="mr-1 flex-shrink-0" style={{ minWidth: symbolsTagWidth }}>
+                    <div className="mr-2 flex-shrink-0">
                         <SymbolTag kind={symbol.kind} />
                     </div>
                     <div

@@ -4,47 +4,29 @@
     border-radius: var(--border-radius);
     font-weight: 500;
     color: var(--gray-01);
+    font-family: var(--code-font-family);
 
-    :global(.theme-dark) & {
-        color: var(--black);
+    &--variable {
+        background-color: #005766;
     }
 
-    $oc-level: 5;
-    $symbol-kinds: (
-        'array': 'red',
-        'boolean': 'red',
-        'class': 'orange',
-        'constant': 'indigo',
-        'constructor': 'violet',
-        'enum': 'blue',
-        'enummember': 'blue',
-        'event': 'red',
-        'field': 'blue',
-        'file': 'gray',
-        'function': 'violet',
-        'interface': 'green',
-        'key': 'yellow',
-        'method': 'violet',
-        'module': 'grape',
-        'namespace': 'grape',
-        'null': 'red',
-        'number': 'violet',
-        'object': 'orange',
-        'operator': 'gray',
-        'package': 'yellow',
-        'property': 'gray',
-        'string': 'orange',
-        'struct': 'orange',
-        'typeparameter': 'blue',
-        'variable': 'blue',
-    );
+    &--module {
+        background-color: #237332;
+    }
 
-    // Default for unknown symbols
-    background-color: var(--oc-gray-#{$oc-level});
+    &--function {
+        background-color: #0b70db;
+    }
 
-    @each $kind, $oc-color in $symbol-kinds {
-        &--kind-#{$kind} {
-            background-color: var(--oc-#{$oc-color}-#{$oc-level});
-        }
+    &--type {
+        background-color: #a305e1;
+    }
+
+    &--class {
+        background-color: #f76707;
+    }
+
+    &--unknown {
+        background-color: #343a4d;
     }
 }
