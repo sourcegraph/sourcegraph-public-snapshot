@@ -15,13 +15,13 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		b := buildkite.Build{}
 		b.State = &state
 		b.Number = &num
-		b.FinishedAt = &buildkite.Timestamp{finishedAt}
+		b.FinishedAt = &buildkite.Timestamp{Time: finishedAt}
 
 		return &Build{Build: b}
 	}
 
 	t.Run("All old builds get removed", func(t *testing.T) {
-		server, err := NewBuildTrackingServer(logger, "", "")
+		server, err := NewBuildTrackingServer(logger, token{}, "")
 		if err != nil {
 			t.Fatalf("failed to create build tracking server: %v", err)
 		}
@@ -46,7 +46,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		}
 	})
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
-		server, err := NewBuildTrackingServer(logger, "", "")
+		server, err := NewBuildTrackingServer(logger, token{}, "")
 		if err != nil {
 			t.Fatalf("failed to create build tracking server: %v", err)
 		}

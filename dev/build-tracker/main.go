@@ -51,12 +51,13 @@ func MustGetTokenFromEnv() token {
 	}
 }
 
-func NewBuildTrackingServer(logger log.Logger, token token, channel string) (*BuildTrackingServer, error) {
+func NewBuildTrackingServer(logger log.Logger, tokens token, channel string) (*BuildTrackingServer, error) {
+	serverLog := logger.Scoped("server", "Build Tracking Server which tracks events received from Buildkite and sends notifications on failures")
 	return &BuildTrackingServer{
-		logger:       logger.Scoped("server", "Build Tracking Server which tracks events received from Buildkite and sends notifications on failrues")
-		store:        NewBuildStore(logger),
-		bkToken:      token.Buildkite,
-		notifyClient: NewNotificationClient(logger, token.Slack, token.Github, channel),
+		logger:       serverLog,
+		store:        NewBuildStore(serverLog),
+		bkToken:      tokens.Buildkite,
+		notifyClient: NewNotificationClient(serverLog, tokens.Slack, tokens.Github, channel),
 	}, nil
 }
 
@@ -236,16 +237,16 @@ func main() {
 	})
 	defer sync.Sync()
 
+	logger := log.Scoped("BuildTracker", "main entrypoint for Build Tracking Server")
+
 	server, err := NewBuildTrackingServer(logger, MustGetTokenFromEnv(), DEFAULT_CHANNEL)
 	if err != nil {
-		log.Scoped("BuildTracker.main", "main entrypoint for BuildTracker").Fatal(
-			"failed to create BuildTracking server", log.Error(err),
-		)
+		logger.Fatal("failed to create BuildTracking server", log.Error(err))
 	}
 
 	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
 	defer stopFn()
 	if err := server.Serve(); err != nil {
-		server.logger.Fatal("server exited with error", log.Error(err))
+		logger.Fatal("server exited with error", log.Error(err))
 	}
 }

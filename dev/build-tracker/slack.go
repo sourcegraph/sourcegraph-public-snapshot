@@ -174,10 +174,25 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n%s", teammate.SlackID)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n@%s", teammate.SlackName)},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline*\n%s", build.PipelineName())},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit*\n%s", commitLink(*build.Commit))},
 			},
+			nil,
+		),
+		&slack.DividerBlock{
+			Type: slack.MBTDivider,
+		},
+		slack.NewSectionBlock(
+			&slack.TextBlockObject{
+				Type: slack.MarkdownType,
+				Text: `:brain: *More information on flakes* :point_down:
+:one: *<https://docs.sourcegraph.com/dev/background-information/ci#flakes|CI flakes>*
+:two: *<https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Assessing flakey client steps>*
+
+_"save your fellow dev some time and proactive disable flakes when you spot them"_`,
+			},
+			nil,
 			nil,
 		),
 		&slack.DividerBlock{
@@ -200,7 +215,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 				&slack.ButtonBlockElement{
 					Type:  slack.METButton,
 					Style: slack.StyleDanger,
-					URL:   grafanaURLFor(logger, build),
+					URL:   "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
 					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake ?"},
 				},
 			}...,

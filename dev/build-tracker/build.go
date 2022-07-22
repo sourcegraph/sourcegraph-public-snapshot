@@ -67,10 +67,19 @@ func (b *Build) PipelineName() string {
 	if b.Pipeline == nil {
 		return "N/A"
 	}
-	if b.Pipeline.Name == nil {
-		return "N/A"
+
+	var slug, name string
+	if b.Pipeline.Name != nil {
+		name = *b.Pipeline.Name
 	}
-	return *b.Pipeline.Name
+	if b.Pipeline.Slug != nil {
+		slug = *b.Pipeline.Slug
+	}
+
+	if name == "" {
+		return name
+	}
+	return slug
 
 }
 
