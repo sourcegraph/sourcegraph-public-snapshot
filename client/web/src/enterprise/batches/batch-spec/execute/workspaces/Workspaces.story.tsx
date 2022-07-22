@@ -1,4 +1,3 @@
-import { withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
 
@@ -15,7 +14,7 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute/workspaces/Workspaces',
-    decorators: [decorator, withKnobs],
+    decorators: [decorator],
 }
 
 export default config
