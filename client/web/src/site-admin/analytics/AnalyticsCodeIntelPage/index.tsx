@@ -136,7 +136,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     minPerItem: 3,
                     value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                     description:
-                        'Cross repository code intel identifies the correct symbol in code throughout your entire code base in a single click, without locating and downloading a repository.',
+                        'Cross repository code intel identifies the correct symbol in code throughout your Sourcegraph instance in a single click, without locating and downloading a repository.',
                 },
                 {
                     label: 'Precise code intel',
