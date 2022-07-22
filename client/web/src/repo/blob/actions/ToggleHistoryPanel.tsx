@@ -16,7 +16,7 @@ import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 import { DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 import { BlobPanelTabID } from '../panel/BlobPanel'
 
@@ -89,10 +89,10 @@ export class ToggleHistoryPanel extends React.PureComponent<
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
+                <RepoHeaderActionMenuItem file={true} onSelect={this.onClick}>
                     <Icon aria-hidden={true} svgPath={mdiHistory} />
                     <span>{visible ? 'Hide' : 'Show'} history (Alt+H/Opt+H)</span>
-                </RepoHeaderActionButtonLink>
+                </RepoHeaderActionMenuItem>
             )
         }
         return (
