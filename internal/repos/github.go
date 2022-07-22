@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/tidwall/gjson"
@@ -53,8 +54,6 @@ type GitHubSource struct {
 	// useGitHubApp indicate whether clients are authenticated through GitHub App,
 	// which may need to hit different API endpoints from regular RESTful API.
 	useGitHubApp bool
-
-	logger log.Logger
 }
 
 var (
@@ -65,12 +64,12 @@ var (
 )
 
 // NewGithubSource returns a new GitHubSource from the given external service.
-func NewGithubSource(logger log.Logger, externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
+func NewGithubSource(externalServicesStore database.ExternalServiceStore, svc *types.ExternalService, cf *httpcli.Factory) (*GitHubSource, error) {
 	var c schema.GitHubConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGithubSource(logger, externalServicesStore, svc, &c, cf)
+	return newGithubSource(externalServicesStore, svc, &c, cf)
 }
 
 var githubRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -99,7 +98,6 @@ func IsGitHubAppCloudEnabled(dotcom *schema.Dotcom) bool {
 // updates the access token if it had expired or about to expire in 5 minutes.
 func GetOrRenewGitHubAppInstallationAccessToken(
 	ctx context.Context,
-	logger log.Logger,
 	externalServicesStore database.ExternalServiceStore,
 	svc *types.ExternalService,
 	client *github.V3Client,
@@ -144,13 +142,12 @@ func GetOrRenewGitHubAppInstallationAccessToken(
 		// If we failed to update the new token and its expiration time, it is fine to
 		// try again later. We should not block further process since we already have the
 		// new token available for use at this time.
-		logger.Error("GetOrRenewGitHubAppInstallationAccessToken.updateExternalService", log.Int64("id", svc.ID), log.Error(err))
+		log15.Error("GetOrRenewGitHubAppInstallationAccessToken.updateExternalService", "id", svc.ID, "error", err)
 	}
 	return *tok.Token, nil
 }
 
 func newGithubSource(
-	logger log.Logger,
 	externalServicesStore database.ExternalServiceStore,
 	svc *types.ExternalService,
 	c *schema.GitHubConnection,
@@ -247,7 +244,7 @@ func newGithubSource(
 			return nil, errors.Wrap(err, "parse installation ID")
 		}
 
-		token, err := GetOrRenewGitHubAppInstallationAccessToken(context.Background(), logger, externalServicesStore, svc, client, installationID)
+		token, err := GetOrRenewGitHubAppInstallationAccessToken(context.Background(), externalServicesStore, svc, client, installationID)
 		if err != nil {
 			return nil, errors.Wrap(err, "get or renew GitHub App installation access token")
 		}
@@ -294,14 +291,6 @@ func newGithubSource(
 		searchClient:     searchClient,
 		originalHostname: originalHostname,
 		useGitHubApp:     useGitHubApp,
-		logger: logger.With(
-			log.Object("GitHubSource",
-				log.Bool("excludeForks", excludeForks),
-				log.Bool("githubDotCom", githubDotCom),
-				log.String("originalHostname", originalHostname),
-				log.Bool("useGitHubApp", useGitHubApp),
-			),
-		),
 	}, nil
 }
 
@@ -507,14 +496,14 @@ func (s *GitHubSource) listOrg(ctx context.Context, org string, results chan *gi
 				}
 
 				remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
-				s.logger.Debug(
+				log15.Debug(
 					"github sync: ListOrgRepositories",
-					log.Int("repos", len(repos)),
-					log.Int("rateLimitCost", cost),
-					log.Int("rateLimitRemaining", remaining),
-					log.Duration("rateLimitReset", reset),
-					log.Duration("retryAfter", retry),
-					log.String("type", tp),
+					"repos", len(repos),
+					"rateLimitCost", cost,
+					"rateLimitRemaining", remaining,
+					"rateLimitReset", reset,
+					"retryAfter", retry,
+					"type", tp,
 				)
 			}()
 
@@ -574,13 +563,13 @@ func (s *GitHubSource) listUser(ctx context.Context, user string, results chan *
 			}
 
 			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
-			s.logger.Debug(
+			log15.Debug(
 				"github sync: ListUserRepositories",
-				log.Int("repos", len(repos)),
-				log.Int("rateLimitCost", cost),
-				log.Int("rateLimitRemaining", remaining),
-				log.Duration("rateLimitReset", reset),
-				log.Duration("retryAfter", retry),
+				"repos", len(repos),
+				"rateLimitCost", cost,
+				"rateLimitRemaining", remaining,
+				"rateLimitReset", reset,
+				"retryAfter", retry,
 			)
 		}()
 		return s.v3Client.ListUserRepositories(ctx, user, page)
@@ -601,7 +590,7 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 		// resulted in EOF errors while testing. And since we rely on fetching
 		// to work, we fall back to the (slower) sequential fetching in case we
 		// run into an GraphQL API error
-		s.logger.Warn("github sync: fetching in batches failed, falling back to sequential fetch", log.Error(err))
+		log15.Warn("github sync: fetching in batches failed, falling back to sequential fetch", "error", err)
 	}
 
 	// Admins normally add to end of lists, so end of list most likely has new
@@ -624,13 +613,13 @@ func (s *GitHubSource) listRepos(ctx context.Context, repos []string, results ch
 			// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 			// 404 errors on external service config validation.
 			if github.IsNotFound(err) {
-				s.logger.Warn("skipping missing github.repos entry:", log.String("name", nameWithOwner), log.Error(err))
+				log15.Warn("skipping missing github.repos entry:", "name", nameWithOwner, "err", err)
 			} else {
 				results <- &githubResult{err: errors.Wrapf(err, "Error getting GitHub repository: nameWithOwner=%s", nameWithOwner)}
 			}
 			continue
 		}
-		s.logger.Debug("github sync: GetRepository", log.String("repo", repo.NameWithOwner))
+		log15.Debug("github sync: GetRepository", "repo", repo.NameWithOwner)
 
 		results <- &githubResult{repo: repo}
 
@@ -666,7 +655,7 @@ func (s *GitHubSource) listPublic(ctx context.Context, results chan *githubResul
 		if len(repos) == 0 {
 			return
 		}
-		s.logger.Debug("github sync public", log.Int("repos", len(repos)), log.Error(err))
+		log15.Debug("github sync public", "repos", len(repos), "error", err)
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 			if sinceRepoID < r.DatabaseID {
@@ -693,13 +682,13 @@ func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubR
 	s.paginate(ctx, results, func(page int) (repos []*github.Repository, hasNext bool, cost int, err error) {
 		defer func() {
 			remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
-			s.logger.Debug(
+			log15.Debug(
 				"github sync: ListAffiliated",
-				log.Int("repos", len(repos)),
-				log.Int("rateLimitCost", cost),
-				log.Int("rateLimitRemaining", remaining),
-				log.Duration("rateLimitReset", reset),
-				log.Duration("retryAfter", retry),
+				"repos", len(repos),
+				"rateLimitCost", cost,
+				"rateLimitRemaining", remaining,
+				"rateLimitReset", reset,
+				"retryAfter", retry,
 			)
 		}()
 		if s.useGitHubApp {
@@ -713,7 +702,7 @@ func (s *GitHubSource) listAffiliated(ctx context.Context, results chan *githubR
 // It returns the repositories matching a GitHub's advanced repository search query
 // via the GraphQL API.
 func (s *GitHubSource) listSearch(ctx context.Context, q string, results chan *githubResult) {
-	(&repositoryQuery{Query: q, Searcher: s.v4Client, Logger: s.logger}).Do(ctx, results)
+	(&repositoryQuery{Query: q, Searcher: s.v4Client}).Do(ctx, results)
 }
 
 // GitHub was founded on February 2008, so this minimum date covers all repos
@@ -740,7 +729,6 @@ type repositoryQuery struct {
 	First    int
 	Limit    int
 	Searcher *github.V4Client
-	Logger   log.Logger
 }
 
 func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
@@ -772,11 +760,14 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 		}
 
 		if res.TotalCount > q.Limit {
-			q.Logger.Info(
+			log15.Info(
 				"repositoryQuery matched more than limit, refining",
-				log.Int("limit", q.Limit),
-				log.Int("resultCount", res.TotalCount),
-				log.String("query", q.String()),
+				"limit",
+				q.Limit,
+				"resultCount",
+				res.TotalCount,
+				"query",
+				q.String(),
 			)
 
 			if q.Created == nil {
@@ -785,7 +776,7 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			}
 
 			if q.Refine() {
-				q.Logger.Info("repositoryQuery refined", log.String("query", q.String()))
+				log15.Info("repositoryQuery refined", "query", q)
 				continue
 			}
 
@@ -793,7 +784,8 @@ func (q *repositoryQuery) Do(ctx context.Context, results chan *githubResult) {
 			return
 
 		}
-		q.Logger.Info("repositoryQuery matched", log.String("query", q.String()), log.Int("total", res.TotalCount), log.Int("page", len(res.Repos)))
+		log15.Info("repositoryQuery matched", "query", q, "total", res.TotalCount, "page", len(res.Repos))
+
 		for i := range res.Repos {
 			results <- &githubResult{repo: &res.Repos[i]}
 		}
@@ -956,7 +948,7 @@ func (s *GitHubSource) fetchAllRepositoriesInBatches(ctx context.Context, result
 			return err
 		}
 
-		s.logger.Debug("github sync: GetReposByNameWithOwner", log.Strings("repos", batch))
+		log15.Debug("github sync: GetReposByNameWithOwner", "repos", batch)
 		for _, r := range repos {
 			results <- &githubResult{repo: r}
 		}
@@ -974,13 +966,13 @@ func (s *GitHubSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	)
 	defer func() {
 		remaining, reset, retry, _ := s.v3Client.RateLimitMonitor().Get()
-		s.logger.Debug(
+		log15.Debug(
 			"github sync: ListAffiliated",
-			log.Int("repos", len(repos)),
-			log.Int("rateLimitCost", cost),
-			log.Int("rateLimitRemaining", remaining),
-			log.Duration("rateLimitReset", reset),
-			log.Duration("retryAfter", retry),
+			"repos", len(repos),
+			"rateLimitCost", cost,
+			"rateLimitRemaining", remaining,
+			"rateLimitReset", reset,
+			"retryAfter", retry,
 		)
 	}()
 	out := make([]types.CodeHostRepository, 0)

@@ -12,8 +12,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -54,7 +52,7 @@ func TestBitbucketServerSource_MakeRepo(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -127,7 +125,7 @@ func TestBitbucketServerSource_Exclude(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -164,7 +162,7 @@ func TestBitbucketServerSource_WithAuthenticator(t *testing.T) {
 		}),
 	}
 
-	bbsSrc, err := NewBitbucketServerSource(logtest.Scoped(t), svc, nil)
+	bbsSrc, err := NewBitbucketServerSource(svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -234,7 +232,7 @@ func TestBitbucketServerSource_ListByReposOnly(t *testing.T) {
 	cases, svc := GetConfig(t, server.URL, "secret")
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -337,7 +335,7 @@ func TestBitbucketServerSource_ListByRepositoryQuery(t *testing.T) {
 		tc := tc
 		for name, config := range cases {
 			t.Run(name, func(t *testing.T) {
-				s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
+				s, err := newBitbucketServerSource(&svc, config, nil)
 				if err != nil {
 					t.Fatal(err)
 				}
@@ -399,7 +397,7 @@ func TestBitbucketServerSource_ListByProjectKeyMock(t *testing.T) {
 	cases, svc := GetConfig(t, server.URL, "secret")
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -429,7 +427,7 @@ func TestBitbucketServerSource_ListByProjectKeyAuthentic(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketServerSource(logtest.Scoped(t), &svc, config, nil)
+			s, err := newBitbucketServerSource(&svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}

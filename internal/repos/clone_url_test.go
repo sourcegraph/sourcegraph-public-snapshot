@@ -8,8 +8,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/sourcegraph/log/logtest"
-
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
@@ -43,7 +41,7 @@ func TestAWSCodeCloneURLs(t *testing.T) {
 		},
 	}
 
-	got := awsCodeCloneURL(logtest.Scoped(t), repo, &cfg)
+	got := awsCodeCloneURL(repo, &cfg)
 	want := "https://username:password@git-codecommit.us-west-1.amazonaws.com/v1/repos/stripe-go"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
@@ -113,7 +111,6 @@ func TestBitbucketServerCloneURLs(t *testing.T) {
 }
 
 func TestBitbucketCloudCloneURLs(t *testing.T) {
-	logger := logtest.Scoped(t)
 	repo := &bitbucketcloud.Repo{
 		FullName: "sg/sourcegraph",
 	}
@@ -132,7 +129,7 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 	t.Run("ssh", func(t *testing.T) {
 		cfg.GitURLType = "ssh"
 
-		got := bitbucketCloudCloneURL(logger, repo, &cfg)
+		got := bitbucketCloudCloneURL(repo, &cfg)
 		want := "git@bitbucket.org:sg/sourcegraph.git"
 		if got != want {
 			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
@@ -142,7 +139,7 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 	t.Run("http", func(t *testing.T) {
 		cfg.GitURLType = "http"
 
-		got := bitbucketCloudCloneURL(logger, repo, &cfg)
+		got := bitbucketCloudCloneURL(repo, &cfg)
 		want := "https://username:password@bitbucket.org/sg/sourcegraph.git"
 		if got != want {
 			t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
@@ -151,9 +148,8 @@ func TestBitbucketCloudCloneURLs(t *testing.T) {
 }
 
 func TestGitHubCloneURLs(t *testing.T) {
-	logger := logtest.Scoped(t)
 	t.Run("empty repo.URL", func(t *testing.T) {
-		_, err := githubCloneURL(logger, &github.Repository{}, &schema.GitHubConnection{})
+		_, err := githubCloneURL(&github.Repository{}, &schema.GitHubConnection{})
 		got := fmt.Sprintf("%v", err)
 		want := "empty repo.URL"
 		if diff := cmp.Diff(want, got); diff != "" {
@@ -186,7 +182,7 @@ func TestGitHubCloneURLs(t *testing.T) {
 
 			repo.URL = test.RepoURL
 
-			got, err := githubCloneURL(logger, &repo, &cfg)
+			got, err := githubCloneURL(&repo, &cfg)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -228,7 +224,7 @@ func TestGitLabCloneURLs(t *testing.T) {
 				GitURLType: test.GitURLType,
 			}
 
-			got := gitlabCloneURL(logtest.Scoped(t), repo, &cfg)
+			got := gitlabCloneURL(repo, &cfg)
 			if got != test.Want {
 				t.Fatalf("wrong cloneURL, got: %q, want: %q", got, test.Want)
 			}
@@ -247,7 +243,7 @@ func TestGerritCloneURL(t *testing.T) {
 		ID: "test-project",
 	}
 
-	got := gerritCloneURL(logtest.Scoped(t), project, &cfg)
+	got := gerritCloneURL(project, &cfg)
 	want := "https://admin:pa$$word@gerrit.com/test-project"
 	if got != want {
 		t.Fatalf("wrong cloneURL, got: %q, want: %q", got, want)
@@ -345,7 +341,7 @@ func TestPhabricatorCloneURL(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	got := phabricatorCloneURL(logtest.Scoped(t), repo, nil)
+	got := phabricatorCloneURL(repo, nil)
 	want := "ssh://git@phabricator.sgdev.org/diffusion/8/test.git"
 
 	if want != got {

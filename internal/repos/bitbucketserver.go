@@ -7,7 +7,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/sourcegraph/log"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -28,7 +28,6 @@ type BitbucketServerSource struct {
 	config  *schema.BitbucketServerConnection
 	exclude excludeFunc
 	client  *bitbucketserver.Client
-	logger  log.Logger
 }
 
 var _ Source = &BitbucketServerSource{}
@@ -37,15 +36,15 @@ var _ VersionSource = &BitbucketServerSource{}
 
 // NewBitbucketServerSource returns a new BitbucketServerSource from the given external service.
 // rl is optional
-func NewBitbucketServerSource(logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func NewBitbucketServerSource(svc *types.ExternalService, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	var c schema.BitbucketServerConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newBitbucketServerSource(logger, svc, &c, cf)
+	return newBitbucketServerSource(svc, &c, cf)
 }
 
-func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
+func newBitbucketServerSource(svc *types.ExternalService, c *schema.BitbucketServerConnection, cf *httpcli.Factory) (*BitbucketServerSource, error) {
 	if cf == nil {
 		cf = httpcli.ExternalClientFactory
 	}
@@ -81,7 +80,6 @@ func newBitbucketServerSource(logger log.Logger, svc *types.ExternalService, c *
 		config:  c,
 		exclude: exclude,
 		client:  client,
-		logger:  logger,
 	}, nil
 }
 
@@ -231,7 +229,7 @@ func (s *BitbucketServerSource) listAllRepos(ctx context.Context, results chan S
 				// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 				// 404 errors on external service config validation.
 				if bitbucketserver.IsNotFound(err) {
-					s.logger.Warn("skipping missing bitbucketserver.repos entry:", log.String("name", name), log.Error(err))
+					log15.Warn("skipping missing bitbucketserver.repos entry:", "name", name, "err", err)
 					continue
 				}
 				ch <- batch{err: errors.Wrapf(err, "bitbucketserver.repos: name: %q", name)}

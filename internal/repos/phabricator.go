@@ -6,8 +6,7 @@ import (
 	"time"
 
 	"github.com/goware/urlx"
-
-	"github.com/sourcegraph/log"
+	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/api/internalapi"
@@ -28,18 +27,17 @@ type PhabricatorSource struct {
 	conn *schema.PhabricatorConnection
 	cf   *httpcli.Factory
 
-	mu     sync.Mutex
-	cli    *phabricator.Client
-	logger log.Logger
+	mu  sync.Mutex
+	cli *phabricator.Client
 }
 
 // NewPhabricatorSource returns a new PhabricatorSource from the given external service.
-func NewPhabricatorSource(logger log.Logger, svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
+func NewPhabricatorSource(svc *types.ExternalService, cf *httpcli.Factory) (*PhabricatorSource, error) {
 	var c schema.PhabricatorConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Wrapf(err, "external service id=%d config error", svc.ID)
 	}
-	return &PhabricatorSource{logger: logger, svc: svc, conn: &c, cf: cf}, nil
+	return &PhabricatorSource{svc: svc, conn: &c, cf: cf}, nil
 }
 
 // ListRepos returns all Phabricator repositories accessible to all connections configured
@@ -124,7 +122,7 @@ func (s *PhabricatorSource) makeRepo(repo *phabricator.Repo) (*types.Repo, error
 	}
 
 	if cloneURL == "" {
-		s.logger.Warn("unable to construct clone URL for repo", log.String("name", name), log.String("phabricator_id", repo.PHID))
+		log15.Warn("unable to construct clone URL for repo", "name", name, "phabricator_id", repo.PHID)
 	}
 
 	if name == "" {
@@ -182,7 +180,7 @@ func (s *PhabricatorSource) client(ctx context.Context) (*phabricator.Client, er
 }
 
 // RunPhabricatorRepositorySyncWorker runs the worker that syncs repositories from Phabricator to Sourcegraph
-func RunPhabricatorRepositorySyncWorker(ctx context.Context, logger log.Logger, s Store) {
+func RunPhabricatorRepositorySyncWorker(ctx context.Context, s Store) {
 	cf := httpcli.ExternalClientFactory
 
 	for {
@@ -190,31 +188,31 @@ func RunPhabricatorRepositorySyncWorker(ctx context.Context, logger log.Logger, 
 			Kinds: []string{extsvc.KindPhabricator},
 		})
 		if err != nil {
-			logger.Error("unable to fetch Phabricator connections", log.Error(err))
+			log15.Error("unable to fetch Phabricator connections", "err", err)
 		}
 
 		for _, phab := range phabs {
-			src, err := NewPhabricatorSource(logger, phab, cf)
+			src, err := NewPhabricatorSource(phab, cf)
 			if err != nil {
-				logger.Error("failed to instantiate PhabricatorSource", log.Error(err))
+				log15.Error("failed to instantiate PhabricatorSource", "err", err)
 				continue
 			}
 
 			repos, err := listAll(ctx, src)
 			if err != nil {
-				logger.Error("Error fetching Phabricator repos", log.Error(err))
+				log15.Error("Error fetching Phabricator repos", "err", err)
 				continue
 			}
 
 			err = updatePhabRepos(ctx, repos)
 			if err != nil {
-				logger.Error("Error updating Phabricator repos", log.Error(err))
+				log15.Error("Error updating Phabricator repos", "err", err)
 				continue
 			}
 
 			cfg, err := phab.Configuration()
 			if err != nil {
-				logger.Error("failed to parse Phabricator config", log.Error(err))
+				log15.Error("failed to parse Phabricator config", "err", err)
 				continue
 			}
 

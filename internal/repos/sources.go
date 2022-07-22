@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sourcegraph/log"
-
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -25,9 +23,9 @@ type Sourcer func(context.Context, *types.ExternalService) (Source, error)
 // http.Clients needed to contact the respective upstream code host APIs.
 //
 // The provided decorator functions will be applied to the Source.
-func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
+func NewSourcer(db database.DB, cf *httpcli.Factory, decs ...func(Source) Source) Sourcer {
 	return func(ctx context.Context, svc *types.ExternalService) (Source, error) {
-		src, err := NewSource(ctx, logger.Scoped("source", ""), db, svc, cf)
+		src, err := NewSource(ctx, db, svc, cf)
 		if err != nil {
 			return nil, err
 		}
@@ -41,24 +39,24 @@ func NewSourcer(logger log.Logger, db database.DB, cf *httpcli.Factory, decs ...
 }
 
 // NewSource returns a repository yielding Source from the given ExternalService configuration.
-func NewSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
+func NewSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (Source, error) {
 	externalServicesStore := db.ExternalServices()
 
 	switch strings.ToUpper(svc.Kind) {
 	case extsvc.KindGitHub:
-		return NewGithubSource(logger.Scoped("GithubSource", ""), externalServicesStore, svc, cf)
+		return NewGithubSource(externalServicesStore, svc, cf)
 	case extsvc.KindGitLab:
-		return NewGitLabSource(ctx, logger.Scoped("GitLabSource", ""), db, svc, cf)
+		return NewGitLabSource(ctx, db, svc, cf)
 	case extsvc.KindGerrit:
 		return NewGerritSource(svc, cf)
 	case extsvc.KindBitbucketServer:
-		return NewBitbucketServerSource(logger.Scoped("BitbucketServerSource", ""), svc, cf)
+		return NewBitbucketServerSource(svc, cf)
 	case extsvc.KindBitbucketCloud:
-		return NewBitbucketCloudSource(logger.Scoped("BitbucketCloudSource", ""), svc, cf)
+		return NewBitbucketCloudSource(svc, cf)
 	case extsvc.KindGitolite:
 		return NewGitoliteSource(db, svc, cf)
 	case extsvc.KindPhabricator:
-		return NewPhabricatorSource(logger.Scoped("PhabricatorSource", ""), svc, cf)
+		return NewPhabricatorSource(svc, cf)
 	case extsvc.KindAWSCodeCommit:
 		return NewAWSCodeCommitSource(svc, cf)
 	case extsvc.KindPerforce:
