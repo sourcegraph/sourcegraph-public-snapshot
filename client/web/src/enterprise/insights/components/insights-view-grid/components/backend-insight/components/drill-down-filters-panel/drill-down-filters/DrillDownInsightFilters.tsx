@@ -56,8 +56,6 @@ interface DrillDownInsightFilters {
 
     className?: string
 
-    seriesCount: number
-
     /** Fires whenever the user changes filter value in any form input. */
     onFiltersChange: (filters: FormChangeEvent<DrillDownFiltersFormValues>) => void
 
@@ -83,7 +81,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
         onCreateInsightRequest,
         onVisualModeChange = noop,
         onFilterValuesChange = noop,
-        seriesCount,
     } = props
 
     const [activeSection, setActiveSection] = useState<FilterSection | null>(FilterSection.RegularExpressions)
@@ -207,7 +204,6 @@ export const DrillDownInsightFilters: FunctionComponent<DrillDownInsightFilters>
                     <SortFilterSeriesPanel
                         value={seriesDisplayOptionsField.input.value}
                         onChange={seriesDisplayOptionsField.input.onChange}
-                        seriesCount={seriesCount}
                     />
                 </FilterCollapseSection>
 

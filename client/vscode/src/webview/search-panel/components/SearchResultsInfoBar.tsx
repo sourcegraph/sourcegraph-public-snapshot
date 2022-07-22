@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo } from 'react'
 
-import { mdiFormatQuoteOpen, mdiBookmarkOutline, mdiLink } from '@mdi/js'
+import { mdiBookmarkOutline, mdiLink } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SearchPatternType } from '@sourcegraph/shared/src/schema'
@@ -55,27 +55,6 @@ const ExperimentalActionButton: React.FunctionComponent<
         </button>
     )
 }
-
-/**
- * A notice for when the user is searching literally and has quotes in their
- * query, in which case it is possible that they think their query `"foobar"`
- * will be searching literally for `foobar` (without quotes). This notice
- * informs them that this may be the case to avoid confusion.
- */
-const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
-    React.PropsWithChildren<SearchResultsInfoBarProps>
-> = props =>
-    props.patternType === SearchPatternType.literal && props.fullQuery && props.fullQuery.includes('"') ? (
-        <small
-            className={styles.notice}
-            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
-        >
-            <span>
-                <Icon aria-hidden={true} className="mr-1" svgPath={mdiFormatQuoteOpen} />
-                Searching literally <strong>(including quotes)</strong>
-            </span>
-        </small>
-    ) : null
 
 export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
@@ -232,7 +211,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         <div className={classNames('flex-grow-1 my-2', styles.searchResultsInfoBar)} data-testid="results-info-bar">
             <div className={styles.row}>
                 {stats}
-                <QuotesInterpretedLiterallyNotice {...props} />
                 <div className={styles.expander} />
                 <ul className="nav align-items-center">
                     {createCodeMonitorButton}

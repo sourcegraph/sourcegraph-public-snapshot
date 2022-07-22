@@ -27,5 +27,4 @@ export const getSanitizedComputeInsight = (values: CreateComputeInsightFormField
             },
         },
     },
-    seriesCount: 0,
 })

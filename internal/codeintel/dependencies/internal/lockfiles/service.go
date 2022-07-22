@@ -8,8 +8,9 @@ import (
 	"path"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -143,9 +144,11 @@ func parseZipLockfile(f *zip.File) ([]reposource.VersionedPackage, *DependencyGr
 	}
 	defer r.Close()
 
+	logger := sglog.Scoped("parseZipLockfile", "")
+
 	deps, graph, err := parse(f.Name, r)
 	if err != nil {
-		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
+		logger.Warn("failed to parse some lockfile dependencies", sglog.Error(err), sglog.String("file", f.Name))
 	}
 
 	return deps, graph, nil

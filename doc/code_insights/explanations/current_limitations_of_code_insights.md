@@ -40,6 +40,7 @@ If you create an insight with a search query that returns a large result set tha
 You can determine if this issue may be affecting your query by just running the query in the Search UI on `/search` with a `count:all` – if your search is returning `x results in 60s` (or the upper limit max timeout is configured to) then the search will time out on insights as well. Note that the duration could be more or less `60s`, e.g. you could encounter `60.02s` as well. 
 
 In this case, you may want to try:
+
 * Using a more granular query
 * Changing your site configuration so that the timeout is increased, provided your instance setup allows it. [More information on timeouts](https://docs.sourcegraph.com/code_search/how-to/exhaustive#timeouts).
 

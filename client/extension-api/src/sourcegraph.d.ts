@@ -2,7 +2,7 @@
  * ## The Sourcegraph extension API
  *
  * Sourcegraph extensions enhance your code host, code reviews, and Sourcegraph itself by adding features such as:
- * - Code intelligence (go-to-definition, find references, hovers, etc.)
+ * - Code navigation (go-to-definition, find references, hovers, etc.)
  * - Test coverage overlays
  * - Links to live traces, log output, and performance data for a line of code
  * - Git blame
@@ -1258,7 +1258,7 @@ declare module 'sourcegraph' {
          * The current version context of the workspace, if any.
          *
          * A version context is a set of repositories and revisions on a Sourcegraph instance.
-         * When set, extensions use it to scope search queries, code intelligence actions, etc.
+         * When set, extensions use it to scope search queries, code navigation actions, etc.
          *
          * See more information at http://docs.sourcegraph.com/user/search#version-contexts.
          *
@@ -1277,7 +1277,7 @@ declare module 'sourcegraph' {
          * The current search context of the workspace, if any.
          *
          * A search context is a set of repositories and revisions on a Sourcegraph instance.
-         * When set, extensions use it to scope search queries, code intelligence actions, etc.
+         * When set, extensions use it to scope search queries, code navigation actions, etc.
          *
          * See more information at https://docs.sourcegraph.com/code_search/explanations/features#search-contexts.
          */
@@ -1417,7 +1417,7 @@ declare module 'sourcegraph' {
          * values can briefly be used to describe some common property of the underlying result set.
          *
          * We currently use this to display whether a file in the file match locations pane contains
-         * only precise or only search-based code intelligence results.
+         * only precise or only search-based code navigation results.
          */
         aggregableBadges?: AggregableBadge[]
     }

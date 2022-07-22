@@ -101,7 +101,7 @@ export const OptionsPage: React.FunctionComponent<React.PropsWithChildren<Option
                 <div className={styles.version}>v{version}</div>
             </section>
             <section className={styles.section}>
-                Get code intelligence tooltips while browsing and reviewing code on your code host.{' '}
+                Get code navigation tooltips while browsing and reviewing code on your code host.{' '}
                 <Link to="https://docs.sourcegraph.com/integration/browser_extension#features" {...NEW_TAB_LINK_PROPS}>
                     Learn more
                 </Link>{' '}

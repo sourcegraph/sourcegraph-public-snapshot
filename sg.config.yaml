@@ -521,10 +521,11 @@ commands:
 
   jaeger:
     cmd: |
+      echo "Jaeger will be available on http://localhost:16686/-/debug/jaeger/search"
       .bin/jaeger-all-in-one-${JAEGER_VERSION} --log-level ${JAEGER_LOG_LEVEL}
     install_func: installJaeger
     env:
-      JAEGER_VERSION: 1.30.0
+      JAEGER_VERSION: 1.36.0
       JAEGER_DISK: $HOME/.sourcegraph-dev/data/jaeger
       JAEGER_LOG_LEVEL: error
       QUERY_BASE_PATH: /-/debug/jaeger
@@ -661,6 +662,7 @@ commands:
       LOKI_LOG_FILE: $HOME/.sourcegraph-dev/logs/loki/loki.log
 
   otel-collector:
+    install: docker-images/opentelemetry-collector/build.sh
     cmd: |
       JAEGER_HOST='host.docker.internal'
       if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -671,13 +673,20 @@ commands:
         JAEGER_HOST="localhost"
       fi
 
-      docker run --rm --name=otel-collector $DOCKER_NET \
+      docker container rm otel-collector
+      docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
         -p 4317:4317 -p 55679:55679 \
         -e JAEGER_HOST=$JAEGER_HOST \
-        -v "$(pwd)"/dev/otel-collector/config.yaml:/etc/otel-collector/config.yaml \
-        otel/opentelemetry-collector:${OTEL_COLLECTOR_VERISON} --config /etc/otel-collector/config.yaml
+        -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
+        -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
+        $IMAGE --config "/etc/otel-collector/$CONFIGURATION_FILE"
     env:
-      OTEL_COLLECTOR_VERISON: '0.54.0'
+      IMAGE: sourcegraph/opentelemetry-collector:dev
+      # Overwrite the following in sg.config.overwrite.yaml, based on which collector
+      # config you are using - see docker-images/opentelemetry-collector for more details.
+      CONFIGURATION_FILE: 'configs/jaeger.yaml'
+      # HONEYCOMB_API_KEY: ''
+      # HONEYCOMB_DATASET: ''
 
   storybook:
     cmd: yarn storybook

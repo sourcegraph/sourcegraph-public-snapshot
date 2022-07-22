@@ -12,7 +12,7 @@ import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@so
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
-import { BlobProps, updateBrowserHistoryIfNecessary } from './Blob'
+import { BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './CodeMirrorLineNumbers'
 
 const staticExtensions: Extension = [
@@ -30,7 +30,14 @@ const staticExtensions: Extension = [
     }),
 ]
 
-export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, wrapCode, isLightTheme }) => {
+export const Blob: React.FunctionComponent<BlobProps> = ({
+    className,
+    blobInfo,
+    wrapCode,
+    isLightTheme,
+    ariaLabel,
+    role,
+}) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
     const dynamicExtensions = useMemo(
@@ -66,7 +73,7 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
             query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
         }
 
-        updateBrowserHistoryIfNecessary(
+        updateBrowserHistoryIfChanged(
             historyRef.current,
             locationRef.current,
             addLineRangeQueryParameter(parameters, query)
@@ -101,5 +108,5 @@ export const Blob: React.FunctionComponent<BlobProps> = ({ className, blobInfo, 
         // logic whenever the content changes
     }, [editor, position, blobInfo])
 
-    return <div ref={setContainer} className={`${className} overflow-hidden`} />
+    return <div ref={setContainer} aria-label={ariaLabel} role={role} className={`${className} overflow-hidden`} />
 }

@@ -20,7 +20,7 @@ func TestProductLicenses_Create(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ps0, err := dbSubscriptions{db: db}.Create(ctx, u.ID)
+	ps0, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -74,11 +74,11 @@ func TestProductLicenses_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ps0, err := dbSubscriptions{db: db}.Create(ctx, u1.ID)
+	ps0, err := dbSubscriptions{db: db}.Create(ctx, u1.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	ps1, err := dbSubscriptions{db: db}.Create(ctx, u1.ID)
+	ps1, err := dbSubscriptions{db: db}.Create(ctx, u1.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
