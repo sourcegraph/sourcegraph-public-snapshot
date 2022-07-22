@@ -7,22 +7,25 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/grafana/regexp"
 
+	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/dev/ci/runtype"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/buildkite"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci"
 	"github.com/sourcegraph/sourcegraph/enterprise/dev/ci/internal/ci/changed"
+	"github.com/sourcegraph/sourcegraph/internal/hostname"
 )
 
 var preview bool
 var wantYaml bool
 var docs bool
+
+var logger log.Logger
 
 func init() {
 	flag.BoolVar(&preview, "preview", false, "Preview the pipeline steps")
@@ -35,6 +38,23 @@ func init() {
 func main() {
 	flag.Parse()
 
+	liblog := log.Init(log.Resource{
+		Name:       "buildkite-ci",
+		Version:    "-",
+		InstanceID: hostname.Get(),
+	}, log.NewSentrySink())
+	defer liblog.Sync()
+
+	liblog.Update(func() log.SinksConfig {
+		return log.SinksConfig{
+			Sentry: &log.SentrySink{
+				DSN: os.Getenv("CI_SENRTY_DSN"),
+			},
+		}
+	})()
+
+	logger = log.Scoped("gen-pipeline", "generates the pipeline for ci")
+
 	if docs {
 		renderPipelineDocs(os.Stdout)
 		return
@@ -44,7 +64,7 @@ func main() {
 
 	pipeline, err := ci.GeneratePipeline(config)
 	if err != nil {
-		panic(err)
+		logger.Fatal("failed to generate pipeline", log.Error(err))
 	}
 
 	if preview {
@@ -58,7 +78,7 @@ func main() {
 		_, err = pipeline.WriteJSONTo(os.Stdout)
 	}
 	if err != nil {
-		panic(err)
+		logger.Fatal("failed to write pipeline out to stdout", log.Error(err), log.Bool("wantYaml", wantYaml))
 	}
 }
 
@@ -117,7 +137,7 @@ func renderPipelineDocs(w io.Writer) {
 			Diff:    diff,
 		})
 		if err != nil {
-			log.Fatalf("Generating pipeline for diff %q: %s", diff, err)
+			logger.Fatal("generating pipeline for diff", log.Error(err), log.Uint32("diff", uint32(diff)))
 		}
 		fmt.Fprintf(w, "\n- Pipeline for `%s` changes:\n", diff)
 		for _, raw := range pipeline.Steps {
@@ -188,7 +208,7 @@ func renderPipelineDocs(w io.Writer) {
 					Diff: changed.None,
 				})
 				if err != nil {
-					log.Fatalf("Generating pipeline for RunType %q: %s", rt.String(), err)
+					logger.Fatal("generating pipeline for RunType", log.String("runType", rt.String()), log.Error(err))
 				}
 				fmt.Fprint(w, "\nBase pipeline (more steps might be included based on branch changes):\n\n")
 				for _, raw := range pipeline.Steps {
