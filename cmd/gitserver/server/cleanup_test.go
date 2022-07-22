@@ -741,7 +741,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d)), true); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -752,7 +752,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d)), true); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -796,13 +796,66 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 		ReposDir: root,
 	}
 
-	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git"))); err != nil {
+	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), true); err != nil {
 		t.Fatal(err)
 	}
 
 	assertPaths(t, root,
 		".tmp",
 	)
+}
+
+func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	repo := &types.Repo{
+		Name: api.RepoName("github.com/foo/baz/"),
+	}
+	if err := db.Repos().Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
+		RepoID:      repo.ID,
+		ShardID:     "test",
+		CloneStatus: types.CloneStatusCloned,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	root := t.TempDir()
+	mkFiles(t, root, "github.com/foo/baz/.git/HEAD")
+	s := &Server{
+		Logger:   logtest.Scoped(t),
+		ReposDir: root,
+		DB:       db,
+		ctx:      ctx,
+	}
+
+	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), false); err != nil {
+		t.Fatal(err)
+	}
+
+	assertPaths(t, root, ".tmp")
+
+	r, err := db.Repos().GetByName(ctx, repo.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gsRepo, err := db.GitserverRepos().GetByID(ctx, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if gsRepo.CloneStatus != types.CloneStatusCloned {
+		t.Fatalf("Expected clone_status to be %s, but got %s", types.CloneStatusCloned, gsRepo.CloneStatus)
+	}
 }
 
 func TestHowManyBytesToFree(t *testing.T) {
