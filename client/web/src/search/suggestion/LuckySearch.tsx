@@ -17,8 +17,13 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
     alert?.kind && alert.kind !== 'lucky-search-queries' ? null : (
         <div className={styles.root}>
             <H3>
-                Also showing additional results
-                <Tooltip content="We returned all the results for your query. We also added results for similar queries that might interest you.">
+                {alert?.title || 'Also showing additional results'}
+                <Tooltip
+                    content={
+                        alert?.description ||
+                        'We returned all the results for your query. We also added results for similar queries that might interest you.'
+                    }
+                >
                     <Icon className="ml-1" tabIndex={0} aria-label="More information" svgPath={mdiInformationOutline} />
                 </Tooltip>
             </H3>
