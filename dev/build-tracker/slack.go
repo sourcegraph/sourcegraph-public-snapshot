@@ -160,6 +160,12 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		return nil, fmt.Errorf("cannot create message blocks for nil Build Number")
 	}
 
+	// should have the @ before here to tag people, but leaving that out for now
+	author := teammate.SlackID
+	if author == "" {
+		author = build.Author.Name
+	}
+
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
 			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf(":red_circle: Build %d failed", *build.Number), true, false),
@@ -174,7 +180,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n@%s", teammate.SlackName)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n%s", author)},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline*\n%s", build.PipelineName())},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit*\n%s", commitLink(*build.Commit))},
 			},

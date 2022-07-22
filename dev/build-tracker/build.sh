@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 
-GOOS=linux go build .
+GOARCH=amd64 GOOS=linux go build .
 
-docker build -t build-tracker .
+docker build --platform linux/amd64 -t us-central1-docker.pkg.dev/sourcegraph-ci/build-tracker/build-tracker .
+docker push  us-central1-docker.pkg.dev/sourcegraph-ci/build-tracker/build-tracker

@@ -125,6 +125,8 @@ func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Reque
 
 	switch err {
 	case ErrInvalidToken:
+		w.WriteHeader(http.StatusUnauthorized)
+		return
 	case ErrInvalidHeader:
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -141,6 +143,11 @@ func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Reque
 
 	s.logger.Info("processing event", log.String("eventName", event.Event), log.Int("buildNumber", event.BuildNumber()), log.String("JobName", event.JobName()))
 	go s.processEvent(event)
+	w.WriteHeader(http.StatusOK)
+}
+
+func (s *BuildTrackingServer) handleHealthz(w http.ResponseWriter, req *http.Request) {
+	// do our super exhaustive check
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -226,6 +233,7 @@ func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 // Server starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
 func (s *BuildTrackingServer) Serve() error {
 	http.HandleFunc("/buildkite", s.handleEvent)
+	http.HandleFunc("/healthz", s.handleHealthz)
 	s.logger.Info("listening on :8080")
 	return http.ListenAndServe(":8080", nil)
 }
