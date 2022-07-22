@@ -889,30 +889,6 @@ func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookI
 	return true, nil
 }
 
-// TestPushWebhook returns a boolean answer as to whether GitHub successfully pinged the target repo
-// This API call replicates a GitHub push event
-//
-// API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#test-the-push-repository-webhook
-func (c *V3Client) TestPushSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
-	u, err := webhookURLBuilderWithID(repoName, hookID)
-	if err != nil {
-		return false, err
-	}
-	url := fmt.Sprintf("%s/tests", u)
-
-	var result WebhookPayload
-	resp, err := c.post(ctx, url, nil, result)
-	if err != nil && err != io.EOF {
-		return false, err
-	}
-
-	if resp.statusCode != 204 {
-		return false, errors.Newf("expected 204 status code, got %d", resp.statusCode)
-	}
-
-	return true, nil
-}
-
 // webhookURLBuilder builds the URL to interface with the GitHub Webhooks API
 func webhookURLBuilder(repoName string) (string, error) {
 	repoName = fmt.Sprintf("//%s", repoName)
