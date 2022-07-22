@@ -118,13 +118,10 @@ func (s *Service) Dependencies(ctx context.Context, params []QueryParams) (depen
 
 	notFound = make(map[api.RepoName]types.RevSpecSet, len(notFoundParams))
 	for _, param := range notFoundParams {
-		repo := param.Repo
-		rev := api.RevSpec(param.RevSpec)
-
-		if _, ok := notFound[repo]; !ok {
-			notFound[repo] = types.RevSpecSet{}
+		if _, ok := notFound[param.Repo]; !ok {
+			notFound[param.Repo] = types.RevSpecSet{}
 		}
-		notFound[repo][rev] = struct{}{}
+		notFound[param.Repo][param.RevSpec] = struct{}{}
 	}
 
 	if !enablePreciseQueries {
@@ -251,7 +248,7 @@ func (s *Service) resolveLockfileDependenciesFromStore(ctx context.Context, para
 // given repo-commit pair and persists the result to the database. This aids in both caching
 // and building an inverted index to power dependents search.
 func (s *Service) listAndPersistLockfileDependencies(ctx context.Context, param resolvedQueryParams) ([]shared.PackageDependency, error) {
-	results, err := s.lockfilesSvc.ListDependencies(ctx, param.Repo, string(param.ResolvedCommit))
+	results, err := s.lockfilesSvc.ListDependencies(ctx, param.Repo, param.ResolvedCommit)
 	if err != nil {
 		return nil, errors.Wrap(err, "lockfiles.ListDependencies")
 	}
