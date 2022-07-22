@@ -30,28 +30,28 @@ func TestIntegration(t *testing.T) {
 		name string
 		test func(repos.Store) func(*testing.T)
 	}{
-		// {"SyncRateLimiters", testSyncRateLimiters},
-		// {"EnqueueSyncJobs", testStoreEnqueueSyncJobs},
-		// {"EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob},
+		{"SyncRateLimiters", testSyncRateLimiters},
+		{"EnqueueSyncJobs", testStoreEnqueueSyncJobs},
+		{"EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob},
 		{"EnqueueSingleWebhookBuildJob", testStoreEnqueueSingleWebhookBuildJob},
-		// {"ListExternalServiceUserIDsByRepoID", testStoreListExternalServiceUserIDsByRepoID},
-		// {"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
+		{"ListExternalServiceUserIDsByRepoID", testStoreListExternalServiceUserIDsByRepoID},
+		{"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
 		// {"Syncer/SyncWorker", testSyncWorkerPlumbing},
-		// {"Syncer/Sync", testSyncerSync},   // PROBLEM WITH foreign key
+		// {"Syncer/Sync", testSyncerSync},
 		// {"Syncer/SyncRepo", testSyncRepo}, // PROBLEM WITHOUT foreign key
-		// {"Syncer/Run", testSyncRun},
+		{"Syncer/Run", testSyncRun},
 		// {"Syncer/MultipleServices", testSyncerMultipleServices}, // PROBLEM with syncer.go
-		// {"Syncer/OrphanedRepos", testOrphanedRepo},
-		// {"Syncer/CloudDefaultExternalServicesDontSync", testCloudDefaultExternalServicesDontSync},
-		// {"Syncer/DeleteExternalService", testDeleteExternalService},
-		// {"Syncer/AbortSyncWhenThereIsRepoLimitError", testAbortSyncWhenThereIsRepoLimitError},
-		// {"Syncer/UserAndOrgReposAreCountedCorrectly", testUserAndOrgReposAreCountedCorrectly},
-		// {"Syncer/UserAddedRepos", testUserAddedRepos},
-		// {"Syncer/NameConflictOnRename", testNameOnConflictOnRename},
-		// {"Syncer/ConflictingSyncers", testConflictingSyncers},
-		// {"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
-		// {"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
-		// {"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
+		{"Syncer/OrphanedRepos", testOrphanedRepo},
+		{"Syncer/CloudDefaultExternalServicesDontSync", testCloudDefaultExternalServicesDontSync},
+		{"Syncer/DeleteExternalService", testDeleteExternalService},
+		{"Syncer/AbortSyncWhenThereIsRepoLimitError", testAbortSyncWhenThereIsRepoLimitError},
+		{"Syncer/UserAndOrgReposAreCountedCorrectly", testUserAndOrgReposAreCountedCorrectly},
+		{"Syncer/UserAddedRepos", testUserAddedRepos},
+		{"Syncer/NameConflictOnRename", testNameOnConflictOnRename},
+		{"Syncer/ConflictingSyncers", testConflictingSyncers},
+		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
+		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
+		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			store := repos.NewStore(logtest.Scoped(t), database.NewDB(dbtest.NewDB(t)))

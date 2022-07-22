@@ -140,7 +140,6 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-
 		err = syncer.SyncChangeset(ctx, s, src, githubRepo, changeset)
 		if err != nil {
 			t.Fatal(err)

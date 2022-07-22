@@ -667,7 +667,7 @@ func (s *Syncer) SyncExternalService(
 		if !allowed(sourced) {
 			continue
 		}
-		fmt.Printf("sourced:%+v\n", sourced)
+		// fmt.Printf("sourced:%+v\n", sourced)
 
 		var diff Diff
 		if diff, err = s.sync(ctx, svc, sourced); err != nil {
@@ -685,6 +685,7 @@ func (s *Syncer) SyncExternalService(
 
 		svc.SyncUsingWebhooks = conf.ExperimentalFeatures().EnableWebhookSyncing
 		if svc.SyncUsingWebhooks {
+			fmt.Println("Syncing...")
 			err = s.Store.EnqueueSingleWhBuildJob(ctx, int64(sourced.ID), string(sourced.Name), svc.Kind)
 			if err != nil && s.Logger != nil {
 				s.Logger.Error("enqueue webhook creation jobs", log.Error(err))

@@ -179,7 +179,9 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 	}
 
 	repo := rs[0]
+
 	s.Scheduler.UpdateOnce(repo.ID, repo.Name)
+
 	return &protocol.RepoUpdateResponse{
 		ID:   repo.ID,
 		Name: string(repo.Name),
