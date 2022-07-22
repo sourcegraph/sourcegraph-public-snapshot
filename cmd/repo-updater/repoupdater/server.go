@@ -37,9 +37,6 @@ type Server struct {
 		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
-	GitserverClient interface {
-		ListCloned(context.Context) ([]string, error)
-	}
 	ChangesetSyncRegistry batches.ChangesetSyncRegistry
 	RateLimitSyncer       interface {
 		// SyncRateLimiters should be called when an external service changes so that
