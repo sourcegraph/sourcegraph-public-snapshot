@@ -58,7 +58,7 @@ const SearchTypeLink: React.FunctionComponent<React.PropsWithChildren<SearchType
             className={styles.sidebarSectionListItem}
             data-testid={dataTestID}
         >
-            {children}
+            <span className={styles.sidebarSectionListItemLabel}>{children}</span>
         </Link>
     )
 }
@@ -85,7 +85,7 @@ const SearchTypeButton: React.FunctionComponent<React.PropsWithChildren<SearchTy
         variant="link"
         data-testid={dataTestID}
     >
-        {children}
+        <span className={styles.sidebarSectionListItemLabel}>{children}</span>
     </Button>
 )
 

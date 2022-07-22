@@ -185,7 +185,7 @@ func (r *resolver) GetUploadDocumentsForPath(ctx context.Context, uploadID int, 
 }
 
 func (r *resolver) QueueAutoIndexJobsForRepo(ctx context.Context, repositoryID int, rev, configuration string) ([]dbstore.Index, error) {
-	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true)
+	return r.indexEnqueuer.QueueIndexes(ctx, repositoryID, rev, configuration, true, true)
 }
 
 const slowQueryResolverRequestThreshold = time.Second
@@ -305,7 +305,7 @@ func (r *resolver) IndexConfiguration(ctx context.Context, repositoryID int) ([]
 }
 
 func (r *resolver) InferedIndexConfiguration(ctx context.Context, repositoryID int, commit string) (*config.IndexConfiguration, bool, error) {
-	maybeConfig, _, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID, commit)
+	maybeConfig, _, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID, commit, true)
 	if err != nil || maybeConfig == nil {
 		return nil, false, err
 	}
@@ -314,7 +314,7 @@ func (r *resolver) InferedIndexConfiguration(ctx context.Context, repositoryID i
 }
 
 func (r *resolver) InferedIndexConfigurationHints(ctx context.Context, repositoryID int, commit string) ([]config.IndexJobHint, error) {
-	_, hints, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID, commit)
+	_, hints, err := r.indexEnqueuer.InferIndexConfiguration(ctx, repositoryID, commit, true)
 	if err != nil {
 		return nil, err
 	}

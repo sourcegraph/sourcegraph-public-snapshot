@@ -4,8 +4,9 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
@@ -17,7 +18,7 @@ func NewOperations(uploadSvc UploadService, observationContext *observation.Cont
 	}, func() float64 {
 		dirtyRepositories, err := uploadSvc.GetDirtyRepositories(context.Background())
 		if err != nil {
-			log15.Error("Failed to determine number of dirty repositories", "err", err)
+			observationContext.Logger.Error("Failed to determine number of dirty repositories", log.Error(err))
 		}
 
 		return float64(len(dirtyRepositories))
@@ -29,7 +30,7 @@ func NewOperations(uploadSvc UploadService, observationContext *observation.Cont
 	}, func() float64 {
 		age, err := uploadSvc.GetRepositoriesMaxStaleAge(context.Background())
 		if err != nil {
-			log15.Error("Failed to determine stale commit graph age", "error", err)
+			observationContext.Logger.Error("Failed to determine stale commit graph age", log.Error(err))
 			return 0
 		}
 

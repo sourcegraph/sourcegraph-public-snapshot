@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/url"
 	"sort"
 	"strconv"
 	"time"
@@ -13,7 +14,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/sourcegraph/internal/errcode"
+	"github.com/sourcegraph/sourcegraph/internal/actor"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
@@ -24,6 +25,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -68,8 +70,10 @@ func (j *bitbucketProjectPermissionsJob) Routines(_ context.Context, logger log.
 
 	bbProjectMetrics := newMetricsForBitbucketProjectPermissionsQueries(logger)
 
+	rootContext := actor.WithInternalActor(context.Background())
+
 	return []goroutine.BackgroundRoutine{
-		newBitbucketProjectPermissionsWorker(db, ConfigInst, bbProjectMetrics),
+		newBitbucketProjectPermissionsWorker(rootContext, db, ConfigInst, bbProjectMetrics),
 		newBitbucketProjectPermissionsResetter(db, ConfigInst, bbProjectMetrics),
 	}, nil
 }
@@ -125,7 +129,7 @@ func (h *bitbucketProjectPermissionsHandler) Handle(ctx context.Context, logger 
 		return h.setReposUnrestricted(ctx, logger, repoIDs, projectKey)
 	}
 
-	err = h.setPermissionsForUsers(ctx, svc, logger, workerJob.Permissions, repoIDs, projectKey)
+	err = h.setPermissionsForUsers(ctx, logger, workerJob.Permissions, repoIDs, projectKey)
 	if err != nil {
 		return errors.Wrapf(err, "failed to set permissions for Bitbucket Project %q", projectKey)
 	}
@@ -169,7 +173,10 @@ func (h *bitbucketProjectPermissionsHandler) setReposUnrestricted(ctx context.Co
 		repoIntIDs[i] = int32(id)
 	}
 
-	logger.Info("Setting bitbucket repositories to unrestricted", log.String("project_key", projectKey))
+	logger.Info("Setting bitbucket repositories to unrestricted",
+		log.String("project_key", projectKey),
+		log.Int("repo_ids_len", len(repoIDs)),
+	)
 
 	err := h.db.Perms().SetRepoPermissionsUnrestricted(ctx, repoIntIDs, true)
 	if err != nil {
@@ -188,9 +195,21 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 		return IDs, nil
 	}
 
-	specs := make([]api.ExternalRepoSpec, 0, count)
+	// unmarshalling external service config
+	var cfg schema.BitbucketServerConnection
+	if err := jsonc.Unmarshal(svc.Config, &cfg); err != nil {
+		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
+	}
+
+	// parsing the hostname from the URL
+	parsedURL, err := url.Parse(cfg.Url)
+	if err != nil {
+		return nil, errors.Errorf("error during parsing external service URL", err)
+	}
+
 	extSvcType := extsvc.KindToType(svc.Kind)
-	extSvcID := strconv.FormatInt(svc.ID, 10)
+	extSvcID := extsvc.NormalizeBaseURL(parsedURL).String()
+	specs := make([]api.ExternalRepoSpec, 0, count)
 	for _, repo := range repos {
 		// using external ID, external service type and external service ID of the repo to find it
 		spec := api.ExternalRepoSpec{
@@ -220,7 +239,7 @@ func (h *bitbucketProjectPermissionsHandler) getRepoIDsByNames(ctx context.Conte
 // Each repo is processed atomically. In case of error, the task fails but doesn't rollback the committed changes
 // done on previous repos. This is fine because when the task is retried, previous repos won't incur any
 // additional writes.
-func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, svc *types.ExternalService, logger log.Logger, perms []types.UserPermission, repoIDs []api.RepoID, projectKey string) error {
+func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.Context, logger log.Logger, perms []types.UserPermission, repoIDs []api.RepoID, projectKey string) error {
 	sort.Slice(perms, func(i, j int) bool {
 		return perms[i].BindID < perms[j].BindID
 	})
@@ -252,11 +271,16 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 		}
 	}
 
-	logger.Info("Applying permissions to Bitbucket project repositories", log.String("project_key", projectKey))
+	logger.Info("Applying permissions to Bitbucket project repositories",
+		log.String("project_key", projectKey),
+		log.Int("repo_ids_len", len(repoIDs)),
+		log.Int("user_ids_len", len(userIDs)),
+		log.Int("pending_bind_ids_len", len(pendingBindIDs)),
+	)
 
 	// apply the permissions for each repo
 	for _, repoID := range repoIDs {
-		err = h.setRepoPermissions(ctx, svc, repoID, perms, userIDs, pendingBindIDs)
+		err = h.setRepoPermissions(ctx, repoID, perms, userIDs, pendingBindIDs)
 		if err != nil {
 			return errors.Wrapf(err, "failed to set permissions for repo %d", repoID)
 		}
@@ -265,7 +289,7 @@ func (h *bitbucketProjectPermissionsHandler) setPermissionsForUsers(ctx context.
 	return nil
 }
 
-func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, svc *types.ExternalService, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
+func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Context, repoID api.RepoID, _ []types.UserPermission, userIDs map[int32]struct{}, pendingBindIDs []string) (err error) {
 	// Make sure the repo ID is valid.
 	if err := h.repoExists(ctx, repoID); err != nil {
 		return errcode.MakeNonRetryable(errors.Wrapf(err, "failed to query repo %d", repoID))
@@ -284,8 +308,8 @@ func (h *bitbucketProjectPermissionsHandler) setRepoPermissions(ctx context.Cont
 	defer func() { err = txs.Done(err) }()
 
 	accounts := &extsvc.Accounts{
-		ServiceType: extsvc.KindToType(svc.Kind),
-		ServiceID:   strconv.FormatInt(svc.ID, 10),
+		ServiceType: authz.SourcegraphServiceType,
+		ServiceID:   authz.SourcegraphServiceID,
 		AccountIDs:  pendingBindIDs,
 	}
 
@@ -323,7 +347,7 @@ func (h *bitbucketProjectPermissionsHandler) repoExists(ctx context.Context, rep
 
 // newBitbucketProjectPermissionsWorker creates a worker that reads the explicit_permissions_bitbucket_projects_jobs table and
 // executes the jobs.
-func newBitbucketProjectPermissionsWorker(db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
+func newBitbucketProjectPermissionsWorker(ctx context.Context, db edb.EnterpriseDB, cfg *config, metrics bitbucketProjectPermissionsMetrics) *workerutil.Worker {
 	options := workerutil.WorkerOptions{
 		Name:              "explicit_permissions_bitbucket_projects_jobs_worker",
 		NumHandlers:       cfg.WorkerConcurrency,
@@ -332,7 +356,7 @@ func newBitbucketProjectPermissionsWorker(db edb.EnterpriseDB, cfg *config, metr
 		Metrics:           metrics.workerMetrics,
 	}
 
-	return dbworker.NewWorker(context.Background(), createBitbucketProjectPermissionsStore(db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
+	return dbworker.NewWorker(ctx, createBitbucketProjectPermissionsStore(db, cfg), &bitbucketProjectPermissionsHandler{db: db}, options)
 }
 
 // newBitbucketProjectPermissionsResetter implements resetter for the explicit_permissions_bitbucket_projects_jobs table.
@@ -356,26 +380,9 @@ func newBitbucketProjectPermissionsResetter(db edb.EnterpriseDB, cfg *config, me
 // It is used by the worker and resetter.
 func createBitbucketProjectPermissionsStore(s basestore.ShareableStore, cfg *config) dbworkerstore.Store {
 	return dbworkerstore.New(s.Handle(), dbworkerstore.Options{
-		Name:      "explicit_permissions_bitbucket_projects_jobs_store",
-		TableName: "explicit_permissions_bitbucket_projects_jobs",
-		ColumnExpressions: []*sqlf.Query{
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.id"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.state"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.failure_message"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.queued_at"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.started_at"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.finished_at"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.process_after"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.num_resets"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.num_failures"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.last_heartbeat_at"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.execution_logs"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.worker_hostname"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.project_key"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.external_service_id"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.permissions"),
-			sqlf.Sprintf("explicit_permissions_bitbucket_projects_jobs.unrestricted"),
-		},
+		Name:              "explicit_permissions_bitbucket_projects_jobs_store",
+		TableName:         "explicit_permissions_bitbucket_projects_jobs",
+		ColumnExpressions: database.BitbucketProjectPermissionsColumnExpressions,
 		Scan: func(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 			j, ok, err := database.ScanFirstBitbucketProjectPermissionsJob(rows, err)
 			return j, ok, err

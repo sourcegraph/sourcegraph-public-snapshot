@@ -15,10 +15,10 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
+	"github.com/grafana/regexp"
 	"github.com/neelance/parallel"
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	"github.com/opentracing/opentracing-go/ext"
@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/gitolite"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/migration"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
@@ -64,18 +63,13 @@ var ClientMocks, emptyClientMocks struct {
 	LocalGitCommandReposDir string
 }
 
-// AddrsMock is a mock for Addrs() function. It is separated from ClientMocks
-// because it is not intended to be cleared when other mocks should be.
-// This mock should be initialized during tests initialization so that
-// gitserver client always contain address of a local machine during tests
-// and tests which use gitserver client can pass successfully
-var AddrsMock func() []string
-
 // ResetClientMocks clears the mock functions set on Mocks (so that subsequent
 // tests don't inadvertently use them).
 func ResetClientMocks() {
 	ClientMocks = emptyClientMocks
 }
+
+var _ Client = &ClientImplementor{}
 
 // NewClient returns a new gitserver.Client instantiated with default arguments
 // and httpcli.Doer.
@@ -93,17 +87,17 @@ func NewClient(db database.DB) *ClientImplementor {
 			return map[string]string{}
 		},
 		db:          db,
-		HTTPClient:  defaultDoer,
+		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
-		// Use the binary name for UserAgent. This should effectively identify
+		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent:  filepath.Base(os.Args[0]),
+		userAgent:  filepath.Base(os.Args[0]),
 		operations: getOperations(),
 	}
 }
 
-func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImplementor {
+func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 	return &ClientImplementor{
 		logger: sglog.Scoped("NewTestClient", "Test New client"),
 		addrs: func() []string {
@@ -113,12 +107,12 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 			// nothing needs to be pinned for the tests
 			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
 		},
-		HTTPClient:  cli,
+		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
-		// Use the binary name for UserAgent. This should effectively identify
+		// Use the binary name for userAgent. This should effectively identify
 		// which service is making the request (excluding requests proxied via the
 		// frontend internal API)
-		UserAgent:  filepath.Base(os.Args[0]),
+		userAgent:  filepath.Base(os.Args[0]),
 		db:         db,
 		operations: newOperations(&observation.TestContext),
 	}
@@ -126,11 +120,15 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) *ClientImpl
 
 // ClientImplementor is a gitserver client.
 type ClientImplementor struct {
-	// HTTP client to use
-	HTTPClient httpcli.Doer
-
 	// Limits concurrency of outstanding HTTP posts
 	HTTPLimiter *parallel.Run
+
+	// userAgent is a string identifying who the client is. It will be logged in
+	// the telemetry in gitserver.
+	userAgent string
+
+	// HTTP client to use
+	httpClient httpcli.Doer
 
 	// logger is used for all logging and logger creation
 	logger sglog.Logger
@@ -144,10 +142,6 @@ type ClientImplementor struct {
 	// should query the conf to fetch a fresh map of pinned repos, so that we don't have to proactively watch for conf changes
 	// and sync the pinned map.
 	pinned func() map[string]string
-
-	// UserAgent is a string identifying who the client is. It will be logged in
-	// the telemetry in gitserver.
-	UserAgent string
 
 	// db is a connection to the database
 	db database.DB
@@ -166,10 +160,6 @@ type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
 
-	// Addrs returns the addresses for gitservers. It is safe for concurrent
-	// use. It may return different results at different times.
-	Addrs() []string
-
 	// Archive produces an archive from a Git repository.
 	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
 
@@ -184,10 +174,6 @@ type Client interface {
 	// BlameFile returns Git blame information about a file.
 	BlameFile(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, path string, opt *BlameOptions) ([]*Hunk, error)
 
-	// GitCommand is deprecated. You should use one of the other methods provided
-	// here or add a new one if what you need doesn't exist.
-	GitCommand(repo api.RepoName, args ...string) GitCommand
-
 	// CreateCommitFromPatch will attempt to create a commit from a patch
 	// If possible, the error returned will be of type protocol.CreateCommitFromPatchError
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
@@ -199,8 +185,16 @@ type Client interface {
 	// error are returned.
 	GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
 
+	// GetDefaultBranchShort returns the short name of the default branch for the
+	// given repository and the commit it's currently at. A short name would return
+	// something like `main` instead of `refs/heads/main`.
+	//
+	// If the repository is empty or currently being cloned, empty values and no
+	// error are returned.
+	GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
+
 	// GetObject fetches git object data in the supplied repo
-	GetObject(_ context.Context, _ api.RepoName, objectName string) (*gitdomain.GitObject, error)
+	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
 
 	// HasCommitAfter indicates the staleness of a repository. It returns a boolean indicating if a repository
 	// contains a commit past a specified date.
@@ -209,13 +203,8 @@ type Client interface {
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
 
+	// IsRepoCloned returns true if the repo is cloned.
 	IsRepoCloned(context.Context, api.RepoName) (bool, error)
-
-	// ListCloned lists all cloned repositories
-	ListCloned(context.Context) ([]string, error)
-
-	// ListGitolite lists Gitolite repositories.
-	ListGitolite(_ context.Context, gitoliteHost string) ([]*gitolite.Repo, error)
 
 	// ListRefs returns a list of all refs in the repository.
 	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
@@ -299,12 +288,118 @@ type Client interface {
 
 	// ReadDir reads the contents of the named directory at commit.
 	ReadDir(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, path string, recurse bool) ([]fs.FileInfo, error)
+
+	// NewFileReader returns an io.ReadCloser reading from the named file at commit.
+	// The caller should always close the reader after use
+	NewFileReader(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) (io.ReadCloser, error)
+
+	// DiffSymbols performs a diff command which is expected to be parsed by our symbols package
+	DiffSymbols(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) ([]byte, error)
+
+	// ListFiles returns a list of root-relative file paths matching the given
+	// pattern in a particular commit of a repository.
+	ListFiles(ctx context.Context, repo api.RepoName, commit api.CommitID, pattern *regexp.Regexp, checker authz.SubRepoPermissionChecker) ([]string, error)
+
+	// Commits returns all commits matching the options.
+	Commits(ctx context.Context, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+
+	// FirstEverCommit returns the first commit ever made to the repository.
+	FirstEverCommit(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error)
+
+	// ListTags returns a list of all tags in the repository. If commitObjs is non-empty, only all tags pointing at those commits are returned.
+	ListTags(ctx context.Context, repo api.RepoName, commitObjs ...string) ([]*gitdomain.Tag, error)
+
+	// ListDirectoryChildren fetches the list of children under the given directory
+	// names. The result is a map keyed by the directory names with the list of files
+	// under each.
+	ListDirectoryChildren(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, dirnames []string) (map[string][]string, error)
+
+	// Diff returns an iterator that can be used to access the diff between two
+	// commits on a per-file basis. The iterator must be closed with Close when no
+	// longer required.
+	Diff(ctx context.Context, opts DiffOptions, checker authz.SubRepoPermissionChecker) (*DiffFileIterator, error)
+
+	// ReadFile returns the first maxBytes of the named file at commit. If maxBytes <= 0, the entire
+	// file is read. (If you just need to check a file's existence, use Stat, not ReadFile.)
+	ReadFile(ctx context.Context, repo api.RepoName, commit api.CommitID, name string, checker authz.SubRepoPermissionChecker) ([]byte, error)
+
+	// BranchesContaining returns a map from branch names to branch tip hashes for
+	// each branch containing the given commit.
+	BranchesContaining(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) ([]string, error)
+
+	// RefDescriptions returns a map from commits to descriptions of the tip of each
+	// branch and tag of the given repository.
+	RefDescriptions(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker, gitObjs ...string) (map[string][]gitdomain.RefDescription, error)
+
+	// CommitExists determines if the given commit exists in the given repository.
+	CommitExists(ctx context.Context, repo api.RepoName, id api.CommitID, checker authz.SubRepoPermissionChecker) (bool, error)
+
+	// CommitsExist determines if the given commits exists in the given repositories. This function returns
+	// a slice of the same size as the input slice, true indicating that the commit at the symmetric index
+	// exists.
+	CommitsExist(ctx context.Context, repoCommits []api.RepoCommit, checker authz.SubRepoPermissionChecker) ([]bool, error)
+
+	// Head determines the tip commit of the default branch for the given repository.
+	// If no HEAD revision exists for the given repository (which occurs with empty
+	// repositories), a false-valued flag is returned along with a nil error and
+	// empty revision.
+	Head(ctx context.Context, repo api.RepoName, checker authz.SubRepoPermissionChecker) (string, bool, error)
+
+	// CommitDate returns the time that the given commit was committed. If the given
+	// revision does not exist, a false-valued flag is returned along with a nil
+	// error and zero-valued time.
+	CommitDate(ctx context.Context, repo api.RepoName, commit api.CommitID, checker authz.SubRepoPermissionChecker) (string, time.Time, bool, error)
+
+	// CommitGraph returns the commit graph for the given repository as a mapping
+	// from a commit to its parents. If a commit is supplied, the returned graph will
+	// be rooted at the given commit. If a non-zero limit is supplied, at most that
+	// many commits will be returned.
+	CommitGraph(ctx context.Context, repo api.RepoName, opts CommitGraphOptions) (_ *gitdomain.CommitGraph, err error)
+
+	// CommitsUniqueToBranch returns a map from commits that exist on a particular
+	// branch in the given repository to their committer date. This set of commits is
+	// determined by listing `{branchName} ^HEAD`, which is interpreted as: all
+	// commits on {branchName} not also on the tip of the default branch. If the
+	// supplied branch name is the default branch, then this method instead returns
+	// all commits reachable from HEAD.
+	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time, checker authz.SubRepoPermissionChecker) (map[string]time.Time, error)
+
+	// LsFiles returns the output of `git ls-files`
+	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...Pathspec) ([]string, error)
+
+	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
+	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
+	// their associated repository or commit are unresolvable.
+	//
+	// If ignoreErrors is true, then errors arising from any single failed git log operation will cause the
+	// resulting commit to be nil, but not fail the entire operation.
+	GetCommits(ctx context.Context, repoCommits []api.RepoCommit, ignoreErrors bool, checker authz.SubRepoPermissionChecker) ([]*gitdomain.Commit, error)
+
+	// GetCommit returns the commit with the given commit ID, or ErrCommitNotFound if no such commit
+	// exists.
+	//
+	// The remoteURLFunc is called to get the Git remote URL if it's not set in repo and if it is
+	// needed. The Git remote URL is only required if the gitserver doesn't already contain a clone of
+	// the repository or if the commit must be fetched from the remote.
+	GetCommit(ctx context.Context, repo api.RepoName, id api.CommitID, opt ResolveRevisionOptions, checker authz.SubRepoPermissionChecker) (*gitdomain.Commit, error)
+
+	// GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
+	// revspecs).
+	GetBehindAhead(ctx context.Context, repo api.RepoName, left, right string) (*gitdomain.BehindAhead, error)
+
+	// ShortLog
+	// TODO: Rename to something like PersonCount?
+	ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error)
+
+	LogReverseEach(repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
+
+	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
+	RevList(repo string, commit string, onCommit func(commit string) (bool, error)) error
+
+	RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error
 }
 
 func (c *ClientImplementor) Addrs() []string {
-	if AddrsMock != nil {
-		return AddrsMock()
-	}
 	return c.addrs()
 }
 
@@ -313,7 +408,7 @@ func (c *ClientImplementor) AddrForRepo(ctx context.Context, repo api.RepoName) 
 	if len(addrs) == 0 {
 		panic("unexpected state: no gitserver addresses")
 	}
-	return AddrForRepo(ctx, c.UserAgent, c.db, repo, GitServerAddresses{
+	return AddrForRepo(ctx, c.userAgent, c.db, repo, GitServerAddresses{
 		Addresses:     addrs,
 		PinnedServers: c.pinned(),
 	})
@@ -328,16 +423,6 @@ func (c *ClientImplementor) RendezvousAddrForRepo(repo api.RepoName) string {
 		return addr
 	}
 	return RendezvousAddrForRepo(repo, addrs)
-}
-
-// addrForKey returns the gitserver address to use for the given string key,
-// which is hashed for sharding purposes.
-func (c *ClientImplementor) addrForKey(key string) string {
-	addrs := c.Addrs()
-	if len(addrs) == 0 {
-		panic("unexpected state: no gitserver addresses")
-	}
-	return addrForKey(key, addrs)
 }
 
 var addrForRepoInvoked = promauto.NewCounterVec(prometheus.CounterOpts{
@@ -880,7 +965,7 @@ func repoNamesFromRepoCommits(repoCommits []api.RepoCommit) []string {
 	return repoNames
 }
 
-func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitCommand {
+func (c *ClientImplementor) gitCommand(repo api.RepoName, arg ...string) GitCommand {
 	if ClientMocks.LocalGitserver {
 		cmd := NewLocalGitCommand(repo, arg...)
 		if ClientMocks.LocalGitCommandReposDir != "" {
@@ -893,78 +978,6 @@ func (c *ClientImplementor) GitCommand(repo api.RepoName, arg ...string) GitComm
 		execFn: c.httpPost,
 		args:   append([]string{git}, arg...),
 	}
-}
-
-func (c *ClientImplementor) ListGitolite(ctx context.Context, gitoliteHost string) (list []*gitolite.Repo, err error) {
-	// The gitserver calls the shared Gitolite server in response to this request, so
-	// we need to only call a single gitserver (or else we'd get duplicate results).
-	addr := c.addrForKey(gitoliteHost)
-	req, err := http.NewRequest("GET", "http://"+addr+"/list-gitolite?gitolite="+url.QueryEscape(gitoliteHost), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	err = json.NewDecoder(resp.Body).Decode(&list)
-	return list, err
-}
-
-func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
-	var (
-		wg    sync.WaitGroup
-		mu    sync.Mutex
-		err   error
-		repos []string
-	)
-	addrs := c.Addrs()
-	for _, addr := range addrs {
-		wg.Add(1)
-		go func(addr string) {
-			defer wg.Done()
-			r, e := c.doListOne(ctx, "?cloned", addr)
-
-			// Only include repos that belong on addr.
-			if len(r) > 0 {
-				filtered := r[:0]
-				for _, repo := range r {
-					if addrForKey(repo, addrs) == addr {
-						filtered = append(filtered, repo)
-					}
-				}
-				r = filtered
-			}
-			mu.Lock()
-			if e != nil {
-				err = e
-			}
-			repos = append(repos, r...)
-			mu.Unlock()
-		}(addr)
-	}
-	wg.Wait()
-	return repos, err
-}
-
-func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
-	req, err := http.NewRequest("GET", "http://"+addr+"/list"+urlSuffix, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.HTTPClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var list []string
-	err = json.NewDecoder(resp.Body).Decode(&list)
-	return list, err
 }
 
 func (c *ClientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {
@@ -1268,7 +1281,7 @@ func (c *ClientImplementor) doReposStats(ctx context.Context, addr string) (*pro
 		return nil, err
 	}
 
-	resp, err := c.HTTPClient.Do(req)
+	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return nil, err
 	}
@@ -1369,7 +1382,7 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 	}
 
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", c.UserAgent)
+	req.Header.Set("User-Agent", c.userAgent)
 	req = req.WithContext(ctx)
 
 	if c.HTTPLimiter != nil {
@@ -1383,7 +1396,7 @@ func (c *ClientImplementor) do(ctx context.Context, repo api.RepoName, method, u
 		nethttp.ClientTrace(false))
 	defer ht.Finish()
 
-	return c.HTTPClient.Do(req)
+	return c.httpClient.Do(req)
 }
 
 func (c *ClientImplementor) CreateCommitFromPatch(ctx context.Context, req protocol.CreateCommitFromPatchRequest) (string, error) {
@@ -1449,7 +1462,7 @@ var ambiguousArgPattern = lazyregexp.New(`ambiguous argument '([^']+)'`)
 func (c *ClientImplementor) ResolveRevisions(ctx context.Context, repo api.RepoName, revs []protocol.RevisionSpecifier) ([]string, error) {
 	args := append([]string{"rev-parse"}, revsToGitArgs(revs)...)
 
-	cmd := c.GitCommand(repo, args...)
+	cmd := c.gitCommand(repo, args...)
 	stdout, stderr, err := cmd.DividedOutput(ctx)
 	if err != nil {
 		if gitdomain.IsRepoNotExist(err) {

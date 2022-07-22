@@ -37,7 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/encryption/keyring"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/hostname"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
@@ -49,6 +48,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 )
 
@@ -76,14 +76,14 @@ func Main(enterpriseInit EnterpriseInit) {
 	env.Lock()
 	env.HandleHelpFlag()
 
-	conf.Init()
 	liblog := log.Init(log.Resource{
 		Name:       env.MyName,
 		Version:    version.Version(),
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
-
 	defer liblog.Sync()
+
+	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
@@ -146,7 +146,6 @@ func Main(enterpriseInit EnterpriseInit) {
 		Logger:                logger,
 		Store:                 store,
 		Scheduler:             updateScheduler,
-		GitserverClient:       gitserver.NewClient(db),
 		SourcegraphDotComMode: envvar.SourcegraphDotComMode(),
 		RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
 	}
@@ -495,9 +494,12 @@ func watchSyncer(
 			}
 
 			// Similarly, changesetSyncer is only available in enterprise mode.
-			if changesetSyncer != nil && len(diff.ArchivedChanged) > 0 {
-				if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, diff.ArchivedChanged.IDs()); err != nil {
-					logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
+			if changesetSyncer != nil {
+				repos := diff.Modified.ReposModified(types.RepoModifiedArchived)
+				if len(repos) > 0 {
+					if err := changesetSyncer.EnqueueChangesetSyncsForRepos(ctx, repos.IDs()); err != nil {
+						logger.Warn("error enqueuing changeset syncs for archived and unarchived repos", log.Error(err))
+					}
 				}
 			}
 		}
@@ -513,7 +515,7 @@ func getPrivateAddedOrModifiedRepos(diff repos.Diff) []api.RepoID {
 		}
 	}
 
-	for _, r := range diff.Modified {
+	for _, r := range diff.Modified.Repos() {
 		if r.Private {
 			repoIDs = append(repoIDs, r.ID)
 		}

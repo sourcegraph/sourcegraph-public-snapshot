@@ -3,13 +3,13 @@ package com.sourcegraph.find;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.intellij.codeInsight.daemon.DaemonCodeAnalyzer;
-import com.intellij.openapi.externalSystem.service.execution.NotSupportedException;
 import com.intellij.openapi.fileEditor.FileEditorManager;
 import com.intellij.openapi.fileEditor.OpenFileDescriptor;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiManager;
+import com.sourcegraph.common.BrowserErrorNotification;
 import com.sourcegraph.config.ConfigUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -115,11 +115,6 @@ public class PreviewContent {
         return resultType;
     }
 
-    @Nullable
-    public String getFileName() {
-        return fileName;
-    }
-
     @NotNull
     public String getRepoUrl() {
         return repoUrl;
@@ -155,17 +150,8 @@ public class PreviewContent {
         return commitMessagePreview;
     }
 
-    public int getLineNumber() {
-        return lineNumber;
-    }
-
     public int[][] getAbsoluteOffsetAndLengths() {
         return absoluteOffsetAndLengths;
-    }
-
-    @Nullable
-    public String getRelativeUrl() {
-        return relativeUrl;
     }
 
     @NotNull
@@ -205,7 +191,7 @@ public class PreviewContent {
             && Objects.equals(relativeUrl, other.relativeUrl);
     }
 
-    public void openInEditorOrBrowser() throws URISyntaxException, IOException, NotSupportedException {
+    public void openInEditorOrBrowser() throws URISyntaxException {
         if (opensInEditor()) {
             openInEditor();
         } else {
@@ -231,13 +217,13 @@ public class PreviewContent {
         }
     }
 
-    private void openInBrowser() throws URISyntaxException, IOException, NotSupportedException {
+    private void openInBrowser() throws URISyntaxException {
+        URI uri = new URI(ConfigUtil.getSourcegraphUrl(project) + "/" + relativeUrl);
         // Source: https://stackoverflow.com/questions/5226212/how-to-open-the-default-webbrowser-using-java
-        if (Desktop.isDesktopSupported() && Desktop.getDesktop().isSupported(Desktop.Action.BROWSE)) {
-            String sourcegraphUrl = ConfigUtil.getSourcegraphUrl(project);
-            Desktop.getDesktop().browse(new URI(sourcegraphUrl + "/" + relativeUrl));
-        } else {
-            throw new NotSupportedException("Can't open link. Desktop is not supported.");
+        try {
+            Desktop.getDesktop().browse(uri);
+        } catch (IOException | UnsupportedOperationException e) {
+            BrowserErrorNotification.show(project, uri);
         }
     }
 }

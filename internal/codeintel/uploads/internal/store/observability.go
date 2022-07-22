@@ -19,10 +19,11 @@ type operations struct {
 	getOldestCommitDate       *observation.Operation
 
 	// Repositories
-	getRepositoriesMaxStaleAge *observation.Operation
-	setRepositoryAsDirty       *observation.Operation
-	getDirtyRepositories       *observation.Operation
-	repoName                   *observation.Operation
+	getRepositoriesMaxStaleAge      *observation.Operation
+	setRepositoryAsDirty            *observation.Operation
+	getDirtyRepositories            *observation.Operation
+	repoName                        *observation.Operation
+	setRepositoriesForRetentionScan *observation.Operation
 
 	// Uploads
 	getUploads                     *observation.Operation
@@ -80,10 +81,11 @@ func newOperations(observationContext *observation.Context) *operations {
 		updateSourcedCommits:      op("UpdateSourcedCommits"),
 
 		// Repositories
-		getRepositoriesMaxStaleAge: op("GetRepositoriesMaxStaleAge"),
-		getDirtyRepositories:       op("GetDirtyRepositories"),
-		setRepositoryAsDirty:       op("SetRepositoryAsDirty"),
-		repoName:                   op("RepoName"),
+		getRepositoriesMaxStaleAge:      op("GetRepositoriesMaxStaleAge"),
+		getDirtyRepositories:            op("GetDirtyRepositories"),
+		setRepositoryAsDirty:            op("SetRepositoryAsDirty"),
+		repoName:                        op("RepoName"),
+		setRepositoriesForRetentionScan: op("SetRepositoriesForRetentionScan"),
 
 		// Uploads
 		getUploads:                     op("GetUploads"),

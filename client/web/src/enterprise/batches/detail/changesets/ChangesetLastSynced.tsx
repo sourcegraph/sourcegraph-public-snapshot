@@ -4,10 +4,12 @@ import { mdiAlertCircle, mdiSync, mdiInformationOutline } from '@mdi/js'
 import { formatDistance, isBefore, parseISO } from 'date-fns'
 
 import { isErrorLike } from '@sourcegraph/common'
-import { LoadingSpinner, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Icon, Tooltip, Button } from '@sourcegraph/wildcard'
 
 import { ExternalChangesetFields, HiddenExternalChangesetFields } from '../../../../graphql-operations'
 import { syncChangeset } from '../backend'
+
+import styles from './ChangesetLastSynced.module.scss'
 
 interface Props {
     changeset:
@@ -87,7 +89,7 @@ export const ChangesetLastSynced: React.FunctionComponent<React.PropsWithChildre
                 </Tooltip>
             )}
             <Tooltip content={tooltipText}>
-                <span>
+                <span className={styles.updateLoaderWrapper}>
                     <UpdateLoaderIcon
                         changesetUpdatedAt={changeset.updatedAt}
                         lastUpdatedAt={lastUpdatedAt}
@@ -114,13 +116,9 @@ const UpdateLoaderIcon: React.FunctionComponent<
 
     if (viewerCanAdminister) {
         return (
-            <Icon
-                aria-label="Refresh"
-                className="cursor-pointer"
-                onClick={onEnqueueChangeset}
-                role="button"
-                svgPath={mdiSync}
-            />
+            <Button aria-label="Refresh" variant="icon" className="d-inline" onClick={onEnqueueChangeset}>
+                <Icon className="text-muted" svgPath={mdiSync} aria-hidden={true} />
+            </Button>
         )
     }
 

@@ -1,7 +1,7 @@
 import { FC, HTMLAttributes, ReactNode } from 'react'
 
 import { GroupByField } from '@sourcegraph/shared/src/graphql-operations'
-import { Code, Input, Link } from '@sourcegraph/wildcard'
+import { Code, Input } from '@sourcegraph/wildcard'
 
 import {
     createDefaultEditSeries,
@@ -171,10 +171,6 @@ export const ComputeInsightCreationContent: FC<ComputeInsightCreationContentProp
 
                 <FormGroup name="map result" title="Map result">
                     <ComputeInsightMapPicker series={validSeries} {...groupBy.input} />
-
-                    <small className="text-muted mt-3">
-                        Learn more about <Link to="">grouping results</Link>
-                    </small>
                 </FormGroup>
 
                 <hr className="my-4 w-100" />

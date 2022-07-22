@@ -13,6 +13,7 @@ import {
     Icon,
     Code,
     screenReaderAnnounce,
+    Tooltip,
 } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../components/time/Timestamp'
@@ -171,15 +172,16 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                 <span className={styles.shaAndParentsLabel}>Commit:</span>
                 <Code className={styles.shaAndParentsSha}>
                     {node.oid}{' '}
-                    <Button
-                        variant="icon"
-                        className={styles.shaAndParentsCopy}
-                        onClick={() => copyToClipboard(node.oid)}
-                        data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
-                        aria-label="Copy full SHA"
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiContentCopy} />
-                    </Button>
+                    <Tooltip content={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}>
+                        <Button
+                            variant="icon"
+                            className={styles.shaAndParentsCopy}
+                            onClick={() => copyToClipboard(node.oid)}
+                            aria-label="Copy full SHA"
+                        >
+                            <Icon aria-hidden={true} svgPath={mdiContentCopy} />
+                        </Button>
+                    </Tooltip>
                 </Code>
             </div>
             <div className="align-items-center d-flex">
@@ -196,15 +198,16 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                 <Link className={styles.shaAndParentsParent} to={parent.url}>
                                     <Code>{parent.oid}</Code>
                                 </Link>
-                                <Button
-                                    variant="icon"
-                                    className={styles.shaAndParentsCopy}
-                                    onClick={() => copyToClipboard(parent.oid)}
-                                    data-tooltip={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
-                                    aria-label="Copy full SHA"
-                                >
-                                    <Icon aria-hidden={true} svgPath={mdiContentCopy} />
-                                </Button>
+                                <Tooltip content={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}>
+                                    <Button
+                                        variant="icon"
+                                        className={styles.shaAndParentsCopy}
+                                        onClick={() => copyToClipboard(parent.oid)}
+                                        aria-label="Copy full SHA"
+                                    >
+                                        <Icon aria-hidden={true} svgPath={mdiContentCopy} />
+                                    </Button>
+                                </Tooltip>
                             </div>
                         ))}
                     </>
@@ -225,18 +228,19 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
 
     const viewFilesCommitElement = node.tree && (
         <div className="d-flex justify-content-between">
-            <Button
-                className="align-center d-inline-flex"
-                to={node.tree.canonicalURL}
-                data-tooltip="Browse files in the repository at this point in history"
-                variant="secondary"
-                outline={true}
-                size="sm"
-                as={Link}
-            >
-                <Icon className="mr-1" aria-hidden={true} svgPath={mdiFileDocument} />
-                Browse files at @{node.abbreviatedOID}
-            </Button>
+            <Tooltip content="Browse files in the repository at this point in history">
+                <Button
+                    className="align-center d-inline-flex"
+                    to={node.tree.canonicalURL}
+                    variant="secondary"
+                    outline={true}
+                    size="sm"
+                    as={Link}
+                >
+                    <Icon className="mr-1" aria-hidden={true} svgPath={mdiFileDocument} />
+                    Browse files at @{node.abbreviatedOID}
+                </Button>
+            </Tooltip>
             {diffModeSelector()}
         </div>
     )
@@ -282,39 +286,44 @@ export const GitCommitNode: React.FunctionComponent<React.PropsWithChildren<GitC
                                 {!showSHAAndParentsRow && (
                                     <div>
                                         <ButtonGroup className="mr-2">
-                                            <Button
-                                                to={node.canonicalURL}
-                                                data-tooltip="View this commit"
-                                                variant="secondary"
-                                                as={Link}
-                                                size="sm"
-                                                aria-label="View this commit"
+                                            <Tooltip content="View this commit">
+                                                <Button to={node.canonicalURL} variant="secondary" as={Link} size="sm">
+                                                    <strong>{oidElement}</strong>
+                                                </Button>
+                                            </Tooltip>
+                                            <Tooltip
+                                                content={flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'}
                                             >
-                                                <strong>{oidElement}</strong>
-                                            </Button>
-                                            <Button
-                                                onClick={() => copyToClipboard(node.oid)}
-                                                data-tooltip={
-                                                    flashCopiedToClipboardMessage ? 'Copied!' : 'Copy full SHA'
-                                                }
-                                                variant="secondary"
-                                                size="sm"
-                                                aria-label="Copy full SHA"
-                                            >
-                                                <Icon className="small" aria-hidden={true} svgPath={mdiContentCopy} />
-                                            </Button>
+                                                <Button
+                                                    onClick={() => copyToClipboard(node.oid)}
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    aria-label="Copy full SHA"
+                                                >
+                                                    <Icon
+                                                        className="small"
+                                                        aria-hidden={true}
+                                                        svgPath={mdiContentCopy}
+                                                    />
+                                                </Button>
+                                            </Tooltip>
                                         </ButtonGroup>
                                         {node.tree && (
-                                            <Button
-                                                to={node.tree.canonicalURL}
-                                                data-tooltip="View files at this commit"
-                                                variant="secondary"
-                                                size="sm"
-                                                as={Link}
-                                                aria-label="View files at this commit"
-                                            >
-                                                <Icon className="mr-1" aria-hidden={true} svgPath={mdiFileDocument} />
-                                            </Button>
+                                            <Tooltip content="View files at this commit">
+                                                <Button
+                                                    aria-label="View files"
+                                                    to={node.tree.canonicalURL}
+                                                    variant="secondary"
+                                                    size="sm"
+                                                    as={Link}
+                                                >
+                                                    <Icon
+                                                        className="mr-1"
+                                                        aria-hidden={true}
+                                                        svgPath={mdiFileDocument}
+                                                    />
+                                                </Button>
+                                            </Tooltip>
                                         )}
                                     </div>
                                 )}

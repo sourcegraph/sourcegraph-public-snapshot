@@ -117,7 +117,6 @@ export const DrillDownFiltersShowcase: Story = () => (
             onFiltersChange={console.log}
             onFilterSave={console.log}
             onCreateInsightRequest={console.log}
-            seriesCount={20}
         />
     </MockedTestProvider>
 )
@@ -135,7 +134,6 @@ export const DrillDownFiltersHorizontalMode: Story = () => {
                 onFiltersChange={console.log}
                 onFilterSave={console.log}
                 onCreateInsightRequest={console.log}
-                seriesCount={20}
             />
         </MockedTestProvider>
     )

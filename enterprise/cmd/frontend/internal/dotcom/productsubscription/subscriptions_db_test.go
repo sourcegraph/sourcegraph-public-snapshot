@@ -6,6 +6,8 @@ import (
 	"testing"
 
 	"github.com/sourcegraph/log/logtest"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -16,45 +18,42 @@ func TestProductSubscriptions_Create(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	ctx := context.Background()
 
-	u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
-	if err != nil {
-		t.Fatal(err)
-	}
+	t.Run("no account number", func(t *testing.T) {
+		u, err := db.Users().Create(ctx, database.NewUser{Username: "u"})
+		require.NoError(t, err)
 
-	sub0, err := dbSubscriptions{db: db}.Create(ctx, u.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
+		sub, err := dbSubscriptions{db: db}.Create(ctx, u.ID, u.Username)
+		require.NoError(t, err)
 
-	got, err := dbSubscriptions{db: db}.GetByID(ctx, sub0)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := sub0; got.ID != want {
-		t.Errorf("got %v, want %v", got.ID, want)
-	}
-	if want := u.ID; got.UserID != want {
-		t.Errorf("got %v, want %v", got.UserID, want)
-	}
-	if got.BillingSubscriptionID != nil {
-		t.Errorf("got %v, want nil", got.BillingSubscriptionID)
-	}
+		got, err := dbSubscriptions{db: db}.GetByID(ctx, sub)
+		require.NoError(t, err)
+		assert.Equal(t, sub, got.ID)
+		assert.Equal(t, u.ID, got.UserID)
+		assert.Nil(t, got.AccountNumber)
+	})
+
+	u, err := db.Users().Create(ctx, database.NewUser{Username: "u-11223344"})
+	require.NoError(t, err)
+
+	sub, err := dbSubscriptions{db: db}.Create(ctx, u.ID, u.Username)
+	require.NoError(t, err)
+
+	got, err := dbSubscriptions{db: db}.GetByID(ctx, sub)
+	require.NoError(t, err)
+	assert.Equal(t, sub, got.ID)
+	assert.Equal(t, u.ID, got.UserID)
+	assert.Nil(t, got.BillingSubscriptionID)
+
+	require.NotNil(t, got.AccountNumber)
+	assert.Equal(t, "11223344", *got.AccountNumber)
 
 	ts, err := dbSubscriptions{db: db}.List(ctx, dbSubscriptionsListOptions{UserID: u.ID})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := 1; len(ts) != want {
-		t.Errorf("got %d product subscriptions, want %d", len(ts), want)
-	}
+	require.NoError(t, err)
+	assert.Len(t, ts, 1)
 
 	ts, err = dbSubscriptions{db: db}.List(ctx, dbSubscriptionsListOptions{UserID: 123 /* invalid */})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if want := 0; len(ts) != want {
-		t.Errorf("got %d product subscriptions, want %d", len(ts), want)
-	}
+	require.NoError(t, err)
+	assert.Len(t, ts, 0)
 }
 
 func TestProductSubscriptions_List(t *testing.T) {
@@ -71,11 +70,11 @@ func TestProductSubscriptions_List(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	_, err = dbSubscriptions{db: db}.Create(ctx, u1.ID)
+	_, err = dbSubscriptions{db: db}.Create(ctx, u1.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, err = dbSubscriptions{db: db}.Create(ctx, u1.ID)
+	_, err = dbSubscriptions{db: db}.Create(ctx, u1.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -131,7 +130,7 @@ func TestProductSubscriptions_Update(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	sub0, err := dbSubscriptions{db: db}.Create(ctx, u.ID)
+	sub0, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")
 	if err != nil {
 		t.Fatal(err)
 	}

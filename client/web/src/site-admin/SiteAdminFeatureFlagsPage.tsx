@@ -9,7 +9,7 @@ import { catchError, map, mergeMap } from 'rxjs/operators'
 import { asError, ErrorLike, isErrorLike, pluralize } from '@sourcegraph/common'
 import { aggregateStreamingSearch, ContentMatch } from '@sourcegraph/shared/src/search/stream'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, PageHeader, Container, Button, Code, H3, Text, Icon } from '@sourcegraph/wildcard'
+import { Link, PageHeader, Container, Button, Code, H3, Text, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { FilteredConnection, FilteredConnectionFilter } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
@@ -264,17 +264,17 @@ const FeatureFlagNode: React.FunctionComponent<React.PropsWithChildren<FeatureFl
                     </div>
 
                     {node.__typename === 'FeatureFlagRollout' && (
-                        <div>
-                            <meter
-                                min={0}
-                                max={1}
-                                optimum={1}
-                                value={node.rolloutBasisPoints / (100 * 100)}
-                                data-tooltip={`${Math.floor(node.rolloutBasisPoints / 100) || 0}%`}
-                                aria-label="rollout progress"
-                                data-placement="bottom"
-                            />
-                        </div>
+                        <Tooltip content={`${Math.floor(node.rolloutBasisPoints / 100) || 0}%`} placement="bottom">
+                            <div>
+                                <meter
+                                    min={0}
+                                    max={1}
+                                    optimum={1}
+                                    value={node.rolloutBasisPoints / (100 * 100)}
+                                    aria-label="rollout progress"
+                                />
+                            </div>
+                        </Tooltip>
                     )}
                 </div>
             </span>

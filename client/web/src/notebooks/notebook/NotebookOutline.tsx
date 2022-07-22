@@ -8,7 +8,7 @@ import { marked, Slugger } from 'marked'
 import ReactDOM from 'react-dom'
 
 import { markdownLexer } from '@sourcegraph/common'
-import { Button, Icon, Link } from '@sourcegraph/wildcard'
+import { Button, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { Block, MarkdownBlock } from '..'
 
@@ -181,9 +181,9 @@ export const NotebookOutline: React.FunctionComponent<React.PropsWithChildren<No
                                 {highlightedHeading === heading.id && (
                                     <span className={styles.highlightDot}>&middot;</span>
                                 )}
-                                <span data-tooltip={heading.text} className={classNames(styles.headingLinkText)}>
-                                    {heading.text}
-                                </span>
+                                <Tooltip content={heading.text} placement="right">
+                                    <span className={classNames(styles.headingLinkText)}>{heading.text}</span>
+                                </Tooltip>
                             </Link>
                         </li>
                     ))}
