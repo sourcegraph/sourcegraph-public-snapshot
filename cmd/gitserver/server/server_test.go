@@ -1563,13 +1563,10 @@ func TestRunCommandGraceful(t *testing.T) {
 		t.Cleanup(cancel)
 
 		cmd := exec.Command("testdata/signaltest_noexit.sh")
-		var stdOut bytes.Buffer
-		cmd.Stdout = &stdOut
 
 		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
 		assert.ErrorIs(t, err, context.DeadlineExceeded)
 		assert.Equal(t, -1, exitStatus)
-		assert.Equal(t, "", stdOut.String())
 	})
 }
 

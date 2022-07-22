@@ -183,6 +183,7 @@ func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (
 			if err := cmd.Process.Kill(); err != nil {
 				logger.Warn("killing process", log.Error(err))
 			}
+			logger.Debug("process killed, waiting for done")
 			// Wait again to ensure we can access cmd.ProcessState below
 			<-done
 		}
