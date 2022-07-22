@@ -642,6 +642,7 @@ const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: st
 
 interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     workspaceID: Scalars['ID']
+    // Require the entire step instead of just the spec number to ensure the query gets called as the step changes.
     step: BatchSpecWorkspaceStepFields
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
