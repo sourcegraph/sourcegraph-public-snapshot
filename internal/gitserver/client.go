@@ -15,7 +15,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
@@ -204,10 +203,8 @@ type Client interface {
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
 
+	// IsRepoCloned returns true if the repo is cloned.
 	IsRepoCloned(context.Context, api.RepoName) (bool, error)
-
-	// ListCloned lists all cloned repositories
-	ListCloned(context.Context) ([]string, error)
 
 	// ListRefs returns a list of all refs in the repository.
 	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
@@ -981,59 +978,6 @@ func (c *ClientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 		execFn: c.httpPost,
 		args:   append([]string{git}, arg...),
 	}
-}
-
-func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
-	var (
-		wg    sync.WaitGroup
-		mu    sync.Mutex
-		err   error
-		repos []string
-	)
-	addrs := c.Addrs()
-	for _, addr := range addrs {
-		wg.Add(1)
-		go func(addr string) {
-			defer wg.Done()
-			r, e := c.doListOne(ctx, "?cloned", addr)
-
-			// Only include repos that belong on addr.
-			if len(r) > 0 {
-				filtered := r[:0]
-				for _, repo := range r {
-					if addrForKey(repo, addrs) == addr {
-						filtered = append(filtered, repo)
-					}
-				}
-				r = filtered
-			}
-			mu.Lock()
-			if e != nil {
-				err = e
-			}
-			repos = append(repos, r...)
-			mu.Unlock()
-		}(addr)
-	}
-	wg.Wait()
-	return repos, err
-}
-
-func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
-	req, err := http.NewRequest("GET", "http://"+addr+"/list"+urlSuffix, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var list []string
-	err = json.NewDecoder(resp.Body).Decode(&list)
-	return list, err
 }
 
 func (c *ClientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {

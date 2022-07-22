@@ -1,4 +1,4 @@
-import { ReactElement, SVGProps, useMemo, useState } from 'react'
+import { ReactElement, SVGProps, useMemo, useRef, useState } from 'react'
 
 import { scaleBand, scaleLinear } from '@visx/scale'
 import classNames from 'classnames'
@@ -44,6 +44,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
         ...attributes
     } = props
 
+    const rootRef = useRef(null)
     const [yAxisElement, setYAxisElement] = useState<SVGGElement | null>(null)
     const [xAxisReference, setXAxisElement] = useState<SVGGElement | null>(null)
     const [activeSegment, setActiveSegment] = useState<ActiveSegment<Datum> | null>(null)
@@ -101,6 +102,7 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
 
     return (
         <svg
+            ref={rootRef}
             width={outerWidth}
             height={outerHeight}
             {...attributes}
@@ -157,8 +159,8 @@ export function BarChart<Datum>(props: BarChartProps<Datum>): ReactElement {
                 />
             )}
 
-            {activeSegment && (
-                <Tooltip>
+            {activeSegment && rootRef.current && (
+                <Tooltip containerElement={rootRef.current}>
                     <BarTooltipContent
                         category={activeSegment.category}
                         activeBar={activeSegment.datum}

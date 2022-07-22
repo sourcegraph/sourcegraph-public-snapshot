@@ -77,6 +77,7 @@ export const JetBrainsSearchResultListStory: Story = () => {
                     name: 'TestSymbol',
                     containerName: 'TestContainer',
                     kind: SymbolKind.CONSTANT,
+                    line: 1,
                 },
             ],
         },

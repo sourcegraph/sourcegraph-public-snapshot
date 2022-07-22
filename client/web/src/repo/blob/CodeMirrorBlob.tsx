@@ -12,7 +12,7 @@ import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@so
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
-import { BlobProps, updateBrowserHistoryIfNecessary } from './Blob'
+import { BlobProps, updateBrowserHistoryIfChanged } from './Blob'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './CodeMirrorLineNumbers'
 
 const staticExtensions: Extension = [
@@ -73,7 +73,7 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
             query = toPositionOrRangeQueryParameter({ position: { line: range.line } })
         }
 
-        updateBrowserHistoryIfNecessary(
+        updateBrowserHistoryIfChanged(
             historyRef.current,
             locationRef.current,
             addLineRangeQueryParameter(parameters, query)

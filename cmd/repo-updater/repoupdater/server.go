@@ -37,9 +37,6 @@ type Server struct {
 		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
 	}
-	GitserverClient interface {
-		ListCloned(context.Context) ([]string, error)
-	}
 	ChangesetSyncRegistry batches.ChangesetSyncRegistry
 	RateLimitSyncer       interface {
 		// SyncRateLimiters should be called when an external service changes so that
@@ -203,7 +200,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if sourcer = s.Sourcer; sourcer == nil {
 		db := database.NewDBWith(logger, s)
 		depsSvc := livedependencies.GetService(db, nil)
-		sourcer = repos.NewSourcer(db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
+		sourcer = repos.NewSourcer(s.Logger.Scoped("repos.Sourcer", ""), db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}
 	src, err := sourcer(ctx, &types.ExternalService{
 		ID:              req.ExternalService.ID,

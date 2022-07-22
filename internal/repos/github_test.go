@@ -19,7 +19,6 @@ import (
 	mockrequire "github.com/derision-test/go-mockgen/testutil/require"
 	"github.com/google/go-cmp/cmp"
 	gogithub "github.com/google/go-github/v31/github"
-	"github.com/inconshreveable/log15"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -112,9 +111,6 @@ func TestGithubSource_GetRepo(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -122,7 +118,7 @@ func TestGithubSource_GetRepo(t *testing.T) {
 				}),
 			}
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -163,7 +159,7 @@ func TestPublicRepos_PaginationTerminatesGracefully(t *testing.T) {
 	factory, save := newClientFactory(t, fixtureName)
 	defer save(t)
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), service, factory)
+	githubSrc, err := NewGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), service, factory)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -263,9 +259,6 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 				t.Fatalf("GHE_TOKEN needs to be set to a token that can access ghe.sgdev.org to update this test fixture")
 			}
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind: extsvc.KindGitHub,
 				Config: marshalJSON(t, &schema.GitHubConnection{
@@ -277,7 +270,7 @@ func TestGithubSource_GetRepo_Enterprise(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -336,10 +329,8 @@ func TestGithubSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "GithubSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
 
-			s, err := newGithubSource(database.NewMockExternalServiceStore(), &svc, test.schema, nil)
+			s, err := newGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -528,15 +519,12 @@ func TestGithubSource_ListRepos(t *testing.T) {
 
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindGitHub,
 				Config: marshalJSON(t, tc.conf),
 			}
 
-			githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+			githubSrc, err := NewGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -571,7 +559,7 @@ func TestGithubSource_WithAuthenticator(t *testing.T) {
 		}),
 	}
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -619,7 +607,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 		}),
 	}
 
-	githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+	githubSrc, err := NewGithubSource(logtest.Scoped(t), database.NewMockExternalServiceStore(), svc, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -636,6 +624,7 @@ func TestGithubSource_excludes_disabledAndLocked(t *testing.T) {
 }
 
 func TestGithubSource_GetVersion(t *testing.T) {
+	logger := logtest.Scoped(t)
 	t.Run("github.com", func(t *testing.T) {
 		svc := &types.ExternalService{
 			Kind: extsvc.KindGitHub,
@@ -644,7 +633,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 			}),
 		}
 
-		githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, nil)
+		githubSrc, err := NewGithubSource(logger, database.NewMockExternalServiceStore(), svc, nil)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -679,7 +668,7 @@ func TestGithubSource_GetVersion(t *testing.T) {
 			}),
 		}
 
-		githubSrc, err := NewGithubSource(database.NewMockExternalServiceStore(), svc, cf)
+		githubSrc, err := NewGithubSource(logger, database.NewMockExternalServiceStore(), svc, cf)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -730,6 +719,7 @@ func TestRepositoryQuery_Do(t *testing.T) {
 			token := &auth.OAuthBearerToken{Token: os.Getenv("GITHUB_TOKEN")}
 
 			q := repositoryQuery{
+				Logger:   logtest.Scoped(t),
 				Query:    tc.query,
 				First:    tc.first,
 				Limit:    tc.limit,
@@ -855,7 +845,7 @@ func TestGetOrRenewGitHubAppInstallationAccessToken(t *testing.T) {
 				TokenExpiresAt: test.tokenExpiresAt,
 			}
 
-			gotToken, err := GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServices, svc, client, 1234)
+			gotToken, err := GetOrRenewGitHubAppInstallationAccessToken(ctx, logtest.Scoped(t), externalServices, svc, client, 1234)
 			require.NoError(t, err)
 			assert.Equal(t, wantToken, gotToken)
 
