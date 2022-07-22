@@ -15,6 +15,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -80,9 +81,9 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 		return nil
 	}
 
-	pathspecs := []gitserver.Pathspec{}
+	pathspecs := []gitdomain.Pathspec{}
 	for _, p := range paths {
-		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+		pathspecs = append(pathspecs, gitdomain.PathspecLiteral(p))
 	}
 
 	opts := gitserver.ArchiveOptions{
