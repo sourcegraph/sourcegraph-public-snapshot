@@ -19,6 +19,7 @@ type Resolver interface {
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
 	SetAuthChecker(authChecker authz.SubRepoPermissionChecker)
 
+	LSIFUploads(ctx context.Context, ids ...int) (uploads []dbstore.Upload, err error)
 	Hover(ctx context.Context, args shared.RequestArgs) (_ string, _ shared.Range, _ bool, err error)
 	Definitions(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, err error)
 	References(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, _ string, err error)

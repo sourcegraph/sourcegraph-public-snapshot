@@ -9,7 +9,7 @@ import (
 // LSIFUploads returns the list of dbstore.Uploads for the store.Dumps determined to be applicable
 // for answering code-intel queries.
 func (r *queryResolver) LSIFUploads(ctx context.Context) (uploads []dbstore.Upload, err error) {
-	return r.dbStore.GetUploadsByIDs(ctx, r.closestDumpIDs()...)
+	return r.symbolsResolver.LSIFUploads(ctx, r.closestDumpIDs()...)
 }
 
 func (r *queryResolver) closestDumpIDs() []int {
