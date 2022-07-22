@@ -39,6 +39,11 @@ func main() {
 	})
 	defer liblog.Sync()
 
+	db, err := workerdb.Init()
+	if err != nil {
+		return
+	}
+
 	logger := log.Scoped("worker", "worker enterprise edition")
 
 	go setAuthzProviders(logger)
@@ -55,7 +60,7 @@ func main() {
 		"executors-janitor":             executors.NewJanitorJob(),
 		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
-		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
+		"export-usage-telemetry":        telemetry.NewTelemetryJob(database.NewDB(logger, db)),
 
 		// fresh
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
