@@ -83,7 +83,6 @@ func TestDefinitions(t *testing.T) {
 }
 
 func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
-	t.Skip("Different arch for now, need to come back to this.")
 	mockDBStore := NewMockDBStore()
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
@@ -158,16 +157,14 @@ func TestDefinitionsRemote(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
-	mockSymbolsResolver := NewMockSymbolsResolver()
 
-	dumps := []dbstore.Dump{
+	remoteUploads := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	remoteUploads := storeDumpToSymbolDump(dumps)
-	mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.PushReturn(remoteUploads, nil)
+	mockDBStore.DefinitionDumpsFunc.PushReturn(remoteUploads, nil)
 
 	// upload #150's commit no longer exists; all others do
 	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
@@ -222,26 +219,24 @@ func TestDefinitionsRemote(t *testing.T) {
 		newOperations(&observation.TestContext),
 		authz.NewMockSubRepoPermissionChecker(),
 		50,
-		mockSymbolsResolver,
 	)
 	adjustedLocations, err := resolver.Definitions(context.Background(), 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying definitions: %s", err)
 	}
 
-	xLocations := []AdjustedLocation{
-		{Dump: dumps[0], Path: "sub2/a.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange1},
-		{Dump: dumps[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange2},
-		{Dump: dumps[0], Path: "sub2/a.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange3},
-		{Dump: dumps[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange4},
-		{Dump: dumps[0], Path: "sub2/c.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange5},
+	expectedLocations := []AdjustedLocation{
+		{Dump: remoteUploads[0], Path: "sub2/a.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange1},
+		{Dump: remoteUploads[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange2},
+		{Dump: remoteUploads[0], Path: "sub2/a.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange3},
+		{Dump: remoteUploads[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange4},
+		{Dump: remoteUploads[0], Path: "sub2/c.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange5},
 	}
-	expectedLocations := uploadLocationsToAdjustedLocations(xLocations)
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 
-	if history := mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
+	if history := mockDBStore.DefinitionDumpsFunc.History(); len(history) != 1 {
 		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 	} else {
 		expectedMonikers := []precise.QualifiedMonikerData{
@@ -275,16 +270,14 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	mockLSIFStore := NewMockLSIFStore()
 	mockGitserverClient := NewMockGitserverClient()
 	mockPositionAdjuster := noopPositionAdjuster()
-	mockSymbolsResolver := NewMockSymbolsResolver()
 
-	dumps := []dbstore.Dump{
+	remoteUploads := []dbstore.Dump{
 		{ID: 150, Commit: "deadbeef1", Root: "sub1/"},
 		{ID: 151, Commit: "deadbeef2", Root: "sub2/"},
 		{ID: 152, Commit: "deadbeef3", Root: "sub3/"},
 		{ID: 153, Commit: "deadbeef4", Root: "sub4/"},
 	}
-	remoteUploads := storeDumpToSymbolDump(dumps)
-	mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.PushReturn(remoteUploads, nil)
+	mockDBStore.DefinitionDumpsFunc.PushReturn(remoteUploads, nil)
 
 	// upload #150's commit no longer exists; all others do
 	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []gitserver.RepositoryCommit) (exists []bool, _ error) {
@@ -354,7 +347,6 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 		newOperations(&observation.TestContext),
 		checker,
 		50,
-		mockSymbolsResolver,
 	)
 
 	ctx := context.Background()
@@ -364,14 +356,14 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	}
 
 	expectedLocations := []AdjustedLocation{
-		{Dump: dumps[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange2},
-		{Dump: dumps[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange4},
+		{Dump: remoteUploads[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange2},
+		{Dump: remoteUploads[0], Path: "sub2/b.go", AdjustedCommit: "deadbeef2", AdjustedRange: testRange4},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
 	}
 
-	if history := mockSymbolsResolver.GetUploadsWithDefinitionsForMonikersFunc.History(); len(history) != 1 {
+	if history := mockDBStore.DefinitionDumpsFunc.History(); len(history) != 1 {
 		t.Fatalf("unexpected call count for dbstore.DefinitionDump. want=%d have=%d", 1, len(history))
 	} else {
 		expectedMonikers := []precise.QualifiedMonikerData{

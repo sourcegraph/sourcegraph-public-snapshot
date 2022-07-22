@@ -13,6 +13,7 @@ import (
 
 	regexp "github.com/grafana/regexp"
 	api "github.com/sourcegraph/sourcegraph/internal/api"
+	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	autoindexing "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	gitserver1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
@@ -10645,10 +10646,6 @@ type MockSymbolsResolver struct {
 	// DiagnosticsFunc is an instance of a mock function object controlling
 	// the behavior of the method Diagnostics.
 	DiagnosticsFunc *SymbolsResolverDiagnosticsFunc
-	// GetUploadsWithDefinitionsForMonikersFunc is an instance of a mock
-	// function object controlling the behavior of the method
-	// GetUploadsWithDefinitionsForMonikers.
-	GetUploadsWithDefinitionsForMonikersFunc *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc
 	// HoverFunc is an instance of a mock function object controlling the
 	// behavior of the method Hover.
 	HoverFunc *SymbolsResolverHoverFunc
@@ -10661,6 +10658,9 @@ type MockSymbolsResolver struct {
 	// ReferencesFunc is an instance of a mock function object controlling
 	// the behavior of the method References.
 	ReferencesFunc *SymbolsResolverReferencesFunc
+	// SetAuthCheckerFunc is an instance of a mock function object
+	// controlling the behavior of the method SetAuthChecker.
+	SetAuthCheckerFunc *SymbolsResolverSetAuthCheckerFunc
 	// SetLocalCommitCacheFunc is an instance of a mock function object
 	// controlling the behavior of the method SetLocalCommitCache.
 	SetLocalCommitCacheFunc *SymbolsResolverSetLocalCommitCacheFunc
@@ -10695,11 +10695,6 @@ func NewMockSymbolsResolver() *MockSymbolsResolver {
 				return
 			},
 		},
-		GetUploadsWithDefinitionsForMonikersFunc: &SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) (r0 []shared.Dump, r1 error) {
-				return
-			},
-		},
 		HoverFunc: &SymbolsResolverHoverFunc{
 			defaultHook: func(context.Context, shared.RequestArgs) (r0 string, r1 shared.Range, r2 bool, r3 error) {
 				return
@@ -10717,6 +10712,11 @@ func NewMockSymbolsResolver() *MockSymbolsResolver {
 		},
 		ReferencesFunc: &SymbolsResolverReferencesFunc{
 			defaultHook: func(context.Context, shared.RequestArgs) (r0 []shared.UploadLocation, r1 string, r2 error) {
+				return
+			},
+		},
+		SetAuthCheckerFunc: &SymbolsResolverSetAuthCheckerFunc{
+			defaultHook: func(authz.SubRepoPermissionChecker) {
 				return
 			},
 		},
@@ -10762,11 +10762,6 @@ func NewStrictMockSymbolsResolver() *MockSymbolsResolver {
 				panic("unexpected invocation of MockSymbolsResolver.Diagnostics")
 			},
 		},
-		GetUploadsWithDefinitionsForMonikersFunc: &SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error) {
-				panic("unexpected invocation of MockSymbolsResolver.GetUploadsWithDefinitionsForMonikers")
-			},
-		},
 		HoverFunc: &SymbolsResolverHoverFunc{
 			defaultHook: func(context.Context, shared.RequestArgs) (string, shared.Range, bool, error) {
 				panic("unexpected invocation of MockSymbolsResolver.Hover")
@@ -10785,6 +10780,11 @@ func NewStrictMockSymbolsResolver() *MockSymbolsResolver {
 		ReferencesFunc: &SymbolsResolverReferencesFunc{
 			defaultHook: func(context.Context, shared.RequestArgs) ([]shared.UploadLocation, string, error) {
 				panic("unexpected invocation of MockSymbolsResolver.References")
+			},
+		},
+		SetAuthCheckerFunc: &SymbolsResolverSetAuthCheckerFunc{
+			defaultHook: func(authz.SubRepoPermissionChecker) {
+				panic("unexpected invocation of MockSymbolsResolver.SetAuthChecker")
 			},
 		},
 		SetLocalCommitCacheFunc: &SymbolsResolverSetLocalCommitCacheFunc{
@@ -10826,9 +10826,6 @@ func NewMockSymbolsResolverFrom(i SymbolsResolver) *MockSymbolsResolver {
 		DiagnosticsFunc: &SymbolsResolverDiagnosticsFunc{
 			defaultHook: i.Diagnostics,
 		},
-		GetUploadsWithDefinitionsForMonikersFunc: &SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc{
-			defaultHook: i.GetUploadsWithDefinitionsForMonikers,
-		},
 		HoverFunc: &SymbolsResolverHoverFunc{
 			defaultHook: i.Hover,
 		},
@@ -10840,6 +10837,9 @@ func NewMockSymbolsResolverFrom(i SymbolsResolver) *MockSymbolsResolver {
 		},
 		ReferencesFunc: &SymbolsResolverReferencesFunc{
 			defaultHook: i.References,
+		},
+		SetAuthCheckerFunc: &SymbolsResolverSetAuthCheckerFunc{
+			defaultHook: i.SetAuthChecker,
 		},
 		SetLocalCommitCacheFunc: &SymbolsResolverSetLocalCommitCacheFunc{
 			defaultHook: i.SetLocalCommitCache,
@@ -11076,120 +11076,6 @@ func (c SymbolsResolverDiagnosticsFuncCall) Args() []interface{} {
 // invocation.
 func (c SymbolsResolverDiagnosticsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc describes the
-// behavior when the GetUploadsWithDefinitionsForMonikers method of the
-// parent MockSymbolsResolver instance is invoked.
-type SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc struct {
-	defaultHook func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error)
-	hooks       []func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error)
-	history     []SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall
-	mutex       sync.Mutex
-}
-
-// GetUploadsWithDefinitionsForMonikers delegates to the next hook function
-// in the queue and stores the parameter and result values of this
-// invocation.
-func (m *MockSymbolsResolver) GetUploadsWithDefinitionsForMonikers(v0 context.Context, v1 []precise.QualifiedMonikerData) ([]shared.Dump, error) {
-	r0, r1 := m.GetUploadsWithDefinitionsForMonikersFunc.nextHook()(v0, v1)
-	m.GetUploadsWithDefinitionsForMonikersFunc.appendCall(SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the
-// GetUploadsWithDefinitionsForMonikers method of the parent
-// MockSymbolsResolver instance is invoked and the hook queue is empty.
-func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) SetDefaultHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// GetUploadsWithDefinitionsForMonikers method of the parent
-// MockSymbolsResolver instance invokes the hook at the front of the queue
-// and discards it. After the queue is empty, the default hook function is
-// invoked for any future action.
-func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) PushHook(hook func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) SetDefaultReturn(r0 []shared.Dump, r1 error) {
-	f.SetDefaultHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) PushReturn(r0 []shared.Dump, r1 error) {
-	f.PushHook(func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error) {
-		return r0, r1
-	})
-}
-
-func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) nextHook() func(context.Context, []precise.QualifiedMonikerData) ([]shared.Dump, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) appendCall(r0 SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of
-// SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall objects
-// describing the invocations of this function.
-func (f *SymbolsResolverGetUploadsWithDefinitionsForMonikersFunc) History() []SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall {
-	f.mutex.Lock()
-	history := make([]SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall is an object
-// that describes an invocation of method
-// GetUploadsWithDefinitionsForMonikers on an instance of
-// MockSymbolsResolver.
-type SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 []precise.QualifiedMonikerData
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []shared.Dump
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c SymbolsResolverGetUploadsWithDefinitionsForMonikersFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
 }
 
 // SymbolsResolverHoverFunc describes the behavior when the Hover method of
@@ -11642,6 +11528,107 @@ func (c SymbolsResolverReferencesFuncCall) Args() []interface{} {
 // invocation.
 func (c SymbolsResolverReferencesFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
+}
+
+// SymbolsResolverSetAuthCheckerFunc describes the behavior when the
+// SetAuthChecker method of the parent MockSymbolsResolver instance is
+// invoked.
+type SymbolsResolverSetAuthCheckerFunc struct {
+	defaultHook func(authz.SubRepoPermissionChecker)
+	hooks       []func(authz.SubRepoPermissionChecker)
+	history     []SymbolsResolverSetAuthCheckerFuncCall
+	mutex       sync.Mutex
+}
+
+// SetAuthChecker delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSymbolsResolver) SetAuthChecker(v0 authz.SubRepoPermissionChecker) {
+	m.SetAuthCheckerFunc.nextHook()(v0)
+	m.SetAuthCheckerFunc.appendCall(SymbolsResolverSetAuthCheckerFuncCall{v0})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetAuthChecker
+// method of the parent MockSymbolsResolver instance is invoked and the hook
+// queue is empty.
+func (f *SymbolsResolverSetAuthCheckerFunc) SetDefaultHook(hook func(authz.SubRepoPermissionChecker)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetAuthChecker method of the parent MockSymbolsResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SymbolsResolverSetAuthCheckerFunc) PushHook(hook func(authz.SubRepoPermissionChecker)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverSetAuthCheckerFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func(authz.SubRepoPermissionChecker) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverSetAuthCheckerFunc) PushReturn() {
+	f.PushHook(func(authz.SubRepoPermissionChecker) {
+		return
+	})
+}
+
+func (f *SymbolsResolverSetAuthCheckerFunc) nextHook() func(authz.SubRepoPermissionChecker) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverSetAuthCheckerFunc) appendCall(r0 SymbolsResolverSetAuthCheckerFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SymbolsResolverSetAuthCheckerFuncCall
+// objects describing the invocations of this function.
+func (f *SymbolsResolverSetAuthCheckerFunc) History() []SymbolsResolverSetAuthCheckerFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverSetAuthCheckerFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverSetAuthCheckerFuncCall is an object that describes an
+// invocation of method SetAuthChecker on an instance of
+// MockSymbolsResolver.
+type SymbolsResolverSetAuthCheckerFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 authz.SubRepoPermissionChecker
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverSetAuthCheckerFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverSetAuthCheckerFuncCall) Results() []interface{} {
+	return []interface{}{}
 }
 
 // SymbolsResolverSetLocalCommitCacheFunc describes the behavior when the

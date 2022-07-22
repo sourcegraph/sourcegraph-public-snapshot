@@ -234,6 +234,7 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	positionAdjuster := NewPositionAdjuster(gitServer, args.Repo, string(args.Commit), r.hunkCache)
 
 	r.symbolsResolver.SetUploadsDataLoader(dumps)
+	r.symbolsResolver.SetAuthChecker(authz.DefaultSubRepoPermsChecker)
 	r.symbolsResolver.SetLocalGitTreeTranslator(gitServer, args.Repo, string(args.Commit), args.Path)
 	r.symbolsResolver.SetLocalCommitCache(r.gitserverClient)
 	r.symbolsResolver.SetMaximumIndexesPerMonikerSearch(r.maximumIndexesPerMonikerSearch)

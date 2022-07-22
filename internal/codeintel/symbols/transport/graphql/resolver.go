@@ -3,12 +3,12 @@ package graphql
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/types"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -17,6 +17,7 @@ type Resolver interface {
 	SetLocalGitTreeTranslator(client gitserver.Client, repo *types.Repo, commit, path string) error
 	SetLocalCommitCache(client shared.GitserverClient)
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
+	SetAuthChecker(authChecker authz.SubRepoPermissionChecker)
 
 	Hover(ctx context.Context, args shared.RequestArgs) (_ string, _ shared.Range, _ bool, err error)
 	Definitions(ctx context.Context, args shared.RequestArgs) (_ []shared.UploadLocation, err error)
@@ -25,15 +26,14 @@ type Resolver interface {
 	Diagnostics(ctx context.Context, args shared.RequestArgs) (diagnosticsAtUploads []shared.DiagnosticAtUpload, _ int, err error)
 	Stencil(ctx context.Context, args shared.RequestArgs) (adjustedRanges []shared.Range, err error)
 	Ranges(ctx context.Context, args shared.RequestArgs, startLine, endLine int) (adjustedRanges []shared.AdjustedCodeIntelligenceRange, err error)
-
-	// temporarily needed until we move all the methods to the new resolver
-	GetUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]shared.Dump, error)
 }
 
 type resolver struct {
-	svc                            Service
-	requestArgs                    *requestArgs
-	gitTreeTranslator              GitTreeTranslator
+	svc               Service
+	requestArgs       *requestArgs
+	GitTreeTranslator GitTreeTranslator
+
+	authChecker                    authz.SubRepoPermissionChecker
 	maximumIndexesPerMonikerSearch int
 
 	// Local Request Caches
@@ -45,13 +45,17 @@ type resolver struct {
 	operations *operations
 }
 
-func New(svc Service, hunkCacheSize int, observationContext *observation.Context) Resolver {
+func New(svc Service, hunkCacheSize int, observationContext *observation.Context) *resolver {
 	return &resolver{
 		svc:           svc,
 		operations:    newOperations(observationContext),
 		dataLoader:    NewUploadsDataLoader(),
 		hunkCacheSize: hunkCacheSize,
 	}
+}
+
+func (r *resolver) SetAuthChecker(authChecker authz.SubRepoPermissionChecker) {
+	r.authChecker = authChecker
 }
 
 func (r *resolver) SetUploadsDataLoader(uploads []dbstore.Dump) {
@@ -73,7 +77,7 @@ func (r *resolver) SetLocalGitTreeTranslator(client gitserver.Client, repo *type
 	}
 
 	r.requestArgs = args
-	r.gitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)
+	r.GitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)
 
 	return nil
 }

@@ -102,7 +102,7 @@ func (r *resolver) Implementations(ctx context.Context, args shared.RequestArgs)
 	// there are no more local results. We'll continue to request additional locations until we fill an
 	// entire page or there are no more local results remaining, just as we did above.
 	if cursor.Phase == "dependencies" {
-		uploads, err := r.GetUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedImplementationMonikers)
+		uploads, err := r.getUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedImplementationMonikers)
 		if err != nil {
 			return nil, "", err
 		}
@@ -232,7 +232,7 @@ func (r *resolver) getVisibleUpload(ctx context.Context, line, character int, up
 		Character: character,
 	}
 
-	targetPath, targetPosition, ok, err := r.gitTreeTranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, position, false)
+	targetPath, targetPosition, ok, err := r.GitTreeTranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, position, false)
 	if err != nil || !ok {
 		return visibleUpload{}, false, errors.Wrap(err, "gitTreeTranslator.GetTargetCommitPositionFromSourcePosition")
 	}
@@ -435,9 +435,9 @@ func (r *resolver) getPageRemoteLocations(
 	return filtered, hasAnotherPage, nil
 }
 
-// GetUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
+// getUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
 // This method will not return uploads for commits which are unknown to gitserver.
-func (r *resolver) GetUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]shared.Dump, error) {
+func (r *resolver) getUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]shared.Dump, error) {
 	uploads, err := r.svc.GetUploadsWithDefinitionsForMonikers(ctx, orderedMonikers)
 	if err != nil {
 		return nil, errors.Wrap(err, "dbstore.DefinitionDumps")
@@ -535,8 +535,7 @@ func (r *resolver) getUploadsByIDs(ctx context.Context, ids []int) ([]shared.Dum
 func (r *resolver) getUploadLocations(ctx context.Context, locations []shared.Location) ([]shared.UploadLocation, error) {
 	uploadLocations := make([]shared.UploadLocation, 0, len(locations))
 
-	checker := authz.DefaultSubRepoPermsChecker
-	checkerEnabled := authz.SubRepoEnabled(checker)
+	checkerEnabled := authz.SubRepoEnabled(r.authChecker)
 	var a *actor.Actor
 	if checkerEnabled {
 		a = actor.FromContext(ctx)
@@ -556,7 +555,7 @@ func (r *resolver) getUploadLocations(ctx context.Context, locations []shared.Lo
 			uploadLocations = append(uploadLocations, adjustedLocation)
 		} else {
 			repo := api.RepoName(adjustedLocation.Dump.RepositoryName)
-			if include, err := authz.FilterActorPath(ctx, checker, a, repo, adjustedLocation.Path); err != nil {
+			if include, err := authz.FilterActorPath(ctx, r.authChecker, a, repo, adjustedLocation.Path); err != nil {
 				return nil, err
 			} else if include {
 				uploadLocations = append(uploadLocations, adjustedLocation)
@@ -593,7 +592,7 @@ func (r *resolver) getSourceRange(ctx context.Context, repositoryID int, commit,
 		return commit, rng, true, nil
 	}
 
-	if _, sourceRange, ok, err := r.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, commit, path, rng, true); err != nil {
+	if _, sourceRange, ok, err := r.GitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, commit, path, rng, true); err != nil {
 		return "", shared.Range{}, false, errors.Wrap(err, "gitTreeTranslator.GetTargetCommitRangeFromSourceRange")
 	} else if ok {
 		return r.requestArgs.commit, sourceRange, true, nil

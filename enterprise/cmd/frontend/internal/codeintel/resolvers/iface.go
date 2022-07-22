@@ -7,6 +7,7 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
@@ -97,6 +98,7 @@ type SymbolsResolver interface {
 	SetLocalGitTreeTranslator(client internalGitserver.Client, repo *types.Repo, commit, path string) error
 	SetLocalCommitCache(gitserverClient symbolsShared.GitserverClient)
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
+	SetAuthChecker(authChecker authz.SubRepoPermissionChecker)
 
 	Stencil(ctx context.Context, args symbolsShared.RequestArgs) (adjustedRanges []symbolsShared.Range, err error)
 	Hover(ctx context.Context, args symbolsShared.RequestArgs) (string, symbolsShared.Range, bool, error)
@@ -105,9 +107,6 @@ type SymbolsResolver interface {
 	Implementations(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
 	Diagnostics(ctx context.Context, args symbolsShared.RequestArgs) (diagnosticsAtUploads []symbolsShared.DiagnosticAtUpload, _ int, err error)
 	Ranges(ctx context.Context, args symbolsShared.RequestArgs, startLine, endLine int) (adjustedRanges []symbolsShared.AdjustedCodeIntelligenceRange, err error)
-
-	// temporarily needed until we move all the methods to the new resolver
-	GetUploadsWithDefinitionsForMonikers(ctx context.Context, orderedMonikers []precise.QualifiedMonikerData) ([]symbolsShared.Dump, error)
 }
 
 type GitTreeTranslator interface {

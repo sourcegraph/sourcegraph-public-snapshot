@@ -95,7 +95,7 @@ func (r *resolver) References(ctx context.Context, args shared.RequestArgs) (_ [
 	if cursor.Phase == "remote" {
 		if cursor.RemoteCursor.UploadBatchIDs == nil {
 			cursor.RemoteCursor.UploadBatchIDs = []int{}
-			definitionUploads, err := r.GetUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedMonikers)
+			definitionUploads, err := r.getUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedMonikers)
 			if err != nil {
 				return nil, "", err
 			}

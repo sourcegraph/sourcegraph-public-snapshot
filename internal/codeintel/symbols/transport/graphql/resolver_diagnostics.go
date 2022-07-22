@@ -38,8 +38,7 @@ func (r *resolver) Diagnostics(ctx context.Context, args shared.RequestArgs) (di
 
 	totalCount := 0
 
-	checker := authz.DefaultSubRepoPermsChecker
-	checkerEnabled := authz.SubRepoEnabled(checker)
+	checkerEnabled := authz.SubRepoEnabled(r.authChecker)
 	var a *actor.Actor
 	if checkerEnabled {
 		a = actor.FromContext(ctx)
@@ -70,7 +69,7 @@ func (r *resolver) Diagnostics(ctx context.Context, args shared.RequestArgs) (di
 			}
 
 			// sub-repo checker is enabled, proceeding with check
-			if include, err := authz.FilterActorPath(ctx, checker, a, api.RepoName(adjustedDiagnostic.Dump.RepositoryName), adjustedDiagnostic.Path); err != nil {
+			if include, err := authz.FilterActorPath(ctx, r.authChecker, a, api.RepoName(adjustedDiagnostic.Dump.RepositoryName), adjustedDiagnostic.Path); err != nil {
 				return nil, 0, err
 			} else if include {
 				diagnosticsAtUploads = append(diagnosticsAtUploads, adjustedDiagnostic)
@@ -96,7 +95,7 @@ func (r *resolver) Diagnostics(ctx context.Context, args shared.RequestArgs) (di
 func (r *resolver) getUploadPaths(ctx context.Context, path string) ([]visibleUpload, error) {
 	visibleUploads := make([]visibleUpload, 0, len(r.dataLoader.uploads))
 	for i := range r.dataLoader.uploads {
-		targetPath, ok, err := r.gitTreeTranslator.GetTargetCommitPathFromSourcePath(ctx, r.dataLoader.uploads[i].Commit, path, false) //.AdjustPath(ctx, r.inMemoryUploads[i].Commit, r.path, false)
+		targetPath, ok, err := r.GitTreeTranslator.GetTargetCommitPathFromSourcePath(ctx, r.dataLoader.uploads[i].Commit, path, false) //.AdjustPath(ctx, r.inMemoryUploads[i].Commit, r.path, false)
 		if err != nil {
 			return nil, errors.Wrap(err, "positionAdjuster.AdjustPath")
 		}

@@ -163,6 +163,7 @@
   interfaces:
     - Service
     - GitserverClient
+    - GitTreeTranslator
 - filename: internal/codeintel/uploads/background/cleanup/mocks_test.go
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/background/cleanup
   interfaces:
