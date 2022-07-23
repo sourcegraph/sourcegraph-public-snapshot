@@ -27,8 +27,15 @@ func TestProductLicenses_Create(t *testing.T) {
 		require.NoError(t, err)
 
 		// This should not happen in practice but just in case to check it won't blow up
-		_, err = dbLicenses{db: db}.Create(ctx, ps, "k", 1, license.Info{})
+		pl, err := dbLicenses{db: db}.Create(ctx, ps, "k", 0, license.Info{})
 		require.NoError(t, err)
+
+		got, err := dbLicenses{db: db}.GetByID(ctx, pl)
+		require.NoError(t, err)
+		assert.Nil(t, got.LicenseVersion)
+		assert.Nil(t, got.LicenseTags)
+		assert.Nil(t, got.LicenseUserCount)
+		assert.Nil(t, got.LicenseExpiresAt)
 	})
 
 	ps, err := dbSubscriptions{db: db}.Create(ctx, u.ID, "")

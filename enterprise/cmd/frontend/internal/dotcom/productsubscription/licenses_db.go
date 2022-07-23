@@ -45,11 +45,16 @@ func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey strin
 	if err != nil {
 		return "", errors.Wrap(err, "new UUID")
 	}
+
+	var expiresAt *time.Time
+	if !info.ExpiresAt.IsZero() {
+		expiresAt = &info.ExpiresAt
+	}
 	if err = s.db.QueryRowContext(ctx, `
 INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at)
 VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
 `,
-		uuid, subscriptionID, licenseKey, version, pq.Array(info.Tags), info.UserCount, dbutil.NullTime{Time: &info.ExpiresAt},
+		uuid, subscriptionID, licenseKey, dbutil.NewNullInt64(int64(version)), pq.Array(info.Tags), dbutil.NewNullInt64(int64(info.UserCount)), dbutil.NullTime{Time: expiresAt},
 	).Scan(&id); err != nil {
 		return "", errors.Wrap(err, "insert")
 	}
