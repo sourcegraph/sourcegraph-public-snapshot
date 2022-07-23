@@ -98,6 +98,7 @@ func TestResultErrorGroup(t *testing.T) {
 		synchronizer := make(chan struct{})
 		g.Go(func() (int, error) {
 			<-synchronizer
+			time.Sleep(100 * time.Millisecond)
 			return 0, err1
 		})
 		g.Go(func() (int, error) {
