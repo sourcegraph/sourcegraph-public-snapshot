@@ -291,7 +291,7 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 				publishOps.Append(publishExecutorDockerMirror(c.Version))
 			}
 			if c.RunType.Is(runtype.ReleaseBranch) {
-				ops.Append(buildWebAppWithSentrySourcemaps(c.Version))
+				publishOps.Append(buildWebAppWithSentrySourcemaps(c.Version))
 			}
 		}
 		ops.Merge(publishOps)
