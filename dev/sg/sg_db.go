@@ -72,8 +72,8 @@ sg db add-user -name=foo
 			},
 			{
 				Name:        "add-user",
-				Usage:       "Create an admin sourcegraph user",
-				Description: `Run 'sg db add-user -name bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds`,
+				Usage:       "Create an admin sourcegrah user",
+				Description: `Run 'sg db add-user -username bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds`,
 				Flags: []cli.Flag{
 					&cli.StringFlag{
 						Name:  "username",
