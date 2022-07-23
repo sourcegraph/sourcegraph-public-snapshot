@@ -432,9 +432,9 @@ $ sg db reset-redis
 
 ### sg db add-user
 
-Create an admin sourcegraph user.
+Create an admin sourcegrah user.
 
-Run 'sg db add-user -name bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds
+Run 'sg db add-user -username bob' to create an admin user whose email is bob@sourcegraph.com. The password will be printed if the operation succeeds
 
 
 Flags:
