@@ -19,3 +19,9 @@ receivers:
   # OpenTelemetry receivers - go.opentelemetry.io/collector/receiver
   - import: go.opentelemetry.io/collector/receiver/otlpreceiver
     gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+
+extensions:
+  - import: go.opentelemetry.io/collector/extension/zpagesextension
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+  - import: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension
+    gomod: github.com/open-telemetry/opentelemetry-collector-contrib v$OTEL_COLLECTOR_VERSION
