@@ -28,8 +28,6 @@ func lintLoggingLibraries() *linter {
 			"dev", "enterprise/dev",
 			// Banned imports will match on the linter here
 			"dev/sg/linters/liblog.go",
-			// Allow some internal commands who log for human consumption
-			"internal/cmd/auth-proxy-http-header",
 			// We allow one usage of a direct zap import here
 			"internal/observation/fields.go",
 		}
