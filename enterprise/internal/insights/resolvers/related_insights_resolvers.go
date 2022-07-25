@@ -5,7 +5,6 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -132,13 +131,13 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 		}
 		mr := *metadataResult
 		if len(mr.Errors) > 0 {
-			log15.Warn("related insights errors", mr.Errors)
+			r.logger.Warn("file related insights errors", log.Strings("errors", mr.Errors))
 		}
 		if len(mr.Alerts) > 0 {
-			log15.Warn("related insights alerts", mr.Alerts)
+			r.logger.Warn("file related insights alerts", log.Strings("alerts", mr.Alerts))
 		}
 		if len(mr.SkippedReasons) > 0 {
-			log15.Warn("related insights skipped", mr.SkippedReasons)
+			r.logger.Warn("file related insights skipped", log.Strings("reasons", mr.SkippedReasons))
 		}
 
 		for _, match := range mr.Matches {
