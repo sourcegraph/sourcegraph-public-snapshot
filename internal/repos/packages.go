@@ -119,10 +119,10 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 				defer sem.Release(1)
 				pkg, err := getPackage(ctx, s.src, depRepo.Name)
 				if err != nil {
-					if errcode.IsNotFound(err) {
-						return nil
+					if !errcode.IsNotFound(err) {
+						results <- SourceResult{Source: s, Err: err}
 					}
-					return err
+					return nil
 				}
 
 				repo := s.makeRepo(pkg)

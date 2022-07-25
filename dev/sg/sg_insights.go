@@ -9,7 +9,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -68,7 +67,7 @@ func getInsightSeriesIDsAction(cmd *cli.Context) error {
 	logger := log.Scoped("getInsightSeriesIDsAction", "")
 
 	// Read the configuration.
-	conf, err := sgconf.Get(configFile, configOverwriteFile)
+	conf, err := getConfig()
 	if err != nil {
 		return err
 	}

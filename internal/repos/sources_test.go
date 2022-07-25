@@ -621,7 +621,7 @@ func TestSources_ListRepos(t *testing.T) {
 
 				logger := logtest.Scoped(t)
 				obs := ObservedSource(logger, NewSourceMetrics())
-				src, err := NewSourcer(database.NewMockDB(), cf, obs)(tc.ctx, svc)
+				src, err := NewSourcer(logtest.Scoped(t), database.NewMockDB(), cf, obs)(tc.ctx, svc)
 				if err != nil {
 					t.Fatal(err)
 				}

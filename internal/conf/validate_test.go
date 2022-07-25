@@ -178,20 +178,20 @@ func TestUnredactSecrets(t *testing.T) {
 		input := getTestSiteWithRedactedSecrets()
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
-		assert.NotContains(t, unredactedSite, RedactedSecret)
+		assert.NotContains(t, unredactedSite, redactedSecret)
 		assert.Equal(t, previousSite, unredactedSite)
 	})
 
 	t.Run("unredacts secrets AND respects specified edits to secret", func(t *testing.T) {
 		input := getTestSiteWithSecrets(
 			"new"+executorsAccessToken,
-			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
+			redactedSecret, "new"+authGitLabClientSecret, redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
 		require.NoError(t, err)
@@ -214,13 +214,13 @@ func TestUnredactSecrets(t *testing.T) {
 		const newEmail = "new_email@example.com"
 		input := getTestSiteWithSecrets(
 			"new"+executorsAccessToken,
-			RedactedSecret, "new"+authGitLabClientSecret, RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
-			RedactedSecret,
+			redactedSecret, "new"+authGitLabClientSecret, redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
+			redactedSecret,
 			newEmail,
 		)
 		unredactedSite, err := UnredactSecrets(input, conftypes.RawUnified{Site: previousSite})
@@ -243,7 +243,7 @@ func TestUnredactSecrets(t *testing.T) {
 }
 
 func getTestSiteWithRedactedSecrets() string {
-	return getTestSiteWithSecrets(RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret, RedactedSecret)
+	return getTestSiteWithSecrets(redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret, redactedSecret)
 }
 
 func getTestSiteWithSecrets(

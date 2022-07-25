@@ -4,9 +4,9 @@ import { mdiFileDownloadOutline } from '@mdi/js'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { encodeRepoRevision, RepoSpec, RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { Icon, Tooltip } from '@sourcegraph/wildcard'
+import { Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { RepoHeaderActionAnchor } from '../components/RepoHeaderActions'
+import { RepoHeaderActionAnchor, RepoHeaderActionMenuLink } from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 interface Props extends RepoSpec, Partial<RevisionSpec>, FileSpec, RepoHeaderContext, TelemetryProps {}
@@ -28,16 +28,17 @@ export class GoToRawAction extends React.PureComponent<Props> {
 
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionAnchor
+                <RepoHeaderActionMenuLink
+                    as={Link}
                     to={to}
                     target="_blank"
                     file={true}
-                    onClick={this.onClick.bind(this)}
+                    onSelect={this.onClick.bind(this)}
                     download={true}
                 >
                     <Icon aria-hidden={true} svgPath={mdiFileDownloadOutline} />
                     <span>{descriptiveText}</span>
-                </RepoHeaderActionAnchor>
+                </RepoHeaderActionMenuLink>
             )
         }
 

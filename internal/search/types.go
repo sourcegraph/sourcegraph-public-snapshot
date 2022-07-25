@@ -168,9 +168,6 @@ type TextPatternInfo struct {
 	IncludePatterns []string
 	ExcludePattern  string
 
-	FilePatternsReposMustInclude []string
-	FilePatternsReposMustExclude []string
-
 	PathPatternsAreCaseSensitive bool
 
 	PatternMatchesContent bool
@@ -218,12 +215,6 @@ func (p *TextPatternInfo) Fields() []otlog.Field {
 	if p.ExcludePattern != "" {
 		add(otlog.String("excludePattern", p.ExcludePattern))
 	}
-	if len(p.FilePatternsReposMustInclude) > 0 {
-		add(trace.Strings("filePatternsReposMustInclude", p.FilePatternsReposMustInclude))
-	}
-	if len(p.FilePatternsReposMustExclude) > 0 {
-		add(trace.Strings("filePatternsReposMustExclude", p.FilePatternsReposMustExclude))
-	}
 	if p.PathPatternsAreCaseSensitive {
 		add(otlog.Bool("pathPatternsAreCaseSensitive", p.PathPatternsAreCaseSensitive))
 	}
@@ -267,13 +258,6 @@ func (p *TextPatternInfo) String() string {
 		args = append(args, fmt.Sprintf("lang:%s", lang))
 	}
 
-	for _, inc := range p.FilePatternsReposMustInclude {
-		args = append(args, fmt.Sprintf("repositoryPathPattern:%s", inc))
-	}
-	for _, dec := range p.FilePatternsReposMustExclude {
-		args = append(args, fmt.Sprintf("-repositoryPathPattern:%s", dec))
-	}
-
 	path := "f"
 	if p.PathPatternsAreCaseSensitive {
 		path = "F"
@@ -314,7 +298,7 @@ type Features struct {
 type RepoOptions struct {
 	RepoFilters         []string
 	MinusRepoFilters    []string
-	Dependencies        []string
+	Dependencies        []query.RepoDependenciesPredicate
 	Dependents          []string
 	DescriptionPatterns []string
 
@@ -325,6 +309,10 @@ type RepoOptions struct {
 	Visibility  query.RepoVisibility
 	Limit       int
 	Cursors     []*types.Cursor
+
+	// Whether we should depend on Zoekt for resolving repositories
+	UseIndex       query.YesNoOnly
+	HasFileContent []query.RepoHasFileContentArgs
 
 	// ForkSet indicates whether `fork:` was set explicitly in the query,
 	// or whether the values were set from defaults.
@@ -354,7 +342,7 @@ func (op *RepoOptions) Tags() []otlog.Field {
 		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))
 	}
 	if len(op.Dependencies) > 0 {
-		add(trace.Strings("dependencies", op.Dependencies))
+		add(trace.Printf("dependencies", "%+v", op.Dependencies))
 	}
 	if len(op.Dependents) > 0 {
 		add(trace.Strings("dependents", op.Dependents))
@@ -379,6 +367,24 @@ func (op *RepoOptions) Tags() []otlog.Field {
 	}
 	if len(op.Cursors) > 0 {
 		add(trace.Printf("cursors", "%+v", op.Cursors))
+	}
+	if op.UseIndex != query.Yes {
+		add(otlog.String("useIndex", string(op.UseIndex)))
+	}
+	if len(op.HasFileContent) > 0 {
+		for i, arg := range op.HasFileContent {
+			nondefault := []otlog.Field{}
+			if arg.Path != "" {
+				nondefault = append(nondefault, otlog.String("path", arg.Path))
+			}
+			if arg.Content != "" {
+				nondefault = append(nondefault, otlog.String("content", arg.Content))
+			}
+			if arg.Negated {
+				nondefault = append(nondefault, otlog.Bool("negated", arg.Negated))
+			}
+			add(trace.Scoped(fmt.Sprintf("hasFileContent[%d]", i), nondefault...))
+		}
 	}
 	if op.ForkSet {
 		add(otlog.Bool("forkSet", op.ForkSet))
@@ -424,6 +430,23 @@ func (op *RepoOptions) String() string {
 
 	fmt.Fprintf(&b, "CommitAfter: %s\n", op.CommitAfter)
 	fmt.Fprintf(&b, "Visibility: %s\n", string(op.Visibility))
+
+	if op.UseIndex != query.Yes {
+		fmt.Fprintf(&b, "UseIndex: %s\n", string(op.UseIndex))
+	}
+	if len(op.HasFileContent) > 0 {
+		for i, arg := range op.HasFileContent {
+			if arg.Path != "" {
+				fmt.Fprintf(&b, "HasFileContent[%d].path: %s\n", i, arg.Path)
+			}
+			if arg.Content != "" {
+				fmt.Fprintf(&b, "HasFileContent[%d].content: %s\n", i, arg.Content)
+			}
+			if arg.Negated {
+				fmt.Fprintf(&b, "HasFileContent[%d].negate: %s\n", i, arg.Path)
+			}
+		}
+	}
 
 	if op.CaseSensitiveRepoFilters {
 		fmt.Fprintf(&b, "CaseSensitiveRepoFilters: %t\n", op.CaseSensitiveRepoFilters)

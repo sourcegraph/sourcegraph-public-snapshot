@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -30,7 +29,7 @@ type SyncWorkerOptions struct {
 }
 
 // NewSyncWorker creates a new external service sync worker.
-func NewSyncWorker(ctx context.Context, dbHandle basestore.TransactableHandle, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
+func NewSyncWorker(ctx context.Context, logger log.Logger, dbHandle basestore.TransactableHandle, handler workerutil.Handler, opts SyncWorkerOptions) (*workerutil.Worker, *dbworker.Resetter) {
 	if opts.NumHandlers == 0 {
 		opts.NumHandlers = 3
 	}
@@ -82,7 +81,7 @@ func NewSyncWorker(ctx context.Context, dbHandle basestore.TransactableHandle, h
 	})
 
 	if opts.CleanupOldJobs {
-		go runJobCleaner(ctx, dbHandle, opts.CleanupOldJobsInterval)
+		go runJobCleaner(ctx, logger, dbHandle, opts.CleanupOldJobsInterval)
 	}
 
 	return worker, resetter
@@ -121,20 +120,23 @@ func newResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
 	}
 }
 
-func runJobCleaner(ctx context.Context, handle basestore.TransactableHandle, interval time.Duration) {
+const cleanSyncJobsQueryFmtstr = `
+-- source: internal/repos/sync_worker.go:runJobCleaner
+DELETE FROM external_service_sync_jobs
+WHERE
+	finished_at < NOW() - INTERVAL '1 day'
+  	AND
+  	state IN ('completed', 'failed')
+`
+
+func runJobCleaner(ctx context.Context, logger log.Logger, handle basestore.TransactableHandle, interval time.Duration) {
 	t := time.NewTicker(interval)
 	defer t.Stop()
 
 	for {
-		_, err := handle.ExecContext(ctx, `
--- source: internal/repos/sync_worker.go:runJobCleaner
-DELETE FROM external_service_sync_jobs
-WHERE
-  finished_at < now() - INTERVAL '1 day'
-  AND state IN ('completed', 'errored')
-`)
+		_, err := handle.ExecContext(ctx, cleanSyncJobsQueryFmtstr)
 		if err != nil && err != context.Canceled {
-			log15.Error("error while running job cleaner", "err", err)
+			logger.Error("error while running job cleaner", log.Error(err))
 		}
 
 		select {

@@ -13,6 +13,7 @@ import (
 	"github.com/inconshreveable/log15"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/state"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -118,6 +119,9 @@ func (e *executor) Run(ctx context.Context, plan *Plan) (err error) {
 
 		case btypes.ReconcilerOperationArchive:
 			e.archiveChangeset()
+
+		case btypes.ReconcilerOperationReattach:
+			e.reattachChangeset()
 
 		default:
 			err = errors.Errorf("executor operation %q not implemented", op)
@@ -398,6 +402,11 @@ func (e *executor) detachChangeset() {
 			e.ch.RemoveBatchChangeID(assoc.BatchChangeID)
 		}
 	}
+	// A changeset can be associated with multiple batch changes. Only set the detached_at field when the changeset is
+	// no longer associated with any batch changes.
+	if len(e.ch.BatchChanges) == 0 {
+		e.ch.DetachedAt = time.Now()
+	}
 }
 
 // archiveChangeset sets all associations to archived that are marked as "to-be-archived".
@@ -407,6 +416,13 @@ func (e *executor) archiveChangeset() {
 			e.ch.BatchChanges[i].IsArchived = true
 			e.ch.BatchChanges[i].Archive = false
 		}
+	}
+}
+
+// reattachChangeset resets detached_at to zero.
+func (e *executor) reattachChangeset() {
+	if !e.ch.DetachedAt.IsZero() {
+		e.ch.DetachedAt = time.Time{}
 	}
 }
 

@@ -558,6 +558,9 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorByID(ctx, db, id, r)
 		},
+		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return externalServiceSyncJobByID(ctx, db, id)
+		},
 	}
 	return r
 }

@@ -5,7 +5,6 @@ import (
 	"io/fs"
 	"os"
 	"path/filepath"
-	"strings"
 
 	"github.com/docker/docker-credential-helpers/credentials"
 	"gopkg.in/yaml.v3"
@@ -16,16 +15,16 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
 
-// UpdateCompose walks all `*docker-compose.yaml` files and updates Sourcegraph images
-// in each.
+// UpdateCompose walks all `*.yaml` files assuming they are docker-compose files and
+// updates Sourcegraph images in each.
 func UpdateCompose(path string, creds credentials.Credentials, pinTag string) error {
 	var checked int
 	if err := filepath.WalkDir(path, func(path string, d fs.DirEntry, err error) error {
 		if d.IsDir() {
 			return nil
 		}
-		if !strings.Contains(d.Name(), "docker-compose.yaml") {
-			std.Out.WriteWarningf("%s is not a docker-compose.yaml file but we will still try to update it anyway", path)
+		if filepath.Ext(d.Name()) != ".yaml" {
+			return nil
 		}
 
 		std.Out.WriteNoticef("Checking %q", path)
@@ -86,7 +85,12 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 		}
 
 		checks.Go(func() *replace {
-			originalImage, ok := service["image"].(string)
+			imageField, set := service["image"]
+			if !set {
+				std.Out.Verbosef("%s: no image", name)
+				return nil
+			}
+			originalImage, ok := imageField.(string)
 			if !ok {
 				std.Out.WriteWarningf("%s: invalid image", name)
 				return nil
@@ -94,7 +98,11 @@ func updateComposeFile(composeFile []byte, creds credentials.Credentials, pinTag
 
 			newImage, err := getUpdatedSourcegraphImage(originalImage, creds, pinTag)
 			if err != nil {
-				std.Out.WriteWarningf("%s: %s", name, err)
+				if errors.Is(err, ErrNoUpdateNeeded) {
+					std.Out.Verbosef("%s: %s", name, err)
+				} else {
+					std.Out.WriteWarningf("%s: %s", name, err)
+				}
 				return nil
 			}
 

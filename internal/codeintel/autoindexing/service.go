@@ -4,6 +4,8 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/internal/store"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -38,6 +40,7 @@ type Service struct {
 	repoUpdater       RepoUpdaterClient
 	inferenceService  inferenceService
 	operations        *operations
+	logger            log.Logger
 }
 
 func newService(
@@ -55,6 +58,7 @@ func newService(
 		repoUpdater:       repoUpdaterClient,
 		inferenceService:  inferenceService,
 		operations:        newOperations(observationContext),
+		logger:            observationContext.Logger,
 	}
 }
 

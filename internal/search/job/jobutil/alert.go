@@ -45,6 +45,8 @@ func (j *alertJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	ao := searchalert.Observer{
 		Logger:       clients.Logger,
 		Db:           clients.DB,
+		Zoekt:        clients.Zoekt,
+		Searcher:     clients.SearcherURLs,
 		SearchInputs: j.inputs,
 		HasResults:   countingStream.Count() > 0,
 	}

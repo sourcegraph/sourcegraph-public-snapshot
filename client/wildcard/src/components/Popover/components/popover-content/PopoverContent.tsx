@@ -17,12 +17,14 @@ export interface PopoverContentProps extends Omit<FloatingPanelProps, 'target' |
     isOpen?: boolean
     focusLocked?: boolean
     autoFocus?: boolean
+    targetElement?: HTMLElement | null
 }
 
 export const PopoverContent = forwardRef((props, reference) => {
     const {
         isOpen,
         children,
+        targetElement: propertyTargetElement = null,
         focusLocked = true,
         autoFocus = true,
         as: Component = 'div',
@@ -31,11 +33,13 @@ export const PopoverContent = forwardRef((props, reference) => {
         ...otherProps
     } = props
 
-    const { isOpen: isOpenContext, targetElement, tailElement, anchor, setOpen } = useContext(PopoverContext)
+    const { isOpen: isOpenContext, targetElement: contextTargetElement, tailElement, anchor, setOpen } = useContext(
+        PopoverContext
+    )
     const { renderRoot } = useContext(PopoverRoot)
 
+    const targetElement = contextTargetElement ?? propertyTargetElement
     const [focusLock, setFocusLock] = useState(false)
-
     const [tooltipElement, setTooltipElement] = useState<HTMLDivElement | null>(null)
     const tooltipReferenceCallback = useCallbackRef<HTMLDivElement>(null, setTooltipElement)
     const mergeReference = useMergeRefs([tooltipReferenceCallback, reference])

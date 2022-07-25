@@ -43,6 +43,12 @@ func DefaultClient() *client {
 	return defaultClientVal
 }
 
+// MockClient returns a client in the same basic configuration as the DefaultClient, but is not limited to a global singleton.
+// This is useful to mock configuration in tests without race conditions modifying values when running tests in parallel.
+func MockClient() *client {
+	return &client{store: newStore()}
+}
+
 // Raw returns a copy of the raw configuration.
 func Raw() conftypes.RawUnified {
 	return DefaultClient().Raw()
@@ -134,8 +140,14 @@ func Watch(f func()) {
 // will be recomputed every time the config is updated.
 //
 // IMPORTANT: The first call to wrapped will block on config initialization.
-func Cached(f func() any) (wrapped func() any) {
-	return DefaultClient().Cached(f)
+func Cached[T any](f func() T) (wrapped func() T) {
+	g := func() any {
+		return f()
+	}
+	h := DefaultClient().Cached(g)
+	return func() T {
+		return h().(T)
+	}
 }
 
 // Watch calls the given function in a separate goroutine whenever the

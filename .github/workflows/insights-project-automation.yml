@@ -34,7 +34,7 @@ jobs:
 
             $PSDefaultParameterValues['*GitHub*:Token'] = ConvertTo-SecureString -String $env:GITHUB_TOKEN -AsPlainText -Force
 
-            ./.github/workflows/update-project-items.ps1 `
+            ./.github/workflows/scripts/update-project-items.ps1 `
               -ProjectNodeId 'MDExOlByb2plY3ROZXh0MzI3Ng==' `
               -TeamLabel 'team/code-insights' `
               -TeamIterationMilestonePattern '^Insights iteration' `
