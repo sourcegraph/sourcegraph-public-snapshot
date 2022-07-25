@@ -376,7 +376,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 <BlobContainer
                     data-testid="repo-blob"
                     repoName={props.repoName}
-                    revision={props.revision}
                     commitID={props.commitID}
                     filePath={props.filePath}
                     className={classNames(styles.blob, styles.border)}

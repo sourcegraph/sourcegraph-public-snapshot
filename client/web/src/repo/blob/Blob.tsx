@@ -102,7 +102,9 @@ import styles from './Blob.module.scss'
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
 export interface BlobProps
-    extends AbsoluteRepoFile,
+    extends RepoSpec,
+        ResolvedRevisionSpec,
+        FileSpec,
         SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
