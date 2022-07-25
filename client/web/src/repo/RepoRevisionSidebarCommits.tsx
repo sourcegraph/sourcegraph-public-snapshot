@@ -72,6 +72,10 @@ export const RepoRevisionSidebarCommits: React.FunctionComponent<React.PropsWith
         [props.repoID, props.revision, props.filePath]
     )
 
+    const test = useConnection()
+    ```
+    testing 2 @Tom Ross
+
     return (
         <FilteredConnection<
             GitCommitFields,
