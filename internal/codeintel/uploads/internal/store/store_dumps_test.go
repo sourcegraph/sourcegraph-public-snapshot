@@ -94,7 +94,6 @@ func TestFindClosestDumps(t *testing.T) {
 func TestDefinitionDumps(t *testing.T) {
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	// store := testStore(db)
 	store := New(db, &observation.TestContext)
 
 	moniker1 := precise.QualifiedMonikerData{

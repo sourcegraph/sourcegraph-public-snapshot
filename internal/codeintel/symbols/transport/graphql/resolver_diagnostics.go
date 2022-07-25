@@ -113,7 +113,7 @@ func (r *resolver) getUploadPaths(ctx context.Context, path string) ([]visibleUp
 	return visibleUploads, nil
 }
 
-// adjustDiagnostic translates a diagnostic (relative to the indexed commit) into an equivalent diagnostic
+// getRequestedCommitDiagnostic translates a diagnostic (relative to the indexed commit) into an equivalent diagnostic
 // in the requested commit.
 func (r *resolver) getRequestedCommitDiagnostic(ctx context.Context, adjustedUpload visibleUpload, diagnostic shared.Diagnostic) (shared.DiagnosticAtUpload, error) {
 	rn := shared.Range{

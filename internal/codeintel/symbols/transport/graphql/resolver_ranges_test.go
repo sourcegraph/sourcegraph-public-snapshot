@@ -18,12 +18,6 @@ import (
 )
 
 func TestRanges(t *testing.T) {
-	// mockDBStore := NewMockDBStore()
-	// mockLSIFStore := NewMockLSIFStore()
-	// mockGitserverClient := NewMockGitserverClient()
-	// mockPositionAdjuster := noopPositionAdjuster()
-	// mockSymbolsResolver := NewMockSymbolsResolver()
-
 	// Set up mocks
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
@@ -65,21 +59,6 @@ func TestRanges(t *testing.T) {
 	}
 	resolver.SetUploadsDataLoader(uploads)
 
-	// resolver := newQueryResolver(
-	// 	database.NewMockDB(),
-	// 	mockDBStore,
-	// 	mockLSIFStore,
-	// 	newCachedCommitChecker(mockGitserverClient),
-	// 	mockPositionAdjuster,
-	// 	42,
-	// 	"deadbeef",
-	// 	"s1/main.go",
-	// 	uploads,
-	// 	newOperations(&observation.TestContext),
-	// 	authz.NewMockSubRepoPermissionChecker(),
-	// 	50,
-	// 	mockSymbolsResolver,
-	// )
 	mockRequest := shared.RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,

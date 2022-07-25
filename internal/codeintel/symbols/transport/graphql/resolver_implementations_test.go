@@ -22,11 +22,6 @@ import (
 )
 
 func TestImplementations(t *testing.T) {
-	// mockDBStore := NewMockDBStore()
-	// mockLSIFStore := NewMockLSIFStore()
-	// mockGitserverClient := NewMockGitserverClient()
-	// mockPositionAdjuster := noopPositionAdjuster()
-	// mockSymbolsResolver := NewMockSymbolsResolver()
 	// Set up mocks
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
@@ -60,21 +55,6 @@ func TestImplementations(t *testing.T) {
 		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
 	}
 	resolver.SetUploadsDataLoader(uploads)
-	// resolver := newQueryResolver(
-	// 	database.NewMockDB(),
-	// 	mockDBStore,
-	// 	mockLSIFStore,
-	// 	newCachedCommitChecker(mockGitserverClient),
-	// 	mockPositionAdjuster,
-	// 	42,
-	// 	"deadbeef",
-	// 	"s1/main.go",
-	// 	uploads,
-	// 	newOperations(&observation.TestContext),
-	// 	authz.NewMockSubRepoPermissionChecker(),
-	// 	50,
-	// 	mockSymbolsResolver,
-	// )
 	mockRequest := shared.RequestArgs{
 		RepositoryID: 51,
 		Commit:       "deadbeef",
@@ -101,11 +81,6 @@ func TestImplementations(t *testing.T) {
 }
 
 func TestImplementationsWithSubRepoPermissions(t *testing.T) {
-	// mockDBStore := NewMockDBStore()
-	// mockLSIFStore := NewMockLSIFStore()
-	// mockGitserverClient := NewMockGitserverClient()
-	// mockPositionAdjuster := noopPositionAdjuster()
-	// mockSymbolsResolver := NewMockSymbolsResolver()
 	// Set up mocks
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
@@ -153,22 +128,6 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 	})
 	resolver.SetAuthChecker(checker)
 
-	// resolver := newQueryResolver(
-	// 	database.NewMockDB(),
-	// 	mockDBStore,
-	// 	mockLSIFStore,
-	// 	newCachedCommitChecker(mockGitserverClient),
-	// 	mockPositionAdjuster,
-	// 	42,
-	// 	"deadbeef",
-	// 	"s1/main.go",
-	// 	uploads,
-	// 	newOperations(&observation.TestContext),
-	// 	checker,
-	// 	50,
-	// 	mockSymbolsResolver,
-	// )
-
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockRequest := shared.RequestArgs{
 		RepositoryID: 42,
@@ -193,12 +152,6 @@ func TestImplementationsWithSubRepoPermissions(t *testing.T) {
 }
 
 func TestImplementationsRemote(t *testing.T) {
-	// mockDBStore := NewMockDBStore()
-	// mockLSIFStore := NewMockLSIFStore()
-	// mockGitserverClient := NewMockGitserverClient()
-	// mockPositionAdjuster := noopPositionAdjuster()
-	// mockSymbolsResolver := NewMockSymbolsResolver()
-
 	// Set up mocks
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
@@ -233,16 +186,6 @@ func TestImplementationsRemote(t *testing.T) {
 	mockSvc.GetDumpsByIDsFunc.PushReturn(referenceUploads[:2], nil)
 	mockSvc.GetDumpsByIDsFunc.PushReturn(referenceUploads[2:], nil)
 
-	// scanner1 := dbstore.PackageReferenceScannerFromSlice(
-	// 	shared.PackageReference{Package: shared.Package{DumpID: 250}},
-	// 	shared.PackageReference{Package: shared.Package{DumpID: 251}},
-	// )
-	// scanner2 := dbstore.PackageReferenceScannerFromSlice(
-	// 	shared.PackageReference{Package: shared.Package{DumpID: 252}},
-	// 	shared.PackageReference{Package: shared.Package{DumpID: 253}},
-	// )
-	// mockDBStore.ReferenceIDsFunc.PushReturn(scanner1, 4, nil)
-	// mockDBStore.ReferenceIDsFunc.PushReturn(scanner2, 2, nil)
 	mockSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{250, 251}, 0, 4, nil)
 	mockSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{252, 253}, 0, 2, nil)
 
@@ -299,21 +242,6 @@ func TestImplementationsRemote(t *testing.T) {
 	}
 	resolver.SetUploadsDataLoader(uploads)
 
-	// resolver := newQueryResolver(
-	// 	database.NewMockDB(),
-	// 	mockDBStore,
-	// 	mockLSIFStore,
-	// 	newCachedCommitChecker(mockGitserverClient),
-	// 	mockPositionAdjuster,
-	// 	42,
-	// 	"deadbeef",
-	// 	"s1/main.go",
-	// 	uploads,
-	// 	newOperations(&observation.TestContext),
-	// 	authz.NewMockSubRepoPermissionChecker(),
-	// 	50,
-	// 	mockSymbolsResolver,
-	// )
 	mockRequest := shared.RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
@@ -383,11 +311,6 @@ func TestImplementationsRemote(t *testing.T) {
 }
 
 func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
-	// mockDBStore := NewMockDBStore()
-	// mockLSIFStore := NewMockLSIFStore()
-	// mockGitserverClient := NewMockGitserverClient()
-	// mockPositionAdjuster := noopPositionAdjuster()
-	// mockSymbolsResolver := NewMockSymbolsResolver()
 	// Set up mocks
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
@@ -418,17 +341,6 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 	}
 	mockSvc.GetDumpsByIDsFunc.PushReturn(referenceUploads[:2], nil)
 	mockSvc.GetDumpsByIDsFunc.PushReturn(referenceUploads[2:], nil)
-
-	// scanner1 := dbstore.PackageReferenceScannerFromSlice(
-	// 	shared.PackageReference{Package: shared.Package{DumpID: 250}},
-	// 	shared.PackageReference{Package: shared.Package{DumpID: 251}},
-	// )
-	// scanner2 := dbstore.PackageReferenceScannerFromSlice(
-	// 	shared.PackageReference{Package: shared.Package{DumpID: 252}},
-	// 	shared.PackageReference{Package: shared.Package{DumpID: 253}},
-	// )
-	// mockDBStore.ReferenceIDsFunc.PushReturn(scanner1, 4, nil)
-	// mockDBStore.ReferenceIDsFunc.PushReturn(scanner2, 2, nil)
 
 	mockSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{250, 251}, 0, 4, nil)
 	mockSvc.GetUploadIDsWithReferencesFunc.PushReturn([]int{252, 253}, 0, 2, nil)
@@ -498,22 +410,6 @@ func TestImplementationsRemoteWithSubRepoPermissions(t *testing.T) {
 		return authz.None, nil
 	})
 	resolver.SetAuthChecker(checker)
-
-	// resolver := newQueryResolver(
-	// 	database.NewMockDB(),
-	// 	mockDBStore,
-	// 	mockLSIFStore,
-	// 	newCachedCommitChecker(mockGitserverClient),
-	// 	mockPositionAdjuster,
-	// 	42,
-	// 	"deadbeef",
-	// 	"s1/main.go",
-	// 	uploads,
-	// 	newOperations(&observation.TestContext),
-	// 	checker,
-	// 	50,
-	// 	mockSymbolsResolver,
-	// )
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockRequest := shared.RequestArgs{

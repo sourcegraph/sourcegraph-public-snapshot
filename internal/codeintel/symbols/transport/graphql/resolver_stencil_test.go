@@ -52,21 +52,6 @@ func TestStencil(t *testing.T) {
 		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
 	}
 	resolver.SetUploadsDataLoader(uploads)
-	// resolver := newQueryResolver(
-	// 	database.NewMockDB(),
-	// 	mockDBStore,
-	// 	mockLSIFStore,
-	// 	newCachedCommitChecker(mockGitserverClient),
-	// 	mockPositionAdjuster,
-	// 	42,
-	// 	"deadbeef",
-	// 	"s1/main.go",
-	// 	uploads,
-	// 	newOperations(&observation.TestContext),
-	// 	authz.NewMockSubRepoPermissionChecker(),
-	// 	50,
-	// 	mockSymbolsResolver,
-	// )
 	mockRequest := shared.RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,

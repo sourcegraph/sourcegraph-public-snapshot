@@ -248,7 +248,7 @@ func (r *resolver) getVisibleUpload(ctx context.Context, line, character int, up
 // monikerLimit is the maximum number of monikers that can be returned from orderedMonikers.
 const monikerLimit = 10
 
-// orderedMonikers returns the set of monikers of the given kind(s) attached to the ranges specified by
+// getOrderedMonikers returns the set of monikers of the given kind(s) attached to the ranges specified by
 // the given upload list.
 //
 // The return slice is ordered by visible upload, then by specificity, i.e., monikers attached to

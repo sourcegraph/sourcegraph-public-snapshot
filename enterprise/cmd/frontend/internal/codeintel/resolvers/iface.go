@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
-	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
 type GitserverClient interface {
@@ -38,10 +37,9 @@ type DBStore interface {
 	GetUploadsByIDs(ctx context.Context, ids ...int) ([]dbstore.Upload, error)
 	GetUploads(ctx context.Context, opts dbstore.GetUploadsOptions) ([]dbstore.Upload, int, error)
 	DeleteUploadByID(ctx context.Context, id int) (bool, error)
-	GetDumpsByIDs(ctx context.Context, ids []int) ([]dbstore.Dump, error)
 	FindClosestDumps(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string) ([]dbstore.Dump, error)
 	FindClosestDumpsFromGraphFragment(ctx context.Context, repositoryID int, commit, path string, rootMustEnclosePath bool, indexer string, graph *gitdomain.CommitGraph) ([]dbstore.Dump, error)
-	ReferenceIDs(ctx context.Context, repositoryID int, commit string, monikers []precise.QualifiedMonikerData, limit, offset int) (_ dbstore.PackageReferenceScanner, _ int, err error)
+
 	HasRepository(ctx context.Context, repositoryID int) (bool, error)
 	HasCommit(ctx context.Context, repositoryID int, commit string) (bool, error)
 	MarkRepositoryAsDirty(ctx context.Context, repositoryID int) error
@@ -72,16 +70,6 @@ type DBStore interface {
 type LSIFStore interface {
 	Exists(ctx context.Context, bundleID int, path string) (bool, error)
 	DocumentPaths(ctx context.Context, bundleID int, path string) ([]string, int, error)
-	Stencil(ctx context.Context, bundelID int, path string) ([]lsifstore.Range, error)
-	Ranges(ctx context.Context, bundleID int, path string, startLine, endLine int) ([]lsifstore.CodeIntelligenceRange, error)
-	Definitions(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
-	References(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
-	Implementations(ctx context.Context, bundleID int, path string, line, character, limit, offset int) ([]lsifstore.Location, int, error)
-	Hover(ctx context.Context, bundleID int, path string, line, character int) (string, lsifstore.Range, bool, error)
-	Diagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) ([]lsifstore.Diagnostic, int, error)
-	MonikersByPosition(ctx context.Context, bundleID int, path string, line, character int) ([][]precise.MonikerData, error)
-	BulkMonikerResults(ctx context.Context, tableName string, ids []int, args []precise.MonikerData, limit, offset int) (_ []lsifstore.Location, _ int, err error)
-	PackageInformation(ctx context.Context, bundleID int, path string, packageInformationID string) (precise.PackageInformationData, bool, error)
 }
 
 type IndexEnqueuer interface {

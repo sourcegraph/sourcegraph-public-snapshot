@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
-// Hover returns the hover text of the symbol at the given position.
+// GetHover returns the hover text of the symbol at the given position.
 func (s *store) GetHover(ctx context.Context, bundleID int, path string, line, character int) (_ string, _ shared.Range, _ bool, err error) {
 	ctx, trace, endObservation := s.operations.getHover.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("bundleID", bundleID),
