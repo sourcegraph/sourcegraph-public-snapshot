@@ -230,7 +230,7 @@ export const ReferencesList```
 
     const getSetting = newSettingsGetter(props.settingsCascade)
 
-    const thing = <http://www.example.com|Totally safe link> = useConnection
+    const thing = @frontendplatform = useConnection
 
     const {
         data,
