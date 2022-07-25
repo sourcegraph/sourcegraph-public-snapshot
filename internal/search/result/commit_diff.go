@@ -120,7 +120,17 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 
 	state := INIT
 	var currentDiff DiffFile
+	finishDiff := func() {
+		res = append(res, currentDiff)
+		currentDiff = DiffFile{}
+	}
+
 	var currentHunk Hunk
+	finishHunk := func() {
+		currentDiff.Hunks = append(currentDiff.Hunks, currentHunk)
+		currentHunk = Hunk{}
+	}
+
 	for _, line := range strings.Split(diff, "\n") {
 		if len(line) == 0 {
 			continue
@@ -137,12 +147,12 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 			case '-', '+', ' ':
 				currentHunk.Lines = append(currentHunk.Lines, line)
 			case '@':
-				currentDiff.Hunks = append(currentDiff.Hunks, currentHunk)
-				currentHunk = Hunk{}
+				finishHunk()
 				currentHunk.OldStart, currentHunk.OldCount, currentHunk.NewStart, currentHunk.NewCount, currentHunk.Header, err = parseHunkHeader(line)
 				state = IN_HUNK
 			default:
-				res = append(res, currentDiff)
+				finishHunk()
+				finishDiff()
 				currentDiff.OrigName, currentDiff.NewName, err = splitDiffFiles(line)
 				state = IN_DIFF
 			}
@@ -151,6 +161,8 @@ func ParseDiffString(diff string) (res []DiffFile, err error) {
 			return nil, err
 		}
 	}
+	finishHunk()
+	finishDiff()
 
 	return res, nil
 }
