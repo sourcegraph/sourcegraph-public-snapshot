@@ -22,6 +22,8 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
+	RelatedInsightsInline(ctx context.Context, args RelatedInsightsInlineArgs) ([]RelatedInsightsInlineResolver, error)
+
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -448,4 +450,20 @@ type DeleteInsightViewArgs struct {
 type SearchInsightLivePreviewSeriesResolver interface {
 	Points(ctx context.Context) ([]InsightsDataPointResolver, error)
 	Label(ctx context.Context) (string, error)
+}
+
+type RelatedInsightsInlineArgs struct {
+	Input RelatedInsightsInlineInput
+}
+
+type RelatedInsightsInlineInput struct {
+	Repo     string
+	File     string
+	Revision *string
+}
+
+type RelatedInsightsInlineResolver interface {
+	ViewID() string
+	Title() string
+	LineNumbers() []int32
 }
