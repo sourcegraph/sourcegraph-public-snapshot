@@ -17,6 +17,9 @@ export const LOCKFILE_INDEXES_LIST = gql`
             abbreviatedOID
             oid
         }
+
+        updatedAt
+        createdAt
     }
 
     fragment LockfileIndexConnectionFields on LockfileIndexConnection {
