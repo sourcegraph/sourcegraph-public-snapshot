@@ -27,6 +27,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { ReferencesPanelWithMemoryRouter } from '../../../codeintel/ReferencesPanel'
 import { RepoRevisionSidebarCommits } from '../../RepoRevisionSidebarCommits'
+import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 
 interface Props
     extends AbsoluteRepoFile,
@@ -173,6 +174,10 @@ export function useBlobPanelViews({
     useEffect(() => {
         panelSubjectChanges.next(panelSubject)
     }, [panelSubject, panelSubjectChanges])
+
+    const test = useConnection()
+    ```
+    testing 2
 
     useBuiltinTabbedPanelViews(
         useMemo(() => {
