@@ -606,7 +606,6 @@ func findWorkspaces(
 
 	// Maps workspace config indexes to repositories matching them.
 	matched := map[int][]*RepoRevision{}
-
 	for _, repoRev := range repoRevs {
 		found := false
 
@@ -616,9 +615,11 @@ func findWorkspaces(
 				continue
 			}
 
-			// Don't allow duplicate matches.
+			// Don't allow duplicate matches. Collect the error so we return
+			// them all so users don't have to run it 1 by 1.
 			if found {
-				return nil, batcheslib.NewValidationError(errors.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repoRev.Repo.Name, conf.In))
+				errs = errors.Append(errs, batcheslib.NewValidationError(errors.Errorf("repository %s matches multiple workspaces.in globs in the batch spec. glob: %q", repoRev.Repo.Name, conf.In)))
+				continue
 			}
 
 			matched[idx] = append(matched[idx], repoRev)
@@ -628,6 +629,9 @@ func findWorkspaces(
 		if !found {
 			root = append(root, repoRev)
 		}
+	}
+	if errs != nil {
+		return nil, errs
 	}
 
 	type repoWorkspaces struct {
