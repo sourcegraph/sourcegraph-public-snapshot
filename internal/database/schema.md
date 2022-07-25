@@ -751,14 +751,16 @@ Tracks a lockfile dependency that might be resolvable to a specific repository-c
 
 # Table "public.codeintel_lockfiles"
 ```
-              Column              |   Type    | Collation | Nullable |                     Default                     
-----------------------------------+-----------+-----------+----------+-------------------------------------------------
- id                               | integer   |           | not null | nextval('codeintel_lockfiles_id_seq'::regclass)
- repository_id                    | integer   |           | not null | 
- commit_bytea                     | bytea     |           | not null | 
- codeintel_lockfile_reference_ids | integer[] |           | not null | 
- lockfile                         | text      |           |          | 
- fidelity                         | text      |           | not null | 'flat'::text
+              Column              |           Type           | Collation | Nullable |                     Default                     
+----------------------------------+--------------------------+-----------+----------+-------------------------------------------------
+ id                               | integer                  |           | not null | nextval('codeintel_lockfiles_id_seq'::regclass)
+ repository_id                    | integer                  |           | not null | 
+ commit_bytea                     | bytea                    |           | not null | 
+ codeintel_lockfile_reference_ids | integer[]                |           | not null | 
+ lockfile                         | text                     |           |          | 
+ fidelity                         | text                     |           | not null | 'flat'::text
+ created_at                       | timestamp with time zone |           | not null | now()
+ updated_at                       | timestamp with time zone |           | not null | now()
 Indexes:
     "codeintel_lockfiles_pkey" PRIMARY KEY, btree (id)
     "codeintel_lockfiles_repository_id_commit_bytea_lockfile" UNIQUE, btree (repository_id, commit_bytea, lockfile)
@@ -772,9 +774,13 @@ Associates a repository-commit pair with the set of repository-level dependencie
 
 **commit_bytea**: A 40-char revhash. Note that this commit may not be resolvable in the future.
 
+**created_at**: Time when lockfile was indexed
+
 **fidelity**: Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...
 
 **lockfile**: Relative path of a lockfile in the given repository and the given commit.
+
+**updated_at**: Time when lockfile index was updated
 
 # Table "public.configuration_policies_audit_logs"
 ```
