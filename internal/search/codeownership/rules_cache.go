@@ -33,7 +33,9 @@ func (c *RulesCache) GetFromCacheOrFetch(ctx context.Context, gitserver gitserve
 	if !ok {
 		ruleset, err = NewRuleset(ctx, gitserver, repoName, commitID)
 		if err != nil {
-			return Ruleset{}, err
+			emptyRuleset := Ruleset{}
+			c.rules[key] = emptyRuleset
+			return emptyRuleset, err
 		}
 		c.rules[key] = ruleset
 	}
