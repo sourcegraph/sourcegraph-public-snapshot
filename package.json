@@ -385,6 +385,7 @@
     "@sourcegraph/extension-api-classes": "^1.1.0",
     "@stripe/react-stripe-js": "^1.8.0-0",
     "@stripe/stripe-js": "^1.29.0",
+    "@tippyjs/react": "^4.2.6",
     "@visx/annotation": "^2.10.0",
     "@visx/axis": "^2.10.0",
     "@visx/glyph": "^2.10.0",
