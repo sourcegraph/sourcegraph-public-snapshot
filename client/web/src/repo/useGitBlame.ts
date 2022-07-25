@@ -83,7 +83,7 @@ const fetchBlame = memoizeObservable(
         repoName: string
         commitID: string
         filePath: string
-    }): Observable<BlameHunk[]> =>
+    }): Observable<BlameHunk[] | undefined> =>
         requestGraphQL<GitBlameResult, GitBlameVariables>(
             gql`
                 query GitBlame($repo: String!, $rev: String!, $path: String!) {
@@ -117,14 +117,7 @@ const fetchBlame = memoizeObservable(
             { repo: repoName, rev: commitID, path: filePath }
         ).pipe(
             map(dataOrThrowErrors),
-            map(({ repository }) => {
-                console.log(repository)
-                if (!repository?.commit?.blob) {
-                    throw new Error('no blame data is available (repository, commit, or path not found)')
-                }
-
-                return repository.commit.blob.blame
-            })
+            map(({ repository }) => repository?.commit?.blob?.blame)
         ),
     makeRepoURI
 )

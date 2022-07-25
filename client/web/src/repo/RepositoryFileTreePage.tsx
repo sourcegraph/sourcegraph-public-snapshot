@@ -139,7 +139,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                 extensionsController={context.extensionsController}
                 platformContext={context.platformContext}
                 telemetryService={context.telemetryService}
-                settingsCascade={context.settingsCascade}
             />
         </>
     )

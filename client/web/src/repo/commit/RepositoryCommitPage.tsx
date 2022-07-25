@@ -54,12 +54,10 @@ import {
     RepositoryFields,
     Scalars,
 } from '../../graphql-operations'
-import { ToggleBlameAction } from '../actions/ToggleBlameAction'
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
-import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
 
 import styles from './RepositoryCommitPage.module.scss'
 
@@ -275,13 +273,6 @@ export class RepositoryCommitPage extends React.Component<Props, State> {
                             : `Commit ${this.props.match.params.revspec}`
                     }
                 />
-                <RepoHeaderContributionPortal
-                    position="right"
-                    id="blame-action"
-                    repoHeaderContributionsLifecycleProps={this.props.repoHeaderContributionsLifecycleProps}
-                >
-                    {() => <ToggleBlameAction key="blame-action" />}
-                </RepoHeaderContributionPortal>
                 {this.state.commitOrError === undefined ? (
                     <LoadingSpinner className="mt-2" />
                 ) : isErrorLike(this.state.commitOrError) ? (

@@ -17,7 +17,6 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
-import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, LoadingSpinner, useObservable, Link, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
@@ -171,11 +170,7 @@ export function useWebActionItems(): Pick<ActionItemsBarProps, 'useActionItemsBa
     }
 }
 
-export interface ActionItemsBarProps
-    extends ExtensionsControllerProps,
-        TelemetryProps,
-        PlatformContextProps,
-        SettingsCascadeProps {
+export interface ActionItemsBarProps extends ExtensionsControllerProps, TelemetryProps, PlatformContextProps {
     useActionItemsBar: () => { isOpen: boolean | undefined; barReference: React.RefCallback<HTMLElement> }
     location: H.Location
 }
