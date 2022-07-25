@@ -146,7 +146,7 @@ export const useGitBlame = ({
 }): unknown => {
     const [isBlameVisible] = useTemporarySetting('git.showBlame', false)
     const hunks = useObservable(
-        useMemo(() => (isBlameVisible || true ? fetchBlame({ repoName, commitID, filePath }) : of(undefined)), [
+        useMemo(() => (isBlameVisible ? fetchBlame({ repoName, commitID, filePath }) : of(undefined)), [
             isBlameVisible,
             repoName,
             commitID,

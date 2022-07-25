@@ -59,7 +59,11 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import {
+    createDecorationType,
+    DecorationMapByLine,
+    groupDecorationsByLine,
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -174,6 +178,8 @@ const domFunctions = {
 const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
 const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
 
+const gitBlameDecorationType = createDecorationType()
+
 /**
  * Renders a code view augmented by Sourcegraph extensions
  *
@@ -209,6 +215,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         role,
         ariaLabel,
         'data-testid': dataTestId,
+        blameDecorations,
     } = props
 
     const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
@@ -821,6 +828,15 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         hoverRef={nextOverlayElement}
                         pinOptions={pinOptions}
                         extensionsController={extensionsController}
+                    />
+                )}
+
+                {blameDecorations && (
+                    <ColumnDecorator
+                        isLightTheme={isLightTheme}
+                        extensionID="remove-me-please"
+                        decorations={groupDecorationsByLine(blameDecorations)}
+                        codeViewElements={codeViewElements}
                     />
                 )}
 
