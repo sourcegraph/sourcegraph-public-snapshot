@@ -95,6 +95,7 @@ export interface MatchedSymbol {
     name: string
     containerName: string
     kind: SymbolKind
+    line: number
 }
 
 type MarkdownText = string

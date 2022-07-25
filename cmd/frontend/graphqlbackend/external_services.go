@@ -14,6 +14,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
@@ -109,7 +111,7 @@ func (r *schemaResolver) AddExternalService(ctx context.Context, args *addExtern
 		return nil, err
 	}
 
-	res := &externalServiceResolver{db: r.db, externalService: externalService}
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService}
 	if err = backend.SyncExternalService(ctx, externalService, syncExternalServiceTimeout, r.repoupdaterClient); err != nil {
 		res.warning = fmt.Sprintf("External service created, but we encountered a problem while validating the external service: %s", err)
 	}
@@ -173,7 +175,7 @@ func (r *schemaResolver) UpdateExternalService(ctx context.Context, args *update
 		return nil, err
 	}
 
-	res := &externalServiceResolver{db: r.db, externalService: es}
+	res := &externalServiceResolver{logger: r.logger.Scoped("externalServiceResolver", ""), db: r.db, externalService: es}
 
 	if oldConfig != es.Config {
 		err = backend.SyncExternalService(ctx, es, syncExternalServiceTimeout, r.repoupdaterClient)
@@ -322,7 +324,7 @@ func (r *externalServiceConnectionResolver) Nodes(ctx context.Context) ([]*exter
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(externalServices))
 	for _, externalService := range externalServices {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: externalService})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: externalService})
 	}
 	return resolvers, nil
 }
@@ -379,7 +381,7 @@ func (r *computedExternalServiceConnectionResolver) Nodes(ctx context.Context) [
 	}
 	resolvers := make([]*externalServiceResolver, 0, len(svcs))
 	for _, svc := range svcs {
-		resolvers = append(resolvers, &externalServiceResolver{db: r.db, externalService: svc})
+		resolvers = append(resolvers, &externalServiceResolver{logger: log.Scoped("externalServiceResolver", ""), db: r.db, externalService: svc})
 	}
 	return resolvers
 }

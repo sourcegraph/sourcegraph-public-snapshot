@@ -1,0 +1,7 @@
+[
+  {
+    "path": "internal/usagestats",
+    "prefix": "TestGetBatchChangesUsageStatistics",
+    "reason": "Fixed up DB constraints, now the test inserts invalid test data."
+  }
+]

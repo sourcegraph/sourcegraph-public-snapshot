@@ -47,13 +47,15 @@ For deployment configuration, please refer to the relevant [installation guide](
 
 ## Features
 
-- [Code intelligence and language servers](../code_intelligence/index.md)
-- [Sourcegraph extensions and extension registry](extensions/index.md)
-- [Search](search.md)
+- <span class="badge badge-experimental">Experimental</span> [Admin Analytics](./admin_analytics.md)
 - [Batch Changes](../batch_changes/index.md)
+- [Beta and experimental features](beta_and_experimental_features.md)
+- [Code intelligence and language servers](../code_intelligence/index.md)
 - [Federation](federation/index.md)
 - [Pings](pings.md)
+- [Pricing and subscriptions](subscriptions/index.md)
+- [Search](search.md)
+- [Sourcegraph extensions and extension registry](extensions/index.md)
 - [Usage statistics](usage_statistics.md)
 - [User feedback surveys](user_surveys.md)
-- [Beta and experimental features](beta_and_experimental_features.md)
-- [Pricing and subscriptions](subscriptions/index.md)
+

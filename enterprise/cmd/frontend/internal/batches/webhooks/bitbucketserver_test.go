@@ -16,6 +16,8 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/syncer"
@@ -73,7 +75,7 @@ func testBitbucketServerWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		bitbucketSource, err := repos.NewBitbucketServerSource(extSvc, cf)
+		bitbucketSource, err := repos.NewBitbucketServerSource(logtest.Scoped(t), extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}
