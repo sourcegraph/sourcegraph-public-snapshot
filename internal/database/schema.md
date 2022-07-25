@@ -2784,6 +2784,28 @@ Triggers:
 
 ```
 
+# Table "public.webhook_build_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                    Default                     
+-------------------+--------------------------+-----------+----------+------------------------------------------------
+ id                | integer                  |           | not null | nextval('webhook_build_jobs_id_seq'::regclass)
+ state             | text                     |           | not null | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ repo_id           | integer                  |           |          | 
+ repo_name         | text                     |           |          | 
+ extsvc_kind       | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | 
+ execution_logs    | json[]                   |           |          | 
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+
+```
+
 # Table "public.webhook_logs"
 ```
        Column        |           Type           | Collation | Nullable |                 Default                  
