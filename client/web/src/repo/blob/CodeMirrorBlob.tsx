@@ -4,22 +4,17 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Extension } from '@codemirror/state'
+import { EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import {
-    editorHeight,
-    replaceValue,
-    useCodeMirror,
-    useCompartment,
-} from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { syntaxHighlight } from './codemirror/highlight'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
-import { syntaxHighlight, setSCIPData } from './codemirror/highlight'
 
 const staticExtensions: Extension = [
     EditorView.editable.of(false),
@@ -93,10 +88,13 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
             selectableLineNumbers({ onSelection }),
             syntaxHighlight(blobInfo.lsif),
         ],
-        [settingsCompartment, onSelection]
+        [settingsCompartment, onSelection, blobInfo]
     )
 
-    const editor = useCodeMirror(container, blobInfo.content, extensions, { updateValueOnChange: false })
+    const editor = useCodeMirror(container, blobInfo.content, extensions, {
+        updateValueOnChange: false,
+        updateOnExtensionChange: false,
+    })
 
     useEffect(() => {
         if (editor) {
@@ -104,18 +102,22 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
         }
     }, [editor, updateSettingsCompartment, settings])
 
-    // We don't want to trigger the transaction on the first render. Maybe there
-    // is a better way to do this.
-    const initialRender = useRef(true)
     useEffect(() => {
-        if (editor && !initialRender.current) {
-            editor.dispatch({
-                changes: replaceValue(editor, blobInfo.content),
-                effects: setSCIPData.of(blobInfo.lsif),
-            })
+        if (editor) {
+            // We use setState here instead of dispatching a transaction because
+            // the new document has nothing to do with the previous one and so
+            // any existing state should be discarded.
+            editor.setState(
+                EditorState.create({
+                    doc: blobInfo.content,
+                    extensions,
+                })
+            )
         }
-        initialRender.current = false
-    }, [editor, blobInfo])
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [blobInfo, extensions])
 
     // Update selected lines when URL changes
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])

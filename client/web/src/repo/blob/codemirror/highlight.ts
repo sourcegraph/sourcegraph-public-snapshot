@@ -1,5 +1,6 @@
 import { Extension, RangeSetBuilder, StateEffect, StateField } from '@codemirror/state'
 import { Decoration, DecorationSet, EditorView, ViewPlugin, ViewUpdate } from '@codemirror/view'
+
 import { JsonDocument, JsonOccurrence, SyntaxKind } from '../../../lsif/lsif-typed'
 
 /**
@@ -24,7 +25,7 @@ function createHighlightTable(json: string): HighlightIndex {
     let previousEndline: number | undefined
 
     for (let index = 0; index < occurrences.length; index++) {
-        let current = occurrences[index]
+        const current = occurrences[index]
         const startLine = current.range[0]
         const endLine = current.range.length === 3 ? startLine : current.range[2]
 
@@ -71,20 +72,20 @@ export function syntaxHighlight(initialSCIPJSON: string): Extension {
         provide: field =>
             ViewPlugin.fromClass(
                 class {
-                    decorationCache: Partial<Record<SyntaxKind, Decoration>> = {}
-                    decorations: DecorationSet = Decoration.none
+                    private decorationCache: Partial<Record<SyntaxKind, Decoration>> = {}
+                    public decorations: DecorationSet = Decoration.none
 
                     constructor(view: EditorView) {
                         this.decorations = this.computeDecorations(view)
                     }
 
-                    update(update: ViewUpdate) {
+                    public update(update: ViewUpdate): void {
                         if (update.viewportChanged) {
                             this.decorations = this.computeDecorations(update.view)
                         }
                     }
 
-                    computeDecorations(view: EditorView): DecorationSet {
+                    private computeDecorations(view: EditorView): DecorationSet {
                         const { from, to } = view.viewport
 
                         // Determine the start and end lines of the current viewport
@@ -94,7 +95,7 @@ export function syntaxHighlight(initialSCIPJSON: string): Extension {
                         const { occurrences, lineIndex } = view.state.field(field)
 
                         // Find index of first relevant token
-                        let startIndex: number | undefined = undefined
+                        let startIndex: number | undefined
                         {
                             let line = fromLine.number - 1
                             do {

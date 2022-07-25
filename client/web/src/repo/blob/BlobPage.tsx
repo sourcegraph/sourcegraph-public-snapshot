@@ -186,7 +186,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, commitID, filePath, mode]
+            [repoName, revision, commitID, filePath, mode, enableCodeMirror]
         )
     )
 
