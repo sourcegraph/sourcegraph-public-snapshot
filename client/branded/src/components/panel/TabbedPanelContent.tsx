@@ -246,9 +246,6 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
         props.telemetryService,
     ])
 
-    const test = useConnection()
-    ```@Tom Ross click this [link!](https://google.com/search)
-
     const items = useMemo(
         () =>
             panelViews
