@@ -93,7 +93,7 @@ func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEm
 
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
 
-const MaxEventsCountDefault = 5
+const MaxEventsCountDefault = 5000
 
 func (t *telemetryHandler) Handle(ctx context.Context) error {
 	if !isEnabled() {
