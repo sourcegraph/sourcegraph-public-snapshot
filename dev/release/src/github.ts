@@ -246,25 +246,6 @@ export async function ensureTrackingIssues({
             parentIssue = { ...issue }
         }
         created.push({ ...issue })
-
-        // close previous iterations of this issue
-        const previous = await queryIssues(octokit, template.titleSuffix, template.labels)
-        for (const previousIssue of previous) {
-            if (previousIssue.number === issue.number) {
-                // don't close self
-                continue
-            }
-
-            if (dryRun) {
-                console.log(`dryRun enabled, skipping closure of #${previousIssue.number} '${previousIssue.title}'`)
-                continue
-            }
-            const comment = await commentOnIssue(octokit, previousIssue, `Superseded by #${issue.number}`)
-            console.log(
-                `Closing #${previousIssue.number} '${previousIssue.title}' - commented with an update: ${comment}`
-            )
-            await closeIssue(octokit, previousIssue)
-        }
     }
     return created
 }
@@ -725,4 +706,21 @@ async function validateToken(): Promise<boolean> {
         return false
     }
     return true
+}
+
+export async function closeTrackingIssue(version: semver.SemVer): Promise<void> {
+    const octokit = await getAuthenticatedGitHubClient()
+    const release = releaseName(version)
+    const labels = [IssueLabel.RELEASE_TRACKING, IssueLabel.RELEASE]
+    // close old tracking issue
+    const previous = await queryIssues(octokit, release, labels)
+    for (const previousIssue of previous) {
+        const comment = await commentOnIssue(
+            octokit,
+            previousIssue,
+            `Issue closed by release tool. #${previousIssue.number}`
+        )
+        console.log(`Closing #${previousIssue.number} '${previousIssue.title} with ${comment}`)
+        await closeIssue(octokit, previousIssue)
+    }
 }

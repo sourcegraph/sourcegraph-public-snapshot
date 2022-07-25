@@ -21,7 +21,7 @@ extend type Mutation {
     """
     setRepositoryPermissionsUnrestricted(
         """
-        The repository ids we want to set unrestricted permissions on.
+        The repository ids we want to set unrestricted permissions on. Must not contain duplicates.
         """
         repositories: [ID!]!
         """

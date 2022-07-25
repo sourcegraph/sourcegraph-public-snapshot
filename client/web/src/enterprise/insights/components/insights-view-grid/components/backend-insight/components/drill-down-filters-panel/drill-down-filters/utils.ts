@@ -81,18 +81,16 @@ export function getSerializedSearchContextFilter(
 /**
  * Returns a SeriesDisplayOptionsInput object with default values
  *
- * @param seriesCount The total series available for this insight. Used to set the max limit value
  * @param options series display options
  */
 export const parseSeriesDisplayOptions = (
-    seriesCount: number,
     options?: SeriesDisplayOptions | SeriesDisplayOptionsInput | DrillDownFiltersFormValues['seriesDisplayOptions']
 ): SeriesDisplayOptionsInputRequired => {
     if (!options) {
-        return { ...DEFAULT_SERIES_DISPLAY_OPTIONS, limit: Math.min(seriesCount, MAX_NUMBER_OF_SERIES) }
+        return { ...DEFAULT_SERIES_DISPLAY_OPTIONS, limit: MAX_NUMBER_OF_SERIES }
     }
 
-    const limit = Math.min(parseSeriesLimit(options?.limit) || seriesCount, seriesCount)
+    const limit = parseSeriesLimit(options?.limit) || MAX_NUMBER_OF_SERIES
     const sortOptions = options.sortOptions || DEFAULT_SERIES_DISPLAY_OPTIONS.sortOptions
 
     return {

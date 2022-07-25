@@ -12,6 +12,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -492,6 +493,7 @@ func TestFindWorkspaces(t *testing.T) {
 
 		// workspaces in which repo/path they are executed
 		wantWorkspaces []*RepoWorkspace
+		wantErr        error
 	}{
 		"no workspace configuration": {
 			spec:          &batcheslib.BatchSpec{Steps: steps},
@@ -599,6 +601,25 @@ func TestFindWorkspaces(t *testing.T) {
 				{RepoRevision: repoRevs[2], Path: "a/b"},
 			},
 		},
+		"workspace configuration matching two repos": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{
+						RootAtLocationOf: "package.json",
+						In:               string(repoRevs[0].Repo.Name),
+					},
+					{
+						RootAtLocationOf: "go.mod",
+						In:               string(repoRevs[0].Repo.Name),
+					},
+				},
+			},
+			finderResults: finderResults{
+				repoRevs[0].Key(): {"a/b"},
+			},
+			wantErr: errors.New(`repository github.com/sourcegraph/automation-testing matches multiple workspaces.in globs in the batch spec. glob: "github.com/sourcegraph/automation-testing"`),
+		},
 	}
 
 	for name, tt := range tests {
@@ -606,7 +627,11 @@ func TestFindWorkspaces(t *testing.T) {
 			finder := &mockDirectoryFinder{results: tt.finderResults}
 			workspaces, err := findWorkspaces(context.Background(), tt.spec, finder, repoRevs)
 			if err != nil {
-				t.Fatalf("unexpected err: %s", err)
+				if tt.wantErr != nil {
+					require.Exactly(t, tt.wantErr.Error(), err.Error(), "wrong error returned")
+				} else {
+					t.Fatalf("unexpected err: %s", err)
+				}
 			}
 
 			// Sort by ID, easier than by name for tests.

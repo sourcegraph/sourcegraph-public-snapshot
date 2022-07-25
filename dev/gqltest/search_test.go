@@ -97,6 +97,8 @@ func TestSearch(t *testing.T) {
 	// Adding and deleting the dependency repos external services in between all other tests is
 	// flaky since deleting an external service doesn't cancel a running external
 	// service sync job for it.
+
+	// 2022-07-22 - This test is skipped as it is flakey
 	t.Run("repo:deps", testDependenciesSearch(client, streamClient))
 }
 
@@ -833,12 +835,12 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:  `Literals, not keyword and implicit and inside group`,
 				query: `repo:^github\.com/sgtest/go-diff$ (a/foo not .svg) patterntype:literal`,
-				skip:  skipStream & skipGraphQL,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  `Literals, not and and keyword inside group`,
 				query: `repo:^github\.com/sgtest/go-diff$ (a/foo and not .svg) patterntype:literal`,
-				skip:  skipStream & skipGraphQL,
+				skip:  skipStream | skipGraphQL,
 			},
 			{
 				name:  `Dangling right parens, supported via content: filter`,
@@ -1370,6 +1372,8 @@ func enableGlobalLockfileIndexing(t *testing.T) {
 
 func testDependenciesSearch(client, streamClient searchClient) func(*testing.T) {
 	return func(t *testing.T) {
+		t.Skipf("Skipping test as it suspected to be flakey")
+
 		t.Helper()
 
 		// Setup global lockfile indexing

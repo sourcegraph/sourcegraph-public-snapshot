@@ -25,6 +25,7 @@ import (
 	"golang.org/x/time/rate"
 
 	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -1520,6 +1521,53 @@ func TestHandleBatchLog(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestRunCommandGraceful(t *testing.T) {
+	t.Parallel()
+
+	t.Run("no timeout", func(t *testing.T) {
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		cmd := exec.Command("sleep", "0.1")
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		if err != nil {
+			t.Fatal(err)
+		}
+		assert.Equal(t, 0, exitStatus)
+	})
+
+	t.Run("context cancel", func(t *testing.T) {
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		t.Cleanup(cancel)
+
+		cmd := exec.Command("testdata/signaltest.sh")
+		var stdOut bytes.Buffer
+		cmd.Stdout = &stdOut
+
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Equal(t, 0, exitStatus)
+		assert.Equal(t, "trapped the INT signal\n", stdOut.String())
+	})
+
+	t.Run("context cancel, command doesn't exit", func(t *testing.T) {
+		t.Parallel()
+		logger := logtest.Scoped(t)
+		ctx := context.Background()
+		ctx, cancel := context.WithTimeout(ctx, 100*time.Millisecond)
+		t.Cleanup(cancel)
+
+		cmd := exec.Command("testdata/signaltest_noexit.sh")
+
+		exitStatus, err := runCommandGraceful(ctx, logger, cmd)
+		assert.ErrorIs(t, err, context.DeadlineExceeded)
+		assert.Equal(t, -1, exitStatus)
+	})
 }
 
 func mustEncodeJSONResponse(value any) string {

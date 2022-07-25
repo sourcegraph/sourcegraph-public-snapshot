@@ -56,12 +56,12 @@ export const TreeNavigation: React.FunctionComponent<React.PropsWithChildren<Tre
         </Button>
         {codeIntelligenceEnabled && (
             <Button
-                to={`/${encodeURIPathComponent(repo.name)}/-/code-intelligence`}
+                to={`/${encodeURIPathComponent(repo.name)}/-/code-graph`}
                 variant="secondary"
                 outline={true}
                 as={Link}
             >
-                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Intelligence
+                <Icon aria-hidden={true} svgPath={mdiBrain} /> Code Graph
             </Button>
         )}
         {batchChangesEnabled && <RepoBatchChangesButton repoName={repo.name} />}

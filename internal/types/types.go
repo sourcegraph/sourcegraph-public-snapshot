@@ -569,6 +569,7 @@ type ExternalServiceSyncJob struct {
 	ID                int64
 	State             string
 	FailureMessage    string
+	QueuedAt          time.Time
 	StartedAt         time.Time
 	FinishedAt        time.Time
 	ProcessAfter      time.Time
@@ -1216,7 +1217,7 @@ type Event struct {
 	ID              int32
 	Name            string
 	URL             string
-	UserID          *int32
+	UserID          int32
 	AnonymousUserID string
 	Argument        string
 	Source          string

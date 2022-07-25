@@ -944,10 +944,12 @@ func TestService(t *testing.T) {
 			}
 			t.Run("attached changeset", func(t *testing.T) {
 				changeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-					Repo:            rs[0].ID,
-					ReconcilerState: btypes.ReconcilerStateCompleted,
-					BatchChange:     batchChange.ID,
-					IsArchived:      false,
+					Repo:             rs[0].ID,
+					ReconcilerState:  btypes.ReconcilerStateCompleted,
+					PublicationState: btypes.ChangesetPublicationStatePublished,
+					ExternalState:    btypes.ChangesetExternalStateOpen,
+					BatchChange:      batchChange.ID,
+					IsArchived:       false,
 				})
 				_, err := svc.CreateChangesetJobs(ctx, batchChange.ID, []int64{changeset.ID}, btypes.ChangesetJobTypeDetach, btypes.ChangesetJobDetachPayload{}, store.ListChangesetsOpts{OnlyArchived: true})
 				if err != ErrChangesetsForJobNotFound {
@@ -956,9 +958,11 @@ func TestService(t *testing.T) {
 			})
 			t.Run("detached changeset", func(t *testing.T) {
 				detachedChangeset := ct.CreateChangeset(t, ctx, s, ct.TestChangesetOpts{
-					Repo:            rs[2].ID,
-					ReconcilerState: btypes.ReconcilerStateCompleted,
-					BatchChanges:    []btypes.BatchChangeAssoc{},
+					Repo:             rs[2].ID,
+					ReconcilerState:  btypes.ReconcilerStateCompleted,
+					PublicationState: btypes.ChangesetPublicationStatePublished,
+					ExternalState:    btypes.ChangesetExternalStateOpen,
+					BatchChanges:     []btypes.BatchChangeAssoc{},
 				})
 				_, err := svc.CreateChangesetJobs(ctx, batchChange.ID, []int64{detachedChangeset.ID}, btypes.ChangesetJobTypeDetach, btypes.ChangesetJobDetachPayload{}, store.ListChangesetsOpts{OnlyArchived: true})
 				if err != ErrChangesetsForJobNotFound {
@@ -1104,9 +1108,10 @@ func TestService(t *testing.T) {
 			}
 
 			changeset := ct.CreateChangeset(t, adminCtx, s, ct.TestChangesetOpts{
-				Repo:            rs[0].ID,
-				ReconcilerState: btypes.ReconcilerStateCompleted,
-				BatchChange:     batchChange.ID,
+				Repo:             rs[0].ID,
+				ReconcilerState:  btypes.ReconcilerStateCompleted,
+				PublicationState: btypes.ChangesetPublicationStateUnpublished,
+				BatchChange:      batchChange.ID,
 			})
 
 			_, err := svc.CreateChangesetJobs(
@@ -1307,6 +1312,7 @@ func TestService(t *testing.T) {
 
 				job := &btypes.BatchSpecWorkspaceExecutionJob{
 					BatchSpecWorkspaceID: ws.ID,
+					UserID:               user.ID,
 				}
 				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
@@ -1367,6 +1373,7 @@ func TestService(t *testing.T) {
 
 			job := &btypes.BatchSpecWorkspaceExecutionJob{
 				BatchSpecWorkspaceID: ws.ID,
+				UserID:               user.ID,
 			}
 			if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 				t.Fatal(err)
@@ -1721,7 +1728,7 @@ changesetTemplate:
 					t.Fatal(err)
 				}
 
-				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID}
+				job := &btypes.BatchSpecWorkspaceExecutionJob{BatchSpecWorkspaceID: ws.ID, UserID: user.ID}
 				if err := ct.CreateBatchSpecWorkspaceExecutionJob(ctx, s, store.ScanBatchSpecWorkspaceExecutionJob, job); err != nil {
 					t.Fatal(err)
 				}
@@ -2643,6 +2650,10 @@ changesetTemplate:
 
 func createJob(t *testing.T, s *store.Store, job *btypes.BatchSpecWorkspaceExecutionJob) {
 	t.Helper()
+
+	if job.UserID == 0 {
+		job.UserID = 1
+	}
 
 	clone := *job
 

@@ -95,6 +95,7 @@ export interface MatchedSymbol {
     name: string
     containerName: string
     kind: SymbolKind
+    line: number
 }
 
 type MarkdownText = string
@@ -213,7 +214,7 @@ export interface Filter {
     label: string
     count: number
     limitHit: boolean
-    kind: string
+    kind: 'file' | 'repo' | 'lang' | 'utility'
 }
 
 export type AlertKind = 'lucky-search-queries'

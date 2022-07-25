@@ -198,7 +198,7 @@ func (r ProductSubscriptionLicensingResolver) CreateProductSubscription(ctx cont
 	if err != nil {
 		return nil, err
 	}
-	id, err := dbSubscriptions{db: r.DB}.Create(ctx, user.DatabaseID())
+	id, err := dbSubscriptions{db: r.DB}.Create(ctx, user.DatabaseID(), user.Username())
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +268,7 @@ func (r ProductSubscriptionLicensingResolver) CreatePaidProductSubscription(ctx 
 
 	// Create the subscription in our database first, before processing payment. If payment fails,
 	// users can retry payment on the already created subscription.
-	subID, err := dbSubscriptions{db: r.DB}.Create(ctx, user.DatabaseID())
+	subID, err := dbSubscriptions{db: r.DB}.Create(ctx, user.DatabaseID(), user.Username())
 	if err != nil {
 		return nil, err
 	}

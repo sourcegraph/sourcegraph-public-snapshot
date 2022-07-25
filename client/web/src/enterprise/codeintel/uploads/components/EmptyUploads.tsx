@@ -8,7 +8,7 @@ export const EmptyUploads: React.FunctionComponent<React.PropsWithChildren<unkno
     <Text alignment="center" className="text-muted w-100 mb-0 mt-1">
         <Icon className="mb-2" svgPath={mdiMapSearch} inline={false} aria-hidden={true} />
         <br />
-        No uploads yet. Enable precise code intelligence by{' '}
+        No uploads yet. Enable precise code navigation by{' '}
         <Link
             to="/help/code_intelligence/explanations/precise_code_intelligence"
             target="_blank"

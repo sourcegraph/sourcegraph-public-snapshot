@@ -12,7 +12,7 @@ import com.intellij.openapi.project.DumbAwareAction;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.TextRange;
 import com.intellij.openapi.vfs.VirtualFile;
-import com.sourcegraph.browser.URLBuilder;
+import com.sourcegraph.common.BrowserErrorNotification;
 import com.sourcegraph.find.SourcegraphVirtualFile;
 import com.sourcegraph.git.GitUtil;
 import com.sourcegraph.git.RepoInfo;
@@ -50,11 +50,17 @@ public abstract class SearchActionBase extends DumbAwareAction {
         }
 
         // Open the URL in the browser.
+        URI uri;
         try {
-            Desktop.getDesktop().browse(URI.create(url));
-        } catch (IOException err) {
-            logger.debug("failed to open browser");
-            err.printStackTrace();
+            uri = URI.create(url);
+        } catch (IllegalArgumentException e) {
+            logger.warn("Unable to create URI for url " + url);
+            return;
+        }
+        try {
+            Desktop.getDesktop().browse(uri);
+        } catch (IOException | UnsupportedOperationException e) {
+            BrowserErrorNotification.show(project, uri);
         }
     }
 

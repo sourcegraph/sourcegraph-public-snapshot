@@ -108,9 +108,8 @@ func (i *indexer) handleRepository(
 
 			revs[api.RevSpec(commit)] = struct{}{}
 		}
-		repoRevs := map[api.RepoName]types.RevSpecSet{api.RepoName(repoName): revs}
-
-		if err := i.dependenciesSvc.IndexLockfiles(ctx, repoRevs); err != nil {
+		params := dependencies.QueryParams{Repo: api.RepoName(repoName), RevSpecs: revs}
+		if err := i.dependenciesSvc.IndexLockfiles(ctx, params); err != nil {
 			return err
 		}
 

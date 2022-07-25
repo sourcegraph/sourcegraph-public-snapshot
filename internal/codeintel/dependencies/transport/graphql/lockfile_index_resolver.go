@@ -14,12 +14,14 @@ type LockfileIndexResolver struct {
 	commit   *graphqlbackend.GitCommitResolver
 }
 
+const lockfileIndexIDKind = "LockfileIndex"
+
 func NewLockfileIndexResolver(lockfile shared.LockfileIndex, repo *graphqlbackend.RepositoryResolver, commit *graphqlbackend.GitCommitResolver) graphqlbackend.LockfileIndexResolver {
 	return &LockfileIndexResolver{lockfile: lockfile, repo: repo, commit: commit}
 }
 
 func (e *LockfileIndexResolver) ID() graphql.ID {
-	return relay.MarshalID("LockfileIndex", (int64(e.lockfile.ID)))
+	return relay.MarshalID(lockfileIndexIDKind, (int64(e.lockfile.ID)))
 }
 
 func (e *LockfileIndexResolver) Lockfile() string {
@@ -36,4 +38,17 @@ func (e *LockfileIndexResolver) Commit() *graphqlbackend.GitCommitResolver {
 
 func (e *LockfileIndexResolver) Fidelity() string {
 	return e.lockfile.Fidelity.ToGraphQL()
+}
+
+func (e *LockfileIndexResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: e.lockfile.CreatedAt}
+}
+
+func (e *LockfileIndexResolver) UpdatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: e.lockfile.UpdatedAt}
+}
+
+func unmarshalLockfileIndexID(id graphql.ID) (lockfileIndexID int, err error) {
+	err = relay.UnmarshalSpec(id, &lockfileIndexID)
+	return
 }

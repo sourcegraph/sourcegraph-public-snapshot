@@ -107,15 +107,9 @@ type MockClient struct {
 	// IsRepoCloneableFunc is an instance of a mock function object
 	// controlling the behavior of the method IsRepoCloneable.
 	IsRepoCloneableFunc *ClientIsRepoCloneableFunc
-	// IsRepoClonedFunc is an instance of a mock function object controlling
-	// the behavior of the method IsRepoCloned.
-	IsRepoClonedFunc *ClientIsRepoClonedFunc
 	// ListBranchesFunc is an instance of a mock function object controlling
 	// the behavior of the method ListBranches.
 	ListBranchesFunc *ClientListBranchesFunc
-	// ListClonedFunc is an instance of a mock function object controlling
-	// the behavior of the method ListCloned.
-	ListClonedFunc *ClientListClonedFunc
 	// ListDirectoryChildrenFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDirectoryChildren.
 	ListDirectoryChildrenFunc *ClientListDirectoryChildrenFunc
@@ -338,18 +332,8 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		IsRepoClonedFunc: &ClientIsRepoClonedFunc{
-			defaultHook: func(context.Context, api.RepoName) (r0 bool, r1 error) {
-				return
-			},
-		},
 		ListBranchesFunc: &ClientListBranchesFunc{
 			defaultHook: func(context.Context, api.RepoName, BranchesOptions) (r0 []*gitdomain.Branch, r1 error) {
-				return
-			},
-		},
-		ListClonedFunc: &ClientListClonedFunc{
-			defaultHook: func(context.Context) (r0 []string, r1 error) {
 				return
 			},
 		},
@@ -379,7 +363,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		LsFilesFunc: &ClientLsFilesFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) (r0 []string, r1 error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) (r0 []string, r1 error) {
 				return
 			},
 		},
@@ -630,19 +614,9 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.IsRepoCloneable")
 			},
 		},
-		IsRepoClonedFunc: &ClientIsRepoClonedFunc{
-			defaultHook: func(context.Context, api.RepoName) (bool, error) {
-				panic("unexpected invocation of MockClient.IsRepoCloned")
-			},
-		},
 		ListBranchesFunc: &ClientListBranchesFunc{
 			defaultHook: func(context.Context, api.RepoName, BranchesOptions) ([]*gitdomain.Branch, error) {
 				panic("unexpected invocation of MockClient.ListBranches")
-			},
-		},
-		ListClonedFunc: &ClientListClonedFunc{
-			defaultHook: func(context.Context) ([]string, error) {
-				panic("unexpected invocation of MockClient.ListCloned")
 			},
 		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
@@ -671,7 +645,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		LsFilesFunc: &ClientLsFilesFunc{
-			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) ([]string, error) {
+			defaultHook: func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error) {
 				panic("unexpected invocation of MockClient.LsFiles")
 			},
 		},
@@ -868,14 +842,8 @@ func NewMockClientFrom(i Client) *MockClient {
 		IsRepoCloneableFunc: &ClientIsRepoCloneableFunc{
 			defaultHook: i.IsRepoCloneable,
 		},
-		IsRepoClonedFunc: &ClientIsRepoClonedFunc{
-			defaultHook: i.IsRepoCloned,
-		},
 		ListBranchesFunc: &ClientListBranchesFunc{
 			defaultHook: i.ListBranches,
-		},
-		ListClonedFunc: &ClientListClonedFunc{
-			defaultHook: i.ListCloned,
 		},
 		ListDirectoryChildrenFunc: &ClientListDirectoryChildrenFunc{
 			defaultHook: i.ListDirectoryChildren,
@@ -3985,113 +3953,6 @@ func (c ClientIsRepoCloneableFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ClientIsRepoClonedFunc describes the behavior when the IsRepoCloned
-// method of the parent MockClient instance is invoked.
-type ClientIsRepoClonedFunc struct {
-	defaultHook func(context.Context, api.RepoName) (bool, error)
-	hooks       []func(context.Context, api.RepoName) (bool, error)
-	history     []ClientIsRepoClonedFuncCall
-	mutex       sync.Mutex
-}
-
-// IsRepoCloned delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) IsRepoCloned(v0 context.Context, v1 api.RepoName) (bool, error) {
-	r0, r1 := m.IsRepoClonedFunc.nextHook()(v0, v1)
-	m.IsRepoClonedFunc.appendCall(ClientIsRepoClonedFuncCall{v0, v1, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the IsRepoCloned method
-// of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientIsRepoClonedFunc) SetDefaultHook(hook func(context.Context, api.RepoName) (bool, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// IsRepoCloned method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientIsRepoClonedFunc) PushHook(hook func(context.Context, api.RepoName) (bool, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientIsRepoClonedFunc) SetDefaultReturn(r0 bool, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName) (bool, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientIsRepoClonedFunc) PushReturn(r0 bool, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName) (bool, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientIsRepoClonedFunc) nextHook() func(context.Context, api.RepoName) (bool, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientIsRepoClonedFunc) appendCall(r0 ClientIsRepoClonedFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientIsRepoClonedFuncCall objects
-// describing the invocations of this function.
-func (f *ClientIsRepoClonedFunc) History() []ClientIsRepoClonedFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientIsRepoClonedFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientIsRepoClonedFuncCall is an object that describes an invocation of
-// method IsRepoCloned on an instance of MockClient.
-type ClientIsRepoClonedFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 api.RepoName
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 bool
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientIsRepoClonedFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientIsRepoClonedFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
 // ClientListBranchesFunc describes the behavior when the ListBranches
 // method of the parent MockClient instance is invoked.
 type ClientListBranchesFunc struct {
@@ -4199,110 +4060,6 @@ func (c ClientListBranchesFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientListBranchesFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0, c.Result1}
-}
-
-// ClientListClonedFunc describes the behavior when the ListCloned method of
-// the parent MockClient instance is invoked.
-type ClientListClonedFunc struct {
-	defaultHook func(context.Context) ([]string, error)
-	hooks       []func(context.Context) ([]string, error)
-	history     []ClientListClonedFuncCall
-	mutex       sync.Mutex
-}
-
-// ListCloned delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) ListCloned(v0 context.Context) ([]string, error) {
-	r0, r1 := m.ListClonedFunc.nextHook()(v0)
-	m.ListClonedFunc.appendCall(ClientListClonedFuncCall{v0, r0, r1})
-	return r0, r1
-}
-
-// SetDefaultHook sets function that is called when the ListCloned method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientListClonedFunc) SetDefaultHook(hook func(context.Context) ([]string, error)) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// ListCloned method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientListClonedFunc) PushHook(hook func(context.Context) ([]string, error)) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientListClonedFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context) ([]string, error) {
-		return r0, r1
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientListClonedFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context) ([]string, error) {
-		return r0, r1
-	})
-}
-
-func (f *ClientListClonedFunc) nextHook() func(context.Context) ([]string, error) {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientListClonedFunc) appendCall(r0 ClientListClonedFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientListClonedFuncCall objects describing
-// the invocations of this function.
-func (f *ClientListClonedFunc) History() []ClientListClonedFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientListClonedFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientListClonedFuncCall is an object that describes an invocation of
-// method ListCloned on an instance of MockClient.
-type ClientListClonedFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 []string
-	// Result1 is the value of the 2nd result returned from this method
-	// invocation.
-	Result1 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientListClonedFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientListClonedFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 
@@ -4878,15 +4635,15 @@ func (c ClientLogReverseEachFuncCall) Results() []interface{} {
 // ClientLsFilesFunc describes the behavior when the LsFiles method of the
 // parent MockClient instance is invoked.
 type ClientLsFilesFunc struct {
-	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) ([]string, error)
-	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) ([]string, error)
+	defaultHook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error)
+	hooks       []func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error)
 	history     []ClientLsFilesFuncCall
 	mutex       sync.Mutex
 }
 
 // LsFiles delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) LsFiles(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 ...Pathspec) ([]string, error) {
+func (m *MockClient) LsFiles(v0 context.Context, v1 authz.SubRepoPermissionChecker, v2 api.RepoName, v3 api.CommitID, v4 ...gitdomain.Pathspec) ([]string, error) {
 	r0, r1 := m.LsFilesFunc.nextHook()(v0, v1, v2, v3, v4...)
 	m.LsFilesFunc.appendCall(ClientLsFilesFuncCall{v0, v1, v2, v3, v4, r0, r1})
 	return r0, r1
@@ -4894,7 +4651,7 @@ func (m *MockClient) LsFiles(v0 context.Context, v1 authz.SubRepoPermissionCheck
 
 // SetDefaultHook sets function that is called when the LsFiles method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientLsFilesFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) ([]string, error)) {
+func (f *ClientLsFilesFunc) SetDefaultHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -4902,7 +4659,7 @@ func (f *ClientLsFilesFunc) SetDefaultHook(hook func(context.Context, authz.SubR
 // LsFiles method of the parent MockClient instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientLsFilesFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) ([]string, error)) {
+func (f *ClientLsFilesFunc) PushHook(hook func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4911,19 +4668,19 @@ func (f *ClientLsFilesFunc) PushHook(hook func(context.Context, authz.SubRepoPer
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientLsFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) ([]string, error) {
+	f.SetDefaultHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientLsFilesFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) ([]string, error) {
+	f.PushHook(func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientLsFilesFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...Pathspec) ([]string, error) {
+func (f *ClientLsFilesFunc) nextHook() func(context.Context, authz.SubRepoPermissionChecker, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4970,7 +4727,7 @@ type ClientLsFilesFuncCall struct {
 	Arg3 api.CommitID
 	// Arg4 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg4 []Pathspec
+	Arg4 []gitdomain.Pathspec
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []string
