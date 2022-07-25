@@ -230,8 +230,6 @@ export const ReferencesList```
 
     const getSetting = newSettingsGetter(props.settingsCascade)
 
-    <http://www.example.com|This is totally not a dodgy link that I've snuck into Slack> = useConnection
-
     const {
         data,
         error,
