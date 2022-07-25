@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/sourcegraph/log"
 
@@ -14,13 +15,14 @@ import (
 )
 
 var _ graphqlbackend.RelatedInsightsInlineResolver = &relatedInsightsInlineResolver{}
+var _ graphqlbackend.RelatedInsightsForFileResolver = &relatedInsightsForFileResolver{}
 
-func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsInlineArgs) ([]graphqlbackend.RelatedInsightsInlineResolver, error) {
+func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsInlineResolver, error) {
 	validator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 	validator.loadUserContext(ctx)
 
 	allSeries, err := r.insightStore.GetAll(ctx, store.InsightQueryArgs{
-		Repo:   &args.Input.Repo,
+		Repo:   args.Input.Repo,
 		UserID: validator.userIds,
 		OrgID:  validator.orgIds,
 	})
@@ -28,7 +30,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		return nil, errors.Wrap(err, "GetAll")
 	}
 
-	seriesMatches := map[string]*relatedInsightMetadata{}
+	seriesMatches := map[string]*relatedInsightInlineMetadata{}
 	for _, series := range allSeries {
 		decoder, metadataResult := streaming.MetadataDecoder()
 		modifiedQuery, err := querybuilder.SingleFileQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.File, args.Input.Revision, querybuilder.CodeInsightsQueryDefaults(false))
@@ -53,7 +55,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		for _, match := range mr.Matches {
 			for _, lineMatch := range match.LineMatches {
 				if seriesMatches[series.UniqueID] == nil {
-					seriesMatches[series.UniqueID] = &relatedInsightMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}}
+					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}}
 				} else if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
 					seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
 				}
@@ -71,7 +73,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 	return resolvers, nil
 }
 
-type relatedInsightMetadata struct {
+type relatedInsightInlineMetadata struct {
 	title       string
 	lineNumbers []int32
 }
@@ -94,6 +96,74 @@ func (r *relatedInsightsInlineResolver) Title() string {
 
 func (r *relatedInsightsInlineResolver) LineNumbers() []int32 {
 	return r.lineNumbers
+}
+
+func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsForFileResolver, error) {
+	validator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+	validator.loadUserContext(ctx)
+
+	allSeries, err := r.insightStore.GetAll(ctx, store.InsightQueryArgs{
+		Repo:                     args.Input.Repo,
+		ContainingQuerySubstring: "select:file",
+		UserID:                   validator.userIds,
+		OrgID:                    validator.orgIds,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetAll")
+	}
+
+	var resolvers []graphqlbackend.RelatedInsightsForFileResolver
+	matchedInsightViews := map[string]bool{}
+	for _, series := range allSeries {
+		// We stop processing if we have matched on this insight view before.
+		if _, ok := matchedInsightViews[series.UniqueID]; ok {
+			continue
+		}
+
+		decoder, metadataResult := streaming.MetadataDecoder()
+		modifiedQuery, err := querybuilder.SingleFileQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.File, args.Input.Revision, querybuilder.CodeInsightsQueryDefaults(false))
+		if err != nil {
+			return nil, errors.Wrap(err, "SingleFileQuery")
+		}
+		err = streaming.Search(ctx, modifiedQuery.String(), decoder)
+		if err != nil {
+			return nil, errors.Wrap(err, "streaming.Search")
+		}
+		mr := *metadataResult
+		if len(mr.Errors) > 0 {
+			r.logger.Warn("file related insights errors", log.Strings("errors", mr.Errors))
+		}
+		if len(mr.Alerts) > 0 {
+			r.logger.Warn("file related insights alerts", log.Strings("alerts", mr.Alerts))
+		}
+		if len(mr.SkippedReasons) > 0 {
+			r.logger.Warn("file related insights skipped", log.Strings("reasons", mr.SkippedReasons))
+		}
+
+		for _, match := range mr.Matches {
+			if len(match.Path) > 0 && strings.EqualFold(match.Path, args.Input.File) {
+				matchedInsightViews[series.UniqueID] = true
+				resolvers = append(resolvers, &relatedInsightsForFileResolver{viewID: series.UniqueID, title: series.Title})
+			}
+		}
+	}
+
+	return resolvers, nil
+}
+
+type relatedInsightsForFileResolver struct {
+	viewID string
+	title  string
+
+	baseInsightResolver
+}
+
+func (r *relatedInsightsForFileResolver) ViewID() string {
+	return r.viewID
+}
+
+func (r *relatedInsightsForFileResolver) Title() string {
+	return r.title
 }
 
 func containsInt(array []int32, findElement int32) bool {
