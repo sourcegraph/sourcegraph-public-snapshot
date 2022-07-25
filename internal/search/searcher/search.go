@@ -105,7 +105,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, repoAllRevs.RepoMetadata, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
@@ -170,6 +170,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 	repo types.MinimalRepo,
 	gitserverRepo api.RepoName,
 	rev string,
+	repoMetadata *types.SearchedRepo,
 	index bool,
 	info *search.TextPatternInfo,
 	fetchTimeout time.Duration,
@@ -199,7 +200,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 
 	onMatches := func(searcherMatches []*protocol.FileMatch) {
 		stream.Send(streaming.SearchEvent{
-			Results: convertMatches(repo, commit, &rev, searcherMatches),
+			Results: convertMatches(repo, commit, &rev, repoMetadata, searcherMatches),
 		})
 	}
 
@@ -207,7 +208,7 @@ func (s *TextSearchJob) searchFilesInRepo(
 }
 
 // convert converts a set of searcher matches into []result.Match
-func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, searcherMatches []*protocol.FileMatch) []result.Match {
+func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, repoMetadata *types.SearchedRepo, searcherMatches []*protocol.FileMatch) []result.Match {
 	matches := make([]result.Match, 0, len(searcherMatches))
 	for _, fm := range searcherMatches {
 		chunkMatches := make(result.ChunkMatches, 0, len(fm.ChunkMatches))
@@ -247,8 +248,9 @@ func convertMatches(repo types.MinimalRepo, commit api.CommitID, rev *string, se
 				CommitID: commit,
 				InputRev: rev,
 			},
-			ChunkMatches: chunkMatches,
-			LimitHit:     fm.LimitHit,
+			RepositoryMetadata: repoMetadata,
+			ChunkMatches:       chunkMatches,
+			LimitHit:           fm.LimitHit,
 		})
 	}
 	return matches

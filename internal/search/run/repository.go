@@ -63,9 +63,10 @@ func repoRevsToRepoMatches(repos []*search.RepositoryRevisions) []result.Match {
 	for _, r := range repos {
 		for _, rev := range r.Revs {
 			matches = append(matches, &result.RepoMatch{
-				Name: r.Repo.Name,
-				ID:   r.Repo.ID,
-				Rev:  rev,
+				Name:               r.Repo.Name,
+				ID:                 r.Repo.ID,
+				Rev:                rev,
+				RepositoryMetadata: r.RepoMetadata,
 			})
 		}
 	}

@@ -35,7 +35,6 @@ import (
 	streamclient "github.com/sourcegraph/sourcegraph/internal/search/streaming/client"
 	streamhttp "github.com/sourcegraph/sourcegraph/internal/search/streaming/http"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -287,29 +286,29 @@ func withDecoration(ctx context.Context, db database.DB, eventMatch streamhttp.E
 	return eventMatch
 }
 
-func fromMatch(match result.Match, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
+func fromMatch(match result.Match, enableChunkMatches bool) streamhttp.EventMatch {
 	switch v := match.(type) {
 	case *result.FileMatch:
-		return fromFileMatch(v, repoCache, enableChunkMatches)
+		return fromFileMatch(v, enableChunkMatches)
 	case *result.RepoMatch:
-		return fromRepository(v, repoCache)
+		return fromRepository(v)
 	case *result.CommitMatch:
-		return fromCommit(v, repoCache)
+		return fromCommit(v)
 	default:
 		panic(fmt.Sprintf("unknown match type %T", v))
 	}
 }
 
-func fromFileMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) streamhttp.EventMatch {
+func fromFileMatch(fm *result.FileMatch, enableChunkMatches bool) streamhttp.EventMatch {
 	if len(fm.Symbols) > 0 {
-		return fromSymbolMatch(fm, repoCache)
+		return fromSymbolMatch(fm)
 	} else if fm.ChunkMatches.MatchCount() > 0 {
-		return fromContentMatch(fm, repoCache, enableChunkMatches)
+		return fromContentMatch(fm, enableChunkMatches)
 	}
-	return fromPathMatch(fm, repoCache)
+	return fromPathMatch(fm)
 }
 
-func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventPathMatch {
+func fromPathMatch(fm *result.FileMatch) *streamhttp.EventPathMatch {
 	pathEvent := &streamhttp.EventPathMatch{
 		Type:         streamhttp.PathMatchType,
 		Path:         fm.Path,
@@ -318,9 +317,10 @@ func fromPathMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searche
 		Commit:       string(fm.CommitID),
 	}
 
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		pathEvent.RepoStars = r.Stars
-		pathEvent.RepoLastFetched = r.LastFetched
+	repoMetadata := fm.RepoMetadata()
+	if repoMetadata != nil {
+		pathEvent.RepoStars = repoMetadata.Stars
+		pathEvent.RepoLastFetched = repoMetadata.LastFetched
 	}
 
 	if fm.InputRev != nil {
@@ -365,7 +365,7 @@ func fromRanges(rs result.Ranges) []streamhttp.Range {
 	return res
 }
 
-func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo, enableChunkMatches bool) *streamhttp.EventContentMatch {
+func fromContentMatch(fm *result.FileMatch, enableChunkMatches bool) *streamhttp.EventContentMatch {
 
 	var (
 		eventLineMatches  []streamhttp.EventLineMatch
@@ -400,15 +400,16 @@ func fromContentMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Sear
 		contentEvent.Branches = []string{*fm.InputRev}
 	}
 
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		contentEvent.RepoStars = r.Stars
-		contentEvent.RepoLastFetched = r.LastFetched
+	repoMetadata := fm.RepoMetadata()
+	if repoMetadata != nil {
+		contentEvent.RepoStars = repoMetadata.Stars
+		contentEvent.RepoLastFetched = repoMetadata.LastFetched
 	}
 
 	return contentEvent
 }
 
-func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventSymbolMatch {
+func fromSymbolMatch(fm *result.FileMatch) *streamhttp.EventSymbolMatch {
 	symbols := make([]streamhttp.Symbol, 0, len(fm.Symbols))
 	for _, sym := range fm.Symbols {
 		kind := sym.Symbol.LSPKind()
@@ -435,9 +436,10 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 		Symbols:      symbols,
 	}
 
-	if r, ok := repoCache[fm.Repo.ID]; ok {
-		symbolMatch.RepoStars = r.Stars
-		symbolMatch.RepoLastFetched = r.LastFetched
+	repoMetadata := fm.RepoMetadata()
+	if repoMetadata != nil {
+		symbolMatch.RepoStars = repoMetadata.Stars
+		symbolMatch.RepoLastFetched = repoMetadata.LastFetched
 	}
 
 	if fm.InputRev != nil {
@@ -447,7 +449,7 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 	return symbolMatch
 }
 
-func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventRepoMatch {
+func fromRepository(rm *result.RepoMatch) *streamhttp.EventRepoMatch {
 	var branches []string
 	if rev := rm.Rev; rev != "" {
 		branches = []string{rev}
@@ -460,19 +462,20 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		Branches:     branches,
 	}
 
-	if r, ok := repoCache[rm.ID]; ok {
-		repoEvent.RepoStars = r.Stars
-		repoEvent.RepoLastFetched = r.LastFetched
-		repoEvent.Description = r.Description
-		repoEvent.Fork = r.Fork
-		repoEvent.Archived = r.Archived
-		repoEvent.Private = r.Private
+	repoMetadata := rm.RepoMetadata()
+	if repoMetadata != nil {
+		repoEvent.RepoStars = repoMetadata.Stars
+		repoEvent.RepoLastFetched = repoMetadata.LastFetched
+		repoEvent.Description = repoMetadata.Description
+		repoEvent.Fork = repoMetadata.Fork
+		repoEvent.Archived = repoMetadata.Archived
+		repoEvent.Private = repoMetadata.Private
 	}
 
 	return repoEvent
 }
 
-func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.SearchedRepo) *streamhttp.EventCommitMatch {
+func fromCommit(commit *result.CommitMatch) *streamhttp.EventCommitMatch {
 	hls := commit.Body().ToHighlightedString()
 	ranges := make([][3]int32, len(hls.Highlights))
 	for i, h := range hls.Highlights {
@@ -494,9 +497,10 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 		Ranges:       ranges,
 	}
 
-	if r, ok := repoCache[commit.Repo.ID]; ok {
-		commitEvent.RepoStars = r.Stars
-		commitEvent.RepoLastFetched = r.LastFetched
+	repoMetadata := commit.RepoMetadata()
+	if repoMetadata != nil {
+		commitEvent.RepoStars = repoMetadata.Stars
+		commitEvent.RepoLastFetched = repoMetadata.LastFetched
 	}
 
 	return commitEvent
@@ -649,23 +653,17 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 
 	h.displayRemaining = event.Results.Limit(h.displayRemaining)
 
-	repoMetadata, err := getEventRepoMetadata(h.ctx, h.db, event)
-	if err != nil {
-		h.logger.Error("failed to get repo metadata", log.Error(err))
-		return
-	}
-
 	for _, match := range event.Results {
 		repo := match.RepoName()
-
+		repoMetadata := match.RepoMetadata()
 		// Don't send matches which we cannot map to a repo the actor has access to. This
 		// check is expected to always pass. Missing metadata is a sign that we have
 		// searched repos that user shouldn't have access to.
-		if md, ok := repoMetadata[repo.ID]; !ok || md.Name != repo.Name {
+		if repoMetadata == nil || repoMetadata.ID != repo.ID || repoMetadata.Name != repo.Name {
 			continue
 		}
 
-		eventMatch := fromMatch(match, repoMetadata, h.enableChunkMatches)
+		eventMatch := fromMatch(match, h.enableChunkMatches)
 		h.matchesBuf.Append(eventMatch)
 	}
 

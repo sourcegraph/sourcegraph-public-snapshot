@@ -262,6 +262,13 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}
 	tr.LazyPrintf("finished contains filtering")
 
+	tr.LazyPrintf("fetching repo metadata")
+	repoRevsWithMetadata, err := r.hydrateRepoRevsMetadata(ctx, filteredRepoRevs)
+	if err != nil {
+		return Resolved{}, errors.Wrap(err, "fetch metadata from db")
+	}
+	tr.LazyPrintf("finished fetching repo metadata")
+
 	if len(missingRepoRevs) > 0 {
 		err = errors.Append(err, &MissingRepoRevsError{Missing: missingRepoRevs})
 	}
@@ -273,10 +280,34 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}
 
 	return Resolved{
-		RepoRevs:        filteredRepoRevs,
+		RepoRevs:        repoRevsWithMetadata,
 		MissingRepoRevs: missingRepoRevs,
 		Next:            next,
 	}, err
+}
+
+// hydrateRepoRevsMetadata fetches additional repo metadata from the db for each repo in repoRevs and populates the
+// RepoMetadata field on each element in repoRevs.
+func (r *Resolver) hydrateRepoRevsMetadata(ctx context.Context, repoRevs []*search.RepositoryRevisions) (_ []*search.RepositoryRevisions, err error) {
+	repoIDs := make([]api.RepoID, 0, len(repoRevs))
+	for _, repoRev := range repoRevs {
+		repoIDs = append(repoIDs, repoRev.Repo.ID)
+	}
+
+	metadata, err := r.db.Repos().Metadata(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	repoRevsWithMetadata := repoRevs[:0]
+	for _, repoRev := range repoRevs {
+		// repo IDs in metadata should always be a subset of the repo IDs in repoRevs, but verify anyway
+		if md, ok := metadata[repoRev.Repo.ID]; ok {
+			repoRev.RepoMetadata = md
+			repoRevsWithMetadata = append(repoRevsWithMetadata, repoRev)
+		}
+	}
+	return repoRevsWithMetadata, nil
 }
 
 // associateReposWithRevs re-associates revisions with the repositories fetched from the db

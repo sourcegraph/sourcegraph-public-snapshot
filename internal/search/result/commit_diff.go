@@ -13,14 +13,19 @@ import (
 )
 
 type CommitDiffMatch struct {
-	Commit  gitdomain.Commit
-	Repo    types.MinimalRepo
-	Preview *MatchedString
+	Commit             gitdomain.Commit
+	Repo               types.MinimalRepo
+	RepositoryMetadata *types.SearchedRepo
+	Preview            *MatchedString
 	*DiffFile
 }
 
 func (cd *CommitDiffMatch) RepoName() types.MinimalRepo {
 	return cd.Repo
+}
+
+func (cd *CommitDiffMatch) RepoMetadata() *types.SearchedRepo {
+	return cd.RepositoryMetadata
 }
 
 // Path returns a nonempty path associated with a diff. This value is the usual

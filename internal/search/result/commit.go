@@ -13,8 +13,9 @@ import (
 )
 
 type CommitMatch struct {
-	Commit gitdomain.Commit
-	Repo   types.MinimalRepo
+	Commit             gitdomain.Commit
+	Repo               types.MinimalRepo
+	RepositoryMetadata *types.SearchedRepo
 
 	// Refs is a set of git references that point to this commit. For example,
 	// for a search like `repo:sourcegraph@abcd123`, if the `refs/heads/main`
@@ -74,6 +75,10 @@ func (cm *CommitMatch) ResultCount() int {
 
 func (cm *CommitMatch) RepoName() types.MinimalRepo {
 	return cm.Repo
+}
+
+func (cm *CommitMatch) RepoMetadata() *types.SearchedRepo {
+	return cm.RepositoryMetadata
 }
 
 func (cm *CommitMatch) Limit(limit int) int {
@@ -257,10 +262,11 @@ func (r *CommitMatch) CommitToDiffMatches() []*CommitDiffMatch {
 	for _, diff := range fileDiffs {
 		diff := diff
 		matches = append(matches, &CommitDiffMatch{
-			Commit:   r.Commit,
-			Repo:     r.Repo,
-			Preview:  r.DiffPreview,
-			DiffFile: &diff,
+			Commit:             r.Commit,
+			Repo:               r.Repo,
+			RepositoryMetadata: r.RepositoryMetadata,
+			Preview:            r.DiffPreview,
+			DiffFile:           &diff,
 		})
 	}
 	return matches

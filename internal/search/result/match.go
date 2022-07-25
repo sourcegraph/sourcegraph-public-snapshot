@@ -20,6 +20,7 @@ type Match interface {
 
 	Select(filter.SelectPath) Match
 	RepoName() types.MinimalRepo
+	RepoMetadata() *types.SearchedRepo
 
 	// Key returns a key which uniquely identifies this match.
 	Key() Key

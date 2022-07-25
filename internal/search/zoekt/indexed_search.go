@@ -116,7 +116,7 @@ func (rb *IndexedRepoRevs) BranchRepos() []zoektquery.BranchRepos {
 }
 
 // getRepoInputRev returns the repo and inputRev associated with file.
-func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, inputRevs []string) {
+func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, repoMetadata *types.SearchedRepo, inputRevs []string) {
 	repoRev, ok := rb.RepoRevs[api.RepoID(file.RepositoryID)]
 
 	// We search zoekt by repo ID. It is possible that the name has come out
@@ -124,11 +124,15 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 	// hash in that case. We intend to restucture this code to avoid this, but
 	// this is the fix to avoid potential nil panics.
 	if !ok {
-		repo := types.MinimalRepo{
+		repo = types.MinimalRepo{
 			ID:   api.RepoID(file.RepositoryID),
 			Name: api.RepoName(file.Repository),
 		}
-		return repo, []string{file.Version}
+		repoMetadata = &types.SearchedRepo{
+			ID:   repo.ID,
+			Name: repo.Name,
+		}
+		return repo, repoMetadata, []string{file.Version}
 	}
 
 	// We inverse the logic in add to work out the revspec from the zoekt
@@ -169,7 +173,7 @@ func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.Mi
 		inputRevs = append(inputRevs, file.Version)
 	}
 
-	return repoRev.Repo, inputRevs
+	return repoRev.Repo, repoRev.RepoMetadata, inputRevs
 }
 
 func PartitionRepos(
@@ -239,7 +243,7 @@ func PartitionRepos(
 	return indexed, unindexed, nil
 }
 
-func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *search.ZoektParameters, c streaming.Sender) error {
+func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, db database.DB, args *search.ZoektParameters, c streaming.Sender) error {
 	k := ResultCountFactor(0, args.FileMatchLimit, true)
 	searchOpts := SearchOpts(ctx, k, args.FileMatchLimit, args.Select)
 
@@ -261,12 +265,23 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, args *searc
 	}
 
 	return client.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
-		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, []string) {
+		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, *types.SearchedRepo, []string) {
+			repoID := api.RepoID(file.RepositoryID)
 			repo := types.MinimalRepo{
-				ID:   api.RepoID(file.RepositoryID),
+				ID:   repoID,
 				Name: api.RepoName(file.Repository),
 			}
-			return repo, []string{""}
+
+			metadataMap, err := db.Repos().Metadata(ctx, repoID)
+			if err != nil {
+				log.NamedError("fetch repo metadata error", err)
+				return repo, nil, []string{""}
+			}
+			if repoMetadata, ok := metadataMap[repoID]; ok {
+				return repo, repoMetadata, []string{""}
+			}
+
+			return repo, nil, []string{""}
 		}, args.Typ, args.Select, c)
 	}))
 }
@@ -356,12 +371,13 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 
 	matches := make([]result.Match, 0, len(files))
 	for _, file := range files {
-		repo, inputRevs := getRepoInputRev(&file)
+		repo, repoMetadata, inputRevs := getRepoInputRev(&file)
 
 		if selector.Root() == filter.Repository {
 			matches = append(matches, &result.RepoMatch{
-				Name: repo.Name,
-				ID:   repo.ID,
+				Name:               repo.Name,
+				ID:                 repo.ID,
+				RepositoryMetadata: repoMetadata,
 			})
 			continue
 		}
@@ -379,8 +395,9 @@ func sendMatches(event *zoekt.SearchResult, getRepoInputRev repoRevFunc, typ sea
 				symbols = zoektFileMatchToSymbolResults(repo, inputRev, &file)
 			}
 			fm := result.FileMatch{
-				ChunkMatches: hms,
-				Symbols:      symbols,
+				ChunkMatches:       hms,
+				Symbols:            symbols,
+				RepositoryMetadata: repoMetadata,
 				File: result.File{
 					InputRev: &inputRev,
 					CommitID: api.CommitID(file.Version),
@@ -665,7 +682,7 @@ func (t *GlobalTextSearchJob) Run(ctx context.Context, clients job.RuntimeClient
 	t.GlobalZoektQuery.ApplyPrivateFilter(userPrivateRepos)
 	t.ZoektArgs.Query = t.GlobalZoektQuery.Generate()
 
-	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, t.ZoektArgs, stream)
+	return nil, DoZoektSearchGlobal(ctx, clients.Zoekt, clients.DB, t.ZoektArgs, stream)
 }
 
 func (*GlobalTextSearchJob) Name() string {

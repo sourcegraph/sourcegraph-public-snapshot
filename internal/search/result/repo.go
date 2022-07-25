@@ -14,6 +14,8 @@ type RepoMatch struct {
 
 	// rev optionally specifies a revision to go to for search results.
 	Rev string
+
+	RepositoryMetadata *types.SearchedRepo
 }
 
 func (r RepoMatch) RepoName() types.MinimalRepo {
@@ -21,6 +23,10 @@ func (r RepoMatch) RepoName() types.MinimalRepo {
 		Name: r.Name,
 		ID:   r.ID,
 	}
+}
+
+func (r RepoMatch) RepoMetadata() *types.SearchedRepo {
+	return r.RepositoryMetadata
 }
 
 func (r RepoMatch) Limit(limit int) int {

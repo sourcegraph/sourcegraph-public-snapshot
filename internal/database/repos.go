@@ -83,7 +83,7 @@ type RepoStore interface {
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
 	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
-	Metadata(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
+	Metadata(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error)
 	StreamMinimalRepos(context.Context, ReposListOptions, func(*types.MinimalRepo)) error
 }
 
@@ -310,7 +310,7 @@ func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, er
 
 // Metadata returns repo metadata used to decorate search results. The returned slice may be smaller than the
 // number of IDs given if a repo with the given ID does not exist.
-func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types.SearchedRepo, err error) {
+func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]*types.SearchedRepo, err error) {
 	tr, ctx := trace.New(ctx, "repos.Metadata", "")
 	defer func() {
 		tr.SetError(err)
@@ -334,7 +334,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 		joinGitserverRepos: true,
 	}
 
-	res := make([]*types.SearchedRepo, 0, len(ids))
+	res := make(map[api.RepoID]*types.SearchedRepo, len(ids))
 	scanMetadata := func(rows *sql.Rows) error {
 		var r types.SearchedRepo
 		if err := rows.Scan(
@@ -350,7 +350,7 @@ func (s *repoStore) Metadata(ctx context.Context, ids ...api.RepoID) (_ []*types
 			return err
 		}
 
-		res = append(res, &r)
+		res[r.ID] = &r
 		return nil
 	}
 

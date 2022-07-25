@@ -42,6 +42,7 @@ func (f *File) URL() *url.URL {
 // - A result representing the whole file (len(Symbols) == 0 && len(LineMatches) == 0)
 type FileMatch struct {
 	File
+	RepositoryMetadata *types.SearchedRepo
 
 	ChunkMatches ChunkMatches
 	Symbols      []*SymbolMatch `json:"-"`
@@ -51,6 +52,10 @@ type FileMatch struct {
 
 func (fm *FileMatch) RepoName() types.MinimalRepo {
 	return fm.File.Repo
+}
+
+func (fm *FileMatch) RepoMetadata() *types.SearchedRepo {
+	return fm.RepositoryMetadata
 }
 
 func (fm *FileMatch) searchResultMarker() {}

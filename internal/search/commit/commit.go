@@ -71,7 +71,7 @@ func (j *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 		onMatches := func(in []protocol.CommitMatch) {
 			res := make([]result.Match, 0, len(in))
 			for _, protocolMatch := range in {
-				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, j.Diff, protocolMatch))
+				res = append(res, protocolMatchToCommitMatch(repoRev.Repo, repoRev.RepoMetadata, j.Diff, protocolMatch))
 			}
 			stream.Send(streaming.SearchEvent{
 				Results: res,
@@ -332,7 +332,7 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 	return newPred
 }
 
-func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
+func protocolMatchToCommitMatch(repo types.MinimalRepo, repoMetadata *types.SearchedRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var diffPreview, messagePreview *result.MatchedString
 	if diff {
 		diffPreview = &in.Diff
@@ -356,9 +356,10 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 			Message: gitdomain.Message(in.Message.Content),
 			Parents: in.Parents,
 		},
-		Repo:           repo,
-		DiffPreview:    diffPreview,
-		MessagePreview: messagePreview,
-		ModifiedFiles:  in.ModifiedFiles,
+		Repo:               repo,
+		RepositoryMetadata: repoMetadata,
+		DiffPreview:        diffPreview,
+		MessagePreview:     messagePreview,
+		ModifiedFiles:      in.ModifiedFiles,
 	}
 }
