@@ -19,7 +19,7 @@ export interface InsightDecoration
     range: Range
 
     /** The raw html to render in line. */
-    content: string
+    content: JSX.Element
 
     /** The JSX Element to render in the popover */
     popover: JSX.Element

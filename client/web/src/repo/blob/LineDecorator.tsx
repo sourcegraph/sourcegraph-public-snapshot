@@ -176,7 +176,7 @@ const LineDecorator = React.memo<LineDecoratorProps>(
                 if ('content' in decoration && isDefined(decoration.content)) {
                     return (
                         <Tippy content={decoration.popover} trigger={decoration.trigger}>
-                            <span dangerouslySetInnerHTML={{ __html: decoration.content }} />
+                            {decoration.content}
                         </Tippy>
                     )
                 }

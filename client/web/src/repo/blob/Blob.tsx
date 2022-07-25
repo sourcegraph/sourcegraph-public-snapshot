@@ -182,7 +182,11 @@ const decoration: InsightDecoration = {
         start: { line: 0, character: 0 },
         end: { line: 0, character: 0 },
     },
-    content: '<b>TEST:</b>Inline insight test',
+    content: (
+        <span>
+            Referenced in <strong>5 insights</strong>
+        </span>
+    ),
     popover: (
         <span>
             Hey look I'm a <b>React Component</b>
