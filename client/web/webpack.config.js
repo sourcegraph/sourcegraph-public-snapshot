@@ -187,12 +187,13 @@ const config = {
          */
         threshold: 10240,
       }),
-    SENTRY_UPLOAD_SOURCE_MAPS &&
+    VERSION &&
+      SENTRY_UPLOAD_SOURCE_MAPS &&
       new SentryWebpackPlugin({
         org: SENTRY_ORGANIZATION,
         project: SENTRY_PROJECT,
         authToken: SENTRY_DOT_COM_AUTH_TOKEN,
-        release: `frontend@${VERSION as string}`,
+        release: `frontend@${VERSION}`,
         include: path.join(STATIC_ASSETS_PATH, 'scripts'),
       }),
   ].filter(Boolean),
