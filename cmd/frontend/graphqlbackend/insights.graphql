@@ -257,6 +257,9 @@ type RelatedInsightInline {
     lineNumbers: [Int!]!
 }
 
+"""
+Metadata for finding whether an insight matches a given file. This type is experimental and should be considered unstable in the API.
+"""
 type RelatedInsightForFile {
     """
     Insight view id
