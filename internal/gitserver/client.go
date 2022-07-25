@@ -1189,8 +1189,8 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		return ClientMocks.RepoInfo(ctx, repos...)
 	}
 
-	numPossibleShards := len(c.Addrs())
-	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+	totalShards := len(c.Addrs())
+	shards := make(map[string]*protocol.RepoInfoRequest, totalShards)
 
 	for _, r := range repos {
 		addr, err := c.AddrForRepo(ctx, r)
