@@ -57,13 +57,15 @@ function closeLine(html: HtmlBuilder): void {
     html.closeTag('tr')
 }
 
-function highlightSlice(html: HtmlBuilder, kind: SyntaxKind, slice: string): void {
-    const kindName = SyntaxKind[kind]
-    if (kindName) {
-        html.span(`class="hl-typed-${kindName}"`, slice)
-    } else {
-        html.plaintext(slice)
+function highlightSlice(html: HtmlBuilder, kind: SyntaxKind | undefined, slice: string): void {
+    if (kind) {
+        const kindName = SyntaxKind[kind]
+        if (kindName) {
+            html.span(`class="hl-typed-${kindName}"`, slice)
+            return
+        }
     }
+    html.plaintext(slice)
 }
 
 // Currently assumes that no ranges overlap in the occurrences.
