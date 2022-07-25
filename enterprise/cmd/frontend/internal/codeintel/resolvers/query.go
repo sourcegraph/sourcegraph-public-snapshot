@@ -44,7 +44,6 @@ type AdjustedCodeIntelligenceRange struct {
 type QueryResolver interface {
 	LSIFUploads(ctx context.Context) ([]store.Upload, error)
 	Ranges(ctx context.Context, startLine, endLine int) ([]AdjustedCodeIntelligenceRange, error)
-
 	Stencil(ctx context.Context) ([]lsifstore.Range, error)
 	Diagnostics(ctx context.Context, limit int) ([]AdjustedDiagnostic, int, error)
 	Hover(ctx context.Context, line, character int) (string, lsifstore.Range, bool, error)
@@ -80,7 +79,6 @@ func NewQueryResolver(
 	repositoryID int,
 	commit string,
 	path string,
-	uploads []store.Dump,
 	operations *operations,
 	symbolsResolver SymbolsResolver,
 ) QueryResolver {

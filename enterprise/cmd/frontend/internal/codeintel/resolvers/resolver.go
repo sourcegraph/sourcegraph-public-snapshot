@@ -246,7 +246,6 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		int(args.Repo.ID),
 		string(args.Commit),
 		args.Path,
-		dumps,
 		r.operations,
 		r.symbolsResolver,
 	), nil
