@@ -305,10 +305,11 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
     },
     {
         id: 'update:cut',
-        description: 'update update guides',
+        description: 'cut update guides',
         run: async config => {
             const { upcoming: release, previous } = await releaseVersions(config)
             const notPatchRelease = release.patch === 0
+            const previousNotPatchRelease = previous.patch === 0
             await createChangesets({
                 requiredCommands: [],
                 changes: [
@@ -316,7 +317,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                         owner: 'sourcegraph',
                         repo: 'sourcegraph',
                         base: 'main',
-                        head: `changelog-${release.version}`,
+                        head: `update-guides-${release.version}`,
                         title: 'dave-test',
                         commitMessage: 'dave test \n\n ## Test plan\n\nn/a',
                         edits: [
@@ -324,22 +325,23 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                                 updateDirectory = directory + updateDirectory
                                 for (const file of readdirSync(updateDirectory)) {
                                     const fullPath = path.join(updateDirectory, file)
-                                    let updateContents = readFileSync(fullPath
-                                        ).toString()
+                                    let updateContents = readFileSync(fullPath).toString()
                                     if (notPatchRelease) {
-                                        const releaseHeader = `## ${previous.format()} -> ${release.format()}`
+                                        const releaseHeader = `## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}`
                                         const unreleasedHeader = '## Unreleased'
-                                        updateContents = updateContents.replace(unreleasedHeader,releaseHeader)
+                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
+                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
+                                    } else if (previousNotPatchRelease) {
                                         updateContents = updateContents.replace(
-                                            update.divider,
-                                            update.releaseTemplate
+                                            `${previous.major}.${previous.minor}`,
+                                            release.version
                                         )
-                                    }else {
-                                        const previousString = previous.format()
-                                        updateContents = updateContents.replace(previousString, release.format());
+                                    } else {
+                                        updateContents = updateContents.replace(previous.version, release.version)
                                     }
-                                console.log(file, updateContents)
-                            }}
+                                    writeFileSync(fullPath, updateContents)
+                                }
+                            },
                         ],
                     },
                 ],
