@@ -341,7 +341,7 @@ func TestIsSingleRepoQuery(t *testing.T) {
 		want       bool
 	}{
 		{
-			name:       "repo text string",
+			name:       "repo as simple text string",
 			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
 			mapType:    Lang,
 			want:       false,
@@ -359,7 +359,7 @@ func TestIsSingleRepoQuery(t *testing.T) {
 			want:       false,
 		},
 		{
-			name:       "repo with revision",
+			name:       "single repo with revision specified",
 			inputQuery: `repo:^github\.com/sgtest/java-langserver$@v1 test`,
 			mapType:    Lang,
 			want:       true,
@@ -371,7 +371,7 @@ func TestIsSingleRepoQuery(t *testing.T) {
 			want:       true,
 		},
 		{
-			name:       "complex query",
+			name:       "query without repo filter",
 			inputQuery: `test`,
 			mapType:    Lang,
 			want:       false,
