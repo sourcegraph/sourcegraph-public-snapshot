@@ -207,9 +207,6 @@ type Client interface {
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
 
-	// IsRepoCloned returns true if the repo is cloned.
-	IsRepoCloned(context.Context, api.RepoName) (bool, error)
-
 	// ListRefs returns a list of all refs in the repository.
 	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
 
@@ -1053,23 +1050,6 @@ func (e *RepoNotCloneableErr) NotFound() bool {
 
 func (e *RepoNotCloneableErr) Error() string {
 	return fmt.Sprintf("repo not found (name=%s notfound=%v) because %s", e.repo, e.notFound, e.reason)
-}
-
-func (c *clientImplementor) IsRepoCloned(ctx context.Context, repo api.RepoName) (bool, error) {
-	req := &protocol.IsRepoClonedRequest{
-		Repo: repo,
-	}
-	resp, err := c.httpPost(ctx, repo, "is-repo-cloned", req)
-	if err != nil {
-		return false, err
-	}
-	// no need to defer, we aren't using the body.
-	resp.Body.Close()
-	var cloned bool
-	if resp.StatusCode == http.StatusOK {
-		cloned = true
-	}
-	return cloned, nil
 }
 
 func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
