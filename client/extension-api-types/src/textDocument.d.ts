@@ -12,3 +12,17 @@ export interface TextDocumentDecoration
     /** The range that the decoration applies to. */
     range: Range
 }
+
+export interface InsightDecoration
+    extends Pick<sourcegraph.TextDocumentDecoration, Exclude<keyof sourcegraph.TextDocumentDecoration, 'range'>> {
+    /** The range that the decoration applies to. */
+    range: Range
+
+    /** The raw html to render in line. */
+    content: string
+
+    /** The JSX Element to render in the popover */
+    popover: JSX.Element
+
+    trigger?: 'hover' | 'click'
+}

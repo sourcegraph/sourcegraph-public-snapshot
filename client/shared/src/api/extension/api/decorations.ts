@@ -8,7 +8,7 @@ import {
 } from 'sourcegraph'
 
 import { hasProperty } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { InsightDecoration, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 
 // LINE AND COLUMN DECORATIONS
 
@@ -46,7 +46,7 @@ export function decorationAttachmentStyleForTheme(
     return { ...base, ...overrides }
 }
 
-export type DecorationMapByLine = ReadonlyMap<number, TextDocumentDecoration[]>
+export type DecorationMapByLine = ReadonlyMap<number, TextDocumentDecoration[] | InsightDecoration[]>
 
 /**
  * @returns Map from 1-based line number to non-empty array of TextDocumentDecoration for that line
