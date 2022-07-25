@@ -3,7 +3,7 @@ set -ex -o nounset -o pipefail
 
 export IGNITE_VERSION=v0.10.0
 export CNI_VERSION=v0.9.1
-export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.77"
+export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
 export EXPORTER_EXPORTER_VERSION=0.4.5
@@ -50,7 +50,7 @@ function install_docker() {
   add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
   apt-get update -y
   apt-cache policy docker-ce
-  apt-get install -y docker-ce docker-ce-cli containerd.io
+  apt-get install -y binutils docker-ce docker-ce-cli containerd.io
 
   DOCKER_DAEMON_CONFIG_FILE='/etc/docker/daemon.json'
 
@@ -63,7 +63,7 @@ function install_docker() {
   systemctl restart --now docker
 }
 
-## Install git >=2.26 (to enable -c protocol.version=2 and sparse checkouts)
+## Install git >=2.18 (to enable -c protocol.version=2)
 function install_git() {
   add-apt-repository ppa:git-core/ppa
   apt-get update -y
@@ -73,16 +73,10 @@ function install_git() {
 ## Install Weaveworks Ignite
 ## Reference: https://ignite.readthedocs.io/en/stable/installation/
 function install_ignite() {
-  # Install dependencies.
-  apt-get update -y
-  apt-get install -y binutils openssh-client dmsetup
-
-  # Download and install ignite binary.
   curl -sfLo ignite https://github.com/weaveworks/ignite/releases/download/${IGNITE_VERSION}/ignite-amd64
   chmod +x ignite
   mv ignite /usr/local/bin
 
-  # Install CNI plugin.
   mkdir -p /opt/cni/bin
   curl -sSL https://github.com/containernetworking/plugins/releases/download/${CNI_VERSION}/cni-plugins-linux-amd64-${CNI_VERSION}.tgz | tar -xz -C /opt/cni/bin
 }
@@ -92,9 +86,7 @@ function install_executor() {
   # Move binary into PATH
   mv /tmp/executor /usr/local/bin
 
-  # Create configuration file and stub environment file.
-  # We also wait for docker to be ready, otherwise
-  # jobs can fail to start while docker is still starting.
+  # Create configuration file and stub environment file
   cat <<EOF >/etc/systemd/system/executor.service
 [Unit]
 Description=User code executor
@@ -102,7 +94,6 @@ Description=User code executor
 [Service]
 ExecStart=/usr/local/bin/executor
 ExecStopPost=/shutdown_executor.sh
-Requires=docker
 Restart=on-failure
 EnvironmentFile=/etc/systemd/system/executor.env
 Environment=HOME="%h"
