@@ -1217,7 +1217,7 @@ type Event struct {
 	ID              int32
 	Name            string
 	URL             string
-	UserID          *int32
+	UserID          int32
 	AnonymousUserID string
 	Argument        string
 	Source          string
