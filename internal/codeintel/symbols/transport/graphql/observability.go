@@ -40,10 +40,12 @@ func newOperations(observationContext *observation.Context) *operations {
 
 	return &operations{
 		symbol: op("Symbol"),
+		hover:  op("Hover"),
 
 		definitions: op("Definitions"),
 		references:  op("References"),
 		diagnostics: op("Diagnostics"),
+		stencil:     op("Stencil"),
 		ranges:      op("Ranges"),
 	}
 }
