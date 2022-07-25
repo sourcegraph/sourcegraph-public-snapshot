@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -201,14 +200,23 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 		depsSvc := livedependencies.GetService(db, nil)
 		sourcer = repos.NewSourcer(s.Logger.Scoped("repos.Sourcer", ""), db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}
-	src, err := sourcer(ctx, &types.ExternalService{
-		ID:              req.ExternalService.ID,
-		Kind:            req.ExternalService.Kind,
-		DisplayName:     req.ExternalService.DisplayName,
-		Config:          req.ExternalService.Config,
-		NamespaceUserID: req.ExternalService.NamespaceUserID,
-		NamespaceOrgID:  req.ExternalService.NamespaceOrgID,
-	})
+
+	externalServiceID := req.ExternalServiceID
+	if externalServiceID == 0 {
+		externalServiceID = req.ExternalService.ID
+	}
+
+	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			s.respond(w, http.StatusNotFound, err)
+			return
+		}
+		s.respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	src, err := sourcer(ctx, es)
 
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))

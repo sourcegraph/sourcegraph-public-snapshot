@@ -10,9 +10,6 @@ import (
 	"github.com/gorilla/mux"
 	"github.com/inconshreveable/log15"
 
-	"github.com/sourcegraph/log"
-
-	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -22,24 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func serveReposGetByName(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	logger := log.Scoped("serveReposGetByName", "")
-	return func(w http.ResponseWriter, r *http.Request) error {
-		repoName := api.RepoName(mux.Vars(r)["RepoName"])
-		repo, err := backend.NewRepos(logger, db).GetByName(r.Context(), repoName)
-		if err != nil {
-			return err
-		}
-		data, err := json.Marshal(repo)
-		if err != nil {
-			return err
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(data)
-		return nil
-	}
-}
 
 func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
 	return func(w http.ResponseWriter, r *http.Request) error {
@@ -112,34 +91,6 @@ func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *
 	}
 }
 
-// serveExternalServicesList serves a JSON response that is an array of all external services
-// of the given kind
-func serveExternalServicesList(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var req api.ExternalServicesListRequest
-		err := json.NewDecoder(r.Body).Decode(&req)
-		if err != nil {
-			return err
-		}
-
-		options := database.ExternalServicesListOptions{
-			Kinds:   req.Kinds,
-			AfterID: int64(req.AfterID),
-		}
-		if req.Limit > 0 {
-			options.LimitOffset = &database.LimitOffset{
-				Limit: req.Limit,
-			}
-		}
-
-		services, err := db.ExternalServices().List(r.Context(), options)
-		if err != nil {
-			return err
-		}
-		return json.NewEncoder(w).Encode(services)
-	}
-}
-
 func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
 	raw := conf.Raw()
 	err := json.NewEncoder(w).Encode(raw)
@@ -149,89 +100,14 @@ func serveConfiguration(w http.ResponseWriter, _ *http.Request) error {
 	return nil
 }
 
-func serveSettingsGetForSubject(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var subject api.SettingsSubject
-		if err := json.NewDecoder(r.Body).Decode(&subject); err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		settings, err := db.Settings().GetLatest(r.Context(), subject)
-		if err != nil {
-			return errors.Wrap(err, "Settings.GetLatest")
-		}
-		if err := json.NewEncoder(w).Encode(settings); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
-func serveOrgsListUsers(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var orgID int32
-		err := json.NewDecoder(r.Body).Decode(&orgID)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		orgMembers, err := db.OrgMembers().GetByOrgID(r.Context(), orgID)
-		if err != nil {
-			return errors.Wrap(err, "OrgMembers.GetByOrgID")
-		}
-		users := make([]int32, 0, len(orgMembers))
-		for _, member := range orgMembers {
-			users = append(users, member.UserID)
-		}
-		if err := json.NewEncoder(w).Encode(users); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
-func serveOrgsGetByName(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var orgName string
-		err := json.NewDecoder(r.Body).Decode(&orgName)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		org, err := db.Orgs().GetByName(r.Context(), orgName)
-		if err != nil {
-			return errors.Wrap(err, "Orgs.GetByName")
-		}
-		if err := json.NewEncoder(w).Encode(org.ID); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
-func serveUserEmailsGetEmail(db database.DB) func(http.ResponseWriter, *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var userID int32
-		err := json.NewDecoder(r.Body).Decode(&userID)
-		if err != nil {
-			return errors.Wrap(err, "Decode")
-		}
-		email, _, err := db.UserEmails().GetPrimaryEmail(r.Context(), userID)
-		if err != nil {
-			return errors.Wrap(err, "UserEmails.GetEmail")
-		}
-		if err := json.NewEncoder(w).Encode(email); err != nil {
-			return errors.Wrap(err, "Encode")
-		}
-		return nil
-	}
-}
-
-func serveExternalURL(w http.ResponseWriter, r *http.Request) error {
+func serveExternalURL(w http.ResponseWriter, _ *http.Request) error {
 	if err := json.NewEncoder(w).Encode(globals.ExternalURL().String()); err != nil {
 		return errors.Wrap(err, "Encode")
 	}
 	return nil
 }
 
-func serveSendEmail(w http.ResponseWriter, r *http.Request) error {
+func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
 	var msg txemail.Message
 	err := json.NewDecoder(r.Body).Decode(&msg)
 	if err != nil {
