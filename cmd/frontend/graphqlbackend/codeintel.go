@@ -27,7 +27,6 @@ type CodeIntelResolver interface {
 	ExecutorResolver
 	UploadsServiceResolver
 	PoliciesServiceResolver
-	// SymbolsResolver
 }
 
 type AutoindexingServiceResolver interface {

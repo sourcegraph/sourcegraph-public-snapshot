@@ -63,15 +63,14 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		symbolsResolver,
 	)
 
-	lsifStore := database.NewDBWith(observationContext.Logger, services.lsifStore)
-
-	// remove the symbolsService and pass the symbolsResolver in instead
-	return codeintelgqlresolvers.NewResolver(db, lsifStore, services.gitserverClient, innerResolver, services.SymbolsSvc, services.UploadsSvc, &observation.Context{
+	obsCtx := &observation.Context{
 		Logger:       nil,
 		Tracer:       &trace.Tracer{},
 		Registerer:   nil,
 		HoneyDataset: &honey.Dataset{},
-	})
+	}
+
+	return codeintelgqlresolvers.NewResolver(db, services.gitserverClient, innerResolver, obsCtx)
 }
 
 func newUploadHandler(services *Services) func(internal bool) http.Handler {

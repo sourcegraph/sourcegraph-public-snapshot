@@ -100,7 +100,7 @@ type CursorAdjustedUpload struct {
 	AdjustedPathInBundle string   `json:"adjustedPathInBundle"`
 }
 
-// adjustedUpload pairs an upload visible from the current target commit with the
+// AdjustedUpload pairs an upload visible from the current target commit with the
 // current target path and position adjusted so that it matches the data within the
 // underlying index.
 type AdjustedUpload struct {

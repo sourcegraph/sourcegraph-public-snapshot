@@ -16,8 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/resolvers"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -48,7 +46,7 @@ type Resolver struct {
 }
 
 // NewResolver creates a new Resolver with the given resolver that defines all code intel-specific behavior.
-func NewResolver(db database.DB, codeIntelDB database.DB, gitserver GitserverClient, resolver resolvers.Resolver, symbolsSvc *symbols.Service, uploadsSvc *uploads.Service, observationContext *observation.Context) gql.CodeIntelResolver {
+func NewResolver(db database.DB, gitserver GitserverClient, resolver resolvers.Resolver, observationContext *observation.Context) gql.CodeIntelResolver {
 	baseResolver := &Resolver{
 		db:                 db,
 		gitserver:          gitserver,

@@ -243,8 +243,6 @@ func (r *GitTreeEntryResolver) LSIF(ctx context.Context, args *struct{ ToolName 
 		return nil, err
 	}
 
-	// rng := EnterpriseResolvers.codeIntelResolver.SymbolsResolver().Range(ctx, &struct{ StartLine int64; EndLine int64 }{
-
 	return EnterpriseResolvers.codeIntelResolver.GitBlobLSIFData(ctx, &GitBlobLSIFDataArgs{
 		Repo:      repo,
 		Commit:    api.CommitID(r.Commit().OID()),
