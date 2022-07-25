@@ -38,6 +38,14 @@ type authProviderInfo struct {
 	AuthenticationURL string `json:"authenticationURL"`
 }
 
+// GenericPasswordPolicy a generic password policy that holds password requirements
+type authPasswordPolicy struct {
+	Enabled                   bool `json:"enabled"`
+	NumberOfSpecialCharacters int  `json:"numberOfSpecialCharacters"`
+	RequireAtLeastOneNumber   bool `json:"requireAtLeastOneNumber"`
+	RequireUpperandLowerCase  bool `json:"requireUpperandLowerCase"`
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 //
@@ -82,8 +90,8 @@ type JSContext struct {
 
 	ExternalServicesUserMode string `json:"externalServicesUserMode"`
 
-	AuthMinPasswordLength int                        `json:"authMinPasswordLength"`
-	AuthPasswordPolicy    conf.GenericPasswordPolicy `json:"authPasswordPolicy"`
+	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
+	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
@@ -146,6 +154,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		}
 	}
 
+	pp := conf.AuthPasswordPolicy()
+
+	var authPasswordPolicy authPasswordPolicy
+	authPasswordPolicy.Enabled = pp.Enabled
+	authPasswordPolicy.NumberOfSpecialCharacters = pp.NumberOfSpecialCharacters
+	authPasswordPolicy.RequireAtLeastOneNumber = pp.RequireAtLeastOneNumber
+	authPasswordPolicy.RequireUpperandLowerCase = pp.RequireUpperandLowerCase
+
 	var sentryDSN *string
 	siteConfig := conf.Get().SiteConfiguration
 
@@ -203,7 +219,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		AllowSignup: conf.AuthAllowSignup(),
 
 		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
-		AuthPasswordPolicy:    conf.AuthPasswordPolicy(),
+		AuthPasswordPolicy:    authPasswordPolicy,
 
 		AuthProviders: authProviders,
 
