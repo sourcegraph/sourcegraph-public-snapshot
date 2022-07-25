@@ -81,6 +81,10 @@
       "Definition": "CREATE OR REPLACE FUNCTION public.batch_spec_workspace_execution_last_dequeues_upsert()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n    INSERT INTO\n        batch_spec_workspace_execution_last_dequeues\n    SELECT\n        user_id,\n        MAX(started_at) as latest_dequeue\n    FROM\n        newtab\n    GROUP BY\n        user_id\n    ON CONFLICT (user_id) DO UPDATE SET\n        latest_dequeue = GREATEST(batch_spec_workspace_execution_last_dequeues.latest_dequeue, EXCLUDED.latest_dequeue);\n\n    RETURN NULL;\nEND $function$\n"
     },
     {
+      "Name": "changesets_computed_state_ensure",
+      "Definition": "CREATE OR REPLACE FUNCTION public.changesets_computed_state_ensure()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$ BEGIN\n\n    NEW.computed_state = CASE\n        WHEN NEW.reconciler_state = 'errored' THEN 'RETRYING'\n        WHEN NEW.reconciler_state = 'failed' THEN 'FAILED'\n        WHEN NEW.reconciler_state = 'scheduled' THEN 'SCHEDULED'\n        WHEN NEW.reconciler_state != 'completed' THEN 'PROCESSING'\n        WHEN NEW.publication_state = 'UNPUBLISHED' THEN 'UNPUBLISHED'\n        ELSE NEW.external_state\n    END AS computed_state;\n\n    RETURN NEW;\nEND $function$\n"
+    },
+    {
       "Name": "delete_batch_change_reference_on_changesets",
       "Definition": "CREATE OR REPLACE FUNCTION public.delete_batch_change_reference_on_changesets()\n RETURNS trigger\n LANGUAGE plpgsql\nAS $function$\n    BEGIN\n        UPDATE\n          changesets\n        SET\n          batch_change_ids = changesets.batch_change_ids - OLD.id::text\n        WHERE\n          changesets.batch_change_ids ? OLD.id::text;\n\n        RETURN OLD;\n    END;\n$function$\n"
     },
@@ -3442,6 +3446,19 @@
           "Comment": ""
         },
         {
+          "Name": "computed_state",
+          "Index": 42,
+          "TypeName": "text",
+          "IsNullable": false,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "created_at",
           "Index": 4,
           "TypeName": "timestamp with time zone",
@@ -3988,6 +4005,16 @@
           "ConstraintDefinition": ""
         },
         {
+          "Name": "changesets_computed_state",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX changesets_computed_state ON changesets USING btree (computed_state)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "changesets_detached_at",
           "IsPrimaryKey": false,
           "IsUnique": false,
@@ -4103,7 +4130,12 @@
           "ConstraintDefinition": "CHECK (external_branch ~~ 'refs/heads/%'::text)"
         }
       ],
-      "Triggers": []
+      "Triggers": [
+        {
+          "Name": "changesets_update_computed_state",
+          "Definition": "CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure()"
+        }
+      ]
     },
     {
       "Name": "cm_action_jobs",
@@ -17988,7 +18020,7 @@
     },
     {
       "Name": "branch_changeset_specs_and_changesets",
-      "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));"
+      "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    changesets.owned_by_batch_change_id AS owner_batch_change_id,\n    repo.name AS repo_name,\n    changeset_specs.title AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state,\n    changesets.computed_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1\n           FROM changeset_specs changeset_specs_1\n          WHERE ((changeset_specs_1.id = changesets.current_spec_id) AND (changeset_specs_1.head_ref = changeset_specs.head_ref)))))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NULL) AND (repo.deleted_at IS NULL));"
     },
     {
       "Name": "external_service_sync_jobs_with_next_sync_at",
@@ -18016,7 +18048,7 @@
     },
     {
       "Name": "reconciler_changesets",
-      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_changed,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
+      "Definition": " SELECT c.id,\n    c.batch_change_ids,\n    c.repo_id,\n    c.queued_at,\n    c.created_at,\n    c.updated_at,\n    c.metadata,\n    c.external_id,\n    c.external_service_type,\n    c.external_deleted_at,\n    c.external_branch,\n    c.external_updated_at,\n    c.external_state,\n    c.external_review_state,\n    c.external_check_state,\n    c.diff_stat_added,\n    c.diff_stat_changed,\n    c.diff_stat_deleted,\n    c.sync_state,\n    c.current_spec_id,\n    c.previous_spec_id,\n    c.publication_state,\n    c.owned_by_batch_change_id,\n    c.reconciler_state,\n    c.computed_state,\n    c.failure_message,\n    c.started_at,\n    c.finished_at,\n    c.process_after,\n    c.num_resets,\n    c.closing,\n    c.num_failures,\n    c.log_contents,\n    c.execution_logs,\n    c.syncer_error,\n    c.external_title,\n    c.worker_hostname,\n    c.ui_publication_state,\n    c.last_heartbeat_at,\n    c.external_fork_namespace,\n    c.detached_at\n   FROM (changesets c\n     JOIN repo r ON ((r.id = c.repo_id)))\n  WHERE ((r.deleted_at IS NULL) AND (EXISTS ( SELECT 1\n           FROM ((batch_changes\n             LEFT JOIN users namespace_user ON ((batch_changes.namespace_user_id = namespace_user.id)))\n             LEFT JOIN orgs namespace_org ON ((batch_changes.namespace_org_id = namespace_org.id)))\n          WHERE ((c.batch_change_ids ? (batch_changes.id)::text) AND (namespace_user.deleted_at IS NULL) AND (namespace_org.deleted_at IS NULL)))));"
     },
     {
       "Name": "site_config",
@@ -18024,7 +18056,7 @@
     },
     {
       "Name": "tracking_changeset_specs_and_changesets",
-      "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    repo.name AS repo_name,\n    COALESCE((changesets.metadata -\u003e\u003e 'Title'::text), (changesets.metadata -\u003e\u003e 'title'::text)) AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));"
+      "Definition": " SELECT changeset_specs.id AS changeset_spec_id,\n    COALESCE(changesets.id, (0)::bigint) AS changeset_id,\n    changeset_specs.repo_id,\n    changeset_specs.batch_spec_id,\n    repo.name AS repo_name,\n    COALESCE((changesets.metadata -\u003e\u003e 'Title'::text), (changesets.metadata -\u003e\u003e 'title'::text)) AS changeset_name,\n    changesets.external_state,\n    changesets.publication_state,\n    changesets.reconciler_state,\n    changesets.computed_state\n   FROM ((changeset_specs\n     LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))\n     JOIN repo ON ((changeset_specs.repo_id = repo.id)))\n  WHERE ((changeset_specs.external_id IS NOT NULL) AND (repo.deleted_at IS NULL));"
     }
   ]
 }

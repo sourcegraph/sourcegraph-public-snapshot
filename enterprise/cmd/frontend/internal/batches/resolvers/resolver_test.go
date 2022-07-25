@@ -1064,10 +1064,9 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		"PUBLISHED",
 		"INVALID",
 	}
-	haveStates := []string{"OPEN", "INVALID"}
+	haveStates := []btypes.ChangesetState{"OPEN", "INVALID"}
 	haveReviewStates := []string{"APPROVED", "INVALID"}
 	haveCheckStates := []string{"PENDING", "INVALID"}
-	wantExternalStates := []btypes.ChangesetExternalState{"OPEN"}
 	wantReviewStates := []btypes.ChangesetReviewState{"APPROVED", "INVALID"}
 	wantCheckStates := []btypes.ChangesetCheckState{"PENDING", "INVALID"}
 	truePtr := func() *bool { val := true; return &val }()
@@ -1101,19 +1100,17 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 		// Setting state is safe and transferred to opts.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &haveStates[0],
+				State: stringPtr(string(haveStates[0])),
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				ExternalStates:   wantExternalStates[0:1],
-				PublicationState: &wantPublicationStates[0],
-				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
+				States: []btypes.ChangesetState{haveStates[0]},
 			},
 		},
 		// Setting invalid state fails.
 		{
 			args: &graphqlbackend.ListChangesetsArgs{
-				State: &haveStates[1],
+				State: stringPtr(string(haveStates[1])),
 			},
 			wantErr: "changeset state not valid",
 		},
@@ -1205,12 +1202,10 @@ func TestListChangesetOptsFromArgs(t *testing.T) {
 			},
 			wantSafe: true,
 			wantParsed: store.ListChangesetsOpts{
-				PublicationState: &wantPublicationStates[0],
-				ExternalStates: []btypes.ChangesetExternalState{
-					btypes.ChangesetExternalStateDraft,
-					btypes.ChangesetExternalStateOpen,
+				States: []btypes.ChangesetState{
+					btypes.ChangesetStateOpen,
+					btypes.ChangesetStateDraft,
 				},
-				ReconcilerStates: []btypes.ReconcilerState{btypes.ReconcilerStateCompleted},
 			},
 		},
 		// error when state and onlyClosable are not null
@@ -1609,6 +1604,7 @@ func TestReenqueueChangesets(t *testing.T) {
 		BatchChange:      otherBatchChange.ID,
 		PublicationState: btypes.ChangesetPublicationStatePublished,
 		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		ExternalState:    btypes.ChangesetExternalStateOpen,
 	})
 
 	r := &Resolver{store: cstore}
@@ -1945,22 +1941,25 @@ func TestPublishChangesets(t *testing.T) {
 		HeadRef:   "main",
 	})
 	publishableChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
-		Repo:            repo.ID,
-		BatchChange:     batchChange.ID,
-		ReconcilerState: btypes.ReconcilerStateCompleted,
-		CurrentSpec:     publishableChangesetSpec.ID,
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		CurrentSpec:      publishableChangesetSpec.ID,
 	})
 	unpublishableChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
-		Repo:            repo.ID,
-		BatchChange:     batchChange.ID,
-		ReconcilerState: btypes.ReconcilerStateCompleted,
-		CurrentSpec:     unpublishableChangesetSpec.ID,
+		Repo:             repo.ID,
+		BatchChange:      batchChange.ID,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		CurrentSpec:      unpublishableChangesetSpec.ID,
 	})
 	otherChangeset := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{
-		Repo:            repo.ID,
-		BatchChange:     otherBatchChange.ID,
-		ReconcilerState: btypes.ReconcilerStateCompleted,
-		CurrentSpec:     otherChangesetSpec.ID,
+		Repo:             repo.ID,
+		BatchChange:      otherBatchChange.ID,
+		ReconcilerState:  btypes.ReconcilerStateCompleted,
+		PublicationState: btypes.ChangesetPublicationStateUnpublished,
+		CurrentSpec:      otherChangesetSpec.ID,
 	})
 
 	r := &Resolver{store: cstore}
