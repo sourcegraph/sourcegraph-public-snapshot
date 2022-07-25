@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // Examples:
@@ -183,7 +184,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
 			f, err := gitserver.NewClient(db).ArchiveReader(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name,
-				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitserver.Pathspec{gitserver.PathspecLiteral(relativePath)}})
+				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitdomain.Pathspec{gitdomain.PathspecLiteral(relativePath)}})
 			if err != nil {
 				return err
 			}

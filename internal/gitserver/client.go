@@ -365,7 +365,7 @@ type Client interface {
 	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time, checker authz.SubRepoPermissionChecker) (map[string]time.Time, error)
 
 	// LsFiles returns the output of `git ls-files`
-	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...Pathspec) ([]string, error)
+	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
@@ -476,9 +476,9 @@ func addrForKey(key string, addrs []string) string {
 
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish   string     // the tree or commit to produce an archive for
-	Format    string     // format of the resulting archive (usually "tar" or "zip")
-	Pathspecs []Pathspec // if nonempty, only include these pathspecs.
+	Treeish   string               // the tree or commit to produce an archive for
+	Format    string               // format of the resulting archive (usually "tar" or "zip")
+	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
 }
 
 type BatchLogOptions protocol.BatchLogRequest
@@ -489,18 +489,6 @@ func (opts BatchLogOptions) LogFields() []log.Field {
 		log.String("Format", opts.Format),
 	}
 }
-
-// Pathspec is a git term for a pattern that matches paths using glob-like syntax.
-// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
-type Pathspec string
-
-// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
-// characters.
-func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
-
-// PathspecSuffix constructs a pathspec that matches paths ending with the given suffix (useful for
-// matching paths by basename).
-func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
 // RemoteGitCommand.StdoutReader with one that knows how to report a repository-not-found
@@ -825,39 +813,6 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		}
 		defer resp.Body.Close()
 		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
-
-		// TODO(efritz) - remove after 3.39 branch cut
-		if resp.StatusCode == http.StatusNotFound {
-			// Frontend and gitserver may be rolling out. Fall back to issuing one
-			// command per item in the batch via the original /exec endpoint. We
-			// inline the same behavior as BatchLog here as this is throw-away code.
-
-			for _, repoCommit := range repoCommits {
-				content, err := func() (string, error) {
-					reader, err := c.execReader(ctx, repoCommit.Repo, []string{"log", "-n", "1", "--name-only", opts.Format, string(repoCommit.CommitID)})
-					if err != nil {
-						return "", errors.Wrap(err, "execReader")
-					}
-
-					content, err := io.ReadAll(reader)
-					if err != nil {
-						return "", errors.Wrap(err, "io.ReadAll")
-					}
-
-					return string(content), nil
-				}()
-
-				rawResult := RawBatchLogResult{
-					Stdout: content,
-					Error:  err,
-				}
-				if err := callback(repoCommit, rawResult); err != nil {
-					return errors.Wrap(err, "commitLogCallback")
-				}
-			}
-
-			return nil
-		}
 
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))

@@ -15,6 +15,8 @@ import (
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
+
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -22,13 +24,10 @@ import (
 )
 
 type telemetryJob struct {
-	db database.DB
 }
 
-func NewTelemetryJob(db database.DB) *telemetryJob {
-	return &telemetryJob{
-		db: db,
-	}
+func NewTelemetryJob() *telemetryJob {
+	return &telemetryJob{}
 }
 
 func (t *telemetryJob) Description() string {
@@ -45,7 +44,13 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 	}
 	logger.Info("Usage telemetry export enabled - initializing background routine")
 
-	eventLogStore := t.db.EventLogs()
+	sqlDB, err := workerdb.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	db := database.NewDB(logger, sqlDB)
+	eventLogStore := db.EventLogs()
 
 	return []goroutine.BackgroundRoutine{
 		newBackgroundTelemetryJob(logger, eventLogStore),

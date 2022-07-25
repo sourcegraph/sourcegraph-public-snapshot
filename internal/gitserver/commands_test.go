@@ -2534,7 +2534,7 @@ func TestArchiveReaderForRepoWithSubRepoPermissions(t *testing.T) {
 	opts := ArchiveOptions{
 		Format:    ArchiveFormatZip,
 		Treeish:   commitID,
-		Pathspecs: []Pathspec{"."},
+		Pathspecs: []gitdomain.Pathspec{"."},
 	}
 	client := NewClient(database.NewMockDB())
 	if _, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts); err == nil {
@@ -2569,7 +2569,7 @@ func TestArchiveReaderForRepoWithoutSubRepoPermissions(t *testing.T) {
 	opts := ArchiveOptions{
 		Format:    ArchiveFormatZip,
 		Treeish:   commitID,
-		Pathspecs: []Pathspec{"."},
+		Pathspecs: []gitdomain.Pathspec{"."},
 	}
 	client := NewClient(database.NewMockDB())
 	readCloser, err := client.ArchiveReader(context.Background(), checker, repo.Name, opts)

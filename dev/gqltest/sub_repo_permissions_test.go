@@ -73,6 +73,10 @@ func TestSubRepoPermissionsPerforce(t *testing.T) {
 }
 
 func TestSubRepoPermissionsSearch(t *testing.T) {
+	// context: https://sourcegraph.slack.com/archives/C07KZF47K/p1658178309055259
+	// But it seems that there is still an issue with P4 and they're currently timing out.
+	// cc @mollylogue
+	t.Skip("Currently broken")
 	checkPerforceEnvironment(t)
 	enableSubRepoPermissions(t)
 	createPerforceExternalService(t)

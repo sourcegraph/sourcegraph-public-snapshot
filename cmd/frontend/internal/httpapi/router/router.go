@@ -28,26 +28,18 @@ const (
 	BitbucketServerWebhooks = "bitbucketServer.webhooks"
 	BitbucketCloudWebhooks  = "bitbucketCloud.webhooks"
 
-	SettingsGetForSubject  = "internal.settings.get-for-subject"
-	OrgsListUsers          = "internal.orgs.list-users"
-	OrgsGetByName          = "internal.orgs.get-by-name"
-	UserEmailsGetEmail     = "internal.user-emails.get-email"
 	ExternalURL            = "internal.app-url"
 	SendEmail              = "internal.send-email"
-	Extension              = "internal.extension"
 	GitInfoRefs            = "internal.git.info-refs"
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitUploadPack          = "internal.git.upload-pack"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
-	ReposGetByName         = "internal.repos.get-by-name"
 	ReposInventoryUncached = "internal.repos.inventory-uncached"
 	ReposInventory         = "internal.repos.inventory"
-	ReposList              = "internal.repos.list"
 	ReposIndex             = "internal.repos.index"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
 	ExternalServiceConfigs = "internal.external-services.configs"
-	ExternalServicesList   = "internal.external-services.list"
 	StreamingSearch        = "internal.stream-search"
 	Checks                 = "internal.checks"
 )
@@ -93,24 +85,16 @@ func NewInternal(base *mux.Router) *mux.Router {
 
 	base.StrictSlash(true)
 	// Internal API endpoints should only be served on the internal Handler
-	base.Path("/settings/get-for-subject").Methods("POST").Name(SettingsGetForSubject)
-	base.Path("/orgs/list-users").Methods("POST").Name(OrgsListUsers)
-	base.Path("/orgs/get-by-name").Methods("POST").Name(OrgsGetByName)
-	base.Path("/user-emails/get-email").Methods("POST").Name(UserEmailsGetEmail)
 	base.Path("/app-url").Methods("POST").Name(ExternalURL)
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
-	base.Path("/extension").Methods("POST").Name(Extension)
 	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoName:.*}/resolve-revision/{Spec}").Methods("GET").Name(GitResolveRevision)
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
-	base.Path("/external-services/list").Methods("POST").Name(ExternalServicesList)
 	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
 	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
-	base.Path("/repos/list").Methods("POST").Name(ReposList)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
-	base.Path("/repos/{RepoName:.*}").Methods("POST").Name(ReposGetByName)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
 	base.Path("/telemetry").Methods("POST").Name(Telemetry)
