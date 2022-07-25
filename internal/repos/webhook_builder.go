@@ -18,7 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type WebhookBuildOptions struct {
@@ -140,7 +139,7 @@ WHERE
   AND state IN ('completed', 'errored')
 `)
 		if err != nil && err != context.Canceled {
-			log.Error(errors.Wrap(err, "runjob cleaner"))
+			log.Scoped("webhook build cleaner", err.Error())
 		}
 
 		select {

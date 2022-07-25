@@ -52,7 +52,7 @@ func testWebhookBuilderPlumbing(store repos.Store) func(t *testing.T) {
 			jobChan: jobChan,
 		}
 
-		worker, resetter := repos.NewWebhookBuilder(ctx, store.Handle(), handler, repos.WebhookBuildOptions{
+		worker, resetter := repos.NewWebhookBuildWorker(ctx, store.Handle(), handler, repos.WebhookBuildOptions{
 			NumHandlers:    1,
 			WorkerInterval: 1 * time.Millisecond,
 		})
