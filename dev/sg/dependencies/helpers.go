@@ -191,7 +191,12 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
-	config, _ := sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
+	var config *sgconf.Config
+	if args.DisableOverwrite {
+		config, _ = sgconf.GetWithoutOverwrites(args.ConfigFile)
+	} else {
+		config, _ = sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
+	}
 	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 	}
