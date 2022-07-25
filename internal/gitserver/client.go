@@ -1216,6 +1216,15 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		err error
 	}
 
+	readResponseBody := func(resp *http.Response) error {
+		content, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return errors.Errorf("RepoInfo: http status code: %d, failed to read response body, error: %v", err)
+		}
+
+		return errors.Errorf("RepoInfo: http status code: %d, body: %q", resp.StatusCode, string(content))
+	}
+
 	ch := make(chan op, len(shards))
 	for _, req := range shards {
 		go func(o op) {
@@ -1231,8 +1240,9 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 				o.err = &url.Error{
 					URL: resp.Request.URL.String(),
 					Op:  "RepoInfo",
-					Err: errors.Errorf("RepoInfo: http status %d", resp.StatusCode),
+					Err: readResponseBody(resp),
 				}
+
 				ch <- o
 				return // we never get an error status code AND result
 			}
