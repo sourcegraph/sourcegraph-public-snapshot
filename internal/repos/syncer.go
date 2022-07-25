@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/url"
 	"sort"
@@ -30,6 +31,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
 
 // A Syncer periodically synchronizes available repositories from all its given Sources
@@ -196,7 +198,12 @@ func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record 
 		id, foundWebhook := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
 		if !foundWebhook {
 			secret := randstr.Hex(32)
-			// store it somewhere [org : secret]
+
+			err := addSecretToExtSvc(svc, "someOrg", secret)
+			if err != nil {
+				return errors.Wrap(err, "add secret to External Service")
+			}
+
 			id, err = gh.Client.CreateSyncWebhook(ctx, wbj.RepoName, globals.ExternalURL().Host, secret)
 			if err != nil {
 				return errors.Wrap(err, "create webhook")
@@ -974,4 +981,26 @@ func syncErrorReason(err error) string {
 	default:
 		return "unknown"
 	}
+}
+
+func addSecretToExtSvc(svc *types.ExternalService, org, secret string) error {
+	var config schema.GitHubConnection
+	err := json.Unmarshal([]byte(svc.Config), &config)
+	if err != nil {
+		return errors.Wrap(err, "unmarshal config")
+	}
+
+	config.Webhooks = append(config.Webhooks, &schema.GitHubWebhook{
+		Org: org, Secret: secret,
+	})
+
+	newConfig, err := json.Marshal(config)
+	if err != nil {
+		return errors.Wrap(err, "marshal config")
+	}
+
+	svc.Config = string(newConfig)
+	fmt.Println("svc:", svc)
+
+	return nil
 }

@@ -484,6 +484,12 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 		id, foundSyncWebhook := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
 		if !foundSyncWebhook {
 			secret := randstr.Hex(32)
+
+			err := addSecretToExtSvc(svc, "someOrg", secret)
+			if err != nil {
+				return errors.Wrap(err, "add secret to External Service")
+			}
+
 			id, err = gh.Client.CreateSyncWebhook(ctx, wbj.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret)
 			if err != nil {
 				return errors.Wrap(err, "create webhook")
@@ -506,4 +512,26 @@ func sign(t *testing.T, message, secret []byte) string {
 	}
 
 	return "sha256=" + hex.EncodeToString(mac.Sum(nil))
+}
+
+func addSecretToExtSvc(svc *types.ExternalService, org, secret string) error {
+	var config schema.GitHubConnection
+	err := json.Unmarshal([]byte(svc.Config), &config)
+	if err != nil {
+		return errors.Wrap(err, "unmarshal config")
+	}
+
+	config.Webhooks = append(config.Webhooks, &schema.GitHubWebhook{
+		Org: org, Secret: secret,
+	})
+
+	newConfig, err := json.Marshal(config)
+	if err != nil {
+		return errors.Wrap(err, "marshal config")
+	}
+
+	svc.Config = string(newConfig)
+	fmt.Println("svc:", svc)
+
+	return nil
 }
