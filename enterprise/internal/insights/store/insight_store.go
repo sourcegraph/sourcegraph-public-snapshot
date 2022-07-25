@@ -148,7 +148,6 @@ func (s *InsightStore) GetAll(ctx context.Context, args InsightQueryArgs) ([]typ
 		visibleViewsQuery(args.UserID, args.OrgID),
 		sqlf.Join(preds, "AND"),
 		limit)
-
 	insightIds, err := scanInsightViewIds(s.Query(ctx, q))
 	if err != nil {
 		return nil, err
