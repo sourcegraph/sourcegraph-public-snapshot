@@ -2033,7 +2033,7 @@ func TestExternalServicesStore_Upsert(t *testing.T) {
 	})
 }
 
-func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
+func TestExternalServiceStore_GetSyncJobs(t *testing.T) {
 	if testing.Short() {
 		t.Skip()
 	}
@@ -2076,6 +2076,107 @@ func TestExternalServiceStore_GetExternalServiceSyncJobs(t *testing.T) {
 	}
 	if diff := cmp.Diff(want, have[0], cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
 		t.Fatal(diff)
+	}
+}
+
+func TestExternalServiceStore_CountSyncJobs(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (external_service_id) VALUES ($1)", es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	have, err := db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if have != 1 {
+		t.Fatalf("Expected 1 job, got %d", have)
+	}
+
+	require.Exactly(t, int64(1), have, "total count is incorrect")
+
+	have, err = db.ExternalServices().CountSyncJobs(ctx, ExternalServicesGetSyncJobsOptions{ExternalServiceID: es.ID + 1})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if have != 0 {
+		t.Fatalf("Expected 0 jobs, got %d", have)
+	}
+
+	require.Exactly(t, int64(0), have, "total count is incorrect")
+}
+
+func TestExternalServiceStore_GetSyncJobByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+	t.Parallel()
+	logger := logtest.Scoped(t)
+	db := NewDB(logger, dbtest.NewDB(logger, t))
+	ctx := context.Background()
+
+	// Create a new external service
+	confGet := func() *conf.Unified {
+		return &conf.Unified{}
+	}
+	es := &types.ExternalService{
+		Kind:        extsvc.KindGitHub,
+		DisplayName: "GITHUB #1",
+		Config:      `{"url": "https://github.com", "repositoryQuery": ["none"], "token": "abc"}`,
+	}
+	err := db.ExternalServices().Create(ctx, confGet, es)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = db.Handle().ExecContext(ctx, "INSERT INTO external_service_sync_jobs (id, external_service_id) VALUES (1, $1)", es.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	have, err := db.ExternalServices().GetSyncJobByID(ctx, 1)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	want := &types.ExternalServiceSyncJob{
+		ID:                1,
+		State:             "queued",
+		ExternalServiceID: es.ID,
+	}
+	if diff := cmp.Diff(want, have, cmpopts.IgnoreFields(types.ExternalServiceSyncJob{}, "ID", "QueuedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// Test not found:
+	_, err = db.ExternalServices().GetSyncJobByID(ctx, 2)
+	if err == nil {
+		t.Fatal("no error for not found")
+	}
+	if !errcode.IsNotFound(err) {
+		t.Fatal("wrong err code for not found")
 	}
 }
 

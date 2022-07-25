@@ -22,6 +22,7 @@ import {
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
 import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
+import { Duration } from '../time/Duration'
 import { Timestamp } from '../time/Timestamp'
 
 import {
@@ -271,10 +272,24 @@ interface ExternalServiceSyncJobNodeProps {
 const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({ node }) => (
     <li className="list-group-item py-3">
         <div className="d-flex align-items-center justify-content-between">
-            <div className="flex-shrink-0">
+            <div className="flex-shrink-0 mr-2">
                 <Badge>{node.state}</Badge>
             </div>
-            <div className="text-right">
+            <div className="flex-shrink-0">
+                {node.startedAt && (
+                    <>
+                        {node.finishedAt === null && <>Running since </>}
+                        {node.finishedAt !== null && <>Ran for </>}
+                        <Duration
+                            start={node.startedAt}
+                            end={node.finishedAt ?? undefined}
+                            stableWidth={false}
+                            className="d-inline"
+                        />
+                    </>
+                )}
+            </div>
+            <div className="text-right flex-grow-1">
                 <div>
                     {node.startedAt === null && 'Not started yet'}
                     {node.startedAt !== null && (

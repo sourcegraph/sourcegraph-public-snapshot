@@ -88,7 +88,7 @@ type ExternalServiceStore interface {
 	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service
 	GetLastSyncError(ctx context.Context, id int64) (string, error)
 
-	// GetSyncJobs gets a sync job by its ID.
+	// GetSyncJobByID gets a sync job by its ID.
 	GetSyncJobByID(ctx context.Context, id int64) (job *types.ExternalServiceSyncJob, err error)
 
 	// GetSyncJobs gets all sync jobs.
@@ -1131,7 +1131,7 @@ ORDER BY
 %s
 `
 
-func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error) {
+func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
 	var preds []*sqlf.Query
 
 	if opts.ExternalServiceID != 0 {
@@ -1166,7 +1166,7 @@ func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opts ExternalSer
 
 const countSyncJobsQueryFmtstr = `
 SELECT
-	COUNT(1)
+	COUNT(*)
 FROM
 	external_service_sync_jobs
 WHERE %s
