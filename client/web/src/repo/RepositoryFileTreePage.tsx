@@ -40,7 +40,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
         globbing,
         ...context
     } = props
-
     // The decoding depends on the pinned `history` version.
     // See https://github.com/sourcegraph/sourcegraph/issues/4408
     // and https://github.com/ReactTraining/history/issues/505
@@ -132,7 +131,6 @@ export const RepositoryFileTreePage: React.FunctionComponent<
                     </ErrorBoundary>
                 </BlobStatusBarContainer>
             )}
-
             <ActionItemsBar
                 useActionItemsBar={context.useActionItemsBar}
                 location={context.location}
