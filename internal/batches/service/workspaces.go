@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"sort"
+	"strings"
 
 	"github.com/gobwas/glob"
 	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
@@ -137,7 +138,19 @@ func findWorkspaces(
 				fetchWorkspace = false
 			}
 
-			steps, err := stepsForRepo(spec, util.NewTemplatingRepo(workspace.Repo.Name, workspace.Repo.FileMatches))
+			// Filter file matches by workspace. Only include paths that are
+			// _within_ the directory.
+			paths := map[string]bool{}
+			for probe := range workspace.Repo.FileMatches {
+				if strings.HasPrefix(probe, path) {
+					paths[probe] = true
+				}
+			}
+
+			repo := *workspace.Repo
+			repo.FileMatches = paths
+
+			steps, err := stepsForRepo(spec, util.NewTemplatingRepo(repo.Name, repo.FileMatches))
 			if err != nil {
 				return nil, err
 			}
@@ -148,7 +161,7 @@ func findWorkspaces(
 			}
 
 			workspaces = append(workspaces, RepoWorkspace{
-				Repo:               workspace.Repo,
+				Repo:               &repo,
 				Path:               path,
 				OnlyFetchWorkspace: fetchWorkspace,
 			})

@@ -15,9 +15,10 @@ import (
 
 func TestFindWorkspaces(t *testing.T) {
 	repos := []*graphql.Repository{
-		{ID: "repo-id-0", Name: "github.com/sourcegraph/automation-testing"},
-		{ID: "repo-id-1", Name: "github.com/sourcegraph/sourcegraph"},
-		{ID: "repo-id-2", Name: "bitbucket.sgdev.org/SOUR/automation-testing"},
+		{ID: "repo-id-0", Name: "github.com/sourcegraph/automation-testing", FileMatches: map[string]bool{}},
+		{ID: "repo-id-1", Name: "github.com/sourcegraph/sourcegraph", FileMatches: map[string]bool{}},
+		{ID: "repo-id-2", Name: "bitbucket.sgdev.org/SOUR/automation-testing", FileMatches: map[string]bool{}},
+		{ID: "repo-id-3", Name: "github.com/sourcegraph/src-cli", FileMatches: map[string]bool{"a/b": true, "a/b/c": true, "d/e/f": true}},
 	}
 	steps := []batcheslib.Step{{Run: "echo 1"}}
 
@@ -37,6 +38,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{Repo: repos[0], Path: ""},
 				{Repo: repos[1], Path: ""},
 				{Repo: repos[2], Path: ""},
+				{Repo: repos[3], Path: ""},
 			},
 		},
 
@@ -52,10 +54,11 @@ func TestFindWorkspaces(t *testing.T) {
 				{Repo: repos[0], Path: ""},
 				{Repo: repos[1], Path: ""},
 				{Repo: repos[2], Path: ""},
+				{Repo: repos[3], Path: ""},
 			},
 		},
 
-		"workspace configuration matching 2 repos with no results": {
+		"workspace configuration matching 3 repos with no results": {
 			spec: &batcheslib.BatchSpec{
 				Steps: steps,
 				Workspaces: []batcheslib.WorkspaceConfiguration{
@@ -68,6 +71,7 @@ func TestFindWorkspaces(t *testing.T) {
 			},
 			wantWorkspaces: []RepoWorkspace{
 				{Repo: repos[1], Path: ""},
+				{Repo: repos[3], Path: ""},
 			},
 		},
 
@@ -90,6 +94,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{Repo: repos[2], Path: "a/b"},
 				{Repo: repos[2], Path: "a/b/c"},
 				{Repo: repos[2], Path: "d/e/f"},
+				{Repo: repos[3], Path: ""},
 			},
 		},
 
@@ -116,6 +121,7 @@ func TestFindWorkspaces(t *testing.T) {
 				{Repo: repos[2], Path: "a/b", OnlyFetchWorkspace: true},
 				{Repo: repos[2], Path: "a/b/c", OnlyFetchWorkspace: true},
 				{Repo: repos[2], Path: "d/e/f", OnlyFetchWorkspace: true},
+				{Repo: repos[3], Path: ""},
 			},
 		},
 		"workspace configuration without 'in' matches all": {
@@ -134,6 +140,53 @@ func TestFindWorkspaces(t *testing.T) {
 			wantWorkspaces: []RepoWorkspace{
 				{Repo: repos[0], Path: "a/b"},
 				{Repo: repos[2], Path: "a/b"},
+			},
+		},
+		"workspace gets subset of search_result_paths": {
+			spec: &batcheslib.BatchSpec{
+				Steps: steps,
+				Workspaces: []batcheslib.WorkspaceConfiguration{
+					{
+						In:               "*src-cli",
+						RootAtLocationOf: "package.json",
+					},
+				},
+			},
+			finderResults: finderResults{
+				repos[3]: {"a/b", "d"},
+			},
+			wantWorkspaces: []RepoWorkspace{
+				{Repo: repos[0], Path: ""},
+				{Repo: repos[1], Path: ""},
+				{Repo: repos[2], Path: ""},
+				{
+					Repo: &graphql.Repository{
+						ID:                 repos[3].ID,
+						Name:               repos[3].Name,
+						URL:                repos[3].URL,
+						ExternalRepository: repos[3].ExternalRepository,
+						DefaultBranch:      repos[3].DefaultBranch,
+						Branch:             repos[3].Branch,
+						Commit:             repos[3].Commit,
+						// Only expect the file matches that are children of a/b.
+						FileMatches: map[string]bool{"a/b": true, "a/b/c": true},
+					},
+					Path: "a/b",
+				},
+				{
+					Repo: &graphql.Repository{
+						ID:                 repos[3].ID,
+						Name:               repos[3].Name,
+						URL:                repos[3].URL,
+						ExternalRepository: repos[3].ExternalRepository,
+						DefaultBranch:      repos[3].DefaultBranch,
+						Branch:             repos[3].Branch,
+						Commit:             repos[3].Commit,
+						// Only expect the file matches that are children of d.
+						FileMatches: map[string]bool{"d/e/f": true},
+					},
+					Path: "d",
+				},
 			},
 		},
 	}
