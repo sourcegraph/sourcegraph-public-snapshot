@@ -3,6 +3,11 @@ package telemetry
 import (
 	"context"
 	"testing"
+	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+
+	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -103,7 +108,7 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			handler := newTelemetryHandler(logtest.Scoped(t), database.NewMockEventLogStore(), func(ctx context.Context, event []*types.Event, config topicConfig) error {
+			handler := newTelemetryHandler(logtest.Scoped(t), database.NewMockEventLogStore(), database.NewMockUserEmailsStore(), database.NewMockGlobalStateStore(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 				return nil
 			})
 			err := handler.Handle(ctx)
@@ -129,7 +134,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
 	t.Run("loads no events when table is empty", func(t *testing.T) {
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event, config topicConfig) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			if len(event) != 0 {
 				t.Errorf("expected empty events but got event array with size: %d", len(event))
 			}
@@ -161,7 +166,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 
 	t.Run("loads events without error", func(t *testing.T) {
 		var got []*types.Event
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event, config topicConfig) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			got = event
 			return nil
 		})
@@ -196,7 +201,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
 		var got []*types.Event
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event, config topicConfig) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			got = event
 			return nil
 		})
@@ -233,16 +238,12 @@ func TestHandleInvalidConfig(t *testing.T) {
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
-	noop := func(ctx context.Context, event []*types.Event, config topicConfig) error {
-		return nil
-	}
-
 	t.Run("handle fails when missing project name", func(t *testing.T) {
 		config := validEnabledConfiguration()
 		config.ExportUsageTelemetry.TopicProjectName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		handler := newTelemetryHandler(logger, db.EventLogs(), noop)
+		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), noopHandler())
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
@@ -252,9 +253,83 @@ func TestHandleInvalidConfig(t *testing.T) {
 		config.ExportUsageTelemetry.TopicName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		handler := newTelemetryHandler(logger, db.EventLogs(), noop)
+		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), noopHandler())
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing topic name", "getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
 	})
+}
+
+func TestBuildBigQueryObject(t *testing.T) {
+	atTime := time.Date(2022, 7, 22, 0, 0, 0, 0, time.UTC)
+	event := &types.Event{
+		ID:              1,
+		Name:            "GREAT_EVENT",
+		URL:             "https://sourcegraph.com/search",
+		UserID:          5,
+		AnonymousUserID: "anonymous",
+		Argument:        "argument",
+		Source:          "src",
+		Version:         "1.1.1",
+		Timestamp:       atTime,
+	}
+
+	metadata := &instanceMetadata{
+		deployType:        "docker",
+		version:           "1.2.3",
+		siteID:            "site-id-1",
+		licenseKey:        "license-key-1",
+		initialAdminEmail: "admin@place.com",
+	}
+
+	got := buildBigQueryObject(event, metadata)
+	autogold.Want("build big query object", &bigQueryEvent{
+		SiteID:            "site-id-1",
+		LicenseKey:        "license-key-1",
+		InitialAdminEmail: "admin@place.com",
+		DeployType:        "docker",
+		EventName:         "GREAT_EVENT",
+		AnonymousUserID:   "anonymous",
+		UserID:            5,
+		Source:            "src",
+		Timestamp:         "2022-07-22T00:00:00Z",
+		Version:           "1.1.1",
+		PublicArgument:    "argument",
+	}).Equal(t, got)
+}
+
+func TestGetInstanceMetadata(t *testing.T) {
+	ctx := context.Background()
+
+	stateStore := database.NewMockGlobalStateStore()
+	userEmailStore := database.NewMockUserEmailsStore()
+	version.Mock("fake-version-1")
+	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{LicenseKey: "mock-license"}})
+	deploy.Mock("fake-deploy-type")
+
+	stateStore.GetFunc.SetDefaultReturn(database.GlobalState{
+		SiteID:      "fake-site-id",
+		Initialized: true,
+	}, nil)
+
+	userEmailStore.GetInitialSiteAdminInfoFunc.SetDefaultReturn("fake@place.com", true, nil)
+
+	got, err := getInstanceMetadata(ctx, stateStore, userEmailStore)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	autogold.Want("check that instance metadata equals mocked values", instanceMetadata{
+		deployType:        "fake-deploy-type",
+		version:           "fake-version-1",
+		siteID:            "fake-site-id",
+		licenseKey:        "mock-license",
+		initialAdminEmail: "fake@place.com",
+	}).Equal(t, got)
+}
+
+func noopHandler() sendEventsCallbackFunc {
+	return func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		return nil
+	}
 }

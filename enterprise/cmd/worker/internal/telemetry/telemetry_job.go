@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
+
 	"cloud.google.com/go/pubsub"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -53,34 +55,39 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 	}
 
 	db := database.NewDB(logger, sqlDB)
-	eventLogStore := db.EventLogs()
 
 	return []goroutine.BackgroundRoutine{
-		newBackgroundTelemetryJob(logger, eventLogStore),
+		newBackgroundTelemetryJob(logger, db),
 	}, nil
 }
 
-func newBackgroundTelemetryJob(logger log.Logger, eventLogStore database.EventLogStore) goroutine.BackgroundRoutine {
+func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
 	observationContext := &observation.Context{
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
 		Registerer: prometheus.NewRegistry(),
 	}
 	operation := observationContext.Operation(observation.Op{})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, newTelemetryHandler(logger, eventLogStore, sendEvents), operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), sendEvents), operation)
 }
+
+type sendEventsCallbackFunc func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error
 
 type telemetryHandler struct {
 	logger             log.Logger
 	eventLogStore      database.EventLogStore
-	sendEventsCallback func(ctx context.Context, event []*types.Event, config topicConfig) error
+	globalStateStore   database.GlobalStateStore
+	userEmailsStore    database.UserEmailsStore
+	sendEventsCallback sendEventsCallbackFunc
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, sendEventsCallback func(ctx context.Context, event []*types.Event, config topicConfig) error) *telemetryHandler {
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
 	return &telemetryHandler{
 		logger:             logger,
 		eventLogStore:      store,
 		sendEventsCallback: sendEventsCallback,
+		globalStateStore:   globalStateStore,
+		userEmailsStore:    userEmailsStore,
 	}
 }
 
@@ -98,6 +105,11 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 		return errors.Wrap(err, "getTopicConfig")
 	}
 
+	instanceMetadata, err := getInstanceMetadata(ctx, t.globalStateStore, t.userEmailsStore)
+	if err != nil {
+		return errors.Wrap(err, "getInstanceMetadata")
+	}
+
 	batchSize := getBatchSize()
 
 	all, err := t.eventLogStore.ListExportableEvents(ctx, database.LimitOffset{
@@ -113,7 +125,7 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 
 	maxId := int(all[len(all)-1].ID)
 	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
-	return t.sendEventsCallback(ctx, all, topicConfig)
+	return t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
 }
 
 // This package level client is to prevent race conditions when mocking this configuration in tests.
@@ -155,24 +167,32 @@ func getTopicConfig() (topicConfig, error) {
 	return config, nil
 }
 
-func sendEvents(ctx context.Context, events []*types.Event, config topicConfig) error {
+func buildBigQueryObject(event *types.Event, metadata *instanceMetadata) *bigQueryEvent {
+	return &bigQueryEvent{
+		EventName:         event.Name,
+		UserID:            int(event.UserID),
+		AnonymousUserID:   event.AnonymousUserID,
+		URL:               "", // omitting URL intentionally
+		Source:            event.Source,
+		Timestamp:         event.Timestamp.Format(time.RFC3339),
+		PublicArgument:    event.Argument,
+		Version:           event.Version, // sending event version since these events could be scraped from the past
+		SiteID:            metadata.siteID,
+		LicenseKey:        metadata.licenseKey,
+		DeployType:        metadata.deployType,
+		InitialAdminEmail: metadata.initialAdminEmail,
+	}
+}
+
+func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, metadata instanceMetadata) error {
 	client, err := pubsub.NewClient(ctx, config.projectName)
 	if err != nil {
 		return errors.Wrap(err, "pubsub.NewClient")
 	}
 
-	var toSend []bigQueryEvent
+	var toSend []*bigQueryEvent
 	for _, event := range events {
-		pubsubEvent := bigQueryEvent{
-			EventName:       event.Name,
-			UserID:          int(*event.UserID),
-			AnonymousUserID: event.AnonymousUserID,
-			URL:             event.URL,
-			Source:          event.Source,
-			Timestamp:       time.Now().UTC().Format(time.RFC3339),
-			Version:         version.Version(),
-			PublicArgument:  event.Argument,
-		}
+		pubsubEvent := buildBigQueryObject(event, &metadata)
 		toSend = append(toSend, pubsubEvent)
 	}
 
@@ -195,21 +215,67 @@ func sendEvents(ctx context.Context, events []*types.Event, config topicConfig) 
 }
 
 type bigQueryEvent struct {
-	EventName       string  `json:"name"`
-	URL             string  `json:"url"`
-	AnonymousUserID string  `json:"anonymous_user_id"`
-	FirstSourceURL  string  `json:"first_source_url"`
-	LastSourceURL   string  `json:"last_source_url"`
-	UserID          int     `json:"user_id"`
-	Source          string  `json:"source"`
-	Timestamp       string  `json:"timestamp"`
-	Version         string  `json:"version"`
-	FeatureFlags    string  `json:"feature_flags"`
-	CohortID        *string `json:"cohort_id,omitempty"`
-	Referrer        string  `json:"referrer,omitempty"`
-	PublicArgument  string  `json:"public_argument"`
-	DeviceID        *string `json:"device_id,omitempty"`
-	InsertID        *string `json:"insert_id,omitempty"`
+	SiteID            string  `json:"site_id"`
+	LicenseKey        string  `json:"license_key"`
+	InitialAdminEmail string  `json:"initial_admin_email"`
+	DeployType        string  `json:"deploy_type"`
+	EventName         string  `json:"name"`
+	URL               string  `json:"url"`
+	AnonymousUserID   string  `json:"anonymous_user_id"`
+	FirstSourceURL    string  `json:"first_source_url"`
+	LastSourceURL     string  `json:"last_source_url"`
+	UserID            int     `json:"user_id"`
+	Source            string  `json:"source"`
+	Timestamp         string  `json:"timestamp"`
+	Version           string  `json:"version"`
+	FeatureFlags      string  `json:"feature_flags"`
+	CohortID          *string `json:"cohort_id,omitempty"`
+	Referrer          string  `json:"referrer,omitempty"`
+	PublicArgument    string  `json:"public_argument"`
+	DeviceID          *string `json:"device_id,omitempty"`
+	InsertID          *string `json:"insert_id,omitempty"`
 }
 
-var pubSubDotComEventsTopicID = env.Get("USAGE_DATA_EVENTS_TOPIC_ID", "", "Pub/sub events topic ID is the pub/sub topic id where usage data events are published.")
+type instanceMetadata struct {
+	deployType        string
+	version           string
+	siteID            string
+	licenseKey        string
+	initialAdminEmail string
+}
+
+func getInstanceMetadata(ctx context.Context, stateStore database.GlobalStateStore, userEmailsStore database.UserEmailsStore) (instanceMetadata, error) {
+	siteId, err := getSiteId(ctx, stateStore)
+	if err != nil {
+		return instanceMetadata{}, errors.Wrap(err, "getInstanceMetadata.getSiteId")
+	}
+
+	initialAdminEmail, err := getInitialAdminEmail(ctx, userEmailsStore)
+	if err != nil {
+		return instanceMetadata{}, errors.Wrap(err, "getInstanceMetadata.getInitialAdminEmail")
+	}
+
+	return instanceMetadata{
+		deployType:        deploy.Type(),
+		version:           version.Version(),
+		siteID:            siteId,
+		licenseKey:        confClient.Get().LicenseKey,
+		initialAdminEmail: initialAdminEmail,
+	}, nil
+}
+
+func getSiteId(ctx context.Context, store database.GlobalStateStore) (string, error) {
+	state, err := store.Get(ctx)
+	if err != nil {
+		return "", err
+	}
+	return state.SiteID, nil
+}
+
+func getInitialAdminEmail(ctx context.Context, store database.UserEmailsStore) (string, error) {
+	info, _, err := store.GetInitialSiteAdminInfo(ctx)
+	if err != nil {
+		return "", err
+	}
+	return info, nil
+}
