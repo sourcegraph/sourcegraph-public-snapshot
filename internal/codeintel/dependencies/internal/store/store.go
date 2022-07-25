@@ -792,7 +792,7 @@ var ErrLockfileIndexNotFound = errors.New("lockfile index matching conditions no
 
 // GetLockfileIndex returns a lockfile index.
 func (s *store) GetLockfileIndex(ctx context.Context, opts GetLockfileIndexOpts) (index shared.LockfileIndex, err error) {
-	ctx, _, endObservation := s.operations.listLockfileIndexes.With(ctx, &err, observation.Args{LogFields: []log.Field{
+	ctx, _, endObservation := s.operations.getLockfileIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("id", opts.ID),
 		log.String("repoName", opts.RepoName),
 		log.String("commit", opts.Commit),
