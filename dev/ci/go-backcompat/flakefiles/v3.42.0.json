@@ -3,5 +3,35 @@
     "path": "internal/usagestats",
     "prefix": "TestGetBatchChangesUsageStatistics",
     "reason": "Fixed up DB constraints, now the test inserts invalid test data."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestPublishChangesets",
+    "reason": "New DB structure doesn't work with old test helper data."
+  },
+  {
+    "path": "enterprise/cmd/frontend/internal/batches/resolvers",
+    "prefix": "TestReenqueueChangesets",
+    "reason": "New DB structure doesn't work with old test helper data."
+  },
+  {
+    "path": "enterprise/internal/batches/processor",
+    "prefix": "TestBulkProcessor",
+    "reason": "New DB structure doesn't work with old test helper data."
+  },
+  {
+    "path": "enterprise/internal/batches/service",
+    "prefix": "TestService",
+    "reason": "New DB structure doesn't work with old test helper data."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestIntegration",
+    "reason": "New DB structure doesn't work with old test helper data."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestCancelQueuedBatchChangeChangesets",
+    "reason": "New DB structure doesn't work with old test helper data."
   }
 ]
