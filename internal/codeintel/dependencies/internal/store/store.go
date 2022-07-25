@@ -266,9 +266,14 @@ func populatePackageDependencyChannel(deps []shared.PackageDependency, lockfile,
 // `codeintel_lockfiles` entry and the full graph is represented in
 // `codeintel_lockfile_references` as edges in the `depends_on` column.
 func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockfile string, deps []shared.PackageDependency, graph shared.DependencyGraph) (err error) {
+	return s.upsertLockfileGraphAt(ctx, repoName, commit, lockfile, deps, graph, time.Now())
+}
+
+func (s *store) upsertLockfileGraphAt(ctx context.Context, repoName, commit, lockfile string, deps []shared.PackageDependency, graph shared.DependencyGraph, now time.Time) (err error) {
 	ctx, _, endObservation := s.operations.upsertLockfileGraph.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.String("repoName", repoName),
 		log.String("commit", commit),
+		log.String("lockfile", lockfile),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -325,8 +330,11 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockf
 			idsArray,
 			lockfile,
 			shared.IndexFidelityFlat,
+			now,
+			now,
 			repoName,
 			idsArray,
+			now,
 		))
 	}
 
@@ -398,8 +406,11 @@ func (s *store) UpsertLockfileGraph(ctx context.Context, repoName, commit, lockf
 		idsArray,
 		lockfile,
 		fidelity,
+		now,
+		now,
 		repoName,
 		idsArray,
+		now,
 	))
 }
 
@@ -453,14 +464,16 @@ INSERT INTO codeintel_lockfiles (
 	commit_bytea,
 	codeintel_lockfile_reference_ids,
 	lockfile,
-	fidelity
+	fidelity,
+	updated_at,
+	created_at
 )
-SELECT id, %s, %s, %s, %s
+SELECT id, %s, %s, %s, %s, %s, %s
 FROM repo
 WHERE name = %s
 -- Last write wins
 ON CONFLICT (repository_id, commit_bytea, lockfile) DO UPDATE
-SET codeintel_lockfile_reference_ids = %s
+SET codeintel_lockfile_reference_ids = %s, updated_at = %s
 `
 
 const insertLockfilesEdgesQuery = `
@@ -740,7 +753,7 @@ func (s *store) ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexe
 
 const listLockfileIndexesQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:ListLockfileIndexes
-SELECT id, repository_id, commit_bytea, codeintel_lockfile_reference_ids, lockfile, fidelity
+SELECT id, repository_id, commit_bytea, codeintel_lockfile_reference_ids, lockfile, fidelity, updated_at, created_at
 FROM codeintel_lockfiles
 WHERE %s
 ORDER BY id ASC
@@ -821,7 +834,7 @@ func (s *store) GetLockfileIndex(ctx context.Context, opts GetLockfileIndexOpts)
 
 const getLockfileIndexQuery = `
 -- source: internal/codeintel/dependencies/internal/store/store.go:GetLockfileIndex
-SELECT id, repository_id, commit_bytea, codeintel_lockfile_reference_ids, lockfile, fidelity
+SELECT id, repository_id, commit_bytea, codeintel_lockfile_reference_ids, lockfile, fidelity, updated_at, created_at
 FROM codeintel_lockfiles
 WHERE %s
 ORDER BY id

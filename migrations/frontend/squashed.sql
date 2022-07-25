@@ -1262,7 +1262,9 @@ CREATE TABLE codeintel_lockfiles (
     commit_bytea bytea NOT NULL,
     codeintel_lockfile_reference_ids integer[] NOT NULL,
     lockfile text,
-    fidelity text DEFAULT 'flat'::text NOT NULL
+    fidelity text DEFAULT 'flat'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
@@ -1274,6 +1276,10 @@ COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key
 COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile in the given repository and the given commit.';
 
 COMMENT ON COLUMN codeintel_lockfiles.fidelity IS 'Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...';
+
+COMMENT ON COLUMN codeintel_lockfiles.created_at IS 'Time when lockfile was indexed';
+
+COMMENT ON COLUMN codeintel_lockfiles.updated_at IS 'Time when lockfile index was updated';
 
 CREATE SEQUENCE codeintel_lockfiles_id_seq
     AS integer

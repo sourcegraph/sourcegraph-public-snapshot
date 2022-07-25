@@ -6035,6 +6035,19 @@
           "Comment": "A 40-char revhash. Note that this commit may not be resolvable in the future."
         },
         {
+          "Name": "created_at",
+          "Index": 7,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Time when lockfile was indexed"
+        },
+        {
           "Name": "fidelity",
           "Index": 6,
           "TypeName": "text",
@@ -6085,6 +6098,19 @@
           "IsGenerated": "NEVER",
           "GenerationExpression": "",
           "Comment": ""
+        },
+        {
+          "Name": "updated_at",
+          "Index": 8,
+          "TypeName": "timestamp with time zone",
+          "IsNullable": false,
+          "Default": "now()",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": "Time when lockfile index was updated"
         }
       ],
       "Indexes": [
