@@ -57,7 +57,7 @@ export const Duration: React.FunctionComponent<React.PropsWithChildren<DurationP
     }, [end])
 
     return (
-        <div className={classNames({ [styles.stableWidth]: stableWidth, className })} {...props}>
+        <div className={classNames({ [styles.stableWidth]: stableWidth }, className)} {...props}>
             {stableWidth && (
                 // Set the width of the parent with a filler block of full-width digits,
                 // to prevent layout shift if the time changes.

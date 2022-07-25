@@ -1,8 +1,9 @@
+import { MutationTuple } from '@apollo/client'
 import { Observable } from 'rxjs'
 import { map, mapTo } from 'rxjs/operators'
 
 import { createAggregateError, isErrorLike, ErrorLike } from '@sourcegraph/common'
-import { gql, dataOrThrowErrors } from '@sourcegraph/http-client'
+import { gql, dataOrThrowErrors, useMutation } from '@sourcegraph/http-client'
 import { TelemetryService } from '@sourcegraph/shared/src/telemetry/telemetryService'
 
 import { requestGraphQL } from '../../backend/graphql'
@@ -23,6 +24,11 @@ import {
     SetExternalServiceReposResult,
     AffiliatedRepositoriesVariables,
     AffiliatedRepositoriesResult,
+    SyncExternalServiceResult,
+    SyncExternalServiceVariables,
+    ExternalServiceSyncJobsVariables,
+    ExternalServiceSyncJobConnectionFields,
+    ExternalServiceSyncJobsResult,
 } from '../../graphql-operations'
 
 export const externalServiceFragment = gql`
@@ -304,6 +310,76 @@ export function queryExternalServicesScope(
                 throw createAggregateError(errors)
             }
             return data.externalServices
+        })
+    )
+}
+
+const SYNC_EXTERNAL_SERVICE = gql`
+    mutation SyncExternalService($id: ID!) {
+        syncExternalService(id: $id) {
+            alwaysNil
+        }
+    }
+`
+
+export function useSyncExternalService(): MutationTuple<SyncExternalServiceResult, SyncExternalServiceVariables> {
+    return useMutation<SyncExternalServiceResult, SyncExternalServiceVariables>(SYNC_EXTERNAL_SERVICE)
+}
+
+export const EXTERNAL_SERVICE_SYNC_JOBS = gql`
+    query ExternalServiceSyncJobs($first: Int, $externalService: ID!) {
+        node(id: $externalService) {
+            __typename
+            ... on ExternalService {
+                syncJobs(first: $first) {
+                    ...ExternalServiceSyncJobConnectionFields
+                }
+            }
+        }
+    }
+
+    fragment ExternalServiceSyncJobConnectionFields on ExternalServiceSyncJobConnection {
+        totalCount
+        pageInfo {
+            endCursor
+            hasNextPage
+        }
+        nodes {
+            ...ExternalServiceSyncJobListFields
+        }
+    }
+
+    fragment ExternalServiceSyncJobListFields on ExternalServiceSyncJob {
+        __typename
+        id
+        state
+        startedAt
+        finishedAt
+        failureMessage
+    }
+`
+
+export function queryExternalServiceSyncJobs(
+    variables: ExternalServiceSyncJobsVariables
+): Observable<ExternalServiceSyncJobConnectionFields> {
+    return requestGraphQL<ExternalServiceSyncJobsResult, ExternalServiceSyncJobsVariables>(
+        EXTERNAL_SERVICE_SYNC_JOBS,
+        variables
+    ).pipe(
+        map(({ data, errors }) => {
+            if (errors) {
+                throw createAggregateError(errors)
+            }
+            if (!data) {
+                throw new Error('No data found')
+            }
+            if (!data.node) {
+                throw new Error('External service not found')
+            }
+            if (data.node.__typename !== 'ExternalService') {
+                throw new Error(`Node is a ${data.node.__typename}, not ExternalService`)
+            }
+            return data.node.syncJobs
         })
     )
 }
