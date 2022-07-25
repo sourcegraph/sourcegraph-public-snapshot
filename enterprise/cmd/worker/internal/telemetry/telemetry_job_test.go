@@ -52,11 +52,9 @@ func TestInitializeJob(t *testing.T) {
 			shouldInit: false,
 		},
 		{
-			name: "setting exists and is enabled",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true},
-			},
-			shouldInit: true,
+			name:         "setting exists and is enabled",
+			mockedConfig: validEnabledConfiguration(),
+			shouldInit:   true,
 		},
 	}
 	for _, test := range tests {
@@ -98,18 +96,16 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 			expectErr: disabledErr,
 		},
 		{
-			name: "setting exists and is enabled",
-			mockedConfig: schema.SiteConfiguration{
-				ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true},
-			},
-			expectErr: nil,
+			name:         "setting exists and is enabled",
+			mockedConfig: validEnabledConfiguration(),
+			expectErr:    nil,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			handler := newTelemetryHandler(logtest.Scoped(t), database.NewMockEventLogStore(), func(ctx context.Context, event []*types.Event) error {
+			handler := newTelemetryHandler(logtest.Scoped(t), database.NewMockEventLogStore(), func(ctx context.Context, event []*types.Event, config topicConfig) error {
 				return nil
 			})
 			err := handler.Handle(ctx)
@@ -132,10 +128,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
-	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true}}})
+	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
 	t.Run("loads no events when table is empty", func(t *testing.T) {
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event, config topicConfig) error {
 			if len(event) != 0 {
 				t.Errorf("expected empty events but got event array with size: %d", len(event))
 			}
@@ -167,7 +163,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 
 	t.Run("loads events without error", func(t *testing.T) {
 		var got []*types.Event
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event, config topicConfig) error {
 			got = event
 			return nil
 		})
@@ -197,10 +193,12 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	})
 
 	t.Run("loads using specified batch size from settings", func(t *testing.T) {
-		confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{Enabled: true, BatchSize: 1}}})
+		config := validEnabledConfiguration()
+		config.ExportUsageTelemetry.BatchSize = 1
+		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
 		var got []*types.Event
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event) error {
+		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), func(ctx context.Context, event []*types.Event, config topicConfig) error {
 			got = event
 			return nil
 		})
@@ -219,4 +217,12 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			},
 		}).Equal(t, got)
 	})
+}
+
+func validEnabledConfiguration() schema.SiteConfiguration {
+	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{
+		Enabled:          true,
+		TopicName:        "test-topic",
+		TopicProjectName: "test-project",
+	}}
 }
