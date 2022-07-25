@@ -6,8 +6,6 @@ import (
 	"time"
 
 	"cloud.google.com/go/pubsub"
-	"github.com/inconshreveable/log15"
-
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/version"
 
@@ -75,10 +73,10 @@ func newBackgroundTelemetryJob(logger log.Logger, eventLogStore database.EventLo
 type telemetryHandler struct {
 	logger             log.Logger
 	eventLogStore      database.EventLogStore
-	sendEventsCallback func(ctx context.Context, event []*types.Event) error
+	sendEventsCallback func(ctx context.Context, event []*types.Event, config topicConfig) error
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, sendEventsCallback func(ctx context.Context, event []*types.Event) error) *telemetryHandler {
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, sendEventsCallback func(ctx context.Context, event []*types.Event, config topicConfig) error) *telemetryHandler {
 	return &telemetryHandler{
 		logger:             logger,
 		eventLogStore:      store,
@@ -95,7 +93,13 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 		return disabledErr
 	}
 
+	topicConfig, err := getTopicConfig()
+	if err != nil {
+		return errors.Wrap(err, "getTopicConfig")
+	}
+
 	batchSize := getBatchSize()
+
 	all, err := t.eventLogStore.ListExportableEvents(ctx, database.LimitOffset{
 		Limit:  batchSize,
 		Offset: 0, // currently static, will become dynamic with https://github.com/sourcegraph/sourcegraph/issues/39089
@@ -109,7 +113,7 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 
 	maxId := int(all[len(all)-1].ID)
 	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
-	return t.sendEventsCallback(ctx, all)
+	return t.sendEventsCallback(ctx, all, topicConfig)
 }
 
 // This package level client is to prevent race conditions when mocking this configuration in tests.
@@ -132,11 +136,29 @@ func getBatchSize() int {
 	return val
 }
 
-func sendEvents(ctx context.Context, events []*types.Event) error {
-	client, err := pubsub.NewClient(ctx, "sourcegraph-dogfood")
+type topicConfig struct {
+	projectName string
+	topicName   string
+}
+
+func getTopicConfig() (topicConfig, error) {
+	var config topicConfig
+
+	config.topicName = confClient.Get().ExportUsageTelemetry.TopicName
+	if config.topicName == "" {
+		return config, errors.New("missing topic name to export usage data")
+	}
+	config.projectName = confClient.Get().ExportUsageTelemetry.TopicProjectName
+	if config.projectName == "" {
+		return config, errors.New("missing project name to export usage data")
+	}
+	return config, nil
+}
+
+func sendEvents(ctx context.Context, events []*types.Event, config topicConfig) error {
+	client, err := pubsub.NewClient(ctx, config.projectName)
 	if err != nil {
-		log15.Error("failed to create pubsub client.", "error", err)
-		return err
+		return errors.Wrap(err, "pubsub.NewClient")
 	}
 
 	var toSend []bigQueryEvent
@@ -159,17 +181,16 @@ func sendEvents(ctx context.Context, events []*types.Event) error {
 		return errors.Wrap(err, "json.Marshal")
 	}
 
-	topic := client.Topic("usage-data-testing")
+	topic := client.Topic(config.topicName)
 	defer topic.Stop()
 	result := topic.Publish(ctx, &pubsub.Message{
 		Data: msg,
 	})
 	_, err = result.Get(ctx)
 	if err != nil {
-		return err
+		return errors.Wrap(err, "result.Get")
 	}
 
-	log15.Info("sent pubsub message")
 	return nil
 }
 
