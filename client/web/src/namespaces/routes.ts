@@ -1,6 +1,8 @@
 import { lazyComponent } from '@sourcegraph/shared/src/util/lazyComponent'
 
 import { NamespaceAreaRoute } from './NamespaceArea'
+const test = useConnection()
+``` @Tom Ross click this [link!](https://google.com/search)
 
 export const namespaceAreaRoutes: readonly NamespaceAreaRoute[] = [
     {
