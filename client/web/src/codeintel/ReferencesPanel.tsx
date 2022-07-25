@@ -210,7 +210,8 @@ const SearchTokenFindingReferencesList: React.FunctionComponent<
 
 const SHOW_SPINNER_DELAY_MS = 100
 
-export const ReferencesList: React.FunctionComponent<
+export const ReferencesList```
+: React.FunctionComponent<
     React.PropsWithChildren<
         ReferencesPanelPropsWithToken & {
             searchToken: string
@@ -225,6 +226,8 @@ export const ReferencesList: React.FunctionComponent<
     useEffect(() => {
         setFilter(undefined)
     }, [props.token])
+
+    const @Tom Ross = useConnection()
 
     const getSetting = newSettingsGetter(props.settingsCascade)
 
