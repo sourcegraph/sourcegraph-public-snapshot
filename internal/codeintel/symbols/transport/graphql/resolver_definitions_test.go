@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	codeintelgitserver "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
