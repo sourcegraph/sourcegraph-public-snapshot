@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,6 +17,8 @@ import (
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
+
+var unknownTeammate = team.Teammate{Name: "_N/A_"}
 
 type NotificationClient struct {
 	slack   slack.Client
@@ -38,32 +41,44 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 }
 
 func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, error) {
+	if build.Author == nil {
+		return nil, errors.New("nil Author")
+	}
 	name := build.Author.Name
-	return c.team.ResolveByName(context.Background(), name)
+	teammate, err := c.team.ResolveByName(context.Background(), name)
+	if err != nil {
+		// If we can't find the teammate then they probably aren't one, so lets set the teammate name to the author name
+		return &team.Teammate{
+			Name: name,
+		}, nil
+	}
+
+	return teammate, nil
 }
 
 func (c *NotificationClient) sendNotification(build *Build) error {
-	c.logger.Debug("creating slack json", log.Int("buildNumber", *build.Number))
+	notifcationLogger := c.logger.With(log.Int("buildNumber", *build.Number), log.String("channel", c.Channel))
+	notifcationLogger.Debug("creating slack json", log.Int("buildNumber", *build.Number))
 
 	teammate, err := c.getTeammateForBuild(build)
 	if err != nil {
-		teammate = &team.Teammate{}
-		c.logger.Error("failed to resolve team mate", log.String("Name", build.Author.Name), log.Error(err))
+		notifcationLogger.Error("failed to find teammate - using 'unknownTeammate'", log.Error(err))
+		teammate = &unknownTeammate
 	}
 
-	blocks, err := createMessageBlocks(c.logger, teammate, build)
+	blocks, err := createMessageBlocks(notifcationLogger, teammate, build)
 	if err != nil {
 		return err
 	}
 
-	c.logger.Debug("sending notification", log.Int("buildNumber", *build.Number), log.String("channel", c.Channel))
+	notifcationLogger.Debug("sending notification")
 	_, _, err = c.slack.PostMessage(c.Channel, slack.MsgOptionBlocks(blocks...))
 	if err != nil {
-		c.logger.Error("failed to post message", log.Int("buildNumber", *build.Number), log.Error(err))
+		notifcationLogger.Error("failed to post message", log.Error(err))
 		return err
 	}
 
-	c.logger.Info("notification posted", log.Int("buildNumber", *build.Number))
+	notifcationLogger.Info("notification posted")
 	return nil
 }
 
@@ -163,7 +178,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 	// should have the @ before here to tag people, but leaving that out for now
 	author := teammate.SlackID
 	if author == "" {
-		author = build.Author.Name
+		author = teammate.Name
 	}
 
 	blocks := []slack.Block{

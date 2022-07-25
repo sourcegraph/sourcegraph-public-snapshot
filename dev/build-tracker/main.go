@@ -247,7 +247,12 @@ func main() {
 
 	logger := log.Scoped("BuildTracker", "main entrypoint for Build Tracking Server")
 
-	server, err := NewBuildTrackingServer(logger, MustGetTokenFromEnv(), DEFAULT_CHANNEL)
+	channel := os.Getenv("SLACK_CHANNEL")
+	if channel == "" {
+		channel = DEFAULT_CHANNEL
+	}
+
+	server, err := NewBuildTrackingServer(logger, MustGetTokenFromEnv(), channel)
 	if err != nil {
 		logger.Fatal("failed to create BuildTracking server", log.Error(err))
 	}
