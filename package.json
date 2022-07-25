@@ -62,7 +62,7 @@
     "not dead",
     "not <0.25%",
     "last 1 Chrome versions",
-    "last 3 Safari major versions",
+    "last 2 Safari major versions",
     "not IE > 0"
   ],
   "nyc": {
