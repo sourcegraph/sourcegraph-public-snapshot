@@ -226,3 +226,37 @@ func validEnabledConfiguration() schema.SiteConfiguration {
 		TopicProjectName: "test-project",
 	}}
 }
+
+func TestHandleInvalidConfig(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+
+	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
+
+	noop := func(ctx context.Context, event []*types.Event, config topicConfig) error {
+		return nil
+	}
+
+	t.Run("handle fails when missing project name", func(t *testing.T) {
+		config := validEnabledConfiguration()
+		config.ExportUsageTelemetry.TopicProjectName = ""
+		confClient.Mock(&conf.Unified{SiteConfiguration: config})
+
+		handler := newTelemetryHandler(logger, db.EventLogs(), noop)
+		err := handler.Handle(ctx)
+
+		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
+	})
+	t.Run("handle fails when missing topic name", func(t *testing.T) {
+		config := validEnabledConfiguration()
+		config.ExportUsageTelemetry.TopicName = ""
+		confClient.Mock(&conf.Unified{SiteConfiguration: config})
+
+		handler := newTelemetryHandler(logger, db.EventLogs(), noop)
+		err := handler.Handle(ctx)
+
+		autogold.Want("handle fails when missing topic name", "getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
+	})
+}
