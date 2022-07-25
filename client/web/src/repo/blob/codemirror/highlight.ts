@@ -30,6 +30,8 @@ function createHighlightTable(json: string): HighlightIndex {
         const endLine = current.range.length === 3 ? startLine : current.range[2]
 
         if (previousEndline !== startLine) {
+            // Only use the current index if there isn't already an occurence on
+            // the current line.
             lineIndex[startLine] = index
         }
 
