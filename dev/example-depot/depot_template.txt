@@ -1,0 +1,13 @@
+Depot:  ${DEPOT_NAME}
+
+Owner:  ${P4_USER}
+
+Date:  ${DATE}
+
+Description: ${DEPOT_DESCRIPTION}
+
+Type:   local
+
+Address: local
+
+Map:    ${DEPOT_NAME}/...
