@@ -275,11 +275,11 @@ func TestBuildBigQueryObject(t *testing.T) {
 	}
 
 	metadata := &instanceMetadata{
-		deployType:        "docker",
-		version:           "1.2.3",
-		siteID:            "site-id-1",
-		licenseKey:        "license-key-1",
-		initialAdminEmail: "admin@place.com",
+		DeployType:        "docker",
+		Version:           "1.2.3",
+		SiteID:            "site-id-1",
+		LicenseKey:        "license-key-1",
+		InitialAdminEmail: "admin@place.com",
 	}
 
 	got := buildBigQueryObject(event, metadata)
@@ -303,7 +303,7 @@ func TestGetInstanceMetadata(t *testing.T) {
 
 	stateStore := database.NewMockGlobalStateStore()
 	userEmailStore := database.NewMockUserEmailsStore()
-	version.Mock("fake-version-1")
+	version.Mock("fake-Version-1")
 	confClient.Mock(&conf.Unified{SiteConfiguration: schema.SiteConfiguration{LicenseKey: "mock-license"}})
 	deploy.Mock("fake-deploy-type")
 
@@ -320,11 +320,11 @@ func TestGetInstanceMetadata(t *testing.T) {
 	}
 
 	autogold.Want("check that instance metadata equals mocked values", instanceMetadata{
-		deployType:        "fake-deploy-type",
-		version:           "fake-version-1",
-		siteID:            "fake-site-id",
-		licenseKey:        "mock-license",
-		initialAdminEmail: "fake@place.com",
+		DeployType:        "fake-deploy-type",
+		Version:           "fake-Version-1",
+		SiteID:            "fake-site-id",
+		LicenseKey:        "mock-license",
+		InitialAdminEmail: "fake@place.com",
 	}).Equal(t, got)
 }
 

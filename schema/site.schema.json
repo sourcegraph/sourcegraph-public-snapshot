@@ -87,7 +87,7 @@
         },
         "topicName": {
           "type": "string",
-          "description": "Destination pubsub topic name to export usage data",
+          "description": "Destination pubsub topic name to export usage data"
         }
       }
     },

@@ -176,11 +176,11 @@ func buildBigQueryObject(event *types.Event, metadata *instanceMetadata) *bigQue
 		Source:            event.Source,
 		Timestamp:         event.Timestamp.Format(time.RFC3339),
 		PublicArgument:    event.Argument,
-		Version:           event.Version, // sending event version since these events could be scraped from the past
-		SiteID:            metadata.siteID,
-		LicenseKey:        metadata.licenseKey,
-		DeployType:        metadata.deployType,
-		InitialAdminEmail: metadata.initialAdminEmail,
+		Version:           event.Version, // sending event Version since these events could be scraped from the past
+		SiteID:            metadata.SiteID,
+		LicenseKey:        metadata.LicenseKey,
+		DeployType:        metadata.DeployType,
+		InitialAdminEmail: metadata.InitialAdminEmail,
 	}
 }
 
@@ -196,7 +196,7 @@ func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, 
 		toSend = append(toSend, pubsubEvent)
 	}
 
-	msg, err := json.Marshal(toSend)
+	marshal, err := json.Marshal(toSend)
 	if err != nil {
 		return errors.Wrap(err, "json.Marshal")
 	}
@@ -204,7 +204,7 @@ func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, 
 	topic := client.Topic(config.topicName)
 	defer topic.Stop()
 	result := topic.Publish(ctx, &pubsub.Message{
-		Data: msg,
+		Data: marshal,
 	})
 	_, err = result.Get(ctx)
 	if err != nil {
@@ -227,7 +227,7 @@ type bigQueryEvent struct {
 	UserID            int     `json:"user_id"`
 	Source            string  `json:"source"`
 	Timestamp         string  `json:"timestamp"`
-	Version           string  `json:"version"`
+	Version           string  `json:"Version"`
 	FeatureFlags      string  `json:"feature_flags"`
 	CohortID          *string `json:"cohort_id,omitempty"`
 	Referrer          string  `json:"referrer,omitempty"`
@@ -237,11 +237,11 @@ type bigQueryEvent struct {
 }
 
 type instanceMetadata struct {
-	deployType        string
-	version           string
-	siteID            string
-	licenseKey        string
-	initialAdminEmail string
+	DeployType        string
+	Version           string
+	SiteID            string
+	LicenseKey        string
+	InitialAdminEmail string
 }
 
 func getInstanceMetadata(ctx context.Context, stateStore database.GlobalStateStore, userEmailsStore database.UserEmailsStore) (instanceMetadata, error) {
@@ -256,11 +256,11 @@ func getInstanceMetadata(ctx context.Context, stateStore database.GlobalStateSto
 	}
 
 	return instanceMetadata{
-		deployType:        deploy.Type(),
-		version:           version.Version(),
-		siteID:            siteId,
-		licenseKey:        confClient.Get().LicenseKey,
-		initialAdminEmail: initialAdminEmail,
+		DeployType:        deploy.Type(),
+		Version:           version.Version(),
+		SiteID:            siteId,
+		LicenseKey:        confClient.Get().LicenseKey,
+		InitialAdminEmail: initialAdminEmail,
 	}, nil
 }
 
