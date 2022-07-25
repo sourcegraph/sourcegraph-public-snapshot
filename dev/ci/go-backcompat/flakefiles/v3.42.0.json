@@ -28,5 +28,10 @@
     "path": "enterprise/internal/batches/store",
     "prefix": "TestIntegration",
     "reason": "New DB structure doesn't work with old test helper data."
+  },
+  {
+    "path": "enterprise/internal/batches/store",
+    "prefix": "TestCancelQueuedBatchChangeChangesets",
+    "reason": "New DB structure doesn't work with old test helper data."
   }
 ]
