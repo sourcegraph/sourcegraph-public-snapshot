@@ -36,7 +36,6 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
-import { useGitBlame } from '../useGitBlame'
 
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
@@ -86,8 +85,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         props.location.search,
         props.location.hash,
     ])
-
-    const blameDecorations = useGitBlame({ repoName, commitID, filePath })
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {
@@ -378,6 +375,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             {renderMode === 'code' && (
                 <BlobContainer
                     data-testid="repo-blob"
+                    repoName={props.repoName}
+                    revision={props.revision}
+                    commitID={props.commitID}
+                    filePath={props.filePath}
                     className={classNames(styles.blob, styles.border)}
                     blobInfo={blobInfoOrError}
                     wrapCode={wrapCode}
@@ -393,7 +394,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     disableDecorations={false}
                     role="region"
                     ariaLabel="File blob"
-                    blameDecorations={blameDecorations}
                 />
             )}
         </>

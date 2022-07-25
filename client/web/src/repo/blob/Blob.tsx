@@ -89,6 +89,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 import { HoverThresholdProps } from '../RepoContainer'
+import { useGitBlame } from '../useGitBlame'
 
 import { ColumnDecorator } from './ColumnDecorator'
 import { LineDecorator } from './LineDecorator'
@@ -101,7 +102,8 @@ import styles from './Blob.module.scss'
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
 export interface BlobProps
-    extends SettingsCascadeProps,
+    extends AbsoluteRepoFile,
+        SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
         HoverThresholdProps,
@@ -209,7 +211,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         role,
         ariaLabel,
         'data-testid': dataTestId,
-        blameDecorations,
     } = props
 
     const settingsChanges = useMemo(() => new BehaviorSubject<Settings | null>(null), [])
@@ -676,6 +677,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
 
         return { column: [], inline: new Map() }
     }, [decorationsOrError, enableExtensionsDecorationsColumnView])
+
+    const blameDecorations = useGitBlame({
+        repoName: props.repoName,
+        commitID: props.commitID,
+        filePath: props.filePath,
+    })
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
