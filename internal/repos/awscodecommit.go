@@ -10,8 +10,9 @@ import (
 	"github.com/aws/aws-sdk-go-v2/config"
 	awscredentials "github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/codecommit"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"golang.org/x/net/http2"
+
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/awscodecommit"
@@ -183,7 +184,7 @@ func wrapWithoutRedirect(c *http.Client) {
 	}
 }
 
-func limitedRedirect(r *http.Request, via []*http.Request) error {
+func limitedRedirect(r *http.Request, _ []*http.Request) error {
 	// Request.Response, in CheckRedirect is the response that is triggering
 	// the redirect.
 	resp := r.Response

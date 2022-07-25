@@ -2,6 +2,7 @@ package shared
 
 import (
 	"strings"
+	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
@@ -37,6 +38,8 @@ type LockfileIndex struct {
 	LockfileReferenceIDs []int
 	Lockfile             string
 	Fidelity             IndexFidelity
+	UpdatedAt            time.Time
+	CreatedAt            time.Time
 }
 
 type Repo struct {

@@ -6,14 +6,14 @@
         "value": "abcdefgh",
         "range": {
           "start": {
-            "offset": -1,
-            "line": 1,
-            "column": 0
+            "offset": 0,
+            "line": -1,
+            "column": -1
           },
           "end": {
-            "offset": -1,
-            "line": 1,
-            "column": 8
+            "offset": 8,
+            "line": -1,
+            "column": -1
           }
         },
         "environment": {
@@ -21,14 +21,14 @@
             "value": "bc",
             "range": {
               "start": {
-                "offset": -1,
-                "line": 1,
-                "column": 1
+                "offset": 1,
+                "line": -1,
+                "column": -1
               },
               "end": {
-                "offset": -1,
-                "line": 1,
-                "column": 3
+                "offset": 3,
+                "line": -1,
+                "column": -1
               }
             }
           },
@@ -36,14 +36,14 @@
             "value": "c",
             "range": {
               "start": {
-                "offset": -1,
-                "line": 1,
-                "column": 2
+                "offset": 2,
+                "line": -1,
+                "column": -1
               },
               "end": {
-                "offset": -1,
-                "line": 1,
-                "column": 3
+                "offset": 3,
+                "line": -1,
+                "column": -1
               }
             }
           },
@@ -51,14 +51,14 @@
             "value": "de",
             "range": {
               "start": {
-                "offset": -1,
-                "line": 1,
-                "column": 3
+                "offset": 3,
+                "line": -1,
+                "column": -1
               },
               "end": {
-                "offset": -1,
-                "line": 1,
-                "column": 5
+                "offset": 5,
+                "line": -1,
+                "column": -1
               }
             }
           },
@@ -66,14 +66,14 @@
             "value": "g",
             "range": {
               "start": {
-                "offset": -1,
-                "line": 1,
-                "column": 6
+                "offset": 6,
+                "line": -1,
+                "column": -1
               },
               "end": {
-                "offset": -1,
-                "line": 1,
-                "column": 7
+                "offset": 7,
+                "line": -1,
+                "column": -1
               }
             }
           }

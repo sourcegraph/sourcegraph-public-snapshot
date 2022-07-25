@@ -33,6 +33,7 @@ export interface Settings {
             forNerds?: boolean
         }
         enableExtensionsDecorationsColumnView?: boolean
+        extensionsAsCoreFeatures?: boolean
     }
     [key: string]: any
 

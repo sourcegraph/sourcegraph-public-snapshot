@@ -5,7 +5,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -22,11 +22,11 @@ func (j *janitor) HandleDeletedRepository(ctx context.Context) (err error) {
 	}
 
 	for _, counts := range gatherCounts(uploadsCounts, indexesCounts) {
-		log15.Debug(
+		j.logger.Debug(
 			"Deleted codeintel records with a deleted repository",
-			"repository_id", counts.repoID,
-			"uploads_count", counts.uploadsCount,
-			"indexes_count", counts.indexesCount,
+			log.Int("repository_id", counts.repoID),
+			log.Int("uploads_count", counts.uploadsCount),
+			log.Int("indexes_count", counts.indexesCount),
 		)
 
 		j.metrics.numUploadRecordsRemoved.Add(float64(counts.uploadsCount))

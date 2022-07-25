@@ -84,8 +84,6 @@ func main() {
 
 	env.Lock()
 	env.HandleHelpFlag()
-
-	conf.Init()
 	logging.Init()
 
 	liblog := log.Init(log.Resource{
@@ -94,6 +92,8 @@ func main() {
 		InstanceID: hostname.Get(),
 	}, log.NewSentrySinkWithOptions(sentrylib.ClientOptions{SampleRate: 0.2})) // Experimental: DevX is observing how sampling affects the errors signal
 	defer liblog.Sync()
+
+	conf.Init()
 	go conf.Watch(liblog.Update(conf.GetLogSinks))
 
 	tracer.Init(log.Scoped("tracer", "internal tracer package"), conf.DefaultClient())
@@ -354,7 +354,7 @@ func getRemoteURLFunc(
 				}
 			}
 		}
-		return repos.CloneURL(svc.Kind, svc.Config, r)
+		return repos.CloneURL(log.Scoped("repos.CloneURL", ""), svc.Kind, svc.Config, r)
 	}
 	return "", errors.Errorf("no sources for %q", repo)
 }
@@ -394,7 +394,7 @@ func editGitHubAppExternalServiceConfigToken(
 
 	client := github.NewV3Client(logger, svc.URN(), apiURL, auther, cli)
 
-	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, externalServiceStore, svc, client, installationID)
+	token, err := repos.GetOrRenewGitHubAppInstallationAccessToken(ctx, log.Scoped("GetOrRenewGitHubAppInstallationAccessToken", ""), externalServiceStore, svc, client, installationID)
 	if err != nil {
 		return "", errors.Wrap(err, "get or renew GitHub App installation access token")
 	}

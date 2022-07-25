@@ -6,14 +6,14 @@
         "value": "a",
         "range": {
           "start": {
-            "offset": -1,
-            "line": 1,
-            "column": 0
+            "offset": 0,
+            "line": -1,
+            "column": -1
           },
           "end": {
-            "offset": -1,
-            "line": 1,
-            "column": 1
+            "offset": 1,
+            "line": -1,
+            "column": -1
           }
         },
         "environment": {
@@ -21,14 +21,14 @@
             "value": "a",
             "range": {
               "start": {
-                "offset": -1,
-                "line": 1,
-                "column": 0
+                "offset": 0,
+                "line": -1,
+                "column": -1
               },
               "end": {
-                "offset": -1,
-                "line": 1,
-                "column": 1
+                "offset": 1,
+                "line": -1,
+                "column": -1
               }
             }
           }
@@ -38,14 +38,14 @@
         "value": "g",
         "range": {
           "start": {
-            "offset": -1,
-            "line": 1,
-            "column": 6
+            "offset": 6,
+            "line": -1,
+            "column": -1
           },
           "end": {
-            "offset": -1,
-            "line": 1,
-            "column": 7
+            "offset": 7,
+            "line": -1,
+            "column": -1
           }
         },
         "environment": {
@@ -53,14 +53,14 @@
             "value": "g",
             "range": {
               "start": {
-                "offset": -1,
-                "line": 1,
-                "column": 6
+                "offset": 6,
+                "line": -1,
+                "column": -1
               },
               "end": {
-                "offset": -1,
-                "line": 1,
-                "column": 7
+                "offset": 7,
+                "line": -1,
+                "column": -1
               }
             }
           }

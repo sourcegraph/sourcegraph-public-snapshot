@@ -9,7 +9,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
@@ -1186,7 +1185,7 @@ func (s *Store) UpdateReferenceCounts(ctx context.Context, ids []int, dependency
 
 	// Just in case
 	if os.Getenv("DEBUG_PRECISE_CODE_INTEL_REFERENCE_COUNTS_BAIL_OUT") != "" {
-		log15.Warn("Reference count operations are currently disabled")
+		s.logger.Warn("Reference count operations are currently disabled")
 		return 0, nil
 	}
 
