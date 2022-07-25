@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
 
 	"github.com/sourcegraph/log"
 
@@ -110,6 +111,10 @@ func registerEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 	}
 
 	if err := insights.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
+		return err
+	}
+
+	if err := productsubscription.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
 		return err
 	}
 
