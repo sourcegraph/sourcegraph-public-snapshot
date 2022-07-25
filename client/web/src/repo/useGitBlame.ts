@@ -135,23 +135,16 @@ const getBlameDecorations = (hunks: BlameHunk[]): TextDocumentDecoration[] => {
     return hunks.map(hunk => getDecorationFromHunk(hunk, hunk.startLine - 1, now))
 }
 
-export const useGitBlame = ({
-    repoName,
-    commitID,
-    filePath,
-}: {
+interface BlameArguments {
     repoName: string
     commitID: string
     filePath: string
-}): unknown => {
+}
+
+export const useGitBlame = (args?: BlameArguments): TextDocumentDecoration[] | undefined => {
     const [isBlameVisible] = useTemporarySetting('git.showBlame', false)
     const hunks = useObservable(
-        useMemo(() => (isBlameVisible ? fetchBlame({ repoName, commitID, filePath }) : of(undefined)), [
-            isBlameVisible,
-            repoName,
-            commitID,
-            filePath,
-        ])
+        useMemo(() => (args && isBlameVisible ? fetchBlame(args) : of(undefined)), [isBlameVisible, args])
     )
 
     return hunks ? getBlameDecorations(hunks) : undefined
