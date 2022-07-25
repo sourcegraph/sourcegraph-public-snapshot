@@ -245,8 +245,10 @@ type RepoDependenciesPredicate struct {
 	Transitive bool
 }
 
+var emptyRepoDependencies = errors.New("no pattern to match a repository in repo:dependencies predicate parameter")
+
 func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
-	for _, elem := range strings.Split(params, " ") {
+	for _, elem := range strings.Fields(params) {
 		if trimmed := strings.TrimPrefix(elem, "transitive:"); trimmed != elem {
 			f.Transitive = parseYesNoOnly(trimmed) == Yes
 		} else {
@@ -256,7 +258,7 @@ func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
 			}
 
 			if re == "" {
-				return errors.Errorf("empty repo:dependencies predicate parameter %q", re)
+				return emptyRepoDependencies
 			}
 
 			_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
@@ -266,6 +268,10 @@ func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
 
 			f.RepoRev = elem
 		}
+	}
+
+	if f.RepoRev == "" {
+		return emptyRepoDependencies
 	}
 
 	return nil

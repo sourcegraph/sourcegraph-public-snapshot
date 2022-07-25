@@ -90,13 +90,13 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`literal`, `test`, &RepoDependenciesPredicate{RepoRev: "test"}},
+			{`literal`, `repo`, &RepoDependenciesPredicate{RepoRev: "repo"}},
 			{`regex with revs`, `^github\.com/org/repo$@v3.0:v4.0`, &RepoDependenciesPredicate{RepoRev: `^github\.com/org/repo$@v3.0:v4.0`}},
 			{`regex with transitive:yes`, `^github\.com/org/repo$ transitive:yes`, &RepoDependenciesPredicate{RepoRev: `^github\.com/org/repo$`, Transitive: true}},
-			{`transitive:no`, `transitive:no`, &RepoDependenciesPredicate{Transitive: false}},
+			{`transitive:no`, `repo transitive:no`, &RepoDependenciesPredicate{RepoRev: "repo", Transitive: false}},
 			// transitive:only is ignored for now
-			{`transitive:only`, `transitive:only`, &RepoDependenciesPredicate{Transitive: false}},
-			{`transitive:horse`, `transitive:horse`, &RepoDependenciesPredicate{Transitive: false}},
+			{`transitive:only`, `repo transitive:only`, &RepoDependenciesPredicate{RepoRev: "repo", Transitive: false}},
+			{`transitive:horse`, `repo transitive:horse`, &RepoDependenciesPredicate{RepoRev: "repo", Transitive: false}},
 		}
 
 		for _, tc := range valid {
@@ -116,6 +116,7 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 		invalid := []test{
 			{`empty`, ``, nil},
 			{`catch invalid regexp`, `([)`, nil},
+			{`only transitive`, `transitive:yes`, nil},
 		}
 
 		for _, tc := range invalid {
