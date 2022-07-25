@@ -23,7 +23,7 @@ class SpecFileReporter extends mocha.reporters.Spec {
 
         if (this.buildkite) {
             this.console = new Console({
-                stdout: fs.createWriteStream(`./annotations/mocha-test-output-${this.title}`),
+                stdout: fs.createWriteStream(`./annotations/mocha-test-output-${this.title}-annotation.md`),
             });
             let tmp = Base.consoleLog;
 
