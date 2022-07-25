@@ -2,9 +2,14 @@ package telemetry
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
+	"cloud.google.com/go/pubsub"
+	"github.com/inconshreveable/log15"
+
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/internal/version"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
@@ -64,9 +69,7 @@ func newBackgroundTelemetryJob(logger log.Logger, eventLogStore database.EventLo
 	}
 	operation := observationContext.Operation(observation.Op{})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, newTelemetryHandler(logger, eventLogStore, func(ctx context.Context, event []*types.Event) error {
-		return nil
-	}), operation)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, newTelemetryHandler(logger, eventLogStore, sendEvents), operation)
 }
 
 type telemetryHandler struct {
@@ -85,7 +88,7 @@ func newTelemetryHandler(logger log.Logger, store database.EventLogStore, sendEv
 
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
 
-const MaxEventsCountDefault = 5000
+const MaxEventsCountDefault = 5
 
 func (t *telemetryHandler) Handle(ctx context.Context) error {
 	if !isEnabled() {
@@ -128,3 +131,64 @@ func getBatchSize() int {
 	}
 	return val
 }
+
+func sendEvents(ctx context.Context, events []*types.Event) error {
+	client, err := pubsub.NewClient(ctx, "sourcegraph-dogfood")
+	if err != nil {
+		log15.Error("failed to create pubsub client.", "error", err)
+		return err
+	}
+
+	var toSend []bigQueryEvent
+	for _, event := range events {
+		pubsubEvent := bigQueryEvent{
+			EventName:       event.Name,
+			UserID:          int(*event.UserID),
+			AnonymousUserID: event.AnonymousUserID,
+			URL:             event.URL,
+			Source:          event.Source,
+			Timestamp:       time.Now().UTC().Format(time.RFC3339),
+			Version:         version.Version(),
+			PublicArgument:  event.Argument,
+		}
+		toSend = append(toSend, pubsubEvent)
+	}
+
+	msg, err := json.Marshal(toSend)
+	if err != nil {
+		return errors.Wrap(err, "json.Marshal")
+	}
+
+	topic := client.Topic("usage-data-testing")
+	defer topic.Stop()
+	result := topic.Publish(ctx, &pubsub.Message{
+		Data: msg,
+	})
+	_, err = result.Get(ctx)
+	if err != nil {
+		return err
+	}
+
+	log15.Info("sent pubsub message")
+	return nil
+}
+
+type bigQueryEvent struct {
+	EventName       string  `json:"name"`
+	URL             string  `json:"url"`
+	AnonymousUserID string  `json:"anonymous_user_id"`
+	FirstSourceURL  string  `json:"first_source_url"`
+	LastSourceURL   string  `json:"last_source_url"`
+	UserID          int     `json:"user_id"`
+	Source          string  `json:"source"`
+	Timestamp       string  `json:"timestamp"`
+	Version         string  `json:"version"`
+	FeatureFlags    string  `json:"feature_flags"`
+	CohortID        *string `json:"cohort_id,omitempty"`
+	Referrer        string  `json:"referrer,omitempty"`
+	PublicArgument  string  `json:"public_argument"`
+	DeviceID        *string `json:"device_id,omitempty"`
+	InsertID        *string `json:"insert_id,omitempty"`
+}
+
+var pubSubDotComEventsTopicID = env.Get("USAGE_DATA_EVENTS_TOPIC_ID", "", "Pub/sub events topic ID is the pub/sub topic id where usage data events are published.")
