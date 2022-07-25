@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/keegancsmith/sqlf"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
@@ -19,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type WebhookBuildOptions struct {
@@ -29,7 +29,7 @@ type WebhookBuildOptions struct {
 	CleanupOldJobsInterval time.Duration
 }
 
-func NewWebhookBuilder(
+func NewWebhookBuildWorker(
 	ctx context.Context,
 	dbHandle basestore.TransactableHandle,
 	handler workerutil.Handler,
@@ -88,7 +88,7 @@ func NewWebhookBuilder(
 	})
 
 	if opts.CleanupOldJobs {
-		go runWebhookBuildCleaner(ctx, dbHandle, opts.CleanupOldJobsInterval)
+		go runJobCleaner(ctx, dbHandle, opts.CleanupOldJobsInterval)
 	}
 
 	return worker, resetter
@@ -140,7 +140,7 @@ WHERE
   AND state IN ('completed', 'errored')
 `)
 		if err != nil && err != context.Canceled {
-			log15.Error("error while running job cleaner", "err", err)
+			log.Error(errors.Wrap(err, "runjob cleaner"))
 		}
 
 		select {
