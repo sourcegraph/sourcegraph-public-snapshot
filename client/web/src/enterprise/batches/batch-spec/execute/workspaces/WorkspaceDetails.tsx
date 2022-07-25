@@ -581,7 +581,7 @@ const WorkspaceStep: React.FunctionComponent<React.PropsWithChildren<WorkspaceSt
                                         {step.startedAt && (
                                             <WorkspaceStepFileDiffConnection
                                                 isLightTheme={isLightTheme}
-                                                step={step.number}
+                                                step={step}
                                                 workspaceID={workspaceID}
                                                 queryBatchSpecWorkspaceStepFileDiffs={
                                                     queryBatchSpecWorkspaceStepFileDiffs
@@ -642,7 +642,8 @@ const StepTimer: React.FunctionComponent<React.PropsWithChildren<{ startedAt: st
 
 interface WorkspaceStepFileDiffConnectionProps extends ThemeProps {
     workspaceID: Scalars['ID']
-    step: number
+    // Require the entire step instead of just the spec number to ensure the query gets called as the step changes.
+    step: BatchSpecWorkspaceStepFields
     queryBatchSpecWorkspaceStepFileDiffs?: typeof _queryBatchSpecWorkspaceStepFileDiffs
 }
 
@@ -660,7 +661,7 @@ const WorkspaceStepFileDiffConnection: React.FunctionComponent<
                 after: args.after ?? null,
                 first: args.first ?? null,
                 node: workspaceID,
-                step,
+                step: step.number,
             }),
         [workspaceID, step, queryBatchSpecWorkspaceStepFileDiffs]
     )
