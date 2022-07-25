@@ -680,7 +680,7 @@ func buildCandidateDockerImage(app, version, tag string, pipelineRuntype runtype
 
 		// Add Sentry environment variables if we are building off main branch
 		// to enable building the webapp with source maps enabled
-		if pipelineRuntype.Is(runtype.MainBranch) {
+		if !pipelineRuntype.Is(runtype.MainBranch) {
 			cmds = append(cmds,
 				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
 				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
