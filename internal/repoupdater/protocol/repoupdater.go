@@ -40,19 +40,6 @@ type RepoQueueState struct {
 	Priority int
 }
 
-// RepoExternalServicesRequest is a request for the external services
-// associated with a repository.
-type RepoExternalServicesRequest struct {
-	// ID of the repository being queried.
-	ID api.RepoID
-}
-
-// RepoExternalServicesResponse is returned in response to an
-// RepoExternalServicesRequest.
-type RepoExternalServicesResponse struct {
-	ExternalServices []api.ExternalService
-}
-
 // RepoLookupArgs is a request for information about a repository on repoupdater.
 type RepoLookupArgs struct {
 	// Repo is the repository name to look up.
@@ -274,7 +261,9 @@ type PermsSyncResponse struct {
 // updating an external service so that admins don't have to wait until the next sync
 // run to see their repos being synced.
 type ExternalServiceSyncRequest struct {
-	ExternalService api.ExternalService
+	// TODO(eseliger): We can remove this after the 3.43 release, it's for backwards compatibility only.
+	ExternalService   api.ExternalService
+	ExternalServiceID int64
 }
 
 // ExternalServiceSyncResult is a result type of an external service's sync request.
