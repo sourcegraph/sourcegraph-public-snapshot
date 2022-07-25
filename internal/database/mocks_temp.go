@@ -27171,7 +27171,7 @@ func NewMockRepoStore() *MockRepoStore {
 			},
 		},
 		MetadataFunc: &RepoStoreMetadataFunc{
-			defaultHook: func(context.Context, ...api.RepoID) (r0 []*types.SearchedRepo, r1 error) {
+			defaultHook: func(context.Context, ...api.RepoID) (r0 map[api.RepoID]*types.SearchedRepo, r1 error) {
 				return
 			},
 		},
@@ -27273,7 +27273,7 @@ func NewStrictMockRepoStore() *MockRepoStore {
 			},
 		},
 		MetadataFunc: &RepoStoreMetadataFunc{
-			defaultHook: func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error) {
+			defaultHook: func(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
 				panic("unexpected invocation of MockRepoStore.Metadata")
 			},
 		},
@@ -28881,15 +28881,15 @@ func (c RepoStoreListMinimalReposFuncCall) Results() []interface{} {
 // RepoStoreMetadataFunc describes the behavior when the Metadata method of
 // the parent MockRepoStore instance is invoked.
 type RepoStoreMetadataFunc struct {
-	defaultHook func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
-	hooks       []func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)
+	defaultHook func(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error)
+	hooks       []func(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error)
 	history     []RepoStoreMetadataFuncCall
 	mutex       sync.Mutex
 }
 
 // Metadata delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockRepoStore) Metadata(v0 context.Context, v1 ...api.RepoID) ([]*types.SearchedRepo, error) {
+func (m *MockRepoStore) Metadata(v0 context.Context, v1 ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
 	r0, r1 := m.MetadataFunc.nextHook()(v0, v1...)
 	m.MetadataFunc.appendCall(RepoStoreMetadataFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -28897,7 +28897,7 @@ func (m *MockRepoStore) Metadata(v0 context.Context, v1 ...api.RepoID) ([]*types
 
 // SetDefaultHook sets function that is called when the Metadata method of
 // the parent MockRepoStore instance is invoked and the hook queue is empty.
-func (f *RepoStoreMetadataFunc) SetDefaultHook(hook func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)) {
+func (f *RepoStoreMetadataFunc) SetDefaultHook(hook func(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error)) {
 	f.defaultHook = hook
 }
 
@@ -28905,7 +28905,7 @@ func (f *RepoStoreMetadataFunc) SetDefaultHook(hook func(context.Context, ...api
 // Metadata method of the parent MockRepoStore instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *RepoStoreMetadataFunc) PushHook(hook func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error)) {
+func (f *RepoStoreMetadataFunc) PushHook(hook func(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -28913,20 +28913,20 @@ func (f *RepoStoreMetadataFunc) PushHook(hook func(context.Context, ...api.RepoI
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *RepoStoreMetadataFunc) SetDefaultReturn(r0 []*types.SearchedRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error) {
+func (f *RepoStoreMetadataFunc) SetDefaultReturn(r0 map[api.RepoID]*types.SearchedRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *RepoStoreMetadataFunc) PushReturn(r0 []*types.SearchedRepo, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error) {
+func (f *RepoStoreMetadataFunc) PushReturn(r0 map[api.RepoID]*types.SearchedRepo, r1 error) {
+	f.PushHook(func(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *RepoStoreMetadataFunc) nextHook() func(context.Context, ...api.RepoID) ([]*types.SearchedRepo, error) {
+func (f *RepoStoreMetadataFunc) nextHook() func(context.Context, ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -28967,7 +28967,7 @@ type RepoStoreMetadataFuncCall struct {
 	Arg1 []api.RepoID
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.SearchedRepo
+	Result0 map[api.RepoID]*types.SearchedRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error

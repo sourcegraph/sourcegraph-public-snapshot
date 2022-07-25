@@ -593,8 +593,8 @@ func TestRepoStore_Metadata(t *testing.T) {
 	gr := db.GitserverRepos()
 	require.NoError(t, gr.Upsert(ctx, gitserverRepos...))
 
-	expected := []*types.SearchedRepo{
-		{
+	expected := map[api.RepoID]*types.SearchedRepo{
+		1: {
 			ID:          1,
 			Name:        "foo",
 			Description: "foo 1",
@@ -604,7 +604,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 			Stars:       10,
 			LastFetched: &d1,
 		},
-		{
+		2: {
 			ID:          2,
 			Name:        "bar",
 			Description: "bar 2",
@@ -618,5 +618,7 @@ func TestRepoStore_Metadata(t *testing.T) {
 
 	md, err := r.Metadata(ctx, 1, 2)
 	require.NoError(t, err)
-	require.ElementsMatch(t, expected, md)
+	if diff := cmp.Diff(expected, md, cmpopts.EquateEmpty()); diff != "" {
+		t.Errorf("mismatch (-want +have):\n%s", diff)
+	}
 }

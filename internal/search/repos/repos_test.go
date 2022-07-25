@@ -75,27 +75,30 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo@revBar:^revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []string{"revBar", "^revBas"},
+				Repo:         types.MinimalRepo{ID: api.RepoID(1), Name: "repoFoo"},
+				Revs:         []string{"revBar", "^revBas"},
+				RepoMetadata: &types.SearchedRepo{ID: api.RepoID(1)},
 			}},
 			wantMissingRepoRevisions: []RepoRevSpecs{},
 		},
 		{
 			repoFilters: []string{"repoFoo@*refs/heads/*:*!refs/heads/revBas"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []string{"revBar"},
+				Repo:         types.MinimalRepo{ID: api.RepoID(1), Name: "repoFoo"},
+				Revs:         []string{"revBar"},
+				RepoMetadata: &types.SearchedRepo{ID: api.RepoID(1)},
 			}},
 			wantMissingRepoRevisions: []RepoRevSpecs{},
 		},
 		{
 			repoFilters: []string{"repoFoo@revBar:^revQux"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []string{"revBar"},
+				Repo:         types.MinimalRepo{ID: api.RepoID(1), Name: "repoFoo"},
+				Revs:         []string{"revBar"},
+				RepoMetadata: &types.SearchedRepo{ID: api.RepoID(1)},
 			}},
 			wantMissingRepoRevisions: []RepoRevSpecs{{
-				Repo: types.MinimalRepo{Name: "repoFoo"},
+				Repo: types.MinimalRepo{ID: api.RepoID(1), Name: "repoFoo"},
 				Revs: []search.RevisionSpecifier{{
 					RevSpec: "^revQux",
 				}},
@@ -123,8 +126,9 @@ func TestRevisionValidation(t *testing.T) {
 		{
 			repoFilters: []string{"repoFoo"},
 			wantRepoRevs: []*search.RepositoryRevisions{{
-				Repo: types.MinimalRepo{Name: "repoFoo"},
-				Revs: []string{""},
+				Repo:         types.MinimalRepo{ID: api.RepoID(1), Name: "repoFoo"},
+				Revs:         []string{""},
+				RepoMetadata: &types.SearchedRepo{ID: api.RepoID(1)},
 			}},
 			wantMissingRepoRevisions: []RepoRevSpecs{},
 			wantErr:                  nil,
@@ -134,7 +138,15 @@ func TestRevisionValidation(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.repoFilters[0], func(t *testing.T) {
 			repos := database.NewMockRepoStore()
-			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{{Name: "repoFoo"}}, nil)
+			repos.ListMinimalReposFunc.SetDefaultReturn([]types.MinimalRepo{{ID: api.RepoID(1), Name: "repoFoo"}}, nil)
+			repos.MetadataFunc.SetDefaultHook(func(ctx context.Context, repoIDs ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
+				res := make(map[api.RepoID]*types.SearchedRepo, len(repoIDs))
+				for _, id := range repoIDs {
+					res[id] = &types.SearchedRepo{ID: id}
+				}
+				return res, nil
+			})
+
 			db := database.NewMockDB()
 			db.ReposFunc.SetDefaultReturn(repos)
 
@@ -410,6 +422,13 @@ func TestResolveRepositoriesWithUserSearchContext(t *testing.T) {
 			},
 		}, nil
 	})
+	repos.MetadataFunc.SetDefaultHook(func(ctx context.Context, repoIDs ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
+		res := make(map[api.RepoID]*types.SearchedRepo, len(repoIDs))
+		for _, id := range repoIDs {
+			res[id] = &types.SearchedRepo{ID: id}
+		}
+		return res, nil
+	})
 
 	ns := database.NewMockNamespaceStore()
 	ns.GetByNameFunc.SetDefaultHook(func(ctx context.Context, name string) (*database.Namespace, error) {
@@ -474,6 +493,13 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		}
 		return []types.MinimalRepo{repoA, repoB}, nil
 	})
+	repos.MetadataFunc.SetDefaultHook(func(ctx context.Context, repoIDs ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
+		res := make(map[api.RepoID]*types.SearchedRepo, len(repoIDs))
+		for _, id := range repoIDs {
+			res[id] = &types.SearchedRepo{ID: id}
+		}
+		return res, nil
+	})
 
 	sc := database.NewMockSearchContextsStore()
 	sc.GetSearchContextFunc.SetDefaultHook(func(ctx context.Context, opts database.GetSearchContextOptions) (*types.SearchContext, error) {
@@ -502,8 +528,8 @@ func TestResolveRepositoriesWithSearchContext(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantRepositoryRevisions := []*search.RepositoryRevisions{
-		{Repo: repoA, Revs: searchContextRepositoryRevisions[0].Revisions},
-		{Repo: repoB, Revs: searchContextRepositoryRevisions[1].Revisions},
+		{Repo: repoA, Revs: searchContextRepositoryRevisions[0].Revisions, RepoMetadata: &types.SearchedRepo{ID: 1}},
+		{Repo: repoB, Revs: searchContextRepositoryRevisions[1].Revisions, RepoMetadata: &types.SearchedRepo{ID: 2}},
 	}
 	if !reflect.DeepEqual(resolved.RepoRevs, wantRepositoryRevisions) {
 		t.Errorf("got repository revisions %+v, want %+v", resolved.RepoRevs, wantRepositoryRevisions)
@@ -518,14 +544,22 @@ func TestRepoHasFileContent(t *testing.T) {
 
 	mkHead := func(repo types.MinimalRepo) *search.RepositoryRevisions {
 		return &search.RepositoryRevisions{
-			Repo: repo,
-			Revs: []string{""},
+			Repo:         repo,
+			Revs:         []string{""},
+			RepoMetadata: &types.SearchedRepo{ID: repo.ID},
 		}
 	}
 
 	repos := database.NewMockRepoStore()
 	repos.ListMinimalReposFunc.SetDefaultHook(func(context.Context, database.ReposListOptions) ([]types.MinimalRepo, error) {
 		return []types.MinimalRepo{repoA, repoB, repoC, repoD}, nil
+	})
+	repos.MetadataFunc.SetDefaultHook(func(ctx context.Context, repoIDs ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
+		res := make(map[api.RepoID]*types.SearchedRepo, len(repoIDs))
+		for _, id := range repoIDs {
+			res[id] = &types.SearchedRepo{ID: id}
+		}
+		return res, nil
 	})
 
 	db := database.NewMockDB()

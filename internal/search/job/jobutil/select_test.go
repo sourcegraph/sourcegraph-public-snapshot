@@ -47,11 +47,13 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths for select:file.directory", `[
   {
     "Path": "pokeman/",
+    "RepositoryMetadata": null,
     "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/",
+    "RepositoryMetadata": null,
     "ChunkMatches": null,
     "LimitHit": false
   }
@@ -60,16 +62,19 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("dedupe paths select:file", `[
   {
     "Path": "pokeman/charmandar",
+    "RepositoryMetadata": null,
     "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "pokeman/bulbosaur",
+    "RepositoryMetadata": null,
     "ChunkMatches": null,
     "LimitHit": false
   },
   {
     "Path": "digiman/ummm",
+    "RepositoryMetadata": null,
     "ChunkMatches": null,
     "LimitHit": false
   }
@@ -78,6 +83,7 @@ func TestWithSelect(t *testing.T) {
 	autogold.Want("don't dedupe file matches for select:content", `[
   {
     "Path": "pokeman/charmandar",
+    "RepositoryMetadata": null,
     "ChunkMatches": [
       {
         "Content": "",
@@ -128,6 +134,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "pokeman/charmandar",
+    "RepositoryMetadata": null,
     "ChunkMatches": [
       {
         "Content": "",
@@ -156,6 +163,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "pokeman/bulbosaur",
+    "RepositoryMetadata": null,
     "ChunkMatches": [
       {
         "Content": "",
@@ -184,6 +192,7 @@ func TestWithSelect(t *testing.T) {
   },
   {
     "Path": "digiman/ummm",
+    "RepositoryMetadata": null,
     "ChunkMatches": [
       {
         "Content": "",
