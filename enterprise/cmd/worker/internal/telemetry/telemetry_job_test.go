@@ -178,7 +178,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			{
 				ID:       1,
 				Name:     "event1",
-				UserID:   2,
+				UserID:   1,
 				Argument: "{}",
 				Source:   "test",
 				Version:  "0.0.0+dev",
@@ -210,7 +210,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			{
 				ID:       1,
 				Name:     "event1",
-				UserID:   2,
+				UserID:   1,
 				Argument: "{}",
 				Source:   "test",
 				Version:  "0.0.0+dev",
