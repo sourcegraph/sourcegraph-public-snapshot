@@ -1,11 +1,10 @@
-import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual, sortBy } from 'lodash'
-import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import {
     BehaviorSubject,
     combineLatest,
@@ -83,11 +82,13 @@ import {
     toURIWithPath,
     parseQueryAndHash,
 } from '@sourcegraph/shared/src/util/url'
-import { Code, Link, useObservable } from '@sourcegraph/wildcard'
+import { Code, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
+import { InsightDecorationContent } from '../../insights/components/InsightDecorationContent'
+import { InsightDecorationPopover } from '../../insights/components/InsightDecorationPopover'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -178,75 +179,61 @@ const domFunctions = {
 const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
 const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
 
-const InsightDecorationContent = forwardRef<HTMLSpanElement>((props, ref) => (
-    <span ref={ref} className={styles.insightDecorationContent}>
-        Referenced in <strong>5 insights</strong> 📈
-    </span>
-))
-
-InsightDecorationContent.displayName = 'InsightDecorationContent'
-
-const InsightDecorationPopover: FC = () => (
-    <div className={styles.insightDecorationPopover}>
-        <div className={styles.insightDecorationSection}>
-            <div>
-                <span>{'{}'}</span>
-                <small className="ml-2">
-                    <strong>AuthURLPrefix</strong>
-                </small>
-            </div>
-            <div className={classNames(styles.insightDecorationRow, styles.insightDecorationLineRef)}>
-                Insights referencing this line (3)
-            </div>
-            <div className={classNames(styles.insightDecorationRow)}>
-                <Link to="/insights" className={styles.insightDecorationLink}>
-                    Track Middleware <OpenInNewIcon size={12} />
-                </Link>
-            </div>
-            <div className={classNames(styles.insightDecorationRow)}>
-                <Link to="/insights" className={styles.insightDecorationLink}>
-                    API Middleware <OpenInNewIcon size={12} />
-                </Link>
-            </div>
-            <div className={classNames(styles.insightDecorationRow)}>
-                <Link to="/insights" className={styles.insightDecorationLink}>
-                    API Tracking <OpenInNewIcon size={12} />
-                </Link>
-            </div>
-        </div>
-        <div className={styles.insightDecorationSection}>
-            <div>
-                <span>{'{}'}</span>
-                <small className="ml-2">
-                    <strong>""./auth"</strong>
-                </small>
-            </div>
-            <div className={classNames(styles.insightDecorationRow, styles.insightDecorationLineRef)}>
-                Insights referencing this line (2)
-            </div>
-            <div className={classNames(styles.insightDecorationRow)}>
-                <Link to="/insights" className={styles.insightDecorationLink}>
-                    Auth protocols <OpenInNewIcon size={12} />
-                </Link>
-            </div>
-            <div className={classNames(styles.insightDecorationRow)}>
-                <Link to="/insights" className={styles.insightDecorationLink}>
-                    Auth Middleware <OpenInNewIcon size={12} />
-                </Link>
-            </div>
-        </div>
-    </div>
-)
+// BEGIN STATIC CODE INSIGHTS TEST DATA
+const insightTokens = [
+    {
+        name: 'AuthURLPrefix',
+        insights: [
+            {
+                id: 'foo',
+                name: 'Track Middleware',
+                url: '/insights/foo',
+            },
+            {
+                id: 'bar',
+                name: 'API Middleware',
+                url: '/insights/bar',
+            },
+            {
+                id: 'baz',
+                name: 'API Tracking',
+                url: '/insights/baz',
+            },
+        ],
+    },
+    {
+        name: '"/.auth"',
+        insights: [
+            {
+                id: 'foo',
+                name: 'Auth Middleware',
+                url: '/insights/foo',
+            },
+            {
+                id: 'bar',
+                name: 'Auth APIs',
+                url: '/insights/bar',
+            },
+        ],
+    },
+]
 
 const decoration: InsightDecoration = {
     range: {
         start: { line: 0, character: 0 },
         end: { line: 0, character: 0 },
     },
-    content: <InsightDecorationContent />,
-    popover: <InsightDecorationPopover />,
+    content: (
+        <InsightDecorationContent>
+            <>
+                Referenced in <strong>5 insights</strong> 📈
+            </>
+        </InsightDecorationContent>
+    ),
+    popover: <InsightDecorationPopover tokens={insightTokens} />,
     trigger: 'click',
 }
+// END STATIC CODE INSIGHTS TEST DATA
 
 /**
  * Renders a code view augmented by Sourcegraph extensions

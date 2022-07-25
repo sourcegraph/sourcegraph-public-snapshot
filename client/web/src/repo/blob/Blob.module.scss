@@ -124,38 +124,3 @@
     background-color: var(--body-bg);
     color: var(--body-color);
 }
-
-.insight-decoration-content {
-    background-color: var(--primary-4);
-    padding: 1px 3px;
-    cursor: pointer;
-}
-
-.insight-decoration-popover {
-    background-color: var(--color-bg-1);
-    padding: 12px;
-    border-radius: 4px;
-    border: solid 1px var(--border-color);
-    box-shadow: var(--dropdown-shadow);
-}
-
-.insight-decoration-line-ref {
-    color: var(--text-muted);
-    font-size: 0.625rem;
-    font-weight: 400;
-}
-
-.insight-decoration-link {
-    font-size: 0.75rem;
-    font-weight: 400;
-}
-
-.insight-decoration-row {
-    padding-left: 16px;
-    margin-left: 4px;
-    border-left: solid 2px var(--border-color-2);
-}
-
-.insight-decoration-section {
-    margin-bottom: 8px;
-}
