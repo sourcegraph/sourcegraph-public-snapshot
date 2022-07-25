@@ -209,6 +209,47 @@ extend type Query {
     Generate an ephemeral set of time series for a code insight, generally for the purposes of live preview.
     """
     searchInsightPreview(input: SearchInsightPreviewInput!): [SearchInsightLivePreviewSeries!]!
+
+    """
+    Returns insights that have matches in this file. This query is experimental and should be considered unstable in the API.
+    """
+    relatedInsightsInline(input: RelatedInsightsInput!): [RelatedInsightInline!]!
+}
+
+"""
+Input for getting insights related to a file. This input type is experimental and should be considered unstable in the API.
+"""
+input RelatedInsightsInput {
+    """
+    The repo name for the file
+    """
+    repo: String!
+    """
+    The revision number
+    """
+    revision: String
+    """
+    The path to the file
+    """
+    file: String!
+}
+
+"""
+Metadata for finding where an insight matches in a file. This type is experimental and should be considered unstable in the API.
+"""
+type RelatedInsightInline {
+    """
+    Insight view id
+    """
+    viewId: String!
+    """
+    Insight title
+    """
+    title: String!
+    """
+    An array of line numbers where matches are found
+    """
+    lineNumbers: [Int!]!
 }
 
 extend type Mutation {

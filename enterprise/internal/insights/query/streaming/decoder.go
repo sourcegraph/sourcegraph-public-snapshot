@@ -21,6 +21,8 @@ type SearchMatch struct {
 	RepositoryID   int32
 	RepositoryName string
 	MatchCount     int
+	LineMatches    []streamhttp.EventLineMatch
+	Path           *string
 }
 
 type TabulationResult struct {
@@ -104,6 +106,59 @@ func TabulationDecoder() (streamhttp.FrontendStreamDecoder, *TabulationResult) {
 			tr.Errors = append(tr.Errors, eventError.Message)
 		},
 	}, tr
+}
+
+// MetadataResult contains information about matches like line matches, paths.
+type MetadataResult struct {
+	StreamDecoderEvents
+	Matches []*SearchMatch
+}
+
+// MetadataDecoder will tabulate metadata for a query. This is to return useful information for
+// related insights.
+func MetadataDecoder() (streamhttp.FrontendStreamDecoder, *MetadataResult) {
+	mr := &MetadataResult{}
+
+	return streamhttp.FrontendStreamDecoder{
+		OnMatches: func(matches []streamhttp.EventMatch) {
+			for _, match := range matches {
+				switch match := match.(type) {
+				// Right now we only care about inline matches.
+				// Should be extended when we care about repo and file results.
+				case *streamhttp.EventContentMatch:
+					mr.Matches = append(mr.Matches, &SearchMatch{LineMatches: match.LineMatches})
+				}
+			}
+		},
+		OnProgress: func(progress *streamapi.Progress) {
+			if !progress.Done {
+				return
+			}
+			// Skipped elements are built progressively for a Progress update until it is Done, so
+			// we want to register its contents only once it is done.
+			for _, skipped := range progress.Skipped {
+				// ShardTimeout is a specific skipped event that we want to retry on. Currently
+				// we only retry on Alert events so this is why we add it there. This behaviour will
+				// be uniformised eventually.
+				if skipped.Reason == streamapi.ShardTimeout {
+					mr.Alerts = append(mr.Alerts, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+				} else {
+					mr.SkippedReasons = append(mr.SkippedReasons, fmt.Sprintf("%s: %s", skipped.Reason, skipped.Message))
+				}
+			}
+		},
+		OnAlert: func(ea *streamhttp.EventAlert) {
+			if ea.Title == "No repositories found" {
+				// If we hit a case where we don't find a repository we don't want to error, just
+				// complete our search.
+			} else {
+				mr.Alerts = append(mr.Alerts, fmt.Sprintf("%s: %s", ea.Title, ea.Description))
+			}
+		},
+		OnError: func(eventError *streamhttp.EventError) {
+			mr.Errors = append(mr.Errors, eventError.Message)
+		},
+	}, mr
 }
 
 // ComputeMatch is our internal representation of a match retrieved from a Compute Streaming Search.
