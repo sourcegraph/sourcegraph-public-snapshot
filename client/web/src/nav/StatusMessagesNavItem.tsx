@@ -430,7 +430,7 @@ export class StatusMessagesNavItem extends React.PureComponent<Props, State> {
                             key={status.message}
                             message={status.message}
                             messageHint="Your repositories may not be up-to-date."
-                            linkTo={links.viewRepositories}
+                            linkTo={links.viewRepositories + '?status=failed-fetch'}
                             linkText="Manage repositories"
                             linkOnClick={this.toggleIsOpen}
                             entryType="error"

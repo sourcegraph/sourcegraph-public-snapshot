@@ -638,6 +638,8 @@ type ExperimentalFeatures struct {
 	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
 }
 type ExportUsageTelemetry struct {
+	// BatchSize description: Maximum number of events scraped from the events table in a single scrape.
+	BatchSize int `json:"batchSize,omitempty"`
 	// Enabled description: Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.
 	Enabled bool `json:"enabled,omitempty"`
 }

@@ -74,6 +74,10 @@ func TestBitbucketProjectsPermsSync_SetPermissionsUnrestricted(t *testing.T) {
 			t.Fatal("Error during getting the status of a Bitbucket Permissions job")
 		}
 
+		if status == "errored" || status == "failed" {
+			t.Fatalf("Bitbucket Permissions job failed with status: '%s'", status)
+		}
+
 		if status == "completed" {
 			return nil
 		}

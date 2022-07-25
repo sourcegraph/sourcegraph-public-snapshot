@@ -117,11 +117,93 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	}()
 
 	err = cmd.Run()
-	exitStatus := -10810
+	exitStatus := -10810         // sentinel value to indicate not set
 	if cmd.ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 	return exitStatus, err
+}
+
+// runCommandGraceful runs the command and returns the exit status. If the
+// supplied context is cancelled we attempt to send SIGINT to the command to
+// allow it to gracefully shutdown. All clients of this function should pass in a
+// command *without* a context.
+func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (exitCode int, err error) {
+	span, _ := ot.StartSpanFromContext(ctx, "runCommandGraceful")
+	span.SetTag("path", cmd.Path)
+	span.SetTag("args", cmd.Args)
+	span.SetTag("dir", cmd.Dir)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+			span.SetTag("exitCode", exitCode)
+		}
+		span.Finish()
+	}()
+
+	exitCode = -10810 // sentinel value to indicate not set
+	err = cmd.Start()
+	if err != nil {
+		return exitCode, err
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		err = cmd.Wait()
+		if err != nil {
+			logger.Error("running command", log.Error(err))
+		}
+	}()
+
+	// Wait for command to exit or context to be done
+	select {
+	case <-ctx.Done():
+		logger.Debug("context cancelled, sending SIGINT")
+		// Attempt to send SIGINT
+		if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
+			logger.Warn("Sending SIGINT to command", log.Error(err))
+			if err := cmd.Process.Kill(); err != nil {
+				logger.Warn("killing process", log.Error(err))
+			}
+			return exitCode, err
+		}
+		// Now, continue waiting for command for up to two seconds before killing it
+		timer := time.NewTimer(2 * time.Second)
+		select {
+		case <-done:
+			logger.Debug("process exited after SIGINT sent")
+			timer.Stop()
+			if err == nil {
+				exitCode = 0
+			}
+		case <-timer.C:
+			logger.Debug("timed out, killing process")
+			if err := cmd.Process.Kill(); err != nil {
+				logger.Warn("killing process", log.Error(err))
+			}
+			logger.Debug("process killed, waiting for done")
+			// Wait again to ensure we can access cmd.ProcessState below
+			<-done
+		}
+
+		if exitError, ok := err.(*exec.ExitError); ok {
+			exitCode = exitError.ExitCode()
+		}
+		err = ctx.Err()
+		return exitCode, err
+	case <-done:
+		// Happy path, command exits
+	}
+
+	if exitError, ok := err.(*exec.ExitError); ok {
+		exitCode = exitError.ExitCode()
+	}
+	if err == nil {
+		exitCode = 0
+	}
+	return exitCode, err
 }
 
 // cloneJob abstracts away a repo and necessary metadata to clone it. In the future it may be

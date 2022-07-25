@@ -142,6 +142,7 @@ const mockSymbolStreamEvents: SearchEvent[] = [
                         url:
                             'https://sourcegraph.com/github.com/sourcegraph/sourcegraph@branch/-/blob/client/web/index.ts?L1:1-1:3',
                         kind: SymbolKind.FUNCTION,
+                        line: 1,
                     },
                 ],
             },

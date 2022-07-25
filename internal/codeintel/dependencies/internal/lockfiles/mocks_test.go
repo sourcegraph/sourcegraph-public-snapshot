@@ -13,6 +13,7 @@ import (
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
+	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // MockGitService is a mock implementation of the GitService interface (from
@@ -38,7 +39,7 @@ func NewMockGitService() *MockGitService {
 			},
 		},
 		LsFilesFunc: &GitServiceLsFilesFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) (r0 []string, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) (r0 []string, r1 error) {
 				return
 			},
 		},
@@ -55,7 +56,7 @@ func NewStrictMockGitService() *MockGitService {
 			},
 		},
 		LsFilesFunc: &GitServiceLsFilesFunc{
-			defaultHook: func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) ([]string, error) {
+			defaultHook: func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error) {
 				panic("unexpected invocation of MockGitService.LsFiles")
 			},
 		},
@@ -189,15 +190,15 @@ func (c GitServiceArchiveFuncCall) Results() []interface{} {
 // GitServiceLsFilesFunc describes the behavior when the LsFiles method of
 // the parent MockGitService instance is invoked.
 type GitServiceLsFilesFunc struct {
-	defaultHook func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) ([]string, error)
-	hooks       []func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) ([]string, error)
+	defaultHook func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error)
+	hooks       []func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error)
 	history     []GitServiceLsFilesFuncCall
 	mutex       sync.Mutex
 }
 
 // LsFiles delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockGitService) LsFiles(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 ...gitserver.Pathspec) ([]string, error) {
+func (m *MockGitService) LsFiles(v0 context.Context, v1 api.RepoName, v2 api.CommitID, v3 ...gitdomain.Pathspec) ([]string, error) {
 	r0, r1 := m.LsFilesFunc.nextHook()(v0, v1, v2, v3...)
 	m.LsFilesFunc.appendCall(GitServiceLsFilesFuncCall{v0, v1, v2, v3, r0, r1})
 	return r0, r1
@@ -206,7 +207,7 @@ func (m *MockGitService) LsFiles(v0 context.Context, v1 api.RepoName, v2 api.Com
 // SetDefaultHook sets function that is called when the LsFiles method of
 // the parent MockGitService instance is invoked and the hook queue is
 // empty.
-func (f *GitServiceLsFilesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) ([]string, error)) {
+func (f *GitServiceLsFilesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error)) {
 	f.defaultHook = hook
 }
 
@@ -214,7 +215,7 @@ func (f *GitServiceLsFilesFunc) SetDefaultHook(hook func(context.Context, api.Re
 // LsFiles method of the parent MockGitService instance invokes the hook at
 // the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *GitServiceLsFilesFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) ([]string, error)) {
+func (f *GitServiceLsFilesFunc) PushHook(hook func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -223,19 +224,19 @@ func (f *GitServiceLsFilesFunc) PushHook(hook func(context.Context, api.RepoName
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitServiceLsFilesFunc) SetDefaultReturn(r0 []string, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) ([]string, error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitServiceLsFilesFunc) PushReturn(r0 []string, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) ([]string, error) {
+	f.PushHook(func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitServiceLsFilesFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, ...gitserver.Pathspec) ([]string, error) {
+func (f *GitServiceLsFilesFunc) nextHook() func(context.Context, api.RepoName, api.CommitID, ...gitdomain.Pathspec) ([]string, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -279,7 +280,7 @@ type GitServiceLsFilesFuncCall struct {
 	Arg2 api.CommitID
 	// Arg3 is a slice containing the values of the variadic arguments
 	// passed to this method invocation.
-	Arg3 []gitserver.Pathspec
+	Arg3 []gitdomain.Pathspec
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []string

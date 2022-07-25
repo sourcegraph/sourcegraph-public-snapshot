@@ -10,7 +10,8 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/inconshreveable/log15"
+
+	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/bitbucketcloud"
@@ -80,15 +81,12 @@ func TestBitbucketCloudSource_ListRepos(t *testing.T) {
 			cf, save := newClientFactory(t, tc.name)
 			defer save(t)
 
-			lg := log15.New()
-			lg.SetHandler(log15.DiscardHandler())
-
 			svc := &types.ExternalService{
 				Kind:   extsvc.KindBitbucketCloud,
 				Config: marshalJSON(t, tc.conf),
 			}
 
-			bbcSrc, err := newBitbucketCloudSource(svc, tc.conf, cf)
+			bbcSrc, err := newBitbucketCloudSource(logtest.Scoped(t), svc, tc.conf, cf)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -150,7 +148,7 @@ func TestBitbucketCloudSource_makeRepo(t *testing.T) {
 	for _, test := range tests {
 		test.name = "BitbucketCloudSource_makeRepo_" + test.name
 		t.Run(test.name, func(t *testing.T) {
-			s, err := newBitbucketCloudSource(&svc, test.schema, nil)
+			s, err := newBitbucketCloudSource(logtest.Scoped(t), &svc, test.schema, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -221,7 +219,7 @@ func TestBitbucketCloudSource_Exclude(t *testing.T) {
 
 	for name, config := range cases {
 		t.Run(name, func(t *testing.T) {
-			s, err := newBitbucketCloudSource(&svc, config, nil)
+			s, err := newBitbucketCloudSource(logtest.Scoped(t), &svc, config, nil)
 			if err != nil {
 				t.Fatal(err)
 			}
