@@ -685,7 +685,7 @@ index 4d14577..9fe9a4f 100644
 
 func TestDiffHunk4(t *testing.T) {
 	// This test exists to protect against an edge case bug illustrated in
-	// https://github.com/sourcegraph/sourcegraph/pull/####
+	// https://github.com/sourcegraph/sourcegraph/pull/39377
 
 	ctx := context.Background()
 	// Ran 'git diff --cached --no-prefix --binary' on a local repo to generate this diff (with the starting lines
