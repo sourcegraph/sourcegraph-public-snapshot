@@ -2262,7 +2262,6 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 		t.Skip()
 	}
 
-	ct.MockRSAKeygen(t)
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	userID := ct.CreateTestUser(t, db, true).ID
@@ -2281,7 +2280,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 }
 
 const querymaxUnlicensedChangesets = `
-query() {
+query {
   maxUnlicensedChangesets
 }
 `
