@@ -38,7 +38,6 @@ Generics are only used where necessary, and the basic `Group/ErrorGroup/ContextG
 
 ## Usage examples
 
-
 <table>
 <tr>
 <th>Without <code>lib/group</code></th>
@@ -59,6 +58,7 @@ for i := 0; i < 10; i++ {
 }
 wg.Wait()
 ```
+
 </td>
 
 <td>
@@ -72,6 +72,7 @@ for i := 0; i < 10; i++ {
 }
 g.Wait()
 ```
+
 </td>
 </tr>
 
@@ -92,6 +93,7 @@ for i := 0; i < 10; i++ {
 }
 wg.Wait()
 ```
+
 </td>
 <td>
 
@@ -104,6 +106,7 @@ for i := 0; i < 10; i++ {
 }
 g.Wait()
 ```
+
 </td>
 
 </tr>
@@ -112,7 +115,7 @@ g.Wait()
 <td>
 
 ```go
-g, ctx := errgroup.WithContext(ctx) 
+g, ctx := errgroup.WithContext(ctx)
 sem := semaphore.NewWeighted(int64(32))
 for _, item := range chunk {
 	item := item
@@ -141,6 +144,7 @@ for _, item := range chunk {
 }
 err := g.Wait()
 ```
+
 </td>
 </tr>
 <tr>
@@ -178,11 +182,12 @@ return results, errs
 g := NewWithResults[int]().WithContext(ctx)
 for _, name := range names {
 	g.Go(func(ctx context.Context) (int, error) {
-		return db.CountNames(ctx)	
+		return db.CountNames(ctx)
 	})
 }
 return g.Wait()
 ```
+
 </tr>
 <tr>
 <td>
@@ -202,13 +207,14 @@ callback := func(i int, err error) {
 	}
 }
 for nameStream.Next() {
-	name := nameStream.Value()	
+	name := nameStream.Value()
 	g.Go(func(ctx context.Context) (int, error) {
 		db.CountNames()
 	}, cb)
 }
 g.Wait()
 ```
+
 </td>
 </tr>
 </table>
