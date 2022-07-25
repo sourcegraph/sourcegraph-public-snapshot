@@ -240,21 +240,38 @@ func (f *RepoContainsCommitAfterPredicate) Plan(parent Basic) (Plan, error) {
 
 // RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
 // which filters to repos that are dependencies of the repos matching the given of regex.
-type RepoDependenciesPredicate struct{}
+type RepoDependenciesPredicate struct {
+	RepoRev    string
+	Transitive bool
+}
+
+var emptyRepoDependencies = errors.New("no pattern to match a repository in repo:dependencies predicate parameter")
 
 func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
-	re := params
-	if n := strings.LastIndex(params, "@"); n > 0 {
-		re = re[:n]
+	for _, elem := range strings.Fields(params) {
+		if trimmed := strings.TrimPrefix(elem, "transitive:"); trimmed != elem {
+			f.Transitive = parseYesNoOnly(trimmed) == Yes
+		} else {
+			re := elem
+			if n := strings.LastIndex(re, "@"); n > 0 {
+				re = re[:n]
+			}
+
+			if re == "" {
+				return emptyRepoDependencies
+			}
+
+			_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
+			if err != nil {
+				return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", re, err)
+			}
+
+			f.RepoRev = elem
+		}
 	}
 
-	if re == "" {
-		return errors.Errorf("empty repo:dependencies predicate parameter %q", params)
-	}
-
-	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	if err != nil {
-		return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", params, err)
+	if f.RepoRev == "" {
+		return emptyRepoDependencies
 	}
 
 	return nil

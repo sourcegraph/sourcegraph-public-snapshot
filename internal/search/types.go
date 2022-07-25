@@ -298,7 +298,7 @@ type Features struct {
 type RepoOptions struct {
 	RepoFilters         []string
 	MinusRepoFilters    []string
-	Dependencies        []string
+	Dependencies        []query.RepoDependenciesPredicate
 	Dependents          []string
 	DescriptionPatterns []string
 
@@ -342,7 +342,7 @@ func (op *RepoOptions) Tags() []otlog.Field {
 		add(trace.Strings("minusRepoFilters", op.MinusRepoFilters))
 	}
 	if len(op.Dependencies) > 0 {
-		add(trace.Strings("dependencies", op.Dependencies))
+		add(trace.Printf("dependencies", "%+v", op.Dependencies))
 	}
 	if len(op.Dependents) > 0 {
 		add(trace.Strings("dependents", op.Dependents))
