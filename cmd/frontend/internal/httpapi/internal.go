@@ -122,12 +122,8 @@ func serveExternalServicesList(db database.DB) func(w http.ResponseWriter, r *ht
 			return err
 		}
 
-		if len(req.Kinds) == 0 {
-			req.Kinds = append(req.Kinds, req.Kind)
-		}
-
 		options := database.ExternalServicesListOptions{
-			Kinds:   []string{req.Kind},
+			Kinds:   req.Kinds,
 			AfterID: int64(req.AfterID),
 		}
 		if req.Limit > 0 {

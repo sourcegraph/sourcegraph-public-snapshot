@@ -257,8 +257,6 @@ func (c *Client) SyncExternalService(
 		// This needs to be done after rolling out the response type in prod.
 		return nil, errors.New(string(bs))
 	} else if len(bs) == 0 {
-		// TODO(keegancsmith): Remove once repo-updater update is rolled out.
-		result.ExternalService = svc
 		return &result, nil
 	} else if err = json.Unmarshal(bs, &result); err != nil {
 		return nil, err
