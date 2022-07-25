@@ -34,7 +34,7 @@ export const ToggleBlameAction: React.FC = () => {
                     <Icon
                         aria-hidden={true}
                         svgPath={mdiGit}
-                        className={classNames(styles.icon, isBlameVisible && styles.iconActive)}
+                        className={classNames(isBlameVisible && styles.iconActive)}
                     />
                 </RepoHeaderActionButtonLink>
             </span>
