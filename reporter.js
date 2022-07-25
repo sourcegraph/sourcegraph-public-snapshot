@@ -8,7 +8,6 @@ const {
     EVENT_TEST_PENDING,
     EVENT_RUN_END,
 } = mocha.Runner.constants;
-const Spec = mocha.reporters.Spec;
 const Base = mocha.reporters.Base;
 
 class SpecFileReporter extends mocha.reporters.Spec {
@@ -19,14 +18,8 @@ class SpecFileReporter extends mocha.reporters.Spec {
             stderr: fs.createWriteStream("s-test.stderr.txt"),
         });
         Base.call(this, runner, options);
-        //var self = this
+        var self = this
 
-        this._runner = runner;
-        this._spec = new Spec(runner, options);
-
-        var passes = [];
-        var failures = [];
-        var pending = [];
 
         runner.on(EVENT_TEST_PASS, function(test) {
             passes.push(test);
