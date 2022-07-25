@@ -21,6 +21,10 @@ export const ToggleBlameAction: React.FC = () => {
 
     return (
         <Tooltip content={descriptiveText}>
+            {/**
+             * This <RepoHeaderActionButtonLink> must be wrapped with an additional span, since the tooltip currently has an issue that will
+             * break its underlying <ButtonLink>'s onClick handler and it will no longer prevent the default page reload (with no href).
+             */}
             <span>
                 <RepoHeaderActionButtonLink
                     aria-label={descriptiveText}
@@ -34,9 +38,6 @@ export const ToggleBlameAction: React.FC = () => {
                     />
                 </RepoHeaderActionButtonLink>
             </span>
-            {/* <Button className={styles.item} onClick={toggleBlameState}>
-                <img src={iconURL} alt="Git blame" className={styles.icon} />
-            </Button> */}
         </Tooltip>
     )
 }
