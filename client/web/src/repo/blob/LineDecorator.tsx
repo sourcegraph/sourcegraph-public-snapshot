@@ -1,11 +1,12 @@
 import React, { useLayoutEffect } from 'react'
 
+import Tippy from '@tippyjs/react'
 import isAbsoluteUrl from 'is-absolute-url'
 import ReactDOM from 'react-dom'
 import { ReplaySubject } from 'rxjs'
 
-import { isDefined, property } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { isDefined } from '@sourcegraph/common'
+import { InsightDecoration, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import {
     decorationAttachmentStyleForTheme,
     decorationStyleForTheme,
@@ -20,7 +21,7 @@ export interface LineDecoratorProps extends ThemeProps {
     /** 1-based line number */
     line: number
     portalID: string
-    decorations: TextDocumentDecoration[]
+    decorations: (TextDocumentDecoration | InsightDecoration)[]
     codeViewElements: ReplaySubject<HTMLElement | null>
     getCodeElementFromLineNumber: (codeView: HTMLElement, line: number) => HTMLTableCellElement | null
 }
@@ -135,38 +136,52 @@ const LineDecorator = React.memo<LineDecoratorProps>(
 
         // Render decoration attachments into portal
         return ReactDOM.createPortal(
-            decorations?.filter(property('after', isDefined)).map((decoration, index) => {
-                const attachment = decoration.after
-                const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
+            decorations?.map((decoration, index) => {
+                // The original decoration path
+                if (isDefined(decoration.after)) {
+                    const attachment = decoration.after
+                    const style = decorationAttachmentStyleForTheme(attachment, isLightTheme)
 
-                return (
-                    <Tooltip
-                        content={attachment.hoverMessage}
-                        // Key by content, use index to remove possibility of duplicate keys
-                        key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
-                    >
-                        <LinkOrSpan
-                            className={styles.lineDecorationAttachment}
-                            data-line-decoration-attachment={true}
-                            to={attachment.linkURL}
-                            // Use target to open external URLs
-                            target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
-                            // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
-                            rel="noreferrer noopener"
+                    return (
+                        <Tooltip
+                            content={attachment.hoverMessage}
+                            // Key by content, use index to remove possibility of duplicate keys
+                            key={`${decoration.after.contentText ?? decoration.after.hoverMessage ?? ''}-${index}`}
                         >
-                            <span
-                                className={styles.contents}
-                                data-line-decoration-attachment-content={true}
-                                // eslint-disable-next-line react/forbid-dom-props
-                                style={{
-                                    color: style.color,
-                                    backgroundColor: style.backgroundColor,
-                                }}
-                                data-contents={attachment.contentText || ''}
-                            />
-                        </LinkOrSpan>
-                    </Tooltip>
-                )
+                            <LinkOrSpan
+                                className={styles.lineDecorationAttachment}
+                                data-line-decoration-attachment={true}
+                                to={attachment.linkURL}
+                                // Use target to open external URLs
+                                target={attachment.linkURL && isAbsoluteUrl(attachment.linkURL) ? '_blank' : undefined}
+                                // Avoid leaking referrer URLs (which contain repository and path names, etc.) to external sites.
+                                rel="noreferrer noopener"
+                            >
+                                <span
+                                    className={styles.contents}
+                                    data-line-decoration-attachment-content={true}
+                                    // eslint-disable-next-line react/forbid-dom-props
+                                    style={{
+                                        color: style.color,
+                                        backgroundColor: style.backgroundColor,
+                                    }}
+                                    data-contents={attachment.contentText || ''}
+                                />
+                            </LinkOrSpan>
+                        </Tooltip>
+                    )
+                }
+
+                // Content is only available on Insight decorations
+                if ('content' in decoration && isDefined(decoration.content)) {
+                    return (
+                        <Tippy content={decoration.popover} trigger={decoration.trigger}>
+                            <span dangerouslySetInnerHTML={{ __html: decoration.content }} />
+                        </Tippy>
+                    )
+                }
+
+                return null
             }),
             portalNode
         )
