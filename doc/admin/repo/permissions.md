@@ -565,6 +565,8 @@ mutation {
 
 This will return an empty respoinse immediately while also enqueuing a background task to set permissions for all the repositories that belong to the project as identified by the `projectKey` in the API request.
 
+> NOTE: This sets the permissions for all repositories for `projectKey` on Sourcegraph at the time of the API call. If a new repository is added for `projectKey` it will remain hidden until you call `setRepositoryPermissionsForBitbucketProject` again.
+
 #### Querying project permissions task status
 
 To get the state of currently queued or running tasks you can run the following query with a list of project keys (one or more):

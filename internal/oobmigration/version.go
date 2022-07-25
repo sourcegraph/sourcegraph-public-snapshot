@@ -42,3 +42,8 @@ func compareVersions(a, b Version) VersionOrder {
 
 	return VersionOrderEqual
 }
+
+// pointIntersectsInterval returns true if point falls within the interval [lower, upper].
+func pointIntersectsInterval(lower, upper, point Version) bool {
+	return compareVersions(point, lower) != VersionOrderBefore && compareVersions(upper, point) != VersionOrderBefore
+}

@@ -15,7 +15,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/cespare/xxhash/v2"
@@ -204,10 +203,8 @@ type Client interface {
 	// IsRepoCloneable returns nil if the repository is cloneable.
 	IsRepoCloneable(context.Context, api.RepoName) error
 
+	// IsRepoCloned returns true if the repo is cloned.
 	IsRepoCloned(context.Context, api.RepoName) (bool, error)
-
-	// ListCloned lists all cloned repositories
-	ListCloned(context.Context) ([]string, error)
 
 	// ListRefs returns a list of all refs in the repository.
 	ListRefs(ctx context.Context, repo api.RepoName) ([]gitdomain.Ref, error)
@@ -368,7 +365,7 @@ type Client interface {
 	CommitsUniqueToBranch(ctx context.Context, repo api.RepoName, branchName string, isDefaultBranch bool, maxAge *time.Time, checker authz.SubRepoPermissionChecker) (map[string]time.Time, error)
 
 	// LsFiles returns the output of `git ls-files`
-	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...Pathspec) ([]string, error)
+	LsFiles(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, commit api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error)
 
 	// GetCommits returns a git commit object describing each of the given repository and commit pairs. This
 	// function returns a slice of the same size as the input slice. Values in the output slice may be nil if
@@ -479,9 +476,9 @@ func addrForKey(key string, addrs []string) string {
 
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
-	Treeish   string     // the tree or commit to produce an archive for
-	Format    string     // format of the resulting archive (usually "tar" or "zip")
-	Pathspecs []Pathspec // if nonempty, only include these pathspecs.
+	Treeish   string               // the tree or commit to produce an archive for
+	Format    string               // format of the resulting archive (usually "tar" or "zip")
+	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
 }
 
 type BatchLogOptions protocol.BatchLogRequest
@@ -492,18 +489,6 @@ func (opts BatchLogOptions) LogFields() []log.Field {
 		log.String("Format", opts.Format),
 	}
 }
-
-// Pathspec is a git term for a pattern that matches paths using glob-like syntax.
-// https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
-type Pathspec string
-
-// PathspecLiteral constructs a pathspec that matches a path without interpreting "*" or "?" as special
-// characters.
-func PathspecLiteral(s string) Pathspec { return Pathspec(":(literal)" + s) }
-
-// PathspecSuffix constructs a pathspec that matches paths ending with the given suffix (useful for
-// matching paths by basename).
-func PathspecSuffix(s string) Pathspec { return Pathspec("*" + s) }
 
 // archiveReader wraps the StdoutReader yielded by gitserver's
 // RemoteGitCommand.StdoutReader with one that knows how to report a repository-not-found
@@ -829,39 +814,6 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		defer resp.Body.Close()
 		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
 
-		// TODO(efritz) - remove after 3.39 branch cut
-		if resp.StatusCode == http.StatusNotFound {
-			// Frontend and gitserver may be rolling out. Fall back to issuing one
-			// command per item in the batch via the original /exec endpoint. We
-			// inline the same behavior as BatchLog here as this is throw-away code.
-
-			for _, repoCommit := range repoCommits {
-				content, err := func() (string, error) {
-					reader, err := c.execReader(ctx, repoCommit.Repo, []string{"log", "-n", "1", "--name-only", opts.Format, string(repoCommit.CommitID)})
-					if err != nil {
-						return "", errors.Wrap(err, "execReader")
-					}
-
-					content, err := io.ReadAll(reader)
-					if err != nil {
-						return "", errors.Wrap(err, "io.ReadAll")
-					}
-
-					return string(content), nil
-				}()
-
-				rawResult := RawBatchLogResult{
-					Stdout: content,
-					Error:  err,
-				}
-				if err := callback(repoCommit, rawResult); err != nil {
-					return errors.Wrap(err, "commitLogCallback")
-				}
-			}
-
-			return nil
-		}
-
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 			return errors.Newf("http status %d: %s", resp.StatusCode, body)
@@ -981,59 +933,6 @@ func (c *ClientImplementor) gitCommand(repo api.RepoName, arg ...string) GitComm
 		execFn: c.httpPost,
 		args:   append([]string{git}, arg...),
 	}
-}
-
-func (c *ClientImplementor) ListCloned(ctx context.Context) ([]string, error) {
-	var (
-		wg    sync.WaitGroup
-		mu    sync.Mutex
-		err   error
-		repos []string
-	)
-	addrs := c.Addrs()
-	for _, addr := range addrs {
-		wg.Add(1)
-		go func(addr string) {
-			defer wg.Done()
-			r, e := c.doListOne(ctx, "?cloned", addr)
-
-			// Only include repos that belong on addr.
-			if len(r) > 0 {
-				filtered := r[:0]
-				for _, repo := range r {
-					if addrForKey(repo, addrs) == addr {
-						filtered = append(filtered, repo)
-					}
-				}
-				r = filtered
-			}
-			mu.Lock()
-			if e != nil {
-				err = e
-			}
-			repos = append(repos, r...)
-			mu.Unlock()
-		}(addr)
-	}
-	wg.Wait()
-	return repos, err
-}
-
-func (c *ClientImplementor) doListOne(ctx context.Context, urlSuffix, addr string) ([]string, error) {
-	req, err := http.NewRequest("GET", "http://"+addr+"/list"+urlSuffix, nil)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.httpClient.Do(req.WithContext(ctx))
-	if err != nil {
-		return nil, err
-	}
-	defer resp.Body.Close()
-
-	var list []string
-	err = json.NewDecoder(resp.Body).Decode(&list)
-	return list, err
 }
 
 func (c *ClientImplementor) RequestRepoUpdate(ctx context.Context, repo api.RepoName, since time.Duration) (*protocol.RepoUpdateResponse, error) {

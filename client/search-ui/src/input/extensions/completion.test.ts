@@ -60,6 +60,7 @@ describe('codmirror completions', () => {
                                 name: 'RepoRoutes',
                                 url: '',
                                 containerName: '',
+                                line: 1,
                             },
                         ],
                     },

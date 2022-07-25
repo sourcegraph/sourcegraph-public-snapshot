@@ -8,7 +8,7 @@ import { WrapDisabledIcon } from '@sourcegraph/shared/src/components/icons'
 import { DeprecatedTooltipController, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { eventLogger } from '../../../tracking/eventLogger'
-import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
 /**
@@ -75,14 +75,14 @@ export class ToggleLineWrap extends React.PureComponent<
     public render(): JSX.Element | null {
         if (this.props.actionType === 'dropdown') {
             return (
-                <RepoHeaderActionButtonLink file={true} onSelect={this.onClick}>
+                <RepoHeaderActionMenuItem file={true} onSelect={this.onClick}>
                     <Icon
                         as={this.state.value ? WrapDisabledIcon : undefined}
                         svgPath={!this.state.value ? mdiWrap : undefined}
                         aria-hidden={true}
                     />
                     <span>{this.state.value ? 'Disable' : 'Enable'} wrapping long lines (Alt+Z/Opt+Z)</span>
-                </RepoHeaderActionButtonLink>
+                </RepoHeaderActionMenuItem>
             )
         }
 

@@ -4,6 +4,12 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
+## 3.41 -> 3.42
+
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
+
 ## Unreleased
 
 ## 3.40 -> 3.41

@@ -8,12 +8,14 @@ import (
 	"path"
 	"strings"
 
-	"github.com/inconshreveable/log15"
 	"github.com/opentracing/opentracing-go/log"
+
+	sglog "github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -79,9 +81,9 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 		return nil
 	}
 
-	pathspecs := []gitserver.Pathspec{}
+	pathspecs := []gitdomain.Pathspec{}
 	for _, p := range paths {
-		pathspecs = append(pathspecs, gitserver.PathspecLiteral(p))
+		pathspecs = append(pathspecs, gitdomain.PathspecLiteral(p))
 	}
 
 	opts := gitserver.ArchiveOptions{
@@ -143,9 +145,11 @@ func parseZipLockfile(f *zip.File) ([]reposource.VersionedPackage, *DependencyGr
 	}
 	defer r.Close()
 
+	logger := sglog.Scoped("parseZipLockfile", "")
+
 	deps, graph, err := parse(f.Name, r)
 	if err != nil {
-		log15.Warn("failed to parse some lockfile dependencies", "error", err, "file", f.Name)
+		logger.Warn("failed to parse some lockfile dependencies", sglog.Error(err), sglog.String("file", f.Name))
 	}
 
 	return deps, graph, nil

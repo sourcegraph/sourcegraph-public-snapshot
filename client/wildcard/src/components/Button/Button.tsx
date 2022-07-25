@@ -27,10 +27,6 @@ export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
      * Modifies the button style to have a transparent/light background and a more pronounced outline.
      */
     outline?: boolean
-    /**
-     * A tooltip to display when the user hovers the button.
-     */
-    ['data-tooltip']?: string
 }
 
 /**

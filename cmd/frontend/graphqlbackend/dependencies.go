@@ -15,6 +15,8 @@ type ListLockfileIndexesArgs struct {
 
 type DependenciesResolver interface {
 	LockfileIndexes(ctx context.Context, args *ListLockfileIndexesArgs) (LockfileIndexConnectionResolver, error)
+
+	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type LockfileIndexConnectionResolver interface {

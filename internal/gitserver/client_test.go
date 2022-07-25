@@ -14,7 +14,6 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
-	"sort"
 	"strings"
 	"sync"
 	"testing"
@@ -25,7 +24,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
@@ -39,39 +37,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-func TestClient_ListCloned(t *testing.T) {
-	addrs := []string{"gitserver-0", "gitserver-1"}
-	cli := gitserver.NewTestClient(
-		httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
-			switch r.URL.String() {
-			case "http://gitserver-0/list?cloned":
-				return &http.Response{
-					Body: io.NopCloser(bytes.NewBufferString(`["repo0-a", "repo0-b"]`)),
-				}, nil
-			case "http://gitserver-1/list?cloned":
-				return &http.Response{
-					Body: io.NopCloser(bytes.NewBufferString(`["repo1-a", "repo1-b"]`)),
-				}, nil
-			default:
-				return nil, errors.Errorf("unexpected url: %s", r.URL.String())
-			}
-		}),
-		database.NewMockDB(),
-		addrs,
-	)
-
-	want := []string{"repo0-a", "repo1-a", "repo1-b"}
-	got, err := cli.ListCloned(context.Background())
-	if err != nil {
-		t.Fatal(err)
-	}
-	sort.Strings(got)
-	sort.Strings(want)
-	if !cmp.Equal(want, got, cmpopts.EquateEmpty()) {
-		t.Errorf("mismatch for (-want +got):\n%s", cmp.Diff(want, got))
-	}
-}
 
 func TestClient_RequestRepoMigrate(t *testing.T) {
 	repo := api.RepoName("github.com/sourcegraph/sourcegraph")

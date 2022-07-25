@@ -17,7 +17,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
--
+- Changesets that are not associated with any batch changes can have a retention period set using the site configuration `batchChanges.changesetsRetention`. [#36188](https://github.com/sourcegraph/sourcegraph/pull/36188)
 
 ### Changed
 
@@ -47,6 +47,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Gitserver endpoint access logs can now be enabled by adding `"log": { "gitserver.accessLogs": true }` to the site config. [#38798](https://github.com/sourcegraph/sourcegraph/pull/38798)
 - Code Insights supports a new type of insight - compute-powered insight, currently under the experimental feature flag: `codeInsightsCompute` [#37857](https://github.com/sourcegraph/sourcegraph/issues/37857)
 - Cache execution result when mounting files in a batch spec. [sourcegraph/src-cli#795](https://github.com/sourcegraph/src-cli/pull/795)
+- Batch Changes changesets open on archived repositories will now move into a [Read-Only state](https://docs.sourcegraph.com/batch_changes/references/faq#why-is-my-changeset-read-only). [#26820](https://github.com/sourcegraph/sourcegraph/issues/26820)
 
 ### Changed
 
@@ -81,6 +82,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed a bug with the WorkspacePreview panel glitching when it's resized. [#36470](https://github.com/sourcegraph/sourcegraph/issues/36470)
 - Handle special characters in search query when creating a batch change from search. [#38772](https://github.com/sourcegraph/sourcegraph/pull/38772)
 - Fixed bug when parsing numeric timezone offset in Gitlab webhook payload. [#38250](https://github.com/sourcegraph/sourcegraph/pull/38250)
+- Fixed setting unrestricted status on a repository when using the explicit permissions API. If the repository had never had explicit permissions before, previously this call would fail. [#39141](https://github.com/sourcegraph/sourcegraph/pull/39141)
 
 ### Removed
 

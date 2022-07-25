@@ -96,9 +96,11 @@ type PermsStore interface {
 	//  ---------+------------+---------------+------------+-----------
 	//         1 |       read |        {1, 2} |      NOW() |     NOW()
 	SetRepoPermissions(ctx context.Context, p *authz.RepoPermissions) error
-	// SetRepoPermissionsUnrestricted sets the unrestricted on the repo_permissions
-	// table for all the provided repos. Either all or non are updated. Passing a
-	// non-existent id is a noop.
+	// SetRepoPermissionsUnrestricted sets the unrestricted on the
+	// repo_permissions table for all the provided repos. Either all or non
+	// are updated. If the repository ID is not in repo_permissions yet, a row
+	// is inserted for read permission and an empty array of user ids. ids
+	// must not contain duplicates.
 	SetRepoPermissionsUnrestricted(ctx context.Context, ids []int32, unrestricted bool) error
 	// TouchRepoPermissions only updates the value of both `updated_at` and
 	// `synced_at` columns of the `repo_permissions` table without modifying the
@@ -577,11 +579,18 @@ func (s *permsStore) SetRepoPermissionsUnrestricted(ctx context.Context, ids []i
 	}
 
 	const format = `
-UPDATE repo_permissions
-SET unrestricted = %s
-WHERE repo_id = ANY (%s::int[])
+-- source: enterprise/internal/database/perms_store.go:SetRepoPermissionsUnrestricted
+INSERT INTO repo_permissions
+  (repo_id, permission, user_ids_ints, updated_at, synced_at, unrestricted)
+SELECT unnest(%s::int[]), 'read', '{}'::int[], NOW(), NOW(), %s
+ON CONFLICT ON CONSTRAINT
+  repo_permissions_perm_unique
+DO UPDATE SET
+   updated_at = NOW(),
+   unrestricted = %s;
 `
-	q := sqlf.Sprintf(format, unrestricted, pq.Array(ids))
+
+	q := sqlf.Sprintf(format, pq.Array(ids), unrestricted, unrestricted)
 
 	return errors.Wrap(s.Exec(ctx, q), "setting unrestricted flag")
 }
@@ -1652,7 +1661,8 @@ func (s *permsStore) ReposIDsWithOldestPerms(ctx context.Context, limit int, age
 SELECT perms.repo_id, perms.synced_at FROM repo_permissions AS perms
 WHERE perms.repo_id IN
 	(SELECT repo.id FROM repo
-	 WHERE repo.deleted_at IS NULL)
+	 WHERE repo.deleted_at IS NULL
+	 AND repo.private = TRUE)
 AND %s
 ORDER BY perms.synced_at ASC NULLS FIRST
 LIMIT %s

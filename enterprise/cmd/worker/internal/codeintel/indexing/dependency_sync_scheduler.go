@@ -42,7 +42,7 @@ func NewDependencySyncScheduler(
 	// into the autoindexing service
 	newOperations(observationContext)
 
-	rootContext := actor.WithActor(context.Background(), &actor.Actor{Internal: true})
+	rootContext := actor.WithInternalActor(context.Background())
 
 	handler := &dependencySyncSchedulerHandler{
 		dbStore:     dbStore,
