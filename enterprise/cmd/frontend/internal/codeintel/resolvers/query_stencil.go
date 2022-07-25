@@ -7,7 +7,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 )
 
-// Stencil return all ranges within a single document.
+// Stencil returns all ranges within a single document.
 func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore.Range, err error) {
 	args := shared.RequestArgs{
 		RepositoryID: r.repositoryID,

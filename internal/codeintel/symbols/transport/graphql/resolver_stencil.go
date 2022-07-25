@@ -14,7 +14,7 @@ import (
 
 const slowStencilRequestThreshold = time.Second
 
-// Stencil return all ranges within a single document.
+// Stencil returns all ranges within a single document.
 func (r *resolver) Stencil(ctx context.Context, args shared.RequestArgs) (adjustedRanges []shared.Range, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, r.operations.stencil, slowStencilRequestThreshold, observation.Args{
 		LogFields: []log.Field{

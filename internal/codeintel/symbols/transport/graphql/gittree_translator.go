@@ -34,7 +34,6 @@ type GitTreeTranslator interface {
 	// that the translation was successful. If revese is true, then the source and target commits
 	// are swapped.
 	GetTargetCommitRangeFromSourceRange(ctx context.Context, commit, path string, rx shared.Range, reverse bool) (string, shared.Range, bool, error)
-	// AdjustRange
 }
 
 type gitTreeTranslator struct {
@@ -43,7 +42,7 @@ type gitTreeTranslator struct {
 	hunkCache        HunkCache
 }
 
-// GitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
+// NewGitTreeTranslator creates a new GitTreeTranslator with the given repository and source commit.
 func NewGitTreeTranslator(client gitserver.Client, args *requestArgs, hunkCache HunkCache) GitTreeTranslator {
 	return &gitTreeTranslator{
 		client:           client,
