@@ -7,10 +7,18 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+<<<<<<< Updated upstream
+=======
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
+>>>>>>> Stashed changes
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+<<<<<<< Updated upstream
+=======
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
+>>>>>>> Stashed changes
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -51,29 +59,112 @@ func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 	defer func() { finish(alert, err) }()
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
+<<<<<<< Updated upstream
 		event = j.filterEvent(event)
+=======
+		event = j.filterEvent(ctx, clients.SearcherURLs, event)
+>>>>>>> Stashed changes
 		stream.Send(event)
 	})
 
 	return j.child.Run(ctx, clients, filteredStream)
 }
 
+<<<<<<< Updated upstream
 func (j *fileContainsFilterJob) filterEvent(event streaming.SearchEvent) streaming.SearchEvent {
 	// Don't filter out files with zero chunks because if the file contained
 	// the a result, we still want to return a match for the file even if it
 	// has no matched ranges left.
 	for i := range event.Results {
 		event.Results[i] = j.filterFileMatch(event.Results[i])
+=======
+func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, event streaming.SearchEvent) streaming.SearchEvent {
+	// Don't filter out files with zero chunks because if the file contained
+	// the a result, we still want to return a match for the file even if it
+	// has no matched ranges left.
+	filtered := event.Results[:0]
+	for _, res := range event.Results {
+		switch v := res.(type) {
+		case *result.FileMatch:
+			filtered = append(filtered, j.filterFileMatch(v))
+		case *result.CommitMatch:
+			cm := j.filterCommitMatch(ctx, searcherURLs, v)
+			if cm != nil {
+				filtered = append(filtered, cm)
+			}
+		default:
+			filtered = append(filtered, v)
+		}
+>>>>>>> Stashed changes
 	}
 	return event
 }
 
+<<<<<<< Updated upstream
 func (j *fileContainsFilterJob) filterFileMatch(m result.Match) result.Match {
 	fm, ok := m.(*result.FileMatch)
 	if !ok {
 		return m
 	}
 
+=======
+func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
+	if cm.DiffPreview == nil {
+		return cm
+	}
+
+	fileDiffs, err := result.ParseDiffString(cm.DiffPreview.Content)
+	if err != nil {
+		// Skip any unparseable diff preview
+		return nil
+	}
+
+	fileNames := make([]string, 0, len(fileDiffs))
+	for _, fileDiff := range fileDiffs {
+		fileNames = append(fileNames, regexp.QuoteMeta(fileDiff.NewName))
+	}
+
+	for _, includeMatcher := range j.includeMatchers {
+		patternInfo := search.TextPatternInfo{
+			Pattern:               includeMatcher.String(),
+			IsRegExp:              true,
+			FileMatchLimit:        99999999,
+			Index:                 query.No,
+			IncludePatterns:       []string{query.UnionRegExps(fileNames)},
+			PatternMatchesContent: true,
+		}
+
+		var matchedFiles []string
+		onMatch := func(fms []*protocol.FileMatch) {
+			for _, fm := range fms {
+
+			}
+		}
+
+		_, err := searcher.Search(
+			ctx,
+			cm.Repo.Name,
+			cm.Repo.ID,
+			"",
+			cm.Commit.ID,
+			false,
+			&patternInfo,
+			time.Hour,
+			nil,
+			search.Features{},
+			onMatch,
+		)
+		if err != nil {
+			// Ignore any files where the search errors
+			return nil
+		}
+
+	}
+
+}
+
+func (j *fileContainsFilterJob) filterFileMatch(fm *result.FileMatch) result.Match {
+>>>>>>> Stashed changes
 	filteredChunks := fm.ChunkMatches[:0]
 	for _, chunk := range fm.ChunkMatches {
 		chunk = j.filterChunk(chunk)
