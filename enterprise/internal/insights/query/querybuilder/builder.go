@@ -108,14 +108,14 @@ func SingleRepoQueryIndexed(query BasicQuery, repo string) BasicQuery {
 	return modified
 }
 
-func SingleFileQuery(query BasicQuery, repo, file string, revision *string, defaultParams searchquery.Parameters) (BasicQuery, error) {
+func SingleFileQuery(query BasicQuery, repo, file string, revision string, defaultParams searchquery.Parameters) (BasicQuery, error) {
 	modified := withCountAll(query)
 	modified, err := withDefaults(modified, defaultParams)
 	if err != nil {
 		return "", errors.Wrap(err, "WithDefaults")
 	}
-	if revision != nil {
-		modified = forRepoRevision(modified, repo, *revision)
+	if len(revision) > 0 {
+		modified = forRepoRevision(modified, repo, revision)
 	} else {
 		modified = forRepos(modified, []string{repo})
 	}
