@@ -55,7 +55,7 @@ import {
     addLineRangeQueryParameter,
     formatSearchParameters,
 } from '@sourcegraph/common'
-import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
+import { InsightDecoration, TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
@@ -176,6 +176,20 @@ const domFunctions = {
 
 const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
 const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
+
+const decoration: InsightDecoration = {
+    range: {
+        start: { line: 0, character: 0 },
+        end: { line: 0, character: 0 },
+    },
+    content: '<b>TEST:</b>Inline insight test',
+    popover: (
+        <span>
+            Hey look I'm a <b>React Component</b>
+        </span>
+    ),
+    trigger: 'click',
+}
 
 /**
  * Renders a code view augmented by Sourcegraph extensions
@@ -307,8 +321,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     }, [blobInfo, nextBlobInfoChange, viewerUpdates])
 
     const [decorationsOrError, setDecorationsOrError] = useState<
-        [TextDocumentDecorationType, TextDocumentDecoration[]][] | Error | undefined
+        [TextDocumentDecorationType, (TextDocumentDecoration | InsightDecoration)[]][] | Error | undefined
     >()
+    const [insightDecorations, setInsightsDecorations] = useState<InsightDecoration[]>([])
+
+    // TODO: Update this to an API call
+    useEffect(() => setInsightsDecorations([decoration]), [])
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
     const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
@@ -868,6 +886,17 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         )
                     })
                     .toArray()}
+                {insightDecorations.map((insightDecoration, index) => (
+                    <LineDecorator
+                        key={index}
+                        isLightTheme={isLightTheme}
+                        portalID={toPortalID(1)}
+                        getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                        line={1}
+                        decorations={[insightDecoration]}
+                        codeViewElements={codeViewElements}
+                    />
+                ))}
             </div>
             {!props.disableStatusBar && (
                 <StatusBar
