@@ -34,8 +34,6 @@ const (
 	GitResolveRevision     = "internal.git.resolve-revision"
 	GitUploadPack          = "internal.git.upload-pack"
 	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
-	ReposInventoryUncached = "internal.repos.inventory-uncached"
-	ReposInventory         = "internal.repos.inventory"
 	ReposIndex             = "internal.repos.index"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
@@ -92,8 +90,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
 	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
-	base.Path("/repos/inventory-uncached").Methods("POST").Name(ReposInventoryUncached)
-	base.Path("/repos/inventory").Methods("POST").Name(ReposInventory)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
 	base.Path("/search/configuration").Methods("GET", "POST").Name(SearchConfiguration)
