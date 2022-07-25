@@ -314,6 +314,8 @@ func (s *Service) CreateBatchSpec(ctx context.Context, opts CreateBatchSpecOpts)
 	}})
 	defer endObservation(1, observation.Args{})
 
+	// TODO move license check logic from resolver to here
+
 	spec, err = btypes.NewBatchSpecFromRaw(opts.RawSpec)
 	if err != nil {
 		return nil, err
