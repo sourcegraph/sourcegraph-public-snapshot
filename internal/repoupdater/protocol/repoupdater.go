@@ -17,9 +17,6 @@ import (
 )
 
 type RepoUpdateSchedulerInfoArgs struct {
-	// RepoName is the repository name to look up.
-	// XXX(tsenart): Depreacted. Remove after lookup by ID is rolled out.
-	RepoName api.RepoName
 	// The ID of the repo to lookup the schedule for.
 	ID api.RepoID
 }
@@ -242,12 +239,10 @@ type RepoUpdateResponse struct {
 	ID api.RepoID `json:"id"`
 	// Name of the repo that got an update request.
 	Name string `json:"name"`
-	// URL of the repo that got an update request.
-	URL string `json:"url"`
 }
 
 func (a *RepoUpdateResponse) String() string {
-	return fmt.Sprintf("RepoUpdateResponse{ID: %d Name: %s URL: %s}", a.ID, a.Name, a.URL)
+	return fmt.Sprintf("RepoUpdateResponse{ID: %d Name: %s}", a.ID, a.Name)
 }
 
 // ChangesetSyncRequest is a request to sync a number of changesets
@@ -284,6 +279,5 @@ type ExternalServiceSyncRequest struct {
 
 // ExternalServiceSyncResult is a result type of an external service's sync request.
 type ExternalServiceSyncResult struct {
-	ExternalService api.ExternalService
-	Error           string
+	Error string
 }
