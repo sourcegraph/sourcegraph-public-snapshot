@@ -23,7 +23,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/repos"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -36,9 +35,6 @@ type Server struct {
 	Scheduler             interface {
 		UpdateOnce(id api.RepoID, name api.RepoName)
 		ScheduleInfo(id api.RepoID) *protocol.RepoUpdateSchedulerInfoResult
-	}
-	GitserverClient interface {
-		ListCloned(context.Context) ([]string, error)
 	}
 	ChangesetSyncRegistry batches.ChangesetSyncRegistry
 	RateLimitSyncer       interface {
@@ -160,7 +156,6 @@ func (s *Server) enqueueRepoUpdate(ctx context.Context, req *protocol.RepoUpdate
 			tr.LogFields(
 				otlog.Int32("resp.id", int32(resp.ID)),
 				otlog.String("resp.name", resp.Name),
-				otlog.String("resp.url", resp.URL),
 			)
 		}
 		tr.SetError(err)
@@ -203,16 +198,25 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if sourcer = s.Sourcer; sourcer == nil {
 		db := database.NewDBWith(logger, s)
 		depsSvc := livedependencies.GetService(db, nil)
-		sourcer = repos.NewSourcer(db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
+		sourcer = repos.NewSourcer(s.Logger.Scoped("repos.Sourcer", ""), db, httpcli.ExternalClientFactory, repos.WithDependenciesService(depsSvc))
 	}
-	src, err := sourcer(ctx, &types.ExternalService{
-		ID:              req.ExternalService.ID,
-		Kind:            req.ExternalService.Kind,
-		DisplayName:     req.ExternalService.DisplayName,
-		Config:          req.ExternalService.Config,
-		NamespaceUserID: req.ExternalService.NamespaceUserID,
-		NamespaceOrgID:  req.ExternalService.NamespaceOrgID,
-	})
+
+	externalServiceID := req.ExternalServiceID
+	if externalServiceID == 0 {
+		externalServiceID = req.ExternalService.ID
+	}
+
+	es, err := s.ExternalServiceStore().GetByID(ctx, externalServiceID)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			s.respond(w, http.StatusNotFound, err)
+			return
+		}
+		s.respond(w, http.StatusInternalServerError, err)
+		return
+	}
+
+	src, err := sourcer(ctx, es)
 
 	if err != nil {
 		logger.Error("server.external-service-sync", log.Error(err))
@@ -223,8 +227,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	if err == github.ErrIncompleteResults {
 		logger.Info("server.external-service-sync", log.Error(err))
 		syncResult := &protocol.ExternalServiceSyncResult{
-			ExternalService: req.ExternalService,
-			Error:           err.Error(),
+			Error: err.Error(),
 		}
 		s.respond(w, http.StatusOK, syncResult)
 		return
@@ -257,9 +260,7 @@ func (s *Server) handleExternalServiceSync(w http.ResponseWriter, r *http.Reques
 	}
 
 	logger.Info("server.external-service-sync", log.Bool("synced", true))
-	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{
-		ExternalService: req.ExternalService,
-	})
+	s.respond(w, http.StatusOK, &protocol.ExternalServiceSyncResult{})
 }
 
 func externalServiceValidate(ctx context.Context, req protocol.ExternalServiceSyncRequest, src repos.Source) error {

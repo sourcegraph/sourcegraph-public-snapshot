@@ -192,6 +192,51 @@ func TestUpsertLockfileGraph(t *testing.T) {
 	packageE := shared.TestPackageDependencyLiteral("E", "5", "6", "pkg-E", "8")
 	packageF := shared.TestPackageDependencyLiteral("F", "6", "7", "pkg-F", "9")
 
+	t.Run("timestamps", func(t *testing.T) {
+		now := timeutil.Now()
+
+		deps := []shared.PackageDependency{packageA}
+		graph := shared.TestDependencyGraphLiteral([]shared.PackageDependency{packageA}, false, [][]shared.PackageDependency{})
+		commit := "cafebabe"
+
+		if err := store.upsertLockfileGraphAt(ctx, "foo", commit, "lock.file", deps, graph, now); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		index, err := store.GetLockfileIndex(ctx, GetLockfileIndexOpts{RepoName: "foo", Commit: commit, Lockfile: "lock.file"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !index.CreatedAt.Equal(now) {
+			t.Fatalf("createdAt not equal to timestamp passed in. want=%s, have=%s", now, index.CreatedAt)
+		}
+
+		if !index.UpdatedAt.Equal(now) {
+			t.Fatalf("updatedAt not equal to timestamp passed in. want=%s, have=%s", now, index.UpdatedAt)
+		}
+
+		// upsert again, with different timestamp, to see that `updated_at` is updated
+		now2 := now.Add(5 * time.Hour)
+
+		if err := store.upsertLockfileGraphAt(ctx, "foo", commit, "lock.file", deps, graph, now2); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		index, err = store.GetLockfileIndex(ctx, GetLockfileIndexOpts{RepoName: "foo", Commit: commit, Lockfile: "lock.file"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !index.CreatedAt.Equal(now) {
+			t.Fatalf("createdAt not equal to timestamp passed in. want=%s, have=%s", now, index.CreatedAt)
+		}
+
+		if !index.UpdatedAt.Equal(now2) {
+			t.Fatalf("updatedAt not equal to timestamp passed in. want=%s, have=%s", now2, index.UpdatedAt)
+		}
+	})
+
 	t.Run("with graph", func(t *testing.T) {
 		deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
 		//    -> b -> E
@@ -1130,6 +1175,7 @@ func TestListAndGetLockfileIndexes(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
+	now := timeutil.Now()
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
 		t.Fatalf(err.Error())
@@ -1172,16 +1218,16 @@ func TestListAndGetLockfileIndexes(t *testing.T) {
 			lockfile: "lock2.file",
 		},
 	} {
-		if err := store.UpsertLockfileGraph(ctx, tt.repoName, tt.commit, tt.lockfile, tt.deps, tt.graph); err != nil {
+		if err := store.upsertLockfileGraphAt(ctx, tt.repoName, tt.commit, tt.lockfile, tt.deps, tt.graph, now); err != nil {
 			t.Fatalf("error: %s", err)
 		}
 	}
 
 	// Query
 	lockfileIndexes := []shared.LockfileIndex{
-		{ID: 1, RepositoryID: 1, Commit: "cafebabe", LockfileReferenceIDs: []int{1}, Lockfile: "lock.file", Fidelity: "graph"},
-		{ID: 2, RepositoryID: 1, Commit: "d34db33f", LockfileReferenceIDs: []int{3}, Lockfile: "lock.file", Fidelity: "graph"},
-		{ID: 3, RepositoryID: 2, Commit: "d34db33f", LockfileReferenceIDs: []int{5}, Lockfile: "lock2.file", Fidelity: "flat"},
+		{ID: 1, RepositoryID: 1, Commit: "cafebabe", LockfileReferenceIDs: []int{1}, Lockfile: "lock.file", Fidelity: "graph", CreatedAt: now, UpdatedAt: now},
+		{ID: 2, RepositoryID: 1, Commit: "d34db33f", LockfileReferenceIDs: []int{3}, Lockfile: "lock.file", Fidelity: "graph", CreatedAt: now, UpdatedAt: now},
+		{ID: 3, RepositoryID: 2, Commit: "d34db33f", LockfileReferenceIDs: []int{5}, Lockfile: "lock2.file", Fidelity: "flat", CreatedAt: now, UpdatedAt: now},
 	}
 
 	for i, tt := range []struct {

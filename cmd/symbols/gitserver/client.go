@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -53,9 +54,9 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	}})
 	defer endObservation(1, observation.Args{})
 
-	pathSpecs := []gitserver.Pathspec{}
+	pathSpecs := []gitdomain.Pathspec{}
 	for _, path := range paths {
-		pathSpecs = append(pathSpecs, gitserver.PathspecLiteral(path))
+		pathSpecs = append(pathSpecs, gitdomain.PathspecLiteral(path))
 	}
 
 	opts := gitserver.ArchiveOptions{

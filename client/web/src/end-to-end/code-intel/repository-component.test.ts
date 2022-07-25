@@ -391,14 +391,14 @@ describe('Repository component', () => {
 
                 await (await driver.page.waitForSelector('[data-tab-content="symbols"]'))?.click()
 
-                await driver.page.waitForSelector('.test-symbol-name', { visible: true })
+                await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
 
                 const symbolNames = await driver.page.evaluate(() =>
-                    [...document.querySelectorAll('.test-symbol-name')].map(name => name.textContent || '')
+                    [...document.querySelectorAll('[data-testid="symbol-name"]')].map(name => name.textContent || '')
                 )
                 const symbolTypes = await driver.page.evaluate(() =>
-                    [...document.querySelectorAll('.test-symbol-icon')].map(
-                        icon => icon.getAttribute('data-tooltip') || ''
+                    [...document.querySelectorAll('[data-testid="symbol-icon"]')].map(
+                        icon => icon.getAttribute('data-symbol-kind') || ''
                     )
                 )
 
@@ -447,7 +447,7 @@ describe('Repository component', () => {
 
                 await (await driver.page.waitForSelector('[data-tab-content="symbols"]'))?.click()
 
-                await driver.page.waitForSelector('.test-symbol-name', { visible: true })
+                await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
 
                 await (
                     await driver.page.waitForSelector(`.test-symbol-link[href*="${navigationTest.symbolPath}"]`, {
@@ -480,7 +480,7 @@ describe('Repository component', () => {
                 await driver.page.goto(sourcegraphBaseUrl + filePath)
                 await driver.page.waitForSelector('[data-tab-content="symbols"]')
                 await driver.page.click('[data-tab-content="symbols"]')
-                await driver.page.waitForSelector('.test-symbol-name', { visible: true })
+                await driver.page.waitForSelector('[data-testid="symbol-name"]', { visible: true })
                 await driver.page.click(`[data-testid="filtered-connection-nodes"] li:nth-child(${index + 1}) a`)
 
                 await driver.page.waitForSelector('.test-blob .selected .line')

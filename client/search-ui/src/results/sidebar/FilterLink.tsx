@@ -9,7 +9,7 @@ import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { FilterType } from '@sourcegraph/shared/src/search/query/filters'
 import { Filter } from '@sourcegraph/shared/src/search/stream'
 import { isSettingsValid, SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { Button } from '@sourcegraph/wildcard'
+import { Button, Tooltip } from '@sourcegraph/wildcard'
 
 import { getFiltersOfKind } from './helpers'
 
@@ -53,10 +53,12 @@ export const FilterLink: React.FunctionComponent<React.PropsWithChildren<FilterL
                 {labelConverter(label)}
             </span>
             {count && (
-                <span className="pl-2 flex-shrink-0" data-tooltip={countTooltip}>
-                    {count}
-                    {limitHit ? '+' : ''}
-                </span>
+                <Tooltip content={countTooltip}>
+                    <span className="pl-2 flex-shrink-0">
+                        {count}
+                        {limitHit ? '+' : ''}
+                    </span>
+                </Tooltip>
             )}
         </Button>
     )

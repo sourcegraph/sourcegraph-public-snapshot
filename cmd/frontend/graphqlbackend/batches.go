@@ -710,7 +710,7 @@ type ChangesetResolver interface {
 	// ExternalState returns a value of type *btypes.ChangesetExternalState.
 	ExternalState() *string
 	// State returns a value of type *btypes.ChangesetState.
-	State() (string, error)
+	State() string
 	BatchChanges(ctx context.Context, args *ListBatchChangesArgs) (BatchChangesConnectionResolver, error)
 
 	ToExternalChangeset() (ExternalChangesetResolver, bool)

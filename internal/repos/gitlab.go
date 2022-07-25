@@ -8,10 +8,11 @@ import (
 	"sync"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/oauth2"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -38,6 +39,7 @@ type GitLabSource struct {
 	nameTransformations reposource.NameTransformations
 	provider            *gitlab.ClientProvider
 	client              *gitlab.Client
+	logger              log.Logger
 }
 
 var _ Source = &GitLabSource{}
@@ -46,12 +48,12 @@ var _ AffiliatedRepositorySource = &GitLabSource{}
 var _ VersionSource = &GitLabSource{}
 
 // NewGitLabSource returns a new GitLabSource from the given external service.
-func NewGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
+func NewGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, cf *httpcli.Factory) (*GitLabSource, error) {
 	var c schema.GitLabConnection
 	if err := jsonc.Unmarshal(svc.Config, &c); err != nil {
 		return nil, errors.Errorf("external service id=%d config error: %s", svc.ID, err)
 	}
-	return newGitLabSource(ctx, db, svc, &c, cf)
+	return newGitLabSource(ctx, logger, db, svc, &c, cf)
 }
 
 var gitlabRemainingGauge = promauto.NewGaugeVec(prometheus.GaugeOpts{
@@ -64,7 +66,7 @@ var gitlabRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 	Help: "The amount of time spent waiting on the rate limit",
 }, []string{"resource", "name"})
 
-func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+func newGitLabSource(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -106,7 +108,7 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {
 	case gitlab.TokenTypeOAuth:
-		refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc)
+		refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, logger, db, svc)
 		if err != nil {
 			return nil, errors.Wrap(err, "refreshing OAuth token")
 		}
@@ -135,6 +137,7 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 		nameTransformations: nts,
 		provider:            provider,
 		client:              client,
+		logger:              logger,
 	}, nil
 }
 
@@ -259,7 +262,7 @@ func (s *GitLabSource) listAllProjects(ctx context.Context, results chan SourceR
 					// TODO(tsenart): When implementing dry-run, reconsider alternatives to return
 					// 404 errors on external service config validation.
 					if gitlab.IsNotFound(err) {
-						log15.Warn("skipping missing gitlab.projects entry:", "name", p.Name, "id", p.Id, "err", err)
+						s.logger.Warn("skipping missing gitlab.projects entry:", log.String("name", p.Name), log.Int("id", p.Id), log.Error(err))
 						continue
 					}
 					ch <- batch{err: errors.Wrapf(err, "gitlab.projects: id: %d, name: %q", p.Id, p.Name)}
@@ -397,7 +400,7 @@ func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 	return out, nil
 }
 
-func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.DB, svc *types.ExternalService) (accessToken string, err error) {
+func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, logger log.Logger, db database.DB, svc *types.ExternalService) (accessToken string, err error) {
 	parsed, err := extsvc.ParseConfig(svc.Kind, svc.Config)
 	if err != nil {
 		return "", errors.Wrap(err, "parsing external service config")
@@ -425,8 +428,8 @@ func maybeRefreshGitLabOAuthTokenFromCodeHost(ctx context.Context, db database.D
 	}
 
 	if oauthConfig == nil {
-		log15.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromCodeHost, external service has no auth.provider",
-			"externalServiceID", svc.ID,
+		logger.Warn("PermsSyncer.maybeRefreshGitLabOAuthTokenFromCodeHost, external service has no auth.provider",
+			log.Int64("externalServiceID", svc.ID),
 		)
 		return config.Token, nil
 	}
