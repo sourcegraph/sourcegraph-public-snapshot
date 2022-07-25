@@ -89,10 +89,6 @@ type IndexEnqueuer interface {
 	InferIndexConfiguration(ctx context.Context, repositoryID int, commit string, bypassLimit bool) (*config.IndexConfiguration, []config.IndexJobHint, error)
 }
 
-type GitserverResolverClient interface {
-	CommitsExist(ctx context.Context, commits []gitserver.RepositoryCommit) ([]bool, error)
-}
-
 type SymbolsResolver interface {
 	SetUploadsDataLoader(uploads []dbstore.Dump)
 	SetLocalGitTreeTranslator(client internalGitserver.Client, repo *types.Repo, commit, path string) error

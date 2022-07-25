@@ -43,15 +43,3 @@ func GetService(db, codeIntelDB database.DB, gsc shared.GitserverClient) *Servic
 
 	return svc
 }
-
-// // Need it specifically for connecting to the lsifstore database.
-// func mustInitializeCodeIntelDB(logger log.Logger) stores.CodeIntelDB {
-// 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
-// 		return serviceConnections.CodeIntelPostgresDSN
-// 	})
-// 	db, err := connections.EnsureNewCodeIntelDB(dsn, "codeintel", &observation.TestContext)
-// 	if err != nil {
-// 		logger.Fatal("Failed to connect to codeintel database", log.Error(err))
-// 	}
-// 	return stores.NewCodeIntelDB(db)
-// }

@@ -40,15 +40,12 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) gql.CodeIntelResolver {
 	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
 
-	oc := func(name string) *observation.Context {
-		return &observation.Context{
-			Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: prometheus.DefaultRegisterer,
-		}
+	symbolsCtx := &observation.Context{
+		Logger:     logger.Scoped("symbols.transport.graphql", "codeintel symbols graphql transport"),
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
-
-	symbolsResolver := symbolsgraphql.New(services.SymbolsSvc, config.HunkCacheSize, oc("symbols"))
+	symbolsResolver := symbolsgraphql.New(services.SymbolsSvc, config.HunkCacheSize, symbolsCtx)
 
 	innerResolver := codeintelresolvers.NewResolver(
 		services.dbStore,

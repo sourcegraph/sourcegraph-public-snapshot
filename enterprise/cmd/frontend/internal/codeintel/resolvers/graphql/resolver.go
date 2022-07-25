@@ -315,7 +315,6 @@ func (r *Resolver) GitBlobLSIFData(ctx context.Context, args *gql.GitBlobLSIFDat
 		return nil, err
 	}
 
-	// This is created once per request, right?
 	return NewQueryResolver(r.gitserver, resolver, r.resolver, r.locationResolver, errTracer), nil
 }
 

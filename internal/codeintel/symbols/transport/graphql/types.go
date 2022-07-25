@@ -116,8 +116,7 @@ type cursorToVisibleUpload struct {
 	TargetPathWithoutRoot string          `json:"adjustedPathInBundle"`
 }
 
-// adjustedUpload
-// uploadsMetadata pairs an upload visible from the current target commit with the
+// visibleUpload pairs an upload visible from the current target commit with the
 // current target path and position matched to the data within the underlying index.
 type visibleUpload struct {
 	Upload                shared.Dump
