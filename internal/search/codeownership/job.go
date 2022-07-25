@@ -99,30 +99,30 @@ func applyCodeOwnershipFiltering(
 
 matchesLoop:
 	for _, m := range matches {
-		switch mm := m.(type) {
-		case *result.FileMatch:
-			ruleset, err := rules.GetFromCacheOrFetch(ctx, gitserver, mm.Repo.Name, mm.CommitID)
-			if err != nil {
-				errs = errors.Append(errs, err)
-			}
-
-			var owners Owners
-			owners, err = ruleset.Match(mm.File.Path)
-			if err != nil {
-				errs = errors.Append(errs, err)
-			}
-
-			for _, owner := range includeOwners {
-				if !containsOwner(owners, owner) {
-					continue matchesLoop
-				}
-			}
-
-			filtered = append(filtered, m)
-		default:
-			// Code ownership is currently only implemented for files.
-			continue matchesLoop
+		// Code ownership is currently only implemented for files.
+		mm, ok := m.(*result.FileMatch)
+		if !ok {
+			continue
 		}
+
+		ruleset, err := rules.GetFromCacheOrFetch(ctx, gitserver, mm.Repo.Name, mm.CommitID)
+		if err != nil {
+			errs = errors.Append(errs, err)
+		}
+
+		var owners Owners
+		owners, err = ruleset.Match(mm.File.Path)
+		if err != nil {
+			errs = errors.Append(errs, err)
+		}
+
+		for _, owner := range includeOwners {
+			if !containsOwner(owners, owner) {
+				continue matchesLoop
+			}
+		}
+
+		filtered = append(filtered, m)
 	}
 
 	return filtered, errs
