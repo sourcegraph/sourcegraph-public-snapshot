@@ -228,6 +228,9 @@ export const ReferencesList```
         setFilter(undefined)
     }, [props.token])
 
+    const [testlink](https://www.google.com) <http://www.example.com|This message *is* a link> = useConnection()
+
+
     const getSetting = newSettingsGetter(props.settingsCascade)
 
     const {
