@@ -29,6 +29,9 @@ type MockClient struct {
 	// AddrForRepoFunc is an instance of a mock function object controlling
 	// the behavior of the method AddrForRepo.
 	AddrForRepoFunc *ClientAddrForRepoFunc
+	// AddrsFunc is an instance of a mock function object controlling the
+	// behavior of the method Addrs.
+	AddrsFunc *ClientAddrsFunc
 	// ArchiveFunc is an instance of a mock function object controlling the
 	// behavior of the method Archive.
 	ArchiveFunc *ClientArchiveFunc
@@ -199,6 +202,11 @@ func NewMockClient() *MockClient {
 	return &MockClient{
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
 			defaultHook: func(context.Context, api.RepoName) (r0 string, r1 error) {
+				return
+			},
+		},
+		AddrsFunc: &ClientAddrsFunc{
+			defaultHook: func() (r0 []string) {
 				return
 			},
 		},
@@ -484,6 +492,11 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.AddrForRepo")
 			},
 		},
+		AddrsFunc: &ClientAddrsFunc{
+			defaultHook: func() []string {
+				panic("unexpected invocation of MockClient.Addrs")
+			},
+		},
 		ArchiveFunc: &ClientArchiveFunc{
 			defaultHook: func(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error) {
 				panic("unexpected invocation of MockClient.Archive")
@@ -764,6 +777,9 @@ func NewMockClientFrom(i Client) *MockClient {
 		AddrForRepoFunc: &ClientAddrForRepoFunc{
 			defaultHook: i.AddrForRepo,
 		},
+		AddrsFunc: &ClientAddrsFunc{
+			defaultHook: i.Addrs,
+		},
 		ArchiveFunc: &ClientArchiveFunc{
 			defaultHook: i.Archive,
 		},
@@ -1034,6 +1050,104 @@ func (c ClientAddrForRepoFuncCall) Args() []interface{} {
 // invocation.
 func (c ClientAddrForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// ClientAddrsFunc describes the behavior when the Addrs method of the
+// parent MockClient instance is invoked.
+type ClientAddrsFunc struct {
+	defaultHook func() []string
+	hooks       []func() []string
+	history     []ClientAddrsFuncCall
+	mutex       sync.Mutex
+}
+
+// Addrs delegates to the next hook function in the queue and stores the
+// parameter and result values of this invocation.
+func (m *MockClient) Addrs() []string {
+	r0 := m.AddrsFunc.nextHook()()
+	m.AddrsFunc.appendCall(ClientAddrsFuncCall{r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the Addrs method of the
+// parent MockClient instance is invoked and the hook queue is empty.
+func (f *ClientAddrsFunc) SetDefaultHook(hook func() []string) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// Addrs method of the parent MockClient instance invokes the hook at the
+// front of the queue and discards it. After the queue is empty, the default
+// hook function is invoked for any future action.
+func (f *ClientAddrsFunc) PushHook(hook func() []string) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *ClientAddrsFunc) SetDefaultReturn(r0 []string) {
+	f.SetDefaultHook(func() []string {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *ClientAddrsFunc) PushReturn(r0 []string) {
+	f.PushHook(func() []string {
+		return r0
+	})
+}
+
+func (f *ClientAddrsFunc) nextHook() func() []string {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *ClientAddrsFunc) appendCall(r0 ClientAddrsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of ClientAddrsFuncCall objects describing the
+// invocations of this function.
+func (f *ClientAddrsFunc) History() []ClientAddrsFuncCall {
+	f.mutex.Lock()
+	history := make([]ClientAddrsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// ClientAddrsFuncCall is an object that describes an invocation of method
+// Addrs on an instance of MockClient.
+type ClientAddrsFuncCall struct {
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []string
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c ClientAddrsFuncCall) Args() []interface{} {
+	return []interface{}{}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c ClientAddrsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // ClientArchiveFunc describes the behavior when the Archive method of the
