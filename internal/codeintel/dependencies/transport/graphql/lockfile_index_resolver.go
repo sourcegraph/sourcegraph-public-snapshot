@@ -40,6 +40,14 @@ func (e *LockfileIndexResolver) Fidelity() string {
 	return e.lockfile.Fidelity.ToGraphQL()
 }
 
+func (e *LockfileIndexResolver) CreatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: e.lockfile.CreatedAt}
+}
+
+func (e *LockfileIndexResolver) UpdatedAt() graphqlbackend.DateTime {
+	return graphqlbackend.DateTime{Time: e.lockfile.UpdatedAt}
+}
+
 func unmarshalLockfileIndexID(id graphql.ID) (lockfileIndexID int, err error) {
 	err = relay.UnmarshalSpec(id, &lockfileIndexID)
 	return
