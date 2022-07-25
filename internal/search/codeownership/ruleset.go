@@ -64,11 +64,7 @@ func loadOwnershipFile(ctx context.Context, gitserver gitserver.Client, repoName
 			authz.DefaultSubRepoPermsChecker,
 		)
 
-		if err != nil {
-			return nil, err
-		}
-
-		if content != nil {
+		if err == nil && content != nil {
 			return content, nil
 		}
 	}

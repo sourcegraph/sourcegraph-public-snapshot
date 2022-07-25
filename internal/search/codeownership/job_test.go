@@ -2,6 +2,7 @@ package codeownership
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -68,6 +69,35 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 				},
 			}),
 		},
+		{
+			name: "filters results based on code owners file in a subdirectory",
+			args: args{
+				includeOwners: []string{"@sqs"},
+				excludeOwners: []string{},
+				matches: []result.Match{
+					&result.FileMatch{
+						File: result.File{
+							Path: "README.md",
+						},
+					},
+					&result.FileMatch{
+						File: result.File{
+							Path: "package.json",
+						},
+					},
+				},
+				repoContent: map[string]string{
+					".github/CODEOWNERS": "README.md @sqs\n",
+				},
+			},
+			want: autogold.Want("results matching ownership", []result.Match{
+				&result.FileMatch{
+					File: result.File{
+						Path: "README.md",
+					},
+				},
+			}),
+		},
 	}
 
 	for _, tt := range tests {
@@ -79,7 +109,7 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			gitserver.Mocks.ReadFile = func(_ api.CommitID, file string) ([]byte, error) {
 				content, ok := tt.args.repoContent[file]
 				if !ok {
-					return nil, nil
+					return nil, fmt.Errorf("Open %s: file does not exist", file)
 				}
 				return []byte(content), nil
 			}
