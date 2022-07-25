@@ -11,6 +11,7 @@ import { Container, PageHeader, Link, Code } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../../../backend/graphql'
 import { FilteredConnection } from '../../../components/FilteredConnection'
+import { useConnection } from '../../../components/FilteredConnection/hooks/useConnection'
 import { PageTitle } from '../../../components/PageTitle'
 import { Timestamp } from '../../../components/time/Timestamp'
 import {
@@ -118,6 +119,9 @@ export const UserEventLogsPage: React.FunctionComponent<React.PropsWithChildren<
             ),
         [user.id]
     )
+
+    // Let's see if the code monitor works for random branches:
+    const test = useConnection()
 
     return (
         <>
