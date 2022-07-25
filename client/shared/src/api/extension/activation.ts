@@ -103,13 +103,7 @@ export function activateExtensions(
     const previouslyActivatedExtensions = new Set<string>()
     const extensionContributions = new Map<string, Contributions>()
     const contributionsToAdd = new Map<string, Contributions>()
-    const extensionsSubscription = combineLatest([
-        state.activeExtensions
-            .pipe
-            // map(extensions => extensions.filter(({ id }) => !id.includes('sourcegraph/git-extras')))
-            (),
-        getScriptURLs(null),
-    ])
+    const extensionsSubscription = combineLatest([state.activeExtensions, getScriptURLs(null)])
         .pipe(
             concatMap(([activeExtensions, getScriptURLs]) => {
                 const toDeactivate = new Set<string>()
