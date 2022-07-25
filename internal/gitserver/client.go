@@ -814,39 +814,6 @@ func (c *ClientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		defer resp.Body.Close()
 		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
 
-		// TODO(efritz) - remove after 3.39 branch cut
-		if resp.StatusCode == http.StatusNotFound {
-			// Frontend and gitserver may be rolling out. Fall back to issuing one
-			// command per item in the batch via the original /exec endpoint. We
-			// inline the same behavior as BatchLog here as this is throw-away code.
-
-			for _, repoCommit := range repoCommits {
-				content, err := func() (string, error) {
-					reader, err := c.execReader(ctx, repoCommit.Repo, []string{"log", "-n", "1", "--name-only", opts.Format, string(repoCommit.CommitID)})
-					if err != nil {
-						return "", errors.Wrap(err, "execReader")
-					}
-
-					content, err := io.ReadAll(reader)
-					if err != nil {
-						return "", errors.Wrap(err, "io.ReadAll")
-					}
-
-					return string(content), nil
-				}()
-
-				rawResult := RawBatchLogResult{
-					Stdout: content,
-					Error:  err,
-				}
-				if err := callback(repoCommit, rawResult); err != nil {
-					return errors.Wrap(err, "commitLogCallback")
-				}
-			}
-
-			return nil
-		}
-
 		if resp.StatusCode != http.StatusOK {
 			body, _ := io.ReadAll(io.LimitReader(resp.Body, 200))
 			return errors.Newf("http status %d: %s", resp.StatusCode, body)
