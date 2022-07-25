@@ -36,6 +36,7 @@ import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
+import { useGitBlame } from '../useGitBlame'
 
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
@@ -202,6 +203,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }
 
     useBlobPanelViews(props)
+
+    const blameDecorations = useGitBlame({ repoName, commitID, filePath })
 
     const isSearchNotebook =
         blobInfoOrError &&
@@ -375,9 +378,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             {renderMode === 'code' && (
                 <BlobContainer
                     data-testid="repo-blob"
-                    repoName={props.repoName}
-                    commitID={props.commitID}
-                    filePath={props.filePath}
                     className={classNames(styles.blob, styles.border)}
                     blobInfo={blobInfoOrError}
                     wrapCode={wrapCode}
@@ -393,6 +393,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     disableDecorations={false}
                     role="region"
                     ariaLabel="File blob"
+                    blameDecorations={blameDecorations}
                 />
             )}
         </>

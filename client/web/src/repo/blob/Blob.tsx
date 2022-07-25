@@ -89,7 +89,6 @@ import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 import { HoverThresholdProps } from '../RepoContainer'
-import { useGitBlame } from '../useGitBlame'
 
 import { ColumnDecorator } from './ColumnDecorator'
 import { LineDecorator } from './LineDecorator'
@@ -102,10 +101,7 @@ import styles from './Blob.module.scss'
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
 
 export interface BlobProps
-    extends RepoSpec,
-        ResolvedRevisionSpec,
-        FileSpec,
-        SettingsCascadeProps,
+    extends SettingsCascadeProps,
         PlatformContextProps<'urlToFile' | 'requestGraphQL' | 'settings' | 'forceUpdateTooltip'>,
         TelemetryProps,
         HoverThresholdProps,
@@ -128,6 +124,8 @@ export interface BlobProps
     nav?: (url: string) => void
     role?: string
     ariaLabel?: string
+
+    blameDecorations?: TextDocumentDecoration[]
 }
 
 export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
@@ -680,12 +678,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         return { column: [], inline: new Map() }
     }, [decorationsOrError, enableExtensionsDecorationsColumnView])
 
-    const blameDecorations = useGitBlame({
-        repoName: props.repoName,
-        commitID: props.commitID,
-        filePath: props.filePath,
-    })
-
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
         useObservable(hoverifier.hoverStateUpdates) || {}
@@ -849,11 +841,12 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     />
                 )}
 
-                {blameDecorations && (
+                {/* Respect `disableDecorations` prop not to render blame decorations in the experimental reference panel. */}
+                {!props.disableDecorations && props.blameDecorations && (
                     <ColumnDecorator
                         isLightTheme={isLightTheme}
                         extensionID="remove-me-please"
-                        decorations={groupDecorationsByLine(blameDecorations)}
+                        decorations={groupDecorationsByLine(props.blameDecorations)}
                         codeViewElements={codeViewElements}
                     />
                 )}
