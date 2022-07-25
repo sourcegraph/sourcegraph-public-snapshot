@@ -57,7 +57,6 @@ import {
 import { GitCommitNode } from '../commits/GitCommitNode'
 import { gitCommitFragment } from '../commits/RepositoryCommitsPage'
 import { queryRepositoryComparisonFileDiffs } from '../compare/RepositoryCompareDiffPage'
-import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 
 import styles from './RepositoryCommitPage.module.scss'
 
@@ -118,7 +117,6 @@ const queryCommit = memoizeObservable(
 
 interface Props
     extends RouteComponentProps<{ revspec: string }>,
-        RepoHeaderContributionsLifecycleProps,
         TelemetryProps,
         PlatformContextProps,
         ExtensionsControllerProps,
