@@ -39,7 +39,6 @@
     - GitserverClient
     - IndexEnqueuer
     - LSIFStore
-    - PositionAdjuster
     - RepoUpdaterClient
     - SymbolsResolver
     - GitTreeTranslator

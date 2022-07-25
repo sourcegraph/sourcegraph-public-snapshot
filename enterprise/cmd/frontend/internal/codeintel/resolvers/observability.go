@@ -14,15 +14,7 @@ import (
 )
 
 type operations struct {
-	definitions     *observation.Operation
-	diagnostics     *observation.Operation
-	hover           *observation.Operation
-	queryResolver   *observation.Operation
-	ranges          *observation.Operation
-	references      *observation.Operation
-	implementations *observation.Operation
-	stencil         *observation.Operation
-
+	queryResolver    *observation.Operation
 	findClosestDumps *observation.Operation
 }
 
@@ -55,15 +47,7 @@ func newOperations(observationContext *observation.Context) *operations {
 	}
 
 	return &operations{
-		definitions:     op("Definitions"),
-		diagnostics:     op("Diagnostics"),
-		hover:           op("Hover"),
-		implementations: op("Implementations"),
-		ranges:          op("Ranges"),
-		references:      op("References"),
-		stencil:         op("Stencil"),
-		queryResolver:   op("QueryResolver"),
-
+		queryResolver:    op("QueryResolver"),
 		findClosestDumps: subOp("findClosestDumps"),
 	}
 }

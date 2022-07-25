@@ -33,7 +33,14 @@ type resolver struct {
 	requestArgs       *requestArgs
 	GitTreeTranslator GitTreeTranslator
 
-	authChecker                    authz.SubRepoPermissionChecker
+	authChecker authz.SubRepoPermissionChecker
+
+	// maximumIndexesPerMonikerSearch configures the maximum number of reference upload identifiers
+	// that can be passed to a single moniker search query. Previously this limit was meant to keep
+	// the number of SQLite files we'd have to open within a single call relatively low. Since we've
+	// migrated to Postgres this limit is not a concern. Now we only want to limit these values
+	// based on the number of elements we can pass to an IN () clause in the codeintel-db, as well
+	// as the size required to encode them in a user-facing pagination cursor.
 	maximumIndexesPerMonikerSearch int
 
 	// Local Request Caches

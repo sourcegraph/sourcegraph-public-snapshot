@@ -57,21 +57,8 @@ func NewResolver(db database.DB, codeIntelDB database.DB, gitserver GitserverCli
 		observationContext: newOperations(observationContext),
 	}
 
-	// oc := func(name string) *observation.Context {
-	// 	return &observation.Context{
-	// 		Logger:     logger.Scoped(name+".transport.graphql", "codeintel "+name+" graphql transport"),
-	// 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-	// 		Registerer: prometheus.DefaultRegisterer,
-	// 	}
-	// }
-
-	// TODO TODO TODO: Thread the upload service, autoindexing service, symbols service, and policies service through the resolver.
 	return &frankenResolver{
 		Resolver: baseResolver,
-		// AutoindexingServiceResolver: autoindexinggraphql.GetResolver(autoindexing.GetService(db, nil, nil, nil)), // Note: Currently unused
-		// UploadsServiceResolver:      uploadsgraphql.GetResolver(uploadsSvc),
-		// PoliciesServiceResolver: policiesgraphql.GetResolver(policies.GetService(db)),
-		// symbolsResolver:         symbolsgraphql.New(symbolsSvc, oc("symbols")),
 	}
 }
 

@@ -95,9 +95,9 @@ func (r *resolver) Diagnostics(ctx context.Context, args shared.RequestArgs) (di
 func (r *resolver) getUploadPaths(ctx context.Context, path string) ([]visibleUpload, error) {
 	visibleUploads := make([]visibleUpload, 0, len(r.dataLoader.uploads))
 	for i := range r.dataLoader.uploads {
-		targetPath, ok, err := r.GitTreeTranslator.GetTargetCommitPathFromSourcePath(ctx, r.dataLoader.uploads[i].Commit, path, false) //.AdjustPath(ctx, r.inMemoryUploads[i].Commit, r.path, false)
+		targetPath, ok, err := r.GitTreeTranslator.GetTargetCommitPathFromSourcePath(ctx, r.dataLoader.uploads[i].Commit, path, false)
 		if err != nil {
-			return nil, errors.Wrap(err, "positionAdjuster.AdjustPath")
+			return nil, errors.Wrap(err, "r.GitTreeTranslator.GetTargetCommitPathFromSourcePath")
 		}
 		if !ok {
 			continue

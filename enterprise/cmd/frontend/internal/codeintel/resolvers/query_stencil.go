@@ -2,13 +2,10 @@ package resolvers
 
 import (
 	"context"
-	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 )
-
-const slowStencilRequestThreshold = time.Second
 
 // Stencil return all ranges within a single document.
 func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore.Range, err error) {

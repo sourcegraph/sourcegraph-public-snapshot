@@ -2,14 +2,11 @@ package resolvers
 
 import (
 	"context"
-	"time"
 
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 )
-
-const slowRangesRequestThreshold = time.Second
 
 // Ranges returns code intelligence for the ranges that fall within the given range of lines. These
 // results are partial and do not include references outside the current file, or any location that

@@ -81,7 +81,6 @@ type resolver struct {
 	gitserverClient  GitserverClient
 	policyMatcher    *policies.Matcher
 	indexEnqueuer    IndexEnqueuer
-	hunkCache        HunkCache
 	operations       *operations
 	executorResolver executor.Resolver
 	symbolsClient    *symbolsClient.Client
@@ -99,14 +98,13 @@ func NewResolver(
 	gitserverClient GitserverClient,
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
-	hunkCache HunkCache,
 	symbolsClient *symbolsClient.Client,
 	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
 	dbConn database.DB,
 	symbolsResolver SymbolsResolver,
 ) Resolver {
-	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, hunkCache, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn, symbolsResolver)
+	return newResolver(dbStore, lsifStore, gitserverClient, policyMatcher, indexEnqueuer, symbolsClient, maximumIndexesPerMonikerSearch, observationContext, dbConn, symbolsResolver)
 }
 
 func newResolver(
@@ -115,7 +113,6 @@ func newResolver(
 	gitserverClient GitserverClient,
 	policyMatcher *policies.Matcher,
 	indexEnqueuer IndexEnqueuer,
-	hunkCache HunkCache,
 	symbolsClient *symbolsClient.Client,
 	maximumIndexesPerMonikerSearch int,
 	observationContext *observation.Context,
@@ -129,7 +126,6 @@ func newResolver(
 		gitserverClient:                gitserverClient,
 		policyMatcher:                  policyMatcher,
 		indexEnqueuer:                  indexEnqueuer,
-		hunkCache:                      hunkCache,
 		symbolsClient:                  symbolsClient,
 		maximumIndexesPerMonikerSearch: maximumIndexesPerMonikerSearch,
 		operations:                     newOperations(observationContext),
@@ -231,29 +227,27 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	}
 
 	gitServer := gitserver.NewClient(r.db)
-	positionAdjuster := NewPositionAdjuster(gitServer, args.Repo, string(args.Commit), r.hunkCache)
 
+	// Maintain a map from identifers to hydrated upload records from the database. We use
+	// this map as a quick lookup when constructing the resulting location set. Any additional
+	// upload records pulled back from the database while processing this page will be added
+	// to this map.
 	r.symbolsResolver.SetUploadsDataLoader(dumps)
 	r.symbolsResolver.SetAuthChecker(authz.DefaultSubRepoPermsChecker)
 	r.symbolsResolver.SetLocalGitTreeTranslator(gitServer, args.Repo, string(args.Commit), args.Path)
 	r.symbolsResolver.SetLocalCommitCache(r.gitserverClient)
 	r.symbolsResolver.SetMaximumIndexesPerMonikerSearch(r.maximumIndexesPerMonikerSearch)
 
-	// TODO: add a cache for the indexes
-
 	return NewQueryResolver(
 		r.db,
 		r.dbStore,
 		r.lsifStore,
 		cachedCommitChecker,
-		positionAdjuster,
 		int(args.Repo.ID),
 		string(args.Commit),
 		args.Path,
 		dumps,
 		r.operations,
-		authz.DefaultSubRepoPermsChecker,
-		r.maximumIndexesPerMonikerSearch,
 		r.symbolsResolver,
 	), nil
 }

@@ -6,7 +6,6 @@ import (
 	"github.com/graph-gophers/graphql-go"
 
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
-	symbolsgraphql "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/transport/graphql"
 )
 
 type frankenResolver struct {
@@ -14,15 +13,10 @@ type frankenResolver struct {
 	gql.AutoindexingServiceResolver
 	gql.UploadsServiceResolver
 	gql.PoliciesServiceResolver
-	symbolsResolver symbolsgraphql.Resolver
 }
 
 func (r *frankenResolver) getAutoindexingServiceResolver() gql.AutoindexingServiceResolver {
 	return r.Resolver
-
-	// TODO
-	// Uncomment after https://github.com/sourcegraph/sourcegraph/issues/33377
-	// return r.AutoindexingServiceResolver
 }
 
 func (r *frankenResolver) LSIFIndexByID(ctx context.Context, id graphql.ID) (_ gql.LSIFIndexResolver, err error) {

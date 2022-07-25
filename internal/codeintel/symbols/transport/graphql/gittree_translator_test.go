@@ -1,4 +1,4 @@
-package resolvers
+package graphql
 
 import (
 	"bytes"
@@ -10,7 +10,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/go-diff/diff"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -18,9 +18,14 @@ import (
 
 var client = gitserver.NewClient(database.NewMockDB())
 
-func TestAdjustPath(t *testing.T) {
-	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
-	path, ok, err := adjuster.AdjustPath(context.Background(), "deadbeef2", "/foo/bar.go", false)
+func TestGetTargetCommitPathFromSourcePath(t *testing.T) {
+	args := &requestArgs{
+		repo:   &types.Repo{ID: 50},
+		commit: "deadbeef1",
+		path:   "/foo/bar.go",
+	}
+	adjuster := NewGitTreeTranslator(client, args, nil)
+	path, ok, err := adjuster.GetTargetCommitPathFromSourcePath(context.Background(), "deadbeef2", "/foo/bar.go", false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -33,7 +38,7 @@ func TestAdjustPath(t *testing.T) {
 	}
 }
 
-func TestAdjustPosition(t *testing.T) {
+func TestGetTargetCommitPositionFromSourcePosition(t *testing.T) {
 	t.Cleanup(func() {
 		gitserver.Mocks.ExecReader = nil
 	})
@@ -46,10 +51,15 @@ func TestAdjustPosition(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
-	posIn := lsifstore.Position{Line: 302, Character: 15}
+	posIn := shared.Position{Line: 302, Character: 15}
 
-	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
-	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, false)
+	args := &requestArgs{
+		repo:   &types.Repo{ID: 50},
+		commit: "deadbeef1",
+		path:   "/foo/bar.go",
+	}
+	adjuster := NewGitTreeTranslator(client, args, nil)
+	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -61,13 +71,13 @@ func TestAdjustPosition(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedPos := lsifstore.Position{Line: 294, Character: 15}
+	expectedPos := shared.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
 }
 
-func TestAdjustPositionEmptyDiff(t *testing.T) {
+func TestGetTargetCommitPositionFromSourcePositionEmptyDiff(t *testing.T) {
 	t.Cleanup(func() {
 		gitserver.Mocks.ExecReader = nil
 	})
@@ -75,10 +85,15 @@ func TestAdjustPositionEmptyDiff(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
 	}
 
-	posIn := lsifstore.Position{Line: 10, Character: 15}
+	posIn := shared.Position{Line: 10, Character: 15}
 
-	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
-	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, false)
+	args := &requestArgs{
+		repo:   &types.Repo{ID: 50},
+		commit: "deadbeef1",
+		path:   "/foo/bar.go",
+	}
+	adjuster := NewGitTreeTranslator(client, args, nil)
+	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -94,7 +109,7 @@ func TestAdjustPositionEmptyDiff(t *testing.T) {
 	}
 }
 
-func TestAdjustPositionReverse(t *testing.T) {
+func TestGetTargetCommitPositionFromSourcePositionReverse(t *testing.T) {
 	t.Cleanup(func() {
 		gitserver.Mocks.ExecReader = nil
 	})
@@ -107,10 +122,15 @@ func TestAdjustPositionReverse(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
-	posIn := lsifstore.Position{Line: 302, Character: 15}
+	posIn := shared.Position{Line: 302, Character: 15}
 
-	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
-	path, posOut, ok, err := adjuster.AdjustPosition(context.Background(), "deadbeef2", "/foo/bar.go", posIn, true)
+	args := &requestArgs{
+		repo:   &types.Repo{ID: 50},
+		commit: "deadbeef1",
+		path:   "/foo/bar.go",
+	}
+	adjuster := NewGitTreeTranslator(client, args, nil)
+	path, posOut, ok, err := adjuster.GetTargetCommitPositionFromSourcePosition(context.Background(), "deadbeef2", posIn, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -122,13 +142,13 @@ func TestAdjustPositionReverse(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedPos := lsifstore.Position{Line: 294, Character: 15}
+	expectedPos := shared.Position{Line: 294, Character: 15}
 	if diff := cmp.Diff(expectedPos, posOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
 }
 
-func TestAdjustRange(t *testing.T) {
+func TestGetTargetCommitRangeFromSourceRange(t *testing.T) {
 	t.Cleanup(func() {
 		gitserver.Mocks.ExecReader = nil
 	})
@@ -141,13 +161,18 @@ func TestAdjustRange(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
-	rIn := lsifstore.Range{
-		Start: lsifstore.Position{Line: 302, Character: 15},
-		End:   lsifstore.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
-	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
-	path, rOut, ok, err := adjuster.AdjustRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
+	args := &requestArgs{
+		repo:   &types.Repo{ID: 50},
+		commit: "deadbeef1",
+		path:   "/foo/bar.go",
+	}
+	adjuster := NewGitTreeTranslator(client, args, nil)
+	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -159,16 +184,16 @@ func TestAdjustRange(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedRange := lsifstore.Range{
-		Start: lsifstore.Position{Line: 294, Character: 15},
-		End:   lsifstore.Position{Line: 297, Character: 20},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 294, Character: 15},
+		End:   shared.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
 }
 
-func TestAdjustRangeEmptyDiff(t *testing.T) {
+func TestGetTargetCommitRangeFromSourceRangeEmptyDiff(t *testing.T) {
 	t.Cleanup(func() {
 		gitserver.Mocks.ExecReader = nil
 	})
@@ -176,13 +201,18 @@ func TestAdjustRangeEmptyDiff(t *testing.T) {
 		return io.NopCloser(bytes.NewReader(nil)), nil
 	}
 
-	rIn := lsifstore.Range{
-		Start: lsifstore.Position{Line: 302, Character: 15},
-		End:   lsifstore.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
-	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
-	path, rOut, ok, err := adjuster.AdjustRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
+	args := &requestArgs{
+		repo:   &types.Repo{ID: 50},
+		commit: "deadbeef1",
+		path:   "/foo/bar.go",
+	}
+	adjuster := NewGitTreeTranslator(client, args, nil)
+	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, false)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -198,7 +228,7 @@ func TestAdjustRangeEmptyDiff(t *testing.T) {
 	}
 }
 
-func TestAdjustRangeReverse(t *testing.T) {
+func TestGetTargetCommitRangeFromSourceRangeReverse(t *testing.T) {
 	t.Cleanup(func() {
 		gitserver.Mocks.ExecReader = nil
 	})
@@ -211,13 +241,18 @@ func TestAdjustRangeReverse(t *testing.T) {
 		return io.NopCloser(bytes.NewReader([]byte(hugoDiff))), nil
 	}
 
-	rIn := lsifstore.Range{
-		Start: lsifstore.Position{Line: 302, Character: 15},
-		End:   lsifstore.Position{Line: 305, Character: 20},
+	rIn := shared.Range{
+		Start: shared.Position{Line: 302, Character: 15},
+		End:   shared.Position{Line: 305, Character: 20},
 	}
 
-	adjuster := NewPositionAdjuster(client, &types.Repo{ID: 50}, "deadbeef1", nil)
-	path, rOut, ok, err := adjuster.AdjustRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, true)
+	args := &requestArgs{
+		repo:   &types.Repo{ID: 50},
+		commit: "deadbeef1",
+		path:   "/foo/bar.go",
+	}
+	adjuster := NewGitTreeTranslator(client, args, nil)
+	path, rOut, ok, err := adjuster.GetTargetCommitRangeFromSourceRange(context.Background(), "deadbeef2", "/foo/bar.go", rIn, true)
 	if err != nil {
 		t.Fatalf("unexpected error: %s", err)
 	}
@@ -229,16 +264,16 @@ func TestAdjustRangeReverse(t *testing.T) {
 		t.Errorf("unexpected path. want=%s have=%s", "/foo/bar.go", path)
 	}
 
-	expectedRange := lsifstore.Range{
-		Start: lsifstore.Position{Line: 294, Character: 15},
-		End:   lsifstore.Position{Line: 297, Character: 20},
+	expectedRange := shared.Range{
+		Start: shared.Position{Line: 294, Character: 15},
+		End:   shared.Position{Line: 297, Character: 20},
 	}
 	if diff := cmp.Diff(expectedRange, rOut); diff != "" {
 		t.Errorf("unexpected position (-want +got):\n%s", diff)
 	}
 }
 
-type adjustPositionTestCase struct {
+type gitTreeTranslatorTestCase struct {
 	diff         string // The git diff output
 	diffName     string // The git diff output name
 	description  string // The description of the test
@@ -287,7 +322,7 @@ index d1d9f650d673..076f2ae4d63b 100644
  func (i *imageResource) decodeImageConfig(action, spec string) (images.ImageConfig, error) {
 `
 
-var hugoTestCases = []adjustPositionTestCase{
+var hugoTestCases = []gitTreeTranslatorTestCase{
 	// Between hunks
 	{hugoDiff, "hugo", "before first hunk", 10, true, 10},
 	{hugoDiff, "hugo", "between hunks (1x deletion)", 150, true, 149},
@@ -339,7 +374,7 @@ index 49bcbf86b7ba..d135cd54e700 100644
         }
 `
 
-var prometheusTestCases = []adjustPositionTestCase{
+var prometheusTestCases = []gitTreeTranslatorTestCase{
 	{prometheusDiff, "prometheus", "before hunk", 100, true, 100},
 	{prometheusDiff, "prometheus", "before deletion", 295, true, 295},
 	{prometheusDiff, "prometheus", "on deletion 1", 296, false, 0},
@@ -351,8 +386,8 @@ var prometheusTestCases = []adjustPositionTestCase{
 	{prometheusDiff, "prometheus", "after hunk", 500, true, 500},
 }
 
-func TestRawAdjustPosition(t *testing.T) {
-	for _, testCase := range append(append([]adjustPositionTestCase(nil), hugoTestCases...), prometheusTestCases...) {
+func TestRawGetTargetCommitPositionFromSourcePosition(t *testing.T) {
+	for _, testCase := range append(append([]gitTreeTranslatorTestCase(nil), hugoTestCases...), prometheusTestCases...) {
 		name := fmt.Sprintf("%s : %s", testCase.diffName, testCase.description)
 
 		t.Run(name, func(t *testing.T) {
@@ -362,12 +397,12 @@ func TestRawAdjustPosition(t *testing.T) {
 			}
 			hunks := diff.Hunks
 
-			pos := lsifstore.Position{
+			pos := shared.Position{
 				Line:      testCase.line - 1, // 1-index -> 0-index
 				Character: 10,
 			}
 
-			if adjusted, ok := adjustPosition(hunks, pos); ok != testCase.expectedOk {
+			if adjusted, ok := translatePosition(hunks, pos); ok != testCase.expectedOk {
 				t.Errorf("unexpected ok. want=%v have=%v", testCase.expectedOk, ok)
 			} else if ok {
 				// Adjust from zero-index to one-index

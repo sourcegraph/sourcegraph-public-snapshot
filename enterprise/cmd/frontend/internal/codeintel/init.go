@@ -19,7 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func Init(ctx context.Context, db database.DB, config *Config, enterpriseServices *enterprise.Services, observationContext *observation.Context, services *Services) error {
@@ -33,23 +32,13 @@ func Init(ctx context.Context, db database.DB, config *Config, enterpriseService
 		},
 	}
 
-	resolver, err := newResolver(db, config, resolverObservationContext, services)
-	if err != nil {
-		return err
-	}
-
-	enterpriseServices.CodeIntelResolver = resolver
+	enterpriseServices.CodeIntelResolver = newResolver(db, config, resolverObservationContext, services)
 	enterpriseServices.NewCodeIntelUploadHandler = newUploadHandler(services)
 	return nil
 }
 
-func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) (gql.CodeIntelResolver, error) {
+func newResolver(db database.DB, config *Config, observationContext *observation.Context, services *Services) gql.CodeIntelResolver {
 	policyMatcher := policies.NewMatcher(services.gitserverClient, policies.NoopExtractor, false, false)
-
-	hunkCache, err := codeintelresolvers.NewHunkCache(config.HunkCacheSize)
-	if err != nil {
-		return nil, errors.Errorf("failed to initialize hunk cache: %s", err)
-	}
 
 	oc := func(name string) *observation.Context {
 		return &observation.Context{
@@ -67,7 +56,6 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		services.gitserverClient,
 		policyMatcher,
 		services.indexEnqueuer,
-		hunkCache,
 		symbols.DefaultClient,
 		config.MaximumIndexesPerMonikerSearch,
 		observationContext,
@@ -83,7 +71,7 @@ func newResolver(db database.DB, config *Config, observationContext *observation
 		Tracer:       &trace.Tracer{},
 		Registerer:   nil,
 		HoneyDataset: &honey.Dataset{},
-	}), nil
+	})
 }
 
 func newUploadHandler(services *Services) func(internal bool) http.Handler {

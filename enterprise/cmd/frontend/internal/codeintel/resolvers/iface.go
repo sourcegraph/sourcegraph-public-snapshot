@@ -100,6 +100,7 @@ type SymbolsResolver interface {
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
 	SetAuthChecker(authChecker authz.SubRepoPermissionChecker)
 
+	LSIFUploads(ctx context.Context) (uploads []symbolsShared.Dump, err error)
 	Stencil(ctx context.Context, args symbolsShared.RequestArgs) (adjustedRanges []symbolsShared.Range, err error)
 	Hover(ctx context.Context, args symbolsShared.RequestArgs) (string, symbolsShared.Range, bool, error)
 	Definitions(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, err error)
