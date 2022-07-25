@@ -59,11 +59,7 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import {
-    createDecorationType,
-    DecorationMapByLine,
-    groupDecorationsByLine,
-} from '@sourcegraph/shared/src/api/extension/api/decorations'
+import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -177,8 +173,6 @@ const domFunctions = {
 
 const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
 const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
-
-const gitBlameDecorationType = createDecorationType()
 
 /**
  * Renders a code view augmented by Sourcegraph extensions
