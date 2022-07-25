@@ -15,6 +15,7 @@ Global flags:
 * `--config, -c="<value>"`: load sg configuration from `file` (default: sg.config.yaml)
 * `--disable-analytics`: disable event logging (logged to '~/.sourcegraph/events')
 * `--disable-output-detection`: use fixed output configuration instead of detecting terminal capabilities
+* `--disable-overwrite`: disable loading additional sg configuration from overwrite file (see -overwrite)
 * `--overwrite, -o="<value>"`: load sg configuration from `file` that is gitignored and can be used to, for example, add credentials (default: sg.config.overwrite.yaml)
 * `--skip-auto-update`: prevent sg from automatically updating itself
 * `--verbose, -v`: toggle verbose mode
