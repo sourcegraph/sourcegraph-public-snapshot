@@ -93,6 +93,6 @@ export const GET_LICENSE_AND_USAGE_INFO = gql`
         allBatchChanges: batchChanges(first: 1) {
             totalCount
         }
-        maxUnlicensedChangesets: maxUnlicensedChangesets
+        maxUnlicensedChangesets
     }
 `
