@@ -133,7 +133,7 @@ type SuggestionSource<R, C extends SuggestionContext> = (
  */
 export function searchQueryAutocompletion(
     sources: SuggestionSource<CompletionResult | null, SuggestionContext>[],
-    // By default we do not enabel suggestion selection with enter because that
+    // By default we do not enable suggestion selection with enter because that
     // interferes with the query submission logic.
     applyOnEnter = false
 ): Extension {
