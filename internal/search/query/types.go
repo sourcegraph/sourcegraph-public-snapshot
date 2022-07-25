@@ -416,13 +416,15 @@ func (p Parameters) Exists(field string) bool {
 	return found
 }
 
-func (p Parameters) Dependencies() (dependencies []string) {
+func (p Parameters) Dependencies() (preds []RepoDependenciesPredicate) {
 	VisitPredicate(toNodes(p), func(field, name, value string) {
 		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			dependencies = append(dependencies, value)
+			var pred RepoDependenciesPredicate
+			pred.ParseParams(value)
+			preds = append(preds, pred)
 		}
 	})
-	return dependencies
+	return preds
 }
 
 func (p Parameters) Dependents() (dependents []string) {

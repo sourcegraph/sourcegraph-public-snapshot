@@ -103,7 +103,11 @@ func (s *userEmailsStore) GetPrimaryEmail(ctx context.Context, id int32) (email 
 	if err := s.Handle().QueryRowContext(ctx, "SELECT email, verified_at IS NOT NULL AS verified FROM user_emails WHERE user_id=$1 AND is_primary",
 		id,
 	).Scan(&email, &verified); err != nil {
-		return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("id %d", id)}}
+		if err == sql.ErrNoRows {
+			return "", false, userEmailNotFoundError{[]any{fmt.Sprintf("id %d", id)}}
+		}
+
+		return "", false, err
 	}
 	return email, verified, nil
 }

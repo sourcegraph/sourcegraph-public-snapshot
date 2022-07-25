@@ -2,6 +2,7 @@ package graphqlbackend
 
 import (
 	"context"
+	"strings"
 	"sync"
 
 	"github.com/graph-gophers/graphql-go"
@@ -11,8 +12,10 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend/graphqlutil"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/repos"
@@ -202,4 +205,152 @@ func (r *externalServiceResolver) GrantedScopes(ctx context.Context) (*[]string,
 
 func (r *externalServiceResolver) WebhookLogs(ctx context.Context, args *webhookLogsArgs) (*webhookLogConnectionResolver, error) {
 	return newWebhookLogConnectionResolver(ctx, r.db, args, webhookLogsExternalServiceID(r.externalService.ID))
+}
+
+type externalServiceSyncJobsArgs struct {
+	First *int32
+}
+
+func (r *externalServiceResolver) SyncJobs(ctx context.Context, args *externalServiceSyncJobsArgs) (*externalServiceSyncJobConnectionResolver, error) {
+	return newExternalServiceSyncJobConnectionResolver(ctx, r.db, args, r.externalService.ID)
+}
+
+type externalServiceSyncJobConnectionResolver struct {
+	logger            log.Logger
+	args              *externalServiceSyncJobsArgs
+	externalServiceID int64
+	db                database.DB
+
+	once       sync.Once
+	nodes      []*types.ExternalServiceSyncJob
+	totalCount int64
+	err        error
+}
+
+func newExternalServiceSyncJobConnectionResolver(ctx context.Context, db database.DB, args *externalServiceSyncJobsArgs, externalServiceID int64) (*externalServiceSyncJobConnectionResolver, error) {
+	return &externalServiceSyncJobConnectionResolver{
+		args:              args,
+		externalServiceID: externalServiceID,
+		db:                db,
+	}, nil
+}
+
+func (r *externalServiceSyncJobConnectionResolver) Nodes(ctx context.Context) ([]*externalServiceSyncJobResolver, error) {
+	jobs, _, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	nodes := make([]*externalServiceSyncJobResolver, len(jobs))
+	for i, j := range jobs {
+		nodes[i] = &externalServiceSyncJobResolver{
+			job: j,
+		}
+	}
+
+	return nodes, nil
+}
+
+func (r *externalServiceSyncJobConnectionResolver) TotalCount(ctx context.Context) (int32, error) {
+	_, totalCount, err := r.compute(ctx)
+	return int32(totalCount), err
+}
+
+func (r *externalServiceSyncJobConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
+	jobs, totalCount, err := r.compute(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return graphqlutil.HasNextPage(len(jobs) != int(totalCount)), nil
+}
+
+func (r *externalServiceSyncJobConnectionResolver) compute(ctx context.Context) ([]*types.ExternalServiceSyncJob, int64, error) {
+	r.once.Do(func() {
+		opts := database.ExternalServicesGetSyncJobsOptions{
+			ExternalServiceID: r.externalServiceID,
+		}
+		if r.args.First != nil {
+			opts.LimitOffset = &database.LimitOffset{
+				Limit: int(*r.args.First),
+			}
+		}
+		r.nodes, r.err = r.db.ExternalServices().GetSyncJobs(ctx, opts)
+		if r.err != nil {
+			return
+		}
+		r.totalCount, r.err = r.db.ExternalServices().CountSyncJobs(ctx, opts)
+	})
+
+	return r.nodes, r.totalCount, r.err
+}
+
+type externalServiceSyncJobResolver struct {
+	job *types.ExternalServiceSyncJob
+}
+
+func marshalExternalServiceSyncJobID(id int64) graphql.ID {
+	return relay.MarshalID("ExternalServiceSyncJob", id)
+}
+
+func unmarshalExternalServiceSyncJobID(id graphql.ID) (jobID int64, err error) {
+	err = relay.UnmarshalSpec(id, &jobID)
+	return
+}
+
+func externalServiceSyncJobByID(ctx context.Context, db database.DB, gqlID graphql.ID) (Node, error) {
+	// Site-admin only for now.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, db); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalExternalServiceSyncJobID(gqlID)
+	if err != nil {
+		return nil, err
+	}
+
+	job, err := db.ExternalServices().GetSyncJobByID(ctx, id)
+	if err != nil {
+		if errcode.IsNotFound(err) {
+			return nil, nil
+		}
+		return nil, err
+	}
+
+	return &externalServiceSyncJobResolver{job: job}, nil
+}
+
+func (r *externalServiceSyncJobResolver) ID() graphql.ID {
+	return marshalExternalServiceSyncJobID(r.job.ID)
+}
+
+func (r *externalServiceSyncJobResolver) State() string {
+	return strings.ToUpper(r.job.State)
+}
+
+func (r *externalServiceSyncJobResolver) FailureMessage() *string {
+	if r.job.FailureMessage == "" {
+		return nil
+	}
+
+	return &r.job.FailureMessage
+}
+
+func (r *externalServiceSyncJobResolver) QueuedAt() DateTime {
+	return DateTime{Time: r.job.QueuedAt}
+}
+
+func (r *externalServiceSyncJobResolver) StartedAt() *DateTime {
+	if r.job.StartedAt.IsZero() {
+		return nil
+	}
+
+	return &DateTime{Time: r.job.StartedAt}
+}
+
+func (r *externalServiceSyncJobResolver) FinishedAt() *DateTime {
+	if r.job.FinishedAt.IsZero() {
+		return nil
+	}
+
+	return &DateTime{Time: r.job.FinishedAt}
 }
