@@ -1,49 +1,38 @@
 const mocha = require("mocha");
 const { Console } = require("console");
 const fs = require("fs");
-const {
-    EVENT_RUN_BEGIN,
-    EVENT_TEST_FAIL,
-    EVENT_TEST_PASS,
-    EVENT_TEST_PENDING,
-    EVENT_RUN_END,
-} = mocha.Runner.constants;
 const Base = mocha.reporters.Base;
 
 class SpecFileReporter extends mocha.reporters.Spec {
     constructor(runner, options) {
         super(runner, options);
-        this.console = new Console({
-            stdout: fs.createWriteStream("s-test.stdout.txt"),
-            stderr: fs.createWriteStream("s-test.stderr.txt"),
-        });
-        Base.call(this, runner, options);
-        var self = this
+        this.title = "placeholder";
+        this.buildkite = false;
 
+        if ('BUILDKITE' in process.env) {
+            this.buildkite = true;
+        }
 
-        runner.on(EVENT_TEST_PASS, function(test) {
-            passes.push(test);
-        });
+        if ('BUILDKITE_LABEL' in process.env) {
+            this.title = process.env.BUILDKIATE_LABEL;
+        }
+    }
 
-        runner.on(EVENT_TEST_FAIL, function(test) {
-            failures.push(test);
-        });
+    epilogue() {
+        super.epilogue()
 
-        runner.on(EVENT_TEST_PENDING, function(test) {
-            pending.push(test);
-        });
-
-        runner.once(EVENT_RUN_END, function() {
+        if (this.buildkite) {
+            this.console = new Console({
+                stdout: fs.createWriteStream(`./annotations/mocha-test-output-${this.title}`),
+            });
             let tmp = Base.consoleLog;
-            Base.consoleLog = c.log;
-            Base.list(self.failures);
+
+            let log = this.console.log;
+            Base.consoleLog = log;
+            super.epilogue()
             Base.consoleLog = tmp;
-        });
-
-
-        return this;
+        }
     }
 }
-SpecFileReporter.prototype.__proto__ = Base.prototype;
 
 module.exports = SpecFileReporter;

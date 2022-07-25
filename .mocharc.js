@@ -11,6 +11,6 @@ module.exports = {
     // command timeout of 30s in order to get the stack trace to point to the
     // Puppeteer command that failed instead of a cryptic test timeout
     // location.
-    timeout: '2s',
+    timeout: '60s',
     slow: '2s',
 }
