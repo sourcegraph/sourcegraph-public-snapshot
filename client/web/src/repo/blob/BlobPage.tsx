@@ -279,7 +279,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
-                priority={30}
                 id="blame-action"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
