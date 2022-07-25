@@ -1,8 +1,8 @@
 package codeownership
 
 import (
+	"bytes"
 	"context"
-	"strings"
 
 	"github.com/hmarr/codeowners"
 
@@ -34,12 +34,9 @@ func (r *Ruleset) Match(path string) (Owners, error) {
 }
 
 func NewRuleset(ctx context.Context, gitserver gitserver.Client, repoName api.RepoName, commitID api.CommitID) (Ruleset, error) {
-	var content []byte
-	var err error
-
 	ruleset := Ruleset{}
 
-	content, err = loadOwnershipFile(ctx, gitserver, repoName, commitID)
+	content, err := loadOwnershipFile(ctx, gitserver, repoName, commitID)
 	if err != nil {
 		return ruleset, err
 	}
@@ -47,7 +44,7 @@ func NewRuleset(ctx context.Context, gitserver gitserver.Client, repoName api.Re
 		return ruleset, nil
 	}
 
-	codeownersRuleset, err := codeowners.ParseFile(strings.NewReader(string(content)))
+	codeownersRuleset, err := codeowners.ParseFile(bytes.NewReader(content))
 	if err != nil {
 		return ruleset, err
 	}
