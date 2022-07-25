@@ -1192,19 +1192,22 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 	totalShards := len(c.Addrs())
 	shards := make(map[string]*protocol.RepoInfoRequest, totalShards)
 
+	// Build a map of each shards -> [list of repos that belong to that shard]. We do this so that
+	// we can send only one request with the entire list of repos for that shard. This allows us to
+	// get away with making only N HTTP requests, where N is the total number of shards.
 	for _, r := range repos {
 		addr, err := c.AddrForRepo(ctx, r)
 		if err != nil {
 			return nil, err
 		}
-		shard := shards[addr]
 
-		if shard == nil {
-			shard = new(protocol.RepoInfoRequest)
-			shards[addr] = shard
+		repoInfoReq := shards[addr]
+		if repoInfoReq == nil {
+			repoInfoReq = new(protocol.RepoInfoRequest)
+			shards[addr] = repoInfoReq
 		}
 
-		shard.Repos = append(shard.Repos, r)
+		repoInfoReq.Repos = append(repoInfoReq.Repos, r)
 	}
 
 	type op struct {
