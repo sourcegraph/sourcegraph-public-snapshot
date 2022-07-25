@@ -13,7 +13,7 @@ import (
 
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
+	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // MockGitService is a mock implementation of the GitService interface (from

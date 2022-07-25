@@ -16,7 +16,6 @@ import (
 
 	regexp "github.com/grafana/regexp"
 	diff "github.com/sourcegraph/go-diff/diff"
-
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
