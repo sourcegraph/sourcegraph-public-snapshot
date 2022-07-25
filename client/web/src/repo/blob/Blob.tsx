@@ -1,10 +1,11 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { FC, forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import classNames from 'classnames'
 import { Remote } from 'comlink'
 import * as H from 'history'
 import iterate from 'iterare'
 import { isEqual, sortBy } from 'lodash'
+import OpenInNewIcon from 'mdi-react/OpenInNewIcon'
 import {
     BehaviorSubject,
     combineLatest,
@@ -82,7 +83,7 @@ import {
     toURIWithPath,
     parseQueryAndHash,
 } from '@sourcegraph/shared/src/util/url'
-import { Code, useObservable } from '@sourcegraph/wildcard'
+import { Code, Link, useObservable } from '@sourcegraph/wildcard'
 
 import { getHover, getDocumentHighlights } from '../../backend/features'
 import { WebHoverOverlay } from '../../components/shared'
@@ -177,21 +178,73 @@ const domFunctions = {
 const STATUS_BAR_HORIZONTAL_GAP_VAR = '--blob-status-bar-horizontal-gap'
 const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
 
+const InsightDecorationContent = forwardRef<HTMLSpanElement>((props, ref) => (
+    <span ref={ref} className={styles.insightDecorationContent}>
+        Referenced in <strong>5 insights</strong> 📈
+    </span>
+))
+
+InsightDecorationContent.displayName = 'InsightDecorationContent'
+
+const InsightDecorationPopover: FC = () => (
+    <div className={styles.insightDecorationPopover}>
+        <div className={styles.insightDecorationSection}>
+            <div>
+                <span>{'{}'}</span>
+                <small className="ml-2">
+                    <strong>AuthURLPrefix</strong>
+                </small>
+            </div>
+            <div className={classNames(styles.insightDecorationRow, styles.insightDecorationLineRef)}>
+                Insights referencing this line (3)
+            </div>
+            <div className={classNames(styles.insightDecorationRow)}>
+                <Link to="/insights" className={styles.insightDecorationLink}>
+                    Track Middleware <OpenInNewIcon size={12} />
+                </Link>
+            </div>
+            <div className={classNames(styles.insightDecorationRow)}>
+                <Link to="/insights" className={styles.insightDecorationLink}>
+                    API Middleware <OpenInNewIcon size={12} />
+                </Link>
+            </div>
+            <div className={classNames(styles.insightDecorationRow)}>
+                <Link to="/insights" className={styles.insightDecorationLink}>
+                    API Tracking <OpenInNewIcon size={12} />
+                </Link>
+            </div>
+        </div>
+        <div className={styles.insightDecorationSection}>
+            <div>
+                <span>{'{}'}</span>
+                <small className="ml-2">
+                    <strong>""./auth"</strong>
+                </small>
+            </div>
+            <div className={classNames(styles.insightDecorationRow, styles.insightDecorationLineRef)}>
+                Insights referencing this line (2)
+            </div>
+            <div className={classNames(styles.insightDecorationRow)}>
+                <Link to="/insights" className={styles.insightDecorationLink}>
+                    Auth protocols <OpenInNewIcon size={12} />
+                </Link>
+            </div>
+            <div className={classNames(styles.insightDecorationRow)}>
+                <Link to="/insights" className={styles.insightDecorationLink}>
+                    Auth Middleware <OpenInNewIcon size={12} />
+                </Link>
+            </div>
+        </div>
+    </div>
+)
+
 const decoration: InsightDecoration = {
     range: {
         start: { line: 0, character: 0 },
         end: { line: 0, character: 0 },
     },
-    content: (
-        <span>
-            Referenced in <strong>5 insights</strong>
-        </span>
-    ),
-    popover: (
-        <span>
-            Hey look I'm a <b>React Component</b>
-        </span>
-    ),
+    content: <InsightDecorationContent />,
+    popover: <InsightDecorationPopover />,
     trigger: 'click',
 }
 
