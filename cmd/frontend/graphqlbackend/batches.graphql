@@ -1465,7 +1465,7 @@ extend type Mutation {
         namespace: ID!
 
         """
-        The batch change this batch spec is associated with. This is set automatically for server-side batch changes.
+        The batch change this batch spec is associated with.
         """
         batchChangeID: ID!
     ): BatchSpec!
