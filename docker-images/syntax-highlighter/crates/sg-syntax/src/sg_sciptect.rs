@@ -187,6 +187,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("constant.numeric"), NumericLiteral),
             (scope("constant.character"), CharacterLiteral),
             (scope("constant.language"), IdentifierBuiltin),
+            (scope("storage.type"), IdentifierType),
             (scope("support.type.builtin"), IdentifierBuiltinType),
         ]
     });
@@ -218,6 +219,7 @@ impl<'a> DocumentGenerator<'a> {
         let mut document = Document::default();
         let mut unhandled_scopes = HashSet::new();
         let mut highlight_manager = HighlightManager::default();
+        let mut end_of_line = (0, 0);
         for (row, line_contents) in LinesWithEndings::from(self.code).enumerate() {
             if self.max_line_len.map_or(false, |n| line_contents.len() > n) {
                 // TODO: Should just gracefully handle this, but haven't been able
@@ -247,8 +249,13 @@ impl<'a> DocumentGenerator<'a> {
                 //
                 // TODO
                 // let mut stack = self.stack.clone();
-                self.stack
-                    .apply_with_hook(op, |basic_op, _| match basic_op {
+                self.stack.apply_with_hook(op, |basic_op, _stack| {
+                    // TODO: Make sure stack is always the same?
+                    //  It seems we _should_ be using that to determine things for mulit-line
+                    //  comments maybe?
+                    //
+                    // I think multi-line is still busted
+                    match basic_op {
                         BasicScopeStackOp::Push(scope) => {
                             // We have to push PartialHighight to the stack
                             // so that when we come to `pop` these highlights they still pop.
@@ -264,7 +271,7 @@ impl<'a> DocumentGenerator<'a> {
                                     {
                                         push_document_occurence(
                                             &mut document,
-                                            partial_hl,
+                                            &partial_hl,
                                             row,
                                             character,
                                         );
@@ -278,24 +285,31 @@ impl<'a> DocumentGenerator<'a> {
                         }
                         BasicScopeStackOp::Pop => {
                             if let Some(partial_hl) = highlight_manager.pop_hl(row, character) {
-                                push_document_occurence(&mut document, partial_hl, row, character);
+                                push_document_occurence(&mut document, &partial_hl, row, character);
                             }
                         }
-                    });
+                    }
+                });
                 // self.stack = stack;
             }
 
-            let end_of_line = (row, line_contents.chars().count());
+            end_of_line = (row, line_contents.chars().count());
             while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
-                push_document_occurence(&mut document, partial_hl, end_of_line.0, end_of_line.1);
+                push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
+                println!("OH ASDFSDFSDF: {:?} // {:?}", highlight_manager, partial_hl);
             }
         }
 
         // TODO: I think (from my logic) this might not be necessary :)
         // document.occurrences.sort_by_key(|o| o.range.clone());
 
+        while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
+            push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
+            println!("OH ASDFSDFSDF: {:?} // {:?}", highlight_manager, partial_hl);
+        }
+
         if highlight_manager.highlights.len() > 0 {
-            panic!("unhandled highlights in: {:?}", highlight_manager);
+            // panic!("unhandled highlights in: {:?}", highlight_manager);
         }
 
         if !unhandled_scopes.is_empty() {
@@ -309,7 +323,7 @@ impl<'a> DocumentGenerator<'a> {
 
 fn push_document_occurence(
     document: &mut Document,
-    partial_hl: PartialHighlight,
+    partial_hl: &PartialHighlight,
     row: usize,
     col: usize,
 ) {
@@ -401,6 +415,28 @@ mod test {
     }
 
     #[test]
+    fn test_generates_c_multi_comment() {
+        let syntax_set = SyntaxSet::load_defaults_newlines();
+        let mut q = crate::SourcegraphQuery::default();
+        q.filetype = Some("c".to_string());
+        q.code = r#"
+/* Multi
+ * Line
+ */
+"#
+        .to_string();
+
+        let syntax_def = determine_language(&q, &syntax_set).unwrap();
+        let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
+            .generate();
+
+        assert_eq!(
+            vec![new_occurence(vec![1, 0, 3, 3], SyntaxKind::Comment),],
+            output.occurrences
+        );
+    }
+
+    #[test]
     fn test_generates_cs_singlebyte() {
         let syntax_set = SyntaxSet::load_defaults_newlines();
         let mut q = crate::SourcegraphQuery::default();
@@ -419,6 +455,43 @@ mod test {
             vec![
                 new_occurence(vec![1, 0, 14], SyntaxKind::StringLiteral),
                 new_occurence(vec![1, 14, 15], SyntaxKind::PunctuationBracket),
+            ],
+            output.occurrences
+        );
+    }
+
+    #[test]
+    fn test_generates_c_with_comment() {
+        let syntax_set = SyntaxSet::load_defaults_newlines();
+        let mut q = crate::SourcegraphQuery::default();
+        // q.filetype = Some("csharp".to_string());
+        q.filepath = "c_with_comment.c".to_string();
+        q.code = r#"
+int main() {
+  // Single line comment
+  return x;
+}
+"#
+        .to_string();
+
+        let syntax_def = determine_language(&q, &syntax_set).unwrap();
+        let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
+            .generate();
+
+        assert_eq!(
+            vec![
+                new_occurence(vec![1, 0, 3], SyntaxKind::IdentifierType),
+                new_occurence(vec![1, 4, 8], SyntaxKind::IdentifierFunction),
+                new_occurence(vec![1, 8, 9], SyntaxKind::PunctuationBracket),
+                new_occurence(vec![1, 9, 10], SyntaxKind::PunctuationBracket),
+                new_occurence(vec![1, 11, 12], SyntaxKind::PunctuationBracket),
+                new_occurence(vec![2, 2, 25], SyntaxKind::Comment),
+                new_occurence(vec![3, 2, 8], SyntaxKind::IdentifierKeyword),
+                // For some reason, syntect not capturing variable here... perhaps in an updated
+                // version it would...?
+                // new_occurence(vec![3, 9, 10], SyntaxKind::Identifier),
+                new_occurence(vec![3, 10, 11], SyntaxKind::PunctuationBracket),
+                new_occurence(vec![4, 0, 1], SyntaxKind::PunctuationBracket),
             ],
             output.occurrences
         );

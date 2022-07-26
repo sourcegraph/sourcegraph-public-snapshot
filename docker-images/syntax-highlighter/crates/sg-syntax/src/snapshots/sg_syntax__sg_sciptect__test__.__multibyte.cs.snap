@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 446
+assertion_line: 527
 expression: "dump_document(&document, &contents)"
 ---
   using System;
@@ -8,26 +8,31 @@ expression: "dump_document(&document, &contents)"
 //            ^ PunctuationBracket
   
   namespace Example
+//^^^^^^^^^ IdentifierType
   {
 //^ PunctuationBracket
       public void Something()
+//           ^^^^ IdentifierType
 //                ^^^^^^^^^ IdentifierFunction
 //                         ^ PunctuationBracket
 //                          ^ PunctuationBracket
       {
 //    ^ PunctuationBracket
           var x = "世界";
+//        ^^^ IdentifierType
 //            ^ Identifier
 //              ^ IdentifierOperator
 //                ^^^^ StringLiteral
 //                    ^ PunctuationBracket
           var y = "世界 Hello, 世界";
+//        ^^^ IdentifierType
 //            ^ Identifier
 //              ^ IdentifierOperator
 //                ^^^^^^^^^^^^^^ StringLiteral
 //                              ^ PunctuationBracket
   
           var emoji = "🥳";
+//        ^^^ IdentifierType
 //            ^^^^^ Identifier
 //                  ^ IdentifierOperator
 //                    ^^^ StringLiteral

@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 456
+assertion_line: 527
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -47,11 +47,13 @@ expression: "dump_document(&document, &contents)"
 //^^^^^ IdentifierKeyword
 //           ^ PunctuationBracket
   namespace Radzen.Blazor.
+//^^^^^^^^^ IdentifierType
 //                ^ PunctuationBracket
 //                       ^ PunctuationBracket
   {
 //^ PunctuationBracket
       public class DataGridTests
+//           ^^^^^ IdentifierType
       {
 //    ^ PunctuationBracket
           // Css classes tests
@@ -61,6 +63,7 @@ expression: "dump_document(&document, &contents)"
 //         ^^^^ Identifier
 //             ^ PunctuationBracket
           public void DataGrid_Renders_CssClass()
+//               ^^^^ IdentifierType
 //                    ^^^^^^^^^^^^^^^^^^^^^^^^^ IdentifierFunction
 //                                             ^ PunctuationBracket
 //                                              ^ PunctuationBracket
@@ -96,6 +99,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                               ^ PunctuationBracket
 //                                                                                ^ PunctuationBracket
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
+//            ^^^ IdentifierType
 //                ^^^^^^^^^ Identifier
 //                          ^ IdentifierOperator
 //                            ^^^ Identifier
@@ -107,6 +111,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                   ^ PunctuationBracket
 //                                                                    ^ PunctuationBracket
 //                                                                     ^^^^^^^^^^^^^^^^ Identifier
+//                                                                                      ^^ IdentifierType
               {
 //            ^ PunctuationBracket
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
@@ -119,6 +124,7 @@ expression: "dump_document(&document, &contents)"
 //                                                         ^ PunctuationBracket
 //                                                          ^ PunctuationBracket
 //                                                           ^ Identifier
+//                                                             ^^ IdentifierType
 //                                                                ^ Identifier
 //                                                                 ^ PunctuationBracket
 //                                                                  ^^^^ Identifier
@@ -158,11 +164,13 @@ expression: "dump_document(&document, &contents)"
 //                                                   ^ PunctuationBracket
 //                                                    ^ PunctuationBracket
 //                                                     ^ Identifier
+//                                                       ^^ IdentifierType
 //                                                          ^ Identifier
 //                                                           ^ PunctuationBracket
 //                                                            ^^^^^^^ Identifier
 //                                                                   ^ PunctuationBracket
 //                                                                     ^^^^^^^ Identifier
+//                                                                             ^^ IdentifierType
                   {
 //                ^ PunctuationBracket
                       builder.OpenComponent(0, typeof(RadzenGridColumn<dynamic>));
@@ -235,6 +243,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                               ^ PunctuationBracket
   
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
+//            ^^^ IdentifierType
 //                ^^^^^^^^^ Identifier
 //                          ^ IdentifierOperator
 //                            ^^^ Identifier
@@ -246,6 +255,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                   ^ PunctuationBracket
 //                                                                    ^ PunctuationBracket
 //                                                                     ^^^^^^^^^^^^^^^^ Identifier
+//                                                                                      ^^ IdentifierType
               {
 //            ^ PunctuationBracket
                   parameterBuilder.Add<IEnumerable<dynamic>>(p => p.Data, new[] { new { Id = 1 }, new { Id = 2 }, new { Id = 3 } });
@@ -258,6 +268,7 @@ expression: "dump_document(&document, &contents)"
 //                                                         ^ PunctuationBracket
 //                                                          ^ PunctuationBracket
 //                                                           ^ Identifier
+//                                                             ^^ IdentifierType
 //                                                                ^ Identifier
 //                                                                 ^ PunctuationBracket
 //                                                                  ^^^^ Identifier
@@ -297,11 +308,13 @@ expression: "dump_document(&document, &contents)"
 //                                                   ^ PunctuationBracket
 //                                                    ^ PunctuationBracket
 //                                                     ^ Identifier
+//                                                       ^^ IdentifierType
 //                                                          ^ Identifier
 //                                                           ^ PunctuationBracket
 //                                                            ^^^^^^^ Identifier
 //                                                                   ^ PunctuationBracket
 //                                                                     ^^^^^^^ Identifier
+//                                                                             ^^ IdentifierType
                   {
 //                ^ PunctuationBracket
                       builder.OpenComponent(0, typeof(RadzenGridColumn<dynamic>));
@@ -347,6 +360,7 @@ expression: "dump_document(&document, &contents)"
 //              ^ PunctuationBracket
   
               var markup = new Regex(@"\s\s+").Replace(component.Markup, "").Trim();
+//            ^^^ IdentifierType
 //                ^^^^^^ Identifier
 //                       ^ IdentifierOperator
 //                         ^^^ IdentifierOperator
