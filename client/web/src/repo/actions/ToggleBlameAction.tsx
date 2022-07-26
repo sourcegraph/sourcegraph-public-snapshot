@@ -3,23 +3,23 @@ import { useCallback } from 'react'
 import { mdiGit } from '@mdi/js'
 import classNames from 'classnames'
 
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../stores'
+import { useBlameVisibility } from '../blame/useBlameVisibility'
 import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
 
 import styles from './ToggleBlameAction.module.scss'
 
 export const ToggleBlameAction: React.FC = () => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
-    const [isBlameVisible, setValueAndSave] = useTemporarySetting('git.showBlame', false)
+    const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
 
     const descriptiveText = isBlameVisible
         ? 'Hide Git blame line annotations'
         : 'Show Git blame line annotations for the whole file'
 
-    const toggleBlameState = useCallback(() => setValueAndSave(isVisible => !isVisible), [setValueAndSave])
+    const toggleBlameState = useCallback(() => setIsBlameVisible(isVisible => !isVisible), [setIsBlameVisible])
 
     if (!extensionsAsCoreFeatures) {
         return null

@@ -22,9 +22,9 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { FileDiffFields } from '../../graphql-operations'
+import { useBlameDecorations } from '../../repo/blame/useBlameDecorations'
 import { DiffMode } from '../../repo/commit/RepositoryCommitPage'
 import { diffDomFunctions } from '../../repo/compare/dom-functions'
-import { useGitBlame } from '../../repo/useGitBlame'
 
 import { DiffHunk } from './DiffHunk'
 import { DiffSplitHunk } from './DiffSplitHunk'
@@ -86,7 +86,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
         base: [],
     })
 
-    const baseBlameDecorations = useGitBlame(
+    const baseBlameDecorations = useBlameDecorations(
         extensionInfo?.base?.filePath
             ? {
                   repoName: extensionInfo.base.repoName,
@@ -95,7 +95,7 @@ export const FileDiffHunks: React.FunctionComponent<React.PropsWithChildren<File
               }
             : undefined
     )
-    const headBlameDecorations = useGitBlame(
+    const headBlameDecorations = useBlameDecorations(
         extensionInfo?.head?.filePath
             ? {
                   repoName: extensionInfo.head.repoName,

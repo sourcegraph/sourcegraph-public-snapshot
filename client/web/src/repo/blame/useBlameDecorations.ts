@@ -8,13 +8,14 @@ import { memoizeObservable } from '@sourcegraph/common'
 import { Range } from '@sourcegraph/extension-api-classes'
 import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
-import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { makeRepoURI } from '@sourcegraph/shared/src/util/url'
 import { useObservable } from '@sourcegraph/wildcard'
 
-import { requestGraphQL } from '../backend/graphql'
-import { GitBlameResult, GitBlameVariables } from '../graphql-operations'
-import { useExperimentalFeatures } from '../stores'
+import { requestGraphQL } from '../../backend/graphql'
+import { GitBlameResult, GitBlameVariables } from '../../graphql-operations'
+import { useExperimentalFeatures } from '../../stores'
+
+import { useBlameVisibility } from './useBlameVisibility'
 
 type BlameHunk = NonNullable<NonNullable<NonNullable<GitBlameResult['repository']>['commit']>['blob']>['blame'][number]
 
@@ -129,15 +130,13 @@ const getBlameDecorations = (hunks: BlameHunk[]): TextDocumentDecoration[] => {
     return hunks.map(hunk => getDecorationFromHunk(hunk, hunk.startLine - 1, now))
 }
 
-interface BlameArguments {
+export const useBlameDecorations = (args?: {
     repoName: string
     commitID: string
     filePath: string
-}
-
-export const useGitBlame = (args?: BlameArguments): TextDocumentDecoration[] | undefined => {
+}): TextDocumentDecoration[] | undefined => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
-    const [isBlameVisible] = useTemporarySetting('git.showBlame', false)
+    const [isBlameVisible] = useBlameVisibility()
     const hunks = useObservable(
         useMemo(() => (extensionsAsCoreFeatures && args && isBlameVisible ? fetchBlame(args) : of(undefined)), [
             extensionsAsCoreFeatures,

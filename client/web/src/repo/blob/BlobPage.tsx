@@ -32,11 +32,11 @@ import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
 import { ToggleBlameAction } from '../actions/ToggleBlameAction'
+import { useBlameDecorations } from '../blame/useBlameDecorations'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
 import { RepoHeaderContributionPortal } from '../RepoHeaderContributionPortal'
-import { useGitBlame } from '../useGitBlame'
 
 import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
@@ -204,7 +204,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
 
     useBlobPanelViews(props)
 
-    const blameDecorations = useGitBlame({ repoName, commitID, filePath })
+    const blameDecorations = useBlameDecorations({ repoName, commitID, filePath })
 
     const isSearchNotebook =
         blobInfoOrError &&
