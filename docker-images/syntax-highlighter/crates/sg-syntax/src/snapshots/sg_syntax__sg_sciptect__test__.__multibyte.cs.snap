@@ -1,10 +1,11 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 530
+assertion_line: 531
 expression: "dump_document(&document, &contents)"
 ---
   using System;
 //^^^^^ IdentifierKeyword
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationBracket
   
   namespace Example

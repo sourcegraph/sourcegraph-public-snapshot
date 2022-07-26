@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 530
+assertion_line: 531
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -10,41 +10,61 @@ expression: "dump_document(&document, &contents)"
   
   using AngleSharp.Dom;
 //^^^^^ IdentifierKeyword
+//      ^^^^^^^^^^ IdentifierNamespace
 //                ^ PunctuationBracket
+//                 ^^^ IdentifierNamespace
 //                    ^ PunctuationBracket
   using Bunit;
 //^^^^^ IdentifierKeyword
+//      ^^^^^ IdentifierNamespace
 //           ^ PunctuationBracket
   using Microsoft.AspNetCore.Components;
 //^^^^^ IdentifierKeyword
+//      ^^^^^^^^^ IdentifierNamespace
 //               ^ PunctuationBracket
+//                ^^^^^^^^^^ IdentifierNamespace
 //                          ^ PunctuationBracket
+//                           ^^^^^^^^^^ IdentifierNamespace
 //                                     ^ PunctuationBracket
   using Microsoft.AspNetCore.Components.Rendering;
 //^^^^^ IdentifierKeyword
+//      ^^^^^^^^^ IdentifierNamespace
 //               ^ PunctuationBracket
+//                ^^^^^^^^^^ IdentifierNamespace
 //                          ^ PunctuationBracket
+//                           ^^^^^^^^^^ IdentifierNamespace
 //                                     ^ PunctuationBracket
+//                                      ^^^^^^^^^ IdentifierNamespace
 //                                               ^ PunctuationBracket
   using System;
 //^^^^^ IdentifierKeyword
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationBracket
   using System.Collections.Generic;
 //^^^^^ IdentifierKeyword
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationBracket
+//             ^^^^^^^^^^^ IdentifierNamespace
 //                        ^ PunctuationBracket
+//                         ^^^^^^^ IdentifierNamespace
 //                                ^ PunctuationBracket
   using System.Linq;
 //^^^^^ IdentifierKeyword
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationBracket
+//             ^^^^ IdentifierNamespace
 //                 ^ PunctuationBracket
   using System.Text.RegularExpressions;
 //^^^^^ IdentifierKeyword
+//      ^^^^^^ IdentifierNamespace
 //            ^ PunctuationBracket
+//             ^^^^ IdentifierNamespace
 //                 ^ PunctuationBracket
+//                  ^^^^^^^^^^^^^^^^^^ IdentifierNamespace
 //                                    ^ PunctuationBracket
   using Xunit;
 //^^^^^ IdentifierKeyword
+//      ^^^^^ IdentifierNamespace
 //           ^ PunctuationBracket
   namespace Radzen.Blazor.
 //^^^^^^^^^ IdentifierNamespace

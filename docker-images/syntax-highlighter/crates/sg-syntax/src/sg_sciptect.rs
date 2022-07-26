@@ -190,6 +190,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("storage.type.namespace"), IdentifierNamespace),
             (scope("storage.type"), IdentifierType),
             (scope("support.type.builtin"), IdentifierBuiltinType),
+            (scope("meta.path"), IdentifierNamespace),
         ]
     });
 
