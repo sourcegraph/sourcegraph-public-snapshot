@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 432
+assertion_line: 433
 expression: "dump_document(&document, &contents)"
 ---
   package main
@@ -42,6 +42,7 @@ expression: "dump_document(&document, &contents)"
 // ^^^ IdentifierKeyword
 //     ^^^^^^^^^^^^^^^^^^ Identifier
 //                        ^ IdentifierKeyword
+//                         ^^^ IdentifierBuiltinType
    null_was_a_mistake = nil
 // ^^^^^^^^^^^^^^^^^^ Identifier
 //                    ^ IdentifierKeyword
