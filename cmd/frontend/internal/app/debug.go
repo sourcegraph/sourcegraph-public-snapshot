@@ -272,15 +272,10 @@ func addJaeger(r *mux.Router, db database.DB) {
 }
 
 // addOpenTelemetryProtocolTunnel registers handlers that forward OpenTelemetry protocol
-// (OTLP) requests to the configured backend.
+// (OTLP) requests in the http/json format to the configured backend.
 func addOpenTelemetryProtocolTunnel(r *mux.Router) {
-	// For now we only support OTEL_EXPORTER_OTLP_ENDPOINT, and we don't support
-	// per-signal backends yet which require additional work.
-	// https://github.com/sourcegraph/sourcegraph/issues/39398
-	endpoint := otlpenv.GetEndpoint()
-	if protocol := otlpenv.GetProtocol(); protocol != "http/json" {
-
-	}
+	// The tunnel only forwards http/json OTLP requests.
+	endpoint := otlpenv.HTTPJSONEndpoint()
 
 	logger := sglog.Scoped("otlpTunnel", "OpenTelemetry protocol tunnel").
 		With(sglog.String("endpoint", endpoint))
@@ -292,7 +287,7 @@ func addOpenTelemetryProtocolTunnel(r *mux.Router) {
 			sglog.Error(err))
 
 		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
+			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_HTTP_JSON_ENDPOINT, or OTEL_EXPORTER_OTLP_ENDPOINT and OTEL_EXPORTER_OTLP_PROTOCOL=http/json`)
 			w.WriteHeader(http.StatusNotFound)
 		})
 		return
@@ -313,9 +308,8 @@ func addOpenTelemetryProtocolTunnel(r *mux.Router) {
 	r.PathPrefix(tunnelPrefix + tracesPrefix).Handler(&httputil.ReverseProxy{
 		Director: func(req *http.Request) {
 			req.URL.Scheme = target.Scheme
-			req.URL.Host = "127.0.0.1:4318"
+			req.URL.Host = target.Host
 			req.URL.Path = tracesTarget
-			logger.Error(req.Header.Get("Content-Type"))
 		},
 		ErrorLog: std.NewLogger(logger.Scoped("traces", "traces tunnel"), sglog.LevelWarn),
 	})

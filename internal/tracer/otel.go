@@ -15,6 +15,7 @@ import (
 	otelbridge "go.opentelemetry.io/otel/bridge/opentracing"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace"
 	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc"
+	"go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp"
 	w3cpropagator "go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	oteltracesdk "go.opentelemetry.io/otel/sdk/trace"
@@ -35,7 +36,7 @@ import (
 func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
 	// We don't support OTEL_EXPORTER_OTLP_ENDPOINT yet, see newOTelCollectorExporter
 	// docstring.
-	endpoint := otlpenv.GetEndpoint()
+	endpoint := otlpenv.Endpoint()
 	logger = logger.Scoped("otel", "OpenTelemetry tracer").With(log.String("endpoint", endpoint))
 
 	// Ensure propagation between services continues to work. This is also done by another
@@ -84,16 +85,37 @@ func newOTelCollectorExporter(ctx context.Context, logger log.Logger, endpoint s
 	// TODO this is kind of incorrect, and we should just set up all OTLP exporter stuff
 	// by default in the future - this should make it easier to comply with the configuration
 	// spec: https://github.com/sourcegraph/sourcegraph/issues/39398
-	// Right now, this logic does not work with 'OTEL_EXPORTER_OTLP_ENDPOINT'.
-	opts := []otlptracegrpc.Option{
-		otlptracegrpc.WithEndpoint(trimSchema(endpoint)),
-	}
-	if isInsecureEndpoint(endpoint) {
-		opts = append(opts, otlptracegrpc.WithInsecure())
-	}
-	client := otlptracegrpc.NewClient(opts...)
+	// Right now, this logic does not work with 'OTEL_EXPORTER_OTLP_TRACE_ENDPOINT'.
+	var (
+		client          otlptrace.Client
+		protocol        = otlpenv.GetProtocol()
+		trimmedEndpoint = trimSchema(endpoint)
+		insecure        = isInsecureEndpoint(endpoint)
+	)
 
-	// Initialize exporter
+	// Work with different protocols
+	// https: //github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#specify-protocol
+	switch protocol {
+	case "grpc":
+		opts := []otlptracegrpc.Option{
+			otlptracegrpc.WithEndpoint(trimmedEndpoint),
+		}
+		if insecure {
+			opts = append(opts, otlptracegrpc.WithInsecure())
+		}
+		client = otlptracegrpc.NewClient(opts...)
+
+	case "http/json":
+		opts := []otlptracehttp.Option{
+			otlptracehttp.WithEndpoint(trimmedEndpoint),
+		}
+		if insecure {
+			opts = append(opts, otlptracehttp.WithInsecure())
+		}
+		client = otlptracehttp.NewClient(opts...)
+	}
+
+	// Initialize the exporter
 	traceExporter, err := otlptrace.New(ctx, client)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to create trace exporter")

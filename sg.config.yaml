@@ -114,6 +114,10 @@ env:
   DISABLE_CODE_INSIGHTS: true
   ENABLE_STREAMING_REPOS_SYNCER: true
 
+  # OpenTelemetry in dev - use single http/json endpoint
+  OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+  OTEL_EXPORTER_OTLP_PROTOCOL: http/json
+
 commands:
   server:
     cmd: ./dev/run-server-image.sh
@@ -328,6 +332,7 @@ commands:
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
+      ENABLE_MONITORING: true
 
   web-standalone-http:
     cmd: yarn workspace @sourcegraph/web serve:dev --color
@@ -675,7 +680,7 @@ commands:
 
       docker container rm otel-collector
       docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
-        -p 4317:4317 -p 55679:55679 \
+        -p 4317:4317 -p 4318:4318 -p 55679:55679 \
         -e JAEGER_HOST=$JAEGER_HOST \
         -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
         -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
