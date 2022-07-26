@@ -16,6 +16,7 @@ import {
 import { SearchFiltersPanel, SearchSidebar } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { SidebarTabID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useObservable } from '@sourcegraph/wildcard'
 
@@ -30,7 +31,7 @@ interface SearchSidebarViewProps
 
 export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<SearchSidebarViewProps>> = React.memo(
     ({ settingsCascade, platformContext, extensionCoreAPI, filters }) => {
-        const [, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+        const [, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', SidebarTabID.FILTERS)
         const useSearchQueryState: SearchQueryStateStore = useMemo(
             () =>
                 create<SearchQueryState>((set, get) => ({

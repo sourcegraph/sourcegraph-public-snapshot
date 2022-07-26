@@ -7,12 +7,12 @@ import { Observable } from 'rxjs'
 import { asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import {
+    FetchFileParameters,
     SearchFiltersPanel,
+    SearchSidebar,
+    SidebarButtonStrip,
     StreamingProgress,
     StreamingSearchResultsList,
-    FetchFileParameters,
-    SidebarButtonStrip,
-    SearchSidebar,
 } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -22,6 +22,7 @@ import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { SidebarTabID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -33,10 +34,10 @@ import { CodeInsightsProps } from '../../insights/types'
 import { isCodeInsightsEnabled } from '../../insights/utils/is-code-insights-enabled'
 import { SavedSearchModal } from '../../savedSearches/SavedSearchModal'
 import {
+    buildSearchURLQueryFromQueryState,
     useExperimentalFeatures,
     useNavbarQueryState,
     useNotepad,
-    buildSearchURLQueryFromQueryState,
 } from '../../stores'
 import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
@@ -48,6 +49,7 @@ import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
 import { SearchResultsInfoBar } from './SearchResultsInfoBar'
 import { getRevisions } from './sidebar/Revisions'
+import { SearchInsightPanel } from './sidebar/SearchInsightPanel'
 
 import styles from './StreamingSearchResults.module.scss'
 
@@ -229,7 +231,7 @@ export const StreamingSearchResults: React.FunctionComponent<
         [query, telemetryService, patternType, caseSensitive, props]
     )
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
-    const [selectedTab, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+    const [selectedTab, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', SidebarTabID.FILTERS)
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
@@ -243,24 +245,30 @@ export const StreamingSearchResults: React.FunctionComponent<
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 onClose={() => setSidebarTab(null)}
             >
-                <GettingStartedTour
-                    className="mb-1"
-                    isSourcegraphDotCom={props.isSourcegraphDotCom}
-                    telemetryService={props.telemetryService}
-                    isAuthenticated={!!props.authenticatedUser}
-                />
+                {selectedTab === SidebarTabID.FILTERS && (
+                    <>
+                        <GettingStartedTour
+                            className="mb-1"
+                            isSourcegraphDotCom={props.isSourcegraphDotCom}
+                            telemetryService={props.telemetryService}
+                            isAuthenticated={!!props.authenticatedUser}
+                        />
 
-                <SearchFiltersPanel
-                    activation={props.activation}
-                    caseSensitive={caseSensitive}
-                    patternType={patternType}
-                    settingsCascade={props.settingsCascade}
-                    telemetryService={props.telemetryService}
-                    selectedSearchContextSpec={props.selectedSearchContextSpec}
-                    filters={results?.filters}
-                    getRevisions={getRevisions}
-                    buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-                />
+                        <SearchFiltersPanel
+                            activation={props.activation}
+                            caseSensitive={caseSensitive}
+                            patternType={patternType}
+                            settingsCascade={props.settingsCascade}
+                            telemetryService={props.telemetryService}
+                            selectedSearchContextSpec={props.selectedSearchContextSpec}
+                            filters={results?.filters}
+                            getRevisions={getRevisions}
+                            buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                        />
+                    </>
+                )}
+
+                {selectedTab === SidebarTabID.INSIGHTS && <SearchInsightPanel />}
             </SearchSidebar>
 
             <SearchResultsInfoBar

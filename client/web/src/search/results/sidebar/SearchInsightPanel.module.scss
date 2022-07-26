@@ -1,0 +1,31 @@
+.chart-container {
+    width: 100%;
+}
+
+.chart {
+    min-height: 14rem;
+    position: relative;
+}
+
+.chart-with-mock {
+    filter: blur(4px);
+    pointer-events: none;
+    opacity: 0.8;
+
+    // In order to turn off any interactions with chart like
+    // tooltip or chart shutter for user cursor we have to
+    // override pointer events. Since visx charts add pointer events
+    // by html attribute we have to use important statement.
+    :global(.visx-group) {
+        pointer-events: none !important;
+    }
+}
+
+.banner {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    padding: 1rem 2rem;
+}

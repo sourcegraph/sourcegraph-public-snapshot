@@ -18,4 +18,7 @@ export enum NoResultsSectionID {
     VIDEOS = 'videos',
 }
 
-export type SidebarTabID = 'filters'
+export enum SidebarTabID {
+    FILTERS = 'filters',
+    INSIGHTS = 'insights',
+}

@@ -1,6 +1,6 @@
 import React, { useCallback } from 'react'
 
-import { mdiFilterOutline } from '@mdi/js'
+import { mdiFilterOutline, mdiPoll } from '@mdi/js'
 import classNames from 'classnames'
 
 import { SidebarTabID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
@@ -9,12 +9,19 @@ import { Button, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import styles from './SidebarButtonStrip.module.scss'
 
-const tabs: { tab: SidebarTabID; icon: string; name: string }[] = [
-    { tab: 'filters', icon: mdiFilterOutline, name: 'Filters' },
+interface SidebarTab {
+    tab: SidebarTabID
+    icon: string
+    name: string
+}
+
+const tabs: SidebarTab[] = [
+    { tab: SidebarTabID.FILTERS, icon: mdiFilterOutline, name: 'Filters' },
+    { tab: SidebarTabID.INSIGHTS, icon: mdiPoll, name: 'Insights' },
 ]
 
 export const SidebarButtonStrip: React.FunctionComponent<{ className?: string }> = ({ className }) => {
-    const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+    const [selectedTab, setSelectedTab] = useTemporarySetting('search.sidebar.selectedTab', SidebarTabID.FILTERS)
 
     const onClickTab = useCallback(
         (tab: SidebarTabID) => {
