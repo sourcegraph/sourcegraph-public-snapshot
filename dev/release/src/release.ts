@@ -30,7 +30,6 @@ import {
     cacheFolder,
     formatDate,
     timezoneLink,
-    hubSpotFeedbackFormStub,
     ensureDocker,
     changelogURL,
     ensureReleaseBranchUpToDate,
@@ -46,7 +45,6 @@ export type StepID =
     | 'tracking:issues'
     // branch cut
     | 'changelog:cut'
-    | 'update:cut'
     | 'release:branch-cut'
     // release
     | 'release:status'
@@ -304,51 +302,6 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         },
     },
     {
-        id: 'update:cut',
-        description: 'cut update guides',
-        run: async config => {
-            const { upcoming: release, previous } = await releaseVersions(config)
-            const notPatchRelease = release.patch === 0
-            const previousNotPatchRelease = previous.patch === 0
-            await createChangesets({
-                requiredCommands: [],
-                changes: [
-                    {
-                        owner: 'sourcegraph',
-                        repo: 'sourcegraph',
-                        base: 'main',
-                        head: `update-guides-${release.version}`,
-                        title: 'dave-test',
-                        commitMessage: 'dave test \n\n ## Test plan\n\nn/a',
-                        edits: [
-                            (directory: string, updateDirectory = '/doc/admin/updates') => {
-                                updateDirectory = directory + updateDirectory
-                                for (const file of readdirSync(updateDirectory)) {
-                                    const fullPath = path.join(updateDirectory, file)
-                                    let updateContents = readFileSync(fullPath).toString()
-                                    if (notPatchRelease) {
-                                        const releaseHeader = `## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}`
-                                        const unreleasedHeader = '## Unreleased'
-                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
-                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
-                                    } else if (previousNotPatchRelease) {
-                                        updateContents = updateContents.replace(
-                                            `${previous.major}.${previous.minor}`,
-                                            release.version
-                                        )
-                                    } else {
-                                        updateContents = updateContents.replace(previous.version, release.version)
-                                    }
-                                    writeFileSync(fullPath, updateContents)
-                                }
-                            },
-                        ],
-                    },
-                ],
-            })
-        },
-    },
-    {
         id: 'release:branch-cut',
         description: 'Create release branch',
         run: async config => {
@@ -452,6 +405,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
             // default values
             const notPatchRelease = release.patch === 0
+            const previousNotPatchRelease = previous.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
@@ -499,13 +453,6 @@ cc @${config.captainGitHubUsername}
                 `${release.major}.${release.minor}`,
             ]
 
-            // we join with escaped newlines for the 'sed' command
-            const upgradeGuideEntry = [
-                `## ${previousVersion} -> ${nextVersion}`,
-                'TODO',
-                hubSpotFeedbackFormStub(previousVersion),
-            ].join('\\n\\n')
-
             // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
@@ -547,27 +494,24 @@ cc @${config.captainGitHubUsername}
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
 
                             // Cut udpate guides with entries from unreleased.
-                            // (updateDirectory = 'admin/docs/updates') => {
-                            //     for (const file of readdirSync(updateDirectory)) {
-                            //         const fullPath = path.join(updateDirectory, file)
-                            //         let updateContents = readFileSync(fullPath
-                            //             ).toString()
-                            //         if (notPatchRelease) {
-                            //             const releaseHeader = `## ${previous.format()} -> ${release.format()}`
-                            //             const unreleasedHeader = '## Unreleased'
-                            //             updateContents = updateContents.replace(unreleasedHeader,releaseHeader)
-                            //             updateContents = updateContents.replace(
-                            //                 update.divider,
-                            //                 update.releaseTemplate
-                            //             )
-
-                            //         }else {
-                            //             const previousString = previous.format()
-                            //             updateContents = updateContents.replace(previousString, release.format());
-                            //         }
-                            //     console.log(file, updateContents)
-
-                            // }}
+                            (directory: string, updateDirectory = '/doc/admin/updates') => {
+                                updateDirectory = directory + updateDirectory
+                                for (const file of readdirSync(updateDirectory)) {
+                                    const fullPath = path.join(updateDirectory, file)
+                                    let updateContents = readFileSync(fullPath).toString()
+                                    if (notPatchRelease) {
+                                        const releaseHeader = `## ${previousVersion} -> ${nextVersion}`
+                                        const unreleasedHeader = '## Unreleased'
+                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
+                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
+                                    } else if (previousNotPatchRelease) {
+                                        updateContents = updateContents.replace(previousVersion, release.version)
+                                    } else {
+                                        updateContents = updateContents.replace(previous.version, release.version)
+                                    }
+                                    writeFileSync(fullPath, updateContents)
+                                }
+                            },
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
