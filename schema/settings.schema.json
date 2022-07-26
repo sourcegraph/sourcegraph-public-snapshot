@@ -254,7 +254,7 @@
           }
         },
         "coolCodeIntel": {
-          "description": "Use the (cool) experimental reference panel for code intelligence.",
+          "description": "Use the (cool) experimental reference panel for code navigation.",
           "type": "boolean",
           "default": false,
           "!go": {
@@ -265,7 +265,7 @@
           "type": "object",
           "properties": {
             "enabled": {
-              "description": "Show the code intelligence badge when viewing a repository.",
+              "description": "Show the code navigation badge when viewing a repository.",
               "type": "boolean",
               "default": false,
               "!go": {
@@ -434,7 +434,7 @@
       "default": 0
     },
     "codeIntelligence.maxPanelResults": {
-      "description": "Maximum number of references/definitions (or other code intelligence results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
+      "description": "Maximum number of references/definitions (or other code navigation results provided by extensions) shown in the panel. If not set a default value will be used to ensure best performance.",
       "type": "integer"
     },
     "codeIntelligence.clickToGoToDefinition": {
@@ -538,7 +538,7 @@
       }
     },
     "alerts.codeHostIntegrationMessaging": {
-      "description": "What in-app messaging to use around availability of Sourcegraph's code intelligence on code hosts. If the native code host integration is installed, this should be set to \"native-integration\" and users won't need to install the Sourcegraph browser extension to get code intelligence on code hosts.",
+      "description": "What in-app messaging to use around availability of Sourcegraph's code navigation on code hosts. If the native code host integration is installed, this should be set to \"native-integration\" and users won't need to install the Sourcegraph browser extension to get code navigation on code hosts.",
       "type": "string",
       "enum": ["browser-extension", "native-integration"],
       "default": "browser-extension"

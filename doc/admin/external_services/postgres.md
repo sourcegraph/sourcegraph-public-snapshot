@@ -12,7 +12,7 @@ Please review [the PostgreSQL](../postgres.md) documentation for a complete list
 If you choose to set up your own PostgreSQL server, please note **we strongly recommend each database to be set up in different servers and/or hosts**. We suggest either:
 
 1. Deploy _codeintel-db_ alongside the other Sourcegraph containers, i.e. not as a managed PostgreSQL instance.
-2. Deploy a separate PostgreSQL instance. The primary reason to not use the same Postgres instance for this data is because precise code intelligence data can take up a significant of space (given the amount of indexed repositories is large) and the performance of the database may impact the performance of the general application database. You'll most likely want to be able to scale their resources independently.
+2. Deploy a separate PostgreSQL instance. The primary reason to not use the same Postgres instance for this data is because code graph data can take up a significant of space (given the amount of indexed repositories is large) and the performance of the database may impact the performance of the general application database. You'll most likely want to be able to scale their resources independently.
 
 We also recommend having backups for the _codeintel-db_ as a best practice. The reason behind this recommendation is that _codeintel-db_ data is uploaded via CI systems. If data is lost, Sourcegraph cannot automatically rebuild it from the repositories, which means you'd have to wait until it is re-uploaded from your CI systems.
 
@@ -27,7 +27,7 @@ The addition of `PG*` environment variables to your Sourcegraph deployment files
 - `PGDATABASE`
 - `PGSSLMODE`
 
-To externalize the _code intelligence database_, use the following prefixed `CODEINTEL_PG*` variables:
+To externalize the _code navigation database_, use the following prefixed `CODEINTEL_PG*` variables:
 
 - `CODEINTEL_PGHOST`
 - `CODEINTEL_PGPORT`
@@ -36,7 +36,7 @@ To externalize the _code intelligence database_, use the following prefixed `COD
 - `CODEINTEL_PGDATABASE`
 - `CODEINTEL_PGSSLMODE`
 
-> NOTE: ⚠️ If you have configured both the frontend (pgsql) and code intelligence (codeintel-db) databases with the same values, the Sourcegraph instance will refuse to start. Each database should either be configured to point to distinct hosts (recommended), or configured to point to distinct databases on the same host.
+> NOTE: ⚠️ If you have configured both the frontend (pgsql) and code navigation (codeintel-db) databases with the same values, the Sourcegraph instance will refuse to start. Each database should either be configured to point to distinct hosts (recommended), or configured to point to distinct databases on the same host.
 
 ### sourcegraph/server
 
@@ -100,7 +100,7 @@ Add the following to your `docker run` command:
     #     - sourcegraph
     # restart: always
 
-    # # Description: PostgreSQL database for code intelligence data.
+    # # Description: PostgreSQL database for code navigation data.
     # #
     # # Disk: 128GB / persistent SSD
     # # Ports exposed to other Sourcegraph services: 5432/TCP 9187/TCP
@@ -126,7 +126,7 @@ Add the following to your `docker run` command:
 
 ### Kubernetes
 
-Update the `PG*` and `CODEINTEL_PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external frontend (`pgsql`) and code intelligence (`codeintel-db`) PostgreSQL instances, respectively. Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
+Update the `PG*` and `CODEINTEL_PG*` environment variables in the `sourcegraph-frontend` deployment YAML file to point to the external frontend (`pgsql`) and code navigation (`codeintel-db`) PostgreSQL instances, respectively. Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
 You are then free to remove the now unused `pgsql` and `codeintel-db` services and deployments from your cluster.
 
@@ -198,7 +198,7 @@ Add the following to your `docker run` command:
     #     - sourcegraph
     # restart: always
 
-    # # Description: PostgreSQL database for code intelligence data.
+    # # Description: PostgreSQL database for code navigation data.
     # #
     # # Disk: 128GB / persistent SSD
     # # Ports exposed to other Sourcegraph services: 5432/TCP 9187/TCP

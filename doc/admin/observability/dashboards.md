@@ -166,7 +166,7 @@ Query: `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_secon
 
 <br />
 
-### Frontend: Search-based code intelligence at a glance
+### Frontend: Search-based code navigation at a glance
 
 #### frontend: 99th_percentile_search_codeintel_request_duration
 
@@ -379,7 +379,7 @@ Query: `sum by (alert_type)(increase(src_graphql_search_response{status="alert",
 
 <br />
 
-### Frontend: Codeintel: Precise code intelligence usage at a glance
+### Frontend: Codeintel: Precise code navigation usage at a glance
 
 #### frontend: codeintel_resolvers_total
 
@@ -6505,7 +6505,7 @@ Query: `sum by(app) (up{app=~".*(pgsql|codeintel-db|codeinsights)"}) / count by 
 
 ## Precise Code Intel Worker
 
-<p class="subtitle">Handles conversion of uploaded precise code intelligence bundles.</p>
+<p class="subtitle">Handles conversion of uploaded code graph data bundles.</p>
 
 To see this dashboard, visit `/-/debug/grafana/d/precise-code-intel-worker/precise-code-intel-worker` on your Sourcegraph instance.
 

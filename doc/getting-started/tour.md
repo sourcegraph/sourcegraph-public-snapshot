@@ -10,7 +10,7 @@ Let's take a tour around Sourcegraph to see how it helps with common developer t
 
 As a developer who is reviewing a pull request or diff, I need to understand the changed code to see whether it'll have unexpected negative impacts or if there are other necessary changes that were accidentally omitted.
 
-Using Sourcegraph makes you a more effective code reviewer because code intelligence makes it much easier to drill down into the implementation (to verify correctness of the change) and enumerate call sites (to verify completeness of the change).
+Using Sourcegraph makes you a more effective code reviewer because code navigation makes it much easier to drill down into the implementation (to verify correctness of the change) and enumerate call sites (to verify completeness of the change).
 
 Requirements:
 
@@ -54,7 +54,7 @@ To try this on an open-source repository, start by searching for [repo:dgrijalva
 
 As a new developer on a project, I need to understand the implementation details of a certain part of the code.
 
-Navigating your code with code intelligence on Sourcegraph is a great way to understand code better, because it works across all of your repositories (and all versions) without additional configuration, and it lets you share links with teammates if you need to ask specific questions about pieces of code.
+Navigating your code with code navigation on Sourcegraph is a great way to understand code better, because it works across all of your repositories (and all versions) without additional configuration, and it lets you share links with teammates if you need to ask specific questions about pieces of code.
 
 Requirements:
 
@@ -87,7 +87,7 @@ Workflow:
 
 1.  Perform a diff search on Sourcegraph with the name of the function that the stack trace originates from, such as `type:diff myCrashingFunctionName`. If you've installed any integrations, use those to initiate the search; otherwise use the search box on the homepage of your organization's internal Sourcegraph instance.
 1.  Scroll through the search results, which show you all commits (and diffs) that match the function name, newest first. (If needed, narrow the diff search by [adding search filters](../code_search/reference/queries.md).)
-1.  Find and click on a relevant search result. On the search results page, clicking on the commit message brings you to the diff (with code intelligence), and clicking on the code in the commit diff brings you to the full file at the revision before or after the commit.
+1.  Find and click on a relevant search result. On the search results page, clicking on the commit message brings you to the diff (with code navigation), and clicking on the code in the commit diff brings you to the full file at the revision before or after the commit.
 1.  Use **Go to definition** and **Find references** to understand the implementation changes and callers
 
 <!-- TODO(sqs): add open-source examples -->
