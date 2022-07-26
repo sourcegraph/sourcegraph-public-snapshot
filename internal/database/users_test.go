@@ -640,7 +640,7 @@ func TestUsers_Delete(t *testing.T) {
 			eventLog := eventLogs[0]
 			if hard {
 				// Event logs should now be anonymous
-				if *eventLog.UserID != 0 {
+				if eventLog.UserID != 0 {
 					t.Error("After hard delete user id should be 0")
 				}
 				if len(eventLog.AnonymousUserID) == 0 {
@@ -648,7 +648,7 @@ func TestUsers_Delete(t *testing.T) {
 				}
 			} else {
 				// Event logs are unchanged
-				if *eventLog.UserID != user.ID {
+				if eventLog.UserID != user.ID {
 					t.Error("After soft delete user id should be non zero")
 				}
 				if len(eventLog.AnonymousUserID) != 0 {

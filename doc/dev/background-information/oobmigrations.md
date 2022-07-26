@@ -148,7 +148,7 @@ func (m *migrator) Progress(ctx context.Context) (float64, error) {
 				cast(c1.count as float) / cast(c2.count as float)
 			END
 		FROM
-			(SELECT count(*) as count FROM skunk_payloads WHERE payload2 IS NOT NULL) c1
+			(SELECT count(*) as count FROM skunk_payloads WHERE payload2 IS NOT NULL) c1,
 			(SELECT count(*) as count FROM skunk_payloads) c2
 	`)))
 	return progress, err

@@ -98,7 +98,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
     }, [afterCreateRoute, createdExternalService, history])
 
     return (
-        <div className="mt-3">
+        <>
             <PageTitle title="Add repositories" />
             <H2>Add repositories</H2>
             {createdExternalService?.warning ? (
@@ -117,7 +117,7 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                     </Alert>
                 </div>
             ) : (
-                <div>
+                <>
                     <div className="mb-3">
                         <ExternalServiceCard {...externalService} />
                     </div>
@@ -137,8 +137,8 @@ export const AddExternalServicePage: React.FunctionComponent<React.PropsWithChil
                         loading={isCreating === true}
                         autoFocus={autoFocusForm}
                     />
-                </div>
+                </>
             )}
-        </div>
+        </>
     )
 }

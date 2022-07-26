@@ -21,7 +21,9 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
@@ -148,6 +150,7 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
     const optimizeHighlighting =
@@ -273,7 +276,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
-        <div className={styles.fileMatchChildren} data-testid="file-match-children">
+        <div
+            className={classNames(styles.fileMatchChildren, result.type === 'symbol' && styles.symbols)}
+            data-testid="file-match-children"
+        >
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
             {result.type === 'path' && (
@@ -283,7 +289,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             )}
 
             {/* Symbols */}
-            {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
+            {((!coreWorkflowImprovementsEnabled && result.type === 'symbol' && result.symbols) || []).map(symbol => (
                 <Link
                     to={symbol.url}
                     className={classNames('test-file-match-children-item', styles.item)}
@@ -297,6 +303,40 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                         {symbol.containerName && <span className="text-muted">{symbol.containerName}</span>}
                     </Code>
                 </Link>
+            ))}
+
+            {((coreWorkflowImprovementsEnabled && result.type === 'symbol' && result.symbols) || []).map(symbol => (
+                <div
+                    key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
+                    className={styles.symbol}
+                >
+                    <div className="mr-2 flex-shrink-0">
+                        <SymbolTag kind={symbol.kind} />
+                    </div>
+                    <div
+                        className={styles.symbolCodeExcerpt}
+                        data-href={symbol.url}
+                        onClick={navigateToFile}
+                        onMouseUp={navigateToFileOnMiddleMouseButtonClick}
+                        onKeyDown={navigateToFile}
+                        role="link"
+                        tabIndex={0}
+                    >
+                        <CodeExcerpt
+                            repoName={result.repository}
+                            commitID={result.commit || ''}
+                            filePath={result.path}
+                            startLine={symbol.line - 1}
+                            endLine={symbol.line}
+                            fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
+                            viewerUpdates={viewerUpdates}
+                            hoverifier={props.hoverifier}
+                            onCopy={logEventOnCopy}
+                            highlightRanges={[]}
+                            isFirst={false}
+                        />
+                    </div>
+                </div>
             ))}
 
             {/* Line matches */}

@@ -31,4 +31,6 @@ type LockfileIndexResolver interface {
 	Repository() *RepositoryResolver
 	Commit() *GitCommitResolver
 	Fidelity() string
+	UpdatedAt() DateTime
+	CreatedAt() DateTime
 }

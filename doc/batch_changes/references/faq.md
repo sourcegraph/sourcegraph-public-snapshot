@@ -92,3 +92,9 @@ Have you [set up webhooks](requirements.md#batch-changes-effect-on-code-host-rat
 When re-running a batch spec on an existing batch change, the scope of repositories affected may change if you modify your `on` statement or if Sourcegraph simply finds a different set of results than it did last time. If the new batch spec no longer matches a repository that Sourcegraph has already published a changeset for, that changeset will be closed on the codehost and marked as *archived* in the batch change when you apply the new batch spec. You will be able to see these actions from the preview screen before you apply the batch spec. Archived changesets are still associated with the batch change, but they will appear under the "Archived" tab on the batch change page instead.
 
 See our [how-to guide](../how-tos/updating_a_batch_change.md#removing-changesets) to learn more about archiving changesets, including how to unarchive a changeset and how to remove a changeset from the batch change entirely.
+
+### Why is my changeset read-only?
+
+Unmerged changesets on repositories that have been archived on the code host will move into a *Read-Only* state, which reflects that they cannot be modified any further on the code host. Re-applying the batch change will result in no operations being performed on those changesets, even if they would otherwise be updated. The only exception is that changesets that would be [archived](#why-has-my-changeset-been-archived) due to the `on` statement or search results changing will still be archived.
+
+If the repository is unarchived, Batch Changes will move the changeset back into its previous state the next time Sourcegraph syncs the repository.

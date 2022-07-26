@@ -279,6 +279,9 @@ type Changeset struct {
 	PublicationState   ChangesetPublicationState // "unpublished", "published"
 	UiPublicationState *ChangesetUiPublicationState
 
+	// State is a computed value. Changes to this value will never be persisted to the database.
+	State ChangesetState
+
 	// All of the following fields are used by workerutil.Worker.
 	ReconcilerState  ReconcilerState
 	FailureMessage   *string
@@ -292,6 +295,9 @@ type Changeset struct {
 	// Closing is set to true (along with the ReocncilerState) when the
 	// reconciler should close the changeset.
 	Closing bool
+
+	// DetachedAt is the time when the changeset became "detached".
+	DetachedAt time.Time
 }
 
 // RecordID is needed to implement the workerutil.Record interface.
@@ -843,6 +849,9 @@ func (c *Changeset) Attach(batchChangeID int64) {
 		}
 	}
 	c.BatchChanges = append(c.BatchChanges, BatchChangeAssoc{BatchChangeID: batchChangeID})
+	if !c.DetachedAt.IsZero() {
+		c.DetachedAt = time.Time{}
+	}
 }
 
 // Detach marks the given batch change as to-be-detached. Returns true, if the

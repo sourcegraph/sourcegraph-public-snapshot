@@ -87,7 +87,7 @@ sg start --debug=gitserver --error=enterprise-worker,enterprise-frontend enterpr
 			},
 		},
 		BashComplete: completeOptions(func() (options []string) {
-			config, _ := sgconf.Get(configFile, configOverwriteFile)
+			config, _ := getConfig()
 			if config == nil {
 				return
 			}
@@ -105,7 +105,7 @@ func constructStartCmdLongHelp() string {
 
 	fmt.Fprintf(&out, `Use this to start your Sourcegraph environment!`)
 
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		out.Write([]byte("\n"))
 		std.NewOutput(&out, false).WriteWarningf(err.Error())
@@ -133,7 +133,7 @@ func constructStartCmdLongHelp() string {
 }
 
 func startExec(ctx *cli.Context) error {
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		return err
 	}

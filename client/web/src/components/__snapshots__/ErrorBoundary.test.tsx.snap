@@ -6,9 +6,13 @@ exports[`ErrorBoundary passes through if non-error 1`] = `
     class="heroPage defaultPadding"
   >
     <div
-      class="icon"
+      class="iconWrapper"
     >
-      <alertcircleicon />
+      <alertcircleicon
+        aria-hidden="true"
+        class="mdi-icon iconInline icon"
+        role="img"
+      />
     </div>
     <h1
       class="h1 title"
@@ -56,9 +60,13 @@ exports[`ErrorBoundary renders reload page if chunk error 1`] = `
     class="heroPage defaultPadding"
   >
     <div
-      class="icon"
+      class="iconWrapper"
     >
-      <reloadicon />
+      <reloadicon
+        aria-hidden="true"
+        class="mdi-icon iconInline icon"
+        role="img"
+      />
     </div>
     <h1
       class="h1 title"

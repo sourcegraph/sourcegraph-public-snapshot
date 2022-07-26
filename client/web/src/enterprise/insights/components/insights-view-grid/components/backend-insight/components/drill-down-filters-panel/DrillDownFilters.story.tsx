@@ -8,7 +8,7 @@ import { InsightFilters } from '../../../../../../core'
 import { DrillDownFiltersPopover } from '../drill-down-filters-popover/DrillDownFiltersPopover'
 
 const defaultStory: Meta = {
-    title: 'DrillDownFilters',
+    title: 'web/insights/DrillDownInsightFilters',
     decorators: [story => <WebStory>{() => story()}</WebStory>],
 }
 

@@ -422,6 +422,7 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 			Name:          sym.Symbol.Name,
 			ContainerName: sym.Symbol.Parent,
 			Kind:          kindString,
+			Line:          int32(sym.Symbol.Line),
 		})
 	}
 
