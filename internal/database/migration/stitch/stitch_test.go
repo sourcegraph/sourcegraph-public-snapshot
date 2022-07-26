@@ -120,7 +120,7 @@ func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
 	testStitchApplication(t, "codeinsights", 29, 42)
 }
 
-// testStitchGraphShape stitches the migrations bewteen the given minor version ranges, then
+// testStitchGraphShape stitches the migrations between the given minor version ranges, then
 // asserts that the resulting graph has the expected root and leaf values.
 func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int) {
 	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {

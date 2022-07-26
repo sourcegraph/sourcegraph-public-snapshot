@@ -88,8 +88,8 @@ func linkVirtualPrivilegedMigrations(definitionMap map[int]definition.Definition
 	for i, id := range squashedIDs {
 		if i == 0 {
 			// Keep first virtual migration only
-			replaceParentsInDefinitionMap(definitionMap, -squashedIDs[0], nil)
-			replaceParentsInDefinitionMap(definitionMap, +squashedIDs[0], []int{-squashedIDs[0]})
+			replaceParentsInDefinitionMap(definitionMap, -id, nil)
+			replaceParentsInDefinitionMap(definitionMap, +id, []int{-id})
 		} else {
 			delete(definitionMap, -id)
 		}

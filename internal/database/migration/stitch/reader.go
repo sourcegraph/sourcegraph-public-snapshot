@@ -17,7 +17,7 @@ type rawMigration struct {
 }
 
 // readRawMigrations reads migrations from a locally available git revision for the given schema.
-// This function understand the common ways we histoorically laid out our migration definitions
+// This function understands the common ways we historically laid out our migration definitions
 // in-tree, and will return results going back to v3.29.0 (with empty metadata where missing).
 func readRawMigrations(schemaName, dir, rev string) (migrations []rawMigration, _ error) {
 	entries, err := readMigrationDirectoryFilenames(schemaName, dir, rev)
