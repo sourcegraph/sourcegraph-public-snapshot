@@ -26,3 +26,8 @@ func GetEndpoint() string {
 	return getWithDefault(defaultCollectorEndpoint,
 		"OTEL_EXPORTER_OTLP_ENDPOINT")
 }
+
+func GetProtocol() string {
+	return getWithDefault("grpc",
+		"OTEL_EXPORTER_OTLP_PROTOCOL")
+}

@@ -10,7 +10,8 @@
 receivers:
   otlp:
     protocols:
-      grpc:
+      grpc: # port 4317
+      http: # port 4318
 
 exporters:
   otlp:
