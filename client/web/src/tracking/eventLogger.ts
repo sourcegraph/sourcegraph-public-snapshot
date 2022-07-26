@@ -235,7 +235,7 @@ export class EventLogger implements TelemetryService {
 
     public getSessionID(): string {
         let sessionID = cookies.get(SESSION_ID_KEY)
-        if ((sessionID = '')) {
+        if (!sessionID || sessionID == '') {
             sessionID = uuid.v4()
             cookies.set(SESSION_ID_KEY, sessionID, this.sessionCookieSettings)
         }
