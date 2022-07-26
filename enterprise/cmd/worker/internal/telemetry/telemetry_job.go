@@ -72,7 +72,8 @@ func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.Back
 	}
 	operation := observationContext.Operation(observation.Op{})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), sendEvents), operation)
+	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, operation)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error
@@ -82,10 +83,11 @@ type telemetryHandler struct {
 	eventLogStore      database.EventLogStore
 	globalStateStore   database.GlobalStateStore
 	userEmailsStore    database.UserEmailsStore
+	bookmarkStore      bookmarkStore
 	sendEventsCallback sendEventsCallbackFunc
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bokomarkStore bookmarkStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
 	return &telemetryHandler{
 		logger:             logger,
 		eventLogStore:      store,
@@ -116,9 +118,14 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 
 	batchSize := getBatchSize()
 
+	bookmark, err := t.bookmarkStore.GetBookmark(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetBookmark")
+	}
+
 	all, err := t.eventLogStore.ListExportableEvents(ctx, database.LimitOffset{
 		Limit:  batchSize,
-		Offset: 0, // currently static, will become dynamic with https://github.com/sourcegraph/sourcegraph/issues/39089
+		Offset: bookmark, // currently static, will become dynamic with https://github.com/sourcegraph/sourcegraph/issues/39089
 	})
 	if err != nil {
 		return errors.Wrap(err, "eventLogStore.ListExportableEvents")
@@ -129,7 +136,13 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 
 	maxId := int(all[len(all)-1].ID)
 	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
-	return t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
+
+	err = t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
+	if err != nil {
+		return errors.Wrap(err, "telemetryHandler.sendEvents")
+	}
+
+	return t.bookmarkStore.UpdateBookmark(ctx, maxId)
 }
 
 // This package level client is to prevent race conditions when mocking this configuration in tests.
@@ -284,15 +297,20 @@ func getInitialAdminEmail(ctx context.Context, store database.UserEmailsStore) (
 	return info, nil
 }
 
-type bookmarkStore struct {
+type bmStore struct {
 	*basestore.Store
 }
 
-func newBookmarkStore(db database.DB) *bookmarkStore {
-	return &bookmarkStore{Store: basestore.NewWithHandle(db.Handle())}
+func newBookmarkStore(db database.DB) bookmarkStore {
+	return &bmStore{Store: basestore.NewWithHandle(db.Handle())}
 }
 
-func (s *bookmarkStore) getBookmark(ctx context.Context) (_ int, err error) {
+type bookmarkStore interface {
+	GetBookmark(ctx context.Context) (int, error)
+	UpdateBookmark(ctx context.Context, val int) error
+}
+
+func (s *bmStore) GetBookmark(ctx context.Context) (_ int, err error) {
 	tx, err := s.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -307,6 +325,6 @@ func (s *bookmarkStore) getBookmark(ctx context.Context) (_ int, err error) {
 	return val, err
 }
 
-func (s *bookmarkStore) updateBookmark(ctx context.Context, val int) error {
+func (s *bmStore) UpdateBookmark(ctx context.Context, val int) error {
 	return s.Exec(ctx, sqlf.Sprintf("UPDATE event_logs_scrape_state SET bookmark_id = %S WHERE id = (SELECT id FROM event_logs_scrape_state ORDER BY id LIMIT 1);", val))
 }

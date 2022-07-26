@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/google/go-cmp/cmp"
@@ -112,7 +114,7 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			handler := newTelemetryHandler(logtest.Scoped(t), database.NewMockEventLogStore(), database.NewMockUserEmailsStore(), database.NewMockGlobalStateStore(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 				return nil
 			})
 			err := handler.Handle(ctx)
@@ -138,7 +140,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
 	t.Run("loads no events when table is empty", func(t *testing.T) {
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			if len(event) != 0 {
 				t.Errorf("expected empty events but got event array with size: %d", len(event))
 			}
@@ -170,10 +172,11 @@ func TestHandlerLoadsEvents(t *testing.T) {
 
 	t.Run("loads events without error", func(t *testing.T) {
 		var got []*types.Event
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			got = event
 			return nil
 		})
+		handler.eventLogStore = db.EventLogs()
 
 		err := handler.Handle(ctx)
 		if err != nil {
@@ -205,10 +208,11 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
 		var got []*types.Event
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			got = event
 			return nil
 		})
+		handler.eventLogStore = db.EventLogs()
 		err := handler.Handle(ctx)
 		if err != nil {
 			t.Fatal(err)
@@ -239,6 +243,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 	dbHandle := dbtest.NewDB(logger, t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
+	bookmarkStore := newBookmarkStore(db)
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
@@ -247,7 +252,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 		config.ExportUsageTelemetry.TopicProjectName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), noopHandler())
+		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler())
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
@@ -257,7 +262,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 		config.ExportUsageTelemetry.TopicName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), noopHandler())
+		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler())
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing topic name", "getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
@@ -346,6 +351,10 @@ func TestGetBookmark(t *testing.T) {
 	store := newBookmarkStore(db)
 	eventLogStore := db.EventLogs()
 
+	clearStateTable := func() {
+		dbHandle.Exec("DELETE FROM event_logs_scrape_state;")
+	}
+
 	insert := []*database.Event{
 		{
 			Name:   "event1",
@@ -364,7 +373,7 @@ func TestGetBookmark(t *testing.T) {
 	}
 
 	t.Run("state is empty should generate row", func(t *testing.T) {
-		got, err := store.getBookmark(ctx)
+		got, err := store.GetBookmark(ctx)
 		if err != nil {
 			t.Error(err)
 		}
@@ -372,15 +381,16 @@ func TestGetBookmark(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("%s (want/got): %s", t.Name(), diff)
 		}
+		clearStateTable()
 	})
 
 	t.Run("state exists and returns bookmark", func(t *testing.T) {
-		err := store.Store.Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
+		err := basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
 		if err != nil {
 			t.Error(err)
 		}
 
-		got, err := store.getBookmark(ctx)
+		got, err := store.GetBookmark(ctx)
 		if err != nil {
 			t.Error(err)
 		}
@@ -388,6 +398,7 @@ func TestGetBookmark(t *testing.T) {
 		if diff := cmp.Diff(want, got); diff != "" {
 			t.Errorf("%s (want/got): %s", t.Name(), diff)
 		}
+		clearStateTable()
 	})
 }
 
@@ -398,22 +409,36 @@ func TestUpdateBookmark(t *testing.T) {
 	db := database.NewDB(logger, dbHandle)
 	store := newBookmarkStore(db)
 
-	err := store.Store.Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
+	err := basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
 	if err != nil {
 		t.Error(err)
 	}
 
 	want := 6
-	err = store.updateBookmark(ctx, want)
+	err = store.UpdateBookmark(ctx, want)
 	if err != nil {
-		t.Error(errors.Wrap(err, "updateBookmark"))
+		t.Error(errors.Wrap(err, "UpdateBookmark"))
 	}
 
-	got, err := store.getBookmark(ctx)
+	got, err := store.GetBookmark(ctx)
 	if err != nil {
 		t.Error(err)
 	}
 	if diff := cmp.Diff(want, got); diff != "" {
 		t.Errorf("%s (want/got): %s", t.Name(), diff)
+	}
+}
+
+func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *telemetryHandler {
+	bms := NewMockBookmarkStore()
+	bms.GetBookmarkFunc.SetDefaultReturn(0, nil)
+
+	return &telemetryHandler{
+		logger:             logtest.Scoped(t),
+		eventLogStore:      database.NewMockEventLogStore(),
+		globalStateStore:   database.NewMockGlobalStateStore(),
+		userEmailsStore:    database.NewMockUserEmailsStore(),
+		bookmarkStore:      bms,
+		sendEventsCallback: callbackFunc,
 	}
 }
