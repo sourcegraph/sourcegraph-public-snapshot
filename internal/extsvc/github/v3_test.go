@@ -878,14 +878,13 @@ func TestSyncWebhook_CreateListFindDelete(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			_, found := client.FindSyncWebhook(ctx, tc.repoName)
-			if !found {
-				t.Fatal(`Could not find webhook with "/github-webhooks" endpoint`)
+			if _, err := client.FindSyncWebhook(ctx, tc.repoName); err != nil {
+				t.Error(`Could not find webhook with "/github-webhooks" endpoint`)
 			}
 
 			deleted, err := client.DeleteSyncWebhook(ctx, tc.repoName, id)
 			if err != nil {
-				t.Fatal(err)
+				t.Error(err)
 			}
 
 			if !deleted {
