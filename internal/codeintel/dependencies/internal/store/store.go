@@ -36,6 +36,7 @@ type Store interface {
 	DeleteDependencyReposByID(ctx context.Context, ids ...int) (err error)
 	ListLockfileIndexes(ctx context.Context, opts ListLockfileIndexesOpts) (indexes []shared.LockfileIndex, totalCount int, err error)
 	GetLockfileIndex(ctx context.Context, opts GetLockfileIndexOpts) (index shared.LockfileIndex, err error)
+	DeleteLockfileIndexByID(ctx context.Context, id int) (err error)
 }
 
 // store manages the database tables for package dependencies.
@@ -865,6 +866,56 @@ func makeGetLockfileIndexConds(opts GetLockfileIndexOpts) ([]*sqlf.Query, error)
 
 	return conds, nil
 }
+
+// DeleteLockfileIndexByID deletes the lockfile index with the given ID.
+func (s *store) DeleteLockfileIndexByID(ctx context.Context, id int) (err error) {
+	ctx, _, endObservation := s.operations.getLockfileIndex.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int("id", id),
+	}})
+	defer func() {
+		endObservation(1, observation.Args{LogFields: []log.Field{}})
+	}()
+
+	if id == 0 {
+		return nil
+	}
+
+	tx, err := s.db.Transact(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	var (
+		repoID   int
+		commit   dbutil.CommitBytea
+		lockfile string
+	)
+	err = tx.QueryRow(ctx, sqlf.Sprintf(deleteLockfileIndexByIDQuery, id)).Scan(&repoID, &commit, &lockfile)
+	if err != nil {
+		return err
+	}
+
+	return tx.Exec(ctx, sqlf.Sprintf(deleteLockfileReferencesQuery, repoID, commit, lockfile))
+}
+
+const deleteLockfileIndexByIDQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:DeleteLockfileIndexByID
+DELETE FROM codeintel_lockfiles
+WHERE id = %s
+RETURNING repository_id, commit_bytea, lockfile
+`
+
+const deleteLockfileReferencesQuery = `
+-- source: internal/codeintel/dependencies/internal/store/store.go:DeleteLockfileIndexByID
+DELETE FROM codeintel_lockfile_references
+WHERE
+	resolution_repository_id = %s
+AND
+	resolution_commit_bytea = %s
+AND
+	resolution_lockfile = %s
+`
 
 // UpsertDependencyRepos creates the given dependency repos if they don't yet exist. The values
 // that did not exist previously are returned.

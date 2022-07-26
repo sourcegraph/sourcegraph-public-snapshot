@@ -47,7 +47,7 @@ export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<C
             return data.lockfileIndexes
         },
         options: {
-            fetchPolicy: 'cache-first',
+            fetchPolicy: 'cache-and-network',
         },
     })
 

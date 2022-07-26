@@ -55,3 +55,11 @@ export const LOCKFILE_INDEX = gql`
         }
     }
 `
+
+export const DELETE_LOCKFILE_INDEX = gql`
+    mutation DeleteLockfileIndex($id: ID!) {
+        deleteLockfileIndex(lockfileIndex: $id) {
+            alwaysNil
+        }
+    }
+`

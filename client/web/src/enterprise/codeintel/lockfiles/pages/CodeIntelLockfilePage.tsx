@@ -1,18 +1,24 @@
-import { FunctionComponent, useEffect } from 'react'
+import { FunctionComponent, useEffect, useState, useCallback } from 'react'
 
+import { mdiDelete } from '@mdi/js'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
-import { RouteComponentProps } from 'react-router'
+import { Redirect, RouteComponentProps } from 'react-router'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { useMutation, useQuery } from '@sourcegraph/http-client'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Code, Container, H2, H3, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Text, Button, Code, Container, H2, H3, Icon, Link, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { HeroPage } from '../../../../components/HeroPage'
 import { PageTitle } from '../../../../components/PageTitle'
 import { Timestamp } from '../../../../components/time/Timestamp'
-import { LockfileIndexResult, LockfileIndexVariables } from '../../../../graphql-operations'
+import {
+    DeleteLockfileIndexResult,
+    DeleteLockfileIndexVariables,
+    LockfileIndexResult,
+    LockfileIndexVariables,
+} from '../../../../graphql-operations'
 
-import { LOCKFILE_INDEX } from './queries'
+import { DELETE_LOCKFILE_INDEX, LOCKFILE_INDEX } from './queries'
 
 export interface CodeIntelLockfilePageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {}
 
@@ -28,6 +34,36 @@ export const CodeIntelLockfilePage: FunctionComponent<React.PropsWithChildren<Co
         variables: { id },
         fetchPolicy: 'cache-first',
     })
+
+    const [deleted, setDeleted] = useState(false)
+    const [isDeleting, setDeleting] = useState(false)
+    const [deleteError, setDeleteError] = useState<string>()
+    const [deleteLockfileIndex] = useMutation<DeleteLockfileIndexResult, DeleteLockfileIndexVariables>(
+        DELETE_LOCKFILE_INDEX
+    )
+
+    const deleteIndex = useCallback(() => {
+        if (!window.confirm('Delete lockfile index?')) {
+            return
+        }
+
+        setDeleting(true)
+        setDeleteError(undefined)
+        deleteLockfileIndex({ variables: { id } })
+            .then(() => {
+                setDeleting(false)
+                setDeleteError(undefined)
+                setDeleted(true)
+            })
+            .catch((error: Error) => {
+                setDeleteError(error.message)
+                setDeleting(false)
+            })
+    }, [deleteLockfileIndex, id])
+
+    if (deleted) {
+        return <Redirect to="./" />
+    }
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -86,6 +122,23 @@ export const CodeIntelLockfilePage: FunctionComponent<React.PropsWithChildren<Co
                         .
                     </small>
                 </div>
+            </Container>
+
+            <Container>
+                <H2>Deletion</H2>
+                <Text>
+                    Deleting this lockfile index will make dependency search unavailable for the repository at the given
+                    commit and lockfile. Deletion will not cause packages added to the instance through
+                    lockfile-indexing to be deleted.
+                </Text>
+                <Button
+                    type="button"
+                    variant="danger"
+                    onClick={deleteIndex}
+                    disabled={isDeleting || deleteError !== undefined}
+                >
+                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Delete lockfile index
+                </Button>
             </Container>
         </div>
     )

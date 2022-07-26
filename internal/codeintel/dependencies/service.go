@@ -535,3 +535,7 @@ type GetLockfileIndexOpts struct {
 func (s *Service) GetLockfileIndexOpts(ctx context.Context, opts GetLockfileIndexOpts) (shared.LockfileIndex, error) {
 	return s.dependenciesStore.GetLockfileIndex(ctx, store.GetLockfileIndexOpts(opts))
 }
+
+func (s *Service) DeleteLockfileIndexByID(ctx context.Context, id int) error {
+	return s.dependenciesStore.DeleteLockfileIndexByID(ctx, id)
+}
