@@ -336,7 +336,7 @@ Sourcegraph should now be accessible at `$EXTERNAL_ADDR:30080`, where `$EXTERNAL
 
 Network policy is a Kubernetes resource that defines how pods are allowed to communicate with each other and with
 other network endpoints. If the cluster administration requires an associated NetworkPolicy when doing an installation,
-then we recommend running Sourcegraph in a namespace (as described in our [Overlays guide](#overlays) or below in the
+then we recommend running Sourcegraph in a namespace (as described in our [Overlays guide](./kustomize.md#overlays) or below in the
 [Using NetworkPolicy with Namespaced Overlay Example](#using-networkpolicy-with-namespaced-overlay)).
 You can then use the `namespaceSelector` to allow traffic between the Sourcegraph pods.
 When you create the namespace you need to give it a label so it can be used in a `matchLabels` clause.
@@ -549,7 +549,8 @@ To disable Jaeger entirely, do:
 
 Sourcegraph communicates with the Kubernetes API for service discovery. It also has some janitor DaemonSets that clean up temporary cache data. To do that we need to create RBAC resources.
 
-If using cluster roles and cluster rolebinding RBAC is not an option, then you can use the [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/non-privileged) overlay to generate modified manifests. Read the [Overlays](#overlays) section below about overlays.
+If using cluster roles and cluster rolebinding RBAC is not an option, then you can use the [non-privileged](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/overlays/non-privileged) overlay to generate modified manifests. Read the [Overlays](./kustomize.md#overlays) section below about overlays.
+
 ## Add license key
 
 Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https://about.sourcegraph.com/pricing).
@@ -561,7 +562,7 @@ Sourcegraph's Kubernetes deployment [requires an Enterprise license key](https:/
 ## Environment variables
 
 Update the environment variables in the appropriate deployment manifest.
-For example, the following [patch](#overlays) will update `PGUSER` to have the value `bob`:
+For example, the following [patch](./kustomize.md#overlays) will update `PGUSER` to have the value `bob`:
 
 ```yaml
 apiVersion: apps/v1
