@@ -4,9 +4,13 @@ import (
 	"context"
 	"fmt"
 	"regexp"
+	"sort"
+	"strings"
+	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
@@ -17,6 +21,20 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
+// NewFileContainsFilterJob creates a filter job to post-filter results for the
+// file:contains.content() predicate.
+//
+// This filter job expects some setup in advance. File results streamed by the
+// child should contain matched ranges both for the original pattern and for
+// the file:contains.content() patterns. This job will filter out any ranges
+// that are matches for the file:contains.content() patterns.
+//
+// This filter job will also handle filtering diff results so that they only
+// include files that contain the pattern specified by file:contains.content().
+// Note that this implementation is pretty inefficient, and relies on running
+// an unindexed search for each streamed diff match. However, we cannot pre-filter
+// because then are not checking whether the file contains the requested content
+// at the commit of the diff match.
 func NewFileContainsFilterJob(includePatterns []string, originalPattern query.Node, caseSensitive bool, child job.Job) job.Job {
 	includeMatchers := make([]*regexp.Regexp, 0, len(includePatterns))
 	for _, pattern := range includePatterns {
@@ -36,6 +54,8 @@ func NewFileContainsFilterJob(includePatterns []string, originalPattern query.No
 	}
 
 	return &fileContainsFilterJob{
+		caseSensitive:           caseSensitive,
+		includePatterns:         includePatterns,
 		includeMatchers:         includeMatchers,
 		originalPatternMatchers: originalPatternMatchers,
 		child:                   child,
@@ -43,9 +63,21 @@ func NewFileContainsFilterJob(includePatterns []string, originalPattern query.No
 }
 
 type fileContainsFilterJob struct {
-	includeMatchers         []*regexp.Regexp
+	// We maintain the original input patterns and case-sensitivity because
+	// searcher does not correctly handle case-insensitive `(?i:)` regex
+	// patterns. The logic for longest substring is incorrect for
+	// case-insensitive patterns (it returns the all-upper-case version of the
+	// longest substring) and will fail to find any matches.
+	caseSensitive   bool
+	includePatterns []string
+
+	// Regex patterns specified by file:contains.content()
+	includeMatchers []*regexp.Regexp
+
+	// Regex patterns specified as part of the original pattern
 	originalPatternMatchers []*regexp.Regexp
-	child                   job.Job
+
+	child job.Job
 }
 
 func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
@@ -75,77 +107,27 @@ func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *e
 				filtered = append(filtered, cm)
 			}
 		default:
-			filtered = append(filtered, v)
+			// Filter out any results that are not FileMatch or CommitMatch
 		}
 	}
+	event.Results = filtered
 	return event
 }
 
-func (j *fileContainsFilterJob) filterFileMatch(m result.Match) result.Match {
-	fm, ok := m.(*result.FileMatch)
-	if !ok {
-		return m
-	}
-
+func (j *fileContainsFilterJob) filterFileMatch(fm *result.FileMatch) result.Match {
 	filteredChunks := fm.ChunkMatches[:0]
 	for _, chunk := range fm.ChunkMatches {
 		chunk = j.filterChunk(chunk)
 		if len(chunk.Ranges) == 0 {
+			// Skip any chunks where we filtered out all the matched ranges
 			continue
 		}
 		filteredChunks = append(filteredChunks, chunk)
 	}
+	// A file match with zero chunks after filtering is still valid, and just
+	// becomes a path match
 	fm.ChunkMatches = filteredChunks
 	return fm
-}
-
-func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
-	if cm.DiffPreview == nil {
-		return cm
-	}
-
-	fileNames := make([]string, 0, len(fileDiffs))
-	for _, fileDiff := range cm.Diff {
-		fileNames = append(fileNames, regexp.QuoteMeta(fileDiff.NewName))
-	}
-
-	for _, includeMatcher := range j.includeMatchers {
-		patternInfo := search.TextPatternInfo{
-			Pattern:               includeMatcher.String(),
-			IsRegExp:              true,
-			FileMatchLimit:        99999999,
-			Index:                 query.No,
-			IncludePatterns:       []string{query.UnionRegExps(fileNames)},
-			PatternMatchesContent: true,
-		}
-
-		var matchedFiles []string
-		onMatch := func(fms []*protocol.FileMatch) {
-			for _, fm := range fms {
-
-			}
-		}
-
-		_, err := searcher.Search(
-			ctx,
-			cm.Repo.Name,
-			cm.Repo.ID,
-			"",
-			cm.Commit.ID,
-			false,
-			&patternInfo,
-			time.Hour,
-			nil,
-			search.Features{},
-			onMatch,
-		)
-		if err != nil {
-			// Ignore any files where the search errors
-			return nil
-		}
-
-	}
-
 }
 
 func (j *fileContainsFilterJob) filterChunk(chunk result.ChunkMatch) result.ChunkMatch {
@@ -167,6 +149,131 @@ func matchesAny(val string, matchers []*regexp.Regexp) bool {
 		}
 	}
 	return false
+}
+
+func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
+	// Skip any commit matches -- we can only handle diff matches
+	if cm.DiffPreview == nil {
+		return nil
+	}
+
+	fileNames := make([]string, 0, len(cm.Diff))
+	for _, fileDiff := range cm.Diff {
+		fileNames = append(fileNames, regexp.QuoteMeta(fileDiff.NewName))
+	}
+
+	// For each pattern specified by file:contains.content(), run a search at
+	// the commit to ensure that the file does, in fact, contain that content.
+	// We cannot do this all at once because searcher does not support complex patterns.
+	// Additionally, we cannot do this in advance because we don't know which commit
+	// we are searching at until we get a result.
+	matchedFileCounts := make(map[string]int)
+	for _, includePattern := range j.includePatterns {
+		patternInfo := search.TextPatternInfo{
+			Pattern:               includePattern,
+			IsCaseSensitive:       j.caseSensitive,
+			IsRegExp:              true,
+			FileMatchLimit:        99999999,
+			Index:                 query.No,
+			IncludePatterns:       []string{query.UnionRegExps(fileNames)},
+			PatternMatchesContent: true,
+		}
+
+		onMatch := func(fms []*protocol.FileMatch) {
+			for _, fm := range fms {
+				matchedFileCounts[fm.Path] += 1
+			}
+		}
+
+		_, err := searcher.Search(
+			ctx,
+			searcherURLs,
+			cm.Repo.Name,
+			cm.Repo.ID,
+			"",
+			cm.Commit.ID,
+			false,
+			&patternInfo,
+			time.Hour,
+			nil,
+			search.Features{},
+			onMatch,
+		)
+		if err != nil {
+			// Ignore any files where the search errors
+			return nil
+		}
+	}
+
+	return j.removeUnmatchedFileDiffs(cm, matchedFileCounts)
+}
+
+func (j *fileContainsFilterJob) removeUnmatchedFileDiffs(cm *result.CommitMatch, matchedFileCounts map[string]int) result.Match {
+	// Ensure the matched ranges are sorted by start offset
+	sort.Slice(cm.DiffPreview.MatchedRanges, func(i, j int) bool {
+		return cm.DiffPreview.MatchedRanges[i].Start.Offset < cm.DiffPreview.MatchedRanges[j].End.Offset
+	})
+
+	// Convert each file diff to a string so we know how much we are removing if we drop that file
+	diffStrings := make([]string, 0, len(cm.Diff))
+	for _, fileDiff := range cm.Diff {
+		diffStrings = append(diffStrings, result.FormatDiffFiles([]result.DiffFile{fileDiff}))
+	}
+
+	// groupedRanges[i] will be the set of ranges that are contained by diffStrings[i]
+	groupedRanges := make([]result.Ranges, len(cm.Diff))
+	{
+		rangeNumStart := 0
+		currentDiffEnd := 0
+	OUTER:
+		for i, diffString := range diffStrings {
+			currentDiffEnd += len(diffString)
+			for rangeNum := rangeNumStart; rangeNum < len(cm.DiffPreview.MatchedRanges); rangeNum++ {
+				currentRange := cm.DiffPreview.MatchedRanges[rangeNum]
+				if currentRange.Start.Offset > currentDiffEnd {
+					groupedRanges[i] = cm.DiffPreview.MatchedRanges[rangeNumStart:rangeNum]
+					rangeNumStart = rangeNum
+					continue OUTER
+				}
+			}
+			groupedRanges[i] = cm.DiffPreview.MatchedRanges[rangeNumStart:]
+		}
+
+	}
+
+	filteredRanges := groupedRanges[:0]
+	filteredDiffs := cm.Diff[:0]
+	filteredDiffStrings := diffStrings[:0]
+	removedAmount := result.Location{}
+	for i, fileDiff := range cm.Diff {
+		if count := matchedFileCounts[fileDiff.NewName]; count == len(j.includeMatchers) {
+			filteredDiffs = append(filteredDiffs, fileDiff)
+			filteredDiffStrings = append(filteredDiffStrings, diffStrings[i])
+			filteredRanges = append(filteredRanges, groupedRanges[i].Sub(removedAmount))
+		} else {
+			// If count != len(j.includeMatchers), that means that not all of our file:contains.content() patterns
+			// matched and this fileDiff should be dropped. Skip appending it, and add its length to the removed amount
+			// so we can adjust the matched ranges down.
+			removedAmount.Add(result.Location{Offset: len(diffStrings[i]), Line: strings.Count(diffStrings[i], "\n")})
+		}
+	}
+
+	// Re-merge groupedRanges
+	ungroupedRanges := result.Ranges{}
+	for _, grouped := range filteredRanges {
+		ungroupedRanges = append(ungroupedRanges, grouped...)
+	}
+
+	// Update the commit match with the filtered slices
+	cm.DiffPreview.MatchedRanges = ungroupedRanges
+	cm.DiffPreview.Content = strings.Join(filteredDiffStrings, "")
+	cm.Diff = filteredDiffs
+	if len(cm.Diff) > 0 {
+		return cm
+	} else {
+		// Return nil if this whole result should be filtered out
+		return nil
+	}
 }
 
 func (j *fileContainsFilterJob) MapChildren(f job.MapFunc) job.Job {
