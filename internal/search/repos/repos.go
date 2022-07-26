@@ -262,6 +262,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}
 	tr.LazyPrintf("finished contains filtering")
 
+	// Fetching metadata should only happen after all filters have been applied.
+	// If additional filtering operations are added to repo resolution in the future, they should be applied
+	// before fetching metadata so that we are only fetching metadata for repos that will actually be searched.
 	tr.LazyPrintf("fetching repo metadata")
 	repoRevsWithMetadata, err := r.fetchRepoRevsMetadata(ctx, filteredRepoRevs)
 	if err != nil {
