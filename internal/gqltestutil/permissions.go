@@ -103,3 +103,23 @@ query BitbucketProjectPermissionJobs($projectKeys: [String!], $status: String, $
 		return resp.Data.Jobs.Nodes[0].State, nil
 	}
 }
+
+// UsersWithPendingPermissions returns bind IDs of users with pending permissions
+func (c *Client) UsersWithPendingPermissions() ([]string, error) {
+	const query = `
+query {
+	usersWithPendingPermissions
+}
+`
+	var resp struct {
+		Data struct {
+			UsersWithPendingPermissions []string `json:"usersWithPendingPermissions"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, nil, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.UsersWithPendingPermissions, nil
+}
