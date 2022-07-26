@@ -77,7 +77,7 @@ Sourcegraph for Kubernetes is configured using our [`sourcegraph/deploy-sourcegr
   kubectl port-forward svc/sourcegraph-frontend 3080:30080
   ```
 
-- Open http://localhost:3080 in your browser and you will see a setup page. Congratulations, you have Sourcegraph up and running! 🎉 
+- Open http://localhost:3080 in your browser and you will see a setup page. Congratulations, you have Sourcegraph up and running! 🎉
 
 > NOTE: If you previously [set up an `ingress-controller`](./configure.md#ingress-controller-recommended), you can now also access your deployment via the ingress.
 
@@ -87,8 +87,8 @@ Sourcegraph for Kubernetes is configured using our [`sourcegraph/deploy-sourcegr
 > or other secure network that restricts unauthenticated access from the public Internet. You can later expose the
 > necessary ports via an
 > [Internet Gateway](http://docs.aws.amazon.com/AmazonVPC/latest/UserGuide/VPC_Internet_Gateway.html) or equivalent
-> mechanism. Note that SG must expose port 443 for outbound traffic to codehosts and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with 
-> Sourcegraph.com. Additionally port 22 may be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your 
+> mechanism. Note that SG must expose port 443 for outbound traffic to codehosts and to enable [telemetry](https://docs.sourcegraph.com/admin/pings) with
+> Sourcegraph.com. Additionally port 22 may be opened to enable git SSH cloning by Sourcegraph. Take care to secure your cluster in a manner that meets your
 > organization's security requirements.
 
 Follow the instructions linked in the table below to provision a Kubernetes cluster for the
