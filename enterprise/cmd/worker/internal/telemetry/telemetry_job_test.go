@@ -5,6 +5,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -331,5 +335,85 @@ func TestGetInstanceMetadata(t *testing.T) {
 func noopHandler() sendEventsCallbackFunc {
 	return func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 		return nil
+	}
+}
+
+func TestGetBookmark(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+	store := newBookmarkStore(db)
+	eventLogStore := db.EventLogs()
+
+	insert := []*database.Event{
+		{
+			Name:   "event1",
+			UserID: 1,
+			Source: "test",
+		},
+		{
+			Name:   "event2",
+			UserID: 2,
+			Source: "test",
+		},
+	}
+	err := eventLogStore.BulkInsert(ctx, insert)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("state is empty should generate row", func(t *testing.T) {
+		got, err := store.getBookmark(ctx)
+		if err != nil {
+			t.Error(err)
+		}
+		want := 2
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("%s (want/got): %s", t.Name(), diff)
+		}
+	})
+
+	t.Run("state exists and returns bookmark", func(t *testing.T) {
+		err := store.Store.Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
+		if err != nil {
+			t.Error(err)
+		}
+
+		got, err := store.getBookmark(ctx)
+		if err != nil {
+			t.Error(err)
+		}
+		want := 1
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("%s (want/got): %s", t.Name(), diff)
+		}
+	})
+}
+
+func TestUpdateBookmark(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+	store := newBookmarkStore(db)
+
+	err := store.Store.Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	want := 6
+	err = store.updateBookmark(ctx, want)
+	if err != nil {
+		t.Error(errors.Wrap(err, "updateBookmark"))
+	}
+
+	got, err := store.getBookmark(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("%s (want/got): %s", t.Name(), diff)
 	}
 }

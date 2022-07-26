@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 
 	"cloud.google.com/go/pubsub"
@@ -278,4 +282,31 @@ func getInitialAdminEmail(ctx context.Context, store database.UserEmailsStore) (
 		return "", err
 	}
 	return info, nil
+}
+
+type bookmarkStore struct {
+	*basestore.Store
+}
+
+func newBookmarkStore(db database.DB) *bookmarkStore {
+	return &bookmarkStore{Store: basestore.NewWithHandle(db.Handle())}
+}
+
+func (s *bookmarkStore) getBookmark(ctx context.Context) (_ int, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	val, found, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("select bookmark_id from event_logs_scrape_state order by id limit 1;")))
+	if !found {
+		// generate a row and return the value
+		return basestore.ScanInt(tx.QueryRow(ctx, sqlf.Sprintf("INSERT INTO event_logs_scrape_state (bookmark_id) SELECT MAX(id) FROM event_logs RETURNING bookmark_id;")))
+	}
+	return val, err
+}
+
+func (s *bookmarkStore) updateBookmark(ctx context.Context, val int) error {
+	return s.Exec(ctx, sqlf.Sprintf("UPDATE event_logs_scrape_state SET bookmark_id = %S WHERE id = (SELECT id FROM event_logs_scrape_state ORDER BY id LIMIT 1);", val))
 }
