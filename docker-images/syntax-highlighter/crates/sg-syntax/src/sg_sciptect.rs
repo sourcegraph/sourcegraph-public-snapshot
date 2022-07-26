@@ -246,18 +246,7 @@ impl<'a> DocumentGenerator<'a> {
                     None => line_contents.chars().count() - 1,
                 };
 
-                // It's unclear to me why we have to clone the entire stack here?
-                //  It should work without cloning (as far as I can tell)
-                //  because we just set the value back afterwards
-                //
-                // TODO
-                // let mut stack = self.stack.clone();
                 self.stack.apply_with_hook(op, |basic_op, _stack| {
-                    // TODO: Make sure stack is always the same?
-                    //  It seems we _should_ be using that to determine things for mulit-line
-                    //  comments maybe?
-                    //
-                    // I think multi-line is still busted
                     match basic_op {
                         BasicScopeStackOp::Push(scope) => {
                             // We have to push PartialHighight to the stack
@@ -287,6 +276,10 @@ impl<'a> DocumentGenerator<'a> {
                             }
                         }
                         BasicScopeStackOp::Pop => {
+                            // TODO: Consider that we should return Result<Option<hl>>
+                            //  This way we can assert that we _always_ have a balanced scope stack
+                            //  (never pop past what we've pushed) and still easily skip the
+                            //  highlights that are useless.
                             if let Some(partial_hl) = highlight_manager.pop_hl(row, character) {
                                 push_document_occurence(&mut document, &partial_hl, row, character);
                             }
