@@ -34,6 +34,22 @@ type token struct {
 	Github    string
 }
 
+func strp(v *string) string {
+	if v == nil {
+		return ""
+	}
+
+	return *v
+}
+
+func intp(v *int, defaultValue int) int {
+	if v == nil {
+		return defaultValue
+	}
+
+	return *v
+}
+
 func mustEnvVar(name string) string {
 	value, exists := os.LookupEnv(name)
 	if !exists {
@@ -59,28 +75,6 @@ func NewBuildTrackingServer(logger log.Logger, tokens token, channel string) (*B
 		bkToken:      tokens.Buildkite,
 		notifyClient: NewNotificationClient(serverLog, tokens.Slack, tokens.Github, channel),
 	}, nil
-}
-
-func (s *BuildTrackingServer) isFailed(b *Build) bool {
-	state := ""
-	if b.State != nil {
-		state = *b.State
-	}
-
-	// no need to check the jobs if the overall build hasn't failed
-	if state != "failed" {
-		s.logger.Debug("build state not failed", log.String("State", state))
-		return false
-	}
-
-	for n, j := range b.Jobs {
-		failed := j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0
-		s.logger.Debug("checking job", log.String("Name", n), log.Bool("failed", failed))
-		if failed {
-			return true
-		}
-	}
-	return false
 }
 
 func (s *BuildTrackingServer) processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, error) {
@@ -141,7 +135,6 @@ func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Reque
 		return
 	}
 
-	s.logger.Info("processing event", log.String("eventName", event.Event), log.Int("buildNumber", event.BuildNumber()), log.String("JobName", event.JobName()))
 	go s.processEvent(event)
 	w.WriteHeader(http.StatusOK)
 }
@@ -153,6 +146,7 @@ func (s *BuildTrackingServer) handleHealthz(w http.ResponseWriter, req *http.Req
 
 func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 	data, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
 	if err != nil {
 		logger.Error("failed to read request body", log.Error(err))
 		return ErrRequestBody
@@ -169,12 +163,12 @@ func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful not notifcation is sent
 func (s *BuildTrackingServer) notifyIfFailed(build *Build) error {
-	if s.isFailed(build) {
-		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", *build.Number))
+	if build.hasFailed() {
+		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number, 0)))
 		return s.notifyClient.sendNotification(build)
 	}
 
-	s.logger.Info("build has not failed", log.Int("buildNumber", *build.Number))
+	s.logger.Info("build has not failed", log.Int("buildNumber", intp(build.Number, 0)))
 	return nil
 }
 
@@ -182,6 +176,9 @@ func (s *BuildTrackingServer) startOldBuildCleaner(every, window time.Duration) 
 	ticker := time.NewTicker(every)
 	done := make(chan interface{})
 
+	// We could technically remove  the builds immediately after we've sent a notification for or it, or the build has passed.
+	// But we keep builds a little longer and prediodically clean them out so that we can in future allow possibly querying
+	// of builds and other use cases, like retrying a build etc.
 	go func() {
 		for {
 			select {
@@ -216,16 +213,17 @@ func (s *BuildTrackingServer) startOldBuildCleaner(every, window time.Duration) 
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
 func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
+	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.buildNumber()), log.String("jobName", event.jobName()))
 	// Build number is required!
 	if event.Build.Number == nil {
 		return
 	}
 
 	s.store.Add(event)
-	if event.IsBuildFinished() {
-		build := s.store.GetByBuildNumber(event.BuildNumber())
+	if event.isBuildFinished() {
+		build := s.store.GetByBuildNumber(event.buildNumber())
 		if err := s.notifyIfFailed(build); err != nil {
-			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.BuildNumber()), log.Error(err))
+			s.logger.Error("failed to send notification for build", log.Int("buildNumber", event.buildNumber()), log.Error(err))
 		}
 	}
 }

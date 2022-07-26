@@ -8,40 +8,33 @@ import (
 	"github.com/sourcegraph/log"
 )
 
+type Job struct {
+	buildkite.Job
+}
+
+func (j *Job) name() string {
+	return strp(j.Name)
+}
+
+func (j *Job) exitStatus() int {
+	return intp(j.ExitStatus, 0)
+}
+
+func (j *Job) failed() bool {
+	return !j.SoftFailed && j.exitStatus() > 0
+}
+
 type Build struct {
 	buildkite.Build
-	Jobs map[string]buildkite.Job
+	Jobs map[string]Job
 }
 
-func (b *Build) HasFailed(logger log.Logger) bool {
-	state := ""
-	if b.State != nil {
-		state = *b.State
-	}
-
-	// no need to check the jobs if the overall build hasn't failed
-	if state != "failed" {
-		logger.Debug("build state not failed", log.String("State", state))
-		return false
-	}
-
-	for n, j := range b.Jobs {
-		failed := j.ExitStatus != nil && !j.SoftFailed && *j.ExitStatus > 0
-		logger.Debug("checking job", log.String("Name", n), log.Bool("failed", failed))
-		if failed {
-			return true
-		}
-	}
-	return false
+func (b *Build) hasFailed() bool {
+	return b.state() == "failed"
 }
 
-func (b *Build) IsFinished() bool {
-	state := ""
-	if b.State != nil {
-		state = *b.State
-	}
-
-	switch state {
+func (b *Build) isFinished() bool {
+	switch b.state() {
 	case "passed":
 		fallthrough
 	case "failed":
@@ -56,16 +49,36 @@ func (b *Build) IsFinished() bool {
 
 }
 
-func (b *Build) AvatarURL() string {
+func (b *Build) state() string {
+	return strp(b.State)
+}
+
+func (b *Build) commit() string {
+	return strp(b.Commit)
+}
+
+func (b *Build) number() int {
+	return intp(b.Number, 0)
+}
+
+func (b *Build) avatarURL() string {
 	if b.Creator == nil {
 		return ""
 	}
 	return fmt.Sprintf("%s.jpg", b.Creator.AvatarURL)
 }
 
-func (b *Build) PipelineName() string {
+func (b *Build) branch() string {
+	return strp(b.Branch)
+}
+
+func (b *Build) message() string {
+	return strp(b.Message)
+}
+
+func (b *Build) pipelineName() string {
 	if b.Pipeline == nil {
-		return "N/A"
+		return ""
 	}
 
 	var slug, name string
@@ -83,35 +96,33 @@ func (b *Build) PipelineName() string {
 
 }
 
-func NewBuildFrom(event *BuildEvent) *Build {
-	return &Build{
-		Build: event.Build,
-		Jobs:  make(map[string]buildkite.Job),
-	}
-}
-
 type BuildEvent struct {
-	Event string          `json:"event"`
+	Name  string          `json:"event"`
 	Build buildkite.Build `json:"build,omitempty"`
 	Job   buildkite.Job   `json:"job,omitempty"`
 }
 
-func (b *BuildEvent) IsBuildFinished() bool {
-	return b.Event == "build.finished"
+func (b *BuildEvent) build() *Build {
+	return &Build{
+		Build: b.Build,
+		Jobs:  make(map[string]Job),
+	}
 }
 
-func (b *BuildEvent) BuildNumber() int {
-	if b.Build.Number == nil {
-		return -1
-	}
-	return *b.Build.Number
+func (b *BuildEvent) job() *Job {
+	return &Job{b.Job}
 }
 
-func (b *BuildEvent) JobName() string {
-	if b.Job.Name == nil {
-		return ""
-	}
-	return *b.Job.Name
+func (b *BuildEvent) isBuildFinished() bool {
+	return b.Name == "build.finished"
+}
+
+func (b *BuildEvent) jobName() string {
+	return strp(b.Job.Name)
+}
+
+func (b *BuildEvent) buildNumber() int {
+	return intp(b.Build.Number, 0)
 }
 
 type BuildStore struct {
@@ -131,21 +142,23 @@ func NewBuildStore(logger log.Logger) *BuildStore {
 func (s *BuildStore) Add(event *BuildEvent) {
 	s.m.Lock()
 	defer s.m.Unlock()
-	build, ok := s.builds[event.BuildNumber()]
+
+	wrappedBuild := event.build()
+	build, ok := s.builds[wrappedBuild.number()]
 	if !ok {
-		build = NewBuildFrom(event)
-		s.builds[event.BuildNumber()] = build
+		s.builds[wrappedBuild.number()] = wrappedBuild
 	}
 	// if the build is finished replace the original build with the replaced one since it will be more up to date
-	if event.IsBuildFinished() {
+	if event.isBuildFinished() {
 		build.Build = event.Build
 	}
 
-	if event.JobName() != "" {
-		build.Jobs[event.JobName()] = event.Job
+	wrappedJob := event.job()
+	if wrappedJob.name() != "" {
+		build.Jobs[wrappedJob.name()] = *wrappedJob
 	}
 
-	s.logger.Debug("job added", log.Int("buildNumber", event.BuildNumber()), log.Int("totalJobs", len(build.Jobs)))
+	s.logger.Debug("job added", log.Int("buildNumber", wrappedBuild.number()), log.Int("totalJobs", len(build.Jobs)))
 }
 
 func (s *BuildStore) GetByBuildNumber(num int) *Build {
@@ -170,10 +183,10 @@ func (s *BuildStore) AllFinishedBuilds() []*Build {
 	defer s.m.RUnlock()
 
 	finished := make([]*Build, 0)
-	for _, v := range s.builds {
-		if v.IsFinished() {
-			s.logger.Debug("build is finished", log.Int("buildNumber", *v.Number), log.String("State", *v.State))
-			finished = append(finished, v)
+	for _, b := range s.builds {
+		if b.isFinished() {
+			s.logger.Debug("build is finished", log.Int("buildNumber", b.number()), log.String("state", b.state()))
+			finished = append(finished, b)
 		}
 	}
 

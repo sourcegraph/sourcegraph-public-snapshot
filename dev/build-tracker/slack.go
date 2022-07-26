@@ -18,8 +18,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/dev/team"
 )
 
-var unknownTeammate = team.Teammate{Name: "_N/A_"}
-
 type NotificationClient struct {
 	slack   slack.Client
 	team    team.TeammateResolver
@@ -46,14 +44,7 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 	}
 	name := build.Author.Name
 	teammate, err := c.team.ResolveByName(context.Background(), name)
-	if err != nil {
-		// If we can't find the teammate then they probably aren't one, so lets set the teammate name to the author name
-		return &team.Teammate{
-			Name: name,
-		}, nil
-	}
-
-	return teammate, nil
+	return teammate, err
 }
 
 func (c *NotificationClient) sendNotification(build *Build) error {
@@ -104,17 +95,16 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 	queryData := struct {
 		Build int
 	}{
-		Build: *build.Number,
+		Build: intp(build.Number, 0),
 	}
-	tmplt := template.Must(template.New("Expression").Parse(`{app="buildkite", build="{{.Build}}", state="failed"} |~ "(?i)failed|panic|error|FAIL \\|"`))
+	tmpl := template.Must(template.New("Expression").Parse(`{app="buildkite", build="{{.Build}}", state="failed"} |~ "(?i)failed|panic|error|FAIL \\|"`))
 
 	var buf bytes.Buffer
-	if err := tmplt.Execute(&buf, queryData); err != nil {
+	if err := tmpl.Execute(&buf, queryData); err != nil {
 		logger.Error("failed to execute template", log.String("template", "Expression"), log.Error(err))
 	}
 	var expression = buf.String()
 
-	buf.Reset()
 	begin := time.Now().Add(-(2 * time.Hour)).UnixMilli()
 	end := time.Now().Add(15 * time.Minute).UnixMilli()
 
@@ -159,27 +149,28 @@ func commitLink(commit string) string {
 	return fmt.Sprintf("<%s|%s>", sgURL, commit[:10])
 }
 
+func determineAuthor(teammate *team.Teammate, build *Build) string {
+	if teammate == nil {
+		return fmt.Sprintf("Teammate *%s* not found. If this is you, ensure the github field is set in your profile <https://github.com/sourcegraph/handbook/blob/main/data/team.yml|here>", build.Author.Name)
+	}
+
+	return fmt.Sprintf("%s", teammate.SlackID)
+}
+
 func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
-	failedJobs := "*Failed jobs:*\n"
+	failedSection, _, _ := strings.Cut(build.message(), "\n")
+	failedSection += "*Failed jobs:*\n"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
-			failedJobs += fmt.Sprintf("• %s", *j.Name)
+			failedSection += fmt.Sprintf("• %s", *j.Name)
 			if j.WebURL != "" {
-				failedJobs += fmt.Sprintf(" - <%s|logs>", j.WebURL)
+				failedSection += fmt.Sprintf(" - <%s|logs>", j.WebURL)
 			}
-			failedJobs += "\n"
+			failedSection += "\n"
 		}
 	}
 
-	if build.Number == nil {
-		return nil, fmt.Errorf("cannot create message blocks for nil Build Number")
-	}
-
-	// should have the @ before here to tag people, but leaving that out for now
-	author := teammate.SlackID
-	if author == "" {
-		author = teammate.Name
-	}
+	author := determineAuthor(teammate, build)
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
@@ -196,7 +187,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 			nil,
 			[]*slack.TextBlockObject{
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n%s", author)},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline*\n%s", build.PipelineName())},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:log: Branch*\n%s", build.branch())},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit*\n%s", commitLink(*build.Commit))},
 			},
 			nil,
