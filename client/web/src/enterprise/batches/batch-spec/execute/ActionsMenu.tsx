@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiChevronDown, mdiAlertCircle, mdiPencil, mdiClose, mdiSync } from '@mdi/js'
+import { mdiChevronDown, mdiAlertCircle, mdiDelete, mdiPencil, mdiClose, mdiSync } from '@mdi/js'
 import { noop } from 'lodash'
 import { useHistory, useLocation } from 'react-router'
 
@@ -12,6 +12,7 @@ import {
     Menu,
     MenuButton,
     MenuItem,
+    MenuLink,
     MenuList,
     Position,
     Text,
@@ -69,6 +70,8 @@ const MemoizedActionsMenu: React.FunctionComponent<
         RetryBatchSpecExecutionResult,
         RetryBatchSpecExecutionVariables
     >(RETRY_BATCH_SPEC_EXECUTION, { variables: { id: batchSpec.id }, onError: setActionsError })
+
+    const onSelectDelete = useCallback(() => {}, [])
 
     const onSelectEdit = useCallback(() => {
         if (isExecuting) {
@@ -142,6 +145,10 @@ const MemoizedActionsMenu: React.FunctionComponent<
                             <Icon aria-hidden={true} svgPath={mdiSync} /> Retry failed workspaces
                         </MenuItem>
                     )}
+                    <MenuLink as={Link} to={`${batchChange.url}/close`}>
+                        <Icon aria-hidden={true} className={styles.cancelIcon} svgPath={mdiDelete} /> Delete batch
+                        change
+                    </MenuLink>
                 </MenuList>
             </Menu>
             <CancelExecutionModal
