@@ -178,6 +178,8 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
         vec![
             (scope("comment"), Comment),
             (scope("meta.documentation"), Comment),
+            // TODO: How does this play with this: keyword.control.import.include
+            (scope("meta.preprocessor.include"), IdentifierNamespace),
             (scope("storage.type.keyword"), IdentifierKeyword),
             (scope("entity.name.function"), IdentifierFunction),
             (scope("keyword.operator"), IdentifierOperator),

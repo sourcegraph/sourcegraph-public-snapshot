@@ -1,3 +1,4 @@
+#include <stdbool.h>
 
 int main() {
   // Single line comment

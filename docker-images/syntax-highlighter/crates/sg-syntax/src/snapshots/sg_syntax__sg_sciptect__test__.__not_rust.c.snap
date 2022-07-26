@@ -1,8 +1,12 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 551
+assertion_line: 534
 expression: "dump_document(&document, &contents)"
 ---
+  #include <stdbool.h>
+//^^^^^^^^ IdentifierKeyword
+//        ^ IdentifierNamespace
+//         ^^^^^^^^^^^ StringLiteral
   
   int main() {
 //^^^ IdentifierType
