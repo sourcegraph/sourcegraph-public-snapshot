@@ -43,7 +43,7 @@ type authPasswordPolicy struct {
 	Enabled                   bool `json:"enabled"`
 	NumberOfSpecialCharacters int  `json:"numberOfSpecialCharacters"`
 	RequireAtLeastOneNumber   bool `json:"requireAtLeastOneNumber"`
-	RequireUpperandLowerCase  bool `json:"requireUpperandLowerCase"`
+	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
 }
 
 // JSContext is made available to JavaScript code via the

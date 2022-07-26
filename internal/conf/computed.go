@@ -294,7 +294,7 @@ func AuthMinPasswordLength() int {
 	return val
 }
 
-// GenericPasswordPolicy a generic password policy that holds password requirements
+// GenericPasswordPolicy is a generic password policy that defines password requirements.
 type GenericPasswordPolicy struct {
 	Enabled                   bool
 	MinimumLength             int
@@ -305,29 +305,25 @@ type GenericPasswordPolicy struct {
 
 // AuthPasswordPolicy returns a GenericPasswordPolicy for password validation
 func AuthPasswordPolicy() GenericPasswordPolicy {
-
-	p := Get().AuthPasswordPolicy
 	ml := Get().AuthMinPasswordLength
 
-	if p == nil {
-		ep := ExperimentalFeatures().PasswordPolicy
-
-		if ep != nil {
-			return GenericPasswordPolicy{
-				Enabled:                   ep.Enabled,
-				MinimumLength:             ml,
-				NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
-				RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
-				RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
-			}
-		}
-	} else {
+	if p := Get().AuthPasswordPolicy; p != nil {
 		return GenericPasswordPolicy{
 			Enabled:                   p.Enabled,
 			MinimumLength:             ml,
 			NumberOfSpecialCharacters: p.NumberOfSpecialCharacters,
 			RequireAtLeastOneNumber:   p.RequireAtLeastOneNumber,
 			RequireUpperandLowerCase:  p.RequireUpperandLowerCase,
+		}
+	}
+
+	if ep := ExperimentalFeatures().PasswordPolicy; ep != nil {
+		return GenericPasswordPolicy{
+			Enabled:                   ep.Enabled,
+			MinimumLength:             ml,
+			NumberOfSpecialCharacters: ep.NumberOfSpecialCharacters,
+			RequireAtLeastOneNumber:   ep.RequireAtLeastOneNumber,
+			RequireUpperandLowerCase:  ep.RequireUpperandLowerCase,
 		}
 	}
 
