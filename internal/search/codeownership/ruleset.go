@@ -30,10 +30,6 @@ func (r *Ruleset) Match(path string) (Owners, error) {
 		return Owners{}, nil
 	}
 
-	// We directly return the codeowners.Owner struct to avoid creating
-	// unnecessary copies. We also found that the longest list of owners
-	// is less than 50.
-	// c.f. https://github.com/sourcegraph/sourcegraph/pull/39250#discussion_r927942090
 	return rule.Owners, nil
 }
 
