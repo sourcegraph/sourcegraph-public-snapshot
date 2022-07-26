@@ -75,7 +75,7 @@ Sourcegraph gives you code intelligence in:
 
 - **code files on your code host**, via [integrations](../integration/index.md)
 
-![GitHub file integration](https://storage.googleapis.com/sourcegraph-assets/covde-navigation-github-file.png)
+![GitHub file integration](https://storage.googleapis.com/sourcegraph-assets/code-navigation-github-file.png)
 
 Read the [code intelligence documentation](../code_intelligence/index.md) to learn more and to set it up.
 
