@@ -73,7 +73,7 @@ fi
 pr_preview_app_name="sg-web-${branch_name}"
 
 # Get service id of preview app on render.com with app name (if exists)
-renderServiceId=$(curl -sS --request GET \
+renderServiceId=$(curl -sSf --request GET \
   --url "https://api.render.com/v1/services?limit=1&type=web_service&name=$(urlencode "$pr_preview_app_name")" \
   --header 'Accept: application/json' \
   --header "Authorization: Bearer ${render_api_key}" | jq -r '.[].service.id')
