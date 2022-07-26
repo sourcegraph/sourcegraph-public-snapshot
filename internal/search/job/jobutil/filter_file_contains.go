@@ -7,18 +7,12 @@ import (
 
 	otlog "github.com/opentracing/opentracing-go/log"
 
-<<<<<<< Updated upstream
-=======
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
->>>>>>> Stashed changes
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-<<<<<<< Updated upstream
-=======
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
->>>>>>> Stashed changes
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
@@ -59,25 +53,13 @@ func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 	defer func() { finish(alert, err) }()
 
 	filteredStream := streaming.StreamFunc(func(event streaming.SearchEvent) {
-<<<<<<< Updated upstream
-		event = j.filterEvent(event)
-=======
 		event = j.filterEvent(ctx, clients.SearcherURLs, event)
->>>>>>> Stashed changes
 		stream.Send(event)
 	})
 
 	return j.child.Run(ctx, clients, filteredStream)
 }
 
-<<<<<<< Updated upstream
-func (j *fileContainsFilterJob) filterEvent(event streaming.SearchEvent) streaming.SearchEvent {
-	// Don't filter out files with zero chunks because if the file contained
-	// the a result, we still want to return a match for the file even if it
-	// has no matched ranges left.
-	for i := range event.Results {
-		event.Results[i] = j.filterFileMatch(event.Results[i])
-=======
 func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, event streaming.SearchEvent) streaming.SearchEvent {
 	// Don't filter out files with zero chunks because if the file contained
 	// the a result, we still want to return a match for the file even if it
@@ -95,32 +77,35 @@ func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *e
 		default:
 			filtered = append(filtered, v)
 		}
->>>>>>> Stashed changes
 	}
 	return event
 }
 
-<<<<<<< Updated upstream
 func (j *fileContainsFilterJob) filterFileMatch(m result.Match) result.Match {
 	fm, ok := m.(*result.FileMatch)
 	if !ok {
 		return m
 	}
 
-=======
+	filteredChunks := fm.ChunkMatches[:0]
+	for _, chunk := range fm.ChunkMatches {
+		chunk = j.filterChunk(chunk)
+		if len(chunk.Ranges) == 0 {
+			continue
+		}
+		filteredChunks = append(filteredChunks, chunk)
+	}
+	fm.ChunkMatches = filteredChunks
+	return fm
+}
+
 func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
 	if cm.DiffPreview == nil {
 		return cm
 	}
 
-	fileDiffs, err := result.ParseDiffString(cm.DiffPreview.Content)
-	if err != nil {
-		// Skip any unparseable diff preview
-		return nil
-	}
-
 	fileNames := make([]string, 0, len(fileDiffs))
-	for _, fileDiff := range fileDiffs {
+	for _, fileDiff := range cm.Diff {
 		fileNames = append(fileNames, regexp.QuoteMeta(fileDiff.NewName))
 	}
 
@@ -161,20 +146,6 @@ func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherU
 
 	}
 
-}
-
-func (j *fileContainsFilterJob) filterFileMatch(fm *result.FileMatch) result.Match {
->>>>>>> Stashed changes
-	filteredChunks := fm.ChunkMatches[:0]
-	for _, chunk := range fm.ChunkMatches {
-		chunk = j.filterChunk(chunk)
-		if len(chunk.Ranges) == 0 {
-			continue
-		}
-		filteredChunks = append(filteredChunks, chunk)
-	}
-	fm.ChunkMatches = filteredChunks
-	return fm
 }
 
 func (j *fileContainsFilterJob) filterChunk(chunk result.ChunkMatch) result.ChunkMatch {
