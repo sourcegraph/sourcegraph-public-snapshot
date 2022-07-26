@@ -181,6 +181,9 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	// We don't have access to a connection pool and hence cannot write and read
+	// from a result set in parallel within in transaction. Therefore, we need to
+	// collect all results before executing update commands.
 	updates := make(map[int]string) // id -> payload
 	for rows.Next() {
 		var id int
@@ -236,6 +239,9 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	// We don't have access to a connection pool and hence cannot write and read
+	// from a result set in parallel within in transaction. Therefore, we need to
+	// collect all results before executing update commands.
 	updates := make(map[int]string) // id -> payload
 	for rows.Next() {
 		var id int
