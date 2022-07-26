@@ -123,7 +123,12 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
 
                 return batchChangeID && template
                     ? createBatchSpecFromRaw({
-                          variables: { namespace: selectedNamespace.id, spec: template, noCache: false, batchChange: batchChangeID },
+                          variables: {
+                              namespace: selectedNamespace.id,
+                              spec: template,
+                              noCache: false,
+                              batchChange: batchChangeID,
+                          },
                       }).then(() => Promise.resolve(args))
                     : Promise.resolve(args)
             })
