@@ -9,7 +9,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/stretchr/testify/assert"
 
 	"github.com/sourcegraph/log/logtest"
@@ -1001,7 +1000,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 						_, bsID := createBatchSpec(t, cstore, userID)
 						bcID := createBatchChange(t, cstore, "testing", userID, bsID)
 
-						batchChangeID := string(relay.MarshalID(batchChangeIDKind, bcID))
+						batchChangeID := string(marshalBatchChangeID(bcID))
 						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
 						if tc.currentUser == 0 {
 							// If we don't have a currentUser we try to create

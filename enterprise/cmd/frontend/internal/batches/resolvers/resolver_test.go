@@ -313,9 +313,9 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 	user := ct.CreateTestUser(t, db, true)
 	userID := user.ID
 
-	cstore := store.New(db, &observation.TestContext, nil)
+	bstore := store.New(db, &observation.TestContext, nil)
 
-	r := &Resolver{store: cstore}
+	r := &Resolver{store: bstore}
 	s, err := newSchema(db, r)
 	if err != nil {
 		t.Fatal(err)
@@ -342,11 +342,11 @@ func TestCreateBatchSpecFromRaw(t *testing.T) {
 		UserID:          userID,
 		NamespaceUserID: userID,
 	}
-	if err := cstore.CreateBatchSpec(ctx, bs); err != nil {
+	if err := bstore.CreateBatchSpec(ctx, bs); err != nil {
 		t.Fatal(err)
 	}
 
-	bc := ct.CreateBatchChange(t, ctx, cstore, name, userID, bs.ID)
+	bc := ct.CreateBatchChange(t, ctx, bstore, name, userID, bs.ID)
 	rawSpec := ct.TestRawBatchSpec
 
 	userAPIID := string(graphqlbackend.MarshalUserID(userID))

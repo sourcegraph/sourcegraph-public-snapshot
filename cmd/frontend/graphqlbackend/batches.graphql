@@ -1467,7 +1467,7 @@ extend type Mutation {
         """
         The batch change this batch spec is associated with.
         """
-        batchChangeID: ID!
+        batchChange: ID!
     ): BatchSpec!
 
     """
