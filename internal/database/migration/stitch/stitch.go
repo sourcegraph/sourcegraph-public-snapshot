@@ -120,32 +120,32 @@ func compareDefinitions(x, y definition.Definition) bool {
 
 var allowedOverrideMap = map[int]struct{}{
 	// frontend
-	1528395798: {}, // #21092 - fixes bad view definition
-	1528395836: {}, // #21092 - fixes bad view definition
-	1528395851: {}, // #29352 - fixes bad view definition
+	1528395798: {}, // https://github.com/sourcegraph/sourcegraph/pull/21092 - fixes bad view definition
+	1528395836: {}, // https://github.com/sourcegraph/sourcegraph/pull/21092 - fixes bad view definition
+	1528395851: {}, // https://github.com/sourcegraph/sourcegraph/pull/29352 - fixes bad view definition
 
-	1528395840: {}, // #23622 - performance issues
-	1528395841: {}, // #23622 - performance issues
-	1528395963: {}, // #29395 - adds a truncation statement
+	1528395840: {}, // https://github.com/sourcegraph/sourcegraph/pull/23622 - performance issues
+	1528395841: {}, // https://github.com/sourcegraph/sourcegraph/pull/23622 - performance issues
+	1528395963: {}, // https://github.com/sourcegraph/sourcegraph/pull/29395 - adds a truncation statement
 
-	1528395869: {}, // #24807 - adds missing COMMIT;
-	1528395880: {}, // #28772 - rewritten to be idempotent
-	1528395955: {}, // #31656 - rewritten to be idempotent
-	1528395959: {}, // #31656 - rewritten to be idempotent
-	1528395965: {}, // #31656 - rewritten to be idempotent
-	1528395970: {}, // #31656 - rewritten to be idempotent
-	1528395971: {}, // #31656 - rewritten to be idempotent
-	1644515056: {}, // #31656 - rewritten to be idempotent
-	1645554732: {}, // #31656 - rewritten to be idempotent
+	1528395869: {}, // https://github.com/sourcegraph/sourcegraph/pull/24807 - adds missing COMMIT;
+	1528395880: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent
+	1528395955: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
+	1528395959: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
+	1528395965: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
+	1528395970: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
+	1528395971: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
+	1644515056: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
+	1645554732: {}, // https://github.com/sourcegraph/sourcegraph/pull/31656 - rewritten to be idempotent
 
 	// codeintel
-	1000000020: {}, // #28772 - rewritten to be idempotent
+	1000000020: {}, // https://github.com/sourcegraph/sourcegraph/pull/28772 - rewritten to be idempotent
 
 	// codeiensights
-	1000000002: {}, // #28713 - fixed SQL error
-	1000000001: {}, // #30781 - removed timescsaledb
-	1000000004: {}, // #30781 - removed timescsaledb
-	1000000010: {}, // #30781 - removed timescsaledb
+	1000000002: {}, // https://github.com/sourcegraph/sourcegraph/pull/28713 - fixed SQL error
+	1000000001: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
+	1000000004: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
+	1000000010: {}, // https://github.com/sourcegraph/sourcegraph/pull/30781 - removed timescsaledb
 }
 
 func overrideAllowed(id int) bool {
