@@ -291,6 +291,13 @@ func TestSearchResultsHydration(t *testing.T) {
 		}
 		return []types.MinimalRepo{{ID: repoWithIDs.ID, Name: repoWithIDs.Name}}, nil
 	})
+	repos.MetadataFunc.SetDefaultHook(func(ctx context.Context, repoIDs ...api.RepoID) (map[api.RepoID]*types.SearchedRepo, error) {
+		res := make(map[api.RepoID]*types.SearchedRepo, len(repoIDs))
+		for _, id := range repoIDs {
+			res[id] = &types.SearchedRepo{ID: id}
+		}
+		return res, nil
+	})
 	repos.CountFunc.SetDefaultReturn(0, nil)
 	db.ReposFunc.SetDefaultReturn(repos)
 

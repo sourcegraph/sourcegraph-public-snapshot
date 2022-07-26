@@ -70,7 +70,8 @@ func TestServeStream_chunkMatches(t *testing.T) {
 	mock.ExecuteFunc.SetDefaultHook(func(_ context.Context, s streaming.Sender, _ *run.SearchInputs) (*search.Alert, error) {
 		s.Send(streaming.SearchEvent{
 			Results: result.Matches{&result.FileMatch{
-				File: result.File{Path: "testpath"},
+				File:               result.File{Path: "testpath"},
+				RepositoryMetadata: &types.SearchedRepo{ID: 0},
 				ChunkMatches: result.ChunkMatches{{
 					Content: "line1",
 					Ranges: result.Ranges{{
@@ -84,14 +85,6 @@ func TestServeStream_chunkMatches(t *testing.T) {
 	})
 
 	mockRepos := database.NewMockRepoStore()
-	mockRepos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) ([]*types.SearchedRepo, error) {
-		out := make([]*types.SearchedRepo, 0, len(ids))
-		for _, id := range ids {
-			out = append(out, &types.SearchedRepo{ID: id})
-		}
-		return out, nil
-	})
-
 	db := database.NewMockDB()
 	db.ReposFunc.SetDefaultReturn(mockRepos)
 
@@ -201,12 +194,10 @@ func TestDisplayLimit(t *testing.T) {
 			})
 
 			repos := database.NewStrictMockRepoStore()
-			repos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) (_ []*types.SearchedRepo, err error) {
-				res := make([]*types.SearchedRepo, 0, len(ids))
+			repos.MetadataFunc.SetDefaultHook(func(_ context.Context, ids ...api2.RepoID) (_ map[api2.RepoID]*types.SearchedRepo, err error) {
+				res := make(map[api2.RepoID]*types.SearchedRepo, len(ids))
 				for _, id := range ids {
-					res = append(res, &types.SearchedRepo{
-						ID: id,
-					})
+					res[id] = &types.SearchedRepo{ID: id}
 				}
 				return res, nil
 			})
