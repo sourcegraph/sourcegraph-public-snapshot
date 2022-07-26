@@ -48,8 +48,8 @@ function createHighlightTable(json: string | undefined): HighlightIndex {
         }
 
         return { occurrences, lineIndex }
-    } catch (err) {
-        console.error(`Unable to parse SCIP highlight data: ${json}`)
+    } catch {
+        console.error(`Unable to process SCIP highlight data: ${json}`)
         return { occurrences: [], lineIndex }
     }
 }
