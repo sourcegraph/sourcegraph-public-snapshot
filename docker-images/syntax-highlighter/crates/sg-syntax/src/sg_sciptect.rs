@@ -329,6 +329,16 @@ fn push_document_occurence(
 
 fn new_occurence(range: Vec<i32>, syntax_kind: SyntaxKind) -> Occurrence {
     let syntax_kind = EnumOrUnknown::new(syntax_kind);
+    let range = match range.len() {
+        4 => {
+            if range[0] == range[2] {
+                vec![range[0], range[1], range[3]]
+            } else {
+                range
+            }
+        }
+        _ => range,
+    };
 
     Occurrence {
         range,
@@ -389,7 +399,7 @@ mod test {
     }
 
     #[test]
-    fn test_generates_cs_multibyte() {
+    fn test_generates_cs_singlebyte() {
         let syntax_set = SyntaxSet::load_defaults_newlines();
         let mut q = crate::SourcegraphQuery::default();
         // q.filetype = Some("csharp".to_string());
@@ -405,10 +415,8 @@ mod test {
 
         assert_eq!(
             vec![
-                new_occurence(vec![1, 0, 1, 1], SyntaxKind::PunctuationBracket),
-                new_occurence(vec![1, 1, 1, 13], SyntaxKind::StringLiteral),
-                new_occurence(vec![1, 13, 1, 14], SyntaxKind::PunctuationBracket),
-                new_occurence(vec![1, 14, 1, 15], SyntaxKind::PunctuationBracket),
+                new_occurence(vec![1, 0, 14], SyntaxKind::StringLiteral),
+                new_occurence(vec![1, 14, 15], SyntaxKind::PunctuationBracket),
             ],
             output.occurrences
         );
