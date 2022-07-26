@@ -197,13 +197,13 @@ func TestBitbucketProjectsPermsSync(t *testing.T) {
 
 			// Wait up to 30 seconds for worker to finish the permissions sync.
 			err = gqltestutil.Retry(30*time.Second, func() error {
-				status, err := client.GetLastBitbucketProjectPermissionJob(projectKey)
+				status, failureMessage, err := client.GetLastBitbucketProjectPermissionJob(projectKey)
 				if err != nil || status == "" {
 					t.Fatal("Error during getting the status of a Bitbucket Permissions job")
 				}
 
 				if status == "errored" || status == "failed" {
-					t.Fatalf("Bitbucket Permissions job failed with status: '%s'", status)
+					t.Fatalf("Bitbucket Permissions job failed with status: '%s' and failure message: '%s'", status, failureMessage)
 				}
 
 				if status == "completed" {
