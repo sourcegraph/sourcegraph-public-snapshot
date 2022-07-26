@@ -18,7 +18,7 @@
       "group": "Search"
     },
     "search.index.enabled": {
-      "description": "Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
+      "description": "Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Search"
@@ -82,6 +82,33 @@
         }
       }
     },
+    "auth.passwordPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+      "properties": {
+        "enabled": {
+          "description": "Enables password policy",
+          "type": "boolean",
+          "default": false
+        },
+        "numberOfSpecialCharacters": {
+          "description": "The required number of special characters",
+          "type": "integer",
+          "length": 2
+        },
+        "requireAtLeastOneNumber": {
+          "description": "Does the password require a number",
+          "type": "boolean",
+          "default": true
+        },
+        "requireUpperandLowerCase": {
+          "description": "Require Mixed characters",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
     "experimentalFeatures": {
       "description": "Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.",
       "type": "object",
@@ -99,7 +126,7 @@
           "default": "enabled"
         },
         "passwordPolicy": {
-          "description": "Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.",
+          "description": "DEPRECATED: this is now a standard feature see: auth.passwordPolicy",
           "type": "object",
           "additionalProperties": false,
           "properties": {
@@ -109,15 +136,14 @@
               "default": true
             },
             "minimumLength": {
-              "description": "The minimum length required for a password",
+              "description": "DEPRECATED: replaced by auth.minPasswordLength",
               "type": "integer",
-              "length": 12,
               "default": 12
             },
             "numberOfSpecialCharacters": {
               "description": "The required number of special characters",
               "type": "integer",
-              "length": 2
+              "default": 2
             },
             "requireAtLeastOneNumber": {
               "description": "Does the password require a number",
