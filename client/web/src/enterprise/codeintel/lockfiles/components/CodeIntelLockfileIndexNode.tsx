@@ -2,6 +2,7 @@ import React, { FunctionComponent } from 'react'
 
 import { Link, H3, Code } from '@sourcegraph/wildcard'
 
+import { Timestamp } from '../../../../components/time/Timestamp'
 import { LockfileIndexFields } from '../../../../graphql-operations'
 
 import styles from './CodeIntelLockfileIndexNode.module.scss'
@@ -31,6 +32,16 @@ export const CodeIntelLockfileNode: FunctionComponent<React.PropsWithChildren<Co
                     </Link>
                     . Dependency graph fidelity: {node.fidelity}.
                 </span>
+
+                <small className="text-mute">
+                    Indexed <Timestamp date={node.createdAt} />.{' '}
+                    {node.createdAt !== node.updatedAt && (
+                        <>
+                            Updated <Timestamp date={node.updatedAt} />{' '}
+                        </>
+                    )}
+                    .
+                </small>
             </div>
         </div>
     </>

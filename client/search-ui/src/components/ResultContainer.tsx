@@ -108,6 +108,8 @@ export interface ResultContainerProps {
      */
     className?: string
 
+    resultsClassName?: string
+
     as?: React.ElementType
     index: number
 }
@@ -132,6 +134,7 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
     repoStars,
     onResultClicked,
     className,
+    resultsClassName,
     resultType,
     as: Component = 'div',
     index,
@@ -243,7 +246,12 @@ export const ResultContainer: React.FunctionComponent<React.PropsWithChildren<Re
                         </span>
                     )}
                 </div>
-                <div className={classNames(coreWorkflowImprovementsEnabled && styles.collapsibleResults)}>
+                <div
+                    className={classNames(
+                        coreWorkflowImprovementsEnabled && styles.collapsibleResults,
+                        resultsClassName
+                    )}
+                >
                     <div>{expanded ? expandedChildren : collapsedChildren}</div>
                     {coreWorkflowImprovementsEnabled && collapsible && (
                         <button

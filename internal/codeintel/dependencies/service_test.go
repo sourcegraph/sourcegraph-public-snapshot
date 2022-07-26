@@ -57,6 +57,13 @@ func TestDependencies(t *testing.T) {
 			return nil, false, nil
 		}
 
+		if opts.IncludeTransitive {
+			return []shared.PackageDependency{
+				shared.TestPackageDependencyLiteral("npm/isLowerCase", "5", "6", "7", "8"),
+				shared.TestPackageDependencyLiteral("npm/isUpperCase", "6", "7", "8", "9"),
+				shared.TestPackageDependencyLiteral("npm/isTitleCase", "7", "8", "9", "10"),
+			}, true, nil
+		}
 		return []shared.PackageDependency{
 			shared.TestPackageDependencyLiteral("npm/leftpad", "1", "2", "3", "4"),
 			shared.TestPackageDependencyLiteral("npm/rightpad", "2", "3", "4", "5"),
@@ -72,21 +79,39 @@ func TestDependencies(t *testing.T) {
 		return commits, nil
 	})
 
-	repoRevs := map[api.RepoName]types.RevSpecSet{
-		api.RepoName("github.com/example/foo"): {
-			api.RevSpec("deadbeef1"): struct{}{},
-			api.RevSpec("deadbeef2"): struct{}{},
+	params := []QueryParams{
+		{
+			Repo: api.RepoName("github.com/example/foo"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef1"): struct{}{},
+				api.RevSpec("deadbeef2"): struct{}{},
+			},
 		},
-		api.RepoName("github.com/example/bar"): {
-			api.RevSpec("deadbeef3"): struct{}{},
-			api.RevSpec("deadbeef4"): struct{}{},
+		{
+			Repo: api.RepoName("github.com/example/bar"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef3"): struct{}{},
+				api.RevSpec("deadbeef4"): struct{}{},
+			},
 		},
-		api.RepoName("github.com/example/baz"): {
-			api.RevSpec("deadbeef5"): struct{}{},
-			api.RevSpec("deadbeef6"): struct{}{},
+		{
+			Repo: api.RepoName("github.com/example/baz"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef5"): struct{}{},
+				api.RevSpec("deadbeef6"): struct{}{},
+			},
+		},
+		{
+			Repo: api.RepoName("github.com/example/baz"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef7"): struct{}{},
+				api.RevSpec("deadbeef8"): struct{}{},
+			},
+			IncludeTransitive: true,
 		},
 	}
-	dependencies, notFound, err := service.Dependencies(ctx, repoRevs, false)
+
+	dependencies, notFound, err := service.Dependencies(ctx, params)
 	if err != nil {
 		t.Fatalf("unexpected error querying dependencies: %s", err)
 	}
@@ -97,11 +122,17 @@ func TestDependencies(t *testing.T) {
 		"github.com/example/baz-depB": {"deadbeef2": struct{}{}},
 		"github.com/example/baz-depC": {"deadbeef3": struct{}{}},
 
-		// From dependencies store
+		// From dependencies store with transitive:false
 		("npm/leftpad"):   {"1": struct{}{}},
 		("npm/rightpad"):  {"2": struct{}{}},
 		("npm/centerpad"): {"3": struct{}{}},
+
+		// From dependencies store with transitive:true
+		("npm/isLowerCase"): {"5": struct{}{}},
+		("npm/isUpperCase"): {"6": struct{}{}},
+		("npm/isTitleCase"): {"7": struct{}{}},
 	}
+
 	if diff := cmp.Diff(expectedDependencies, dependencies); diff != "" {
 		t.Errorf("unexpected dependencies (-want +got):\n%s", diff)
 	}
@@ -139,16 +170,29 @@ func TestDependencies(t *testing.T) {
 			return commits, nil
 		})
 
-		repoRevs := map[api.RepoName]types.RevSpecSet{
-			api.RepoName("github.com/example/foo"): {
-				api.RevSpec("deadbeef1"): struct{}{},
+		params := []QueryParams{
+			{
+				Repo: api.RepoName("github.com/example/foo"),
+				RevSpecs: types.RevSpecSet{
+					api.RevSpec("deadbeef1"): struct{}{},
+				},
 			},
-			api.RepoName("github.com/example/quux"): {
-				api.RevSpec("deadbeef1"): struct{}{},
+			{
+				Repo: api.RepoName("github.com/example/quux"),
+				RevSpecs: types.RevSpecSet{
+					api.RevSpec("deadbeef1"): struct{}{},
+				},
+			},
+			{
+				Repo: api.RepoName("github.com/example/baz"),
+				RevSpecs: types.RevSpecSet{
+					api.RevSpec("deadbeef5"): struct{}{},
+					api.RevSpec("deadbeef6"): struct{}{},
+				},
 			},
 		}
 
-		dependencies, notFound, err := service.Dependencies(ctx, repoRevs, false)
+		dependencies, notFound, err := service.Dependencies(ctx, params)
 		if err != nil {
 			t.Fatalf("unexpected error querying dependencies: %s", err)
 		}
@@ -205,21 +249,30 @@ func TestDependents(t *testing.T) {
 		}, nil
 	})
 
-	repoRevs := map[api.RepoName]types.RevSpecSet{
-		api.RepoName("github.com/example/foo"): {
-			api.RevSpec("deadbeef1"): struct{}{},
-			api.RevSpec("deadbeef2"): struct{}{},
+	params := []QueryParams{
+		{
+			Repo: api.RepoName("github.com/example/foo"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef1"): struct{}{},
+				api.RevSpec("deadbeef2"): struct{}{},
+			},
 		},
-		api.RepoName("github.com/example/bar"): {
-			api.RevSpec("deadbeef3"): struct{}{},
-			api.RevSpec("deadbeef4"): struct{}{},
+		{
+			Repo: api.RepoName("github.com/example/bar"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef3"): struct{}{},
+				api.RevSpec("deadbeef4"): struct{}{},
+			},
 		},
-		api.RepoName("github.com/example/baz"): {
-			api.RevSpec("deadbeef5"): struct{}{},
-			api.RevSpec("deadbeef6"): struct{}{},
+		{
+			Repo: api.RepoName("github.com/example/baz"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef5"): struct{}{},
+				api.RevSpec("deadbeef6"): struct{}{},
+			},
 		},
 	}
-	dependents, err := service.Dependents(ctx, repoRevs)
+	dependents, err := service.Dependents(ctx, params)
 	if err != nil {
 		t.Fatalf("unexpected error querying dependents: %s", err)
 	}
@@ -326,24 +379,34 @@ func TestIndexLockfiles(t *testing.T) {
 		return filtered, nil
 	})
 
-	repoRevs := map[api.RepoName]types.RevSpecSet{
-		api.RepoName("github.com/example/foo"): {
-			api.RevSpec("deadbeef1"): struct{}{},
-			api.RevSpec("deadbeef2"): struct{}{},
+	params := []QueryParams{
+		{
+			Repo: api.RepoName("github.com/example/foo"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef1"): struct{}{},
+				api.RevSpec("deadbeef2"): struct{}{},
+			},
 		},
-		api.RepoName("github.com/example/bar"): {
-			api.RevSpec("deadbeef3"): struct{}{},
-			api.RevSpec("deadbeef4"): struct{}{},
+		{
+			Repo: api.RepoName("github.com/example/bar"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef3"): struct{}{},
+				api.RevSpec("deadbeef4"): struct{}{},
+			},
 		},
-		api.RepoName("github.com/example/baz"): {
-			api.RevSpec("deadbeef5"): struct{}{},
-			api.RevSpec("deadbeef6"): struct{}{},
+		{
+			Repo: api.RepoName("github.com/example/baz"),
+			RevSpecs: types.RevSpecSet{
+				api.RevSpec("deadbeef5"): struct{}{},
+				api.RevSpec("deadbeef6"): struct{}{},
+			},
 		},
 	}
-
-	err := service.IndexLockfiles(ctx, repoRevs)
-	if err != nil {
-		t.Fatalf("unexpected error querying dependencies: %s", err)
+	for _, param := range params {
+		err := service.IndexLockfiles(ctx, param)
+		if err != nil {
+			t.Fatalf("unexpected error querying dependencies: %s", err)
+		}
 	}
 
 	// Assert `store.UpsertLockfileGraph` was called
@@ -368,9 +431,14 @@ func TestIndexLockfiles(t *testing.T) {
 
 	// It should have synced the dependencies not filtered out by
 	// UpsertDependencyRepos above.
+	// It contains duplicates because we do multiple calls to IndexLockfiles
+	// above.
 	expectedNames := []string{
 		"maven/g1/a1",
+		"maven/g1/a1",
 		"maven/g2/a2",
+		"maven/g2/a2",
+		"maven/g3/a3",
 		"maven/g3/a3",
 	}
 	if diff := cmp.Diff(expectedNames, syncedRepoNames); diff != "" {

@@ -88,8 +88,14 @@ type ExternalServiceStore interface {
 	// 🚨 SECURITY: The caller must ensure that the actor is a site admin or owner of the external service
 	GetLastSyncError(ctx context.Context, id int64) (string, error)
 
-	// GetSyncJobs gets all sync jobs
-	GetSyncJobs(ctx context.Context) ([]*types.ExternalServiceSyncJob, error)
+	// GetSyncJobByID gets a sync job by its ID.
+	GetSyncJobByID(ctx context.Context, id int64) (job *types.ExternalServiceSyncJob, err error)
+
+	// GetSyncJobs gets all sync jobs.
+	GetSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) ([]*types.ExternalServiceSyncJob, error)
+
+	// CountSyncJobs counts all sync jobs.
+	CountSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (int64, error)
 
 	// List returns external services under given namespace.
 	// If no namespace is given, it returns all external services.
@@ -216,6 +222,12 @@ type ExternalServiceKind struct {
 	JSONSchema string // JSON Schema for the external service's configuration
 }
 
+type ExternalServicesGetSyncJobsOptions struct {
+	ExternalServiceID int64
+
+	*LimitOffset
+}
+
 // ExternalServicesListOptions contains options for listing external services.
 type ExternalServicesListOptions struct {
 	// When specified, only include external services with the given IDs.
@@ -258,11 +270,7 @@ type ExternalServicesListOptions struct {
 func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	conds := []*sqlf.Query{sqlf.Sprintf("deleted_at IS NULL")}
 	if len(o.IDs) > 0 {
-		ids := make([]*sqlf.Query, 0, len(o.IDs))
-		for _, id := range o.IDs {
-			ids = append(ids, sqlf.Sprintf("%s", id))
-		}
-		conds = append(conds, sqlf.Sprintf("id IN (%s)", sqlf.Join(ids, ",")))
+		conds = append(conds, sqlf.Sprintf("id = ANY(%s)", pq.Array(o.IDs)))
 	}
 
 	if o.NoNamespace {
@@ -279,11 +287,7 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 		}
 	}
 	if len(o.Kinds) > 0 {
-		kinds := make([]*sqlf.Query, 0, len(o.Kinds))
-		for _, kind := range o.Kinds {
-			kinds = append(kinds, sqlf.Sprintf("%s", kind))
-		}
-		conds = append(conds, sqlf.Sprintf("kind IN (%s)", sqlf.Join(kinds, ",")))
+		conds = append(conds, sqlf.Sprintf("kind = ANY(%s)", pq.Array(o.Kinds)))
 	}
 	if o.AfterID > 0 {
 		conds = append(conds, sqlf.Sprintf(`id < %d`, o.AfterID))
@@ -631,12 +635,31 @@ func (e *externalServiceStore) Create(ctx context.Context, confGet func() *conf.
 		return err
 	}
 
-	return e.Store.Handle().QueryRowContext(
+	return e.QueryRow(
 		ctx,
-		"INSERT INTO external_services(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING id",
-		es.Kind, es.DisplayName, config, keyID, es.CreatedAt, es.UpdatedAt, nullInt32Column(es.NamespaceUserID), nullInt32Column(es.NamespaceOrgID), es.Unrestricted, es.CloudDefault, es.HasWebhooks,
+		sqlf.Sprintf(
+			createExternalServiceQueryFmtstr,
+			es.Kind,
+			es.DisplayName,
+			config,
+			keyID,
+			es.CreatedAt,
+			es.UpdatedAt,
+			nullInt32Column(es.NamespaceUserID),
+			nullInt32Column(es.NamespaceOrgID),
+			es.Unrestricted,
+			es.CloudDefault,
+			es.HasWebhooks,
+		),
 	).Scan(&es.ID)
 }
+
+const createExternalServiceQueryFmtstr = `
+INSERT INTO external_services
+	(kind, display_name, config, encryption_key_id, created_at, updated_at, namespace_user_id, namespace_org_id, unrestricted, cloud_default, has_webhooks)
+	VALUES(%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+RETURNING id
+`
 
 // maybeEncryptConfig encrypts and returns externals service config if an encryption.Key is configured
 func (e *externalServiceStore) maybeEncryptConfig(ctx context.Context, config string) (string, string, error) {
@@ -1088,39 +1111,121 @@ func (e *externalServiceStore) GetByID(ctx context.Context, id int64) (*types.Ex
 	return ess[0], nil
 }
 
-func (e *externalServiceStore) GetSyncJobs(ctx context.Context) ([]*types.ExternalServiceSyncJob, error) {
-	q := sqlf.Sprintf(`SELECT id, state, failure_message, started_at, finished_at, process_after, num_resets, external_service_id, num_failures
-FROM external_service_sync_jobs ORDER BY started_at desc
-`)
+const getSyncJobsQueryFmtstr = `
+SELECT
+	id,
+	state,
+	failure_message,
+	queued_at,
+	started_at,
+	finished_at,
+	process_after,
+	num_resets,
+	external_service_id,
+	num_failures
+FROM
+	external_service_sync_jobs
+WHERE %s
+ORDER BY
+	started_at DESC
+%s
+`
+
+func (e *externalServiceStore) GetSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (_ []*types.ExternalServiceSyncJob, err error) {
+	var preds []*sqlf.Query
+
+	if opts.ExternalServiceID != 0 {
+		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"), opts.LimitOffset.SQL())
 
 	rows, err := e.Query(ctx, q)
 	if err != nil {
 		return nil, err
 	}
+	defer func() {
+		err = basestore.CloseRows(rows, err)
+	}()
 
-	var jobs []*types.ExternalServiceSyncJob
+	jobs := make([]*types.ExternalServiceSyncJob, 0)
 	for rows.Next() {
 		var job types.ExternalServiceSyncJob
-		if err := rows.Scan(
-			&job.ID,
-			&job.State,
-			&dbutil.NullString{S: &job.FailureMessage},
-			&dbutil.NullTime{Time: &job.StartedAt},
-			&dbutil.NullTime{Time: &job.FinishedAt},
-			&dbutil.NullTime{Time: &job.ProcessAfter},
-			&job.NumResets,
-			&dbutil.NullInt64{N: &job.ExternalServiceID},
-			&job.NumFailures,
-		); err != nil {
+		if err := scanExternalServiceSyncJob(rows, &job); err != nil {
 			return nil, errors.Wrap(err, "scanning external service job row")
 		}
 		jobs = append(jobs, &job)
 	}
-	if rows.Err() != nil {
-		return nil, errors.Wrap(err, "row scanning error")
-	}
 
 	return jobs, nil
+}
+
+const countSyncJobsQueryFmtstr = `
+SELECT
+	COUNT(*)
+FROM
+	external_service_sync_jobs
+WHERE %s
+`
+
+func (e *externalServiceStore) CountSyncJobs(ctx context.Context, opts ExternalServicesGetSyncJobsOptions) (int64, error) {
+	var preds []*sqlf.Query
+
+	if opts.ExternalServiceID != 0 {
+		preds = append(preds, sqlf.Sprintf("external_service_id = %s", opts.ExternalServiceID))
+	}
+
+	if len(preds) == 0 {
+		preds = append(preds, sqlf.Sprintf("TRUE"))
+	}
+
+	q := sqlf.Sprintf(countSyncJobsQueryFmtstr, sqlf.Join(preds, "AND"))
+
+	count, _, err := basestore.ScanFirstInt64(e.Query(ctx, q))
+	return count, err
+}
+
+type errSyncJobNotFound struct{ id int64 }
+
+func (e errSyncJobNotFound) Error() string {
+	return fmt.Sprintf("sync job with id %d not found", e.id)
+}
+
+func (errSyncJobNotFound) NotFound() bool {
+	return true
+}
+
+func (e *externalServiceStore) GetSyncJobByID(ctx context.Context, id int64) (*types.ExternalServiceSyncJob, error) {
+	q := sqlf.Sprintf(getSyncJobsQueryFmtstr, sqlf.Sprintf("id = %s", id), (&LimitOffset{Limit: 1}).SQL())
+
+	var job types.ExternalServiceSyncJob
+	if err := scanExternalServiceSyncJob(e.QueryRow(ctx, q), &job); err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &errSyncJobNotFound{id: id}
+		}
+		return nil, errors.Wrap(err, "scanning external service job row")
+	}
+
+	return &job, nil
+}
+
+func scanExternalServiceSyncJob(sc dbutil.Scanner, job *types.ExternalServiceSyncJob) error {
+	return sc.Scan(
+		&job.ID,
+		&job.State,
+		&dbutil.NullString{S: &job.FailureMessage},
+		&job.QueuedAt,
+		&dbutil.NullTime{Time: &job.StartedAt},
+		&dbutil.NullTime{Time: &job.FinishedAt},
+		&dbutil.NullTime{Time: &job.ProcessAfter},
+		&job.NumResets,
+		&dbutil.NullInt64{N: &job.ExternalServiceID},
+		&job.NumFailures,
+	)
 }
 
 func (e *externalServiceStore) GetLastSyncError(ctx context.Context, id int64) (string, error) {
@@ -1424,9 +1529,4 @@ func configurationHasWebhooks(config any) bool {
 	}
 
 	return false
-}
-
-// MockExternalServices mocks the external services store.
-type MockExternalServices struct {
-	List func(opt ExternalServicesListOptions) ([]*types.ExternalService, error)
 }

@@ -117,6 +117,22 @@ CREATE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert() RETURNS tr
     RETURN NULL;
 END $$;
 
+CREATE FUNCTION changesets_computed_state_ensure() RETURNS trigger
+    LANGUAGE plpgsql
+    AS $$ BEGIN
+
+    NEW.computed_state = CASE
+        WHEN NEW.reconciler_state = 'errored' THEN 'RETRYING'
+        WHEN NEW.reconciler_state = 'failed' THEN 'FAILED'
+        WHEN NEW.reconciler_state = 'scheduled' THEN 'SCHEDULED'
+        WHEN NEW.reconciler_state != 'completed' THEN 'PROCESSING'
+        WHEN NEW.publication_state = 'UNPUBLISHED' THEN 'UNPUBLISHED'
+        ELSE NEW.external_state
+    END AS computed_state;
+
+    RETURN NEW;
+END $$;
+
 CREATE FUNCTION delete_batch_change_reference_on_changesets() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
@@ -817,6 +833,7 @@ CREATE TABLE changesets (
     queued_at timestamp with time zone DEFAULT now(),
     cancel boolean DEFAULT false NOT NULL,
     detached_at timestamp with time zone,
+    computed_state text NOT NULL,
     CONSTRAINT changesets_batch_change_ids_check CHECK ((jsonb_typeof(batch_change_ids) = 'object'::text)),
     CONSTRAINT changesets_external_id_check CHECK ((external_id <> ''::text)),
     CONSTRAINT changesets_external_service_type_not_blank CHECK ((external_service_type <> ''::text)),
@@ -857,7 +874,8 @@ CREATE VIEW branch_changeset_specs_and_changesets AS
     changeset_specs.title AS changeset_name,
     changesets.external_state,
     changesets.publication_state,
-    changesets.reconciler_state
+    changesets.reconciler_state,
+    changesets.computed_state
    FROM ((changeset_specs
      LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.current_spec_id IS NOT NULL) AND (EXISTS ( SELECT 1
            FROM changeset_specs changeset_specs_1
@@ -1244,7 +1262,9 @@ CREATE TABLE codeintel_lockfiles (
     commit_bytea bytea NOT NULL,
     codeintel_lockfile_reference_ids integer[] NOT NULL,
     lockfile text,
-    fidelity text DEFAULT 'flat'::text NOT NULL
+    fidelity text DEFAULT 'flat'::text NOT NULL,
+    created_at timestamp with time zone DEFAULT now() NOT NULL,
+    updated_at timestamp with time zone DEFAULT now() NOT NULL
 );
 
 COMMENT ON TABLE codeintel_lockfiles IS 'Associates a repository-commit pair with the set of repository-level dependencies parsed from lockfiles.';
@@ -1256,6 +1276,10 @@ COMMENT ON COLUMN codeintel_lockfiles.codeintel_lockfile_reference_ids IS 'A key
 COMMENT ON COLUMN codeintel_lockfiles.lockfile IS 'Relative path of a lockfile in the given repository and the given commit.';
 
 COMMENT ON COLUMN codeintel_lockfiles.fidelity IS 'Fidelity of the dependency graph thats persisted, whether it is a flat list, a whole graph, circular graph, ...';
+
+COMMENT ON COLUMN codeintel_lockfiles.created_at IS 'Time when lockfile was indexed';
+
+COMMENT ON COLUMN codeintel_lockfiles.updated_at IS 'Time when lockfile index was updated';
 
 CREATE SEQUENCE codeintel_lockfiles_id_seq
     AS integer
@@ -2669,6 +2693,7 @@ CREATE VIEW reconciler_changesets AS
     c.publication_state,
     c.owned_by_batch_change_id,
     c.reconciler_state,
+    c.computed_state,
     c.failure_message,
     c.started_at,
     c.finished_at,
@@ -2949,7 +2974,8 @@ CREATE VIEW tracking_changeset_specs_and_changesets AS
     COALESCE((changesets.metadata ->> 'Title'::text), (changesets.metadata ->> 'title'::text)) AS changeset_name,
     changesets.external_state,
     changesets.publication_state,
-    changesets.reconciler_state
+    changesets.reconciler_state,
+    changesets.computed_state
    FROM ((changeset_specs
      LEFT JOIN changesets ON (((changesets.repo_id = changeset_specs.repo_id) AND (changesets.external_id = changeset_specs.external_id))))
      JOIN repo ON ((changeset_specs.repo_id = repo.id)))
@@ -3587,6 +3613,8 @@ CREATE INDEX changesets_bitbucket_cloud_metadata_source_commit_idx ON changesets
 
 CREATE INDEX changesets_changeset_specs ON changesets USING btree (current_spec_id, previous_spec_id);
 
+CREATE INDEX changesets_computed_state ON changesets USING btree (computed_state);
+
 CREATE INDEX changesets_detached_at ON changesets USING btree (detached_at);
 
 CREATE INDEX changesets_external_state_idx ON changesets USING btree (external_state);
@@ -3860,6 +3888,8 @@ CREATE INDEX webhook_logs_status_code_idx ON webhook_logs USING btree (status_co
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_insert AFTER INSERT ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
 
 CREATE TRIGGER batch_spec_workspace_execution_last_dequeues_update AFTER UPDATE ON batch_spec_workspace_execution_jobs REFERENCING NEW TABLE AS newtab FOR EACH STATEMENT EXECUTE FUNCTION batch_spec_workspace_execution_last_dequeues_upsert();
+
+CREATE TRIGGER changesets_update_computed_state BEFORE INSERT OR UPDATE ON changesets FOR EACH ROW EXECUTE FUNCTION changesets_computed_state_ensure();
 
 CREATE TRIGGER trig_delete_batch_change_reference_on_changesets AFTER DELETE ON batch_changes FOR EACH ROW EXECUTE FUNCTION delete_batch_change_reference_on_changesets();
 

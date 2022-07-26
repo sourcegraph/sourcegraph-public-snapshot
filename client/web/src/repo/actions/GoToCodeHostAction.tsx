@@ -12,12 +12,16 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { Position, Range } from '@sourcegraph/extension-api-types'
 import { PhabricatorIcon } from '@sourcegraph/shared/src/components/icons' // TODO: Switch mdi icon
 import { RevisionSpec, FileSpec } from '@sourcegraph/shared/src/util/url'
-import { useObservable, Icon, Tooltip } from '@sourcegraph/wildcard'
+import { useObservable, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { ExternalLinkFields, RepositoryFields, ExternalServiceKind } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
 import { fetchFileExternalLinks } from '../backend'
-import { RepoHeaderActionAnchor, RepoHeaderActionAnchorProps } from '../components/RepoHeaderActions'
+import {
+    RepoHeaderActionAnchor,
+    RepoHeaderActionAnchorProps,
+    RepoHeaderActionMenuLink,
+} from '../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../RepoHeader'
 
 interface Props extends RevisionSpec, Partial<FileSpec> {
@@ -127,7 +131,8 @@ export const GoToCodeHostAction: React.FunctionComponent<
     // Don't show browser extension popover on small screens
     if (props.actionType === 'dropdown') {
         return (
-            <RepoHeaderActionAnchor
+            <RepoHeaderActionMenuLink
+                as={Link}
                 className="test-go-to-code-host"
                 // empty href is OK because we always set tabindex=0
                 to={url}
@@ -140,7 +145,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
             >
                 <Icon as={exportIcon} aria-hidden={true} />
                 <span>{descriptiveText}</span>
-            </RepoHeaderActionAnchor>
+            </RepoHeaderActionMenuLink>
         )
     }
 

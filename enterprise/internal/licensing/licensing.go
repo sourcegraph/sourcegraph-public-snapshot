@@ -160,19 +160,19 @@ var licenseGenerationPrivateKey = func() ssh.Signer {
 
 // GenerateProductLicenseKey generates a product license key using the license generation private
 // key configured in site configuration.
-func GenerateProductLicenseKey(info license.Info) (string, error) {
+func GenerateProductLicenseKey(info license.Info) (licenseKey string, version int, err error) {
 	if envLicenseGenerationPrivateKey == "" {
 		const msg = "no product license generation private key was configured"
 		if env.InsecureDev {
 			// Show more helpful error message in local dev.
-			return "", errors.Errorf("%s (for testing by Sourcegraph staff: set the SOURCEGRAPH_LICENSE_GENERATION_KEY env var to the key obtained at %s)", msg, licenseGenerationPrivateKeyURL)
+			return "", 0, errors.Errorf("%s (for testing by Sourcegraph staff: set the SOURCEGRAPH_LICENSE_GENERATION_KEY env var to the key obtained at %s)", msg, licenseGenerationPrivateKeyURL)
 		}
-		return "", errors.New(msg)
+		return "", 0, errors.New(msg)
 	}
 
-	licenseKey, err := license.GenerateSignedKey(info, licenseGenerationPrivateKey)
+	licenseKey, version, err = license.GenerateSignedKey(info, licenseGenerationPrivateKey)
 	if err != nil {
-		return "", err
+		return "", 0, errors.Wrap(err, "generate signed key")
 	}
-	return licenseKey, nil
+	return licenseKey, version, nil
 }

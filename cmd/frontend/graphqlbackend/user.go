@@ -67,7 +67,10 @@ type UserResolver struct {
 
 // NewUserResolver returns a new UserResolver with given user object.
 func NewUserResolver(db database.DB, user *types.User) *UserResolver {
-	return &UserResolver{db: db, user: user}
+	return &UserResolver{db: db, user: user, logger: log.Scoped("userResolver", "resolves a specific user").With(
+		log.Object("repo",
+			log.String("user", user.Username))),
+	}
 }
 
 // UserByID looks up and returns the user with the given GraphQL ID. If no such user exists, it returns a
@@ -584,6 +587,7 @@ func (r *UserResolver) PublicRepositories(ctx context.Context) ([]*RepositoryRes
 	var out []*RepositoryResolver
 	for _, repo := range repos {
 		out = append(out, &RepositoryResolver{
+			logger: r.logger,
 			RepoMatch: result.RepoMatch{
 				ID:   repo.RepoID,
 				Name: api.RepoName(repo.RepoURI),

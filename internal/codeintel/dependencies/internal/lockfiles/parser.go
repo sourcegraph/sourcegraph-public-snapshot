@@ -4,7 +4,7 @@ import (
 	"io"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 type parser func(io.Reader) ([]reposource.VersionedPackage, *DependencyGraph, error)
@@ -29,10 +29,10 @@ var parsers = map[string]parser{
 // lockfilePathspecs is the list of git pathspecs that match lockfiles.
 //
 // https://git-scm.com/docs/gitglossary#Documentation/gitglossary.txt-aiddefpathspecapathspec
-var lockfilePathspecs = func() []gitserver.Pathspec {
-	pathspecs := make([]gitserver.Pathspec, 0, len(parsers))
+var lockfilePathspecs = func() []gitdomain.Pathspec {
+	pathspecs := make([]gitdomain.Pathspec, 0, len(parsers))
 	for filename := range parsers {
-		pathspecs = append(pathspecs, gitserver.PathspecSuffix(filename))
+		pathspecs = append(pathspecs, gitdomain.PathspecSuffix(filename))
 	}
 	return pathspecs
 }()

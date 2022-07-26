@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	livedependencies "github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/live"
 	codeintelTypes "github.com/sourcegraph/sourcegraph/internal/codeintel/types"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -910,14 +911,13 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 		return nil, nil, nil, errors.Errorf("support for `repo:dependencies()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := listDependencyRepos(ctx, r.db.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
+	params, err := buildDependenciesParams(ctx, r.db.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, nil, err
 	}
 
-	// TODO: We'll make this value depend on user input, but for now we include all dependencies.
-	includeTransitive := true
-	dependencyRepoRevs, notFound, err := livedependencies.GetService(r.db, livedependencies.NewSyncer()).Dependencies(ctx, repoRevs, includeTransitive)
+	svc := livedependencies.GetService(r.db, livedependencies.NewSyncer())
+	dependencyRepoRevs, notFound, err := svc.Dependencies(ctx, params)
 	if err != nil {
 		return nil, nil, nil, err
 	}
@@ -945,6 +945,47 @@ func (r *Resolver) dependencies(ctx context.Context, op *search.RepoOptions) (_ 
 	}
 
 	return depNames, depRevs, notFoundRevs, nil
+}
+
+func buildDependenciesParams(ctx context.Context, repoStore database.RepoStore, preds []query.RepoDependenciesPredicate, caseSensitive bool) ([]dependencies.QueryParams, error) {
+	var params []dependencies.QueryParams
+
+	for _, pred := range preds {
+		repoPattern, revs := search.ParseRepositoryRevisions(pred.RepoRev)
+		if len(revs) == 0 {
+			revs = append(revs, search.RevisionSpecifier{RevSpec: "HEAD"})
+		}
+
+		rs, err := repoStore.ListMinimalRepos(ctx, database.ReposListOptions{
+			IncludePatterns:       []string{repoPattern},
+			CaseSensitivePatterns: caseSensitive,
+		})
+		if err != nil {
+			return params, err
+		}
+
+		for _, repo := range rs {
+			param := dependencies.QueryParams{
+				Repo:              repo.Name,
+				IncludeTransitive: pred.Transitive,
+				RevSpecs:          codeintelTypes.RevSpecSet{},
+			}
+
+			for _, rev := range revs {
+				if rev == (search.RevisionSpecifier{}) {
+					rev.RevSpec = "HEAD"
+				} else if rev.RevSpec == "" {
+					return params, errors.New("unsupported glob rev in dependencies filter")
+				}
+
+				param.RevSpecs[api.RevSpec(rev.RevSpec)] = struct{}{}
+			}
+
+			params = append(params, param)
+		}
+	}
+
+	return params, nil
 }
 
 func listDependencyRepos(ctx context.Context, repoStore database.RepoStore, revSpecPatterns []string, caseSensitive bool) (map[api.RepoName]codeintelTypes.RevSpecSet, error) {
@@ -995,12 +1036,13 @@ func (r *Resolver) dependents(ctx context.Context, op *search.RepoOptions) (_ []
 		return nil, nil, errors.Errorf("support for `repo:dependents()` is disabled in site config (`experimentalFeatures.dependenciesSearch`)")
 	}
 
-	repoRevs, err := listDependencyRepos(ctx, r.db.Repos(), op.Dependents, op.CaseSensitiveRepoFilters)
+	params, err := buildDependenciesParams(ctx, r.db.Repos(), op.Dependencies, op.CaseSensitiveRepoFilters)
 	if err != nil {
 		return nil, nil, err
 	}
 
-	dependencyRepoRevs, err := livedependencies.GetService(r.db, livedependencies.NewSyncer()).Dependents(ctx, repoRevs)
+	svc := livedependencies.GetService(r.db, livedependencies.NewSyncer())
+	dependencyRepoRevs, err := svc.Dependents(ctx, params)
 	if err != nil {
 		return nil, nil, err
 	}
