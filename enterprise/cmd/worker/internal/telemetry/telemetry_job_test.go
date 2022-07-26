@@ -230,6 +230,74 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	})
 }
 
+func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+
+	want := []*database.Event{
+		{
+			Name:   "event1",
+			UserID: 1,
+			Source: "test",
+		},
+		{
+			Name:   "event2",
+			UserID: 2,
+			Source: "test",
+		},
+	}
+	err := db.EventLogs().BulkInsert(ctx, want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	expectEvents := func(t *testing.T, want []*database.Event) sendEventsCallbackFunc {
+		return func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			if len(event) != len(want) {
+				t.Error("got wrong event count")
+			}
+			if diff := cmp.Diff(want, event[0]); diff != "" {
+				t.Errorf("event mismatch (want/got): %s", diff)
+			}
+			return nil
+		}
+	}
+
+	config := validEnabledConfiguration()
+	config.ExportUsageTelemetry.BatchSize = 1
+	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+
+	handler := mockTelemetryHandler(t, noopHandler())
+	handler.eventLogStore = db.EventLogs()
+	handler.bookmarkStore = newBookmarkStore(db)
+
+	t.Run("first execution of handler should return first event", func(t *testing.T) {
+		handler.sendEventsCallback = expectEvents(t, want[:0])
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("second execution of handler should return second event", func(t *testing.T) {
+		handler.sendEventsCallback = expectEvents(t, want[:1])
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("third execution of handler should return no events", func(t *testing.T) {
+		handler.sendEventsCallback = expectEvents(t, nil)
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 func validEnabledConfiguration() schema.SiteConfiguration {
 	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{
 		Enabled:          true,
