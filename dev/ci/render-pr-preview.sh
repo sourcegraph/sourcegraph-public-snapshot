@@ -168,7 +168,7 @@ fi
 
 echo "Preview url: ${pr_preview_url}"
 
-if [[ -n "${github_api_key}" && -n "${pr_number}" ]]; then
+if [[ -n "${github_api_key}" && -n "${pr_number}" && "${pr_number}" != "false" ]]; then
 
   # GitHub pull request number and GitHub api token are set
   # Appending `App Preview` section into PR description if it hasn't existed yet
