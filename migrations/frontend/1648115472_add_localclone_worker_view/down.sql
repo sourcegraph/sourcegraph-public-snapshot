@@ -1,1 +1,0 @@
-DROP VIEW IF EXISTS gitserver_localclone_jobs_with_repo_name;
