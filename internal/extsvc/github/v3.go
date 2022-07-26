@@ -817,7 +817,7 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, s
 	}
 
 	if resp.statusCode != http.StatusCreated {
-		return 0, errors.Newf("expected http.StatusCreated got %d", resp.statusCode)
+		return 0, errors.Newf("expected status code 201, got %d", resp.statusCode)
 	}
 
 	return result.ID, nil
@@ -840,7 +840,7 @@ func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Web
 	}
 
 	if resp.statusCode != http.StatusOK {
-		return nil, errors.Newf("expected http.StatusOK, got %d", resp.statusCode)
+		return nil, errors.Newf("expected status code 200, got %d", resp.statusCode)
 	}
 
 	return results, nil
@@ -878,7 +878,7 @@ func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookI
 	}
 
 	if resp.statusCode != http.StatusNoContent {
-		return false, errors.Newf("expected http.StatusNoContent, got %d", resp.statusCode)
+		return false, errors.Newf("expected status code 204, got %d", resp.statusCode)
 	}
 
 	return true, nil
