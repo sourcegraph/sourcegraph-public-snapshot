@@ -8,7 +8,7 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
-import { LayoutRouteProps } from '../routes';
+import { LayoutRouteProps } from '../routes'
 
 import { validCategories } from './extension/extension'
 import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'
@@ -169,7 +169,7 @@ export function applyWIPFilter(
 
 export function excludeExtensionsRoute(routes: readonly LayoutRouteProps<any>[]): readonly LayoutRouteProps<any>[] {
     const extensionsRouteIndex = routes.findIndex(route => route.path === '/extensions')
-    return (extensionsRouteIndex > -1)
+    return extensionsRouteIndex > -1
         ? [...routes.slice(0, extensionsRouteIndex), ...routes.slice(extensionsRouteIndex + 1)]
         : routes
 }
