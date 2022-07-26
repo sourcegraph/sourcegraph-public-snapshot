@@ -117,7 +117,7 @@
   non_destructive: true
   is_enterprise: true
   introduced_version_major: 3
-  introduced_version_minor: 42
+  introduced_version_minor: 43
 - id: 16
   team: iam
   component: frontend-db.product_licenses
@@ -125,4 +125,4 @@
   non_destructive: true
   is_enterprise: true
   introduced_version_major: 3
-  introduced_version_minor: 42
+  introduced_version_minor: 43
