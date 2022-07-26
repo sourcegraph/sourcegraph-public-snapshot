@@ -815,7 +815,7 @@ func scanWebhookBuildJobs(rows *sql.Rows) ([]WebhookBuildJob, error) {
 			&executionLogs,
 			&job.RepoID,
 			&job.RepoName,
-			&job.ExtsvcKind,
+			&job.ExtSvcKind,
 			&job.QueuedAt,
 		); err != nil {
 			return nil, err

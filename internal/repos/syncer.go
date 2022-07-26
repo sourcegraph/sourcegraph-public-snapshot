@@ -162,7 +162,7 @@ func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record 
 		return errors.Errorf("expected repos.WhBuildJob, got %T", record)
 	}
 
-	switch wbj.ExtsvcKind {
+	switch wbj.ExtSvcKind {
 	case "GITHUB":
 		svcs, err := wb.store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{}) // some namespace
 		if err != nil || len(svcs) != 1 {
@@ -195,7 +195,7 @@ func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record 
 		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, cli)
 		gh := NewGitHubWebhookAPI(client)
 
-		id, err := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
+		id, err := gh.FindSyncWebhook(ctx, wbj.RepoName)
 		if err != nil {
 			return err
 		}
@@ -205,7 +205,7 @@ func (wb *whBuildHandler) Handle(ctx context.Context, logger log.Logger, record 
 			return errors.Wrap(err, "add secret to External Service")
 		}
 
-		id, err = gh.Client.CreateSyncWebhook(ctx, wbj.RepoName, globals.ExternalURL().Host, secret)
+		id, err = gh.CreateSyncWebhook(ctx, wbj.RepoName, globals.ExternalURL().Host, secret)
 		if err != nil {
 			return errors.Wrap(err, "create webhook")
 		}

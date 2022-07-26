@@ -175,7 +175,7 @@ type WebhookBuildJob struct {
 	NumFailures    int
 	RepoID         int64
 	RepoName       string
-	ExtsvcKind     string
+	ExtSvcKind     string
 	QueuedAt       sql.NullTime
 }
 
