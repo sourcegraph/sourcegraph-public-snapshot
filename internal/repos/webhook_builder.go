@@ -61,9 +61,8 @@ func NewWebhookBuildWorker(
 	}
 
 	store := workerstore.New(dbHandle, workerstore.Options{
-		Name:      "webhook_build_worker_store",
-		TableName: "webhook_build_jobs",
-		// ViewName:          "webhook_build_jobs_with_next_in_queue",
+		Name:              "webhook_build_worker_store",
+		TableName:         "webhook_build_jobs",
 		Scan:              scanWebhookBuildJob,
 		OrderByExpression: sqlf.Sprintf("webhook_build_jobs.queued_at"),
 		ColumnExpressions: webhookBuildJobColumns,

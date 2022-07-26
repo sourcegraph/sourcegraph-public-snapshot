@@ -17,7 +17,7 @@ CREATE SEQUENCE IF NOT EXISTS webhook_build_jobs_id_seq
      repo_id integer,
      repo_name text,
      extsvc_kind text,
-     queued_at timestamp with time zone,
+     queued_at timestamp with time zone DEFAULT now(),
      execution_logs json[],
      last_heartbeat_at timestamp with time zone,
      worker_hostname text DEFAULT ''::text NOT NULL

@@ -17,7 +17,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/timeutil"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -826,8 +825,8 @@ func (s *store) EnqueueSingleWebhookBuildJob(ctx context.Context,
 	repoName string,
 	kind string) (err error) {
 	q := sqlf.Sprintf(`
-INSERT INTO webhook_build_jobs (repo_id, repo_name, queued_at, extsvc_kind)
-SELECT %s, %s, %s, %s
+INSERT INTO webhook_build_jobs (repo_id, repo_name, extsvc_kind)
+SELECT %s, %s, %s
 WHERE NOT EXISTS (
 	SELECT
 	FROM repo r
@@ -837,7 +836,7 @@ WHERE NOT EXISTS (
 		j.state IN ('queued', 'processing')
 	)
 )
-`, repoID, repoName, timeutil.Now(), kind, repoID)
+`, repoID, repoName, kind, repoID)
 	return s.Exec(ctx, q)
 }
 

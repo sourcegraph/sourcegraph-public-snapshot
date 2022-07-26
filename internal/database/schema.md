@@ -2799,7 +2799,7 @@ Triggers:
  repo_id           | integer                  |           |          | 
  repo_name         | text                     |           |          | 
  extsvc_kind       | text                     |           |          | 
- queued_at         | timestamp with time zone |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
  execution_logs    | json[]                   |           |          | 
  last_heartbeat_at | timestamp with time zone |           |          | 
  worker_hostname   | text                     |           | not null | ''::text

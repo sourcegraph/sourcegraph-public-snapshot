@@ -17962,7 +17962,7 @@
           "Index": 12,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
-          "Default": "",
+          "Default": "now()",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
           "IdentityGeneration": "",
