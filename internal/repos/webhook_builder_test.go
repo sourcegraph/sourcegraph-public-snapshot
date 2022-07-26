@@ -481,19 +481,19 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, *h.doer)
 		gh := repos.NewGitHubWebhookAPI(client)
 
-		id, foundSyncWebhook := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
-		if !foundSyncWebhook {
-			secret := randstr.Hex(32)
+		id, err := gh.Client.FindSyncWebhook(ctx, wbj.RepoName)
+		if err != nil {
+			return errors.Wrap(err, "find webhook")
+		}
+		secret := randstr.Hex(32)
 
-			err := addSecretToExtSvc(svc, "someOrg", secret)
-			if err != nil {
-				return errors.Wrap(err, "add secret to External Service")
-			}
+		if err := addSecretToExtSvc(svc, "someOrg", secret); err != nil {
+			return errors.Wrap(err, "add secret to External Service")
+		}
 
-			id, err = gh.Client.CreateSyncWebhook(ctx, wbj.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret)
-			if err != nil {
-				return errors.Wrap(err, "create webhook")
-			}
+		id, err = gh.Client.CreateSyncWebhook(ctx, wbj.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret)
+		if err != nil {
+			return errors.Wrap(err, "create webhook")
 		}
 		h.jobChan <- id
 	}
