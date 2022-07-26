@@ -38,6 +38,14 @@ type authProviderInfo struct {
 	AuthenticationURL string `json:"authenticationURL"`
 }
 
+// GenericPasswordPolicy a generic password policy that holds password requirements
+type authPasswordPolicy struct {
+	Enabled                   bool `json:"enabled"`
+	NumberOfSpecialCharacters int  `json:"numberOfSpecialCharacters"`
+	RequireAtLeastOneNumber   bool `json:"requireAtLeastOneNumber"`
+	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 //
@@ -81,6 +89,9 @@ type JSContext struct {
 	ResetPasswordEnabled bool `json:"resetPasswordEnabled"`
 
 	ExternalServicesUserMode string `json:"externalServicesUserMode"`
+
+	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
+	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
 
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
@@ -143,6 +154,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		}
 	}
 
+	pp := conf.AuthPasswordPolicy()
+
+	var authPasswordPolicy authPasswordPolicy
+	authPasswordPolicy.Enabled = pp.Enabled
+	authPasswordPolicy.NumberOfSpecialCharacters = pp.NumberOfSpecialCharacters
+	authPasswordPolicy.RequireAtLeastOneNumber = pp.RequireAtLeastOneNumber
+	authPasswordPolicy.RequireUpperAndLowerCase = pp.RequireUpperandLowerCase
+
 	var sentryDSN *string
 	siteConfig := conf.Get().SiteConfiguration
 
@@ -198,6 +217,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExternalServicesUserMode: conf.ExternalServiceUserMode().String(),
 
 		AllowSignup: conf.AuthAllowSignup(),
+
+		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
+		AuthPasswordPolicy:    authPasswordPolicy,
 
 		AuthProviders: authProviders,
 
