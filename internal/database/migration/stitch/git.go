@@ -45,7 +45,7 @@ func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, err
 
 // readMigrationFileContents reads the contents of the migration at given path at the given git revision.
 func readMigrationFileContents(schemaName, dir, rev, path string) (string, error) {
-	m, err := cachedArchiveContents(schemaName, dir, rev)
+	m, err := cachedArchiveContents(dir, rev)
 	if err != nil {
 		return "", err
 	}
@@ -58,37 +58,33 @@ func readMigrationFileContents(schemaName, dir, rev, path string) (string, error
 }
 
 var (
-	archiveContentsCacheMutex sync.RWMutex
-	archiveContentsCache      = map[string]map[string]string{}
+	revToPathTocontentsCacheMutex sync.RWMutex
+	revToPathTocontentsCache      = map[string]map[string]string{}
 )
 
 // cachedArchiveContents memoizes archiveContents by git revision and schema name.
-func cachedArchiveContents(schemaName, dir, rev string) (map[string]string, error) {
-	archiveContentsCacheMutex.Lock()
-	defer archiveContentsCacheMutex.Unlock()
+func cachedArchiveContents(dir, rev string) (map[string]string, error) {
+	revToPathTocontentsCacheMutex.Lock()
+	defer revToPathTocontentsCacheMutex.Unlock()
 
-	m, ok := archiveContentsCache[hash(schemaName, rev)]
+	m, ok := revToPathTocontentsCache[rev]
 	if ok {
 		return m, nil
 	}
 
-	m, err := archiveContents(dir, rev, migrationPath(schemaName))
+	m, err := archiveContents(dir, rev)
 	if err != nil {
 		return nil, err
 	}
 
-	archiveContentsCache[hash(schemaName, rev)] = m
+	revToPathTocontentsCache[rev] = m
 	return m, nil
-}
-
-func hash(schemaName, rev string) string {
-	return fmt.Sprintf("%s:%s", schemaName, rev)
 }
 
 // archiveContents calls git archive with the given git revision and path prefix and returns a map from
 // file paths to file contents.
-func archiveContents(dir, rev, path string) (map[string]string, error) {
-	cmd := exec.Command("git", "archive", "--format=tar", rev+"^", path)
+func archiveContents(dir, rev string) (map[string]string, error) {
+	cmd := exec.Command("git", "archive", "--format=tar", rev, "migrations")
 	cmd.Dir = dir
 
 	out, err := cmd.CombinedOutput()
