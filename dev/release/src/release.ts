@@ -1,4 +1,4 @@
-import { readFileSync, rmdirSync, writeFileSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync, readdirSync } from 'fs'
 import * as path from 'path'
 
 import commandExists from 'command-exists'
@@ -25,6 +25,7 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
+import * as update from './update'
 import {
     cacheFolder,
     formatDate,
@@ -45,6 +46,7 @@ export type StepID =
     | 'tracking:issues'
     // branch cut
     | 'changelog:cut'
+    | 'update:cut'
     | 'release:branch-cut'
     // release
     | 'release:status'
@@ -302,6 +304,51 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
         },
     },
     {
+        id: 'update:cut',
+        description: 'cut update guides',
+        run: async config => {
+            const { upcoming: release, previous } = await releaseVersions(config)
+            const notPatchRelease = release.patch === 0
+            const previousNotPatchRelease = previous.patch === 0
+            await createChangesets({
+                requiredCommands: [],
+                changes: [
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        base: 'main',
+                        head: `update-guides-${release.version}`,
+                        title: 'dave-test',
+                        commitMessage: 'dave test \n\n ## Test plan\n\nn/a',
+                        edits: [
+                            (directory: string, updateDirectory = '/doc/admin/updates') => {
+                                updateDirectory = directory + updateDirectory
+                                for (const file of readdirSync(updateDirectory)) {
+                                    const fullPath = path.join(updateDirectory, file)
+                                    let updateContents = readFileSync(fullPath).toString()
+                                    if (notPatchRelease) {
+                                        const releaseHeader = `## ${previous.major}.${previous.minor} -> ${release.major}.${release.minor}`
+                                        const unreleasedHeader = '## Unreleased'
+                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
+                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
+                                    } else if (previousNotPatchRelease) {
+                                        updateContents = updateContents.replace(
+                                            `${previous.major}.${previous.minor}`,
+                                            release.version
+                                        )
+                                    } else {
+                                        updateContents = updateContents.replace(previous.version, release.version)
+                                    }
+                                    writeFileSync(fullPath, updateContents)
+                                }
+                            },
+                        ],
+                    },
+                ],
+            })
+        },
+    },
+    {
         id: 'release:branch-cut',
         description: 'Create release branch',
         run: async config => {
@@ -499,10 +546,28 @@ cc @${config.captainGitHubUsername}
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
 
-                            // Add a stub to add upgrade guide entries
-                            notPatchRelease
-                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n${upgradeGuideEntry}' doc/admin/updates/*.md`
-                                : 'echo "Skipping upgrade guide entries on patch release"',
+                            // Cut udpate guides with entries from unreleased.
+                            // (updateDirectory = 'admin/docs/updates') => {
+                            //     for (const file of readdirSync(updateDirectory)) {
+                            //         const fullPath = path.join(updateDirectory, file)
+                            //         let updateContents = readFileSync(fullPath
+                            //             ).toString()
+                            //         if (notPatchRelease) {
+                            //             const releaseHeader = `## ${previous.format()} -> ${release.format()}`
+                            //             const unreleasedHeader = '## Unreleased'
+                            //             updateContents = updateContents.replace(unreleasedHeader,releaseHeader)
+                            //             updateContents = updateContents.replace(
+                            //                 update.divider,
+                            //                 update.releaseTemplate
+                            //             )
+
+                            //         }else {
+                            //             const previousString = previous.format()
+                            //             updateContents = updateContents.replace(previousString, release.format());
+                            //         }
+                            //     console.log(file, updateContents)
+
+                            // }}
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
