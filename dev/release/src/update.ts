@@ -3,4 +3,7 @@ export const divider = '<!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling 
 export const releaseTemplate = `${divider}
 
 ## Unreleased
+
+<!-- Add changes changes to this section before release. -->'
+
 `
