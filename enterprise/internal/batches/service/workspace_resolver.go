@@ -285,10 +285,14 @@ func (wr *workspaceResolver) resolveRepositoryName(ctx context.Context, name str
 		return nil, err
 	}
 
-	return repoToRepoRevisionWithDefaultBranch(
+	return repoToRepoRevisionWithBranch(
 		ctx,
 		wr.gitserverClient,
 		repo,
+		// Default branch.
+		"",
+		// Latest commit.
+		"",
 		// Directly resolved repos don't have any file matches.
 		[]string{},
 	)
@@ -331,9 +335,24 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 
 	query = setDefaultQueryCount(query)
 
-	repoIDs := []api.RepoID{}
+	allRepoBranches := map[api.RepoID]map[string]struct{}{}
+	allRepoCommits := map[api.RepoID]map[api.CommitID]struct{}{}
+	visitRepo := func(id api.RepoID, branch, commit string) {
+		if _, ok := allRepoBranches[id]; !ok {
+			allRepoBranches[id] = map[string]struct{}{branch: {}}
+		} else {
+			allRepoBranches[id][branch] = struct{}{}
+		}
+
+		if _, ok := allRepoCommits[id]; !ok {
+			allRepoCommits[id] = map[api.CommitID]struct{}{api.CommitID(commit): {}}
+		} else {
+			allRepoCommits[id][api.CommitID(commit)] = struct{}{}
+		}
+	}
+
 	repoFileMatches := make(map[api.RepoID]map[string]bool)
-	addRepoFilePatch := func(repoID api.RepoID, path string) {
+	addRepoFilePath := func(repoID api.RepoID, path string) {
 		repoMap, ok := repoFileMatches[repoID]
 		if !ok {
 			repoMap = make(map[string]bool)
@@ -343,29 +362,82 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 			repoMap[path] = true
 		}
 	}
+
 	if err := wr.runSearch(ctx, query, func(matches []streamhttp.EventMatch) {
 		for _, match := range matches {
 			switch m := match.(type) {
 			case *streamhttp.EventRepoMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
+				// Anything greater than 1 doesn't ever happen.
+				if len(m.Branches) == 1 {
+					visitRepo(api.RepoID(m.RepositoryID), m.Branches[0], "")
+				} else {
+					visitRepo(api.RepoID(m.RepositoryID), "", "")
+				}
 			case *streamhttp.EventContentMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
+				// Anything greater than 1 doesn't ever happen.
+				if len(m.Branches) == 1 {
+					visitRepo(api.RepoID(m.RepositoryID), m.Branches[0], m.Commit)
+				} else {
+					visitRepo(api.RepoID(m.RepositoryID), "", m.Commit)
+				}
+				addRepoFilePath(api.RepoID(m.RepositoryID), m.Path)
 			case *streamhttp.EventPathMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
+				// Anything greater than 1 doesn't ever happen.
+				if len(m.Branches) == 1 {
+					visitRepo(api.RepoID(m.RepositoryID), m.Branches[0], m.Commit)
+				} else {
+					visitRepo(api.RepoID(m.RepositoryID), "", m.Commit)
+				}
+				addRepoFilePath(api.RepoID(m.RepositoryID), m.Path)
 			case *streamhttp.EventSymbolMatch:
-				repoIDs = append(repoIDs, api.RepoID(m.RepositoryID))
-				addRepoFilePatch(api.RepoID(m.RepositoryID), m.Path)
+				// Anything greater than 1 doesn't ever happen.
+				if len(m.Branches) == 1 {
+					visitRepo(api.RepoID(m.RepositoryID), m.Branches[0], m.Commit)
+				} else {
+					visitRepo(api.RepoID(m.RepositoryID), "", m.Commit)
+				}
+				addRepoFilePath(api.RepoID(m.RepositoryID), m.Path)
 			}
 		}
 	}); err != nil {
 		return nil, err
 	}
 
+	for repo, branches := range allRepoBranches {
+		if len(branches) != 1 {
+			return nil, errors.Newf("more than 1 branches resolved for repo %d", repo)
+		}
+	}
+
+	for repo, commits := range allRepoCommits {
+		if len(commits) != 1 {
+			return nil, errors.Newf("more than 1 commits resolved for repo %d", repo)
+		}
+	}
+
+	repoBranches := map[api.RepoID]string{}
+	for repo, branches := range allRepoBranches {
+		// guaranteed to be len(branches) == 1 at this point.
+		for branch := range branches {
+			repoBranches[repo] = branch
+		}
+	}
+	repoCommits := map[api.RepoID]api.CommitID{}
+	for repo, commits := range allRepoCommits {
+		// guaranteed to be len(commits) == 1 at this point.
+		for branch := range commits {
+			repoCommits[repo] = branch
+		}
+	}
+
 	// If no repos matched the search query, we can early return.
-	if len(repoIDs) == 0 {
+	if len(allRepoBranches) == 0 {
 		return []*RepoRevision{}, nil
+	}
+
+	repoIDs := make([]api.RepoID, 0, len(allRepoBranches))
+	for id := range allRepoBranches {
+		repoIDs = append(repoIDs, id)
 	}
 
 	// 🚨 SECURITY: We use database.Repos.List to check whether the user has access to
@@ -384,7 +456,8 @@ func (wr *workspaceResolver) resolveRepositoriesMatchingQuery(ctx context.Contex
 		}
 		// Sort file matches so cache results always match.
 		sort.Strings(fileMatches)
-		rev, err := repoToRepoRevisionWithDefaultBranch(ctx, wr.gitserverClient, repo, fileMatches)
+
+		rev, err := repoToRepoRevisionWithBranch(ctx, wr.gitserverClient, repo, repoBranches[repo.ID], repoCommits[repo.ID], fileMatches)
 		if err != nil {
 			// There is an edge-case where a repo might be returned by a search query that does not exist in gitserver yet.
 			if errcode.IsNotFound(err) {
@@ -438,16 +511,61 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	return err
 }
 
-func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gitserver.Client, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
-	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
+func repoToRepoRevisionWithBranch(ctx context.Context, gitserverClient gitserver.Client, repo *types.Repo, branch string, commit api.CommitID, fileMatches []string) (_ *RepoRevision, err error) {
+	tr, ctx := trace.New(ctx, "repoToRepoRevisionWithBranch", "")
 	defer func() {
 		tr.SetError(err)
 		tr.Finish()
 	}()
 
-	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name)
+	if branch == "" {
+		var headCommit api.CommitID
+		branch, headCommit, err = gitserverClient.GetDefaultBranch(ctx, repo.Name)
+		if err != nil {
+			return nil, err
+		}
+		// If the branch is the default branch, and no commit is set, set it to
+		// latest head.
+		if commit == "" {
+			commit = headCommit
+		}
+	}
+
+	// Verify type of object:
+	ob, err := gitserverClient.GetObject(ctx, repo.Name, branch)
 	if err != nil {
 		return nil, err
+	}
+
+	if ob.Type == gitdomain.ObjectTypeTag {
+		return nil, errors.New("git tags are not supported")
+	}
+
+	if ob.Type == gitdomain.ObjectTypeBlob {
+		return nil, errors.New("git blobs are not supported")
+	}
+
+	if commit == "" {
+		commit, err = gitserverClient.ResolveRevision(ctx, repo.Name, string(branch), gitserver.ResolveRevisionOptions{NoEnsureRevision: true})
+		if err != nil {
+			return nil, errors.Wrap(err, "ResolveRevision")
+		}
+	}
+
+	branches, err := gitserverClient.BranchesContaining(ctx, repo.Name, commit, authz.DefaultSubRepoPermsChecker)
+	if err != nil {
+		return nil, errors.New("")
+	}
+	found := false
+	for _, cb := range branches {
+		if cb == branch {
+			found = true
+			break
+		}
+	}
+
+	if !found {
+		return nil, errors.Newf("commit %q does not exist in branch %q", commit, branch)
 	}
 
 	repoRev := &RepoRevision{
