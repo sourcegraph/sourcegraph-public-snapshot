@@ -38,7 +38,7 @@ export const ImportingChangesetsPreviewListStory: Story = () => {
                         fetchMore: action('Fetch More'),
                         loading: boolean('Loading', false),
                     }}
-                    isStale={boolean('Is State', false)}
+                    isStale={boolean('Is Stale', false)}
                     {...props}
                 />
             )}
