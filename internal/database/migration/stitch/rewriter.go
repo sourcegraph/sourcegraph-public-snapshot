@@ -13,7 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/mapfs"
 )
 
-var versionPattern = lazyregexp.New(`^v3.(\d+).\d+$`)
+var versionPattern = lazyregexp.New(`^v(\d+)\.(\d+)\.\d+$`)
 
 // readMigrations reads migrations from a locally available git revision for the given schema, and
 // rewrites old versions and explicit edge cases so that they can be more easily composed by the
@@ -52,7 +52,11 @@ func readMigrations(schemaName, root, rev string) (fs.FS, error) {
 	}
 
 	if matches := versionPattern.FindStringSubmatch(rev); len(matches) > 0 {
-		minorVersion, err := strconv.Atoi(matches[1])
+		majorVersion, err := strconv.Atoi(matches[1])
+		if err != nil {
+			return nil, err
+		}
+		minorVersion, err := strconv.Atoi(matches[2])
 		if err != nil {
 			return nil, err
 		}
@@ -63,7 +67,7 @@ func readMigrations(schemaName, root, rev string) (fs.FS, error) {
 		}
 
 		for _, rewrite := range rewriters {
-			rewrite(schemaName, minorVersion, migrationIDs, contents)
+			rewrite(schemaName, majorVersion, minorVersion, migrationIDs, contents)
 		}
 	}
 
@@ -105,7 +109,7 @@ func linkVirtualPrivilegedMigrations(definitionMap map[int]definition.Definition
 // beginning of the rewrite procedure will be represented in the provided slide of identifiers.
 // Additional files/migrations may be added to the contents map will not be reflected in this slice for
 // subsequent rewriters.
-var rewriters = []func(schemaName string, minorVersion int, migrationIDs []int, contents map[string]string){
+var rewriters = []func(schemaName string, majorVersion, minorVersion int, migrationIDs []int, contents map[string]string){
 	rewriteInitialCodeinsightsMigration,
 	ensureParentMetadataExists,
 	extractPrivilegedQueriesFromSquashedMigrations,
@@ -118,7 +122,7 @@ var rewriters = []func(schemaName string, minorVersion int, migrationIDs []int, 
 
 // rewriteInitialCodeinsightsMigration renames the initial codeinsights migration file to include the expected
 // title of "squashed migration".
-func rewriteInitialCodeinsightsMigration(schemaName string, _ int, _ []int, contents map[string]string) {
+func rewriteInitialCodeinsightsMigration(schemaName string, _, _ int, _ []int, contents map[string]string) {
 	if schemaName != "codeinsights" {
 		return
 	}
@@ -130,9 +134,9 @@ func rewriteInitialCodeinsightsMigration(schemaName string, _ int, _ []int, cont
 
 // ensureParentMetadataExists adds parent information to the metadata file of each migration, prior to 3.37,
 // in which metadata files did not exist and parentage was implied by linear migration identifiers.
-func ensureParentMetadataExists(_ string, minorVersion int, migrationIDs []int, contents map[string]string) {
+func ensureParentMetadataExists(_ string, majorVersion, minorVersion int, migrationIDs []int, contents map[string]string) {
 	// 3.37 and above enforces this structure
-	if minorVersion >= 37 || len(migrationIDs) == 0 {
+	if !(majorVersion == 3 && minorVersion < 37) || len(migrationIDs) == 0 {
 		return
 	}
 
@@ -146,8 +150,8 @@ func ensureParentMetadataExists(_ string, minorVersion int, migrationIDs []int, 
 // extractPrivilegedQueriesFromSquashedMigrations splits the squashed migration into a distinct set of
 // privileged and unprivileged queries. Prior to 3.38, privileged migrations were not distinct. The current
 // code that reads migration definitions require that privileged migrations are expilcitly marked.
-func extractPrivilegedQueriesFromSquashedMigrations(_ string, minorVersion int, migrationIDs []int, contents map[string]string) {
-	if minorVersion >= 38 || len(migrationIDs) == 0 {
+func extractPrivilegedQueriesFromSquashedMigrations(_ string, majorVersion, minorVersion int, migrationIDs []int, contents map[string]string) {
+	if !(majorVersion == 3 && minorVersion < 38) || len(migrationIDs) == 0 {
 		// 3.38 and above enforces this structure
 		return
 	}
@@ -178,7 +182,7 @@ var unmarkedPrivilegedMigrationsMap = map[string][]int{
 
 // rewriteUnmarkedPrivilegedMigrations adds an explicit privileged marker to the metadata of migration
 // definitions that modify extensions (prior to the privileged/unprivileged split).
-func rewriteUnmarkedPrivilegedMigrations(schemaName string, _ int, _ []int, contents map[string]string) {
+func rewriteUnmarkedPrivilegedMigrations(schemaName string, _, _ int, _ []int, contents map[string]string) {
 	for _, id := range unmarkedPrivilegedMigrationsMap[schemaName] {
 		mapContents(contents, migrationFilename(id, "metadata.yaml"), func(oldMetadata string) string {
 			return fmt.Sprintf("%s\nprivileged: true", oldMetadata)
@@ -194,7 +198,7 @@ var unmarkedConcurrentIndexCreationMigrationsMap = map[string][]int{
 
 // rewriteUnmarkedConcurrentIndexCreationMigrations adds an explicit marker to the metadata of migrations that
 // define a concurrent index (prior to the introduction of the migrator).
-func rewriteUnmarkedConcurrentIndexCreationMigrations(schemaName string, _ int, _ []int, contents map[string]string) {
+func rewriteUnmarkedConcurrentIndexCreationMigrations(schemaName string, _, _ int, _ []int, contents map[string]string) {
 	for _, id := range unmarkedConcurrentIndexCreationMigrationsMap[schemaName] {
 		mapContents(contents, migrationFilename(id, "metadata.yaml"), func(oldMetadata string) string {
 			return fmt.Sprintf("%s\ncreateIndexConcurrently: true", oldMetadata)
@@ -209,7 +213,7 @@ var concurrentIndexCreationDownMigrationsMap = map[string][]int{
 }
 
 // rewriteConcurrentIndexCreationDownMigrations removes CONCURRENTLY from down migrations, which is now unsupported.
-func rewriteConcurrentIndexCreationDownMigrations(schemaName string, _ int, _ []int, contents map[string]string) {
+func rewriteConcurrentIndexCreationDownMigrations(schemaName string, _, _ int, _ []int, contents map[string]string) {
 	for _, id := range concurrentIndexCreationDownMigrationsMap[schemaName] {
 		mapContents(contents, migrationFilename(id, "down.sql"), func(oldQuery string) string {
 			return strings.ReplaceAll(oldQuery, " CONCURRENTLY", "")
@@ -221,8 +225,8 @@ func rewriteConcurrentIndexCreationDownMigrations(schemaName string, _ int, _ []
 // these files exist and haven't yet been renamed, we do the renaming at this time to make it match later versions.
 //
 // See https://github.com/sourcegraph/sourcegraph/pull/29395.
-func reorderMigrations(schemaName string, minorVersion int, _ []int, contents map[string]string) {
-	if schemaName != "frontend" || minorVersion >= 36 {
+func reorderMigrations(schemaName string, majorVersion, minorVersion int, _ []int, contents map[string]string) {
+	if schemaName != "frontend" || !(majorVersion == 3 && minorVersion < 36) {
 		// Rename occurred at v3.36
 		return
 	}
