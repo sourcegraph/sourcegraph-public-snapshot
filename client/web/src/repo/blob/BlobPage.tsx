@@ -172,7 +172,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         } = {
                             content: blob.content,
                             html: blob.highlight.html,
-                            lsif: blob.highlight.lsif ?? '{}',
+                            lsif: blob.highlight.lsif,
                             repoName,
                             revision,
                             commitID,

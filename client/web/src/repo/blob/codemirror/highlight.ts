@@ -18,31 +18,40 @@ interface HighlightIndex {
  * NOTE: This assumes that the data is sorted and does not contain overlapping
  * ranges.
  */
-function createHighlightTable(json: string): HighlightIndex {
+function createHighlightTable(json: string | undefined): HighlightIndex {
     const lineIndex: (number | undefined)[] = []
 
-    const occurrences = (JSON.parse(json) as JsonDocument).occurrences ?? []
-    let previousEndline: number | undefined
-
-    for (let index = 0; index < occurrences.length; index++) {
-        const current = occurrences[index]
-        const startLine = current.range[0]
-        const endLine = current.range.length === 3 ? startLine : current.range[2]
-
-        if (previousEndline !== startLine) {
-            // Only use the current index if there isn't already an occurence on
-            // the current line.
-            lineIndex[startLine] = index
-        }
-
-        if (startLine !== endLine) {
-            lineIndex[endLine] = index
-        }
-
-        previousEndline = endLine
+    if (!json) {
+        return { occurrences: [], lineIndex }
     }
 
-    return { occurrences, lineIndex }
+    try {
+        const occurrences = (JSON.parse(json) as JsonDocument).occurrences ?? []
+        let previousEndline: number | undefined
+
+        for (let index = 0; index < occurrences.length; index++) {
+            const current = occurrences[index]
+            const startLine = current.range[0]
+            const endLine = current.range.length === 3 ? startLine : current.range[2]
+
+            if (previousEndline !== startLine) {
+                // Only use the current index if there isn't already an occurence on
+                // the current line.
+                lineIndex[startLine] = index
+            }
+
+            if (startLine !== endLine) {
+                lineIndex[endLine] = index
+            }
+
+            previousEndline = endLine
+        }
+
+        return { occurrences, lineIndex }
+    } catch (err) {
+        console.error(`Unable to parse SCIP highlight data: ${json}`)
+        return { occurrences: [], lineIndex }
+    }
 }
 
 /**
@@ -54,7 +63,7 @@ export const setSCIPData = StateEffect.define<string>()
  * Extension to convert SCIP-encoded highlighting information to decorations.
  * The SCIP data should be set/updated via the `setSCIPData` effect.
  */
-export function syntaxHighlight(initialSCIPJSON: string): Extension {
+export function syntaxHighlight(initialSCIPJSON: string | undefined): Extension {
     return StateField.define<HighlightIndex>({
         create: () => createHighlightTable(initialSCIPJSON),
 
