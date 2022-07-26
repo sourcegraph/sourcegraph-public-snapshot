@@ -125,7 +125,7 @@ export function syntaxHighlight(initialSCIPJSON: string): Extension {
                                 }
 
                                 // Fetch new line information if necessary
-                                if (fromLine.number !== occurrence.range[0] + 1) {
+                                if (line.number !== occurrence.range[0] + 1) {
                                     line = view.state.doc.line(occurrence.range[0] + 1)
                                 }
 
