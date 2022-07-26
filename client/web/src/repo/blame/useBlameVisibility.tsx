@@ -3,10 +3,7 @@ import React from 'react'
 const BlameContext = React.createContext<{
     isBlameVisible: boolean
     setIsBlameVisible: React.Dispatch<React.SetStateAction<boolean>>
-}>({
-    isBlameVisible: false,
-    setIsBlameVisible: () => undefined,
-})
+} | null>(null)
 
 export const BlameContextProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
     const [isBlameVisible, setIsBlameVisible] = React.useState<boolean>(false)
@@ -15,7 +12,11 @@ export const BlameContextProvider: React.FC<React.PropsWithChildren<{}>> = ({ ch
 }
 
 export const useBlameVisibility = (): [boolean, React.Dispatch<React.SetStateAction<boolean>>] => {
-    const { isBlameVisible, setIsBlameVisible } = React.useContext(BlameContext)
+    const context = React.useContext(BlameContext)
 
-    return [isBlameVisible, setIsBlameVisible]
+    if (context === null) {
+        throw new Error('useBlameVisibility must be used within BlameContextProvider')
+    }
+
+    return [context.isBlameVisible, context.setIsBlameVisible]
 }
