@@ -10,7 +10,6 @@ abs_yarn="$(pwd)/dev/ci/yarn-install-with-retry.sh"
 
 cd "$1"
 echo "--- yarn"
-# mutex is necessary since CI runs various yarn installs in parallel
 "$abs_yarn"
 
 echo "--- test"
