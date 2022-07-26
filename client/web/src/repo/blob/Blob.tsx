@@ -220,8 +220,8 @@ const insightTokens = [
 
 const decoration: InsightDecoration = {
     range: {
-        start: { line: 0, character: 0 },
-        end: { line: 0, character: 0 },
+        start: { line: 2, character: 0 },
+        end: { line: 2, character: 0 },
     },
     content: (
         <InsightDecorationContent>
@@ -367,10 +367,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     const [decorationsOrError, setDecorationsOrError] = useState<
         [TextDocumentDecorationType, (TextDocumentDecoration | InsightDecoration)[]][] | Error | undefined
     >()
-    const [insightDecorations, setInsightsDecorations] = useState<InsightDecoration[]>([])
+    const [insightDecorations, setInsightsDecorations] = useState<DecorationMapByLine>(new Map())
 
     // TODO: Update this to an API call
-    useEffect(() => setInsightsDecorations([decoration]), [])
+    useEffect(() => setInsightsDecorations(groupDecorationsByLine([decoration])), [])
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
     const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])
@@ -930,17 +930,22 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         )
                     })
                     .toArray()}
-                {insightDecorations.map((insightDecoration, index) => (
-                    <LineDecorator
-                        key={index}
-                        isLightTheme={isLightTheme}
-                        portalID={toPortalID(1)}
-                        getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
-                        line={1}
-                        decorations={[insightDecoration]}
-                        codeViewElements={codeViewElements}
-                    />
-                ))}
+                {iterate(insightDecorations)
+                    .map(([line, items]) => {
+                        const portalID = toPortalID(line)
+                        return (
+                            <LineDecorator
+                                key={`${portalID}-${blobInfo.filePath}`}
+                                isLightTheme={isLightTheme}
+                                portalID={toPortalID(3)}
+                                getCodeElementFromLineNumber={domFunctions.getCodeElementFromLineNumber}
+                                line={line}
+                                decorations={items}
+                                codeViewElements={codeViewElements}
+                            />
+                        )
+                    })
+                    .toArray()}
             </div>
             {!props.disableStatusBar && (
                 <StatusBar

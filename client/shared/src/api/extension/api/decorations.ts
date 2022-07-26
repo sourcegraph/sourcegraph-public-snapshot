@@ -53,8 +53,10 @@ export type DecorationMapByLine = ReadonlyMap<number, TextDocumentDecoration[] |
  *
  * @todo this does not handle decorations that span multiple lines
  */
-export const groupDecorationsByLine = (decorations: TextDocumentDecoration[] | null): DecorationMapByLine => {
-    const grouped = new Map<number, TextDocumentDecoration[]>()
+export const groupDecorationsByLine = (
+    decorations: (TextDocumentDecoration | InsightDecoration)[] | null
+): DecorationMapByLine => {
+    const grouped = new Map<number, (TextDocumentDecoration | InsightDecoration)[]>()
     for (const decoration of decorations || []) {
         const lineNumber = decoration.range.start.line + 1
         const decorationsForLine = grouped.get(lineNumber)
