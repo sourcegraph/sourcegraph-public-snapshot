@@ -7,7 +7,7 @@ func main() {
 
 	x := 1234
 	char := '1'
-	string := "hello"
+	string := "hello\n"
 	bool := true
 
 	var null_was_a_mistake *int

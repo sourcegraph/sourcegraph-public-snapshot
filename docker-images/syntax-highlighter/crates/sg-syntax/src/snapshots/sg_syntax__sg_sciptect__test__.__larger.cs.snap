@@ -1,12 +1,12 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 531
+assertion_line: 551
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
-//  ^^^^^^^^^^^ Comment
+//  ^^^^^^^^^^ Comment
   // repo:^github\.com/radzenhq/radzen-blazor$ file:^Radzen\.Blazor\.Tests/DataGridTests\.cs
-//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   
   using AngleSharp.Dom;
 //^^^^^ IdentifierKeyword
@@ -77,7 +77,7 @@ expression: "dump_document(&document, &contents)"
       {
 //    ^ PunctuationBracket
           // Css classes tests
-//        ^^^^^^^^^^^^^^^^^^^^^ Comment
+//        ^^^^^^^^^^^^^^^^^^^^ Comment
           [Fact]
 //        ^ PunctuationBracket
 //         ^^^^ Identifier
@@ -236,7 +236,7 @@ expression: "dump_document(&document, &contents)"
 //              ^ PunctuationBracket
   
               // Main
-//            ^^^^^^^^ Comment
+//            ^^^^^^^ Comment
               Assert.Contains(@$"rz-datatable-scrollable-wrapper", component.Markup);
 //            ^^^^^^ Identifier
 //                  ^ PunctuationBracket
@@ -407,9 +407,9 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
 //                            ^^^ StringLiteral
-//                               ^^ CharacterLiteral
+//                               ^^ StringLiteralEscape
 //                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ CharacterLiteral
+//                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
@@ -421,9 +421,9 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
 //                            ^^^ StringLiteral
-//                               ^^ CharacterLiteral
+//                               ^^ StringLiteralEscape
 //                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ CharacterLiteral
+//                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
@@ -435,9 +435,9 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
 //                            ^^^ StringLiteral
-//                               ^^ CharacterLiteral
+//                               ^^ StringLiteralEscape
 //                                 ^^^^^^^^^^^^ StringLiteral
-//                                             ^^ CharacterLiteral
+//                                             ^^ StringLiteralEscape
 //                                               ^^^ StringLiteral
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
@@ -448,7 +448,6 @@ expression: "dump_document(&document, &contents)"
 //                  ^ PunctuationBracket
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
-//                            ^^^ StringLiteral
   Lorem Ipsum
   ", component.Markup);
 // ^ PunctuationBracket

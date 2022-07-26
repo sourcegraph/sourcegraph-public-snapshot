@@ -177,12 +177,14 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
         //  make sure to place the scope(...) at the beginning of the list.
         vec![
             (scope("comment"), Comment),
+            (scope("meta.documentation"), Comment),
             (scope("storage.type.keyword"), IdentifierKeyword),
             (scope("entity.name.function"), IdentifierFunction),
             (scope("keyword.operator"), IdentifierOperator),
             (scope("keyword"), IdentifierKeyword),
             (scope("variable"), Identifier),
             (scope("punctuation"), PunctuationBracket),
+            (scope("constant.character.escape"), StringLiteralEscape),
             (scope("string"), StringLiteral),
             (scope("constant.numeric"), NumericLiteral),
             (scope("constant.character"), CharacterLiteral),
@@ -223,6 +225,9 @@ impl<'a> DocumentGenerator<'a> {
         let mut highlight_manager = HighlightManager::default();
         let mut end_of_line = (0, 0);
         for (row, line_contents) in LinesWithEndings::from(self.code).enumerate() {
+            println!("");
+            println!("Starting new line: {}", line_contents);
+
             if self.max_line_len.map_or(false, |n| line_contents.len() > n) {
                 // TODO: Should just gracefully handle this, but haven't been able
                 // to reproduce this yet.
@@ -231,6 +236,8 @@ impl<'a> DocumentGenerator<'a> {
             }
 
             let ops = self.parse_state.parse_line(line_contents, self.syntax_set);
+            println!("Applying: {:?}", ops);
+
             for &(byte_offset, ref op) in ops.as_slice() {
                 // Character represents the nth character in a line.
                 // This can be roughly thought of as column, but non-single-width
@@ -240,10 +247,9 @@ impl<'a> DocumentGenerator<'a> {
                     .enumerate()
                     .find(|(_, (offset, _))| *offset == byte_offset)
                 {
-                    Some(char) => char,
-                    None => continue,
-                }
-                .0;
+                    Some(char) => char.0,
+                    None => line_contents.chars().count() - 1,
+                };
 
                 // It's unclear to me why we have to clone the entire stack here?
                 //  It should work without cloning (as far as I can tell)
@@ -252,6 +258,8 @@ impl<'a> DocumentGenerator<'a> {
                 // TODO
                 // let mut stack = self.stack.clone();
                 self.stack.apply_with_hook(op, |basic_op, _stack| {
+                    // println!("Applying: {:?} w/ stack: {:?}", basic_op, _stack);
+
                     // TODO: Make sure stack is always the same?
                     //  It seems we _should_ be using that to determine things for mulit-line
                     //  comments maybe?
@@ -292,14 +300,16 @@ impl<'a> DocumentGenerator<'a> {
                         }
                     }
                 });
+
+                dbg!(&self.stack.scopes);
                 // self.stack = stack;
             }
 
             end_of_line = (row, line_contents.chars().count());
-            while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
-                push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
-                println!("OH ASDFSDFSDF: {:?} // {:?}", highlight_manager, partial_hl);
-            }
+            // while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
+            //     push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
+            //     println!("OH ASDFSDFSDF: {:?} // {:?}", highlight_manager, partial_hl);
+            // }
         }
 
         // TODO: I think (from my logic) this might not be necessary :)
@@ -410,7 +420,7 @@ mod test {
         assert_eq!(
             vec![
                 new_occurence(vec![0, 0, 0, 7], SyntaxKind::IdentifierKeyword),
-                new_occurence(vec![0, 8, 0, 12], SyntaxKind::Identifier),
+                new_occurence(vec![0, 8, 0, 11], SyntaxKind::Identifier),
             ],
             output.occurrences
         );
@@ -425,6 +435,7 @@ mod test {
 /* Multi
  * Line
  */
+int x = 1;
 "#
         .to_string();
 
@@ -433,7 +444,13 @@ mod test {
             .generate();
 
         assert_eq!(
-            vec![new_occurence(vec![1, 0, 3, 3], SyntaxKind::Comment),],
+            vec![
+                new_occurence(vec![1, 0, 3, 3], SyntaxKind::Comment),
+                new_occurence(vec![4, 0, 3], SyntaxKind::IdentifierType),
+                new_occurence(vec![4, 6, 7], SyntaxKind::IdentifierOperator),
+                new_occurence(vec![4, 8, 9], SyntaxKind::NumericLiteral),
+                new_occurence(vec![4, 9, 10], SyntaxKind::PunctuationBracket),
+            ],
             output.occurrences
         );
     }
@@ -480,22 +497,25 @@ int main() {
         let output = DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
             .generate();
 
+        let dumped = dump_document(&output, &q.code);
         assert_eq!(
-            vec![
-                new_occurence(vec![1, 0, 3], SyntaxKind::IdentifierType),
-                new_occurence(vec![1, 4, 8], SyntaxKind::IdentifierFunction),
-                new_occurence(vec![1, 8, 9], SyntaxKind::PunctuationBracket),
-                new_occurence(vec![1, 9, 10], SyntaxKind::PunctuationBracket),
-                new_occurence(vec![1, 11, 12], SyntaxKind::PunctuationBracket),
-                new_occurence(vec![2, 2, 25], SyntaxKind::Comment),
-                new_occurence(vec![3, 2, 8], SyntaxKind::IdentifierKeyword),
-                // For some reason, syntect not capturing variable here... perhaps in an updated
-                // version it would...?
-                // new_occurence(vec![3, 9, 10], SyntaxKind::Identifier),
-                new_occurence(vec![3, 10, 11], SyntaxKind::PunctuationBracket),
-                new_occurence(vec![4, 0, 1], SyntaxKind::PunctuationBracket),
-            ],
-            output.occurrences
+            dumped.trim(),
+            r#"
+  int main() {
+//^^^ IdentifierType
+//    ^^^^ IdentifierFunction
+//        ^ PunctuationBracket
+//         ^ PunctuationBracket
+//           ^ PunctuationBracket
+    // Single line comment
+//  ^^^^^^^^^^^^^^^^^^^^^^ Comment
+    return x;
+//  ^^^^^^ IdentifierKeyword
+//          ^ PunctuationBracket
+  }
+//^ PunctuationBracket
+"#
+            .trim()
         );
     }
 

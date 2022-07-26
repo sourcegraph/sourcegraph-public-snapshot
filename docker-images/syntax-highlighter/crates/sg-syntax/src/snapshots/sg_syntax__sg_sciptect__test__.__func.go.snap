@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 456
+assertion_line: 551
 expression: "dump_document(&document, &contents)"
 ---
   package main
@@ -18,7 +18,7 @@ expression: "dump_document(&document, &contents)"
 //          ^ PunctuationBracket
 //            ^ PunctuationBracket
    // this is comment
-// ^^^^^^^^^^^^^^^^^^^ Comment
+// ^^^^^^^^^^^^^^^^^^ Comment
   
    x := 1234
 // ^ Identifier
@@ -28,10 +28,12 @@ expression: "dump_document(&document, &contents)"
 // ^^^^ Identifier
 //      ^^ IdentifierOperator
 //         ^^^ CharacterLiteral
-   string := "hello"
+   string := "hello\n"
 // ^^^^^^ Identifier
 //        ^^ IdentifierOperator
-//           ^^^^^^^ StringLiteral
+//           ^^^^^^ StringLiteral
+//                 ^^ StringLiteralEscape
+//                   ^ StringLiteral
    bool := true
 // ^^^^ Identifier
 //      ^^ IdentifierOperator
