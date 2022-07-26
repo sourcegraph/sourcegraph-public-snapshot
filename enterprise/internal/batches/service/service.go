@@ -808,7 +808,6 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 	if spec.BatchChangeID != 0 {
 		opts = store.GetBatchChangeOpts{ID: spec.BatchChangeID}
 	} else {
-		// TODO: Should name be case-insensitive? i.e. are "foo" and "Foo" the same?
 		opts = store.GetBatchChangeOpts{
 			Name:            spec.Spec.Name,
 			NamespaceUserID: spec.NamespaceUserID,
