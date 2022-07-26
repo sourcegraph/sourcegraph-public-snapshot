@@ -19,10 +19,8 @@ import (
 
 func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfo, error) {
 	dir := s.dir(repo)
-	resp := protocol.RepoInfo{
-		Cloned: repoCloned(dir),
-	}
-	if resp.Cloned {
+	resp := protocol.RepoInfo{}
+	if repoCloned(dir) {
 		// TODO(keegancsmith,tsenart) the only user of this information is the site admin
 		// settings page for a repo. That page should just ask the DB for the remote URL.
 		//
@@ -36,50 +34,9 @@ func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.Rep
 		resp.URL = remoteURL.String()
 	}
 	{
-		resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
-		if isAlwaysCloningTest(repo) {
-			resp.CloneInProgress = true
-			resp.CloneProgress = "This will never finish cloning"
-		}
-	}
-	if resp.Cloned {
-		if mtime, err := repoLastFetched(dir); err != nil {
-			s.Logger.Warn("error computing last-fetched date", log.String("repo", string(repo)), log.Error(err))
-		} else {
-			resp.LastFetched = &mtime
-		}
-
-		if cloneTime, err := getRecloneTime(dir); err != nil {
-			s.Logger.Warn("error getting re-clone time", log.String("repo", string(repo)), log.Error(err))
-		} else {
-			resp.CloneTime = &cloneTime
-		}
-
-		if lastChanged, err := repoLastChanged(dir); err != nil {
-			s.Logger.Warn("error getting last changed", log.String("repo", string(repo)), log.Error(err))
-		} else {
-			resp.LastChanged = &lastChanged
-		}
-	}
-	gitRepo, err := s.DB.GitserverRepos().GetByName(ctx, repo)
-	if err == nil {
-		resp.Size = gitRepo.RepoSizeBytes
-		resp.LastError = gitRepo.LastError
+		resp.CloneProgress, _ = s.locker.Status(dir)
 	}
 	return &resp, nil
-}
-
-func (s *Server) repoCloneProgress(repo api.RepoName) *protocol.RepoCloneProgress {
-	dir := s.dir(repo)
-	resp := protocol.RepoCloneProgress{
-		Cloned: repoCloned(dir),
-	}
-	resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
-	if isAlwaysCloningTest(repo) {
-		resp.CloneInProgress = true
-		resp.CloneProgress = "This will never finish cloning"
-	}
-	return &resp
 }
 
 func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
@@ -90,15 +47,18 @@ func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
 	}
 
 	resp := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]*protocol.RepoInfo, len(req.Repos)),
+		Results: make(map[api.RepoName]protocol.RepoInfoResult, len(req.Repos)),
 	}
 	for _, repoName := range req.Repos {
 		result, err := s.repoInfo(r.Context(), repoName)
+		var errMsg string
 		if err != nil {
-			http.Error(w, err.Error(), http.StatusInternalServerError)
-			return
+			errMsg = err.Error()
 		}
-		resp.Results[repoName] = result
+		resp.Results[repoName] = protocol.RepoInfoResult{
+			RepoInfo: result,
+			Error:    errMsg,
+		}
 	}
 
 	if err := json.NewEncoder(w).Encode(resp); err != nil {
@@ -121,27 +81,6 @@ func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_, _ = w.Write(b)
-}
-
-func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoCloneProgressRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	resp := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
-	}
-	for _, repoName := range req.Repos {
-		result := s.repoCloneProgress(repoName)
-		resp.Results[repoName] = result
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
 }
 
 func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {

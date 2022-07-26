@@ -219,8 +219,6 @@ type Client interface {
 	// repo name using the Rendezvous hashing scheme.
 	RendezvousAddrForRepo(api.RepoName) string
 
-	RepoCloneProgress(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
-
 	// ResolveRevision will return the absolute commit for a commit-ish spec. If spec is empty, HEAD is
 	// used.
 	//
@@ -974,79 +972,6 @@ func (e *RepoNotCloneableErr) Error() string {
 	return fmt.Sprintf("repo not found (name=%s notfound=%v) because %s", e.repo, e.notFound, e.reason)
 }
 
-func (c *clientImplementor) RepoCloneProgress(ctx context.Context, repos ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
-	numPossibleShards := len(c.Addrs())
-	shards := make(map[string]*protocol.RepoCloneProgressRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
-
-	for _, r := range repos {
-		addr, err := c.AddrForRepo(ctx, r)
-		if err != nil {
-			return nil, err
-		}
-		shard := shards[addr]
-
-		if shard == nil {
-			shard = new(protocol.RepoCloneProgressRequest)
-			shards[addr] = shard
-		}
-
-		shard.Repos = append(shard.Repos, r)
-	}
-
-	type op struct {
-		req *protocol.RepoCloneProgressRequest
-		res *protocol.RepoCloneProgressResponse
-		err error
-	}
-
-	ch := make(chan op, len(shards))
-	for _, req := range shards {
-		go func(o op) {
-			var resp *http.Response
-			resp, o.err = c.httpPost(ctx, o.req.Repos[0], "repo-clone-progress", o.req)
-			if o.err != nil {
-				ch <- o
-				return
-			}
-
-			defer resp.Body.Close()
-			if resp.StatusCode != http.StatusOK {
-				o.err = &url.Error{
-					URL: resp.Request.URL.String(),
-					Op:  "RepoCloneProgress",
-					Err: errors.Errorf("RepoCloneProgress: http status %d", resp.StatusCode),
-				}
-				ch <- o
-				return // we never get an error status code AND result
-			}
-
-			o.res = new(protocol.RepoCloneProgressResponse)
-			o.err = json.NewDecoder(resp.Body).Decode(o.res)
-			ch <- o
-		}(op{req: req})
-	}
-
-	var err error
-	res := protocol.RepoCloneProgressResponse{
-		Results: make(map[api.RepoName]*protocol.RepoCloneProgress),
-	}
-
-	for i := 0; i < cap(ch); i++ {
-		o := <-ch
-
-		if o.err != nil {
-			err = errors.Append(err, o.err)
-			continue
-		}
-
-		for repo, info := range o.res.Results {
-			res.Results[repo] = info
-		}
-	}
-
-	return &res, err
-}
-
 func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName) (*protocol.RepoInfoResponse, error) {
 	if ClientMocks.RepoInfo != nil {
 		return ClientMocks.RepoInfo(ctx, repos...)
@@ -1109,7 +1034,7 @@ func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 
 	var err error
 	res := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]*protocol.RepoInfo),
+		Results: make(map[api.RepoName]protocol.RepoInfoResult),
 	}
 
 	for i := 0; i < cap(ch); i++ {

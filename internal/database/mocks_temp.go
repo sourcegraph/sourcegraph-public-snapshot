@@ -17966,7 +17966,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (r0 []*types.GitserverRepo, r1 error) {
+			defaultHook: func(context.Context, ...api.RepoName) (r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
 				return
 			},
 		},
@@ -17986,7 +17986,7 @@ func NewMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		IterateWithNonemptyLastErrorFunc: &GitserverRepoStoreIterateWithNonemptyLastErrorFunc{
-			defaultHook: func(context.Context, func(repo types.RepoGitserverStatus) error) (r0 error) {
+			defaultHook: func(context.Context, func(repo api.RepoName) error) (r0 error) {
 				return
 			},
 		},
@@ -18054,7 +18054,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		GetByNamesFunc: &GitserverRepoStoreGetByNamesFunc{
-			defaultHook: func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+			defaultHook: func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 				panic("unexpected invocation of MockGitserverRepoStore.GetByNames")
 			},
 		},
@@ -18074,7 +18074,7 @@ func NewStrictMockGitserverRepoStore() *MockGitserverRepoStore {
 			},
 		},
 		IterateWithNonemptyLastErrorFunc: &GitserverRepoStoreIterateWithNonemptyLastErrorFunc{
-			defaultHook: func(context.Context, func(repo types.RepoGitserverStatus) error) error {
+			defaultHook: func(context.Context, func(repo api.RepoName) error) error {
 				panic("unexpected invocation of MockGitserverRepoStore.IterateWithNonemptyLastError")
 			},
 		},
@@ -18402,15 +18402,15 @@ func (c GitserverRepoStoreGetByNameFuncCall) Results() []interface{} {
 // GetByNames method of the parent MockGitserverRepoStore instance is
 // invoked.
 type GitserverRepoStoreGetByNamesFunc struct {
-	defaultHook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)
-	hooks       []func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)
+	defaultHook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
+	hooks       []func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)
 	history     []GitserverRepoStoreGetByNamesFuncCall
 	mutex       sync.Mutex
 }
 
 // GetByNames delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoName) ([]*types.GitserverRepo, error) {
+func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 	r0, r1 := m.GetByNamesFunc.nextHook()(v0, v1...)
 	m.GetByNamesFunc.appendCall(GitserverRepoStoreGetByNamesFuncCall{v0, v1, r0, r1})
 	return r0, r1
@@ -18419,7 +18419,7 @@ func (m *MockGitserverRepoStore) GetByNames(v0 context.Context, v1 ...api.RepoNa
 // SetDefaultHook sets function that is called when the GetByNames method of
 // the parent MockGitserverRepoStore instance is invoked and the hook queue
 // is empty.
-func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)) {
+func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)) {
 	f.defaultHook = hook
 }
 
@@ -18427,7 +18427,7 @@ func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultHook(hook func(context.Cont
 // GetByNames method of the parent MockGitserverRepoStore instance invokes
 // the hook at the front of the queue and discards it. After the queue is
 // empty, the default hook function is invoked for any future action.
-func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error)) {
+func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -18435,20 +18435,20 @@ func (f *GitserverRepoStoreGetByNamesFunc) PushHook(hook func(context.Context, .
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultReturn(r0 []*types.GitserverRepo, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) SetDefaultReturn(r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *GitserverRepoStoreGetByNamesFunc) PushReturn(r0 []*types.GitserverRepo, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) PushReturn(r0 map[api.RepoName]*types.GitserverRepo, r1 error) {
+	f.PushHook(func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 		return r0, r1
 	})
 }
 
-func (f *GitserverRepoStoreGetByNamesFunc) nextHook() func(context.Context, ...api.RepoName) ([]*types.GitserverRepo, error) {
+func (f *GitserverRepoStoreGetByNamesFunc) nextHook() func(context.Context, ...api.RepoName) (map[api.RepoName]*types.GitserverRepo, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -18489,7 +18489,7 @@ type GitserverRepoStoreGetByNamesFuncCall struct {
 	Arg1 []api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*types.GitserverRepo
+	Result0 map[api.RepoName]*types.GitserverRepo
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -18841,15 +18841,15 @@ func (c GitserverRepoStoreIterateRepoGitserverStatusFuncCall) Results() []interf
 // when the IterateWithNonemptyLastError method of the parent
 // MockGitserverRepoStore instance is invoked.
 type GitserverRepoStoreIterateWithNonemptyLastErrorFunc struct {
-	defaultHook func(context.Context, func(repo types.RepoGitserverStatus) error) error
-	hooks       []func(context.Context, func(repo types.RepoGitserverStatus) error) error
+	defaultHook func(context.Context, func(repo api.RepoName) error) error
+	hooks       []func(context.Context, func(repo api.RepoName) error) error
 	history     []GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall
 	mutex       sync.Mutex
 }
 
 // IterateWithNonemptyLastError delegates to the next hook function in the
 // queue and stores the parameter and result values of this invocation.
-func (m *MockGitserverRepoStore) IterateWithNonemptyLastError(v0 context.Context, v1 func(repo types.RepoGitserverStatus) error) error {
+func (m *MockGitserverRepoStore) IterateWithNonemptyLastError(v0 context.Context, v1 func(repo api.RepoName) error) error {
 	r0 := m.IterateWithNonemptyLastErrorFunc.nextHook()(v0, v1)
 	m.IterateWithNonemptyLastErrorFunc.appendCall(GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall{v0, v1, r0})
 	return r0
@@ -18858,7 +18858,7 @@ func (m *MockGitserverRepoStore) IterateWithNonemptyLastError(v0 context.Context
 // SetDefaultHook sets function that is called when the
 // IterateWithNonemptyLastError method of the parent MockGitserverRepoStore
 // instance is invoked and the hook queue is empty.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultHook(hook func(context.Context, func(repo types.RepoGitserverStatus) error) error) {
+func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultHook(hook func(context.Context, func(repo api.RepoName) error) error) {
 	f.defaultHook = hook
 }
 
@@ -18867,7 +18867,7 @@ func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultHook(hook
 // instance invokes the hook at the front of the queue and discards it.
 // After the queue is empty, the default hook function is invoked for any
 // future action.
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(context.Context, func(repo types.RepoGitserverStatus) error) error) {
+func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(context.Context, func(repo api.RepoName) error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -18876,19 +18876,19 @@ func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushHook(hook func(
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, func(repo types.RepoGitserverStatus) error) error {
+	f.SetDefaultHook(func(context.Context, func(repo api.RepoName) error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, func(repo types.RepoGitserverStatus) error) error {
+	f.PushHook(func(context.Context, func(repo api.RepoName) error) error {
 		return r0
 	})
 }
 
-func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) nextHook() func(context.Context, func(repo types.RepoGitserverStatus) error) error {
+func (f *GitserverRepoStoreIterateWithNonemptyLastErrorFunc) nextHook() func(context.Context, func(repo api.RepoName) error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -18928,7 +18928,7 @@ type GitserverRepoStoreIterateWithNonemptyLastErrorFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 func(repo types.RepoGitserverStatus) error
+	Arg1 func(repo api.RepoName) error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error

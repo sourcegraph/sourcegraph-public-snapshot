@@ -464,7 +464,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
 	mux.HandleFunc("/repos", trace.WithRouteName("repos", s.handleRepoInfo))
 	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
-	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
 	mux.HandleFunc("/delete", trace.WithRouteName("delete", s.handleRepoDelete))
 	mux.HandleFunc("/repo-update", trace.WithRouteName("repo-update", s.handleRepoUpdate))
 	mux.HandleFunc("/create-commit-from-patch", trace.WithRouteName("create-commit-from-patch", s.handleCreateCommitFromPatch))
@@ -961,12 +960,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 	defer cancel1()
 	ctx, cancel2 := context.WithTimeout(ctx, conf.GitLongCommandTimeout())
 	defer cancel2()
-	resp.QueueCap, resp.QueueLen = s.queryCloneLimiter()
 	if !repoCloned(dir) && !s.skipCloneForTests {
-		// optimistically, we assume that our cloning attempt might
-		// succeed.
-		resp.CloneInProgress = true
-
 		// We do not need to check if req.CloneFromShard is non-zero here since that has no effect on
 		// the code path at this point. Since the repo is already not cloned at this point, either
 		// this request was received for a repo migration or a regular clone - for both of which we
@@ -979,7 +973,6 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 			resp.Error = err.Error()
 		}
 	} else {
-		resp.Cloned = true
 		var statusErr, updateErr error
 
 		if debounce(req.Repo, req.Since) {
@@ -1919,6 +1912,7 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
 }
 
+// TODO: Why does this exist? It could mean we miss clone status in the UI, correct?
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
 func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, status types.CloneStatus) {
 	if err := s.setCloneStatus(ctx, name, status); err != nil {
@@ -1981,9 +1975,9 @@ type cloneOptions struct {
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (cloneProgress string, err error) {
-	if isAlwaysCloningTest(repo) {
-		return "This will never finish cloning", nil
-	}
+	// if isAlwaysCloningTest(repo) {
+	// 	return "This will never finish cloning", nil
+	// }
 
 	// We always want to store whether there was an error cloning the repo
 	defer func() {

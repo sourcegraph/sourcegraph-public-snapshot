@@ -176,17 +176,9 @@ type RepoUpdateRequest struct {
 //
 // TODO just use RepoInfoResponse?
 type RepoUpdateResponse struct {
-	Cloned          bool
-	CloneInProgress bool
-	LastFetched     *time.Time
-	LastChanged     *time.Time
-	Error           string // an error reported by the update, as opposed to a protocol error
-	QueueCap        int    // size of the clone queue
-	QueueLen        int    // current clone operations
-	// Following items likely provided only if the request specified waiting.
-	Received *time.Time // time request was received by handler function
-	Started  *time.Time // time request actually started processing
-	Finished *time.Time // time request completed
+	LastFetched *time.Time
+	LastChanged *time.Time
+	Error       string // an error reported by the update, as opposed to a protocol error
 }
 
 type NotFoundPayload struct {
@@ -208,12 +200,6 @@ type IsRepoCloneableResponse struct {
 	Reason    string // if not cloneable, the reason why not
 }
 
-// IsRepoClonedRequest is a request to determine if a repo currently exists on gitserver.
-type IsRepoClonedRequest struct {
-	// Repo is the repository to check.
-	Repo api.RepoName
-}
-
 // RepoDeleteRequest is a request to delete a repository clone on gitserver
 type RepoDeleteRequest struct {
 	// Repo is the repository to delete.
@@ -229,27 +215,20 @@ type RepoInfoRequest struct {
 // RepoInfo is the information requests about a single repository
 // via a RepoInfoRequest.
 type RepoInfo struct {
-	URL             string     // this repository's Git remote URL
-	CloneInProgress bool       // whether the repository is currently being cloned
-	CloneProgress   string     // a progress message from the running clone command.
-	Cloned          bool       // whether the repository has been cloned successfully
-	LastFetched     *time.Time // when the last `git remote update` or `git fetch` occurred
-	LastChanged     *time.Time // timestamp of the most recent ref in the git repository
-	LastError       string     // the most recent error seen while fetching or cloning the repo
-	ShardID         string     // the ID of the shard owning this repo
-	Size            int64      // size in bytes
+	URL           string // this repository's Git remote URL
+	CloneProgress string // a progress message from the running clone command.
+}
 
-	// CloneTime is the time the clone occurred. Note: Repositories may be
-	// re-cloned automatically, so this time is likely to move forward
-	// periodically.
-	CloneTime *time.Time
+type RepoInfoResult struct {
+	RepoInfo *RepoInfo
+	Error    string
 }
 
 // RepoInfoResponse is the response to a repository information request
 // for multiple repositories at the same time.
 type RepoInfoResponse struct {
 	// Results mapping from the repository name to the repository information.
-	Results map[api.RepoName]*RepoInfo
+	Results map[api.RepoName]RepoInfoResult
 }
 
 // ReposStats is an aggregation of statistics from a gitserver.
@@ -261,25 +240,6 @@ type ReposStats struct {
 
 	// GitDirBytes is the amount of bytes stored in .git directories.
 	GitDirBytes int64
-}
-
-// RepoCloneProgressRequest is a request for information about the clone progress of multiple
-// repositories on gitserver.
-type RepoCloneProgressRequest struct {
-	Repos []api.RepoName
-}
-
-// RepoCloneProgress is information about the clone progress of a repo
-type RepoCloneProgress struct {
-	CloneInProgress bool   // whether the repository is currently being cloned
-	CloneProgress   string // a progress message from the running clone command.
-	Cloned          bool   // whether the repository has been cloned successfully
-}
-
-// RepoCloneProgressResponse is the response to a repository clone progress request
-// for multiple repositories at the same time.
-type RepoCloneProgressResponse struct {
-	Results map[api.RepoName]*RepoCloneProgress
 }
 
 // CreateCommitFromPatchRequest is the request information needed for creating

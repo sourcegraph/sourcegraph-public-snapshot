@@ -175,7 +175,7 @@ func (c *Client) CommitDate(ctx context.Context, repositoryID int, commit string
 	return "", time.Time{}, false, errors.Wrap(err, "git.CommitDate")
 }
 
-func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]*protocol.RepoInfo, err error) {
+func (c *Client) RepoInfo(ctx context.Context, repos ...api.RepoName) (_ map[api.RepoName]protocol.RepoInfoResult, err error) {
 	ctx, _, endObservation := c.operations.repoInfo.With(ctx, &err, observation.Args{LogFields: []log.Field{
 		log.Int("numRepos", len(repos)),
 	}})
