@@ -132,6 +132,9 @@ export interface BlobInfo extends AbsoluteRepoFile, ModeSpec {
 
     /** The trusted syntax-highlighted code as HTML */
     html: string
+
+    /** LSIF syntax-highlighting data */
+    lsif?: string
 }
 
 const domFunctions = {
