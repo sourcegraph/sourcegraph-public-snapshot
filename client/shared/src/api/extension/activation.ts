@@ -8,6 +8,7 @@ import { asError, ErrorLike, isErrorLike, hashCode, memoizeObservable } from '@s
 
 import { ConfiguredExtension, getScriptURLFromExtensionManifest, splitExtensionID } from '../../extensions/extension'
 import { areExtensionsSame, getEnabledExtensionsForSubject } from '../../extensions/extensions'
+import { isSettingsValid } from '../../settings/settings'
 import { wrapRemoteObservable } from '../client/api/common'
 import { MainThreadAPI } from '../contract'
 import { tryCatchPromise } from '../util'
@@ -55,15 +56,16 @@ export function observeActiveExtensions(
 }
 
 /**
- * List of extension IDs migrated to the core workflow:
- * - insight-like extensions migrated to the insight built-in data-fetchers
- * - Sourcegraph default extensions implemented as separate core product fetures.
+ * List of insight-like extension ids. These insights worked via extensions before,
+ * but at the moment they work via insight built-in data-fetchers.
  */
-const DEPRECATED_EXTENSION_IDS = new Set([
-    'sourcegraph/code-stats-insights',
-    'sourcegraph/search-insights',
-    'sourcegraph/git-extras',
-])
+const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'sourcegraph/search-insights'])
+
+/**
+ * List of extensions being migrated to the core workflow. These extensions are not activated if
+ * `extensionsAsCoreFeatures` experimental feature is enabled.
+ */
+const MIGRATING_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras'])
 
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,
@@ -103,9 +105,11 @@ export function activateExtensions(
     const previouslyActivatedExtensions = new Set<string>()
     const extensionContributions = new Map<string, Contributions>()
     const contributionsToAdd = new Map<string, Contributions>()
-    const extensionsSubscription = combineLatest([state.activeExtensions, getScriptURLs(null)])
+    const extensionsSubscription = combineLatest([state.settings, state.activeExtensions, getScriptURLs(null)])
         .pipe(
-            concatMap(([activeExtensions, getScriptURLs]) => {
+            concatMap(([settings, activeExtensions, getScriptURLs]) => {
+                const extensionsAsCoreFeatures =
+                    isSettingsValid(settings) && settings.final.experimentalFeatures?.extensionsAsCoreFeatures
                 const toDeactivate = new Set<string>()
                 const toActivate = new Map<string, ConfiguredExtension | ExecutableExtension>()
                 const activeExtensionIDs = new Set<string>()
@@ -113,6 +117,11 @@ export function activateExtensions(
                 for (const extension of activeExtensions) {
                     // Ignore extensions that now work via built-in insights fetchers
                     if (DEPRECATED_EXTENSION_IDS.has(extension.id)) {
+                        continue
+                    }
+
+                    // Ignore extensions that are being migrated to the core workflow if the experimental feature is enabled
+                    if (extensionsAsCoreFeatures && MIGRATING_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)) {
                         continue
                     }
 

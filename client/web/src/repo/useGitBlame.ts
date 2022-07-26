@@ -14,6 +14,7 @@ import { useObservable } from '@sourcegraph/wildcard'
 
 import { requestGraphQL } from '../backend/graphql'
 import { GitBlameResult, GitBlameVariables } from '../graphql-operations'
+import { useExperimentalFeatures } from '../stores'
 
 type BlameHunk = NonNullable<NonNullable<NonNullable<GitBlameResult['repository']>['commit']>['blob']>['blame'][number]
 
@@ -135,9 +136,14 @@ interface BlameArguments {
 }
 
 export const useGitBlame = (args?: BlameArguments): TextDocumentDecoration[] | undefined => {
+    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible] = useTemporarySetting('git.showBlame', false)
     const hunks = useObservable(
-        useMemo(() => (args && isBlameVisible ? fetchBlame(args) : of(undefined)), [isBlameVisible, args])
+        useMemo(() => (extensionsAsCoreFeatures && args && isBlameVisible ? fetchBlame(args) : of(undefined)), [
+            extensionsAsCoreFeatures,
+            isBlameVisible,
+            args,
+        ])
     )
 
     return hunks ? getBlameDecorations(hunks) : undefined

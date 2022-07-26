@@ -6,11 +6,13 @@ import classNames from 'classnames'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
+import { useExperimentalFeatures } from '../../stores'
 import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
 
 import styles from './ToggleBlameAction.module.scss'
 
 export const ToggleBlameAction: React.FC = () => {
+    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible, setValueAndSave] = useTemporarySetting('git.showBlame', false)
 
     const descriptiveText = isBlameVisible
@@ -18,6 +20,10 @@ export const ToggleBlameAction: React.FC = () => {
         : 'Show Git blame line annotations for the whole file'
 
     const toggleBlameState = useCallback(() => setValueAndSave(isVisible => !isVisible), [setValueAndSave])
+
+    if (!extensionsAsCoreFeatures) {
+        return null
+    }
 
     return (
         <Tooltip content={descriptiveText}>
