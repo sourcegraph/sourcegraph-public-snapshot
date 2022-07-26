@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 438
+assertion_line: 446
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -92,9 +92,7 @@ expression: "dump_document(&document, &contents)"
 //                         ^ PunctuationBracket
 //                          ^^^^^^^^^^^ Identifier
 //                                     ^ PunctuationBracket
-//                                      ^ PunctuationBracket
-//                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                                              ^ PunctuationBracket
+//                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                                               ^ PunctuationBracket
 //                                                                                ^ PunctuationBracket
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
@@ -188,13 +186,9 @@ expression: "dump_document(&document, &contents)"
 //                                        ^ PunctuationBracket
 //                                         ^ NumericLiteral
 //                                          ^ PunctuationBracket
-//                                            ^ PunctuationBracket
-//                                             ^^^^^^^^ StringLiteral
-//                                                     ^ PunctuationBracket
+//                                            ^^^^^^^^^^ StringLiteral
 //                                                      ^ PunctuationBracket
-//                                                        ^ PunctuationBracket
-//                                                         ^^ StringLiteral
-//                                                           ^ PunctuationBracket
+//                                                        ^^^^ StringLiteral
 //                                                            ^ PunctuationBracket
 //                                                             ^ PunctuationBracket
                       builder.CloseComponent();
@@ -220,9 +214,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^ PunctuationBracket
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
-//                            ^^^ PunctuationBracket
-//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                              ^ PunctuationBracket
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                               ^ PunctuationBracket
 //                                                                 ^^^^^^^^^ Identifier
 //                                                                          ^ PunctuationBracket
@@ -234,9 +226,7 @@ expression: "dump_document(&document, &contents)"
 //                  ^ PunctuationBracket
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
-//                            ^^^ PunctuationBracket
-//                               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
-//                                                           ^ PunctuationBracket
+//                            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ StringLiteral
 //                                                            ^ PunctuationBracket
 //                                                              ^^^^^^^^^ Identifier
 //                                                                       ^ PunctuationBracket
@@ -335,13 +325,9 @@ expression: "dump_document(&document, &contents)"
 //                                        ^ PunctuationBracket
 //                                         ^ NumericLiteral
 //                                          ^ PunctuationBracket
-//                                            ^ PunctuationBracket
-//                                             ^^^^^^^^ StringLiteral
-//                                                     ^ PunctuationBracket
+//                                            ^^^^^^^^^^ StringLiteral
 //                                                      ^ PunctuationBracket
-//                                                        ^ PunctuationBracket
-//                                                         ^^ StringLiteral
-//                                                           ^ PunctuationBracket
+//                                                        ^^^^ StringLiteral
 //                                                            ^ PunctuationBracket
 //                                                             ^ PunctuationBracket
                       builder.CloseComponent();
@@ -365,9 +351,7 @@ expression: "dump_document(&document, &contents)"
 //                       ^ IdentifierOperator
 //                         ^^^ IdentifierOperator
 //                                  ^ PunctuationBracket
-//                                   ^^ PunctuationBracket
-//                                     ^^^^^ StringLiteral
-//                                          ^ PunctuationBracket
+//                                   ^^^^^^^^ StringLiteral
 //                                           ^ PunctuationBracket
 //                                            ^ PunctuationBracket
 //                                             ^^^^^^^ Identifier
@@ -376,8 +360,7 @@ expression: "dump_document(&document, &contents)"
 //                                                              ^ PunctuationBracket
 //                                                               ^^^^^^ Identifier
 //                                                                     ^ PunctuationBracket
-//                                                                       ^ PunctuationBracket
-//                                                                        ^ PunctuationBracket
+//                                                                       ^^ StringLiteral
 //                                                                         ^ PunctuationBracket
 //                                                                          ^ PunctuationBracket
 //                                                                           ^^^^ Identifier
@@ -389,12 +372,11 @@ expression: "dump_document(&document, &contents)"
 //                  ^ PunctuationBracket
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
-//                            ^^^ PunctuationBracket
+//                            ^^^ StringLiteral
 //                               ^^ CharacterLiteral
 //                                 ^^^^^^^^^^^^ StringLiteral
 //                                             ^^ CharacterLiteral
-//                                               ^^ StringLiteral
-//                                                 ^ PunctuationBracket
+//                                               ^^^ StringLiteral
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
 //                                                          ^ PunctuationBracket
@@ -404,12 +386,11 @@ expression: "dump_document(&document, &contents)"
 //                  ^ PunctuationBracket
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
-//                            ^^^ PunctuationBracket
+//                            ^^^ StringLiteral
 //                               ^^ CharacterLiteral
 //                                 ^^^^^^^^^^^^ StringLiteral
 //                                             ^^ CharacterLiteral
-//                                               ^^ StringLiteral
-//                                                 ^ PunctuationBracket
+//                                               ^^^ StringLiteral
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
 //                                                          ^ PunctuationBracket
@@ -419,12 +400,11 @@ expression: "dump_document(&document, &contents)"
 //                  ^ PunctuationBracket
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
-//                            ^^^ PunctuationBracket
+//                            ^^^ StringLiteral
 //                               ^^ CharacterLiteral
 //                                 ^^^^^^^^^^^^ StringLiteral
 //                                             ^^ CharacterLiteral
-//                                               ^^ StringLiteral
-//                                                 ^ PunctuationBracket
+//                                               ^^^ StringLiteral
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
 //                                                          ^ PunctuationBracket
@@ -434,11 +414,9 @@ expression: "dump_document(&document, &contents)"
 //                  ^ PunctuationBracket
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
-//                            ^^ PunctuationBracket
-//                              ^ StringLiteral
+//                            ^^^ StringLiteral
   Lorem Ipsum
   ", component.Markup);
-//^ PunctuationBracket
 // ^ PunctuationBracket
 //   ^^^^^^^^^ Identifier
 //            ^ PunctuationBracket

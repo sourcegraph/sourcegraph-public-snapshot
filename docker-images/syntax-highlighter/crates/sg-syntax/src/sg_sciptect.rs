@@ -144,7 +144,15 @@ impl Debug for HighlightManager {
 static IGNORED_SCOPES: OnceCell<Vec<Scope>> = OnceCell::new();
 fn should_skip_scope(scope: &Scope) -> bool {
     IGNORED_SCOPES
-        .get_or_init(|| vec![Scope::new("source").unwrap()])
+        .get_or_init(|| {
+            // See match_scope_to_kind
+            let scope = |s| Scope::new(s).unwrap();
+            vec![
+                scope("source"),
+                scope("punctuation.definition.string.begin"),
+                scope("punctuation.definition.string.end"),
+            ]
+        })
         .iter()
         .any(|ignored| ignored.is_prefix_of(*scope))
 }

@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 438
+assertion_line: 446
 expression: "dump_document(&document, &contents)"
 ---
   package main
@@ -9,9 +9,7 @@ expression: "dump_document(&document, &contents)"
   
   import "fmt"
 //^^^^^^ IdentifierKeyword
-//       ^ PunctuationBracket
-//        ^^^ StringLiteral
-//           ^ PunctuationBracket
+//       ^^^^^ StringLiteral
   
   func main() {
 //^^^^ IdentifierKeyword
@@ -30,9 +28,7 @@ expression: "dump_document(&document, &contents)"
    string := "hello"
 // ^^^^^^ Identifier
 //        ^^ IdentifierOperator
-//           ^ PunctuationBracket
-//            ^^^^^ StringLiteral
-//                 ^ PunctuationBracket
+//           ^^^^^^^ StringLiteral
    bool := true
 // ^^^^ Identifier
 //      ^^ IdentifierOperator
