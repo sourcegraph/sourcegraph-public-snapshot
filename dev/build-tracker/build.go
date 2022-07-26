@@ -8,25 +8,10 @@ import (
 	"github.com/sourcegraph/log"
 )
 
-type Job struct {
-	buildkite.Job
-}
-
-func (j *Job) name() string {
-	return strp(j.Name)
-}
-
-func (j *Job) exitStatus() int {
-	return intp(j.ExitStatus, 0)
-}
-
-func (j *Job) failed() bool {
-	return !j.SoftFailed && j.exitStatus() > 0
-}
-
 type Build struct {
 	buildkite.Build
-	Jobs map[string]Job
+	Pipeline *Pipeline
+	Jobs     map[string]Job
 }
 
 func (b *Build) hasFailed() bool {
@@ -76,41 +61,51 @@ func (b *Build) message() string {
 	return strp(b.Message)
 }
 
-func (b *Build) pipelineName() string {
-	if b.Pipeline == nil {
-		return ""
-	}
+type Job struct {
+	buildkite.Job
+}
 
-	var slug, name string
-	if b.Pipeline.Name != nil {
-		name = *b.Pipeline.Name
-	}
-	if b.Pipeline.Slug != nil {
-		slug = *b.Pipeline.Slug
-	}
+func (j *Job) name() string {
+	return strp(j.Name)
+}
 
-	if name == "" {
-		return name
-	}
-	return slug
+func (j *Job) exitStatus() int {
+	return intp(j.ExitStatus, 0)
+}
 
+func (j *Job) failed() bool {
+	return !j.SoftFailed && j.exitStatus() > 0
+}
+
+type Pipeline struct {
+	buildkite.Pipeline
+}
+
+func (p *Pipeline) name() string {
+	return strp(p.Name)
 }
 
 type BuildEvent struct {
-	Name  string          `json:"event"`
-	Build buildkite.Build `json:"build,omitempty"`
-	Job   buildkite.Job   `json:"job,omitempty"`
+	Name     string             `json:"event"`
+	Build    buildkite.Build    `json:"build,omitempty"`
+	Pipeline buildkite.Pipeline `json:"pipeline,omitempty"`
+	Job      buildkite.Job      `json:"job,omitempty"`
 }
 
 func (b *BuildEvent) build() *Build {
 	return &Build{
-		Build: b.Build,
-		Jobs:  make(map[string]Job),
+		Build:    b.Build,
+		Pipeline: b.pipeline(),
+		Jobs:     make(map[string]Job),
 	}
 }
 
 func (b *BuildEvent) job() *Job {
-	return &Job{b.Job}
+	return &Job{Job: b.Job}
+}
+
+func (b *BuildEvent) pipeline() *Pipeline {
+	return &Pipeline{Pipeline: b.Pipeline}
 }
 
 func (b *BuildEvent) isBuildFinished() bool {
@@ -143,10 +138,10 @@ func (s *BuildStore) Add(event *BuildEvent) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
-	wrappedBuild := event.build()
-	build, ok := s.builds[wrappedBuild.number()]
+	build, ok := s.builds[event.buildNumber()]
 	if !ok {
-		s.builds[wrappedBuild.number()] = wrappedBuild
+		build = event.build()
+		s.builds[event.buildNumber()] = build
 	}
 	// if the build is finished replace the original build with the replaced one since it will be more up to date
 	if event.isBuildFinished() {
@@ -158,7 +153,7 @@ func (s *BuildStore) Add(event *BuildEvent) {
 		build.Jobs[wrappedJob.name()] = *wrappedJob
 	}
 
-	s.logger.Debug("job added", log.Int("buildNumber", wrappedBuild.number()), log.Int("totalJobs", len(build.Jobs)))
+	s.logger.Debug("job added", log.Int("buildNumber", event.buildNumber()), log.Int("totalJobs", len(build.Jobs)))
 }
 
 func (s *BuildStore) GetByBuildNumber(num int) *Build {

@@ -152,6 +152,7 @@ func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 		return ErrRequestBody
 	}
 
+	logger.Debug("event data", log.String("data", string(data)))
 	err = json.Unmarshal(data, &target)
 	if err != nil {
 		logger.Error("failed to unmarshall request body", log.Error(err))
@@ -214,11 +215,6 @@ func (s *BuildTrackingServer) startOldBuildCleaner(every, window time.Duration) 
 // processEvent delegates the decision to actually send a notifcation
 func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.buildNumber()), log.String("jobName", event.jobName()))
-	// Build number is required!
-	if event.Build.Number == nil {
-		return
-	}
-
 	s.store.Add(event)
 	if event.isBuildFinished() {
 		build := s.store.GetByBuildNumber(event.buildNumber())

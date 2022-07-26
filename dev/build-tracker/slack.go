@@ -53,8 +53,7 @@ func (c *NotificationClient) sendNotification(build *Build) error {
 
 	teammate, err := c.getTeammateForBuild(build)
 	if err != nil {
-		notifcationLogger.Error("failed to find teammate - using 'unknownTeammate'", log.Error(err))
-		teammate = &unknownTeammate
+		notifcationLogger.Error("failed to find teammate", log.Error(err))
 	}
 
 	blocks, err := createMessageBlocks(notifcationLogger, teammate, build)
@@ -179,7 +178,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,
 		},
-		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedJobs}, nil, nil),
+		slack.NewSectionBlock(&slack.TextBlockObject{Type: slack.MarkdownType, Text: failedSection}, nil, nil),
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,
 		},
@@ -187,7 +186,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 			nil,
 			[]*slack.TextBlockObject{
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n%s", author)},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:log: Branch*\n%s", build.branch())},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline*\n%s", build.Pipeline.name())},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit*\n%s", commitLink(*build.Commit))},
 			},
 			nil,
@@ -217,18 +216,18 @@ _"save your fellow dev some time and proactive disable flakes when you spot them
 					Type:  slack.METButton,
 					Style: slack.StylePrimary,
 					URL:   *build.WebURL,
-					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Go to build"},
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: ":mag: Go to build"},
 				},
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
 					URL:  grafanaURLFor(logger, build),
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View logs on Grafana"},
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: ":wood: View logs on Grafana"},
 				},
 				&slack.ButtonBlockElement{
 					Type:  slack.METButton,
 					Style: slack.StyleDanger,
 					URL:   "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake ?"},
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "face_with_raised_eyebrow: Is this a flake ?"},
 				},
 			}...,
 		),
