@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 432
+assertion_line: 438
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -69,8 +69,8 @@ expression: "dump_document(&document, &contents)"
               using var ctx = new TestContext();
 //                  ^^^ Identifier
 //                      ^^^ Identifier
-//                          ^ IdentifierKeyword
-//                            ^^^ IdentifierKeyword
+//                          ^ IdentifierOperator
+//                            ^^^ IdentifierOperator
 //                                           ^ PunctuationBracket
 //                                            ^ PunctuationBracket
 //                                             ^ PunctuationBracket
@@ -80,7 +80,7 @@ expression: "dump_document(&document, &contents)"
 //                ^^^^^^^^^ Identifier
 //                         ^ PunctuationBracket
 //                          ^^^^ Identifier
-//                               ^ IdentifierKeyword
+//                               ^ IdentifierOperator
 //                                 ^^^^^^^^^^^^^ Identifier
 //                                              ^ PunctuationBracket
 //                                               ^^^^^ Identifier
@@ -99,7 +99,7 @@ expression: "dump_document(&document, &contents)"
 //                                                                                ^ PunctuationBracket
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
 //                ^^^^^^^^^ Identifier
-//                          ^ IdentifierKeyword
+//                          ^ IdentifierOperator
 //                            ^^^ Identifier
 //                               ^ PunctuationBracket
 //                                ^^^^^^^^^^^^^^^ Identifier
@@ -125,28 +125,28 @@ expression: "dump_document(&document, &contents)"
 //                                                                 ^ PunctuationBracket
 //                                                                  ^^^^ Identifier
 //                                                                      ^ PunctuationBracket
-//                                                                        ^^^ IdentifierKeyword
+//                                                                        ^^^ IdentifierOperator
 //                                                                           ^ PunctuationBracket
 //                                                                            ^ PunctuationBracket
 //                                                                              ^ PunctuationBracket
-//                                                                                ^^^ IdentifierKeyword
+//                                                                                ^^^ IdentifierOperator
 //                                                                                    ^ PunctuationBracket
 //                                                                                      ^^ Identifier
-//                                                                                         ^ IdentifierKeyword
+//                                                                                         ^ IdentifierOperator
 //                                                                                           ^ NumericLiteral
 //                                                                                             ^ PunctuationBracket
 //                                                                                              ^ PunctuationBracket
-//                                                                                                ^^^ IdentifierKeyword
+//                                                                                                ^^^ IdentifierOperator
 //                                                                                                    ^ PunctuationBracket
 //                                                                                                      ^^ Identifier
-//                                                                                                         ^ IdentifierKeyword
+//                                                                                                         ^ IdentifierOperator
 //                                                                                                           ^ NumericLiteral
 //                                                                                                             ^ PunctuationBracket
 //                                                                                                              ^ PunctuationBracket
-//                                                                                                                ^^^ IdentifierKeyword
+//                                                                                                                ^^^ IdentifierOperator
 //                                                                                                                    ^ PunctuationBracket
 //                                                                                                                      ^^ Identifier
-//                                                                                                                         ^ IdentifierKeyword
+//                                                                                                                         ^ IdentifierOperator
 //                                                                                                                           ^ NumericLiteral
 //                                                                                                                             ^ PunctuationBracket
 //                                                                                                                               ^ PunctuationBracket
@@ -174,7 +174,7 @@ expression: "dump_document(&document, &contents)"
 //                                         ^ PunctuationBracket
 //                                          ^ NumericLiteral
 //                                           ^ PunctuationBracket
-//                                             ^^^^^^ IdentifierKeyword
+//                                             ^^^^^^ IdentifierOperator
 //                                                   ^ PunctuationBracket
 //                                                                    ^ PunctuationBracket
 //                                                                            ^ PunctuationBracket
@@ -246,7 +246,7 @@ expression: "dump_document(&document, &contents)"
   
               var component = ctx.RenderComponent<RadzenGrid<dynamic>>(parameterBuilder =>
 //                ^^^^^^^^^ Identifier
-//                          ^ IdentifierKeyword
+//                          ^ IdentifierOperator
 //                            ^^^ Identifier
 //                               ^ PunctuationBracket
 //                                ^^^^^^^^^^^^^^^ Identifier
@@ -272,28 +272,28 @@ expression: "dump_document(&document, &contents)"
 //                                                                 ^ PunctuationBracket
 //                                                                  ^^^^ Identifier
 //                                                                      ^ PunctuationBracket
-//                                                                        ^^^ IdentifierKeyword
+//                                                                        ^^^ IdentifierOperator
 //                                                                           ^ PunctuationBracket
 //                                                                            ^ PunctuationBracket
 //                                                                              ^ PunctuationBracket
-//                                                                                ^^^ IdentifierKeyword
+//                                                                                ^^^ IdentifierOperator
 //                                                                                    ^ PunctuationBracket
 //                                                                                      ^^ Identifier
-//                                                                                         ^ IdentifierKeyword
+//                                                                                         ^ IdentifierOperator
 //                                                                                           ^ NumericLiteral
 //                                                                                             ^ PunctuationBracket
 //                                                                                              ^ PunctuationBracket
-//                                                                                                ^^^ IdentifierKeyword
+//                                                                                                ^^^ IdentifierOperator
 //                                                                                                    ^ PunctuationBracket
 //                                                                                                      ^^ Identifier
-//                                                                                                         ^ IdentifierKeyword
+//                                                                                                         ^ IdentifierOperator
 //                                                                                                           ^ NumericLiteral
 //                                                                                                             ^ PunctuationBracket
 //                                                                                                              ^ PunctuationBracket
-//                                                                                                                ^^^ IdentifierKeyword
+//                                                                                                                ^^^ IdentifierOperator
 //                                                                                                                    ^ PunctuationBracket
 //                                                                                                                      ^^ Identifier
-//                                                                                                                         ^ IdentifierKeyword
+//                                                                                                                         ^ IdentifierOperator
 //                                                                                                                           ^ NumericLiteral
 //                                                                                                                             ^ PunctuationBracket
 //                                                                                                                               ^ PunctuationBracket
@@ -321,7 +321,7 @@ expression: "dump_document(&document, &contents)"
 //                                         ^ PunctuationBracket
 //                                          ^ NumericLiteral
 //                                           ^ PunctuationBracket
-//                                             ^^^^^^ IdentifierKeyword
+//                                             ^^^^^^ IdentifierOperator
 //                                                   ^ PunctuationBracket
 //                                                                    ^ PunctuationBracket
 //                                                                            ^ PunctuationBracket
@@ -362,8 +362,8 @@ expression: "dump_document(&document, &contents)"
   
               var markup = new Regex(@"\s\s+").Replace(component.Markup, "").Trim();
 //                ^^^^^^ Identifier
-//                       ^ IdentifierKeyword
-//                         ^^^ IdentifierKeyword
+//                       ^ IdentifierOperator
+//                         ^^^ IdentifierOperator
 //                                  ^ PunctuationBracket
 //                                   ^^ PunctuationBracket
 //                                     ^^^^^ StringLiteral

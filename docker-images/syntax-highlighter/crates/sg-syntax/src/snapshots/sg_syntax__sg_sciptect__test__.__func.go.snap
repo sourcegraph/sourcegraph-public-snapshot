@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 433
+assertion_line: 438
 expression: "dump_document(&document, &contents)"
 ---
   package main
@@ -21,31 +21,31 @@ expression: "dump_document(&document, &contents)"
 //            ^ PunctuationBracket
    x := 1234
 // ^ Identifier
-//   ^^ IdentifierKeyword
+//   ^^ IdentifierOperator
 //      ^^^^ NumericLiteral
    char := '1'
 // ^^^^ Identifier
-//      ^^ IdentifierKeyword
+//      ^^ IdentifierOperator
 //         ^^^ CharacterLiteral
    string := "hello"
 // ^^^^^^ Identifier
-//        ^^ IdentifierKeyword
+//        ^^ IdentifierOperator
 //           ^ PunctuationBracket
 //            ^^^^^ StringLiteral
 //                 ^ PunctuationBracket
    bool := true
 // ^^^^ Identifier
-//      ^^ IdentifierKeyword
+//      ^^ IdentifierOperator
 //         ^^^^ IdentifierBuiltin
   
    var null_was_a_mistake *int
 // ^^^ IdentifierKeyword
 //     ^^^^^^^^^^^^^^^^^^ Identifier
-//                        ^ IdentifierKeyword
+//                        ^ IdentifierOperator
 //                         ^^^ IdentifierBuiltinType
    null_was_a_mistake = nil
 // ^^^^^^^^^^^^^^^^^^ Identifier
-//                    ^ IdentifierKeyword
+//                    ^ IdentifierOperator
 //                      ^^^ IdentifierBuiltin
   
    fmt.Println(x, char, string, bool, null_was_a_mistake)

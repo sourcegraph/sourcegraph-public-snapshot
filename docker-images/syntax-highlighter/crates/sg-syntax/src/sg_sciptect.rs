@@ -154,17 +154,22 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
     let scope_matches: &Vec<(Scope, SyntaxKind)> = SCOPE_MATCHES.get_or_init(|| {
         use SyntaxKind::*;
 
-        // TODO: We should probably make sure that we can't even ship syntect if this doesn't work
-        // (which should happen because it won't be able to pass tests or do anything without this)
+        // TODO: We should probably make sure that we can't even ship syntax-highlighter if this
+        // doesn't work (which should happen because it won't be able to pass tests or do anything
+        // without this)
         //
-        // The only way this can fail is if you pass in a Scope with >=8 atoms (so we just won't do
-        // that here). This only runs once, so we don't have to worry about subsequent failures for
-        // any of these unwraps.
+        // The only way (as far as I can tell) this can fail is if you pass in a Scope with >=8
+        // atoms (so we just won't do that here). This only runs once, so we don't have to worry
+        // about subsequent failures for any of these unwraps.
         let scope = |s| Scope::new(s).unwrap();
 
+        // These are IN ORDER.
+        //  If you want something to resolve to something more specifically or as a higher priority
+        //  make sure to place the scope(...) at the beginning of the list.
         vec![
             (scope("storage.type.keyword"), IdentifierKeyword),
             (scope("entity.name.function"), IdentifierFunction),
+            (scope("keyword.operator"), IdentifierOperator),
             (scope("keyword"), IdentifierKeyword),
             (scope("variable"), Identifier),
             (scope("punctuation"), PunctuationBracket),
