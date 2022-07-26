@@ -42,13 +42,12 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 	if build.Author == nil {
 		return nil, errors.New("nil Author")
 	}
-	teammate, err := c.team.ResolveByName(context.Background(), build.Author.Name)
-	return teammate, err
+	return c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
 }
 
 func (c *NotificationClient) sendNotification(build *Build) error {
-	notifcationLogger := c.logger.With(log.Int("buildNumber", *build.Number), log.String("channel", c.Channel))
-	notifcationLogger.Debug("creating slack json", log.Int("buildNumber", *build.Number))
+	notifcationLogger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.Channel))
+	notifcationLogger.Debug("creating slack json", log.Int("buildNumber", build.number()))
 
 	teammate, err := c.getTeammateForBuild(build)
 	if err != nil {
@@ -141,24 +140,28 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 	return base.String() + "?orgId=1&left=" + query
 }
 
-func commitLink(commit string) string {
+func commitLink(msg, commit string) string {
 	repo := "http://github.com/sourcegraph/sourcegraph"
 	sgURL := fmt.Sprintf("%s/commit/%s", repo, commit)
-	return fmt.Sprintf("<%s|%s>", sgURL, commit[:10])
+	return fmt.Sprintf("<%s|%s>", sgURL, msg)
 }
 
-func determineAuthor(teammate *team.Teammate, build *Build) string {
+func slackMention(teammate *team.Teammate, build *Build) string {
 	if teammate == nil {
-		return fmt.Sprintf("Teammate *%s* not found. If this is you, ensure the github field is set in your profile <https://github.com/sourcegraph/handbook/blob/main/data/team.yml|here>", build.Author.Name)
+		authorName := build.authorName()
+		if authorName == "" {
+			authorName = "N/A"
+		}
+		return fmt.Sprintf("Teammate *%s* not found. If this is you, ensure the github field is set in your profile <https://github.com/sourcegraph/handbook/blob/main/data/team.yml|here>", authorName)
 	}
 
-	return fmt.Sprintf("<%s>", teammate.SlackID)
+	return fmt.Sprintf("<@%s>", teammate.SlackID)
 }
 
 func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
-	failedSection := fmt.Sprintf(":spiral_notepad: %s\n", msg)
-	failedSection += "*Failed jobs:*\n"
+	failedSection := fmt.Sprintf(":git: *Message:* %s\n\n", commitLink(msg, build.commit()))
+	failedSection += ":clipboard: *Failed jobs:*\n\n"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
 			failedSection += fmt.Sprintf("• %s", *j.Name)
@@ -169,11 +172,11 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		}
 	}
 
-	author := determineAuthor(teammate, build)
+	author := slackMention(teammate, build)
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
-			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf(":red_circle: Build %d failed", *build.Number), true, false),
+			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf(":red_circle: Build %d failed", build.number()), true, false),
 		),
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,
@@ -185,9 +188,9 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		slack.NewSectionBlock(
 			nil,
 			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author*\n%s", author)},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline*\n%s", build.Pipeline.name())},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit*\n%s", commitLink(*build.Commit))},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author:* %s", author)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline:* %s", build.Pipeline.name())},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit:* %s", commitLink(build.commit()[:15], build.commit()))},
 			},
 			nil,
 		),
@@ -197,11 +200,11 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		slack.NewSectionBlock(
 			&slack.TextBlockObject{
 				Type: slack.MarkdownType,
-				Text: `:brain: *More information on flakes* :point_down:
-:one: *<https://docs.sourcegraph.com/dev/background-information/ci#flakes|CI flakes>*
-:two: *<https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Assessing flakey client steps>*
+				Text: `:books: *More information on flakes* :point_down:
+• *<https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flakey tests>*
+• *<https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flakey client steps and how to fix them>*
 
-_"save your fellow dev some time and proactively disable flakes when you spot them"_`,
+_:sourcegraph: disable flakes on sight and save your fellow teammate some time!_`,
 			},
 			nil,
 			nil,
@@ -216,18 +219,18 @@ _"save your fellow dev some time and proactively disable flakes when you spot th
 					Type:  slack.METButton,
 					Style: slack.StylePrimary,
 					URL:   *build.WebURL,
-					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: ":mag: Go to build"},
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Go to build"},
 				},
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
 					URL:  grafanaURLFor(logger, build),
-					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: ":wood: View logs on Grafana"},
+					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View logs on Grafana"},
 				},
 				&slack.ButtonBlockElement{
 					Type:  slack.METButton,
 					Style: slack.StyleDanger,
 					URL:   "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: ":face_with_raised_eyebrow: Is this a flake ?"},
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "Is this a flake ?"},
 				},
 			}...,
 		),

@@ -34,6 +34,14 @@ func (b *Build) isFinished() bool {
 
 }
 
+func (b *Build) authorName() string {
+	if b.Author == nil {
+		return ""
+	}
+
+	return b.Author.Name
+}
+
 func (b *Build) state() string {
 	return strp(b.State)
 }

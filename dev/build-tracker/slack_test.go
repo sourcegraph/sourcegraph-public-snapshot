@@ -10,11 +10,11 @@ import (
 
 var RunIntegrationTest *bool = flag.Bool("RunIntegrationTest", false, "Run integrations tests")
 
-func newJob(name string, exit int) *buildkite.Job {
-	return &buildkite.Job{
+func newJob(name string, exit int) *Job {
+	return &Job{buildkite.Job{
 		Name:       &name,
 		ExitStatus: &exit,
-	}
+	}}
 }
 
 func TestSlack(t *testing.T) {
@@ -54,7 +54,10 @@ func TestSlack(t *testing.T) {
 				URL:    &url,
 				Commit: &commit,
 			},
-			Jobs: map[string]buildkite.Job{
+			Pipeline: &Pipeline{buildkite.Pipeline{
+				Name: &pipelineID,
+			}},
+			Jobs: map[string]Job{
 				":one: fake step":   *newJob(":one: fake step", exit),
 				":two: fake step":   *newJob(":two: fake step", exit),
 				":three: fake step": *newJob(":three: fake step", exit),
