@@ -71,7 +71,7 @@ const squashedMigrationPrefix = "squashed migrations"
 // overlayDefinition reads migrations from a locally available git revision for the given schema, then
 // extends the given map of definitions with migrations that have not yet been inserted.
 //
-// This function returns the identifiers of hte migration leaves at this revision, which will be necessary
+// This function returns the identifiers of the migration leaves at this revision, which will be necessary
 // to distinguish where on the graph out-of-band migration interrupt points can "rest" to wait for data
 // migrations to complete.
 //
