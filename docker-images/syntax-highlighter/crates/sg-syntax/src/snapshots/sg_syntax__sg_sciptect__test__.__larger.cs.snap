@@ -1,12 +1,12 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 446
+assertion_line: 456
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
-//^^ PunctuationBracket
+//  ^^^^^^^^^^^ Comment
   // repo:^github\.com/radzenhq/radzen-blazor$ file:^Radzen\.Blazor\.Tests/DataGridTests\.cs
-//^^ PunctuationBracket
+//^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ Comment
   
   using AngleSharp.Dom;
 //^^^^^ IdentifierKeyword
@@ -55,7 +55,7 @@ expression: "dump_document(&document, &contents)"
       {
 //    ^ PunctuationBracket
           // Css classes tests
-//        ^^ PunctuationBracket
+//        ^^^^^^^^^^^^^^^^^^^^^ Comment
           [Fact]
 //        ^ PunctuationBracket
 //         ^^^^ Identifier
@@ -208,7 +208,7 @@ expression: "dump_document(&document, &contents)"
 //              ^ PunctuationBracket
   
               // Main
-//            ^^ PunctuationBracket
+//            ^^^^^^^^ Comment
               Assert.Contains(@$"rz-datatable-scrollable-wrapper", component.Markup);
 //            ^^^^^^ Identifier
 //                  ^ PunctuationBracket

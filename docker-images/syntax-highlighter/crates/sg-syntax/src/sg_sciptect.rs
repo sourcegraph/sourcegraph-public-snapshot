@@ -151,6 +151,7 @@ fn should_skip_scope(scope: &Scope) -> bool {
                 scope("source"),
                 scope("punctuation.definition.string.begin"),
                 scope("punctuation.definition.string.end"),
+                scope("punctuation.definition.comment"),
             ]
         })
         .iter()
@@ -175,6 +176,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
         //  If you want something to resolve to something more specifically or as a higher priority
         //  make sure to place the scope(...) at the beginning of the list.
         vec![
+            (scope("comment"), Comment),
             (scope("storage.type.keyword"), IdentifierKeyword),
             (scope("entity.name.function"), IdentifierFunction),
             (scope("keyword.operator"), IdentifierOperator),

@@ -3,6 +3,8 @@ package main
 import "fmt"
 
 func main() {
+	// this is comment
+
 	x := 1234
 	char := '1'
 	string := "hello"
