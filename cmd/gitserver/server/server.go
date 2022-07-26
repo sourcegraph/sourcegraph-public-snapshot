@@ -459,7 +459,6 @@ func (s *Server) Handler() http.Handler {
 		conf.DefaultClient(),
 		s.handleP4Exec,
 	)))
-	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
 	mux.HandleFunc("/repos", trace.WithRouteName("repos", s.handleRepoInfo))
@@ -709,9 +708,9 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 			return
 		}
 
-		if err := store.Upsert(ctx, batch...); err != nil {
+		if err := store.Update(ctx, batch...); err != nil {
 			repoStateUpsertCounter.WithLabelValues("false").Add(float64(len(batch)))
-			s.Logger.Error("Upserting GitserverRepos", log.Error(err))
+			s.Logger.Error("Updating GitserverRepos", log.Error(err))
 			return
 		}
 		repoStateUpsertCounter.WithLabelValues("true").Add(float64(len(batch)))
@@ -745,12 +744,6 @@ func (s *Server) syncRepoState(gitServerAddrs gitserver.GitServerAddresses, batc
 		_, cloning := s.locker.Status(dir)
 
 		var shouldUpdate bool
-		if repo.GitserverRepo == nil {
-			repo.GitserverRepo = &types.GitserverRepo{
-				RepoID: repo.ID,
-			}
-			shouldUpdate = true
-		}
 		if repo.ShardID != s.Hostname {
 			repo.ShardID = s.Hostname
 			shouldUpdate = true
@@ -1864,17 +1857,10 @@ func (s *Server) p4exec(w http.ResponseWriter, r *http.Request, req *protocol.P4
 }
 
 func (s *Server) setLastError(ctx context.Context, name api.RepoName, error string) (err error) {
-	if s.DB == nil {
-		return nil
-	}
 	return s.DB.GitserverRepos().SetLastError(ctx, name, error, s.Hostname)
 }
 
 func (s *Server) setLastFetched(ctx context.Context, name api.RepoName) error {
-	if s.DB == nil {
-		return nil
-	}
-
 	dir := s.dir(name)
 
 	lastFetched, err := repoLastFetched(dir)
@@ -1906,9 +1892,6 @@ func (s *Server) setLastErrorNonFatal(ctx context.Context, name api.RepoName, er
 }
 
 func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus) (err error) {
-	if s.DB == nil {
-		return nil
-	}
 	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
 }
 
@@ -1922,10 +1905,6 @@ func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, 
 
 // setRepoSize calculates the size of the repo and stores it in the database.
 func (s *Server) setRepoSize(ctx context.Context, name api.RepoName) error {
-	if s.DB == nil {
-		return nil
-	}
-
 	return s.DB.GitserverRepos().SetRepoSize(ctx, name, dirSize(s.dir(name).Path(".")), s.Hostname)
 }
 
@@ -2518,7 +2497,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error
 		return errors.Wrap(err, `git config set "sourcegraph.type"`)
 	}
 
-	// Update the last-changed stamp.
+	// Update the last-changed stamp on disk.
 	if err := setLastChanged(dir); err != nil {
 		s.Logger.Warn("Failed to update last changed time", log.String("repo", string(repo)), log.Error(err))
 	}

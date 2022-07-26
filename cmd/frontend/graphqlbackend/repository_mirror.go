@@ -95,23 +95,17 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 		return strings.Replace(strings.Replace(u.String(), "fake://", "", 1), "/", ":", 1)
 	}
 
-	{
-		repo, err := r.repository.repo(ctx)
-		if err != nil {
-			return "", err
-		}
-
-		if cloneURLs := repo.CloneURLs(); len(cloneURLs) > 0 {
-			return removeUserinfo(cloneURLs[0]), nil
-		}
-	}
-
-	// Fall back to the gitserver repo info for repos on hosts that are not yet fully supported by repo-updater.
-	info, err := r.gitserverRepoInfo(ctx)
+	repo, err := r.repository.repo(ctx)
 	if err != nil {
 		return "", err
 	}
-	return removeUserinfo(info.URL), nil
+
+	cloneURLs := repo.CloneURLs()
+	if len(cloneURLs) == 0 {
+		return "", errors.Errorf("no sources for %q", repo)
+	}
+
+	return removeUserinfo(cloneURLs[0]), nil
 }
 
 func (r *repositoryMirrorInfoResolver) Cloned(ctx context.Context) (bool, error) {

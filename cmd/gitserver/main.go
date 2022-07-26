@@ -314,6 +314,7 @@ func getDB() (*sql.DB, error) {
 	return connections.EnsureNewFrontendDB(dsn, "gitserver", &observation.TestContext)
 }
 
+// TODO: Is the order in which Sources is iterated over really not stable? How does this work reliably?
 func getRemoteURLFunc(
 	ctx context.Context,
 	externalServiceStore database.ExternalServiceStore,
@@ -326,22 +327,19 @@ func getRemoteURLFunc(
 		return "", err
 	}
 
-	for _, info := range r.Sources {
-		// build the clone url using the external service config instead of using
-		// the source CloneURL field
-		svc, err := externalServiceStore.GetByID(ctx, info.ExternalServiceID())
-		if err != nil {
-			return "", err
-		}
+	svcs, err := externalServiceStore.List(ctx, database.ExternalServicesListOptions{
+		IDs: r.ExternalServiceIDs(),
+		// We won't be able to use this remote URL, so we should skip it. This can happen
+		// if a repo moves from being public to private while belonging to both a cloud
+		// default external service and another external service with a token that has
+		// access to the private repo.
+		NoCloudDefault: r.Private,
+	})
+	if err != nil {
+		return "", err
+	}
 
-		if svc.CloudDefault && r.Private {
-			// We won't be able to use this remote URL, so we should skip it. This can happen
-			// if a repo moves from being public to private while belonging to both a cloud
-			// default external service and another external service with a token that has
-			// access to the private repo.
-			continue
-		}
-
+	for _, svc := range svcs {
 		dotcomConfig := conf.SiteConfig().Dotcom
 		if envvar.SourcegraphDotComMode() &&
 			repos.IsGitHubAppCloudEnabled(dotcomConfig) &&

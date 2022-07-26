@@ -23,10 +23,8 @@ type GitserverRepoStore interface {
 	basestore.ShareableStore
 	With(other basestore.ShareableStore) GitserverRepoStore
 
-	// Upsert adds a row representing the GitServer status of a repo.
-	// TODO: Make this update instead, there are no insertions to the table from this store,
-	// it's handled by a trigger that keeps repo and gitserver_repos in sync.
-	Upsert(ctx context.Context, repos ...*types.GitserverRepo) error
+	// Update updates the given rows with the GitServer status of a repo.
+	Update(ctx context.Context, repos ...*types.GitserverRepo) error
 	// IterateRepoGitserverStatus iterates over the status of all repos by joining
 	// our repo and gitserver_repos table. It is impossible for us not to have a
 	// corresponding row in gitserver_repos because of the trigger on repos table.
@@ -86,13 +84,13 @@ func (s *gitserverRepoStore) Transact(ctx context.Context) (GitserverRepoStore, 
 	return &gitserverRepoStore{Store: txBase}, err
 }
 
-func (s *gitserverRepoStore) Upsert(ctx context.Context, repos ...*types.GitserverRepo) error {
+func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s, now())",
+		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s, NOW())",
 			gr.RepoID,
 			gr.CloneStatus,
-			dbutil.NewNullString(gr.ShardID),
+			gr.ShardID,
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
 			gr.LastFetched,
 			gr.LastChanged,
@@ -103,16 +101,14 @@ func (s *gitserverRepoStore) Upsert(ctx context.Context, repos ...*types.Gitserv
 	}
 
 	err := s.Exec(ctx, sqlf.Sprintf(`
--- source: internal/database/gitserver_repos.go:gitserverRepoStore.Upsert
-INSERT INTO
-    gitserver_repos(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at)
-    VALUES %s
-    ON CONFLICT (repo_id) DO UPDATE
-    SET (clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at) =
-        (EXCLUDED.clone_status, EXCLUDED.shard_id, EXCLUDED.last_error, EXCLUDED.last_fetched, EXCLUDED.last_changed, EXCLUDED.repo_size_bytes, now())
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.Update
+UPDATE
+	gitserver_repos
+SET (clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at)
+VALUES(%s)
 `, sqlf.Join(values, ",")))
 
-	return errors.Wrap(err, "upserting GitserverRepo")
+	return errors.Wrap(err, "updating GitserverRepo")
 }
 
 func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
@@ -316,7 +312,12 @@ WHERE repo_id = %s
 `
 
 	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, id)))
-	return repo, err
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &errGitserverRepoNotFound{}
+		}
+	}
+	return repo, nil
 }
 
 func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
@@ -343,7 +344,7 @@ WHERE r.name = %s
 			return nil, &errGitserverRepoNotFound{}
 		}
 	}
-	return repo, err
+	return repo, nil
 }
 
 type errGitserverRepoNotFound struct{}
@@ -412,7 +413,7 @@ func scanGitserverRepo(scanner dbutil.Scanner) (*types.GitserverRepo, api.RepoNa
 }
 
 func (s *gitserverRepoStore) SetCloneStatus(ctx context.Context, name api.RepoName, status types.CloneStatus, shardID string) error {
-	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
+	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetCloneStatus
 UPDATE gitserver_repos
 SET
@@ -428,19 +429,13 @@ WHERE
 		return errors.Wrap(err, "setting clone status")
 	}
 
-	if nrows, err := res.RowsAffected(); err != nil {
-		return errors.Wrap(err, "getting rows affected")
-	} else if nrows != 1 {
-		return errors.New("repo not found")
-	}
-
 	return nil
 }
 
 func (s *gitserverRepoStore) SetLastError(ctx context.Context, name api.RepoName, error, shardID string) error {
 	ns := dbutil.NewNullString(sanitizeToUTF8(error))
 
-	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
+	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetLastError
 UPDATE gitserver_repos
 SET
@@ -456,17 +451,11 @@ WHERE
 		return errors.Wrap(err, "setting last error")
 	}
 
-	if nrows, err := res.RowsAffected(); err != nil {
-		return errors.Wrap(err, "getting rows affected")
-	} else if nrows != 1 {
-		return errors.New("repo not found")
-	}
-
 	return nil
 }
 
 func (s *gitserverRepoStore) SetRepoSize(ctx context.Context, name api.RepoName, size int64, shardID string) error {
-	res, err := s.ExecResult(ctx, sqlf.Sprintf(`
+	err := s.Exec(ctx, sqlf.Sprintf(`
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.SetRepoSize
 UPDATE gitserver_repos
 SET
@@ -481,12 +470,6 @@ WHERE
 	`, size, shardID, types.CloneStatusCloned, name, size))
 	if err != nil {
 		return errors.Wrap(err, "setting repo size")
-	}
-
-	if nrows, err := res.RowsAffected(); err != nil {
-		return errors.Wrap(err, "getting rows affected")
-	} else if nrows != 1 {
-		return errors.New("repo not found")
 	}
 
 	return nil

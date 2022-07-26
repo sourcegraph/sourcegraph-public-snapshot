@@ -10,7 +10,6 @@ import (
 
 	"github.com/sourcegraph/log"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/types"
@@ -20,22 +19,9 @@ import (
 func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfo, error) {
 	dir := s.dir(repo)
 	resp := protocol.RepoInfo{}
-	if repoCloned(dir) {
-		// TODO(keegancsmith,tsenart) the only user of this information is the site admin
-		// settings page for a repo. That page should just ask the DB for the remote URL.
-		//
-		// We need an internal actor here since we query the repo table. We are trusting
-		// the auth checks we already have in place that do not allow a site admin to
-		// view private repos they don't own.
-		remoteURL, err := s.getRemoteURL(actor.WithInternalActor(ctx), repo)
-		if err != nil {
-			return nil, err
-		}
-		resp.URL = remoteURL.String()
-	}
-	{
-		resp.CloneProgress, _ = s.locker.Status(dir)
-	}
+
+	resp.CloneProgress, _ = s.locker.Status(dir)
+
 	return &resp, nil
 }
 
@@ -105,6 +91,7 @@ func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}
+	// TODO: This is duplicative?
 	err = s.setCloneStatus(ctx, repo, types.CloneStatusNotCloned)
 	if err != nil {
 		return errors.Wrap(err, "setting clone status after delete")

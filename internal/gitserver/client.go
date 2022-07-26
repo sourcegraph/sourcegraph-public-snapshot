@@ -1034,7 +1034,7 @@ func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 
 	var err error
 	res := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]protocol.RepoInfoResult),
+		Results: make(map[api.RepoName]*protocol.RepoInfo),
 	}
 
 	for i := 0; i < cap(ch); i++ {
