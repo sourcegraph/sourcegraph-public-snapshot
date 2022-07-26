@@ -971,7 +971,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 				mutationFunc: func(userID string, bcID string) string {
 					return fmt.Sprintf(`
 					mutation {
-						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing", batchChangeID: %q) {
+						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing", batchChange: %q) {
 							id
 						}
 					}`, userID, bcID)

@@ -74,7 +74,7 @@ interface UseWorkspacesPreviewOptions {
     /** Any filters currently applied to the workspaces connection preview. */
     filters?: WorkspacePreviewFilters
     /** The ID of the batch change associated with the batch spec. */
-    batchChangeID: Scalars['ID']
+    batchChange: Scalars['ID']
 }
 
 export const POLLING_INTERVAL = 1000
@@ -111,7 +111,7 @@ const getBatchSpecID = ({
  */
 export const useWorkspacesPreview = (
     batchSpecID: Scalars['ID'],
-    { isBatchSpecApplied, namespaceID, noCache, onComplete, filters, batchChangeID }: UseWorkspacesPreviewOptions
+    { isBatchSpecApplied, namespaceID, noCache, onComplete, filters, batchChange }: UseWorkspacesPreviewOptions
 ): UseWorkspacesPreviewResult => {
     // Track whether the user has previewed the batch spec workspaces at least once.
     const [hasRequestedPreview, setHasRequestedPreview] = useState(false)
@@ -170,7 +170,7 @@ export const useWorkspacesPreview = (
             const preview = (): Promise<FetchResult<CreateBatchSpecFromRawResult | ReplaceBatchSpecInputResult>> =>
                 isBatchSpecApplied
                     ? createBatchSpecFromRaw({
-                          variables: { spec: code, namespace: namespaceID, noCache, batchChangeID },
+                          variables: { spec: code, namespace: namespaceID, noCache, batchChange },
                       })
                     : replaceBatchSpecInput({ variables: { spec: code, previousSpec: batchSpecID, noCache } })
 
@@ -199,7 +199,7 @@ export const useWorkspacesPreview = (
             replaceBatchSpecInput,
             refetchResolutionStatus,
             startPolling,
-            batchChangeID,
+            batchChange,
         ]
     )
 

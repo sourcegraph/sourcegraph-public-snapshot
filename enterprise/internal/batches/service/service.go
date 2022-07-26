@@ -394,7 +394,7 @@ type CreateBatchSpecFromRawOpts struct {
 	AllowUnsupported bool
 	NoCache          bool
 
-	BatchChangeID int64
+	BatchChange int64
 }
 
 // CreateBatchSpecFromRaw creates the BatchSpec.
@@ -421,13 +421,27 @@ func (s *Service) CreateBatchSpecFromRaw(ctx context.Context, opts CreateBatchSp
 	a := actor.FromContext(ctx)
 	spec.UserID = a.UID
 
-	spec.BatchChangeID = opts.BatchChangeID
+	spec.BatchChangeID = opts.BatchChange
 
 	tx, err := s.store.Transact(ctx)
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = tx.Done(err) }()
+
+	if opts.BatchChange != 0 {
+		batchChange, err := tx.GetBatchChange(ctx, store.GetBatchChangeOpts{
+			ID: opts.BatchChange,
+		})
+		if err != nil {
+			return nil, err
+		}
+
+		// 🚨 SECURITY: Only the Author of the batch change can create a batchSpec from raw assigned to it.
+		if err := backend.CheckSiteAdminOrSameUser(ctx, tx.DatabaseDB(), batchChange.CreatorID); err != nil {
+			return nil, err
+		}
+	}
 
 	return spec, s.createBatchSpecForExecution(ctx, tx, createBatchSpecForExecutionOpts{
 		spec:             spec,
@@ -789,8 +803,8 @@ func (s *Service) GetBatchChangeMatchingBatchSpec(ctx context.Context, spec *bty
 
 	var opts store.GetBatchChangeOpts
 
-	// if the batch spec is linked to a batch change, we want to take advantage of querying for the batch change using the primary
-	// key as it's faster.
+	// if the batch spec is linked to a batch change, we want to take advantage of querying for the
+	// batch change using the primary key as it's faster.
 	if spec.BatchChangeID != 0 {
 		opts = store.GetBatchChangeOpts{ID: spec.BatchChangeID}
 	} else {

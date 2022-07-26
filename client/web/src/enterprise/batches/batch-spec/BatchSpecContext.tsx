@@ -168,7 +168,7 @@ export const BatchSpecContextProvider = <BatchSpecFields extends MinimalBatchSpe
         noCache: executionOptions.runWithoutCache,
         onComplete: refetchBatchChange,
         filters,
-        batchChangeID: batchChange.id,
+        batchChange: batchChange.id,
     })
     const {
         isInProgress: isWorkspacesPreviewInProgress,
