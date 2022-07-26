@@ -1,0 +1,50 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 412
+expression: "dump_document(&document, &contents)"
+---
+  using System;
+//^^^^^ Identifier
+//      ^^^^^^ Identifier
+//            ^ PunctuationBracket
+  
+  namespace Example
+//^^^^^^^^^ Identifier
+//          ^^^^^^^ Identifier
+  {
+//^ PunctuationBracket
+      public void Something()
+//    ^^^^^^ Identifier
+//           ^^^^ Identifier
+//                ^^^^^^^^^ Identifier
+//                         ^ PunctuationBracket
+//                          ^ PunctuationBracket
+      {
+//    ^ PunctuationBracket
+          var x = "世界";
+//            ^ Identifier
+//              ^ IdentifierKeyword
+//                ^ PunctuationBracket
+//                 ^^ StringLiteral
+//                   ^ PunctuationBracket
+//                    ^ PunctuationBracket
+          var y = "世界 Hello, 世界";
+//            ^ Identifier
+//              ^ IdentifierKeyword
+//                ^ PunctuationBracket
+//                 ^^^^^^^^^^^^ StringLiteral
+//                             ^ PunctuationBracket
+//                              ^ PunctuationBracket
+  
+          var emoji = "🥳";
+//            ^^^^^ Identifier
+//                  ^ IdentifierKeyword
+//                    ^ PunctuationBracket
+//                     ^ StringLiteral
+//                      ^ PunctuationBracket
+//                       ^ PunctuationBracket
+      }
+//    ^ PunctuationBracket
+  }
+//^ PunctuationBracket
+

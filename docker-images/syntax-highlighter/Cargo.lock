@@ -1702,6 +1702,7 @@ dependencies = [
  "lazy_static",
  "libloading",
  "paste",
+ "pretty_assertions",
  "protobuf",
  "rocket 0.5.0-rc.1 (git+https://github.com/SergioBenitez/Rocket)",
  "scip",
@@ -1715,6 +1716,7 @@ dependencies = [
  "tree-sitter-highlight",
  "tree-sitter-jsonnet",
  "tree-sitter-sql",
+ "unicode-width",
 ]
 
 [[package]]

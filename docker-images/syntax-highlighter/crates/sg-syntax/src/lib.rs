@@ -82,7 +82,7 @@ pub fn determine_filetype(q: &SourcegraphQuery) -> String {
     .to_lowercase()
 }
 
-fn determine_language<'a>(
+pub fn determine_language<'a>(
     q: &SourcegraphQuery,
     syntax_set: &'a SyntaxSet,
 ) -> Result<&'a SyntaxReference, JsonValue> {
