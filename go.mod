@@ -199,11 +199,6 @@ require (
 )
 
 require (
-	github.com/knadh/koanf v1.4.2 // indirect
-	go.opentelemetry.io/collector/cmd/builder v0.56.0 // indirect
-)
-
-require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.101.0 // indirect
 	cloud.google.com/go/compute v1.6.1 // indirect
@@ -380,7 +375,6 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
