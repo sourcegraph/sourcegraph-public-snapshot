@@ -58,6 +58,12 @@ export const createJsContext = ({ sourcegraphBaseUrl }: { sourcegraphBaseUrl: st
         version: '0.0.0',
         xhrHeaders: {},
         authProviders: [builtinAuthProvider],
+        openTelemetryTracing: {
+            collectorURL: ENVIRONMENT_CONFIG.OTEL_TRACING_COLLECTOR_URL,
+        },
+        openTelemetryMetrics: {
+            collectorURL: ENVIRONMENT_CONFIG.OTEL_METRICS_COLLECTOR_URL,
+        },
         // Site-config overrides default JS context
         ...siteConfig,
     }

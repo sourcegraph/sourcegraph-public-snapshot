@@ -104,6 +104,11 @@ const config = {
           name: 'react',
           chunks: 'all',
         },
+        opentelemetry: {
+          test: /[/\\]node_modules[/\\](@opentelemetry)[/\\]/,
+          name: 'opentelemetry',
+          chunks: 'all',
+        },
       },
     },
     ...(IS_DEVELOPMENT && {

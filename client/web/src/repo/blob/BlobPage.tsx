@@ -1,6 +1,4 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react'
-import { trace, context } from '@opentelemetry/api'
-
 
 import classNames from 'classnames'
 import * as H from 'history'
@@ -86,14 +84,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         props.location.search,
         props.location.hash,
     ])
-
-    const tracer = useMemo(() => trace.getTracer('Blob'), [trace])
-
-    const span = useMemo(() => {
-        const span = tracer.startSpan('Blob')
-        span.setAttributes({ repoName, commitID, filePath })
-        return span
-    }, [tracer, repoName, commitID, filePath, renderMode, tracer])
 
     // Log view event whenever a new Blob, or a Blob with a different render mode, is visited.
     useEffect(() => {

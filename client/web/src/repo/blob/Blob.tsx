@@ -94,7 +94,6 @@ import { ColumnDecorator } from './ColumnDecorator'
 import { LineDecorator } from './LineDecorator'
 
 import styles from './Blob.module.scss'
-import { Span } from '@opentelemetry/api'
 
 /**
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
@@ -119,8 +118,6 @@ export interface BlobProps
     // Experimental reference panel
     disableStatusBar: boolean
     disableDecorations: boolean
-
-    span: Span
 
     // If set, nav is called when a user clicks on a token highlighted by
     // WebHoverOverlay
@@ -810,7 +807,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                 <Code
                     className={classNames('test-blob', styles.blobCode, props.wrapCode && styles.blobCodeWrapped)}
                     ref={nextCodeViewElement}
-                    onLoad={() => props.span.end()}
                     onCopy={logEventOnCopy}
                     dangerouslySetInnerHTML={{
                         __html: blobInfo.html,
