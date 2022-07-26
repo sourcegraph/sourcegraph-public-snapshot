@@ -10,9 +10,10 @@ import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
+import { parseQueryAndHash, toURIWithPath } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { codeIntel } from './codemirror/code-intel'
 import { blob, syntaxHighlight } from './codemirror/highlight'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 
@@ -39,8 +40,24 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
     isLightTheme,
     ariaLabel,
     role,
+    extensionsController,
 }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
+
+    // Setup ceremony to make code intel stuff work. This might have to change
+    // so that code-intel (and other extensions) don't query information about a
+    // document before it was added.
+    useEffect(() => {
+        if (blobInfo) {
+            void extensionsController.extHostAPI.then(api =>
+                api.addTextDocumentIfNotExists({
+                    uri: toURIWithPath(blobInfo),
+                    text: blobInfo.content,
+                    languageId: blobInfo.mode,
+                })
+            )
+        }
+    }, [extensionsController.extHostAPI, blobInfo])
 
     const settings = useMemo(
         () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
@@ -83,8 +100,14 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
     }, [])
 
     const extensions = useMemo(
-        () => [staticExtensions, settingsCompartment, selectableLineNumbers({ onSelection }), blob(blobInfo)],
-        [settingsCompartment, onSelection, blobInfo]
+        () => [
+            staticExtensions,
+            settingsCompartment,
+            selectableLineNumbers({ onSelection }),
+            blob(blobInfo),
+            codeIntel({ extensionsController }),
+        ],
+        [settingsCompartment, onSelection, blobInfo, extensionsController]
     )
 
     const editor = useCodeMirror(container, blobInfo.content, extensions, {
