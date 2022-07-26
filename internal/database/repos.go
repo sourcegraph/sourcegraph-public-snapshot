@@ -783,6 +783,14 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 // ListMinimalRepos returns a list of repositories names and ids.
 func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
+	preallocSize := 128
+	if opt.LimitOffset != nil {
+		preallocSize = opt.Limit
+	}
+	if preallocSize > 4096 {
+		preallocSize = 4096
+	}
+	results = make([]types.MinimalRepo, 0, preallocSize)
 	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
 		results = append(results, *r)
 	})
