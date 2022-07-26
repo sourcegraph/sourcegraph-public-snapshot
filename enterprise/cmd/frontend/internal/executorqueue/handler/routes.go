@@ -229,7 +229,13 @@ func decodeAndLabelMetrics(encodedMetrics, instanceName string) ([]*dto.MetricFa
 		metricLabelJob := "sg_job"
 		job := "sourcegraph-executors"
 		for _, m := range mf.Metric {
-			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
+			var found bool
+			for _, l := range m.Label {
+				found = found || *l.Name == metricLabelInstance
+			}
+			if !found {
+				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
+			}
 			m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelJob, Value: &job})
 		}
 
