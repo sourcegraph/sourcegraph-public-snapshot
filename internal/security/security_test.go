@@ -44,7 +44,7 @@ func TestGetPasswordPolicy(t *testing.T) {
 	setMockPasswordPolicyConfig(false, true,
 		authPolicyLength, authPolicySpChr, true, true)
 
-	t.Run("Fetch correct policy.", func(t *testing.T) {
+	t.Run("fetch correct policy", func(t *testing.T) {
 		p := conf.AuthPasswordPolicy()
 
 		assert.True(t, p.Enabled)
@@ -76,7 +76,7 @@ func TestGetPasswordPolicy(t *testing.T) {
 	})
 }
 
-func TestFetchPasswordPolicy_nil(t *testing.T) {
+func TestFetchPasswordPolicyReturnsNil(t *testing.T) {
 
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
@@ -94,14 +94,13 @@ func TestFetchPasswordPolicy_nil(t *testing.T) {
 	})
 }
 func TestPasswordPolicy(t *testing.T) {
-
 	authPolicyLength := 15
 	authPolicySpChr := 2
 
 	setMockPasswordPolicyConfig(false, true, authPolicyLength, authPolicySpChr,
 		true, true)
 
-	t.Run("PasswordPolicy correctly detects deviating passwords", func(t *testing.T) {
+	t.Run("correctly detects deviating passwords", func(t *testing.T) {
 		password := "sup3rstr0ngbutn0teno0ugh"
 		assert.ErrorContains(t, ValidatePassword(password),
 			"Your password must include one uppercase letter.")
@@ -125,7 +124,7 @@ func TestPasswordPolicy(t *testing.T) {
 		assert.Nil(t, ValidatePassword(password))
 	})
 
-	t.Run("PasswordPolicy detects correct passwords", func(t *testing.T) {
+	t.Run("detects correct passwords", func(t *testing.T) {
 		setMockPasswordPolicyConfig(false, true, 12,
 			2, true, true)
 
@@ -141,5 +140,4 @@ func TestPasswordPolicy(t *testing.T) {
 		password = "tH1smustCert@!inlybe0kthen?"
 		assert.Nil(t, ValidatePassword(password))
 	})
-
 }
