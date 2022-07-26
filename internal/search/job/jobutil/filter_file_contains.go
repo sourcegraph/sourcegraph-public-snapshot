@@ -152,7 +152,7 @@ func matchesAny(val string, matchers []*regexp.Regexp) bool {
 }
 
 func (j *fileContainsFilterJob) filterCommitMatch(ctx context.Context, searcherURLs *endpoint.Map, cm *result.CommitMatch) result.Match {
-	// Skip any commit matches -- we can only handle diff matches
+	// Skip any commit matches -- we only handle diff matches
 	if cm.DiffPreview == nil {
 		return nil
 	}
@@ -254,7 +254,7 @@ func (j *fileContainsFilterJob) removeUnmatchedFileDiffs(cm *result.CommitMatch,
 			// If count != len(j.includeMatchers), that means that not all of our file:contains.content() patterns
 			// matched and this fileDiff should be dropped. Skip appending it, and add its length to the removed amount
 			// so we can adjust the matched ranges down.
-			removedAmount.Add(result.Location{Offset: len(diffStrings[i]), Line: strings.Count(diffStrings[i], "\n")})
+			removedAmount = removedAmount.Add(result.Location{Offset: len(diffStrings[i]), Line: strings.Count(diffStrings[i], "\n")})
 		}
 	}
 
