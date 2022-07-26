@@ -97,7 +97,7 @@ type Store interface {
 	EnqueueSyncJobs(ctx context.Context, isCloud bool) (err error)
 	// ListSyncJobs returns all sync jobs.
 	ListSyncJobs(ctx context.Context) ([]SyncJob, error)
-	// Enqueues webhook build jobs for external services that requests syncing using webhooks.
+	// EnqueueSingleWebhookBuildJob enqueues a job to build a webhook for a particular repo.
 	EnqueueSingleWebhookBuildJob(ctx context.Context, repoID int64, repoName string, kind string) (err error)
 }
 

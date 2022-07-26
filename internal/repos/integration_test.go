@@ -34,6 +34,7 @@ func TestIntegration(t *testing.T) {
 		{"SyncRateLimiters", testSyncRateLimiters},
 		{"EnqueueSyncJobs", testStoreEnqueueSyncJobs},
 		{"EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob},
+		{"EnqueueSingleWebhookBuildJob", testStoreEnqueueSingleWebhookBuildJob},
 		{"ListExternalServiceUserIDsByRepoID", testStoreListExternalServiceUserIDsByRepoID},
 		{"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
 		{"Syncer/SyncWorker", testSyncWorkerPlumbing},
@@ -52,32 +53,7 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
-
-			store.SetMetrics(repos.NewStoreMetrics())
-			store.SetTracer(trace.Tracer{Tracer: opentracing.GlobalTracer()})
-
-			tc.test(store)(t)
-		})
-	}
-}
-
-func TestIntegration_WebhookBuilder(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	t.Parallel()
-
-	for _, tc := range []struct {
-		name string
-		test func(repos.Store) func(*testing.T)
-	}{
-		{"EnqueueSingleWebhookBuildJob", testStoreEnqueueSingleWebhookBuildJob},
-		{"WebhookBuilder/WebhookBuilderPlumbing", testWebhookBuilderPlumbing},
+		{"WebhookBuildWorker/WebhookBuildWorkerPlumbing", testWebhookBuilderPlumbing},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
