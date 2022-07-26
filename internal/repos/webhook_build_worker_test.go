@@ -2,7 +2,6 @@ package repos_test
 
 import (
 	"context"
-	"flag"
 	"testing"
 	"time"
 
@@ -15,8 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
-
-var updateWebhooks = flag.Bool("updateWebhooks", false, "update testdata for webhook build worker integration test")
 
 func testWebhookBuilderPlumbing(store repos.Store) func(t *testing.T) {
 	return func(t *testing.T) {

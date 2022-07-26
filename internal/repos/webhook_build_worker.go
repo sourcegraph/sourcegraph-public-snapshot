@@ -86,7 +86,7 @@ func NewWebhookBuildWorker(
 	})
 
 	if opts.CleanupOldJobs {
-		go runJobCleaner(ctx, dbHandle, opts.CleanupOldJobsInterval)
+		go runWebhookBuildCleaner(ctx, dbHandle, opts.CleanupOldJobsInterval)
 	}
 
 	return worker, resetter
