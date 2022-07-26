@@ -177,6 +177,6 @@ type WebhookBuildJob struct {
 	QueuedAt       sql.NullTime
 }
 
-func (cw *WebhookBuildJob) RecordID() int {
-	return cw.ID
+func (wbj *WebhookBuildJob) RecordID() int {
+	return wbj.ID
 }

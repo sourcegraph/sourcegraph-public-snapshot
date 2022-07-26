@@ -23,4 +23,4 @@ CREATE SEQUENCE IF NOT EXISTS webhook_build_jobs_id_seq
      worker_hostname text DEFAULT ''::text NOT NULL
  );
 
- CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
+ CREATE INDEX IF NOT EXISTS webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
