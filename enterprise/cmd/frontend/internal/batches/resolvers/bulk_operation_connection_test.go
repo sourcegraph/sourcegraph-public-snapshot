@@ -35,7 +35,7 @@ func TestBulkOperationConnectionResolver(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test", userID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test", userID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
 	batchChangeAPIID := marshalBatchChangeID(batchChange.ID)
 	repos, _ := ct.CreateTestRepos(t, ctx, db, 3)
