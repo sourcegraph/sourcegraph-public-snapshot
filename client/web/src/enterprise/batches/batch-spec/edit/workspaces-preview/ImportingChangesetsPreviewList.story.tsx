@@ -1,10 +1,11 @@
+import { action } from '@storybook/addon-actions'
+import { boolean, number, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
-import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 import { mockImportingChangesets } from '../../batch-spec.mock'
-import { boolean, number, withKnobs } from '@storybook/addon-knobs'
-import { action } from '@storybook/addon-actions'
+
+import { ImportingChangesetsPreviewList } from './ImportingChangesetsPreviewList'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 
