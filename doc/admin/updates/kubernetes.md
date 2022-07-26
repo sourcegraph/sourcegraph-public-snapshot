@@ -12,6 +12,9 @@
 
 ## Unreleased
 
+
+## 3.42 -> 3.43
+
 ## 3.41 -> 3.42
 
 Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
