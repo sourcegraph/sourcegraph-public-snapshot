@@ -47,6 +47,7 @@ type Event struct {
 	DeviceID       *string
 	InsertID       *string
 	EventID        *int32
+	SessionID      *string
 }
 
 // LogBackendEvent is a convenience function for logging backend events.
@@ -113,6 +114,7 @@ type bigQueryEvent struct {
 	PublicArgument  string  `json:"public_argument"`
 	DeviceID        *string `json:"device_id,omitempty"`
 	InsertID        *string `json:"insert_id,omitempty"`
+	SessionID       *string `json:"session_id,omitempty"`
 }
 
 // publishSourcegraphDotComEvents publishes Sourcegraph.com events to BigQuery.
@@ -178,6 +180,7 @@ func serializePublishSourcegraphDotComEvents(events []Event) ([]string, error) {
 			PublicArgument:  string(event.PublicArgument),
 			DeviceID:        event.DeviceID,
 			InsertID:        event.InsertID,
+			SessionID:       event.SessionID,
 		})
 		if err != nil {
 			return nil, err

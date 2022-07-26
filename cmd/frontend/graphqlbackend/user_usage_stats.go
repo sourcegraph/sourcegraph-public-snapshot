@@ -87,6 +87,7 @@ type Event struct {
 	Argument       *string
 	CohortID       *string
 	Referrer       *string
+	SessionID      *string
 	PublicArgument *string
 	UserProperties *string
 	DeviceID       *string
@@ -180,6 +181,7 @@ func (r *schemaResolver) LogEvents(ctx context.Context, args *EventBatch) (*Empt
 			DeviceID:         args.DeviceID,
 			EventID:          args.EventID,
 			InsertID:         args.InsertID,
+			SessionID:        args.SessionID,
 		})
 	}
 

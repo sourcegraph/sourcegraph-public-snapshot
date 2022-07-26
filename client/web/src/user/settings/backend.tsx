@@ -160,6 +160,7 @@ function createEvent(event: string, eventProperties?: unknown, publicArgument?: 
         firstSourceURL: eventLogger.getFirstSourceURL(),
         lastSourceURL: eventLogger.getLastSourceURL(),
         referrer: eventLogger.getReferrer(),
+        sessionID: eventLogger.getSessionID(),
         url: window.location.href,
         source: EventSource.WEB,
         argument: eventProperties ? JSON.stringify(eventProperties) : null,
