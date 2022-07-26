@@ -48,6 +48,8 @@ import (
 func TestStitchFrontendDefinitions(t *testing.T) {
 	t.Parallel()
 
+	// Note: negative values imply a quashed migration split into a privileged and
+	// unprivileged version. See `readMigrations` in this package for more details.
 	testStitchGraphShape(t, "frontend", 41, 42, +1644868458, []int{1657635365})
 	testStitchGraphShape(t, "frontend", 40, 42, +1528395943, []int{1657635365})
 	testStitchGraphShape(t, "frontend", 38, 42, +1528395943, []int{1657635365})
@@ -59,6 +61,8 @@ func TestStitchFrontendDefinitions(t *testing.T) {
 func TestStitchCodeintelDefinitions(t *testing.T) {
 	t.Parallel()
 
+	// Note: negative values imply a quashed migration split into a privileged and
+	// unprivileged version. See `readMigrations` in this package for more details.
 	testStitchGraphShape(t, "codeintel", 41, 42, +1000000029, []int{1000000034})
 	testStitchGraphShape(t, "codeintel", 40, 42, +1000000029, []int{1000000034})
 	testStitchGraphShape(t, "codeintel", 38, 42, +1000000029, []int{1000000034})
@@ -70,6 +74,8 @@ func TestStitchCodeintelDefinitions(t *testing.T) {
 func TestStitchCodeinsightsDefinitions(t *testing.T) {
 	t.Parallel()
 
+	// Note: negative values imply a quashed migration split into a privileged and
+	// unprivileged version. See `readMigrations` in this package for more details.
 	testStitchGraphShape(t, "codeinsights", 41, 42, +1000000026, []int{1656517037, 1656608833})
 	testStitchGraphShape(t, "codeinsights", 40, 42, +1000000020, []int{1656517037, 1656608833})
 	testStitchGraphShape(t, "codeinsights", 38, 42, +1000000020, []int{1656517037, 1656608833})
