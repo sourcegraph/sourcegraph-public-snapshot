@@ -2,12 +2,12 @@
 // but it doesn't make sense to do so right now.
 
 export interface JsonDocument {
-    occurrences: JsonOccurrence[]
+    occurrences?: JsonOccurrence[]
 }
 
 export interface JsonOccurrence {
-    range: number[]
-    syntaxKind: number
+    range: [number, number, number] | [number, number, number, number]
+    syntaxKind?: SyntaxKind
 }
 
 export class Position {
@@ -20,7 +20,7 @@ export class Range {
 
 export class Occurrence {
     public range: Range
-    public kind: SyntaxKind
+    public kind?: SyntaxKind
 
     constructor(occ: JsonOccurrence) {
         this.range = new Range(
