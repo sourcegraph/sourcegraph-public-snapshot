@@ -1405,6 +1405,12 @@ func TestDeleteLockfileIndexByID(t *testing.T) {
 		if len(names) != 0 {
 			t.Fatalf("references not inserted")
 		}
+
+		// Delete again
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if err != ErrLockfileIndexNotFound {
+			t.Fatalf("wrong error: %s", err)
+		}
 	})
 
 	t.Run("without any dependencies", func(t *testing.T) {
@@ -1437,6 +1443,12 @@ func TestDeleteLockfileIndexByID(t *testing.T) {
 		_, err = store.GetLockfileIndex(ctx, GetLockfileIndexOpts{ID: index.ID})
 		if err != ErrLockfileIndexNotFound {
 			t.Fatalf("unexpected error: %s", err)
+		}
+
+		// Delete again
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if err != ErrLockfileIndexNotFound {
+			t.Fatalf("wrong error: %s", err)
 		}
 	})
 }

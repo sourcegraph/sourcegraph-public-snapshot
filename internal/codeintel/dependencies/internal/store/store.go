@@ -802,7 +802,7 @@ type GetLockfileIndexOpts struct {
 	Lockfile string
 }
 
-var ErrLockfileIndexNotFound = errors.New("lockfile index matching conditions not found")
+var ErrLockfileIndexNotFound = errors.New("lockfile index not found")
 
 // GetLockfileIndex returns a lockfile index.
 func (s *store) GetLockfileIndex(ctx context.Context, opts GetLockfileIndexOpts) (index shared.LockfileIndex, err error) {
@@ -893,6 +893,9 @@ func (s *store) DeleteLockfileIndexByID(ctx context.Context, id int) (err error)
 	)
 	err = tx.QueryRow(ctx, sqlf.Sprintf(deleteLockfileIndexByIDQuery, id)).Scan(&repoID, &commit, &lockfile)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return ErrLockfileIndexNotFound
+		}
 		return err
 	}
 
