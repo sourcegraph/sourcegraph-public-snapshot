@@ -3,7 +3,7 @@ import React, { useMemo, useState, useEffect } from 'react'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
-import { useQuery } from '@sourcegraph/http-client'
+import { useQuery, useLazyQuery } from '@sourcegraph/http-client'
 import { Card, H3, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
@@ -11,13 +11,14 @@ import { AnalyticsDateRange, SearchStatisticsResult, SearchStatisticsVariables }
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
+import { ExportButton } from '../components/ExportButton'
 import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
 import { StandardDatum } from '../utils'
 
-import { SEARCH_STATISTICS } from './queries'
+import { SEARCH_STATISTICS, EXPORT_STATISTICS } from './queries'
 
 import styles from './index.module.scss'
 
@@ -29,9 +30,11 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
             dateRange,
         },
     })
+
     useEffect(() => {
         eventLogger.logPageView('AdminAnalyticsSearch')
     }, [])
+
     const [stats, legends] = useMemo(() => {
         if (!data) {
             return []
@@ -161,7 +164,17 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
 
     return (
         <>
-            <AnalyticsPageTitle>Analytics / Search</AnalyticsPageTitle>
+            <div className="d-flex justify-content-between align-items-end">
+                <AnalyticsPageTitle>Analytics / Search</AnalyticsPageTitle>
+                <div className="mb-4">
+                    <ExportButton
+                        query={EXPORT_STATISTICS}
+                        variables={{ dateRange }}
+                        path="site.analytics.search.exportCSV"
+                        fileName="search_analytics"
+                    />
+                </div>
+            </div>
 
             <Card className="p-3">
                 <div className="d-flex justify-content-end align-items-stretch mb-2">

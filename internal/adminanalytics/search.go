@@ -2,6 +2,8 @@ package adminanalytics
 
 import (
 	"context"
+	"fmt"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 )
@@ -98,4 +100,39 @@ func (s *Search) CacheAll(ctx context.Context) error {
 		}
 	}
 	return nil
+}
+
+type csvEvent struct {
+	Name    string
+	Fetcher func() (*AnalyticsFetcher, error)
+}
+
+func (s *Search) ExportCSV(ctx context.Context) (*string, error) {
+	rows := []string{"Event,Metric,Date,Value"}
+
+	events := []csvEvent{
+		{Name: "Searches", Fetcher: s.Searches},
+		{Name: "Result Clicks", Fetcher: s.ResultClicks},
+		{Name: "File Views", Fetcher: s.FileViews},
+	}
+
+	for _, event := range events {
+		if fetcher, err := event.Fetcher(); err == nil {
+			if nodes, err := fetcher.Nodes(ctx); err == nil {
+				for _, node := range nodes {
+					rows = append(rows, fmt.Sprintf("%s,Total Events,%s,%v", event.Name, node.Date(), node.Count()))
+					rows = append(rows, fmt.Sprintf("%s,Unique Users,%s,%v", event.Name, node.Date(), node.UniqueUsers()))
+				}
+			} else {
+				return nil, err
+			}
+		} else {
+			return nil, err
+		}
+
+	}
+
+	csv := strings.Join(rows[:], "\n")
+
+	return &csv, nil
 }

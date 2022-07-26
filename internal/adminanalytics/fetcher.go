@@ -65,10 +65,6 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		nodes = append(nodes, &AnalyticsNode{data})
 	}
 
-	if _, err := setArrayToCache(cacheKey, nodes); err != nil {
-		return nil, err
-	}
-
 	now := time.Now()
 	to := now
 	daysOffset := 1
@@ -106,6 +102,10 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		}
 
 		allNodes = append(allNodes, node)
+	}
+
+	if _, err := setArrayToCache(cacheKey, allNodes); err != nil {
+		return nil, err
 	}
 
 	return allNodes, nil

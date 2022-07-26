@@ -6081,6 +6081,10 @@ type AnalyticsSearchResult {
     File open analytics
     """
     fileOpens: AnalyticsStatItem!
+    """
+    CSV export
+    """
+    exportCSV: String
 }
 
 """

@@ -37,3 +37,15 @@ export const SEARCH_STATISTICS = gql`
     }
     ${analyticsStatItemFragment}
 `
+
+export const EXPORT_STATISTICS = gql`
+    query ExportSearchStatistics($dateRange: AnalyticsDateRange!) {
+        site {
+            analytics {
+                search(dateRange: $dateRange) {
+                    exportCSV
+                }
+            }
+        }
+    }
+`
