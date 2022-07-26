@@ -53,12 +53,15 @@ func TestStitchFrontendDefinitions(t *testing.T) {
 
 	// Note: negative values imply a quashed migration split into a privileged and
 	// unprivileged version. See `readMigrations` in this package for more details.
-	testStitchGraphShape(t, "frontend", 41, 42, +1644868458, []int{1657635365})
-	testStitchGraphShape(t, "frontend", 40, 42, +1528395943, []int{1657635365})
-	testStitchGraphShape(t, "frontend", 38, 42, +1528395943, []int{1657635365})
-	testStitchGraphShape(t, "frontend", 37, 42, -1528395834, []int{1657635365})
-	testStitchGraphShape(t, "frontend", 35, 42, -1528395834, []int{1657635365})
-	testStitchGraphShape(t, "frontend", 29, 42, -1528395787, []int{1657635365})
+	testStitchGraphShape(t, "frontend", 41, 42, +1644868458, []int{1654770608, 1658174103, 1658225452, 1657663493})
+	testStitchGraphShape(t, "frontend", 40, 42, +1528395943, []int{1654770608, 1658174103, 1658225452, 1657663493})
+	testStitchGraphShape(t, "frontend", 38, 42, +1528395943, []int{1654770608, 1658174103, 1658225452, 1657663493})
+	testStitchGraphShape(t, "frontend", 37, 42, -1528395834, []int{1654770608, 1658174103, 1658225452, 1657663493})
+	testStitchGraphShape(t, "frontend", 35, 42, -1528395834, []int{1654770608, 1658174103, 1658225452, 1657663493})
+	testStitchGraphShape(t, "frontend", 29, 42, -1528395787, []int{1654770608, 1658174103, 1658225452, 1657663493})
+
+	// Test a different leaf
+	testStitchGraphShape(t, "frontend", 35, 40, -1528395834, []int{1652228814, 1652707934})
 }
 
 func TestStitchCodeintelDefinitions(t *testing.T) {
@@ -75,6 +78,9 @@ func TestStitchCodeintelDefinitions(t *testing.T) {
 	testStitchGraphShape(t, "codeintel", 37, 42, -1000000015, []int{1000000034})
 	testStitchGraphShape(t, "codeintel", 35, 42, -1000000015, []int{1000000034})
 	testStitchGraphShape(t, "codeintel", 29, 42, -1000000005, []int{1000000034})
+
+	// Test a different leaf
+	testStitchGraphShape(t, "codeintel", 32, 37, -1000000005, []int{1000000030})
 }
 
 func TestStitchCodeinsightsDefinitions(t *testing.T) {
@@ -91,6 +97,9 @@ func TestStitchCodeinsightsDefinitions(t *testing.T) {
 	testStitchGraphShape(t, "codeinsights", 37, 42, -1000000000, []int{1656517037, 1656608833})
 	testStitchGraphShape(t, "codeinsights", 35, 42, -1000000000, []int{1656517037, 1656608833})
 	testStitchGraphShape(t, "codeinsights", 29, 42, -1000000000, []int{1656517037, 1656608833})
+
+	// Test a different leaf
+	testStitchGraphShape(t, "codeinsights", 38, 39, +1000000020, []int{1649801281})
 }
 
 func TestStitchAndApplyFrontendDefinitions(t *testing.T) {
