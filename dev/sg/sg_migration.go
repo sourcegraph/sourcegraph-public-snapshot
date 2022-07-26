@@ -310,7 +310,7 @@ func squashExec(ctx *cli.Context) (err error) {
 		return cli.NewExitError(fmt.Sprintf("database %q not found :(", databaseName), 1)
 	}
 
-	// Get the last migration that existed in the version _before_ `minimumMigrationSquashDistance` releases ago
+	// Get the last migration that existed in the version _before_ the given release
 	commit, err := findTargetSquashCommit(args[0])
 	if err != nil {
 		return err
@@ -376,21 +376,12 @@ func leavesExec(ctx *cli.Context) (err error) {
 	return migration.LeavesForCommit(db.Databases(), args[0])
 }
 
-// minimumMigrationSquashDistance is the minimum number of releases a migration is guaranteed to exist
-// as a non-squashed file.
-//
-// A squash distance of 1 will allow one minor downgrade.
-// A squash distance of 2 will allow two minor downgrades.
-// etc
-const minimumMigrationSquashDistance = 2
-
-// findTargetSquashCommit constructs the git version tag that is `minimumMIgrationSquashDistance` minor
-// releases ago.
+// findTargetSquashCommit constructs the git version tag that that contains the definitions we can squash away.
 func findTargetSquashCommit(migrationName string) (string, error) {
 	currentVersion, err := semver.NewVersion(migrationName)
 	if err != nil {
 		return "", err
 	}
 
-	return fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-minimumMigrationSquashDistance-1), nil
+	return fmt.Sprintf("v%d.%d.0", currentVersion.Major(), currentVersion.Minor()-1), nil
 }
