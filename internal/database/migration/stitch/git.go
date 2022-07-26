@@ -81,7 +81,7 @@ func cachedArchiveContents(dir, rev string) (map[string]string, error) {
 	return m, nil
 }
 
-// archiveContents calls git archive with the given git revision and path prefix and returns a map from
+// archiveContents calls git archive with the given git revision and returns a map from
 // file paths to file contents.
 func archiveContents(dir, rev string) (map[string]string, error) {
 	cmd := exec.Command("git", "archive", "--format=tar", rev+"^", "migrations")
