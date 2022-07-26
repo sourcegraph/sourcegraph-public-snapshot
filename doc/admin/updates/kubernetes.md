@@ -2,6 +2,8 @@
 
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes any special manual migration steps you must perform per-version.
 
+## Upgrade procedure
+
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
 3. After checking the relevant update notes, to upgrade your instance refer to either:
@@ -16,7 +18,7 @@
 
 Follow the [standard upgrade procedure](../deploy/kubernetes/update.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.42).*
 
 ## 3.40 -> 3.41
 
