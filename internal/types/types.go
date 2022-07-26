@@ -485,7 +485,7 @@ type ExternalService struct {
 	DeletedAt         time.Time
 	LastSyncAt        time.Time
 	NextSyncAt        time.Time
-	SyncUsingWebhooks bool // will put this in config later
+	SyncUsingWebhooks bool
 	NamespaceUserID   int32
 	NamespaceOrgID    int32
 	Unrestricted      bool       // Whether access to repositories belong to this external service is unrestricted.
