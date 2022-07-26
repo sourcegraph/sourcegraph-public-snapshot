@@ -18036,7 +18036,18 @@
           "Comment": ""
         }
       ],
-      "Indexes": [],
+      "Indexes": [
+        {
+          "Name": "webhook_build_jobs_queued_at_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": false,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        }
+      ],
       "Constraints": null,
       "Triggers": []
     },
