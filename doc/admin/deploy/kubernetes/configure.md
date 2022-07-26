@@ -1,6 +1,6 @@
 # Configure Sourcegraph with Kubernetes
 
-> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm. If using Helm, please go to [Configuration in the Helm guide](helm.md#configuration). 
+> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm. If using Helm, please go to [Configuration in the Helm guide](helm.md#configuration).
 > If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the later upgrade process. See our [Helm guide](helm.md) for more information.
 
 Configuring a [Sourcegraph Kubernetes cluster](./index.md) without Helm is done by applying manifest files and with simple
@@ -41,17 +41,17 @@ We **strongly** recommend you fork the [Sourcegraph with Kubernetes reference re
 > NOTE: We do not recommend storing secrets in the repository itself - instead, consider leveraging [Kubernetes's Secret objects](https://kubernetes.io/docs/concepts/configuration/secret).
 
 ### Create a fork or private duplicate
-  
+
   [Create a public fork](https://docs.github.com/en/get-started/quickstart/fork-a-repo#forking-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository.
 
   Alternatively, create a [private duplicate](https://docs.github.com/en/repositories/creating-and-managing-repositories/duplicating-a-repository#mirroring-a-repository) of the [deploy-sourcegraph](https://github.com/sourcegraph/deploy-sourcegraph) repository as follows:
 
-  Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub, then bare clone the reference repository. 
+  Create an [empty private repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-new-repository), for example `<you/private-repository>` in GitHub, then bare clone the reference repository.
 
 ```bash
 git clone --bare https://github.com/sourcegraph/deploy-sourcegraph/
 ```
-  
+
 Navigate to the bare clone and mirror push it to your private repository.
 
 ```bash
@@ -59,7 +59,7 @@ cd deploy-sourcegraph.git
 git push --mirror https://github.com/<you/private-repository>.git
 ```
 
-Remove your local bare clone. 
+Remove your local bare clone.
 ```bash
   cd ..
   rm -rf deploy-sourcegraph.git
@@ -394,7 +394,7 @@ We recommend utilizing an external database when deploying Sourcegraph to provid
 
 Simply edit the relevant PostgreSQL environment variables (e.g. PGHOST, PGPORT, PGUSER, [etc.](http://www.postgresql.org/docs/current/static/libpq-envars.html)) in [base/frontend/sourcegraph-frontend.Deployment.yaml](https://github.com/sourcegraph/deploy-sourcegraph/blob/master/base/frontend/sourcegraph-frontend.Deployment.yaml) to point to your existing PostgreSQL instance.
 
-If you do not have an external database available, configuration is provided to deploy PostgreSQL on Kubernetes. 
+If you do not have an external database available, configuration is provided to deploy PostgreSQL on Kubernetes.
 
 
 ## Configure repository cloning via SSH
@@ -486,7 +486,7 @@ Sourcegraph supports specifying a custom Redis server for:
 - caching information (specified via the `REDIS_CACHE_ENDPOINT` environment variable)
 - storing information (session data and job queues) (specified via the `REDIS_STORE_ENDPOINT` environment variable)
 
-If these are not set, they will [default](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) to `redis-cache:6379` & `redis-store:6379` 
+If these are not set, they will [default](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24++REDIS_CACHE_ENDPOINT+AND+REDIS_STORE_ENDPOINT+-file:doc+file:internal&patternType=literal) to `redis-cache:6379` & `redis-store:6379`
 
 If you want to specify a custom Redis server, you'll need specify the corresponding environment variable for each of the following deployments:
 
@@ -515,7 +515,6 @@ spec:
             value: "<REDIS_CACHE_DSN>"
           - name: REDIS_STORE_ENDPOINT
             value: "<REDIS_STORE_DSN>"
-    
 ```
 
 ## Connect to an external Jaeger instance
