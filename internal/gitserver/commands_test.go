@@ -946,7 +946,7 @@ func TestParseTags_WithoutCreatorDate(t *testing.T) {
 	}
 }
 
-func TestExecSafe(t *testing.T) {
+func TestClientImplementor_ExecSafe(t *testing.T) {
 	ClientMocks.LocalGitserver = true
 	defer ResetClientMocks()
 
@@ -994,7 +994,7 @@ func TestExecSafe(t *testing.T) {
 
 	repo := MakeGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z")
 
-	client := NewClient(database.NewMockDB())
+	client := newClientImplementor(database.NewMockDB())
 	for _, test := range tests {
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
 			stdout, stderr, exitCode, err := client.execSafe(context.Background(), repo, test.args)
@@ -1141,9 +1141,9 @@ func TestRepository_FileSystem_Symlinks(t *testing.T) {
 
 	// Check symlinks are links
 	for symlink := range symlinks {
-		fi, err := client.lStat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
+		fi, err := client.Stat(ctx, authz.DefaultSubRepoPermsChecker, repo, commitID, symlink)
 		if err != nil {
-			t.Fatalf("fs.lStat(%s): %s", symlink, err)
+			t.Fatalf("fs.Stat(%s): %s", symlink, err)
 		}
 		if runtime.GOOS != "windows" {
 			// TODO(alexsaveliev) make it work on Windows too
@@ -2247,7 +2247,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
-	client := NewClient(database.NewMockDB())
+	client := newClientImplementor(database.NewMockDB())
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions, checker)
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
@@ -2395,7 +2395,7 @@ func TestCommitDate(t *testing.T) {
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	db := database.NewMockDB()
-	client := NewClient(db)
+	client := newClientImplementor(db)
 	commits, err := client.Commits(ctx, repo, opt, checker)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)

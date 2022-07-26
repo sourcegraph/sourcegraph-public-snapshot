@@ -13,7 +13,6 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -97,7 +96,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 	logger := log.Scoped("dbAddUserAction", "")
 
 	// Read the configuration.
-	conf, _ := sgconf.Get(configFile, configOverwriteFile)
+	conf, _ := getConfig()
 	if conf == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
@@ -150,7 +149,7 @@ func dbAddUserAction(cmd *cli.Context) error {
 
 func dbResetRedisExec(ctx *cli.Context) error {
 	// Read the configuration.
-	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	config, _ := getConfig()
 	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
@@ -173,7 +172,7 @@ func dbResetRedisExec(ctx *cli.Context) error {
 
 func dbResetPGExec(ctx *cli.Context) error {
 	// Read the configuration.
-	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	config, _ := getConfig()
 	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This command needs to be run in the `sourcegraph` repository")
 	}
