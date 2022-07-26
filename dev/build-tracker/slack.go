@@ -42,8 +42,7 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 	if build.Author == nil {
 		return nil, errors.New("nil Author")
 	}
-	name := build.Author.Name
-	teammate, err := c.team.ResolveByName(context.Background(), name)
+	teammate, err := c.team.ResolveByName(context.Background(), build.Author.Name)
 	return teammate, err
 }
 
@@ -153,11 +152,12 @@ func determineAuthor(teammate *team.Teammate, build *Build) string {
 		return fmt.Sprintf("Teammate *%s* not found. If this is you, ensure the github field is set in your profile <https://github.com/sourcegraph/handbook/blob/main/data/team.yml|here>", build.Author.Name)
 	}
 
-	return fmt.Sprintf("%s", teammate.SlackID)
+	return fmt.Sprintf("<%s>", teammate.SlackID)
 }
 
 func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
-	failedSection, _, _ := strings.Cut(build.message(), "\n")
+	msg, _, _ := strings.Cut(build.message(), "\n")
+	failedSection := fmt.Sprintf(":spiral_notepad: %s\n", msg)
 	failedSection += "*Failed jobs:*\n"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
@@ -201,7 +201,7 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 :one: *<https://docs.sourcegraph.com/dev/background-information/ci#flakes|CI flakes>*
 :two: *<https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Assessing flakey client steps>*
 
-_"save your fellow dev some time and proactive disable flakes when you spot them"_`,
+_"save your fellow dev some time and proactively disable flakes when you spot them"_`,
 			},
 			nil,
 			nil,
@@ -227,7 +227,7 @@ _"save your fellow dev some time and proactive disable flakes when you spot them
 					Type:  slack.METButton,
 					Style: slack.StyleDanger,
 					URL:   "https://www.loom.com/share/58cedf44d44c45a292f650ddd3547337",
-					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: "face_with_raised_eyebrow: Is this a flake ?"},
+					Text:  &slack.TextBlockObject{Type: slack.PlainTextType, Text: ":face_with_raised_eyebrow: Is this a flake ?"},
 				},
 			}...,
 		),
