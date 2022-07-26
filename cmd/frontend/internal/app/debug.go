@@ -10,12 +10,14 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 
 	sglog "github.com/sourcegraph/log"
+	"github.com/sourcegraph/log/std"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
@@ -25,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
+	"github.com/sourcegraph/sourcegraph/internal/otlpenv"
 	srcprometheus "github.com/sourcegraph/sourcegraph/internal/src-prometheus"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -52,6 +55,7 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
 	addSentry(r)
+	addOpenTelemetryProtocolTunnel(r)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -265,6 +269,65 @@ func addJaeger(r *mux.Router, db database.DB) {
 	} else {
 		addNoJaegerHandler(r, db)
 	}
+}
+
+// addOpenTelemetryProtocolTunnel registers handlers that forward OpenTelemetry protocol
+// (OTLP) requests to the configured backend.
+func addOpenTelemetryProtocolTunnel(r *mux.Router) {
+	// For now we only support OTEL_EXPORTER_OTLP_ENDPOINT, and we don't support
+	// per-signal backends yet which require additional work.
+	// https://github.com/sourcegraph/sourcegraph/issues/39398
+	endpoint := otlpenv.GetEndpoint()
+	if protocol := otlpenv.GetProtocol(); protocol != "http/json" {
+
+	}
+
+	logger := sglog.Scoped("otlpTunnel", "OpenTelemetry protocol tunnel").
+		With(sglog.String("endpoint", endpoint))
+
+	target, err := url.Parse(endpoint)
+	if err != nil {
+		logger.Error("unable to parse OTLP export target",
+			sglog.String("endpoint", endpoint),
+			sglog.Error(err))
+
+		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_ENDPOINT`)
+			w.WriteHeader(http.StatusNotFound)
+		})
+		return
+	}
+
+	const (
+		tunnelPrefix  = "/otlp"
+		tracesPrefix  = "/v1/traces"
+		metricsPrefix = "/v1/metrics"
+	)
+
+	var (
+		tracesTarget  = path.Join(target.Path, "/v1/traces")
+		metricsTarget = path.Join(target.Path, "/v1/metrics")
+	)
+
+	// Trace tunnel
+	r.PathPrefix(tunnelPrefix + tracesPrefix).Handler(&httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = "127.0.0.1:4318"
+			req.URL.Path = tracesTarget
+			logger.Error(req.Header.Get("Content-Type"))
+		},
+		ErrorLog: std.NewLogger(logger.Scoped("traces", "traces tunnel"), sglog.LevelWarn),
+	})
+	// Metrics tunnel
+	r.PathPrefix(tunnelPrefix + metricsPrefix).Handler(&httputil.ReverseProxy{
+		Director: func(req *http.Request) {
+			req.URL.Scheme = target.Scheme
+			req.URL.Host = target.Host
+			req.URL.Path = metricsTarget
+		},
+		ErrorLog: std.NewLogger(logger.Scoped("metrics", "metrics tunnel"), sglog.LevelWarn),
+	})
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.
