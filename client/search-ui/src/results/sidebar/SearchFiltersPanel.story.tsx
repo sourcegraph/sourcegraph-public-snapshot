@@ -17,7 +17,7 @@ import { EMPTY_SETTINGS_CASCADE } from '@sourcegraph/shared/src/settings/setting
 import { NOOP_TELEMETRY_SERVICE } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { buildSearchURLQuery } from '@sourcegraph/shared/src/util/url'
 
-import { SearchSidebar, SearchSidebarProps } from './SearchSidebar'
+import { SearchFiltersPanel, SearchFiltersPanelProps } from './SearchFiltersPanel'
 
 const config: Meta = {
     title: 'search-ui/results/sidebar/SearchSidebar',
@@ -48,7 +48,7 @@ const mockUseQueryState = create<SearchQueryState>((set, get) => ({
     submitSearch: () => {},
 }))
 
-const defaultProps: SearchSidebarProps = {
+const defaultProps: SearchFiltersPanelProps = {
     caseSensitive: false,
     patternType: SearchPatternType.literal,
     selectedSearchContextSpec: 'global',
@@ -155,7 +155,7 @@ export const EmptySidebar: Story = () => (
     <BrandedStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
-                <SearchSidebar {...defaultProps} />
+                <SearchFiltersPanel {...defaultProps} />
             </SearchQueryStateStoreProvider>
         )}
     </BrandedStory>
@@ -167,7 +167,7 @@ export const WithEverything: Story = () => (
     <BrandedStory>
         {() => (
             <SearchQueryStateStoreProvider useSearchQueryState={mockUseQueryState}>
-                <SearchSidebar
+                <SearchFiltersPanel
                     {...defaultProps}
                     settingsCascade={{ subjects: [], final: { quicklinks, 'search.scopes': scopes } }}
                     filters={filters}

@@ -13,9 +13,10 @@ import {
     SearchQueryStateStoreProvider,
     updateQuery,
 } from '@sourcegraph/search'
-import { SearchSidebar } from '@sourcegraph/search-ui'
+import { SearchFiltersPanel, SearchSidebar } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { Filter, LATEST_VERSION } from '@sourcegraph/shared/src/search/stream'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useObservable } from '@sourcegraph/wildcard'
 
 import { WebviewPageProps } from '../../platform/context'
@@ -29,6 +30,7 @@ interface SearchSidebarViewProps
 
 export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<SearchSidebarViewProps>> = React.memo(
     ({ settingsCascade, platformContext, extensionCoreAPI, filters }) => {
+        const [, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
         const useSearchQueryState: SearchQueryStateStore = useMemo(
             () =>
                 create<SearchQueryState>((set, get) => ({
@@ -111,20 +113,21 @@ export const SearchSidebarView: React.FunctionComponent<React.PropsWithChildren<
 
         return (
             <SearchQueryStateStoreProvider useSearchQueryState={useSearchQueryState}>
-                <SearchSidebar
-                    // Used for SearchTypeLink, which we shouldn't render in the extension.
-                    buildSearchURLQueryFromQueryState={() => ''}
-                    // Ensure we always render SearchTypeButton which sets zustand state,
-                    // instead of URL state which wouldn't make sense in this webview.
-                    forceButton={true}
-                    caseSensitive={caseSensitive}
-                    patternType={patternType}
-                    settingsCascade={settingsCascade}
-                    telemetryService={platformContext.telemetryService}
-                    className={styles.sidebarContainer}
-                    filters={filters}
-                    // Debt: no selected search context spec
-                />
+                <SearchSidebar className={styles.sidebarContainer} onClose={() => setSidebarTab(null)}>
+                    <SearchFiltersPanel
+                        // Used for SearchTypeLink, which we shouldn't render in the extension.
+                        buildSearchURLQueryFromQueryState={() => ''}
+                        // Ensure we always render SearchTypeButton which sets zustand state,
+                        // instead of URL state which wouldn't make sense in this webview.
+                        forceButton={true}
+                        caseSensitive={caseSensitive}
+                        patternType={patternType}
+                        settingsCascade={settingsCascade}
+                        telemetryService={platformContext.telemetryService}
+                        filters={filters}
+                        // Debt: no selected search context spec
+                    />
+                </SearchSidebar>
             </SearchQueryStateStoreProvider>
         )
     }

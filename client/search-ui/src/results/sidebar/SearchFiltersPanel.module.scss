@@ -1,0 +1,11 @@
+@import 'wildcard/src/global-styles/breakpoints';
+
+.item {
+    @media (--md-breakpoint-down) {
+        width: calc(50% - 0.75rem);
+    }
+
+    @media (--xs-breakpoint-down) {
+        width: 100%;
+    }
+}

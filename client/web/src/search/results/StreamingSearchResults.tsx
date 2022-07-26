@@ -7,11 +7,12 @@ import { Observable } from 'rxjs'
 import { asError } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import {
-    SearchSidebar,
+    SearchFiltersPanel,
     StreamingProgress,
     StreamingSearchResultsList,
     FetchFileParameters,
     SidebarButtonStrip,
+    SearchSidebar,
 } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -228,36 +229,39 @@ export const StreamingSearchResults: React.FunctionComponent<
         [query, telemetryService, patternType, caseSensitive, props]
     )
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
-    const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
+    const [selectedTab, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
     return (
-        <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
+        <div className={classNames(styles.container, !selectedTab && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={query} />
 
             <SidebarButtonStrip className={styles.sidebarButtonStrip} />
 
             <SearchSidebar
-                activation={props.activation}
-                caseSensitive={caseSensitive}
-                patternType={patternType}
-                settingsCascade={props.settingsCascade}
-                telemetryService={props.telemetryService}
-                selectedSearchContextSpec={props.selectedSearchContextSpec}
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
-                filters={results?.filters}
-                getRevisions={getRevisions}
-                prefixContent={
-                    <GettingStartedTour
-                        className="mb-1"
-                        isSourcegraphDotCom={props.isSourcegraphDotCom}
-                        telemetryService={props.telemetryService}
-                        isAuthenticated={!!props.authenticatedUser}
-                    />
-                }
-                buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
-            />
+                onClose={() => setSidebarTab(null)}
+            >
+                <GettingStartedTour
+                    className="mb-1"
+                    isSourcegraphDotCom={props.isSourcegraphDotCom}
+                    telemetryService={props.telemetryService}
+                    isAuthenticated={!!props.authenticatedUser}
+                />
+
+                <SearchFiltersPanel
+                    activation={props.activation}
+                    caseSensitive={caseSensitive}
+                    patternType={patternType}
+                    settingsCascade={props.settingsCascade}
+                    telemetryService={props.telemetryService}
+                    selectedSearchContextSpec={props.selectedSearchContextSpec}
+                    filters={results?.filters}
+                    getRevisions={getRevisions}
+                    buildSearchURLQueryFromQueryState={buildSearchURLQueryFromQueryState}
+                />
+            </SearchSidebar>
 
             <SearchResultsInfoBar
                 {...props}

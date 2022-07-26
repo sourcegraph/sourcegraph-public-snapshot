@@ -8,16 +8,6 @@
     }
 }
 
-.item {
-    @media (--md-breakpoint-down) {
-        width: calc(50% - 0.75rem);
-    }
-
-    @media (--xs-breakpoint-down) {
-        width: 100%;
-    }
-}
-
 .sticky-box {
     :global(.core-workflow-improvements-enabled) & {
         background-color: var(--sidebar-bg);
