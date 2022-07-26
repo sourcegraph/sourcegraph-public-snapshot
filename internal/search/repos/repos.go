@@ -263,7 +263,7 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	tr.LazyPrintf("finished contains filtering")
 
 	tr.LazyPrintf("fetching repo metadata")
-	repoRevsWithMetadata, err := r.hydrateRepoRevsMetadata(ctx, filteredRepoRevs)
+	repoRevsWithMetadata, err := r.fetchRepoRevsMetadata(ctx, filteredRepoRevs)
 	if err != nil {
 		return Resolved{}, errors.Wrap(err, "fetch metadata from db")
 	}
@@ -286,9 +286,9 @@ func (r *Resolver) Resolve(ctx context.Context, op search.RepoOptions) (_ Resolv
 	}, err
 }
 
-// hydrateRepoRevsMetadata fetches additional repo metadata from the db for each repo in repoRevs and populates the
+// fetchRepoRevsMetadata fetches additional repo metadata from the db for each repo in repoRevs and populates the
 // RepoMetadata field on each element in repoRevs.
-func (r *Resolver) hydrateRepoRevsMetadata(ctx context.Context, repoRevs []*search.RepositoryRevisions) (_ []*search.RepositoryRevisions, err error) {
+func (r *Resolver) fetchRepoRevsMetadata(ctx context.Context, repoRevs []*search.RepositoryRevisions) (_ []*search.RepositoryRevisions, err error) {
 	repoIDs := make([]api.RepoID, 0, len(repoRevs))
 	for _, repoRev := range repoRevs {
 		repoIDs = append(repoIDs, repoRev.Repo.ID)
