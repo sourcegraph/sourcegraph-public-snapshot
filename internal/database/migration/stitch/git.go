@@ -19,7 +19,7 @@ var gitTreePattern = lazyregexp.New("^tree .+:.+\n")
 // readMigrationDirectoryFilenames reads the names of the direct children of the given migration directory
 // at the given git revision.
 func readMigrationDirectoryFilenames(schemaName, dir, rev string) ([]string, error) {
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s^:%s", rev, migrationPath(schemaName)))
+	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", rev, migrationPath(schemaName)))
 	cmd.Dir = dir
 
 	out, err := cmd.CombinedOutput()
@@ -84,7 +84,7 @@ func cachedArchiveContents(dir, rev string) (map[string]string, error) {
 // archiveContents calls git archive with the given git revision and returns a map from
 // file paths to file contents.
 func archiveContents(dir, rev string) (map[string]string, error) {
-	cmd := exec.Command("git", "archive", "--format=tar", rev+"^", "migrations")
+	cmd := exec.Command("git", "archive", "--format=tar", rev, "migrations")
 	cmd.Dir = dir
 
 	out, err := cmd.CombinedOutput()
