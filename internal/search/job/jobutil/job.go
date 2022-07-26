@@ -65,14 +65,14 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 
 	// Modify the input query if the user specified `file:contains.content()`
 	fileContainsPatterns := b.FileContainsContent()
-	fileContainsOriginalPattern := b.Pattern
+	originalQuery := b
 	if len(fileContainsPatterns) > 0 {
 		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
 		for _, pat := range fileContainsPatterns {
 			newNodes = append(newNodes, query.Pattern{Value: pat})
 		}
-		if fileContainsOriginalPattern != nil {
-			newNodes = append(newNodes, fileContainsOriginalPattern)
+		if b.Pattern != nil {
+			newNodes = append(newNodes, b.Pattern)
 		}
 		b.Pattern = query.Operator{Operands: newNodes, Kind: query.And}
 	}
@@ -148,7 +148,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
 			addJob(&commit.SearchJob{
-				Query:                commit.QueryToGitQuery(b, diff),
+				Query:                commit.QueryToGitQuery(originalQuery, diff),
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
@@ -177,7 +177,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 
 	{ // Apply file:contains() post-filter
 		if len(fileContainsPatterns) > 0 {
-			basicJob = NewFileContainsFilterJob(fileContainsPatterns, fileContainsOriginalPattern, b.IsCaseSensitive(), basicJob)
+			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
 		}
 	}
 
