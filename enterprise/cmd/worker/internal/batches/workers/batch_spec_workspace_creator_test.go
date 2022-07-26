@@ -305,10 +305,7 @@ func TestBatchSpecWorkspaceCreatorProcess_Caching(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		haveDiff, err := changesetSpec.Spec.Diff()
-		if err != nil {
-			t.Fatal(err)
-		}
+		haveDiff := changesetSpec.Diff
 		if haveDiff != testDiff {
 			t.Fatalf("changeset spec built from cache has wrong diff: %s", haveDiff)
 		}
@@ -630,14 +627,11 @@ importChangesets:
 			ID:          have[0].ID,
 			RandID:      have[0].RandID,
 			UserID:      user.ID,
-			RepoID:      repos[0].ID,
+			BaseRepoID:  repos[0].ID,
 			BatchSpecID: batchSpec.ID,
-			Spec: &batcheslib.ChangesetSpec{
-				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repos[0].ID)),
-				ExternalID:     "123",
-			},
-			CreatedAt: now,
-			UpdatedAt: now,
+			ExternalID:  "123",
+			CreatedAt:   now,
+			UpdatedAt:   now,
 		},
 	}
 
@@ -690,14 +684,11 @@ importChangesets:
 			ID:          have[0].ID,
 			RandID:      have[0].RandID,
 			UserID:      user.ID,
-			RepoID:      repos[0].ID,
+			BaseRepoID:  repos[0].ID,
 			BatchSpecID: batchSpec.ID,
-			Spec: &batcheslib.ChangesetSpec{
-				BaseRepository: string(graphqlbackend.MarshalRepositoryID(repos[0].ID)),
-				ExternalID:     "123",
-			},
-			CreatedAt: now,
-			UpdatedAt: now,
+			ExternalID:  "123",
+			CreatedAt:   now,
+			UpdatedAt:   now,
 		},
 	}
 

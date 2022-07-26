@@ -21,7 +21,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/types/typestest"
-	batcheslib "github.com/sourcegraph/sourcegraph/lib/batches"
 )
 
 // Comparing the IDs is good enough, no need to bloat the tests here.
@@ -51,39 +50,31 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 	changesetSpecs := make(btypes.ChangesetSpecs, 0, 3)
 	for i := 0; i < cap(changesetSpecs); i++ {
-		var spec *batcheslib.ChangesetSpec
-		if i == 0 {
-			spec = &batcheslib.ChangesetSpec{
-				BaseRef:   "refs/heads/main",
-				BaseRev:   "deadbeef",
-				HeadRef:   "refs/heads/branch",
-				Title:     "The title",
-				Body:      "The body",
-				Published: batcheslib.PublishedValue{Val: false},
-				Commits: []batcheslib.GitCommitDescription{
-					{
-						Message: "Test message",
-						// The diff may contain non ascii, cover for this.
-						Diff:        "git diff here\\x20",
-						AuthorName:  "name",
-						AuthorEmail: "email",
-					},
-				},
-			}
-		} else {
-			spec = &batcheslib.ChangesetSpec{
-				ExternalID: "123456",
-			}
-		}
 		c := &btypes.ChangesetSpec{
-			Spec:        spec,
 			UserID:      int32(i + 1234),
 			BatchSpecID: int64(i + 910),
-			RepoID:      repo.ID,
+			BaseRepoID:  repo.ID,
 
 			DiffStatAdded:   123,
 			DiffStatChanged: 456,
 			DiffStatDeleted: 789,
+		}
+		if i == 0 {
+			c.BaseRef = "refs/heads/main"
+			c.BaseRev = "deadbeef"
+			c.HeadRef = "refs/heads/branch"
+			c.Title = "The title"
+			c.Body = "The body"
+			c.Published = batcheslib.PublishedValue{Val: false}
+			c.CommitMessage = "Test message"
+			// The diff may contain non ascii, cover for this.
+			c.Diff = "git diff here\\x20"
+			c.CommitAuthorName = "name"
+			c.CommitAuthorEmail = "email"
+			c.Typ = btypes.ChangesetSpecTypeBranch
+		} else {
+			c.ExternalID = "123456"
+			c.Typ = btypes.ChangesetSpecTypeExisting
 		}
 
 		if i == cap(changesetSpecs)-1 {
@@ -98,12 +89,12 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	// listing or getting ChangesetSpecs, since we don't want to load
 	// ChangesetSpecs whose repository has been (soft-)deleted.
 	changesetSpecDeletedRepo := &btypes.ChangesetSpec{
-		UserID: int32(424242),
-		Spec: &batcheslib.ChangesetSpec{
-			ExternalID: "123",
-		},
+		UserID:      int32(424242),
 		BatchSpecID: int64(424242),
-		RepoID:      deletedRepo.ID,
+		BaseRepoID:  deletedRepo.ID,
+
+		ExternalID: "123",
+		Typ:        btypes.ChangesetSpecTypeExisting,
 	}
 
 	t.Run("Create", func(t *testing.T) {
@@ -409,8 +400,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			for i := 0; i < 3; i++ {
 				spec := &btypes.ChangesetSpec{
 					BatchSpecID: int64(i + 1),
-					RepoID:      repo.ID,
-					Spec:        &batcheslib.ChangesetSpec{ExternalID: "123"},
+					BaseRepoID:  repo.ID,
+					ExternalID:  "123",
+					Typ:         btypes.ChangesetSpecTypeExisting,
 				}
 				err := s.CreateChangesetSpec(ctx, spec)
 				if err != nil {
@@ -438,10 +430,9 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			for i := 0; i < 3; i++ {
 				spec := &btypes.ChangesetSpec{
 					BatchSpecID: int64(i + 1),
-					RepoID:      repo.ID,
-					Spec: &batcheslib.ChangesetSpec{
-						ExternalID: "123",
-					},
+					BaseRepoID:  repo.ID,
+					ExternalID:  "123",
+					Typ:         btypes.ChangesetSpecTypeExisting,
 				}
 				err := s.CreateChangesetSpec(ctx, spec)
 				if err != nil {
@@ -490,9 +481,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 
 			changesetSpec := &btypes.ChangesetSpec{
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
-				RepoID:    repo.ID,
-				CreatedAt: tc.createdAt,
-				Spec:      &batcheslib.ChangesetSpec{ExternalID: "123"},
+				BaseRepoID: repo.ID,
+				ExternalID: "123",
+				Typ:        btypes.ChangesetSpecTypeExisting,
+				CreatedAt:  tc.createdAt,
 			}
 
 			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {
@@ -588,9 +580,10 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			changesetSpec := &btypes.ChangesetSpec{
 				BatchSpecID: batchSpec.ID,
 				// Need to set a RepoID otherwise GetChangesetSpec filters it out.
-				RepoID:    repo.ID,
-				Spec:      &batcheslib.ChangesetSpec{ExternalID: "123"},
-				CreatedAt: tc.createdAt,
+				BaseRepoID: repo.ID,
+				ExternalID: "123",
+				Typ:        btypes.ChangesetSpecTypeExisting,
+				CreatedAt:  tc.createdAt,
 			}
 
 			if err := s.CreateChangesetSpec(ctx, changesetSpec); err != nil {

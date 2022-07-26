@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -98,8 +97,8 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 	updatedChangesetSpec := bt.CreateChangesetSpec(t, ctx, bstore, bt.TestSpecOpts{
 		BatchSpec: oldBatchSpec.ID,
 		User:      userID,
-		Repo:      changesetSpecs[1].RepoID,
-		HeadRef:   changesetSpecs[1].Spec.HeadRef,
+		Repo:      changesetSpecs[1].BaseRepoID,
+		HeadRef:   changesetSpecs[1].HeadRef,
 	})
 	updatedChangeset := bt.CreateChangeset(t, ctx, bstore, bt.TestChangesetOpts{
 		Repo:               rs[1].ID,
@@ -378,12 +377,8 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 		newFx := newApplyPreviewTestFixture(t, ctx, bstore, userID, repo.ID, "already published")
 
 		// We need to modify the changeset spec to not have a published field.
-		newFx.specPublished.Spec.Published = batches.PublishedValue{Val: nil}
-		spec, err := json.Marshal(newFx.specPublished.Spec)
-		if err != nil {
-			t.Fatal(err)
-		}
-		q := sqlf.Sprintf(`UPDATE changeset_specs SET spec = %s WHERE id = %s`, spec, newFx.specPublished.ID)
+		newFx.specPublished.Published = batches.PublishedValue{Val: nil}
+		q := sqlf.Sprintf(`UPDATE changeset_specs SET published = %s WHERE id = %s`, newFx.specPublished.Published, newFx.specPublished.ID)
 		if _, err := db.ExecContext(context.Background(), q.Query(sqlf.PostgresBindVar), q.Args()...); err != nil {
 			t.Fatal(err)
 		}

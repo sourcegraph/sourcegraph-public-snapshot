@@ -522,8 +522,8 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 		}
 
 		if err := s.CreateChangesetSpec(ctx,
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10, Spec: &batcheslib.ChangesetSpec{ExternalID: "123"}},
-			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, RepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20, Spec: &batcheslib.ChangesetSpec{ExternalID: "123"}},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo1.ID, DiffStatAdded: 10, DiffStatChanged: 10, DiffStatDeleted: 10, ExternalID: "123"},
+			&btypes.ChangesetSpec{BatchSpecID: batchSpec.ID, BaseRepoID: repo2.ID, DiffStatAdded: 20, DiffStatChanged: 20, DiffStatDeleted: 20, ExternalID: "123"},
 		); err != nil {
 			t.Fatal(err)
 		}
@@ -609,7 +609,7 @@ func testStoreBatchSpecs(t *testing.T, ctx context.Context, s *Store, clock bt.C
 
 			if tc.hasChangesetSpecs {
 				changesetSpec := &btypes.ChangesetSpec{
-					RepoID:      1,
+					BaseRepoID:  1,
 					BatchSpecID: batchSpec.ID,
 					Spec:        &batcheslib.ChangesetSpec{ExternalID: "123"},
 				}

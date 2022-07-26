@@ -68,25 +68,19 @@ func TestUiPublicationStates_get(t *testing.T) {
 func TestUiPublicationStates_prepareAndValidate(t *testing.T) {
 	var (
 		changesetUI = &btypes.ChangesetSpec{
-			ID:     1,
-			RandID: "1",
-			Spec: &batcheslib.ChangesetSpec{
-				Published: batcheslib.PublishedValue{Val: nil},
-			},
+			ID:        1,
+			RandID:    "1",
+			Published: batcheslib.PublishedValue{Val: nil},
 		}
 		changesetPublished = &btypes.ChangesetSpec{
-			ID:     2,
-			RandID: "2",
-			Spec: &batcheslib.ChangesetSpec{
-				Published: batcheslib.PublishedValue{Val: true},
-			},
+			ID:        2,
+			RandID:    "2",
+			Published: batcheslib.PublishedValue{Val: true},
 		}
 		changesetUnwired = &btypes.ChangesetSpec{
-			ID:     3,
-			RandID: "3",
-			Spec: &batcheslib.ChangesetSpec{
-				Published: batcheslib.PublishedValue{Val: true},
-			},
+			ID:        3,
+			RandID:    "3",
+			Published: batcheslib.PublishedValue{Val: true},
 		}
 
 		mappings = btypes.RewirerMappings{

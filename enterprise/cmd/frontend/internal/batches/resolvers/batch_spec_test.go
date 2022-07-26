@@ -69,7 +69,7 @@ func TestBatchSpecResolver(t *testing.T) {
 	}
 	changesetSpec.BatchSpecID = spec.ID
 	changesetSpec.UserID = userID
-	changesetSpec.RepoID = repo.ID
+	changesetSpec.BaseRepoID = repo.ID
 
 	if err := bstore.CreateChangesetSpec(ctx, changesetSpec); err != nil {
 		t.Fatal(err)

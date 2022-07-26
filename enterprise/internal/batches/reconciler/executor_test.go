@@ -594,7 +594,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 			// Setup gitserver dependency.
 			gitClient := &bt.FakeGitserverClient{ResponseErr: tc.gitClientErr}
 			if changesetSpec != nil {
-				gitClient.Response = changesetSpec.Spec.HeadRef
+				gitClient.Response = changesetSpec.HeadRef
 			}
 
 			// Setup the sourcer that's used to create a Source with which
@@ -612,8 +612,8 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 				fakeSource.FakeMetadata = githubPR
 			}
 			if changesetSpec != nil {
-				fakeSource.WantHeadRef = changesetSpec.Spec.HeadRef
-				fakeSource.WantBaseRef = changesetSpec.Spec.BaseRef
+				fakeSource.WantHeadRef = changesetSpec.HeadRef
+				fakeSource.WantBaseRef = changesetSpec.BaseRef
 			}
 
 			sourcer := stesting.NewFakeSourcer(nil, fakeSource)

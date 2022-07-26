@@ -231,9 +231,9 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				t.Fatalf("wrong batch change name. want=%s, have=%s", want, have)
 			}
 
-			c1 := cs.Find(btypes.WithExternalID(spec1.Spec.ExternalID))
+			c1 := cs.Find(btypes.WithExternalID(spec1.ExternalID))
 			bt.AssertChangeset(t, c1, bt.ChangesetAssertions{
-				Repo:             spec1.RepoID,
+				Repo:             spec1.BaseRepoID,
 				ExternalID:       "1234",
 				ReconcilerState:  btypes.ReconcilerStateQueued,
 				PublicationState: btypes.ChangesetPublicationStateUnpublished,
@@ -242,7 +242,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			c2 := cs.Find(btypes.WithCurrentSpecID(spec2.ID))
 			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
-				Repo:               spec2.RepoID,
+				Repo:               spec2.BaseRepoID,
 				CurrentSpec:        spec2.ID,
 				OwnedByBatchChange: batchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
@@ -338,10 +338,10 @@ func TestServiceApplyBatchChange(t *testing.T) {
 			// expect to be closed to look "published", otherwise it won't be
 			// closed.
 			wantClosed := oldChangesets.Find(btypes.WithCurrentSpecID(oldSpec4.ID))
-			bt.SetChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.Spec.HeadRef)
+			bt.SetChangesetPublished(t, ctx, store, wantClosed, "98765", oldSpec4.HeadRef)
 
 			changeset3 := oldChangesets.Find(btypes.WithCurrentSpecID(oldSpec3.ID))
-			bt.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.Spec.HeadRef)
+			bt.SetChangesetPublished(t, ctx, store, changeset3, "12345", oldSpec3.HeadRef)
 
 			// Apply and expect 6 changesets
 			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 6)
@@ -368,7 +368,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				Closing:            true,
 			})
 
-			c1 := cs.Find(btypes.WithExternalID(spec1.Spec.ExternalID))
+			c1 := cs.Find(btypes.WithExternalID(spec1.ExternalID))
 			bt.AssertChangeset(t, c1, bt.ChangesetAssertions{
 				Repo:             repos[0].ID,
 				CurrentSpec:      0,
@@ -379,7 +379,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 				AttachedTo:       []int64{batchChange.ID},
 			})
 
-			c2 := cs.Find(btypes.WithExternalID(spec2.Spec.ExternalID))
+			c2 := cs.Find(btypes.WithExternalID(spec2.ExternalID))
 			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
 				Repo:             repos[0].ID,
 				CurrentSpec:      0,
@@ -495,7 +495,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			// But we do want to have a new changeset record that is going to create a new changeset on the code host.
 			bt.ReloadAndAssertChangeset(t, ctx, store, cs[1], bt.ChangesetAssertions{
-				Repo:               spec3.RepoID,
+				Repo:               spec3.BaseRepoID,
 				CurrentSpec:        spec3.ID,
 				OwnedByBatchChange: trackingBatchChange.ID,
 				ReconcilerState:    btypes.ReconcilerStateQueued,
@@ -760,7 +760,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			batchChange, cs := applyAndListChangesets(adminCtx, t, svc, batchSpec2.RandID, 2)
 
-			c1 := cs.Find(btypes.WithExternalID(newSpec1.Spec.ExternalID))
+			c1 := cs.Find(btypes.WithExternalID(newSpec1.ExternalID))
 			bt.ReloadAndAssertChangeset(t, ctx, store, c1, bt.ChangesetAssertions{
 				Repo:             spec1Opts.Repo,
 				ExternalID:       "1234",
@@ -774,7 +774,7 @@ func TestServiceApplyBatchChange(t *testing.T) {
 
 			c2 := cs.Find(btypes.WithCurrentSpecID(newSpec2.ID))
 			bt.AssertChangeset(t, c2, bt.ChangesetAssertions{
-				Repo:        newSpec2.RepoID,
+				Repo:        newSpec2.BaseRepoID,
 				CurrentSpec: newSpec2.ID,
 				// An errored changeset doesn't get the specs rotated, to prevent https://github.com/sourcegraph/sourcegraph/issues/16041.
 				PreviousSpec:       0,
