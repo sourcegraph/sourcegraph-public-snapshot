@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 527
+assertion_line: 530
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -47,7 +47,7 @@ expression: "dump_document(&document, &contents)"
 //^^^^^ IdentifierKeyword
 //           ^ PunctuationBracket
   namespace Radzen.Blazor.
-//^^^^^^^^^ IdentifierType
+//^^^^^^^^^ IdentifierNamespace
 //                ^ PunctuationBracket
 //                       ^ PunctuationBracket
   {

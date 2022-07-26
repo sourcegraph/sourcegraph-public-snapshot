@@ -187,6 +187,7 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("constant.numeric"), NumericLiteral),
             (scope("constant.character"), CharacterLiteral),
             (scope("constant.language"), IdentifierBuiltin),
+            (scope("storage.type.namespace"), IdentifierNamespace),
             (scope("storage.type"), IdentifierType),
             (scope("support.type.builtin"), IdentifierBuiltinType),
         ]
