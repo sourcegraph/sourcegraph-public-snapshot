@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-MAX_DURATION_IN_SECONDS=60 # seconds
+MAX_DURATION_IN_SECONDS=600 # seconds
 
 tmp_log=$(mktemp)
 trap 'rm -f ${tmp_log}' EXIT
