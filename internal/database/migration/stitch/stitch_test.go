@@ -244,7 +244,7 @@ func makeRange(from, to int) []string {
 }
 
 func expectedSchema(t *testing.T, rev, filename string) (schemaDescription schemas.SchemaDescription) {
-	cmd := exec.Command("git", "show", fmt.Sprintf("%s:%s", rev, filename))
+	cmd := exec.Command("git", "show", fmt.Sprintf("%s^:%s", rev, filename))
 	cmd.Dir = repositoryRoot(t)
 
 	out, err := cmd.CombinedOutput()
