@@ -65,7 +65,7 @@ const DEPRECATED_EXTENSION_IDS = new Set(['sourcegraph/code-stats-insights', 'so
  * List of extensions being migrated to the core workflow. These extensions are not activated if
  * `extensionsAsCoreFeatures` experimental feature is enabled.
  */
-const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras'])
+const MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS = new Set(['sourcegraph/git-extras', 'sourcegraph/search-export'])
 
 export function activateExtensions(
     state: Pick<ExtensionHostState, 'activeExtensions' | 'contributions' | 'haveInitialExtensionsLoaded' | 'settings'>,

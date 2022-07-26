@@ -1,6 +1,14 @@
-import React, { useMemo, useState } from 'react'
+import React, { useCallback, useMemo, useState } from 'react'
 
-import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
+import {
+    mdiBookmarkOutline,
+    mdiMenu,
+    mdiMenuDown,
+    mdiMenuUp,
+    mdiArrowExpandDown,
+    mdiArrowCollapseUp,
+    mdiDownload,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -17,6 +25,7 @@ import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
+import { fetchSearchResults } from '../backend'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import {
@@ -231,7 +240,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     button={
                         <>
                             <Icon aria-hidden={true} className="mr-1" svgPath={mdiBookmarkOutline} />
-                            Save search
+                            Save Search
                         </>
                     }
                     icon={<BookmarkRadialGradientIcon />}
@@ -245,6 +254,31 @@ export const SearchResultsInfoBar: React.FunctionComponent<
             </li>
         ),
         [props.location, showActionButtonExperimentalVersion, props.onSaveQueryClick, props.telemetryService]
+    )
+
+    const onExportSearchResultsClick = useCallback(() => {
+        console.log(props.query, props.patternType)
+        if (props.query && props.patternType) {
+            fetchSearchResults(props.query, props.patternType)
+        }
+    }, [props.query, props.patternType])
+
+    const searchExportButton = useMemo(
+        () => (
+            <Tooltip content="Export search results as CVS file">
+                <li className={classNames('mr-2', styles.navItem)}>
+                    <button
+                        type="button"
+                        className="btn btn-sm btn-outline-secondary text-decoration-none"
+                        onClick={onExportSearchResultsClick}
+                    >
+                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
+                        Export Results
+                    </button>
+                </li>
+            </Tooltip>
+        ),
+        [onExportSearchResultsClick]
     )
 
     const extraContext = useMemo(
@@ -318,6 +352,7 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     {(createActions.length > 0 ||
                         createCodeMonitorButton ||
                         saveSearchButton ||
+                        searchExportButton ||
                         coreWorkflowImprovementsEnabled) && <li className={styles.divider} aria-hidden="true" />}
 
                     {coreWorkflowImprovementsEnabled ? (
@@ -372,6 +407,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                             )}
 
                             {saveSearchButton}
+
+                            {searchExportButton}
 
                             {props.resultsFound && (
                                 <>
