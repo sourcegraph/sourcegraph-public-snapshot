@@ -1,12 +1,14 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiChevronDown, mdiAlertCircle, mdiDelete, mdiPencil, mdiClose, mdiSync } from '@mdi/js'
+import { mdiChevronDown, mdiAlertCircle, mdiCloseCircleOutline, mdiPencil, mdiClose, mdiSync } from '@mdi/js'
+import { VisuallyHidden } from '@reach/visually-hidden'
 import { noop } from 'lodash'
 import { useHistory, useLocation } from 'react-router'
 
 import { useMutation } from '@sourcegraph/http-client'
 import {
     Button,
+    ButtonGroup,
     Icon,
     Link,
     Menu,
@@ -71,8 +73,6 @@ const MemoizedActionsMenu: React.FunctionComponent<
         RetryBatchSpecExecutionVariables
     >(RETRY_BATCH_SPEC_EXECUTION, { variables: { id: batchSpec.id }, onError: setActionsError })
 
-    const onSelectDelete = useCallback(() => {}, [])
-
     const onSelectEdit = useCallback(() => {
         if (isExecuting) {
             setCancelModalType('edit')
@@ -90,81 +90,127 @@ const MemoizedActionsMenu: React.FunctionComponent<
     const showPreviewButton = !location.pathname.endsWith('preview') && state === BatchSpecState.COMPLETED
     const showPreviewMenuItem = !location.pathname.endsWith('preview') && state === BatchSpecState.FAILED
 
-    // The actions menu button is wider than the "Preview" button, so to prevent layout
-    // shift, we apply the width of the actions menu button to the "Preview" button
-    // instead.
+    // The Preview dropdown button is wider than the Actions menu,
+    // so to prevent layout shift, we apply the width of the Preview
+    // dropdown button to the Action button instead.
     const [menuReference, { width: menuWidth }] = useMeasure()
 
     return (
         <div className="position-relative">
-            {showPreviewButton && (
-                <Button
-                    to={`${batchSpec.executionURL}/preview`}
-                    variant="primary"
-                    as={Link}
-                    className={styles.previewButton}
-                    style={{ width: menuWidth }}
-                >
-                    Preview
-                </Button>
-            )}
-            <Menu>
-                <div className="d-inline-block" ref={menuReference} aria-hidden={showPreviewButton}>
-                    <MenuButton
-                        variant="secondary"
-                        className={showPreviewButton ? styles.menuButtonHidden : undefined}
-                        // If an element with aria-hidden={true} contains a focusable
-                        // element, assistive technologies won't read the focusable
-                        // element, but keyboard users will still be able to navigate to
-                        // it, which can cause confusion. We pair this with negative tab
-                        // index to take the menu button out of the tab order when it is
-                        // hidden. See: https://web.dev/aria-hidden-focus/
-                        tabIndex={showPreviewButton ? -1 : undefined}
-                    >
-                        Actions
-                        <Icon aria-hidden={true} className={styles.chevronIcon} svgPath={mdiChevronDown} />
-                    </MenuButton>
+            {showPreviewButton ? (
+                // eslint-disable-next-line react/forbid-dom-props
+                <div style={{ width: menuWidth }} className={styles.menuButton}>
+                    <Menu>
+                        <ButtonGroup>
+                            <Button to={`${batchSpec.executionURL}/preview`} variant="primary" as={Link}>
+                                Preview
+                            </Button>
+                            <MenuButton variant="primary" className={styles.dropdownButton}>
+                                <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                                <VisuallyHidden>Actions</VisuallyHidden>
+                            </MenuButton>
+                        </ButtonGroup>
+                        <MenuList position={Position.bottomEnd}>
+                            <MenuLink as={Link} to={`${batchChange.url}/close`}>
+                                <Icon
+                                    aria-hidden={true}
+                                    className={styles.cancelIcon}
+                                    svgPath={mdiCloseCircleOutline}
+                                />{' '}
+                                Close batch change
+                            </MenuLink>
+                        </MenuList>
+                    </Menu>
                 </div>
-                <MenuList position={Position.bottomEnd}>
-                    {showPreviewMenuItem && (
-                        <MenuItem onSelect={() => history.push(`${batchSpec.executionURL}/preview`)}>
-                            <Icon aria-hidden={true} svgPath={mdiAlertCircle} /> Preview with errors
-                        </MenuItem>
-                    )}
-                    <MenuItem onSelect={onSelectEdit}>
-                        <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit spec{isExecuting ? '...' : ''}
-                    </MenuItem>
-                    {isExecuting && (
-                        <MenuItem onSelect={onSelectCancel}>
-                            <Icon aria-hidden={true} className={styles.cancelIcon} svgPath={mdiClose} /> Cancel
-                            execution...
-                        </MenuItem>
-                    )}
-                    {batchSpec.viewerCanRetry && (
-                        <MenuItem onSelect={retryBatchSpecExecution} disabled={isRetryLoading}>
-                            <Icon aria-hidden={true} svgPath={mdiSync} /> Retry failed workspaces
-                        </MenuItem>
-                    )}
-                    <MenuLink as={Link} to={`${batchChange.url}/close`}>
-                        <Icon aria-hidden={true} className={styles.cancelIcon} svgPath={mdiDelete} /> Delete batch
-                        change
-                    </MenuLink>
-                </MenuList>
-            </Menu>
-            <CancelExecutionModal
-                isOpen={showCancelModal}
-                onCancel={() => setShowCancelModal(false)}
-                onConfirm={cancelModalType === 'cancel' ? cancelBatchSpecExecution : cancelAndEdit}
-                modalHeader={cancelModalType === 'cancel' ? 'Cancel execution' : 'The execution is still running'}
-                modalBody={
-                    <Text>
-                        {cancelModalType === 'cancel'
-                            ? 'Are you sure you want to cancel the current execution?'
-                            : 'You are unable to edit the spec when an execution is running.'}
-                    </Text>
-                }
-                isLoading={isCancelLoading}
-            />
+            ) : (
+                <>
+                    <div className={styles.menuButton}>
+                        <Menu>
+                            <div className="d-inline-block" aria-hidden={showPreviewButton}>
+                                <MenuButton
+                                    variant="secondary"
+                                    style={{ width: menuWidth }}
+                                    className={styles.actionsButton}
+                                >
+                                    <div className={styles.actionLabel}>Actions</div>
+                                    <div className={styles.actionChevron}>
+                                        <Icon
+                                            aria-hidden={true}
+                                            className={styles.chevronIcon}
+                                            svgPath={mdiChevronDown}
+                                        />
+                                    </div>
+                                </MenuButton>
+                            </div>
+                            <MenuList position={Position.bottomEnd}>
+                                {showPreviewMenuItem && (
+                                    <MenuItem onSelect={() => history.push(`${batchSpec.executionURL}/preview`)}>
+                                        <Icon aria-hidden={true} svgPath={mdiAlertCircle} /> Preview with errors
+                                    </MenuItem>
+                                )}
+                                <MenuItem onSelect={onSelectEdit}>
+                                    <Icon aria-hidden={true} svgPath={mdiPencil} /> Edit spec{isExecuting ? '...' : ''}
+                                </MenuItem>
+                                {isExecuting && (
+                                    <MenuItem onSelect={onSelectCancel}>
+                                        <Icon aria-hidden={true} className={styles.cancelIcon} svgPath={mdiClose} />{' '}
+                                        Cancel execution...
+                                    </MenuItem>
+                                )}
+                                {batchSpec.viewerCanRetry && (
+                                    <MenuItem onSelect={retryBatchSpecExecution} disabled={isRetryLoading}>
+                                        <Icon aria-hidden={true} svgPath={mdiSync} /> Retry failed workspaces
+                                    </MenuItem>
+                                )}
+                                <MenuLink as={Link} to={`${batchChange.url}/close`}>
+                                    <Icon
+                                        aria-hidden={true}
+                                        className={styles.cancelIcon}
+                                        svgPath={mdiCloseCircleOutline}
+                                    />{' '}
+                                    Close batch change
+                                </MenuLink>
+                            </MenuList>
+                        </Menu>
+                    </div>
+                    <CancelExecutionModal
+                        isOpen={showCancelModal}
+                        onCancel={() => setShowCancelModal(false)}
+                        onConfirm={cancelModalType === 'cancel' ? cancelBatchSpecExecution : cancelAndEdit}
+                        modalHeader={
+                            cancelModalType === 'cancel' ? 'Cancel execution' : 'The execution is still running'
+                        }
+                        modalBody={
+                            <Text>
+                                {cancelModalType === 'cancel'
+                                    ? 'Are you sure you want to cancel the current execution?'
+                                    : 'You are unable to edit the spec when an execution is running.'}
+                            </Text>
+                        }
+                        isLoading={isCancelLoading}
+                    />
+                </>
+            )}
+            {/* We need to render a Preview dropdown button, but make it invisible and non-actionable. */}
+            <div className={styles.menuButtonHidden} ref={menuReference}>
+                <Menu>
+                    <ButtonGroup>
+                        <Button to={`${batchSpec.executionURL}/preview`} variant="primary" as={Link}>
+                            Preview
+                        </Button>
+                        <MenuButton variant="primary" className={styles.dropdownButton}>
+                            <Icon aria-hidden={true} svgPath={mdiChevronDown} />
+                            <VisuallyHidden>Actions</VisuallyHidden>
+                        </MenuButton>
+                    </ButtonGroup>
+                    <MenuList position={Position.bottomEnd}>
+                        <MenuLink as={Link} to={`${batchChange.url}/close`}>
+                            <Icon aria-hidden={true} className={styles.cancelIcon} svgPath={mdiCloseCircleOutline} />{' '}
+                            Close batch change
+                        </MenuLink>
+                    </MenuList>
+                </Menu>
+            </div>
         </div>
     )
 })

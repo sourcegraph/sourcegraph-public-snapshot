@@ -8,12 +8,38 @@
     color: var(--danger);
 }
 
-.preview-button {
-    z-index: 1;
+.menu-button {
     position: absolute;
 }
 
 .menu-button-hidden {
     opacity: 0;
     z-index: -999;
+    visibility: hidden;
+}
+
+.dropdown-button {
+    border-left: 1px solid var(--border-primary-color);
+    padding: 0 0.25rem;
+}
+
+.actions-button {
+    display: inline-flex;
+    padding-left: 0;
+    padding-right: 0;
+}
+
+.action-label {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.action-chevron {
+    // This is ugly, but it makes the styles match the true MenuButton on the
+    // preview button.
+    box-sizing: content-box;
+    border-left: 1px solid transparent;
+    border-right: 1px solid transparent;
+    padding: 0 0.25rem;
+    width: 16px;
 }

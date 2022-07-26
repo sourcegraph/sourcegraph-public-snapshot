@@ -1,6 +1,6 @@
 import React, { useCallback, useState } from 'react'
 
-import { mdiInformation, mdiDelete, mdiPencil } from '@mdi/js'
+import { mdiInformation, mdiClose, mdiDelete, mdiPencil } from '@mdi/js'
 import * as H from 'history'
 
 import { isErrorLike, asError } from '@sourcegraph/common'
@@ -85,7 +85,7 @@ export const BatchChangeDetailsActionSection: React.FunctionComponent<
                     outline={true}
                     as={Link}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiDelete} /> Close
+                    <Icon aria-hidden={true} svgPath={mdiClose} /> Close
                 </Button>
             </Tooltip>
         </div>
