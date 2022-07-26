@@ -115,7 +115,7 @@ func (rb *IndexedRepoRevs) BranchRepos() []zoektquery.BranchRepos {
 	return brs
 }
 
-// getRepoInputRev returns the repo and inputRev associated with file.
+// getRepoInputRev returns the repo, repo metadata, and inputRev associated with file.
 func (rb *IndexedRepoRevs) getRepoInputRev(file *zoekt.FileMatch) (repo types.MinimalRepo, repoMetadata *types.SearchedRepo, inputRevs []string) {
 	repoRev, ok := rb.RepoRevs[api.RepoID(file.RepositoryID)]
 
