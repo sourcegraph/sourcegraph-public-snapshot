@@ -205,8 +205,11 @@ func TestService(t *testing.T) {
 
 	admin := bt.CreateTestUser(t, db, true)
 	user := bt.CreateTestUser(t, db, false)
+	user2 := bt.CreateTestUser(t, db, false)
+
 	adminCtx := actor.WithActor(context.Background(), actor.FromUser(admin.ID))
 	userCtx := actor.WithActor(context.Background(), actor.FromUser(user.ID))
+	user2Ctx := actor.WithActor(context.Background(), actor.FromUser(user2.ID))
 
 	now := timeutil.Now()
 	clock := func() time.Time { return now }
@@ -931,6 +934,7 @@ func TestService(t *testing.T) {
 				t.Fatal(err)
 			}
 		})
+
 		t.Run("changeset not found", func(t *testing.T) {
 			changeset := bt.CreateChangeset(t, ctx, s, bt.TestChangesetOpts{
 				Repo:        rs[0].ID,
@@ -950,6 +954,7 @@ func TestService(t *testing.T) {
 				t.Fatalf("wrong error. want=%s, got=%s", ErrChangesetsForJobNotFound, err)
 			}
 		})
+
 		t.Run("DetachChangesets", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
@@ -988,6 +993,7 @@ func TestService(t *testing.T) {
 				}
 			})
 		})
+
 		t.Run("MergeChangesets", func(t *testing.T) {
 			spec := testBatchSpec(admin.ID)
 			if err := s.CreateBatchSpec(ctx, spec); err != nil {
@@ -1555,7 +1561,26 @@ changesetTemplate:
 	})
 
 	t.Run("CreateBatchSpecFromRaw", func(t *testing.T) {
-		adminCtx := actor.WithActor(ctx, actor.FromUser(admin.ID))
+		t.Run("batch change isn't owned by non-admin user", func(t *testing.T) {
+			spec := testBatchSpec(user.ID)
+			if err := s.CreateBatchSpec(ctx, spec); err != nil {
+				t.Fatal(err)
+			}
+
+			batchChange := testBatchChange(user.ID, spec)
+			if err := s.CreateBatchChange(ctx, batchChange); err != nil {
+				t.Fatal(err)
+			}
+
+			_, err := svc.CreateBatchSpecFromRaw(user2Ctx, CreateBatchSpecFromRawOpts{
+				RawSpec:         bt.TestRawBatchSpecYAML,
+				NamespaceUserID: user2.ID,
+				BatchChange:     batchChange.ID,
+			})
+
+			assert.Equal(t, "must be authenticated as the authorized user or as an admin (must be site admin)", err.Error())
+		})
+
 		t.Run("success - without batch change ID", func(t *testing.T) {
 			newSpec, err := svc.CreateBatchSpecFromRaw(adminCtx, CreateBatchSpecFromRawOpts{
 				RawSpec:         bt.TestRawBatchSpecYAML,
