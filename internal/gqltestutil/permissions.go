@@ -102,7 +102,8 @@ query BitbucketProjectPermissionJobs($projectKeys: [String!], $status: String, $
 	if resp.Data.Jobs.TotalCount < 1 {
 		return "", "", nil
 	} else {
-		return resp.Data.Jobs.Nodes[0].State, resp.Data.Jobs.Nodes[0].FailureMessage, nil
+		job := resp.Data.Jobs.Nodes[0]
+		return job.State, job.FailureMessage, nil
 	}
 }
 
