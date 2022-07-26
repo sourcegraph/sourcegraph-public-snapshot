@@ -8,12 +8,15 @@ type MigrationInterrupt struct {
 }
 
 // ScheduleMigrationInterrupts returns the set of versions during an instance upgrade that
-// have out-of-band migration completion requirements.
-func ScheduleMigrationInterrupts() ([]MigrationInterrupt, error) {
-	return scheduleMigrationInterrupts(yamlMigrations)
+// have out-of-band migration completion requirements. Any out of band migrations that do
+// not become deprecated within the given version bounds do not need to be completed, as
+// the target instance version will still be able to read partially migrated data from
+// non (or not-yet-)-deprecated out of band migrations.
+func ScheduleMigrationInterrupts(from, to Version) ([]MigrationInterrupt, error) {
+	return scheduleMigrationInterrupts(from, to, yamlMigrations)
 }
 
-func scheduleMigrationInterrupts(migrations []yamlMigration) ([]MigrationInterrupt, error) {
+func scheduleMigrationInterrupts(from, to Version, migrations []yamlMigration) ([]MigrationInterrupt, error) {
 	type migrationInterval struct {
 		id         int
 		introduced Version
@@ -30,11 +33,19 @@ func scheduleMigrationInterrupts(migrations []yamlMigration) ([]MigrationInterru
 			continue
 		}
 
-		intervals = append(intervals, migrationInterval{
-			m.ID,
-			Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor},
-			Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor},
-		})
+		introduced := Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor}
+		if compareVersions(introduced, to) == VersionOrderAfter {
+			// Skip migrations introduced after the target instance version
+			continue
+		}
+
+		deprecated := Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor}
+		if !(compareVersions(from, deprecated) == VersionOrderBefore && compareVersions(deprecated, to) == VersionOrderBefore) {
+			// Skip migrations not deprecated within the the instance upgrade interval
+			continue
+		}
+
+		intervals = append(intervals, migrationInterval{m.ID, introduced, deprecated})
 	}
 
 	// Choose a minimal set of versions that intersect all migration intervals. These will be the
