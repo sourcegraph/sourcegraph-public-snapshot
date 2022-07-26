@@ -265,22 +265,29 @@ func DoZoektSearchGlobal(ctx context.Context, client zoekt.Streamer, db database
 	}
 
 	return client.StreamSearch(ctx, args.Query, &searchOpts, backend.ZoektStreamFunc(func(event *zoekt.SearchResult) {
+		ids := make(map[api.RepoID]struct{}, 0)
+		for _, fm := range event.Files {
+			ids[api.RepoID(fm.RepositoryID)] = struct{}{}
+		}
+		repoIDs := make([]api.RepoID, 0, len(ids))
+		for id := range ids {
+			repoIDs = append(repoIDs, id)
+		}
+		reposMetadata, err := db.Repos().Metadata(ctx, repoIDs...)
+		if err != nil {
+			log.NamedError("fetch repo metadata error", err)
+			return
+		}
+
 		sendMatches(event, func(file *zoekt.FileMatch) (types.MinimalRepo, *types.SearchedRepo, []string) {
 			repoID := api.RepoID(file.RepositoryID)
 			repo := types.MinimalRepo{
 				ID:   repoID,
 				Name: api.RepoName(file.Repository),
 			}
-
-			metadataMap, err := db.Repos().Metadata(ctx, repoID)
-			if err != nil {
-				log.NamedError("fetch repo metadata error", err)
-				return repo, nil, []string{""}
+			if metadata, ok := reposMetadata[repoID]; ok {
+				return repo, metadata, []string{""}
 			}
-			if repoMetadata, ok := metadataMap[repoID]; ok {
-				return repo, repoMetadata, []string{""}
-			}
-
 			return repo, nil, []string{""}
 		}, args.Typ, args.Select, c)
 	}))
