@@ -199,7 +199,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 // exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
 func localGitExpectedSchemaFactory(filename, version string) (schemaDescription descriptions.SchemaDescription, _ bool, _ error) {
 	ctx := context.Background()
-	output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s^:%s", version, filename)))
+	output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s:%s", version, filename)))
 
 	if err := output.Wait(); err != nil {
 		// See if there is an error indicating a missing object, but no other problems
@@ -220,11 +220,11 @@ func filterLocalGitErrors(filename, version string, err error) error {
 
 	missingMessages := []string{
 		// unknown revision
-		fmt.Sprintf("fatal: invalid object name '%s^'", version),
+		fmt.Sprintf("fatal: invalid object name '%s'", version),
 
 		// path unknown to the revision (regardless of repo state)
-		fmt.Sprintf("fatal: path '%s' does not exist in '%s^'", filename, version),
-		fmt.Sprintf("fatal: path '%s' exists on disk, but not in '%s^'", filename, version),
+		fmt.Sprintf("fatal: path '%s' does not exist in '%s'", filename, version),
+		fmt.Sprintf("fatal: path '%s' exists on disk, but not in '%s'", filename, version),
 	}
 	for _, missingMessage := range missingMessages {
 		if strings.Contains(err.Error(), missingMessage) {
