@@ -59,7 +59,11 @@ import { TextDocumentDecoration } from '@sourcegraph/extension-api-types'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
-import { DecorationMapByLine, groupDecorationsByLine } from '@sourcegraph/shared/src/api/extension/api/decorations'
+import {
+    createDecorationType,
+    DecorationMapByLine,
+    groupDecorationsByLine,
+} from '@sourcegraph/shared/src/api/extension/api/decorations'
 import { haveInitialExtensionsLoaded } from '@sourcegraph/shared/src/api/features'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -99,6 +103,8 @@ import styles from './Blob.module.scss'
  * toPortalID builds an ID that will be used for the {@link LineDecorator} portal containers.
  */
 const toPortalID = (line: number): string => `line-decoration-attachment-${line}`
+
+const blameDecorationType = createDecorationType('git-extras')({ display: 'column' })
 
 export interface BlobProps
     extends SettingsCascadeProps,
@@ -648,6 +654,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         column: [TextDocumentDecorationType, DecorationMapByLine][]
         inline: DecorationMapByLine
     } = useMemo(() => {
+        const blameDecorationsByLine = props.blameDecorations && groupDecorationsByLine(props.blameDecorations)
+        const columnWithBlame: [TextDocumentDecorationType, DecorationMapByLine][] =
+            !props.disableDecorations && blameDecorationsByLine ? [[blameDecorationType, blameDecorationsByLine]] : []
+
         if (decorationsOrError && !isErrorLike(decorationsOrError)) {
             const { column, inline } = decorationsOrError.reduce(
                 (accumulator, [type, items]) => {
@@ -663,7 +673,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                     return accumulator
                 },
                 {
-                    column: [] as [TextDocumentDecorationType, DecorationMapByLine][],
+                    column: columnWithBlame,
                     inline: [] as TextDocumentDecoration[],
                 }
             )
@@ -675,8 +685,8 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             }
         }
 
-        return { column: [], inline: new Map() }
-    }, [decorationsOrError, enableExtensionsDecorationsColumnView])
+        return { column: columnWithBlame, inline: new Map() }
+    }, [props.disableDecorations, props.blameDecorations, decorationsOrError, enableExtensionsDecorationsColumnView])
 
     // Passed to HoverOverlay
     const hoverState: Readonly<HoverState<HoverContext, HoverMerged, ActionItemAction>> =
@@ -838,16 +848,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
                         hoverRef={nextOverlayElement}
                         pinOptions={pinOptions}
                         extensionsController={extensionsController}
-                    />
-                )}
-
-                {/* Respect `disableDecorations` prop not to render blame decorations in the experimental reference panel. */}
-                {!props.disableDecorations && props.blameDecorations && (
-                    <ColumnDecorator
-                        isLightTheme={isLightTheme}
-                        extensionID="remove-me-please"
-                        decorations={groupDecorationsByLine(props.blameDecorations)}
-                        codeViewElements={codeViewElements}
                     />
                 )}
 
