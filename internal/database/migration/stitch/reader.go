@@ -97,7 +97,7 @@ var hierarchicalPattern = lazyregexp.New(`(\d+)(_.+)?/`)
 
 // matchHierarchicalPattern returns the text captured from the given string.
 func matchHierarchicalPattern(s string) (id, suffix string, ok bool) {
-	if matches := hierarchicalPattern.FindStringSubmatch(s); len(matches) > 0 {
+	if matches := hierarchicalPattern.FindStringSubmatch(s); len(matches) >= 3 {
 		return matches[1], matches[2], true
 	}
 
