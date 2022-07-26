@@ -456,6 +456,10 @@ type Mutation {
         """
         referrer: String
         """
+        Session ID to identify the user's session for analytics.
+        """
+        sessionID: String
+        """
         The additional argument information.
         """
         argument: String
