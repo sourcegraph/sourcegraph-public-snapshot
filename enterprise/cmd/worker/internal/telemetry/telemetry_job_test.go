@@ -7,8 +7,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/hexops/autogold"
-	"github.com/hexops/valast"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -22,11 +20,10 @@ import (
 )
 
 func TestInitializeJob(t *testing.T) {
-	ctx := context.Background()
-	logger := logtest.Scoped(t)
-	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-
 	confClient = conf.MockClient()
+	defer func() {
+		confClient = conf.DefaultClient()
+	}()
 
 	tests := []struct {
 		name         string
@@ -64,20 +61,8 @@ func TestInitializeJob(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			job := NewTelemetryJob(db)
-			routines, err := job.Routines(ctx, logtest.Scoped(t))
-			if err != nil {
-				t.Error(err)
-			}
-
-			if test.shouldInit {
-				if len(routines) != 1 {
-					t.Error("expected one routine")
-				}
-			} else {
-				if len(routines) != 0 {
-					t.Error("expected no routines")
-				}
+			if have, want := isEnabled(), test.shouldInit; have != want {
+				t.Errorf("unexpected isEnabled return value have=%t want=%t", have, want)
 			}
 		})
 	}
@@ -193,7 +178,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			{
 				ID:       1,
 				Name:     "event1",
-				UserID:   valast.Addr(int32(1)).(*int32),
+				UserID:   1,
 				Argument: "{}",
 				Source:   "test",
 				Version:  "0.0.0+dev",
@@ -201,7 +186,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			{
 				ID:       2,
 				Name:     "event2",
-				UserID:   valast.Addr(int32(2)).(*int32),
+				UserID:   2,
 				Argument: "{}",
 				Source:   "test",
 				Version:  "0.0.0+dev",
@@ -225,7 +210,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			{
 				ID:       1,
 				Name:     "event1",
-				UserID:   valast.Addr(int32(1)).(*int32),
+				UserID:   1,
 				Argument: "{}",
 				Source:   "test",
 				Version:  "0.0.0+dev",

@@ -87,4 +87,14 @@ type LockfileIndex implements Node {
     The fidelity of the dependency graph.
     """
     fidelity: LockfileIndexFidelity!
+
+    """
+    The date and time when the lockfile index was created.
+    """
+    createdAt: DateTime!
+
+    """
+    The date and time when the lockfile index was updated.
+    """
+    updatedAt: DateTime!
 }

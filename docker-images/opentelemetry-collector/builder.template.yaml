@@ -1,0 +1,29 @@
+dist:
+  module: github.com/sourcegraph/sourcegraph/docker-images/opentelemetry-collector
+  name: otelcol-sourcegraph
+  description: "Sourcegraph OpenTelemetry Collector distribution"
+  otelcol_version: "$OTEL_COLLECTOR_VERSION"
+
+exporters:
+  # OpenTelemetry exporters - https://go.opentelemetry.io/collector/exporter
+  - import: go.opentelemetry.io/collector/exporter/otlpexporter
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+  - import: go.opentelemetry.io/collector/exporter/otlphttpexporter
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+
+  # Contrib exporters - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/exporter
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/jaegerexporter v$OTEL_COLLECTOR_VERSION"
+  - gomod: "github.com/open-telemetry/opentelemetry-collector-contrib/exporter/googlecloudexporter v$OTEL_COLLECTOR_VERSION"
+
+receivers:
+  # OpenTelemetry receivers - https://go.opentelemetry.io/collector/receiver
+  - import: go.opentelemetry.io/collector/receiver/otlpreceiver
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+
+extensions:
+  # OpenTelemetry extensions - https://go.opentelemetry.io/collector/extension
+  - import: go.opentelemetry.io/collector/extension/zpagesextension
+    gomod: go.opentelemetry.io/collector v$OTEL_COLLECTOR_VERSION
+
+  # Contrib extensions - https://github.com/open-telemetry/opentelemetry-collector-contrib/tree/main/extension
+  - gomod: github.com/open-telemetry/opentelemetry-collector-contrib/extension/healthcheckextension v$OTEL_COLLECTOR_VERSION

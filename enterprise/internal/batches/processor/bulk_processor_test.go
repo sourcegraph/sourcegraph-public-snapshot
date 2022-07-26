@@ -235,20 +235,24 @@ func TestBulkProcessor(t *testing.T) {
 				"imported changeset": {
 					spec: nil,
 					changeset: ct.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						CurrentSpec:     0,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						CurrentSpec:      0,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStatePublished,
+						ExternalState:    btypes.ChangesetExternalStateOpen,
 					},
 					wantRetryable: false,
 				},
 				"bogus changeset spec ID, dude": {
 					spec: nil,
 					changeset: ct.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						CurrentSpec:     -1,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						CurrentSpec:      -1,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStatePublished,
+						ExternalState:    btypes.ChangesetExternalStateOpen,
 					},
 					wantRetryable: false,
 				},
@@ -261,9 +265,10 @@ func TestBulkProcessor(t *testing.T) {
 						Published: false,
 					},
 					changeset: ct.TestChangesetOpts{
-						Repo:            repo.ID,
-						BatchChange:     batchChange.ID,
-						ReconcilerState: btypes.ReconcilerStateCompleted,
+						Repo:             repo.ID,
+						BatchChange:      batchChange.ID,
+						ReconcilerState:  btypes.ReconcilerStateCompleted,
+						PublicationState: btypes.ChangesetPublicationStateUnpublished,
 					},
 					wantRetryable: false,
 				},
@@ -321,10 +326,11 @@ func TestBulkProcessor(t *testing.T) {
 								HeadRef:   "main",
 							})
 							changeset := ct.CreateChangeset(t, ctx, bstore, ct.TestChangesetOpts{
-								Repo:            repo.ID,
-								BatchChange:     batchChange.ID,
-								CurrentSpec:     changesetSpec.ID,
-								ReconcilerState: reconcilerState,
+								Repo:             repo.ID,
+								BatchChange:      batchChange.ID,
+								CurrentSpec:      changesetSpec.ID,
+								ReconcilerState:  reconcilerState,
+								PublicationState: btypes.ChangesetPublicationStateUnpublished,
 							})
 
 							job := &types.ChangesetJob{

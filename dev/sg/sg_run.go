@@ -9,7 +9,6 @@ import (
 	"github.com/urfave/cli/v2"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/run"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/lib/output"
 )
@@ -40,7 +39,7 @@ sg run gitserver frontend repo-updater
 	Flags:    []cli.Flag{},
 	Action:   runExec,
 	BashComplete: completeOptions(func() (options []string) {
-		config, _ := sgconf.Get(configFile, configOverwriteFile)
+		config, _ := getConfig()
 		if config == nil {
 			return
 		}
@@ -52,7 +51,7 @@ sg run gitserver frontend repo-updater
 }
 
 func runExec(ctx *cli.Context) error {
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		return err
 	}
@@ -81,7 +80,7 @@ func constructRunCmdLongHelp() string {
 
 	fmt.Fprintf(&out, "Runs the given command. If given a whitespace-separated list of commands it runs the set of commands.\n")
 
-	config, err := sgconf.Get(configFile, configOverwriteFile)
+	config, err := getConfig()
 	if err != nil {
 		out.Write([]byte("\n"))
 		// Do not treat error message as a format string
