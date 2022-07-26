@@ -334,6 +334,7 @@ commands:
       ENTERPRISE: 1
 
   web-standalone-http:
+    description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: |
       yarn --no-progress
@@ -343,6 +344,7 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
+    description: Standalone web frontend (production) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:prod
     install: yarn workspace @sourcegraph/web run build
     env:
@@ -520,6 +522,7 @@ commands:
     #       PGUSER: sourcegraph
     #
     # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
+    description: Dockerized version of redis and postgres
     cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
     env:
       COMPOSE_ARGS: --force-recreate
@@ -940,7 +943,7 @@ commandsets:
       - web-standalone-http-prod
       - caddy
 
-  # For testing out OpenTelemetry stack
+  # For testing our OpenTelemetry stack
   otel:
     checks:
       - docker
