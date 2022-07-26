@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
-	"go.uber.org/zap"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -72,7 +71,7 @@ func observeResolver(
 }
 
 func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
-	fields := []log.Field{zap.Duration("duration", duration)}
+	fields := []log.Field{log.Duration("duration", duration)}
 	if err != nil && *err != nil {
 		fields = append(fields, log.Error(*err))
 	}
