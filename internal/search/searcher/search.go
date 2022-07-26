@@ -90,6 +90,8 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	g.Go(func() error {
 		for _, repoAllRevs := range s.Repos {
 			repo := repoAllRevs.Repo // capture repo
+			// Capture repoMetadata to make sure we populate each repo with the correct metadata in `searchFilesInRepo()`
+			repoMetadata := repoAllRevs.RepoMetadata
 			if len(repoAllRevs.Revs) == 0 {
 				continue
 			}
@@ -105,7 +107,7 @@ func (s *TextSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 					ctx, done := limitCtx, limitDone
 					defer done()
 
-					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, repoAllRevs.RepoMetadata, s.Indexed, s.PatternInfo, fetchTimeout, stream)
+					repoLimitHit, err := s.searchFilesInRepo(ctx, clients.DB, clients.SearcherURLs, repo, repo.Name, rev, repoMetadata, s.Indexed, s.PatternInfo, fetchTimeout, stream)
 					if err != nil {
 						tr.LogFields(otlog.String("repo", string(repo.Name)), otlog.Error(err), otlog.Bool("timeout", errcode.IsTimeout(err)), otlog.Bool("temporary", errcode.IsTemporary(err)))
 						clients.Logger.Warn("searchFilesInRepo failed", log.Error(err), log.String("repo", string(repo.Name)))
