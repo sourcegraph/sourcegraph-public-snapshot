@@ -7,8 +7,6 @@ import (
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/hexops/autogold"
-	"github.com/hexops/valast"
-
 	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
@@ -180,7 +178,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			{
 				ID:       1,
 				Name:     "event1",
-				UserID:   valast.Addr(int32(1)).(*int32),
+				UserID:   1,
 				Argument: "{}",
 				Source:   "test",
 				Version:  "0.0.0+dev",
@@ -188,7 +186,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			{
 				ID:       2,
 				Name:     "event2",
-				UserID:   valast.Addr(int32(2)).(*int32),
+				UserID:   2,
 				Argument: "{}",
 				Source:   "test",
 				Version:  "0.0.0+dev",
@@ -212,7 +210,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 			{
 				ID:       1,
 				Name:     "event1",
-				UserID:   valast.Addr(int32(1)).(*int32),
+				UserID:   1,
 				Argument: "{}",
 				Source:   "test",
 				Version:  "0.0.0+dev",
