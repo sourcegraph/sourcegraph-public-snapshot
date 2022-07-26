@@ -10,55 +10,59 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-// setMockPasswordPolicyConfig helper for returning customized mock config
-func setMockPasswordPolicyConfig(policyEnabled bool, authPolicyEnabled bool, authMinPasswordLength int,
-	authPolicySpChr int, reqNumber bool, reqCase bool) {
+// mockPolicyOpts configurable options for the mock password policy
+type mockPolicyOpts struct {
+	policyEnabled, authPolicyEnabled, reqNumber, reqCase bool
+	minPasswordLength, specialChars                      int
+}
 
+type passwordTest struct {
+	password string
+	errorStr string
+}
+
+// setMockPasswordPolicyConfig helper for returning a customized mock config
+func setMockPasswordPolicyConfig(opts mockPolicyOpts) {
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
-			AuthMinPasswordLength: authMinPasswordLength,
+			AuthMinPasswordLength: opts.minPasswordLength,
 			ExperimentalFeatures: &schema.ExperimentalFeatures{
 				PasswordPolicy: &schema.PasswordPolicy{
-					Enabled:                   policyEnabled,
+					Enabled:                   opts.policyEnabled,
 					NumberOfSpecialCharacters: 3,
 					// invert reqNumber and reqCase so it differs AuthPasswordPolicy
-					RequireUpperandLowerCase: !reqNumber,
-					RequireAtLeastOneNumber:  !reqCase,
+					RequireUpperandLowerCase: !opts.reqNumber,
+					RequireAtLeastOneNumber:  !opts.reqCase,
 				},
 			},
 			AuthPasswordPolicy: &schema.AuthPasswordPolicy{
-				Enabled:                   authPolicyEnabled,
-				NumberOfSpecialCharacters: authPolicySpChr,
-				RequireAtLeastOneNumber:   reqNumber,
-				RequireUpperandLowerCase:  reqCase,
+				Enabled:                   opts.authPolicyEnabled,
+				NumberOfSpecialCharacters: opts.specialChars,
+				RequireAtLeastOneNumber:   opts.reqNumber,
+				RequireUpperandLowerCase:  opts.reqCase,
 			},
 		},
 	})
 }
 
 func TestGetPasswordPolicy(t *testing.T) {
-
-	authPolicyLength := 12
-	authPolicySpChr := 2
-
-	setMockPasswordPolicyConfig(false, true,
-		authPolicyLength, authPolicySpChr, true, true)
-
 	t.Run("fetch correct policy", func(t *testing.T) {
+		setMockPasswordPolicyConfig(mockPolicyOpts{policyEnabled: true, authPolicyEnabled: true,
+			minPasswordLength: 15, specialChars: 2, reqNumber: true, reqCase: true})
 		p := conf.AuthPasswordPolicy()
 
 		assert.True(t, p.Enabled)
-		assert.Equal(t, p.MinimumLength, authPolicyLength)
+		assert.Equal(t, p.MinimumLength, 15)
 		assert.Equal(t, p.RequireUpperandLowerCase, true)
 
 		// create experimental policy for testing backwards compatability
 		conf.Mock(&conf.Unified{
 			SiteConfiguration: schema.SiteConfiguration{
-				AuthMinPasswordLength: authPolicyLength,
+				AuthMinPasswordLength: 15,
 				ExperimentalFeatures: &schema.ExperimentalFeatures{
 					PasswordPolicy: &schema.PasswordPolicy{
 						Enabled:                   true,
-						NumberOfSpecialCharacters: authPolicySpChr,
+						NumberOfSpecialCharacters: 2,
 						RequireUpperandLowerCase:  true,
 						RequireAtLeastOneNumber:   true,
 					},
@@ -69,15 +73,13 @@ func TestGetPasswordPolicy(t *testing.T) {
 		p = conf.AuthPasswordPolicy()
 
 		assert.True(t, p.Enabled)
-		assert.Equal(t, p.MinimumLength, authPolicyLength)
+		assert.Equal(t, p.MinimumLength, 15)
 		assert.Equal(t, p.RequireUpperandLowerCase, true)
-		assert.Equal(t, p.NumberOfSpecialCharacters, authPolicySpChr)
-
+		assert.Equal(t, p.NumberOfSpecialCharacters, 2)
 	})
 }
 
 func TestFetchPasswordPolicyReturnsNil(t *testing.T) {
-
 	conf.Mock(&conf.Unified{
 		SiteConfiguration: schema.SiteConfiguration{
 			AuthMinPasswordLength: 9,
@@ -90,54 +92,38 @@ func TestFetchPasswordPolicyReturnsNil(t *testing.T) {
 
 		assert.Nil(t, ValidatePassword("idontneedanythingspecial"))
 		assert.ErrorContains(t, ValidatePassword("abshort"), "Your password may not be less than 9 or be more than 256 characters.")
-
 	})
 }
 func TestPasswordPolicy(t *testing.T) {
-	authPolicyLength := 15
-	authPolicySpChr := 2
-
-	setMockPasswordPolicyConfig(false, true, authPolicyLength, authPolicySpChr,
-		true, true)
+	var passwordTests = []passwordTest{
+		{"Sup3rstr0ngbutn0teno0ugh", "Your password must include at least 2 special character(s)."},
+		{"id0hav3symb0lsn0w!!works?", "Your password must include one uppercase letter."},
+		{"Andn0w?!!", fmt.Sprintf("Your password may not be less than 15 characters.")},
+		{strings.Repeat("A", 259), "Your password may not be more than 256 characters."},
+	}
 
 	t.Run("correctly detects deviating passwords", func(t *testing.T) {
-		password := "sup3rstr0ngbutn0teno0ugh"
-		assert.ErrorContains(t, ValidatePassword(password),
-			"Your password must include one uppercase letter.")
+		setMockPasswordPolicyConfig(mockPolicyOpts{policyEnabled: false, minPasswordLength: 15,
+			authPolicyEnabled: true, specialChars: 2, reqNumber: true, reqCase: true})
 
-		password = "id0hav3symb0lsn0w!!works?"
-		assert.ErrorContains(t, ValidatePassword(password),
-			"Your password must include one uppercase letter.")
-
-		password = "Andn0w?!!"
-		err := fmt.Sprintf("Your password may not be less than %d characters.", authPolicyLength)
-		assert.ErrorContains(t, ValidatePassword(password), err)
-
-		password = strings.Repeat("A", 259)
-		assert.ErrorContains(t, ValidatePassword(password),
-			"Your password may not be more than 256 characters.")
-
-		authPolicySpChr = 0
-		setMockPasswordPolicyConfig(false, true, authPolicyLength, authPolicySpChr,
-			false, false)
-		password = "thisshouldnowpassaswell"
-		assert.Nil(t, ValidatePassword(password))
+		for _, p := range passwordTests {
+			assert.ErrorContains(t, ValidatePassword(p.password), p.errorStr)
+		}
 	})
 
 	t.Run("detects correct passwords", func(t *testing.T) {
-		setMockPasswordPolicyConfig(false, true, 12,
-			2, true, true)
-
+		// test with all options enabled and a length limit
+		setMockPasswordPolicyConfig(mockPolicyOpts{policyEnabled: false, minPasswordLength: 12,
+			authPolicyEnabled: true, specialChars: 2,
+			reqNumber: true, reqCase: true})
 		password := "tH1smustCert@!inlybe0kthen?"
 		assert.Nil(t, ValidatePassword(password))
 
-		password = strings.Repeat("A", 259)
-		assert.ErrorContains(t, ValidatePassword(password),
-			"Your password may not be more than 256 characters.")
-
-		setMockPasswordPolicyConfig(false, true, 12,
-			2, true, true)
-		password = "tH1smustCert@!inlybe0kthen?"
+		// test with only a password length limit
+		setMockPasswordPolicyConfig(mockPolicyOpts{policyEnabled: false, minPasswordLength: 15,
+			authPolicyEnabled: true, specialChars: 0,
+			reqNumber: false, reqCase: false})
+		password = "thisshouldnowpassaswell"
 		assert.Nil(t, ValidatePassword(password))
 	})
 }

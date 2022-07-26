@@ -160,7 +160,7 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 	authPasswordPolicy.Enabled = pp.Enabled
 	authPasswordPolicy.NumberOfSpecialCharacters = pp.NumberOfSpecialCharacters
 	authPasswordPolicy.RequireAtLeastOneNumber = pp.RequireAtLeastOneNumber
-	authPasswordPolicy.RequireUpperandLowerCase = pp.RequireUpperandLowerCase
+	authPasswordPolicy.RequireUpperAndLowerCase = pp.RequireUpperandLowerCase
 
 	var sentryDSN *string
 	siteConfig := conf.Get().SiteConfiguration
