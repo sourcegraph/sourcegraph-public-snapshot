@@ -6,7 +6,8 @@ import (
 )
 
 func Executor() *monitoring.Dashboard {
-	const containerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|sourcegraph-executors|worker|sourcegraph-executor-nodes)"
+	// sg_job value is hard-coded, see enterprise/cmd/frontend/internal/executorqueue/handler/routes.go
+	const containerName = "sourcegraph-executors"
 
 	// frontend is sometimes called sourcegraph-frontend in various contexts
 	const queueContainerName = "(executor|sourcegraph-code-intel-indexers|executor-batches|frontend|sourcegraph-frontend|worker|sourcegraph-executors)"
@@ -42,8 +43,8 @@ func Executor() *monitoring.Dashboard {
 			shared.CodeIntelligence.NewExecutorExecutionCommandGroup(containerName),
 			shared.CodeIntelligence.NewExecutorTeardownCommandGroup(containerName),
 
-			shared.NewNodeExporterGroup("(sourcegraph-code-intel-indexer-nodes|sourcegraph-executor-nodes|sourcegraph-executors)", "Compute", "$instance"),
-			shared.NewNodeExporterGroup("(sourcegraph-code-intel-indexer-docker-registry-mirror-nodes|sourcegraph-executors-docker-registry-mirror-nodes)", "Docker Registry Mirror", ".*"),
+			shared.NewNodeExporterGroup(containerName, "Compute", "$instance"),
+			shared.NewNodeExporterGroup(containerName, "Docker Registry Mirror", ".*"),
 
 			// Resource monitoring
 			shared.NewGolangMonitoringGroup(containerName, monitoring.ObservableOwnerCodeIntel, &shared.GolangMonitoringOptions{

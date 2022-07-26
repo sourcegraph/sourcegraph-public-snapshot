@@ -449,7 +449,6 @@ func (codeIntelligence) NewExecutorAPIClientGroup(containerName string) monitori
 				MetricNameRoot:        "apiworker_apiclient",
 				MetricDescriptionRoot: "client",
 				JobLabel:              "sg_job",
-				Filters:               nil,
 				By:                    []string{"op"},
 			},
 		},
