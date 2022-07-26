@@ -2,7 +2,7 @@ package codeownership
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
 	"github.com/hexops/autogold"
@@ -109,7 +109,7 @@ func Test_applyCodeOwnershipFiltering(t *testing.T) {
 			gitserver.Mocks.ReadFile = func(_ api.CommitID, file string) ([]byte, error) {
 				content, ok := tt.args.repoContent[file]
 				if !ok {
-					return nil, fmt.Errorf("Open %s: file does not exist", file)
+					return nil, errors.New("file does not exist")
 				}
 				return []byte(content), nil
 			}
