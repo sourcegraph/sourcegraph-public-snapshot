@@ -89,7 +89,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 			definitionMap[newDefinition.ID] = newDefinition
 			continue
 		}
-		if isSquashedMigration || compareDefinitions(newDefinition, existingDefinition) {
+		if isSquashedMigration || areEqualDefinitions(newDefinition, existingDefinition) {
 			// Existing file, but identical definitions, or
 			// Existing file, but squashed in newer version (do not ovewrite)
 			continue
@@ -106,7 +106,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 	return nil
 }
 
-func compareDefinitions(x, y definition.Definition) bool {
+func areEqualDefinitions(x, y definition.Definition) bool {
 	// Names can be different (we parsed names from filepaths and manually humanized them)
 	x.Name = y.Name
 
