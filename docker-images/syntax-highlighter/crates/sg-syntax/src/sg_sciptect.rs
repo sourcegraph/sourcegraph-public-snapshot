@@ -225,18 +225,13 @@ impl<'a> DocumentGenerator<'a> {
         let mut highlight_manager = HighlightManager::default();
         let mut end_of_line = (0, 0);
         for (row, line_contents) in LinesWithEndings::from(self.code).enumerate() {
-            println!("");
-            println!("Starting new line: {}", line_contents);
-
             if self.max_line_len.map_or(false, |n| line_contents.len() > n) {
                 // TODO: Should just gracefully handle this, but haven't been able
                 // to reproduce this yet.
                 panic!("Made it past end of line? {:?} {:?}", row, line_contents);
-                // self.write_escaped_html(line);
             }
 
             let ops = self.parse_state.parse_line(line_contents, self.syntax_set);
-            println!("Applying: {:?}", ops);
 
             for &(byte_offset, ref op) in ops.as_slice() {
                 // Character represents the nth character in a line.
@@ -258,8 +253,6 @@ impl<'a> DocumentGenerator<'a> {
                 // TODO
                 // let mut stack = self.stack.clone();
                 self.stack.apply_with_hook(op, |basic_op, _stack| {
-                    // println!("Applying: {:?} w/ stack: {:?}", basic_op, _stack);
-
                     // TODO: Make sure stack is always the same?
                     //  It seems we _should_ be using that to determine things for mulit-line
                     //  comments maybe?
@@ -300,28 +293,24 @@ impl<'a> DocumentGenerator<'a> {
                         }
                     }
                 });
-
-                dbg!(&self.stack.scopes);
-                // self.stack = stack;
             }
 
             end_of_line = (row, line_contents.chars().count());
-            // while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
-            //     push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
-            //     println!("OH ASDFSDFSDF: {:?} // {:?}", highlight_manager, partial_hl);
-            // }
         }
 
-        // TODO: I think (from my logic) this might not be necessary :)
-        // document.occurrences.sort_by_key(|o| o.range.clone());
+        if highlight_manager
+            .highlights
+            .iter()
+            .filter(|hl| hl.kind.is_some())
+            .count()
+            > 0
+        {
+            // TODO: Probably shouldn't panic in prod?...
+            panic!("unhandled highlights in: {:?}", highlight_manager);
+        }
 
         while let Some(partial_hl) = highlight_manager.pop_hl(end_of_line.0, end_of_line.1) {
             push_document_occurence(&mut document, &partial_hl, end_of_line.0, end_of_line.1);
-            println!("OH ASDFSDFSDF: {:?} // {:?}", highlight_manager, partial_hl);
-        }
-
-        if highlight_manager.highlights.len() > 0 {
-            // panic!("unhandled highlights in: {:?}", highlight_manager);
         }
 
         if !unhandled_scopes.is_empty() {
