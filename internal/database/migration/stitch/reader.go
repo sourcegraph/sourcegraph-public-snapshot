@@ -43,7 +43,7 @@ func readRawMigrations(schemaName, dir, rev string) (migrations []rawMigration, 
 		}
 
 		// Attempt to parse file as a hierarchical migration entry
-		if id, suffix, ok := readHierarchicalPattern(filename); ok {
+		if id, suffix, ok := matchHierarchicalPattern(filename); ok {
 			migration, err := readHierarchical(schemaName, dir, rev, id, suffix)
 			if err != nil {
 				return nil, err
@@ -95,8 +95,8 @@ func readFlat(schemaName, dir, rev, id, suffix string) (rawMigration, error) {
 
 var hierarchicalPattern = lazyregexp.New(`(\d+)(_.+)?/`)
 
-// readHierarchicalPattern returns the text captured from the given string.
-func readHierarchicalPattern(s string) (id, suffix string, ok bool) {
+// matchHierarchicalPattern returns the text captured from the given string.
+func matchHierarchicalPattern(s string) (id, suffix string, ok bool) {
 	if matches := hierarchicalPattern.FindStringSubmatch(s); len(matches) > 0 {
 		return matches[1], matches[2], true
 	}
