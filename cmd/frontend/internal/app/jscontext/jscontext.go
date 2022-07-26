@@ -56,14 +56,14 @@ type JSContext struct {
 
 	IsAuthenticatedUser bool `json:"isAuthenticatedUser"`
 
-	SentryDSN            *string                      `json:"sentryDSN"`
-	OpenTelemetryMetrics *schema.OpenTelemetryMetrics `json:"openTelemetryMetrics"`
-	OpenTelemetryTracing *schema.OpenTelemetryTracing `json:"openTelemetryTracing"`
-	SiteID               string                       `json:"siteID"`
-	SiteGQLID            string                       `json:"siteGQLID"`
-	Debug                bool                         `json:"debug"`
-	NeedsSiteInit        bool                         `json:"needsSiteInit"`
-	EmailEnabled         bool                         `json:"emailEnabled"`
+	SentryDSN     *string               `json:"sentryDSN"`
+	OpenTelemetry *schema.OpenTelemetry `json:"openTelemetry"`
+
+	SiteID        string `json:"siteID"`
+	SiteGQLID     string `json:"siteGQLID"`
+	Debug         bool   `json:"debug"`
+	NeedsSiteInit bool   `json:"needsSiteInit"`
+	EmailEnabled  bool   `json:"emailEnabled"`
 
 	Site              schema.SiteConfiguration `json:"site"` // public subset of site configuration
 	LikelyDockerOnMac bool                     `json:"likelyDockerOnMac"`
@@ -150,6 +150,11 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 	if siteConfig.Log != nil && siteConfig.Log.Sentry != nil && siteConfig.Log.Sentry.Dsn != "" {
 		sentryDSN = &siteConfig.Log.Sentry.Dsn
+	}
+
+	var openTelemetry *schema.OpenTelemetry
+	if clientObservability := siteConfig.ObservabilityClient; clientObservability != nil {
+		openTelemetry = clientObservability.OpenTelemetry
 	}
 
 	var githubAppCloudSlug string
