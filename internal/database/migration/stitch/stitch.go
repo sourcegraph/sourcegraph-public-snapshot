@@ -10,7 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// StitchDefinitions constructs the migration graph of the given schema over time.
+// StitchDefinitions constructs a migration graph over time in two values. First, the migration graph itself
+// is formed by merging migration definitions as they were defined over time in Git. Second, the set of leaves
+// of the migration point at each of the given revisions is also constructed. This data is useful during
+// instance upgrades as these points in the graph represent the "edge" of the graph as it was defined for a
+// particular release.
 //
 // Stitch is an undoing of squashing. We construct the migration graph by layering the definitions of the
 // migrations as they're defined in each of the given git revisions. Migration definitions with the same
@@ -18,10 +22,10 @@ import (
 //
 // NOTE: This should only be used at development or build time - the root parameter should point to a
 // valid git clone root directory. Resulting errors are apparent.
-func StitchDefinitions(schemaName, root string, revs []string) (*definition.Definitions, error) {
-	definitionMap, err := overlayDefinitions(schemaName, root, revs)
+func StitchDefinitions(schemaName, root string, revs []string) (*definition.Definitions, map[string][]int, error) {
+	definitionMap, leafIDsByRev, err := overlayDefinitions(schemaName, root, revs)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 
 	migrationDefinitions := make([]definition.Definition, 0, len(definitionMap))
@@ -29,27 +33,37 @@ func StitchDefinitions(schemaName, root string, revs []string) (*definition.Defi
 		migrationDefinitions = append(migrationDefinitions, v)
 	}
 
-	return definition.NewDefinitions(migrationDefinitions)
+	definitions, err := definition.NewDefinitions(migrationDefinitions)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	return definitions, leafIDsByRev, nil
 }
 
 // overlayDefinitions combines the definitions defined at all of the given git revisions for the given schema,
 // then spot-rewrites portions of definitions to ensure they can be reordered to form a valid migration graph
-// (as it would be defined today).
+// (as it would be defined today). The leaf migration identifiers for each of the given revs are also returned.
 //
 // An error is returned if the git revision's contents cannot be rewritten into a format readable by the
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinitions(schemaName, root string, revs []string) (map[int]definition.Definition, error) {
+func overlayDefinitions(schemaName, root string, revs []string) (map[int]definition.Definition, map[string][]int, error) {
 	definitionMap := map[int]definition.Definition{}
+	leafIDsByRev := make(map[string][]int, len(revs))
+
 	for _, rev := range revs {
-		if err := overlayDefinition(schemaName, root, rev, definitionMap); err != nil {
-			return nil, err
+		leafIDs, err := overlayDefinition(schemaName, root, rev, definitionMap)
+		if err != nil {
+			return nil, nil, err
 		}
+
+		leafIDsByRev[rev] = leafIDs
 	}
 
 	linkVirtualPrivilegedMigrations(definitionMap)
-	return definitionMap, nil
+	return definitionMap, leafIDsByRev, nil
 }
 
 const squashedMigrationPrefix = "squashed migrations"
@@ -57,19 +71,23 @@ const squashedMigrationPrefix = "squashed migrations"
 // overlayDefinition reads migrations from a locally available git revision for the given schema, then
 // extends the given map of definitions with migrations that have not yet been inserted.
 //
+// This function returns the identifiers of the migration leaves at this revision, which will be necessary
+// to distinguish where on the graph out-of-band migration interrupt points can "rest" to wait for data
+// migrations to complete.
+//
 // An error is returned if the git revision's contents cannot be rewritten into a format readable by the
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) error {
+func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) ([]int, error) {
 	fs, err := readMigrations(schemaName, root, rev)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	revDefinitions, err := definition.ReadDefinitions(fs, migrationPath(schemaName))
 	if err != nil {
-		return errors.Wrap(err, "@"+rev)
+		return nil, errors.Wrap(err, "@"+rev)
 	}
 
 	for i, newDefinition := range revDefinitions.All() {
@@ -80,7 +98,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		// version incorrectly.
 
 		if isSquashedMigration && !strings.HasPrefix(newDefinition.Name, squashedMigrationPrefix) {
-			return errors.Newf("expected migration %d@%s to have a name prefixed with %q", newDefinition.ID, rev, squashedMigrationPrefix)
+			return nil, errors.Newf("expected migration %d@%s to have a name prefixed with %q", newDefinition.ID, rev, squashedMigrationPrefix)
 		}
 
 		existingDefinition, ok := definitionMap[newDefinition.ID]
@@ -100,10 +118,15 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 			continue
 		}
 
-		return errors.Newf("migration %d unexpectedly edited in release %s", newDefinition.ID, rev)
+		return nil, errors.Newf("migration %d unexpectedly edited in release %s", newDefinition.ID, rev)
 	}
 
-	return nil
+	leafIDs := []int{}
+	for _, migration := range revDefinitions.Leaves() {
+		leafIDs = append(leafIDs, migration.ID)
+	}
+
+	return leafIDs, nil
 }
 
 func areEqualDefinitions(x, y definition.Definition) bool {

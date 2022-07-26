@@ -51,17 +51,42 @@ func TestStitchFrontendDefinitions(t *testing.T) {
 	}
 	t.Parallel()
 
+	leavesByRev := map[string][]int{
+		"v3.29.0": {1528395834},
+		"v3.30.0": {1528395853},
+		"v3.31.0": {1528395871},
+		"v3.32.0": {1528395891},
+		"v3.33.0": {1528395918},
+		"v3.34.0": {1528395944},
+		"v3.35.0": {1528395964},
+		"v3.36.0": {1528395968},
+		"v3.37.0": {1645106226},
+		"v3.38.0": {1646652951, 1647282553},
+		"v3.39.0": {1649441222, 1649759318, 1649432863},
+		"v3.40.0": {1652228814, 1652707934},
+		"v3.41.0": {1655481894},
+		"v3.42.0": {1654770608, 1658174103, 1658225452, 1657663493},
+	}
+
+	makeTest := func(from int, to int, expectedRoot int) {
+		filteredLeavesByRev := make(map[string][]int, len(leavesByRev))
+		for i := from; i <= to; i++ {
+			v := fmt.Sprintf("v3.%d.0", i)
+			filteredLeavesByRev[v] = leavesByRev[v]
+		}
+
+		testStitchGraphShape(t, "frontend", from, to, expectedRoot, leavesByRev[fmt.Sprintf("v3.%d.0", to)], filteredLeavesByRev)
+	}
+
 	// Note: negative values imply a quashed migration split into a privileged and
 	// unprivileged version. See `readMigrations` in this package for more details.
-	testStitchGraphShape(t, "frontend", 41, 42, +1644868458, []int{1654770608, 1658174103, 1658225452, 1657663493})
-	testStitchGraphShape(t, "frontend", 40, 42, +1528395943, []int{1654770608, 1658174103, 1658225452, 1657663493})
-	testStitchGraphShape(t, "frontend", 38, 42, +1528395943, []int{1654770608, 1658174103, 1658225452, 1657663493})
-	testStitchGraphShape(t, "frontend", 37, 42, -1528395834, []int{1654770608, 1658174103, 1658225452, 1657663493})
-	testStitchGraphShape(t, "frontend", 35, 42, -1528395834, []int{1654770608, 1658174103, 1658225452, 1657663493})
-	testStitchGraphShape(t, "frontend", 29, 42, -1528395787, []int{1654770608, 1658174103, 1658225452, 1657663493})
-
-	// Test a different leaf
-	testStitchGraphShape(t, "frontend", 35, 40, -1528395834, []int{1652228814, 1652707934})
+	makeTest(41, 42, +1644868458)
+	makeTest(40, 42, +1528395943)
+	makeTest(38, 42, +1528395943)
+	makeTest(37, 42, -1528395834)
+	makeTest(35, 42, -1528395834)
+	makeTest(29, 42, -1528395787)
+	makeTest(35, 40, -1528395834) // Test a different leaf
 }
 
 func TestStitchCodeintelDefinitions(t *testing.T) {
@@ -70,17 +95,42 @@ func TestStitchCodeintelDefinitions(t *testing.T) {
 	}
 	t.Parallel()
 
+	leavesByRev := map[string][]int{
+		"v3.29.0": {1000000015},
+		"v3.30.0": {1000000018},
+		"v3.31.0": {1000000019},
+		"v3.32.0": {1000000019},
+		"v3.33.0": {1000000025},
+		"v3.34.0": {1000000030},
+		"v3.35.0": {1000000030},
+		"v3.36.0": {1000000030},
+		"v3.37.0": {1000000030},
+		"v3.38.0": {1000000034},
+		"v3.39.0": {1000000034},
+		"v3.40.0": {1000000034},
+		"v3.41.0": {1000000034},
+		"v3.42.0": {1000000034},
+	}
+
+	makeTest := func(from int, to int, expectedRoot int) {
+		filteredLeavesByRev := make(map[string][]int, len(leavesByRev))
+		for i := from; i <= to; i++ {
+			v := fmt.Sprintf("v3.%d.0", i)
+			filteredLeavesByRev[v] = leavesByRev[v]
+		}
+
+		testStitchGraphShape(t, "codeintel", from, to, expectedRoot, leavesByRev[fmt.Sprintf("v3.%d.0", to)], filteredLeavesByRev)
+	}
+
 	// Note: negative values imply a quashed migration split into a privileged and
 	// unprivileged version. See `readMigrations` in this package for more details.
-	testStitchGraphShape(t, "codeintel", 41, 42, +1000000029, []int{1000000034})
-	testStitchGraphShape(t, "codeintel", 40, 42, +1000000029, []int{1000000034})
-	testStitchGraphShape(t, "codeintel", 38, 42, +1000000029, []int{1000000034})
-	testStitchGraphShape(t, "codeintel", 37, 42, -1000000015, []int{1000000034})
-	testStitchGraphShape(t, "codeintel", 35, 42, -1000000015, []int{1000000034})
-	testStitchGraphShape(t, "codeintel", 29, 42, -1000000005, []int{1000000034})
-
-	// Test a different leaf
-	testStitchGraphShape(t, "codeintel", 32, 37, -1000000005, []int{1000000030})
+	makeTest(41, 42, +1000000029)
+	makeTest(40, 42, +1000000029)
+	makeTest(38, 42, +1000000029)
+	makeTest(37, 42, -1000000015)
+	makeTest(35, 42, -1000000015)
+	makeTest(29, 42, -1000000005)
+	makeTest(32, 37, -1000000005) // Test a different leaf
 }
 
 func TestStitchCodeinsightsDefinitions(t *testing.T) {
@@ -89,17 +139,42 @@ func TestStitchCodeinsightsDefinitions(t *testing.T) {
 	}
 	t.Parallel()
 
+	leavesByRev := map[string][]int{
+		"v3.29.0": {1000000006},
+		"v3.30.0": {1000000008},
+		"v3.31.0": {1000000011},
+		"v3.32.0": {1000000013},
+		"v3.33.0": {1000000016},
+		"v3.34.0": {1000000021},
+		"v3.35.0": {1000000024},
+		"v3.36.0": {1000000025},
+		"v3.37.0": {1000000027},
+		"v3.38.0": {1646761143},
+		"v3.39.0": {1649801281},
+		"v3.40.0": {1652289966},
+		"v3.41.0": {1651021000, 1652289966},
+		"v3.42.0": {1656517037, 1656608833},
+	}
+
+	makeTest := func(from int, to int, expectedRoot int) {
+		filteredLeavesByRev := make(map[string][]int, len(leavesByRev))
+		for i := from; i <= to; i++ {
+			v := fmt.Sprintf("v3.%d.0", i)
+			filteredLeavesByRev[v] = leavesByRev[v]
+		}
+
+		testStitchGraphShape(t, "codeinsights", from, to, expectedRoot, leavesByRev[fmt.Sprintf("v3.%d.0", to)], filteredLeavesByRev)
+	}
+
 	// Note: negative values imply a quashed migration split into a privileged and
 	// unprivileged version. See `readMigrations` in this package for more details.
-	testStitchGraphShape(t, "codeinsights", 41, 42, +1000000026, []int{1656517037, 1656608833})
-	testStitchGraphShape(t, "codeinsights", 40, 42, +1000000020, []int{1656517037, 1656608833})
-	testStitchGraphShape(t, "codeinsights", 38, 42, +1000000020, []int{1656517037, 1656608833})
-	testStitchGraphShape(t, "codeinsights", 37, 42, -1000000000, []int{1656517037, 1656608833})
-	testStitchGraphShape(t, "codeinsights", 35, 42, -1000000000, []int{1656517037, 1656608833})
-	testStitchGraphShape(t, "codeinsights", 29, 42, -1000000000, []int{1656517037, 1656608833})
-
-	// Test a different leaf
-	testStitchGraphShape(t, "codeinsights", 38, 39, +1000000020, []int{1649801281})
+	makeTest(41, 42, +1000000026)
+	makeTest(40, 42, +1000000020)
+	makeTest(38, 42, +1000000020)
+	makeTest(37, 42, -1000000000)
+	makeTest(35, 42, -1000000000)
+	makeTest(29, 42, -1000000000)
+	makeTest(38, 39, +1000000020) // Test a different leaf
 }
 
 func TestStitchAndApplyFrontendDefinitions(t *testing.T) {
@@ -146,9 +221,9 @@ func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
 
 // testStitchGraphShape stitches the migrations between the given minor version ranges, then
 // asserts that the resulting graph has the expected root and leaf values.
-func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int) {
+func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int, expectedLeavesByRev map[string][]int) {
 	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		definitions, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
+		definitions, leavesByRev, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
 		}
@@ -164,6 +239,9 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 		if len(leafIDs) != len(expectedLeaves) || cmp.Diff(expectedLeaves, leafIDs) != "" {
 			t.Fatalf("unexpected leaf migrations. want=%v have=%v", expectedLeaves, leafIDs)
 		}
+		if diff := cmp.Diff(expectedLeavesByRev, leavesByRev); diff != "" {
+			t.Fatalf("unexpected all leave (-want +got):\n%s", diff)
+		}
 	})
 }
 
@@ -172,7 +250,7 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 // compared against the target version's description (in the git-tree).
 func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 	t.Run(fmt.Sprintf("upgrade 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		definitions, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
+		definitions, _, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
 		}
