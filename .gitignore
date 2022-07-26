@@ -1,5 +1,5 @@
 ./src
-./cmd/src/src
+cmd/src/src
 *.zip
 release
 ./vendor

@@ -9,7 +9,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
+	"github.com/hexops/autogold"
 
 	"github.com/sourcegraph/src-cli/internal/api"
 	"github.com/sourcegraph/src-cli/internal/streaming"
@@ -113,19 +113,16 @@ func TestSearchStream(t *testing.T) {
 	cases := []struct {
 		name string
 		opts streaming.Opts
-		want string
 	}{
 		{
 			"Text",
 			streaming.Opts{},
-			"./testdata/streaming_search_want.txt",
 		},
 		{
 			"JSON",
 			streaming.Opts{
 				Json: true,
 			},
-			"./testdata/streaming_search_want.json",
 		},
 	}
 	for _, c := range cases {
@@ -151,13 +148,8 @@ func TestSearchStream(t *testing.T) {
 			if err != nil {
 				t.Fatal(err)
 			}
-			want, err := os.ReadFile(c.want)
-			if err != nil {
-				t.Fatal(err)
-			}
-			if d := cmp.Diff(want, got); d != "" {
-				t.Fatalf("(-want +got): %s", d)
-			}
+
+			autogold.Equal(t, autogold.Raw(got))
 		})
 	}
 
