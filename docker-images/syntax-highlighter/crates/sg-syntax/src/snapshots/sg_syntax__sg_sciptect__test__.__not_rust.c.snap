@@ -1,0 +1,29 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 456
+expression: "dump_document(&document, &contents)"
+---
+  
+  int main() {
+//    ^^^^ IdentifierFunction
+//        ^ PunctuationBracket
+//         ^ PunctuationBracket
+//           ^ PunctuationBracket
+    // Single line comment
+//  ^^^^^^^^^^^^^^^^^^^^^^^ Comment
+    int x = 1;
+//        ^ IdentifierOperator
+//          ^ NumericLiteral
+//           ^ PunctuationBracket
+  
+    /*
+//  ^^^ Comment
+     *Multi Line
+     */
+  
+    return x;
+//  ^^^^^^ IdentifierKeyword
+//          ^ PunctuationBracket
+  }
+//^ PunctuationBracket
+
