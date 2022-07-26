@@ -23,7 +23,8 @@ type InsightsResolver interface {
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
 	RelatedInsightsInline(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsInlineResolver, error)
-	RelatedInsightsForFile(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsForFileResolver, error)
+	RelatedInsightsForFile(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsResolver, error)
+	RelatedInsightsForRepo(ctx context.Context, args RelatedInsightsRepoArgs) ([]RelatedInsightsResolver, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -463,13 +464,22 @@ type RelatedInsightsInput struct {
 	Revision string
 }
 
+type RelatedInsightsRepoArgs struct {
+	Input RelatedInsightsRepoInput
+}
+
+type RelatedInsightsRepoInput struct {
+	Repo     string
+	Revision string
+}
+
 type RelatedInsightsInlineResolver interface {
 	ViewID() string
 	Title() string
 	LineNumbers() []int32
 }
 
-type RelatedInsightsForFileResolver interface {
+type RelatedInsightsResolver interface {
 	ViewID() string
 	Title() string
 }
