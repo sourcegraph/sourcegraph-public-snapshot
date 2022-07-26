@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiMagnify, mdiAlert } from '@mdi/js'
+import { mdiAlert, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Button, H4, Icon, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -259,7 +259,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     {ctaButton}
                 </div>
             )}
-            {shouldShowConnection && (
+            {(hasPreviewed || isReadOnly) && (
                 <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
             )}
             {shouldShowConnection && (
