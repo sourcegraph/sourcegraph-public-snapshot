@@ -1282,9 +1282,12 @@ type ObservabilityAlerts struct {
 	Owners []string `json:"owners,omitempty"`
 }
 
-// ObservabilityOpentelemetry description: Configuration for OpenTelemetry
-type ObservabilityOpentelemetry struct {
-	CollectorURL string `json:"collectorURL"`
+// ObservabilityClient description: Configuration for client observability
+type ObservabilityClient struct {
+	// OpenTelemetryMetrics description: Configuration for OpenTelemetry metrics
+	OpenTelemetryMetrics OpenTelemetryMetrics `json:"openTelemetry.metrics"`
+	// OpenTelemetryTracing description: Configuration for OpenTelemetry tracing
+	OpenTelemetryTracing OpenTelemetryTracing `json:"openTelemetry.tracing"`
 }
 
 // ObservabilityTracing description: Controls the settings for distributed tracing.
@@ -1335,6 +1338,18 @@ type OpenIDConnectAuthProvider struct {
 	// RequireEmailDomain description: Only allow users to authenticate if their email domain is equal to this value (example: mycompany.com). Do not include a leading "@". If not set, all users on this OpenID Connect provider can authenticate to Sourcegraph.
 	RequireEmailDomain string `json:"requireEmailDomain,omitempty"`
 	Type               string `json:"type"`
+}
+
+// OpenTelemetryMetrics description: Configuration for OpenTelemetry metrics
+type OpenTelemetryMetrics struct {
+	// CollectorURL description: OpenTelemetry metrics collector endpoint
+	CollectorURL string `json:"collectorURL"`
+}
+
+// OpenTelemetryTracing description: Configuration for OpenTelemetry tracing
+type OpenTelemetryTracing struct {
+	// CollectorURL description: OpenTelemetry tracing collector endpoint
+	CollectorURL string `json:"collectorURL"`
 }
 
 // OrganizationInvitations description: Configuration for organization invitations.
@@ -1987,12 +2002,12 @@ type SiteConfiguration struct {
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
+	// ObservabilityClient description: Configuration for client observability
+	ObservabilityClient *ObservabilityClient `json:"observability.client,omitempty"`
 	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
 	// ObservabilityLogSlowSearches description: (debug) logs all search queries (issued by users, code intelligence, or API requests) slower than the specified number of milliseconds.
 	ObservabilityLogSlowSearches int `json:"observability.logSlowSearches,omitempty"`
-	// ObservabilityOpentelemetry description: Configuration for OpenTelemetry
-	ObservabilityOpentelemetry *ObservabilityOpentelemetry `json:"observability.opentelemetry,omitempty"`
 	// ObservabilitySilenceAlerts description: Silence individual Sourcegraph alerts by identifier.
 	ObservabilitySilenceAlerts []string `json:"observability.silenceAlerts,omitempty"`
 	// ObservabilityTracing description: Controls the settings for distributed tracing.

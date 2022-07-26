@@ -24,7 +24,13 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     readonly sentryDSN: string | null
 
-    readonly openTelemetryCollectorURL: string | null
+    readonly openTelemetryMetrics?: {
+        collectorURL: string
+    }
+
+    readonly openTelemetryTracing?: {
+        collectorURL: string
+    }
 
     /** Externally accessible URL for Sourcegraph (e.g., https://sourcegraph.com or http://localhost:3080). */
     externalURL: string

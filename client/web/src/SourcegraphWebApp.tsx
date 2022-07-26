@@ -99,7 +99,6 @@ import { observeLocation } from './util/location'
 import { siteSubjectNoAdmin, viewerSubjectFromSettings } from './util/settings'
 
 import styles from './SourcegraphWebApp.module.scss'
-import { initOpenTelemetry } from './monitoring/opentelemetry/initOpenTelemetry'
 
 export interface SourcegraphWebAppProps
     extends CodeIntelligenceProps,
@@ -326,8 +325,6 @@ export class SourcegraphWebApp extends React.Component<
             }
             return <HeroPage icon={ServerIcon} title={`${statusCode}: ${statusText}`} subtitle={subtitle} />
         }
-
-        React.useMemo(() => initOpenTelemetry(), [])
 
         const { authenticatedUser, graphqlClient, temporarySettingsStorage } = this.state
         if (authenticatedUser === undefined || graphqlClient === undefined || temporarySettingsStorage === undefined) {
