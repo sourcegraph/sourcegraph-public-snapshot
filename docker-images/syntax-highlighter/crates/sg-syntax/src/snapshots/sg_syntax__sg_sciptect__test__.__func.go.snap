@@ -1,17 +1,67 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 427
+assertion_line: 432
 expression: "dump_document(&document, &contents)"
 ---
   package main
 //^^^^^^^ IdentifierKeyword
 //        ^^^^ Identifier
   
-  func main() {}
+  import "fmt"
+//^^^^^^ IdentifierKeyword
+//       ^ PunctuationBracket
+//        ^^^ StringLiteral
+//           ^ PunctuationBracket
+  
+  func main() {
 //^^^^ IdentifierKeyword
 //     ^^^^ IdentifierFunction
 //         ^ PunctuationBracket
 //          ^ PunctuationBracket
 //            ^ PunctuationBracket
-//             ^ PunctuationBracket
+   x := 1234
+// ^ Identifier
+//   ^^ IdentifierKeyword
+//      ^^^^ NumericLiteral
+   char := '1'
+// ^^^^ Identifier
+//      ^^ IdentifierKeyword
+//         ^^^ CharacterLiteral
+   string := "hello"
+// ^^^^^^ Identifier
+//        ^^ IdentifierKeyword
+//           ^ PunctuationBracket
+//            ^^^^^ StringLiteral
+//                 ^ PunctuationBracket
+   bool := true
+// ^^^^ Identifier
+//      ^^ IdentifierKeyword
+//         ^^^^ IdentifierBuiltin
+  
+   var null_was_a_mistake *int
+// ^^^ IdentifierKeyword
+//     ^^^^^^^^^^^^^^^^^^ Identifier
+//                        ^ IdentifierKeyword
+   null_was_a_mistake = nil
+// ^^^^^^^^^^^^^^^^^^ Identifier
+//                    ^ IdentifierKeyword
+//                      ^^^ IdentifierBuiltin
+  
+   fmt.Println(x, char, string, bool, null_was_a_mistake)
+// ^^^ Identifier
+//    ^ PunctuationBracket
+//     ^^^^^^^ Identifier
+//            ^ PunctuationBracket
+//             ^ Identifier
+//              ^ PunctuationBracket
+//                ^^^^ Identifier
+//                    ^ PunctuationBracket
+//                      ^^^^^^ Identifier
+//                            ^ PunctuationBracket
+//                              ^^^^ Identifier
+//                                  ^ PunctuationBracket
+//                                    ^^^^^^^^^^^^^^^^^^ Identifier
+//                                                      ^ PunctuationBracket
+  }
+//^ PunctuationBracket
 

@@ -169,6 +169,9 @@ fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
             (scope("variable"), Identifier),
             (scope("punctuation"), PunctuationBracket),
             (scope("string"), StringLiteral),
+            (scope("constant.numeric"), NumericLiteral),
+            (scope("constant.character"), CharacterLiteral),
+            (scope("constant.language"), IdentifierBuiltin),
         ]
     });
 
@@ -420,8 +423,7 @@ mod test {
                 code: contents.clone(),
             };
             let syntax_def = determine_language(&q, &ss).unwrap();
-            let document =
-                DocumentGenerator::new(&ss, syntax_def, &q.code, q.line_length_limit).generate();
+            let document = DocumentGenerator::new(&ss, syntax_def, &q.code, None).generate();
 
             // As far as I can tell, there is no "matches_snapshot" or similar for `insta`.
             // So we'll just catch the panic for now, push the results and then panic at the end

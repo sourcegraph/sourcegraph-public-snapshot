@@ -1,6 +1,6 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 427
+assertion_line: 432
 expression: "dump_document(&document, &contents)"
 ---
   // Original:
@@ -133,18 +133,21 @@ expression: "dump_document(&document, &contents)"
 //                                                                                    ^ PunctuationBracket
 //                                                                                      ^^ Identifier
 //                                                                                         ^ IdentifierKeyword
+//                                                                                           ^ NumericLiteral
 //                                                                                             ^ PunctuationBracket
 //                                                                                              ^ PunctuationBracket
 //                                                                                                ^^^ IdentifierKeyword
 //                                                                                                    ^ PunctuationBracket
 //                                                                                                      ^^ Identifier
 //                                                                                                         ^ IdentifierKeyword
+//                                                                                                           ^ NumericLiteral
 //                                                                                                             ^ PunctuationBracket
 //                                                                                                              ^ PunctuationBracket
 //                                                                                                                ^^^ IdentifierKeyword
 //                                                                                                                    ^ PunctuationBracket
 //                                                                                                                      ^^ Identifier
 //                                                                                                                         ^ IdentifierKeyword
+//                                                                                                                           ^ NumericLiteral
 //                                                                                                                             ^ PunctuationBracket
 //                                                                                                                               ^ PunctuationBracket
 //                                                                                                                                ^ PunctuationBracket
@@ -169,6 +172,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^^ Identifier
 //                                         ^ PunctuationBracket
+//                                          ^ NumericLiteral
 //                                           ^ PunctuationBracket
 //                                             ^^^^^^ IdentifierKeyword
 //                                                   ^ PunctuationBracket
@@ -182,6 +186,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^ Identifier
 //                                        ^ PunctuationBracket
+//                                         ^ NumericLiteral
 //                                          ^ PunctuationBracket
 //                                            ^ PunctuationBracket
 //                                             ^^^^^^^^ StringLiteral
@@ -275,18 +280,21 @@ expression: "dump_document(&document, &contents)"
 //                                                                                    ^ PunctuationBracket
 //                                                                                      ^^ Identifier
 //                                                                                         ^ IdentifierKeyword
+//                                                                                           ^ NumericLiteral
 //                                                                                             ^ PunctuationBracket
 //                                                                                              ^ PunctuationBracket
 //                                                                                                ^^^ IdentifierKeyword
 //                                                                                                    ^ PunctuationBracket
 //                                                                                                      ^^ Identifier
 //                                                                                                         ^ IdentifierKeyword
+//                                                                                                           ^ NumericLiteral
 //                                                                                                             ^ PunctuationBracket
 //                                                                                                              ^ PunctuationBracket
 //                                                                                                                ^^^ IdentifierKeyword
 //                                                                                                                    ^ PunctuationBracket
 //                                                                                                                      ^^ Identifier
 //                                                                                                                         ^ IdentifierKeyword
+//                                                                                                                           ^ NumericLiteral
 //                                                                                                                             ^ PunctuationBracket
 //                                                                                                                               ^ PunctuationBracket
 //                                                                                                                                ^ PunctuationBracket
@@ -311,6 +319,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^^ Identifier
 //                                         ^ PunctuationBracket
+//                                          ^ NumericLiteral
 //                                           ^ PunctuationBracket
 //                                             ^^^^^^ IdentifierKeyword
 //                                                   ^ PunctuationBracket
@@ -324,6 +333,7 @@ expression: "dump_document(&document, &contents)"
 //                           ^ PunctuationBracket
 //                            ^^^^^^^^^^^^ Identifier
 //                                        ^ PunctuationBracket
+//                                         ^ NumericLiteral
 //                                          ^ PunctuationBracket
 //                                            ^ PunctuationBracket
 //                                             ^^^^^^^^ StringLiteral
@@ -380,7 +390,10 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
 //                            ^^^ PunctuationBracket
-//                               ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                               ^^ CharacterLiteral
+//                                 ^^^^^^^^^^^^ StringLiteral
+//                                             ^^ CharacterLiteral
+//                                               ^^ StringLiteral
 //                                                 ^ PunctuationBracket
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
@@ -392,7 +405,10 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
 //                            ^^^ PunctuationBracket
-//                               ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                               ^^ CharacterLiteral
+//                                 ^^^^^^^^^^^^ StringLiteral
+//                                             ^^ CharacterLiteral
+//                                               ^^ StringLiteral
 //                                                 ^ PunctuationBracket
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
@@ -404,7 +420,10 @@ expression: "dump_document(&document, &contents)"
 //                   ^^^^^^^^ Identifier
 //                           ^ PunctuationBracket
 //                            ^^^ PunctuationBracket
-//                               ^^^^^^^^^^^^^^^^^^ StringLiteral
+//                               ^^ CharacterLiteral
+//                                 ^^^^^^^^^^^^ StringLiteral
+//                                             ^^ CharacterLiteral
+//                                               ^^ StringLiteral
 //                                                 ^ PunctuationBracket
 //                                                  ^ PunctuationBracket
 //                                                    ^^^^^^ Identifier
