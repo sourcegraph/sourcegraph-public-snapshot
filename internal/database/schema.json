@@ -2432,7 +2432,7 @@
         {
           "Name": "batch_change_id",
           "Index": 14,
-          "TypeName": "integer",
+          "TypeName": "bigint",
           "IsNullable": true,
           "Default": "",
           "CharacterMaximumLength": 0,
