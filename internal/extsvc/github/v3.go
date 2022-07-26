@@ -164,20 +164,15 @@ func (c *V3Client) post(ctx context.Context, requestURI string, payload, result 
 	return c.request(ctx, req, result)
 }
 
-func (c *V3Client) delete(ctx context.Context, requestURI string, payload, result any) (*httpResponseState, error) {
-	body, err := json.Marshal(payload)
-	if err != nil {
-		return nil, errors.Wrap(err, "marshalling payload")
-	}
-
-	req, err := http.NewRequest("DELETE", requestURI, bytes.NewReader(body))
+func (c *V3Client) delete(ctx context.Context, requestURI string) (*httpResponseState, error) {
+	req, err := http.NewRequest("DELETE", requestURI, bytes.NewReader(make([]byte, 0)))
 	if err != nil {
 		return nil, err
 	}
 
 	req.Header.Add("Content-Type", "application/json")
 
-	return c.request(ctx, req, result)
+	return c.request(ctx, req, struct{}{})
 }
 
 func (c *V3Client) request(ctx context.Context, req *http.Request, result any) (*httpResponseState, error) {
@@ -774,26 +769,27 @@ func (c *V3Client) GetUserInstallations(ctx context.Context) ([]github.Installat
 }
 
 type WebhookPayload struct {
-	Name          string        `json:"name"`
-	ID            int           `json:"id,omitempty"`
-	PayloadConfig PayloadConfig `json:"config"`
-	Events        []string      `json:"events"`
-	Active        bool          `json:"active"`
-	URL           string        `json:"url"`
+	Name   string   `json:"name"`
+	ID     int      `json:"id,omitempty"`
+	Config Config   `json:"config"`
+	Events []string `json:"events"`
+	Active bool     `json:"active"`
+	URL    string   `json:"url"`
 }
 
-type PayloadConfig struct {
-	Url          string `json:"url"`
-	Content_type string `json:"content_type"`
-	Secret       string `json:"secret"`
-	Insecure_ssl string `json:"insecure_ssl"`
-	Token        string `json:"token"`
-	Digest       string `json:"digest,omitempty"`
+type Config struct {
+	URL         string `json:"url"`
+	ContentType string `json:"content_type"`
+	Secret      string `json:"secret"`
+	InsecureSSL string `json:"insecure_ssl"`
+	Token       string `json:"token"`
+	Digest      string `json:"digest,omitempty"`
 }
 
 // CreateSyncWebhooks returns the id of the newly created webhook, or 0 if there was an error
 //
-// API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#create-a-repository-webhook
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#create-a-repository-webhook
 func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, secret string) (int, error) {
 	url, err := webhookURLBuilder(repoName)
 	if err != nil {
@@ -803,11 +799,11 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, s
 	payload := WebhookPayload{
 		Name:   "web",
 		Active: true,
-		PayloadConfig: PayloadConfig{
-			Url:          fmt.Sprintf("%s/github-webhooks", targetURL),
-			Content_type: "json",
-			Secret:       secret,
-			Insecure_ssl: "0",
+		Config: Config{
+			URL:         fmt.Sprintf("%s/github-webhooks", targetURL),
+			ContentType: "json",
+			Secret:      secret,
+			InsecureSSL: "0",
 		},
 		Events: []string{
 			"push",
@@ -820,8 +816,8 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, s
 		return 0, err
 	}
 
-	if resp.statusCode != 201 {
-		return 0, errors.Newf("expected 201 status code, got %d", resp.statusCode)
+	if resp.statusCode != http.StatusCreated {
+		return 0, errors.Newf("expected http.StatusCreated got %d", resp.statusCode)
 	}
 
 	return result.ID, nil
@@ -829,7 +825,8 @@ func (c *V3Client) CreateSyncWebhook(ctx context.Context, repoName, targetURL, s
 
 // ListSyncWebhooks returns an array of WebhookPayloads
 //
-// API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#list-repository-webhooks
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#list-repository-webhooks
 func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]WebhookPayload, error) {
 	url, err := webhookURLBuilder(repoName)
 	if err != nil {
@@ -842,48 +839,46 @@ func (c *V3Client) ListSyncWebhooks(ctx context.Context, repoName string) ([]Web
 		return nil, err
 	}
 
-	if resp.statusCode != 200 {
-		return nil, errors.Newf("expected 200 status code, got %d", resp.statusCode)
+	if resp.statusCode != http.StatusOK {
+		return nil, errors.Newf("expected http.StatusOK, got %d", resp.statusCode)
 	}
 
 	return results, nil
 }
 
 // FindSyncWebhook looks for any webhook with the targetURL ending in /github-webhooks
-func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, bool) {
+func (c *V3Client) FindSyncWebhook(ctx context.Context, repoName string) (int, error) {
 	payloads, err := c.ListSyncWebhooks(ctx, repoName)
 	if err != nil {
-		return 0, false
+		return 0, err
 	}
 
 	for _, payload := range payloads {
-		endpoint := payload.PayloadConfig.Url
-		parts := strings.Split(endpoint, "/")
-		if len(parts) > 0 && parts[len(parts)-1] == "github-webhooks" {
-			return payload.ID, true
+		if strings.Contains(payload.Config.URL, "github-webhooks") {
+			return payload.ID, nil
 		}
 	}
 
-	return 0, false
+	return 0, errors.New("unable to find webhook")
 }
 
 // DeleteSyncWebhook returns a boolean answer as to whether the target repo was deleted or not
 //
-// API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
+// Cloud API docs: https://docs.github.com/en/enterprise-cloud@latest/rest/webhooks/repos#delete-a-repository-webhook
+// Server API docs: https://docs.github.com/en/enterprise-server@3.3/rest/webhooks/repos#delete-a-repository-webhook
 func (c *V3Client) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
 	url, err := webhookURLBuilderWithID(repoName, hookID)
 	if err != nil {
 		return false, err
 	}
 
-	var result any
-	resp, err := c.delete(ctx, url, "", &result)
+	resp, err := c.delete(ctx, url)
 	if err != nil && err != io.EOF {
 		return false, err
 	}
 
-	if resp.statusCode != 204 {
-		return false, errors.Newf("expected 204 status code, got %d", resp.statusCode)
+	if resp.statusCode != http.StatusNoContent {
+		return false, errors.Newf("expected http.StatusNoContent, got %d", resp.statusCode)
 	}
 
 	return true, nil
