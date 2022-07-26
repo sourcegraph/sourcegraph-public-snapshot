@@ -179,6 +179,3 @@ $card-cap-bg: var(--color-bg-2);
     --card-spacer-y: #{$card-spacer-y};
     --card-spacer-x: #{$card-spacer-x};
 }
-
-/* stylelint-disable-next-line @sourcegraph/no-restricted-imports */
-@import 'bootstrap/scss/card';
