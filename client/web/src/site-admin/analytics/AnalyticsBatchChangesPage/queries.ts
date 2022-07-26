@@ -23,6 +23,15 @@ export const BATCHCHANGES_STATISTICS = gql`
                             totalCount
                         }
                     }
+                    unpublishedChangesets {
+                        nodes {
+                            date
+                            count
+                        }
+                        summary {
+                            totalCount
+                        }
+                    }
                 }
             }
         }

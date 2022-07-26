@@ -109,6 +109,49 @@ func (s *BatchChanges) ChangesetsMerged() (*AnalyticsFetcher, error) {
 	}, nil
 }
 
+var unpublishedChangesetsNodesQuery = `
+	SELECT
+		%s AS date,
+		COUNT(DISTINCT changesets.id) AS count,
+		COUNT(DISTINCT batch_changes.creator_id) AS unique_users,
+		COUNT(DISTINCT batch_changes.creator_id) AS registered_users
+	FROM
+		changesets
+		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
+	WHERE changesets.created_at %s AND changesets.publication_state = 'UNPUBLISHED'
+	GROUP BY date
+`
+
+var unpublishedChangesetsSummaryQuery = `
+	SELECT
+		COUNT(DISTINCT changesets.id) AS total_count,
+		COUNT(DISTINCT batch_changes.creator_id) AS total_unique_users,
+		COUNT(DISTINCT batch_changes.creator_id) AS total_registered_users
+	FROM
+		changesets
+		INNER JOIN batch_changes ON batch_changes.id = changesets.owned_by_batch_change_id
+	WHERE changesets.created_at %s AND changesets.publication_state = 'UNPUBLISHED'
+`
+
+func (s *BatchChanges) UnpublishedChangesets() (*AnalyticsFetcher, error) {
+	dateTruncExp, dateBetweenCond, err := makeDateParameters(s.DateRange, "changesets.created_at")
+	if err != nil {
+		return nil, err
+	}
+
+	nodesQuery := sqlf.Sprintf(unpublishedChangesetsNodesQuery, dateTruncExp, dateBetweenCond)
+	summaryQuery := sqlf.Sprintf(unpublishedChangesetsSummaryQuery, dateBetweenCond)
+
+	return &AnalyticsFetcher{
+		db:           s.DB,
+		dateRange:    s.DateRange,
+		nodesQuery:   nodesQuery,
+		summaryQuery: summaryQuery,
+		group:        "BatchChanges:UnpublishedChangesets",
+		cache:        s.Cache,
+	}, nil
+}
+
 func (s *BatchChanges) CacheAll(ctx context.Context) error {
 	fetcherBuilders := []func() (*AnalyticsFetcher, error){s.ChangesetsCreated, s.ChangesetsMerged}
 	for _, buildFetcher := range fetcherBuilders {

@@ -38,7 +38,7 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
         if (!data) {
             return []
         }
-        const { changesetsCreated, changesetsMerged } = data.site.analytics.batchChanges
+        const { changesetsCreated, changesetsMerged, unpublishedChangesets } = data.site.analytics.batchChanges
         const stats: Series<StandardDatum>[] = [
             {
                 id: 'changesets_created',
@@ -68,6 +68,20 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                 getXValue: ({ date }) => date,
                 getYValue: ({ value }) => value,
             },
+            {
+                id: 'unpublished_changesets',
+                name: 'Unpublished changesets',
+                color: 'var(--purple)',
+                data: unpublishedChangesets.nodes.map(
+                    node => ({
+                        date: new Date(node.date),
+                        value: node.count,
+                    }),
+                    dateRange
+                ),
+                getXValue: ({ date }) => date,
+                getYValue: ({ value }) => value,
+            },
         ]
         const legends: ValueLegendListProps['items'] = [
             {
@@ -79,6 +93,11 @@ export const AnalyticsBatchChangesPage: React.FunctionComponent<RouteComponentPr
                 value: changesetsMerged.summary.totalCount,
                 description: 'Changesets merged',
                 color: 'var(--cyan)',
+            },
+            {
+                value: unpublishedChangesets.summary.totalCount,
+                description: 'Unpublished changesets',
+                color: 'var(--purple)',
             },
         ]
 
