@@ -293,6 +293,11 @@ type Features struct {
 	// unindexed searches. Searcher (unindexed search) will the only search
 	// what has changed since the indexed commit.
 	HybridSearch bool
+
+	// CodeOwnershipFilters when true will add the code ownership post-search
+	// filter and allow users to search by code owners using the has.owner
+	// predicate.
+	CodeOwnershipFilters bool
 }
 
 type RepoOptions struct {
