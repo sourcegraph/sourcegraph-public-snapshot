@@ -68,7 +68,7 @@ mutation SetRepositoryPermissionsForBitbucketProject($projectKey: String!, $code
 
 // GetLastBitbucketProjectPermissionJob returns a status of the most recent
 // BitbucketProjectPermissionJob for given projectKey
-func (c *Client) GetLastBitbucketProjectPermissionJob(projectKey string) (string, string, error) {
+func (c *Client) GetLastBitbucketProjectPermissionJob(projectKey string) (state string, failureMessage string, err error) {
 	const query = `
 query BitbucketProjectPermissionJobs($projectKeys: [String!], $status: String, $count: Int) {
 	bitbucketProjectPermissionJobs(projectKeys: $projectKeys, status: $status, count: $count) {
@@ -94,7 +94,7 @@ query BitbucketProjectPermissionJobs($projectKeys: [String!], $status: String, $
 			} `json:"bitbucketProjectPermissionJobs"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err = c.GraphQL("", query, variables, &resp)
 	if err != nil {
 		return "", "", errors.Wrap(err, "request GraphQL")
 	}
