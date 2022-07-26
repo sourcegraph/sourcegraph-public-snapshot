@@ -1,8 +1,5 @@
 Client: ${P4CLIENT}
 
-Update: ${DATE}
-Access: ${DATE}
-
 Owner:  admin
 
 Host: ${P4_CLIENT_HOST}

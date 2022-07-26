@@ -2,8 +2,6 @@ Depot:  ${DEPOT_NAME}
 
 Owner:  ${P4USER}
 
-Date:  ${DATE}
-
 Description: ${DEPOT_DESCRIPTION}
 
 Type:   local
