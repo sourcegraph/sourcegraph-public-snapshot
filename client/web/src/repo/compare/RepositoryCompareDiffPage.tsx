@@ -29,14 +29,22 @@ export function queryRepositoryComparisonFileDiffs(args: {
     head: string | null
     first?: number
     after?: string | null
+    paths?: string[]
 }): Observable<GQL.IFileDiffConnection> {
     return queryGraphQL(
         gql`
-            query RepositoryComparisonDiff($repo: ID!, $base: String, $head: String, $first: Int, $after: String) {
+            query RepositoryComparisonDiff(
+                $repo: ID!
+                $base: String
+                $head: String
+                $first: Int
+                $after: String
+                $paths: [String!]
+            ) {
                 node(id: $repo) {
                     ... on Repository {
                         comparison(base: $base, head: $head) {
-                            fileDiffs(first: $first, after: $after) {
+                            fileDiffs(first: $first, after: $after, paths: $paths) {
                                 nodes {
                                     ...FileDiffFields
                                 }
@@ -125,5 +133,6 @@ export class RepositoryCompareDiffPage extends React.PureComponent<RepositoryCom
             repo: this.props.repo.id,
             base: this.props.base.commitID,
             head: this.props.head.commitID,
+            paths: ['client/web/src/components/FilteredConnection/ConnectionNodes.tsx'],
         })
 }

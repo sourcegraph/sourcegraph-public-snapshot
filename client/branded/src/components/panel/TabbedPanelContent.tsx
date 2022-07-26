@@ -138,6 +138,7 @@ export function useBuiltinTabbedPanelViews(builtinPanels: BuiltinTabbedPanelDefi
  *
  * Other components can contribute panel items to the panel with the `useBuildinPanelViews` hook.
  */
+// eslint-disable-next-line react/display-name
 export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
     // Ensures that we don't show a misleading empty state when extensions haven't loaded yet.
     const areExtensionsReady = useObservable(
@@ -305,6 +306,7 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                 {(activeTab.id === 'def' ||
                                     activeTab.id === 'references' ||
                                     activeTab.id.startsWith('implementations_')) && <ReferencesPanelFeedbackCta />}
+                                {/* This is where we could manually inject a "Compare file revisions" CTA, if needed (e.g. activeTab.id === history) */}
                                 <ActionsNavItems
                                     {...props}
                                     // TODO remove references to Bootstrap from shared, get class name from prop

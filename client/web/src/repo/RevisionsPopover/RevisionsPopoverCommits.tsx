@@ -144,7 +144,7 @@ export const RevisionsPopoverCommits: React.FunctionComponent<
             query,
             first: BATCH_COUNT,
             repo,
-            revision: currentRev || defaultBranch,
+            revision: currentRev || defaultBranch, // Set currentRev to be the selected revision from the one viewed in the history panel content
         },
         getConnection: response => {
             const { node } = dataOrThrowErrors(response)

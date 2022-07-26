@@ -440,7 +440,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                         '/-/docs',
                         '/-/branch',
                         '/-/contributors',
-                        '/-/compare',
+                        '/-/compare', // TODO, update /-/compare/:path route, so we can render compare differently for single file views?
                         '/-/tag',
                         '/-/home',
                     ].map(routePath => (

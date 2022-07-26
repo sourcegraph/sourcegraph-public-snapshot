@@ -187,15 +187,18 @@ export function useBlobPanelViews({
                             selector: null,
                             locationProvider: undefined,
                             reactElement: (
-                                <RepoRevisionSidebarCommits
-                                    key="commits"
-                                    repoID={repoID}
-                                    revision={revision}
-                                    filePath={filePath}
-                                    history={history}
-                                    location={location}
-                                    preferAbsoluteTimestamps={preferAbsoluteTimestamps}
-                                />
+                                <>
+                                    {/* This is where we can change the history panel content */}
+                                    <RepoRevisionSidebarCommits
+                                        key="commits"
+                                        repoID={repoID}
+                                        revision={revision}
+                                        filePath={filePath}
+                                        history={history}
+                                        location={location}
+                                        preferAbsoluteTimestamps={preferAbsoluteTimestamps}
+                                    />
+                                </>
                             ),
                         }))
                     ),
