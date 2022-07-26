@@ -13,7 +13,7 @@ import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfChanged } from './Blob'
-import { syntaxHighlight } from './codemirror/highlight'
+import { blob, syntaxHighlight } from './codemirror/highlight'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 
 const staticExtensions: Extension = [
@@ -29,6 +29,7 @@ const staticExtensions: Extension = [
             backgroundColor: 'var(--code-selection-bg)',
         },
     }),
+    syntaxHighlight(),
 ]
 
 export const Blob: React.FunctionComponent<BlobProps> = ({
@@ -82,12 +83,7 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
     }, [])
 
     const extensions = useMemo(
-        () => [
-            staticExtensions,
-            settingsCompartment,
-            selectableLineNumbers({ onSelection }),
-            syntaxHighlight(blobInfo.lsif),
-        ],
+        () => [staticExtensions, settingsCompartment, selectableLineNumbers({ onSelection }), blob(blobInfo)],
         [settingsCompartment, onSelection, blobInfo]
     )
 
