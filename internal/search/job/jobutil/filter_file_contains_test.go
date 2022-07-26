@@ -4,14 +4,18 @@ import (
 	"context"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/sourcegraph/sourcegraph/cmd/searcher/protocol"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/mockjob"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
+	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 )
 
@@ -39,9 +43,9 @@ func TestFileContainsFilterJob(t *testing.T) {
 			ChunkMatches: cms,
 		}
 	}
-	r := func(fms ...*result.FileMatch) (res result.Matches) {
-		for _, fm := range fms {
-			res = append(res, fm)
+	r := func(ms ...result.Match) (res result.Matches) {
+		for _, m := range ms {
+			res = append(res, m)
 		}
 		return res
 	}
@@ -132,7 +136,7 @@ func TestFileContainsFilterJob(t *testing.T) {
 			Results: result.Matches{&result.RepoMatch{Name: "test"}},
 		},
 		outputEvent: streaming.SearchEvent{
-			Results: result.Matches{&result.RepoMatch{Name: "test"}},
+			Results: result.Matches{},
 		},
 	}, {
 		name:            "tree shaped pattern",
@@ -169,6 +173,80 @@ func TestFileContainsFilterJob(t *testing.T) {
 				}},
 			})),
 		},
+	}, {
+		name:            "diff search",
+		includePatterns: []string{"predicate"},
+		originalPattern: query.Pattern{Value: "needle"},
+		caseSensitive:   false,
+		inputEvent: streaming.SearchEvent{
+			Results: r(&result.CommitMatch{
+				DiffPreview: &result.MatchedString{
+					Content: "file1 file2\n@@ -1,2 +1,6 @@\n+needle\n-needle\nfile3 file4\n@@ -3,4 +1,6 @@\n+needle\n-needle\n",
+					MatchedRanges: result.Ranges{{
+						Start: result.Location{Offset: 29, Line: 2, Column: 1},
+						End:   result.Location{Offset: 35, Line: 2, Column: 7},
+					}, {
+						Start: result.Location{Offset: 37, Line: 3, Column: 1},
+						End:   result.Location{Offset: 43, Line: 3, Column: 7},
+					}, {
+						Start: result.Location{Offset: 73, Line: 6, Column: 1},
+						End:   result.Location{Offset: 79, Line: 6, Column: 7},
+					}, {
+						Start: result.Location{Offset: 81, Line: 7, Column: 1},
+						End:   result.Location{Offset: 87, Line: 7, Column: 7},
+					}},
+				},
+				Diff: []result.DiffFile{{
+					OrigName: "file1",
+					NewName:  "file2",
+					Hunks: []result.Hunk{{
+						OldStart: 1,
+						NewStart: 1,
+						OldCount: 2,
+						NewCount: 6,
+						Header:   "",
+						Lines:    []string{"+needle", "-needle"},
+					}},
+				}, {
+					OrigName: "file3",
+					NewName:  "file4",
+					Hunks: []result.Hunk{{
+						OldStart: 3,
+						NewStart: 1,
+						OldCount: 4,
+						NewCount: 6,
+						Header:   "",
+						Lines:    []string{"+needle", "-needle"},
+					}},
+				}},
+			}),
+		},
+		outputEvent: streaming.SearchEvent{
+			Results: r(&result.CommitMatch{
+				DiffPreview: &result.MatchedString{
+					Content: "file3 file4\n@@ -3,4 +1,6 @@\n+needle\n-needle\n",
+					MatchedRanges: result.Ranges{{
+						Start: result.Location{Offset: 29, Line: 2, Column: 1},
+						End:   result.Location{Offset: 35, Line: 2, Column: 7},
+					}, {
+						Start: result.Location{Offset: 37, Line: 3, Column: 1},
+						End:   result.Location{Offset: 43, Line: 3, Column: 7},
+					}},
+				},
+				Diff: []result.DiffFile{{
+					OrigName: "file3",
+					NewName:  "file4",
+					Hunks: []result.Hunk{{
+						OldStart: 3,
+						NewStart: 1,
+						OldCount: 4,
+						NewCount: 6,
+						Header:   "",
+						Lines:    []string{"+needle", "-needle"},
+					}},
+				}},
+			}),
+		},
 	}}
 
 	for _, tc := range cases {
@@ -178,6 +256,12 @@ func TestFileContainsFilterJob(t *testing.T) {
 				s.Send(tc.inputEvent)
 				return nil, nil
 			})
+			searcher.MockSearch = func(_ context.Context, _ api.RepoName, _ api.RepoID, _ api.CommitID, p *search.TextPatternInfo, _ time.Duration, onMatches func([]*protocol.FileMatch)) (limitHit bool, err error) {
+				if len(p.IncludePatterns) > 0 {
+					onMatches([]*protocol.FileMatch{{Path: "file4"}})
+				}
+				return false, nil
+			}
 			var result streaming.SearchEvent
 			streamCollector := streaming.StreamFunc(func(ev streaming.SearchEvent) {
 				result = ev
