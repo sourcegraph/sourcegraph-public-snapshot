@@ -8,13 +8,24 @@ cleanup() {
 }
 trap cleanup EXIT
 
+gitp4() {
+  "$(dirname "${BASH_SOURCE[0]}")"/git-p4.py "$@"
+}
+
 set -euxo pipefail
 
-export P4_USER="${P4_USER:-admin}"
+export P4USER="${P4USER:-admin}"
+
+export P4CLIENT="${P4CLIENT:-"integration-test-client"}"
+export P4_CLIENT_HOST="${P4_CLIENT_HOST:-"$(hostname)"}"
 
 export DEPOT_NAME="${DEPOT_NAME:-"integration-test"}"
-export DEPOT_DESCRIPTION="${DEPOT_DESCRIPTION:-"$(printf "Created by %s for integration testing." "${P4_USER}")"}"
-export DATE="$(date '+%Y/%m/%d %T')"
+export DEPOT_DESCRIPTION="${DEPOT_DESCRIPTION:-"$(printf "Created by %s for integration testing." "${P4USER}")"}"
+
+DATE="$(date '+%Y/%m/%d %T')"
+export DATE
+
+export DEPOT_DIR="${OUTPUT}/depot"
 
 # delete older copy of depot if it exists
 if p4 depots | awk '{print $2}' | grep -q "${DEPOT_NAME}"; then
@@ -25,20 +36,38 @@ fi
 # create depot
 envsubst <./depot_template.txt | p4 depot -i
 
-DEPOT_DIR="${OUTPUT}/depot"
+# delete older copy of client if it exists
+if p4 clients | awk '{print $2}' | grep -q "${P4CLIENT}"; then
+  p4 client -f -Fs -d "${P4CLIENT}"
+fi
+
+# create client
+envsubst <./client_template.txt | p4 client -i
+
+# create depot
+envsubst <./depot_template.txt | p4 depot -i
+
+# create client
 
 # clone perforce depot
-./git-p4.py clone "//${DEPOT_NAME}/..."@all "${DEPOT_DIR}"
+gitp4 clone "//${DEPOT_NAME}/..." "${DEPOT_DIR}"
 
 # all files to perforce depot
 cp -r ./base/ "${DEPOT_DIR}"
 
 cd "${DEPOT_DIR}"
 
-git checkout -b master
+# git checkout -b master
+gitp4 sync
 
 # commit all above files
 git add --all
 git commit -m "initial commit"
 
-# TODO: Idempotently create a workspace client, have git use it, and submit all the changes (./git-p4.py submit ...)
+cat .git/config
+
+git remote
+
+exa -lah --tree .
+
+gitp4 submit "$(git rev-parse HEAD)"

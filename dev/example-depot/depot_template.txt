@@ -1,6 +1,6 @@
 Depot:  ${DEPOT_NAME}
 
-Owner:  ${P4_USER}
+Owner:  ${P4USER}
 
 Date:  ${DATE}
 
