@@ -1,13 +1,10 @@
 #![allow(dead_code)]
-use std::{
-    collections::{HashMap, HashSet},
-    fmt::Debug,
-};
-
+use once_cell::sync::OnceCell;
 use protobuf::{EnumOrUnknown, SpecialFields};
 use scip::types::{Document, Occurrence, SyntaxKind};
+use std::{collections::HashSet, fmt::Debug};
 use syntect::{
-    parsing::{BasicScopeStackOp, ParseState, ScopeStack, SyntaxReference, SyntaxSet, SCOPE_REPO},
+    parsing::{BasicScopeStackOp, ParseState, Scope, ScopeStack, SyntaxReference, SyntaxSet},
     util::LinesWithEndings,
 };
 
@@ -101,6 +98,10 @@ impl HighlightManager {
         existing_hl
     }
 
+    fn push_empty(&mut self) {
+        self.highlights.push(PartialHighlight::none());
+    }
+
     fn pop_hl(&mut self, row: usize, character: usize) -> Option<PartialHighlight> {
         let row = row as i32;
         let character = character as i32;
@@ -140,6 +141,43 @@ impl Debug for HighlightManager {
     }
 }
 
+static IGNORED_SCOPES: OnceCell<Vec<Scope>> = OnceCell::new();
+fn should_skip_scope(scope: &Scope) -> bool {
+    IGNORED_SCOPES
+        .get_or_init(|| vec![Scope::new("source").unwrap()])
+        .iter()
+        .any(|ignored| ignored.is_prefix_of(*scope))
+}
+
+static SCOPE_MATCHES: OnceCell<Vec<(Scope, SyntaxKind)>> = OnceCell::new();
+fn match_scope_to_kind(scope: &Scope) -> Option<SyntaxKind> {
+    let scope_matches: &Vec<(Scope, SyntaxKind)> = SCOPE_MATCHES.get_or_init(|| {
+        use SyntaxKind::*;
+
+        // TODO: We should probably make sure that we can't even ship syntect if this doesn't work
+        // (which should happen because it won't be able to pass tests or do anything without this)
+        //
+        // The only way this can fail is if you pass in a Scope with >=8 atoms (so we just won't do
+        // that here). This only runs once, so we don't have to worry about subsequent failures for
+        // any of these unwraps.
+        let scope = |s| Scope::new(s).unwrap();
+
+        vec![
+            (scope("storage.type.keyword"), IdentifierKeyword),
+            (scope("entity.name.function"), IdentifierFunction),
+            (scope("keyword"), IdentifierKeyword),
+            (scope("variable"), Identifier),
+            (scope("punctuation"), PunctuationBracket),
+            (scope("string"), StringLiteral),
+        ]
+    });
+
+    scope_matches
+        .iter()
+        .find(|&(prefix, _)| prefix.is_prefix_of(*scope))
+        .and_then(|&(_, kind)| Some(kind))
+}
+
 impl<'a> DocumentGenerator<'a> {
     pub fn new(
         ss: &'a SyntaxSet,
@@ -158,22 +196,8 @@ impl<'a> DocumentGenerator<'a> {
 
     // generate takes ownership of self so that it can't be re-used
     pub fn generate(mut self) -> Document {
-        // TODO: We need to handle multiple scope lengths here
-        //          Possibly the entire scope list but it's SO annoyingly large...
-        //          Not sure how you would even do all of them.
-        let mut scope_mapping = HashMap::new();
-        scope_mapping.insert("keyword".to_string(), SyntaxKind::IdentifierKeyword);
-        scope_mapping.insert("variable".to_string(), SyntaxKind::Identifier);
-        scope_mapping.insert("punctuation".to_string(), SyntaxKind::PunctuationBracket);
-        scope_mapping.insert("string".to_string(), SyntaxKind::StringLiteral);
-
-        let mut ignore_mapping = HashSet::new();
-        ignore_mapping.insert("source");
-
-        let mut unhandled_scopes = HashSet::new();
-
         let mut document = Document::default();
-
+        let mut unhandled_scopes = HashSet::new();
         let mut highlight_manager = HighlightManager::default();
         for (row, line_contents) in LinesWithEndings::from(self.code).enumerate() {
             if self.max_line_len.map_or(false, |n| line_contents.len() > n) {
@@ -207,22 +231,16 @@ impl<'a> DocumentGenerator<'a> {
                 self.stack
                     .apply_with_hook(op, |basic_op, _| match basic_op {
                         BasicScopeStackOp::Push(scope) => {
-                            let atom = scope.atom_at(0 as usize);
-
-                            // Release lock as quickly as we can
-                            let atom_s = {
-                                let repo = SCOPE_REPO.lock().unwrap();
-                                repo.atom_str(atom).to_string()
-                            };
-
-                            if ignore_mapping.contains(atom_s.as_str()) {
-                                highlight_manager.push_hl(PartialHighlight::none());
+                            // We have to push PartialHighight to the stack
+                            // so that when we come to `pop` these highlights they still pop.
+                            if should_skip_scope(&scope) {
+                                highlight_manager.push_empty();
                                 return;
                             }
 
-                            match scope_mapping.get(atom_s.as_str()) {
+                            match match_scope_to_kind(&scope) {
                                 Some(kind) => {
-                                    let partial_hl = PartialHighlight::some(row, character, *kind);
+                                    let partial_hl = PartialHighlight::some(row, character, kind);
                                     if let Some(partial_hl) = highlight_manager.push_hl(partial_hl)
                                     {
                                         push_document_occurence(
@@ -235,7 +253,7 @@ impl<'a> DocumentGenerator<'a> {
                                 }
                                 None => {
                                     unhandled_scopes.insert(scope);
-                                    return;
+                                    highlight_manager.push_empty();
                                 }
                             }
                         }
@@ -317,7 +335,7 @@ mod test {
     use unicode_width::UnicodeWidthStr;
 
     use super::*;
-    use crate::{determine_language, dump_document};
+    use crate::{determine_language, dump_document, SourcegraphQuery};
 
     #[test]
     fn test_generates_empty_file() {
@@ -381,6 +399,9 @@ mod test {
 
     #[test]
     fn test_all_files() -> Result<(), std::io::Error> {
+        let ss = SyntaxSet::load_defaults_newlines();
+        let mut failed = vec![];
+
         let dir = read_dir("./src/snapshots/syntect_files/")?;
         for entry in dir {
             let entry = entry?;
@@ -389,34 +410,37 @@ mod test {
             let mut contents = String::new();
             file.read_to_string(&mut contents)?;
 
-            // let filetype = &determine_filetype(&SourcegraphQuery {
-            //     extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
-            //     filepath: filepath.to_str().unwrap().to_string(),
-            //     filetype: None,
-            //     css: false,
-            //     line_length_limit: None,
-            //     theme: "".to_string(),
-            //     code: contents.clone(),
-            // });
-
-            let mut q = crate::SourcegraphQuery::default();
-            q.filetype = Some("go".to_string());
-            q.code = contents.clone();
-            let syntax_set = SyntaxSet::load_defaults_newlines();
-            let syntax_def = determine_language(&q, &syntax_set).unwrap();
-
+            let q = SourcegraphQuery {
+                extension: filepath.extension().unwrap().to_str().unwrap().to_string(),
+                filepath: filepath.to_str().unwrap().to_string(),
+                filetype: None,
+                css: false,
+                line_length_limit: None,
+                theme: "".to_string(),
+                code: contents.clone(),
+            };
+            let syntax_def = determine_language(&q, &ss).unwrap();
             let document =
-                DocumentGenerator::new(&syntax_set, syntax_def, &q.code, q.line_length_limit)
-                    .generate();
+                DocumentGenerator::new(&ss, syntax_def, &q.code, q.line_length_limit).generate();
 
-            insta::assert_snapshot!(
-                filepath
-                    .to_str()
-                    .unwrap()
-                    .replace("/src/snapshots/syntect_files", ""),
-                dump_document(&document, &contents)
-            );
+            // As far as I can tell, there is no "matches_snapshot" or similar for `insta`.
+            // So we'll just catch the panic for now, push the results and then panic at the end
+            // with all the failed files (if applicable)
+            match std::panic::catch_unwind(|| {
+                insta::assert_snapshot!(
+                    filepath
+                        .to_str()
+                        .unwrap()
+                        .replace("/src/snapshots/syntect_files", ""),
+                    dump_document(&document, &contents)
+                );
+            }) {
+                Ok(_) => {}
+                Err(_) => failed.push(entry),
+            }
         }
+
+        assert!(failed.is_empty(), "Failed: {:?}", failed);
 
         Ok(())
     }

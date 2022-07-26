@@ -1,22 +1,17 @@
 ---
 source: crates/sg-syntax/src/sg_sciptect.rs
-assertion_line: 412
+assertion_line: 427
 expression: "dump_document(&document, &contents)"
 ---
   using System;
-//^^^^^ Identifier
-//      ^^^^^^ Identifier
+//^^^^^ IdentifierKeyword
 //            ^ PunctuationBracket
   
   namespace Example
-//^^^^^^^^^ Identifier
-//          ^^^^^^^ Identifier
   {
 //^ PunctuationBracket
       public void Something()
-//    ^^^^^^ Identifier
-//           ^^^^ Identifier
-//                ^^^^^^^^^ Identifier
+//                ^^^^^^^^^ IdentifierFunction
 //                         ^ PunctuationBracket
 //                          ^ PunctuationBracket
       {

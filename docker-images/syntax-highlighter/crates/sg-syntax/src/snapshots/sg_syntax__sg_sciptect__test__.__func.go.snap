@@ -1,0 +1,17 @@
+---
+source: crates/sg-syntax/src/sg_sciptect.rs
+assertion_line: 427
+expression: "dump_document(&document, &contents)"
+---
+  package main
+//^^^^^^^ IdentifierKeyword
+//        ^^^^ Identifier
+  
+  func main() {}
+//^^^^ IdentifierKeyword
+//     ^^^^ IdentifierFunction
+//         ^ PunctuationBracket
+//          ^ PunctuationBracket
+//            ^ PunctuationBracket
+//             ^ PunctuationBracket
+
