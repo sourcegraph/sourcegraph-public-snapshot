@@ -68,6 +68,7 @@
     "exportUsageTelemetry": {
       "type": "object",
       "additionalProperties": false,
+      "required": ["topicName", "topicProjectName"],
       "properties": {
         "enabled": {
           "description": "Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.",
@@ -79,6 +80,14 @@
           "type": "integer",
           "default": 5000,
           "minimum": 1
+        },
+        "topicProjectName": {
+          "type": "string",
+          "description": "GCP project name containing the usage data pubsub topic"
+        },
+        "topicName": {
+          "type": "string",
+          "description": "Destination pubsub topic name to export usage data"
         }
       }
     },

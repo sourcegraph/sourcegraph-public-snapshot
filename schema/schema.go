@@ -654,6 +654,10 @@ type ExportUsageTelemetry struct {
 	BatchSize int `json:"batchSize,omitempty"`
 	// Enabled description: Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.
 	Enabled bool `json:"enabled,omitempty"`
+	// TopicName description: Destination pubsub topic name to export usage data
+	TopicName string `json:"topicName"`
+	// TopicProjectName description: GCP project name containing the usage data pubsub topic
+	TopicProjectName string `json:"topicProjectName"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
