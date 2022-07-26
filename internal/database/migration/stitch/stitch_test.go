@@ -46,6 +46,9 @@ import (
 //   3.29.0 -> 1000000000
 
 func TestStitchFrontendDefinitions(t *testing.T) {
+	if testing.Short() {
+		return
+	}
 	t.Parallel()
 
 	// Note: negative values imply a quashed migration split into a privileged and
@@ -59,6 +62,9 @@ func TestStitchFrontendDefinitions(t *testing.T) {
 }
 
 func TestStitchCodeintelDefinitions(t *testing.T) {
+	if testing.Short() {
+		return
+	}
 	t.Parallel()
 
 	// Note: negative values imply a quashed migration split into a privileged and
@@ -72,6 +78,9 @@ func TestStitchCodeintelDefinitions(t *testing.T) {
 }
 
 func TestStitchCodeinsightsDefinitions(t *testing.T) {
+	if testing.Short() {
+		return
+	}
 	t.Parallel()
 
 	// Note: negative values imply a quashed migration split into a privileged and
@@ -130,8 +139,6 @@ func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
 // asserts that the resulting graph has the expected root and leaf values.
 func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int) {
 	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		t.Parallel()
-
 		definitions, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
@@ -156,8 +163,6 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 // compared against the target version's description (in the git-tree).
 func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 	t.Run(fmt.Sprintf("upgrade 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		t.Parallel()
-
 		definitions, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
