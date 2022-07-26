@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/inconshreveable/log15"
+	"google.golang.org/protobuf/proto"
+
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -29,7 +32,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
+
+	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 )
 
 type telemetryJob struct {
@@ -87,13 +93,14 @@ type telemetryHandler struct {
 	sendEventsCallback sendEventsCallbackFunc
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bokomarkStore bookmarkStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
 	return &telemetryHandler{
 		logger:             logger,
 		eventLogStore:      store,
 		sendEventsCallback: sendEventsCallback,
 		globalStateStore:   globalStateStore,
 		userEmailsStore:    userEmailsStore,
+		bookmarkStore:      bookmarkStore,
 	}
 }
 
@@ -122,11 +129,9 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	if err != nil {
 		return errors.Wrap(err, "GetBookmark")
 	}
+	t.logger.Info("fetching events from bookmark", log.Int("bookmark_id", bookmark))
 
-	all, err := t.eventLogStore.ListExportableEvents(ctx, database.LimitOffset{
-		Limit:  batchSize,
-		Offset: bookmark, // currently static, will become dynamic with https://github.com/sourcegraph/sourcegraph/issues/39089
-	})
+	all, err := t.eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
 	if err != nil {
 		return errors.Wrap(err, "eventLogStore.ListExportableEvents")
 	}
@@ -220,9 +225,18 @@ func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, 
 
 	topic := client.Topic(config.topicName)
 	defer topic.Stop()
-	result := topic.Publish(ctx, &pubsub.Message{
+	masg := &pubsub.Message{
 		Data: marshal,
+	}
+	result := topic.Publish(ctx, masg)
+	// Calculate the size of the encoded proto message by accounting
+	// for the length of an individual PubSubMessage and Data/Attributes field.
+	msgSize := proto.Size(&pb.PubsubMessage{
+		Data:        masg.Data,
+		Attributes:  masg.Attributes,
+		OrderingKey: masg.OrderingKey,
 	})
+	log15.Info("trying to send pubsub", "size", msgSize)
 	_, err = result.Get(ctx)
 	if err != nil {
 		return errors.Wrap(err, "result.Get")
