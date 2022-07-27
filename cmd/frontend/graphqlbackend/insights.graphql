@@ -255,10 +255,19 @@ type SearchQueryInsights {
     preview: [SearchInsightLivePreviewSeries!]!
 }
 
+"""
+Indicates that search query insights are not available. This type is experimental and should be considered unstable in the API.
+"""
 type SearchQueryInsightsNotAvailable {
+    """
+    message regrading the unavailablity of search query insights.
+    """
     message: String!
 }
 
+"""
+Defines search query insights for a specified search query.
+"""
 union SearchQueryInsightsResult = SearchQueryInsights | SearchQueryInsightsNotAvailable
 
 """
