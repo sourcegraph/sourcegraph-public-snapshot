@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lib/pq"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/keegancsmith/sqlf"
@@ -139,6 +141,8 @@ func TestHandlerLoadsEvents(t *testing.T) {
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
+	initAllowedEvents(t, db, []string{"event1", "event2"})
+
 	t.Run("loads no events when table is empty", func(t *testing.T) {
 		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			if len(event) != 0 {
@@ -169,7 +173,6 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	t.Run("loads events without error", func(t *testing.T) {
 		var got []*types.Event
 		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
@@ -526,5 +529,19 @@ func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *te
 		userEmailsStore:    database.NewMockUserEmailsStore(),
 		bookmarkStore:      bms,
 		sendEventsCallback: callbackFunc,
+	}
+}
+
+// initAllowedEvents is a helper to establish a deterministic set of allowed events. This is useful because
+// the standard database migrations will create data in the allowed events table that may conflict with tests.
+func initAllowedEvents(t *testing.T, db database.DB, names []string) {
+	store := basestore.NewWithHandle(db.Handle())
+	err := store.Exec(context.Background(), sqlf.Sprintf("delete from event_logs_export_allowlist"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.Exec(context.Background(), sqlf.Sprintf("insert into event_logs_export_allowlist (event_name) values (unnest(%s::text[]))", pq.Array(names)))
+	if err != nil {
+		t.Fatal(err)
 	}
 }
