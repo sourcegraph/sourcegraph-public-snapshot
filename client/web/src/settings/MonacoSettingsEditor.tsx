@@ -272,8 +272,8 @@ function setDiagnosticsOptions(
 ): void {
     let schema = settingsSchema
     if (extensionsAsCoreFeatures) {
-        const {'extensions.activeLoggers': ___, extensions: ____, ...properties} = schema.properties
-        schema = {...settingsSchema, properties}
+        const { 'extensions.activeLoggers': ___, extensions: ____, ...properties } = schema.properties
+        schema = { ...settingsSchema, properties }
     }
     editor.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
