@@ -270,14 +270,10 @@ function setDiagnosticsOptions(
     jsonSchema: JSONSchema | undefined,
     extensionsAsCoreFeatures: boolean
 ): void {
-    const schema = { ...settingsSchema, properties: { ...settingsSchema.properties } }
+    let schema = settingsSchema
     if (extensionsAsCoreFeatures) {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- no need to remove this key conditionally, but not from the schema
-        // @ts-ignore
-        delete schema.properties.extensions
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- no need to remove this key conditionally, but not from the schema
-        // @ts-ignore
-        delete schema.properties['extensions.activeLoggers']
+        const {'extensions.activeLoggers': ___, extensions: ____, ...properties} = schema.properties
+        schema = {...settingsSchema, properties}
     }
     editor.languages.json.jsonDefaults.setDiagnosticsOptions({
         validate: true,
