@@ -31,6 +31,9 @@ type Store interface {
 	// ExternalServiceStore returns a database.ExternalServiceStore using the same
 	// database handle.
 	ExternalServiceStore() database.ExternalServiceStore
+	// UserExternalAccountsStore returns a database.UserExternalAccountsStore using the same
+	// database handle.
+	UserExternalAccountsStore() database.UserExternalAccountsStore
 
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
@@ -136,6 +139,10 @@ func (s *store) GitserverReposStore() database.GitserverRepoStore {
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s.Logger, s)
+}
+
+func (s *store) UserExternalAccountsStore() database.UserExternalAccountsStore {
+	return database.ExternalAccountsWith(s.Logger, s)
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
@@ -829,18 +836,15 @@ INSERT INTO webhook_build_jobs (repo_id, repo_name, extsvc_kind)
 SELECT %s, %s, %s
 WHERE NOT EXISTS (
 	SELECT
-	FROM repo r
-	LEFT JOIN webhook_build_jobs j ON r.id = j.repo_id
+	FROM repo r, webhook_build_jobs j
 	WHERE r.id = %s
-	AND (
-		j.state IN ('queued', 'processing')
-	)
+	AND j.state IN ('queued', 'processing')
 )
 `, repoID, repoName, kind, repoID)
 	return s.Exec(ctx, q)
 }
 
-func scanWebhookBuildJobs(rows *sql.Rows) ([]WebhookBuildJob, error) {
+func scanWebhookBuildJobsOld(rows *sql.Rows) ([]WebhookBuildJob, error) {
 	var jobs []WebhookBuildJob
 
 	for rows.Next() {

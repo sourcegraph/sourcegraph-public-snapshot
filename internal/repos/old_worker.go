@@ -6,15 +6,12 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/observation"
-	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -63,7 +60,7 @@ func NewWebhookBuildWorker(
 	store := workerstore.New(dbHandle, workerstore.Options{
 		Name:              "webhook_build_worker_store",
 		TableName:         "webhook_build_jobs",
-		Scan:              scanWebhookBuildJob,
+		Scan:              scanWebhookBuildJobOld,
 		OrderByExpression: sqlf.Sprintf("webhook_build_jobs.queued_at"),
 		ColumnExpressions: webhookBuildJobColumns,
 		StalledMaxAge:     30 * time.Second,
@@ -76,7 +73,7 @@ func NewWebhookBuildWorker(
 		NumHandlers:       opts.NumHandlers,
 		Interval:          opts.WorkerInterval,
 		HeartbeatInterval: 15 * time.Second,
-		Metrics:           newWebhookBuildWorkerMetrics(opts.PrometheusRegisterer),
+		// Metrics:           newWebhookBuildWorkerMetrics(opts.PrometheusRegisterer),
 	})
 
 	resetter := dbworker.NewResetter(store, dbworker.ResetterOptions{
@@ -90,22 +87,6 @@ func NewWebhookBuildWorker(
 	}
 
 	return worker, resetter
-}
-
-func newWebhookBuildWorkerMetrics(r prometheus.Registerer) workerutil.WorkerMetrics {
-	var observationContext *observation.Context
-
-	if r == nil {
-		observationContext = &observation.TestContext
-	} else {
-		observationContext = &observation.Context{
-			Logger:     log.Scoped("webhook_build_worker", ""),
-			Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-			Registerer: r,
-		}
-	}
-
-	return workerutil.NewMetrics(observationContext, "repo_updater_webhook_build_worker")
 }
 
 func newWebhookBuildResetterMetrics(r prometheus.Registerer) dbworker.ResetterMetrics {
@@ -149,12 +130,12 @@ WHERE
 	}
 }
 
-func scanWebhookBuildJob(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
+func scanWebhookBuildJobOld(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
 	if err != nil {
 		return nil, false, err
 	}
 
-	jobs, err := scanWebhookBuildJobs(rows)
+	jobs, err := scanWebhookBuildJobsOld(rows)
 	if err != nil || len(jobs) == 0 {
 		return nil, false, err
 	}
