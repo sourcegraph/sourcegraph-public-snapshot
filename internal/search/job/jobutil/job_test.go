@@ -530,30 +530,6 @@ func TestNewPlanJob(t *testing.T) {
           NoopJob)))))`),
 	},
 		{
-			query:      `file:has.owner(@sqs) example`,
-			protocol:   search.Streaming,
-			searchType: query.SearchTypeRegex,
-			want: autogold.Want("codeownership", `
-(ALERT
-  (query . )
-  (originalQuery . )
-  (patternType . literal)
-  (TIMEOUT
-    (timeout . 20s)
-    (LIMIT
-      (limit . 500)
-      (CODEOWNERSHIPFILTER
-        (includeOwners.0 . @sqs)
-
-        (PARALLEL
-          (ZOEKTGLOBALTEXTSEARCH
-            (query . substr:"example")
-            (type . text)
-            )
-          (REPOSCOMPUTEEXCLUDED
-            )
-          NoopJob)))))`),
-		}, {
 			query:      `repo:contains.file(a) repo:contains.content(b)`,
 			protocol:   search.Streaming,
 			searchType: query.SearchTypeRegex,

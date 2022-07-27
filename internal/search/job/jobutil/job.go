@@ -61,6 +61,8 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		children = append(children, j)
 	}
 
+	features := toFeatures(inputs.Features)
+
 	{
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
@@ -69,7 +71,6 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		resultTypes := computeResultTypes(types, b, inputs.PatternType)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
-		features := toFeatures(inputs.Features)
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
 
@@ -161,7 +162,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	basicJob := NewParallelJob(children...)
 
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
+		if includeOwners, excludeOwners := b.FileHasOwner(); features.CodeOwnershipFilters == true && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
 			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
@@ -786,6 +787,7 @@ func toFeatures(flagSet *featureflag.FlagSet) search.Features {
 	return search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
+		CodeOwnershipFilters:    flagSet.GetBoolOr("code-ownership", false),
 	}
 }
 
