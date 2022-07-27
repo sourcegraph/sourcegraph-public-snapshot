@@ -49,13 +49,17 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
     // document before it was added.
     useEffect(() => {
         if (blobInfo) {
-            void extensionsController.extHostAPI.then(api =>
-                api.addTextDocumentIfNotExists({
-                    uri: toURIWithPath(blobInfo),
-                    text: blobInfo.content,
-                    languageId: blobInfo.mode,
+            extensionsController.extHostAPI
+                .then(api =>
+                    api.addTextDocumentIfNotExists({
+                        uri: toURIWithPath(blobInfo),
+                        text: blobInfo.content,
+                        languageId: blobInfo.mode,
+                    })
+                )
+                .catch(() => {
+                    // Nothing to do on error but eslint wants this
                 })
-            )
         }
     }, [extensionsController.extHostAPI, blobInfo])
 
