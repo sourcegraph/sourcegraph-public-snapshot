@@ -750,9 +750,9 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 	if err != nil {
 		return nil, nil, err
 	}
-	defer resp.Body.Close()
 
 	if resp.StatusCode != http.StatusOK {
+		defer resp.Body.Close()
 		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, readResponseBody(resp))
 	}
 
