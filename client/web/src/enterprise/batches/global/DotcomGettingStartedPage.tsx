@@ -2,7 +2,7 @@ import React, { useEffect } from 'react'
 
 import classNames from 'classnames'
 
-import { PageHeader, CardBody, Card, Text } from '@sourcegraph/wildcard'
+import { PageHeader, CardBody, Card, Text, H3 } from '@sourcegraph/wildcard'
 
 import { BatchChangesIcon } from '../../../batches/icons'
 import { CtaBanner } from '../../../components/CtaBanner'
@@ -51,7 +51,7 @@ const DotcomGettingStartedPageFooter: React.FunctionComponent<React.PropsWithChi
         </Card>
         <CtaBanner
             bodyText="Batch Changes requires a local Sourcegraph installation. You can check it out for free by installing with a single line of code."
-            title="Install locally to get started"
+            title={<H3>Install locally to get started</H3>}
             linkText="Install local instance"
             href="/help/admin/install?utm_medium=inproduct&utm_source=inproduct-batch-changes&utm_campaign=inproduct-batch-changes&term="
             icon={<DownloadSourcegraphIcon />}

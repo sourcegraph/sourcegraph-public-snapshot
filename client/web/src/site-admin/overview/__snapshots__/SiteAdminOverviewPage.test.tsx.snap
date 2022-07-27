@@ -116,11 +116,11 @@ exports[`SiteAdminOverviewPage >= 2 users 1`] = `
           <div
             class="site-admin-overview-page__detail-header"
           >
-            <h2
+            <h3
               class="h2"
             >
               Weekly unique users
-            </h2>
+            </h3>
             <h3
               class="h3"
             >
