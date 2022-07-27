@@ -50,3 +50,19 @@ func ResolveSchema(fs fs.FS, name string) (*Schema, error) {
 		Definitions:         definitions,
 	}, nil
 }
+
+// FilterSchemasByName returns a copy of the given schemas slice containing only schema matching the given
+// set of names.
+func FilterSchemasByName(schemas []*Schema, targetNames []string) []*Schema {
+	filtered := make([]*Schema, 0, len(schemas))
+	for _, schema := range schemas {
+		for _, targetName := range targetNames {
+			if targetName == schema.Name {
+				filtered = append(filtered, schema)
+				break
+			}
+		}
+	}
+
+	return filtered
+}
