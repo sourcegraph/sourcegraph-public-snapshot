@@ -20,7 +20,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -32,7 +31,7 @@ type Observer struct {
 	Searcher *endpoint.Map
 
 	// Inputs are used to generate alert messages based on the query.
-	*run.SearchInputs
+	*search.Inputs
 
 	// Update state.
 	HasResults bool
