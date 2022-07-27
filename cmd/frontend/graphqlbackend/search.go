@@ -36,9 +36,9 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		return nil, err
 	}
 
-	inputs, err := run.NewSearchInputs(
+	client := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
+	inputs, err := client.Plan(
 		ctx,
-		db,
 		args.Version,
 		args.PatternType,
 		args.Query,
@@ -55,7 +55,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
-		client:       client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs()),
+		client:       client,
 		db:           db,
 		SearchInputs: inputs,
 		zoekt:        search.Indexed(),
