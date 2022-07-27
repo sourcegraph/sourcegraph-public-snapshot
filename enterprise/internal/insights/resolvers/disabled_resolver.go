@@ -87,6 +87,10 @@ func (r *disabledResolver) RelatedInsightsInline(ctx context.Context, args graph
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsForFileResolver, error) {
+func (r *disabledResolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {
+	return nil, errors.New(r.reason)
+}
+
+func (r *disabledResolver) RelatedInsightsForRepo(ctx context.Context, args graphqlbackend.RelatedInsightsRepoArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {
 	return nil, errors.New(r.reason)
 }

@@ -1,6 +1,11 @@
 package oobmigration
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+
+	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+)
 
 type Version struct {
 	Major int
@@ -12,6 +17,19 @@ func NewVersion(major, minor int) Version {
 		Major: major,
 		Minor: minor,
 	}
+}
+
+var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.\d+)?$`)
+
+func NewVersionFromString(v string) (Version, bool) {
+	if matches := versionPattern.FindStringSubmatch(v); len(matches) >= 3 {
+		major, _ := strconv.Atoi(matches[1])
+		minor, _ := strconv.Atoi(matches[2])
+
+		return NewVersion(major, minor), true
+	}
+
+	return Version{}, false
 }
 
 func (v Version) String() string {

@@ -16,6 +16,14 @@ extend type Query {
     ): LockfileIndexConnection!
 }
 
+extend type Mutation {
+    """
+    Deletes the lockfile index. All associated data will be deleted, except for
+    package repos that were added to the instance as a result of indexing.
+    """
+    deleteLockfileIndex(lockfileIndex: ID!): EmptyResponse!
+}
+
 """
 A list of lockfile indexes.
 """

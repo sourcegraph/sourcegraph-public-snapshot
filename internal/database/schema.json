@@ -2430,6 +2430,19 @@
           "Comment": ""
         },
         {
+          "Name": "batch_change_id",
+          "Index": 14,
+          "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "created_at",
           "Index": 8,
           "TypeName": "timestamp with time zone",
@@ -2596,6 +2609,13 @@
         }
       ],
       "Constraints": [
+        {
+          "Name": "batch_specs_batch_change_id_fkey",
+          "ConstraintType": "f",
+          "RefTableName": "batch_changes",
+          "IsDeferrable": true,
+          "ConstraintDefinition": "FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE"
+        },
         {
           "Name": "batch_specs_has_1_namespace",
           "ConstraintType": "c",

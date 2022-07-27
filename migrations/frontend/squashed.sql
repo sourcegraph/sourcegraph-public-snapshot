@@ -761,6 +761,7 @@ CREATE TABLE batch_specs (
     allow_unsupported boolean DEFAULT false NOT NULL,
     allow_ignored boolean DEFAULT false NOT NULL,
     no_cache boolean DEFAULT false NOT NULL,
+    batch_change_id bigint,
     CONSTRAINT batch_specs_has_1_namespace CHECK (((namespace_user_id IS NULL) <> (namespace_org_id IS NULL)))
 );
 
@@ -3956,6 +3957,9 @@ ALTER TABLE ONLY batch_spec_workspaces
 
 ALTER TABLE ONLY batch_spec_workspaces
     ADD CONSTRAINT batch_spec_workspaces_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE;
+
+ALTER TABLE ONLY batch_specs
+    ADD CONSTRAINT batch_specs_batch_change_id_fkey FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE;
 
 ALTER TABLE ONLY batch_specs
     ADD CONSTRAINT batch_specs_user_id_fkey FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE;

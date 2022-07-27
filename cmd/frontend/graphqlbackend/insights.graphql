@@ -218,7 +218,12 @@ extend type Query {
     """
     Returns insights that match the given file. This query is experimental and should be considered unstable in the API.
     """
-    relatedInsightsForFile(input: RelatedInsightsInput!): [RelatedInsightForFile!]!
+    relatedInsightsForFile(input: RelatedInsightsInput!): [RelatedInsight!]!
+
+    """
+    Returns insights that match the given repo. This query is experimental and should be considered unstable in the API.
+    """
+    relatedInsightsForRepo(input: RelatedInsightsRepoInput!): [RelatedInsight!]!
 }
 
 """
@@ -240,6 +245,20 @@ input RelatedInsightsInput {
 }
 
 """
+Input for getting insights related to a repo. This input type is experimental and should be considered unstable in the API.
+"""
+input RelatedInsightsRepoInput {
+    """
+    The repo name for the file
+    """
+    repo: String!
+    """
+    The revision number
+    """
+    revision: String!
+}
+
+"""
 Metadata for finding where an insight matches in a file. This type is experimental and should be considered unstable in the API.
 """
 type RelatedInsightInline {
@@ -258,9 +277,9 @@ type RelatedInsightInline {
 }
 
 """
-Metadata for finding whether an insight matches a given file. This type is experimental and should be considered unstable in the API.
+Metadata for a related insight. This type is experimental and should be considered unstable in the API.
 """
-type RelatedInsightForFile {
+type RelatedInsight {
     """
     Insight view id
     """
