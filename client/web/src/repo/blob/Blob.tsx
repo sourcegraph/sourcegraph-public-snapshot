@@ -468,10 +468,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
         }, [] as InsightDecoration[])
     }
 
-    console.log(
-        '🚀 ~ file: Blob.tsx ~ line 467 ~ insightDecorationsData=Object.entries ~ insightDecorationsData',
-        insightDecorationsData
-    )
     useEffect(() => setInsightsDecorations(groupDecorationsByLine(insightDecorationsData)), [insightDecorationsData])
     // TODO: Update this to an API call
     // useEffect(() => setInsightsDecorations(groupDecorationsByLine([decoration])), [])

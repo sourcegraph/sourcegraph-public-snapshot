@@ -474,13 +474,13 @@ type RelatedInsightsRepoInput struct {
 }
 
 type RelatedInsightsInlineResolver interface {
-	ViewID() string
+	ViewID() graphql.ID
 	Title() string
 	LineNumbers() []int32
 	Text() []string
 }
 
 type RelatedInsightsResolver interface {
-	ViewID() string
+	ViewID() graphql.ID
 	Title() string
 }
