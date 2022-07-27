@@ -14,6 +14,7 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -75,6 +76,15 @@ func mainErr(ctx context.Context, args []string) error {
 }
 
 func newRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+	return newRunnerWithSchemas(ctx, schemas.FilterSchemasByName(schemas.Schemas, schemaNames))
+}
+
+func newRunnerWithSchemas(ctx context.Context, schemas []*schemas.Schema) (cliutil.Runner, error) {
+	schemaNames := make([]string, 0, len(schemas))
+	for _, schema := range schemas {
+		schemaNames = append(schemaNames, schema.Name)
+	}
+
 	logger := log.Scoped("runner", "")
 	observationContext := &observation.Context{
 		Logger:     logger,
