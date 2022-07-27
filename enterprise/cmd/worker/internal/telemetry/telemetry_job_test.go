@@ -239,6 +239,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
+	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
 	testData := []*database.Event{
 		{
 			Name:   "event1",
@@ -309,6 +310,76 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 			if len(event) == 0 {
 				t.Error("expected empty events")
 			}
+			return nil
+		}
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+
+	initAllowedEvents(t, db, []string{"allowed"})
+	testData := []*database.Event{
+		{
+			Name:   "allowed",
+			UserID: 1,
+			Source: "test",
+		},
+		{
+			Name:   "not-allowed",
+			UserID: 2,
+			Source: "test",
+		},
+		{
+			Name:   "allowed",
+			UserID: 3,
+			Source: "test",
+		},
+	}
+	err := db.EventLogs().BulkInsert(ctx, testData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (0);"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	config := validEnabledConfiguration()
+	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+
+	handler := mockTelemetryHandler(t, noopHandler())
+	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
+	handler.bookmarkStore = newBookmarkStore(db)
+
+	t.Run("ensure only allowed events are returned", func(t *testing.T) {
+		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("first execution of handler should return first event", []*types.Event{
+				{
+					ID:       1,
+					Name:     "allowed",
+					UserID:   1,
+					Argument: "{}",
+					Source:   "test",
+					Version:  "0.0.0+dev",
+				},
+				{
+					ID:       3,
+					Name:     "allowed",
+					UserID:   3,
+					Argument: "{}",
+					Source:   "test",
+					Version:  "0.0.0+dev",
+				},
+			}).Equal(t, got)
 			return nil
 		}
 
