@@ -275,13 +275,9 @@ type RelatedInsightInline {
     """
     lineNumbers: [Int!]!
     """
-    The offsets and lengths of the matches
+    The text that was matched
     """
-    offsetAndLengths: [[Int!]!]!
-    """
-    The lines that the matches are found on
-    """
-    lines: [String!]!
+    text: [String!]!
 }
 
 """

@@ -53,16 +53,17 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 
 		for _, match := range mr.Matches {
 			for _, lineMatch := range match.LineMatches {
+				lowBound := lineMatch.OffsetAndLengths[0][0]
+				highBound := lowBound + lineMatch.OffsetAndLengths[0][1]
+				text := lineMatch.Line[lowBound:highBound]
 				if seriesMatches[series.UniqueID] == nil {
 					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{
-						title:            series.Title,
-						lineNumbers:      []int32{lineMatch.LineNumber},
-						offsetAndLengths: lineMatch.OffsetAndLengths,
-						lines:            []string{lineMatch.Line}}
+						title:       series.Title,
+						lineNumbers: []int32{lineMatch.LineNumber},
+						text:        []string{text}}
 				} else {
 					seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
-					seriesMatches[series.UniqueID].offsetAndLengths = append(seriesMatches[series.UniqueID].offsetAndLengths, lineMatch.OffsetAndLengths...)
-					seriesMatches[series.UniqueID].lines = append(seriesMatches[series.UniqueID].lines, lineMatch.Line)
+					seriesMatches[series.UniqueID].text = append(seriesMatches[series.UniqueID].text, text)
 				}
 			}
 		}
@@ -71,29 +72,26 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 	var resolvers []graphqlbackend.RelatedInsightsInlineResolver
 	for insightId, metadata := range seriesMatches {
 		resolvers = append(resolvers, &relatedInsightsInlineResolver{
-			viewID:           insightId,
-			title:            metadata.title,
-			lineNumbers:      metadata.lineNumbers,
-			offsetAndLengths: metadata.offsetAndLengths,
-			lines:            metadata.lines,
+			viewID:      insightId,
+			title:       metadata.title,
+			lineNumbers: metadata.lineNumbers,
+			text:        metadata.text,
 		})
 	}
 	return resolvers, nil
 }
 
 type relatedInsightInlineMetadata struct {
-	title            string
-	lineNumbers      []int32
-	offsetAndLengths [][2]int32
-	lines            []string
+	title       string
+	lineNumbers []int32
+	text        []string
 }
 
 type relatedInsightsInlineResolver struct {
-	viewID           string
-	title            string
-	lineNumbers      []int32
-	offsetAndLengths [][2]int32
-	lines            []string
+	viewID      string
+	title       string
+	lineNumbers []int32
+	text        []string
 
 	baseInsightResolver
 }
@@ -110,16 +108,8 @@ func (r *relatedInsightsInlineResolver) LineNumbers() []int32 {
 	return r.lineNumbers
 }
 
-func (r *relatedInsightsInlineResolver) OffsetAndLengths() [][]int32 {
-	converted := [][]int32{}
-	for i := range r.offsetAndLengths {
-		converted = append(converted, r.offsetAndLengths[i][:])
-	}
-	return converted
-}
-
-func (r *relatedInsightsInlineResolver) Lines() []string {
-	return r.lines
+func (r *relatedInsightsInlineResolver) Text() []string {
+	return r.text
 }
 
 func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {
