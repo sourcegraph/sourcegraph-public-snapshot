@@ -18,7 +18,7 @@ func main() {
 }
 
 func mainErr() error {
-	// This script is invokved via a go:generate directive in
+	// This script is invoked via a go:generate directive in
 	// internal/database/migration/cliutil (upgrade_data.go)
 	wd, err := os.Getwd()
 	if err != nil {
