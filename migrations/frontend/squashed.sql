@@ -797,7 +797,18 @@ CREATE TABLE changeset_specs (
     head_ref text,
     title text,
     external_id text,
-    fork_namespace citext
+    fork_namespace citext,
+    diff bytea,
+    head_repo_id integer,
+    base_rev text,
+    base_ref text,
+    body text,
+    published text,
+    commit_message text,
+    commit_author_name text,
+    commit_author_email text,
+    type text,
+    migrated boolean DEFAULT false NOT NULL
 );
 
 CREATE TABLE changesets (
@@ -4087,6 +4098,9 @@ ALTER TABLE ONLY changeset_jobs
 
 ALTER TABLE ONLY changeset_specs
     ADD CONSTRAINT changeset_specs_batch_spec_id_fkey FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) ON DELETE CASCADE DEFERRABLE;
+
+ALTER TABLE ONLY changeset_specs
+    ADD CONSTRAINT changeset_specs_head_repo_id_fkey FOREIGN KEY (head_repo_id) REFERENCES repo(id) ON DELETE CASCADE DEFERRABLE;
 
 ALTER TABLE ONLY changeset_specs
     ADD CONSTRAINT changeset_specs_repo_id_fkey FOREIGN KEY (repo_id) REFERENCES repo(id) DEFERRABLE;
