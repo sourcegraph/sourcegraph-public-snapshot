@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	_ "log"
 	"net/http"
 	"os"
 	"time"
@@ -12,8 +11,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var ErrRequestBody = errors.New("failed to read body from request")
-var ErrJSONUnmarshall = errors.New("failed to unmarshal body")
 var ErrInvalidToken = errors.New("buildkite token is invalid")
 var ErrInvalidHeader = errors.New("Header of request is invalid")
 var ErrUnwantedEvent = errors.New("Unwanted event received")
@@ -62,31 +59,6 @@ func NewServer(logger log.Logger, c config, channel string) *Server {
 	}
 }
 
-func (s *Server) processBuildkiteRequest(req *http.Request) (*BuildEvent, error) {
-	h, ok := req.Header["X-Buildkite-Token"]
-	if !ok || len(h) == 0 {
-		return nil, ErrInvalidToken
-	} else if h[0] != s.bkToken {
-		return nil, ErrInvalidToken
-	}
-
-	h, ok = req.Header["X-Buildkite-Event"]
-	if !ok || len(h) == 0 {
-		return nil, ErrInvalidHeader
-	}
-
-	eventName := h[0]
-	s.logger.Debug("received event", log.String("eventName", eventName))
-
-	var event BuildEvent
-	err := readBody(s.logger, req, &event)
-	if err != nil {
-		return nil, err
-	}
-
-	return &event, nil
-}
-
 // handleEvent handles an event received from the http listener. A event is valid when:
 // - Has the correct headers from Buildkite
 // - On of the following events
@@ -96,27 +68,41 @@ func (s *Server) processBuildkiteRequest(req *http.Request) (*BuildEvent, error)
 // Note that if we received an unwanted event ie. the event is not "job.finished" or "build.finished" we respond with a 200 OK regardless.
 // Once all the conditions are met, the event is processed in a go routine with `processEvent`
 func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
-	event, err := s.processBuildkiteRequest(req)
-
-	switch err {
-	case ErrInvalidToken:
+	h, ok := req.Header["X-Buildkite-Token"]
+	if !ok || len(h) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	} else if h[0] != s.bkToken {
 		w.WriteHeader(http.StatusUnauthorized)
-		return
-	case ErrInvalidHeader:
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	case ErrUnwantedEvent:
-		w.WriteHeader(http.StatusOK)
-		return
-	case ErrRequestBody:
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	case ErrJSONUnmarshall:
-		w.WriteHeader(http.StatusUnprocessableEntity)
 		return
 	}
 
-	go s.processEvent(event)
+	h, ok = req.Header["X-Buildkite-Event"]
+	if !ok || len(h) == 0 {
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+
+	eventName := h[0]
+	s.logger.Debug("received event", log.String("eventName", eventName))
+
+	data, err := ioutil.ReadAll(req.Body)
+	defer req.Body.Close()
+	if err != nil {
+		s.logger.Error("failed to read request body", log.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var event Event
+	err = json.Unmarshal(data, &event)
+	if err != nil {
+		s.logger.Error("failed to unmarshall request body", log.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	go s.processEvent(&event)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -126,19 +112,6 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 }
 
 func readBody[T any](logger log.Logger, req *http.Request, target T) error {
-	data, err := ioutil.ReadAll(req.Body)
-	defer req.Body.Close()
-	if err != nil {
-		logger.Error("failed to read request body", log.Error(err))
-		return err
-	}
-
-	logger.Debug("event data", log.String("data", string(data)))
-	err = json.Unmarshal(data, &target)
-	if err != nil {
-		logger.Error("failed to unmarshall request body", log.Error(err))
-		return err
-	}
 
 	return nil
 }
@@ -146,11 +119,11 @@ func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful not notifcation is sent
 func (s *Server) notifyIfFailed(build *Build) error {
 	if build.hasFailed() {
-		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number, 0)))
-		return s.notifyClient.sendNotification(build)
+		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number)))
+		return s.notifyClient.send(build)
 	}
 
-	s.logger.Info("build has not failed", log.Int("buildNumber", intp(build.Number, 0)))
+	s.logger.Info("build has not failed", log.Int("buildNumber", intp(build.Number)))
 	return nil
 }
 
@@ -165,25 +138,21 @@ func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
 		for {
 			select {
 			case <-ticker.C:
-				{
-					oldBuilds := make([]int, 0)
-					now := time.Now()
-					for _, b := range s.store.AllFinishedBuilds() {
-						finishedAt := *b.FinishedAt
-						delta := now.Sub(finishedAt.Time)
-						if delta >= window {
-							s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
-							oldBuilds = append(oldBuilds, *b.Number)
-						}
+				oldBuilds := make([]int, 0)
+				now := time.Now()
+				for _, b := range s.store.FinishedBuilds() {
+					finishedAt := *b.FinishedAt
+					delta := now.Sub(finishedAt.Time)
+					if delta >= window {
+						s.logger.Debug("build past age window", log.Int("buildNumber", *b.Number), log.Time("FinishedAt", finishedAt.Time), log.Duration("window", window))
+						oldBuilds = append(oldBuilds, *b.Number)
 					}
-					s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
-					s.store.DelByBuildNumber(oldBuilds...)
 				}
+				s.logger.Info("deleting old builds", log.Int("oldBuildCount", len(oldBuilds)))
+				s.store.DelByBuildNumber(oldBuilds...)
 			case <-done:
-				{
-					ticker.Stop()
-					return
-				}
+				ticker.Stop()
+				return
 			}
 		}
 	}()
@@ -194,7 +163,7 @@ func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
 // processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
-func (s *Server) processEvent(event *BuildEvent) {
+func (s *Server) processEvent(event *Event) {
 	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.buildNumber()), log.String("jobName", event.jobName()))
 	s.store.Add(event)
 	if event.isBuildFinished() {

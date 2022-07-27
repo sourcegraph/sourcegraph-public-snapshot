@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"sync"
 
 	"github.com/buildkite/go-buildkite/v3/buildkite"
@@ -49,14 +48,7 @@ func (b *Build) commit() string {
 }
 
 func (b *Build) number() int {
-	return intp(b.Number, 0)
-}
-
-func (b *Build) avatarURL() string {
-	if b.Creator == nil {
-		return ""
-	}
-	return fmt.Sprintf("%s.jpg", b.Creator.AvatarURL)
+	return intp(b.Number)
 }
 
 func (b *Build) branch() string {
@@ -76,7 +68,7 @@ func (j *Job) name() string {
 }
 
 func (j *Job) exitStatus() int {
-	return intp(j.ExitStatus, 0)
+	return intp(j.ExitStatus)
 }
 
 func (j *Job) failed() bool {
@@ -91,14 +83,14 @@ func (p *Pipeline) name() string {
 	return strp(p.Name)
 }
 
-type BuildEvent struct {
+type Event struct {
 	Name     string             `json:"event"`
 	Build    buildkite.Build    `json:"build,omitempty"`
 	Pipeline buildkite.Pipeline `json:"pipeline,omitempty"`
 	Job      buildkite.Job      `json:"job,omitempty"`
 }
 
-func (b *BuildEvent) build() *Build {
+func (b *Event) build() *Build {
 	return &Build{
 		Build:    b.Build,
 		Pipeline: b.pipeline(),
@@ -106,24 +98,24 @@ func (b *BuildEvent) build() *Build {
 	}
 }
 
-func (b *BuildEvent) job() *Job {
+func (b *Event) job() *Job {
 	return &Job{Job: b.Job}
 }
 
-func (b *BuildEvent) pipeline() *Pipeline {
+func (b *Event) pipeline() *Pipeline {
 	return &Pipeline{Pipeline: b.Pipeline}
 }
 
-func (b *BuildEvent) isBuildFinished() bool {
+func (b *Event) isBuildFinished() bool {
 	return b.Name == "build.finished"
 }
 
-func (b *BuildEvent) jobName() string {
+func (b *Event) jobName() string {
 	return strp(b.Job.Name)
 }
 
-func (b *BuildEvent) buildNumber() int {
-	return intp(b.Build.Number, 0)
+func (b *Event) buildNumber() int {
+	return intp(b.Build.Number)
 }
 
 type BuildStore struct {
@@ -140,7 +132,7 @@ func NewBuildStore(logger log.Logger) *BuildStore {
 	}
 }
 
-func (s *BuildStore) Add(event *BuildEvent) {
+func (s *BuildStore) Add(event *Event) {
 	s.m.Lock()
 	defer s.m.Unlock()
 
@@ -150,9 +142,8 @@ func (s *BuildStore) Add(event *BuildEvent) {
 		s.builds[event.buildNumber()] = build
 	}
 	// if the build is finished replace the original build with the replaced one since it will be more up to date
-	if event.isBuildFinished() {
-		build.Build = event.Build
-	}
+	build.Build = event.Build
+	build.Pipeline = event.pipeline()
 
 	wrappedJob := event.job()
 	if wrappedJob.name() != "" {
@@ -179,7 +170,7 @@ func (s *BuildStore) DelByBuildNumber(buildNumbers ...int) {
 	s.logger.Info("deleted builds", log.Int("totalBuilds", len(buildNumbers)))
 }
 
-func (s *BuildStore) AllFinishedBuilds() []*Build {
+func (s *BuildStore) FinishedBuilds() []*Build {
 	s.m.RLock()
 	defer s.m.RUnlock()
 

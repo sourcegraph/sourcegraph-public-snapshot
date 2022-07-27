@@ -39,7 +39,7 @@ func TestSlack(t *testing.T) {
 	pipelineID := "sourcegraph"
 	exit := 999
 	msg := "this is a test"
-	err = client.sendNotification(
+	err = client.send(
 		&Build{
 			Build: buildkite.Build{
 				Message: &msg,

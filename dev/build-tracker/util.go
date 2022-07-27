@@ -14,9 +14,9 @@ func strp(v *string) string {
 	return *v
 }
 
-func intp(v *int, defaultValue int) int {
+func intp(v *int) int {
 	if v == nil {
-		return defaultValue
+		return 0
 	}
 
 	return *v

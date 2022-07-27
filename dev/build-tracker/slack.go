@@ -22,7 +22,7 @@ type NotificationClient struct {
 	slack   slack.Client
 	team    team.TeammateResolver
 	logger  log.Logger
-	Channel string
+	channel string
 }
 
 func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
@@ -38,7 +38,7 @@ func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel s
 		logger:  logger.Scoped("notificationClient", "client which interacts with Slack and Github to send notifications"),
 		slack:   *slack,
 		team:    teamResolver,
-		Channel: channel,
+		channel: channel,
 	}
 }
 
@@ -49,8 +49,8 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 	return c.team.ResolveByCommitAuthor(context.Background(), "sourcegraph", "sourcegraph", build.commit())
 }
 
-func (c *NotificationClient) sendNotification(build *Build) error {
-	notifcationLogger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.Channel))
+func (c *NotificationClient) send(build *Build) error {
+	notifcationLogger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
 	notifcationLogger.Debug("creating slack json", log.Int("buildNumber", build.number()))
 
 	teammate, err := c.getTeammateForBuild(build)
@@ -64,7 +64,7 @@ func (c *NotificationClient) sendNotification(build *Build) error {
 	}
 
 	notifcationLogger.Debug("sending notification")
-	_, _, err = c.slack.PostMessage(c.Channel, slack.MsgOptionBlocks(blocks...))
+	_, _, err = c.slack.PostMessage(c.channel, slack.MsgOptionBlocks(blocks...))
 	if err != nil {
 		notifcationLogger.Error("failed to post message", log.Error(err))
 		return err
@@ -90,19 +90,17 @@ type GrafanaPayload struct {
 	Range      GrafanaRange   `json:"range"`
 }
 
-func grafanaURLFor(logger log.Logger, build *Build) string {
-	logger = logger.Scoped("grafana", "generates grafana links")
-	base, _ := url.Parse("https://sourcegraph.grafana.net/explore")
+func grafanaURLFor(build *Build) (string, error) {
 	queryData := struct {
 		Build int
 	}{
-		Build: intp(build.Number, 0),
+		Build: intp(build.Number),
 	}
 	tmpl := template.Must(template.New("Expression").Parse(`{app="buildkite", build="{{.Build}}", state="failed"} |~ "(?i)failed|panic|error|FAIL \\|"`))
 
 	var buf bytes.Buffer
 	if err := tmpl.Execute(&buf, queryData); err != nil {
-		logger.Error("failed to execute template", log.String("template", "Expression"), log.Error(err))
+		return "", err
 	}
 	var expression = buf.String()
 
@@ -125,7 +123,7 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 
 	result, err := json.Marshal(data)
 	if err != nil {
-		logger.Error("failed to marshall GrafanaPayload", log.Error(err))
+		return "", err
 	}
 
 	query := url.PathEscape(string(result))
@@ -141,7 +139,7 @@ func grafanaURLFor(logger log.Logger, build *Build) string {
 	)
 	query = replacer.Replace(query)
 
-	return base.String() + "?orgId=1&left=" + query
+	return "https://sourcegraph.grafana.net/explore?orgId=1&left=" + query, nil
 }
 
 func commitLink(msg, commit string) string {
@@ -178,6 +176,10 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 	}
 
 	author := slackMention(teammate, build)
+	grafanaURL, err := grafanaURLFor(build)
+	if err != nil {
+		return nil, err
+	}
 
 	blocks := []slack.Block{
 		slack.NewHeaderBlock(
@@ -227,7 +229,7 @@ _:sourcegraph: disable flakes on sight and save your fellow teammate some time!_
 				},
 				&slack.ButtonBlockElement{
 					Type: slack.METButton,
-					URL:  grafanaURLFor(logger, build),
+					URL:  grafanaURL,
 					Text: &slack.TextBlockObject{Type: slack.PlainTextType, Text: "View logs on Grafana"},
 				},
 				&slack.ButtonBlockElement{
