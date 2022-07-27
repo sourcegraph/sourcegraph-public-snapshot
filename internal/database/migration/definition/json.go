@@ -59,8 +59,8 @@ func (d *Definition) UnmarshalJSON(data []byte) error {
 
 	d.ID = jsonDefinition.ID
 	d.Name = jsonDefinition.Name
-	d.UpQuery = sqlf.Sprintf(jsonDefinition.UpQuery)
-	d.DownQuery = sqlf.Sprintf(jsonDefinition.DownQuery)
+	d.UpQuery = queryFromString(jsonDefinition.UpQuery)
+	d.DownQuery = queryFromString(jsonDefinition.DownQuery)
 	d.Privileged = jsonDefinition.Privileged
 	d.NonIdempotent = jsonDefinition.NonIdempotent
 	d.Parents = jsonDefinition.Parents
