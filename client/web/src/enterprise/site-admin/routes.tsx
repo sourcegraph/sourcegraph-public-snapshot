@@ -147,6 +147,15 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         exact: true,
         condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
     },
+    {
+        path: '/code-graph/lockfiles/:id',
+        render: lazyComponent(
+            () => import('../codeintel/lockfiles/pages/CodeIntelLockfilePage'),
+            'CodeIntelLockfilePage'
+        ),
+        exact: true,
+        condition: () => Boolean(window.context?.codeIntelLockfileIndexingEnabled),
+    },
 
     // Code graph configuration
     {

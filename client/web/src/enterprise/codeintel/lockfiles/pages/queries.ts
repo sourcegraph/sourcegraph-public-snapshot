@@ -1,6 +1,6 @@
 import { gql } from '@sourcegraph/http-client'
 
-export const LOCKFILE_INDEXES_LIST = gql`
+const LOCKFILE_INDEX_FIELDS = gql`
     fragment LockfileIndexFields on LockfileIndex {
         id
         lockfile
@@ -21,6 +21,10 @@ export const LOCKFILE_INDEXES_LIST = gql`
         updatedAt
         createdAt
     }
+`
+
+export const LOCKFILE_INDEXES_LIST = gql`
+    ${LOCKFILE_INDEX_FIELDS}
 
     fragment LockfileIndexConnectionFields on LockfileIndexConnection {
         nodes {
@@ -36,6 +40,26 @@ export const LOCKFILE_INDEXES_LIST = gql`
     query LockfileIndexes($first: Int, $after: String) {
         lockfileIndexes(first: $first, after: $after) {
             ...LockfileIndexConnectionFields
+        }
+    }
+`
+
+export const LOCKFILE_INDEX = gql`
+    ${LOCKFILE_INDEX_FIELDS}
+
+    query LockfileIndex($id: ID!) {
+        node(id: $id) {
+            ... on LockfileIndex {
+                ...LockfileIndexFields
+            }
+        }
+    }
+`
+
+export const DELETE_LOCKFILE_INDEX = gql`
+    mutation DeleteLockfileIndex($id: ID!) {
+        deleteLockfileIndex(lockfileIndex: $id) {
+            alwaysNil
         }
     }
 `

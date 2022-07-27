@@ -501,6 +501,9 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// DeleteDependencyReposByID.
 	DeleteDependencyReposByIDFunc *StoreDeleteDependencyReposByIDFunc
+	// DeleteLockfileIndexByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteLockfileIndexByID.
+	DeleteLockfileIndexByIDFunc *StoreDeleteLockfileIndexByIDFunc
 	// GetLockfileIndexFunc is an instance of a mock function object
 	// controlling the behavior of the method GetLockfileIndex.
 	GetLockfileIndexFunc *StoreGetLockfileIndexFunc
@@ -543,6 +546,11 @@ func NewMockStore() *MockStore {
 	return &MockStore{
 		DeleteDependencyReposByIDFunc: &StoreDeleteDependencyReposByIDFunc{
 			defaultHook: func(context.Context, ...int) (r0 error) {
+				return
+			},
+		},
+		DeleteLockfileIndexByIDFunc: &StoreDeleteLockfileIndexByIDFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
 				return
 			},
 		},
@@ -613,6 +621,11 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.DeleteDependencyReposByID")
 			},
 		},
+		DeleteLockfileIndexByIDFunc: &StoreDeleteLockfileIndexByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockStore.DeleteLockfileIndexByID")
+			},
+		},
 		GetLockfileIndexFunc: &StoreGetLockfileIndexFunc{
 			defaultHook: func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error) {
 				panic("unexpected invocation of MockStore.GetLockfileIndex")
@@ -677,6 +690,9 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
 		DeleteDependencyReposByIDFunc: &StoreDeleteDependencyReposByIDFunc{
 			defaultHook: i.DeleteDependencyReposByID,
+		},
+		DeleteLockfileIndexByIDFunc: &StoreDeleteLockfileIndexByIDFunc{
+			defaultHook: i.DeleteLockfileIndexByID,
 		},
 		GetLockfileIndexFunc: &StoreGetLockfileIndexFunc{
 			defaultHook: i.GetLockfileIndex,
@@ -825,6 +841,112 @@ func (c StoreDeleteDependencyReposByIDFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c StoreDeleteDependencyReposByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreDeleteLockfileIndexByIDFunc describes the behavior when the
+// DeleteLockfileIndexByID method of the parent MockStore instance is
+// invoked.
+type StoreDeleteLockfileIndexByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []StoreDeleteLockfileIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteLockfileIndexByID delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) DeleteLockfileIndexByID(v0 context.Context, v1 int) error {
+	r0 := m.DeleteLockfileIndexByIDFunc.nextHook()(v0, v1)
+	m.DeleteLockfileIndexByIDFunc.appendCall(StoreDeleteLockfileIndexByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteLockfileIndexByID method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreDeleteLockfileIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteLockfileIndexByID method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreDeleteLockfileIndexByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreDeleteLockfileIndexByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreDeleteLockfileIndexByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *StoreDeleteLockfileIndexByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreDeleteLockfileIndexByIDFunc) appendCall(r0 StoreDeleteLockfileIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreDeleteLockfileIndexByIDFuncCall
+// objects describing the invocations of this function.
+func (f *StoreDeleteLockfileIndexByIDFunc) History() []StoreDeleteLockfileIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreDeleteLockfileIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreDeleteLockfileIndexByIDFuncCall is an object that describes an
+// invocation of method DeleteLockfileIndexByID on an instance of MockStore.
+type StoreDeleteLockfileIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreDeleteLockfileIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreDeleteLockfileIndexByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
