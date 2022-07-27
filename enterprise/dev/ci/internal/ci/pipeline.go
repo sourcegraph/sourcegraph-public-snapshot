@@ -102,8 +102,6 @@ func GeneratePipeline(c Config) (*bk.Pipeline, error) {
 			ClientLintOnlyChangedFiles: false,
 		}))
 
-		ops.Append(buildCandidateDockerImage("frontend", c.Version, c.candidateImageTag(), c.RunType))
-
 		// Now we set up conditional operations that only apply to pull requests.
 		if c.Diff.Has(changed.Client) {
 			// triggers a slow pipeline, currently only affects web. It's optional so we
