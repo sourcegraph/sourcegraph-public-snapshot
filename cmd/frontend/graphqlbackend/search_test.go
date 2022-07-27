@@ -348,7 +348,6 @@ func BenchmarkSearchResults(b *testing.B) {
 				Query:        plan.ToQ(),
 				UserSettings: &schema.Settings{},
 			},
-			zoekt: z,
 		}
 		results, err := resolver.Results(ctx)
 		if err != nil {

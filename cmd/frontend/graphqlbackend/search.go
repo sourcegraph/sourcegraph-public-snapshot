@@ -58,7 +58,6 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		client:       cli,
 		db:           db,
 		SearchInputs: inputs,
-		zoekt:        search.Indexed(),
 		searcherURLs: search.SearcherURLs(),
 	}, nil
 }
@@ -73,7 +72,6 @@ type searchResolver struct {
 	SearchInputs *run.SearchInputs
 	db           database.DB
 
-	zoekt        zoekt.Streamer
 	searcherURLs *endpoint.Map
 }
 
