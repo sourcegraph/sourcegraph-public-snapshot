@@ -136,7 +136,7 @@ type BuildStore struct {
 
 func NewBuildStore(logger log.Logger) *BuildStore {
 	return &BuildStore{
-		logger: logger.Scoped("store", "stores all the builds"),
+		logger: logger.Scoped("store", "stores all the buildkite builds"),
 		builds: make(map[int]*Build),
 		m:      sync.RWMutex{},
 	}

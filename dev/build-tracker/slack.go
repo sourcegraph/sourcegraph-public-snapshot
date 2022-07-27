@@ -27,7 +27,11 @@ type NotificationClient struct {
 
 func NewNotificationClient(logger log.Logger, slackToken, githubToken, channel string) *NotificationClient {
 	slack := slack.New(slackToken)
-	githubClient := github.NewClient(http.DefaultClient)
+
+	httpClient := http.Client{
+		Timeout: 5 * time.Second,
+	}
+	githubClient := github.NewClient(&httpClient)
 	teamResolver := team.NewTeammateResolver(githubClient, slack)
 
 	return &NotificationClient{
@@ -160,6 +164,7 @@ func slackMention(teammate *team.Teammate, build *Build) string {
 
 func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
+	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
 	failedSection := fmt.Sprintf(":git: *Message:* %s\n\n", commitLink(msg, build.commit()))
 	failedSection += ":clipboard: *Failed jobs:*\n\n"
 	for _, j := range build.Jobs {
@@ -190,7 +195,6 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 			[]*slack.TextBlockObject{
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author:* %s", author)},
 				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline:* %s", build.Pipeline.name())},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:github: Commit:* %s", commitLink(build.commit()[:15], build.commit()))},
 			},
 			nil,
 		),

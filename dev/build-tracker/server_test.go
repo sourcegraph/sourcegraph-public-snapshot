@@ -21,10 +21,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 	}
 
 	t.Run("All old builds get removed", func(t *testing.T) {
-		server, err := NewBuildTrackingServer(logger, token{}, "")
-		if err != nil {
-			t.Fatalf("failed to create build tracking server: %v", err)
-		}
+		server := NewServer(logger, config{}, "")
 		b := finishedBuild(1, "passed", time.Now().AddDate(-1, 0, 0))
 		server.store.builds[*b.Number] = b
 
@@ -46,10 +43,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		}
 	})
 	t.Run("1 build left after old builds are removed", func(t *testing.T) {
-		server, err := NewBuildTrackingServer(logger, token{}, "")
-		if err != nil {
-			t.Fatalf("failed to create build tracking server: %v", err)
-		}
+		server := NewServer(logger, config{}, "")
 		b := finishedBuild(1, "canceled", time.Now().AddDate(-1, 0, 0))
 		server.store.builds[*b.Number] = b
 

@@ -24,9 +24,14 @@ func TestSlack(t *testing.T) {
 	}
 	logger := logtest.NoOp(t)
 
-	tokens := MustGetTokenFromEnv()
+	config, err := configFromEnv()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	client := NewNotificationClient(logger, tokens.Slack, tokens.Github, DEFAULT_CHANNEL)
+	println(config.SlackToken)
+
+	client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
 
 	num := 160000
 	url := "http://www.google.com"
@@ -34,7 +39,7 @@ func TestSlack(t *testing.T) {
 	pipelineID := "sourcegraph"
 	exit := 999
 	msg := "this is a test"
-	err := client.sendNotification(
+	err = client.sendNotification(
 		&Build{
 			Build: buildkite.Build{
 				Message: &msg,

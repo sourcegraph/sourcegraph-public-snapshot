@@ -2,8 +2,6 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
-	"fmt"
 	"io/ioutil"
 	_ "log"
 	"net/http"
@@ -11,77 +9,64 @@ import (
 	"time"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var ErrRequestBody = fmt.Errorf("failed to read body from request")
-var ErrJSONUnmarshall = fmt.Errorf("failed to unmarshal body")
-var ErrInvalidToken = fmt.Errorf("buildkite token is invalid")
-var ErrInvalidHeader = fmt.Errorf("Header of request is invalid")
-var ErrUnwantedEvent = fmt.Errorf("Unwanted event received")
+var ErrRequestBody = errors.New("failed to read body from request")
+var ErrJSONUnmarshall = errors.New("failed to unmarshal body")
+var ErrInvalidToken = errors.New("buildkite token is invalid")
+var ErrInvalidHeader = errors.New("Header of request is invalid")
+var ErrUnwantedEvent = errors.New("Unwanted event received")
 
-const DEFAULT_CHANNEL = "#william-buildchecker-webhook-test"
+const DefaultChannel = "#william-buildchecker-webhook-test"
 
-type BuildTrackingServer struct {
+type Server struct {
 	logger       log.Logger
 	store        *BuildStore
 	bkToken      string
 	notifyClient *NotificationClient
 }
 
-type token struct {
-	Buildkite string
-	Slack     string
-	Github    string
+type config struct {
+	BuildkiteToken string
+	SlackToken     string
+	GithubToken    string
 }
 
-func strp(v *string) string {
-	if v == nil {
-		return ""
+func configFromEnv() (*config, error) {
+	var c config
+
+	err := envVar("BUILDKITE_WEBHOOK_TOKEN", &c.BuildkiteToken)
+	if err != nil {
+		return nil, err
+	}
+	err = envVar("SLACK_TOKEN", &c.SlackToken)
+	if err != nil {
+		return nil, err
+	}
+	err = envVar("GITHUB_TOKEN", &c.GithubToken)
+	if err != nil {
+		return nil, err
 	}
 
-	return *v
+	return &c, nil
 }
 
-func intp(v *int, defaultValue int) int {
-	if v == nil {
-		return defaultValue
-	}
-
-	return *v
-}
-
-func mustEnvVar(name string) string {
-	value, exists := os.LookupEnv(name)
-	if !exists {
-		panic(fmt.Sprintf("%s not found in environment", name))
-	}
-
-	return value
-}
-
-func MustGetTokenFromEnv() token {
-	return token{
-		Buildkite: mustEnvVar("BUILDKITE_WEBHOOK_TOKEN"),
-		Slack:     mustEnvVar("SLACK_TOKEN"),
-		Github:    mustEnvVar("GITHUB_TOKEN"),
-	}
-}
-
-func NewBuildTrackingServer(logger log.Logger, tokens token, channel string) (*BuildTrackingServer, error) {
-	serverLog := logger.Scoped("server", "Build Tracking Server which tracks events received from Buildkite and sends notifications on failures")
-	return &BuildTrackingServer{
+func NewServer(logger log.Logger, c config, channel string) *Server {
+	serverLog := logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
+	return &Server{
 		logger:       serverLog,
 		store:        NewBuildStore(serverLog),
-		bkToken:      tokens.Buildkite,
-		notifyClient: NewNotificationClient(serverLog, tokens.Slack, tokens.Github, channel),
-	}, nil
+		bkToken:      c.BuildkiteToken,
+		notifyClient: NewNotificationClient(serverLog, c.SlackToken, c.GithubToken, channel),
+	}
 }
 
-func (s *BuildTrackingServer) processBuildkiteRequest(req *http.Request, token string) (*BuildEvent, error) {
+func (s *Server) processBuildkiteRequest(req *http.Request) (*BuildEvent, error) {
 	h, ok := req.Header["X-Buildkite-Token"]
 	if !ok || len(h) == 0 {
 		return nil, ErrInvalidToken
-	} else if h[0] != token {
+	} else if h[0] != s.bkToken {
 		return nil, ErrInvalidToken
 	}
 
@@ -91,16 +76,12 @@ func (s *BuildTrackingServer) processBuildkiteRequest(req *http.Request, token s
 	}
 
 	eventName := h[0]
-	s.logger.Debug("receied event", log.String("eventName", eventName))
+	s.logger.Debug("received event", log.String("eventName", eventName))
 
 	var event BuildEvent
 	err := readBody(s.logger, req, &event)
-	if errors.Is(err, ErrRequestBody) {
-		s.logger.Error("failed to read body of request", log.Error(err))
-		return nil, ErrRequestBody
-	} else if errors.Is(err, ErrJSONUnmarshall) {
-		s.logger.Error("failed to unmarshall body of request", log.Error(err))
-		return nil, ErrJSONUnmarshall
+	if err != nil {
+		return nil, err
 	}
 
 	return &event, nil
@@ -114,8 +95,8 @@ func (s *BuildTrackingServer) processBuildkiteRequest(req *http.Request, token s
 // - Has valid JSON
 // Note that if we received an unwanted event ie. the event is not "job.finished" or "build.finished" we respond with a 200 OK regardless.
 // Once all the conditions are met, the event is processed in a go routine with `processEvent`
-func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Request) {
-	event, err := s.processBuildkiteRequest(req, s.bkToken)
+func (s *Server) handleEvent(w http.ResponseWriter, req *http.Request) {
+	event, err := s.processBuildkiteRequest(req)
 
 	switch err {
 	case ErrInvalidToken:
@@ -139,7 +120,7 @@ func (s *BuildTrackingServer) handleEvent(w http.ResponseWriter, req *http.Reque
 	w.WriteHeader(http.StatusOK)
 }
 
-func (s *BuildTrackingServer) handleHealthz(w http.ResponseWriter, req *http.Request) {
+func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 	// do our super exhaustive check
 	w.WriteHeader(http.StatusOK)
 }
@@ -149,21 +130,21 @@ func readBody[T any](logger log.Logger, req *http.Request, target T) error {
 	defer req.Body.Close()
 	if err != nil {
 		logger.Error("failed to read request body", log.Error(err))
-		return ErrRequestBody
+		return err
 	}
 
 	logger.Debug("event data", log.String("data", string(data)))
 	err = json.Unmarshal(data, &target)
 	if err != nil {
 		logger.Error("failed to unmarshall request body", log.Error(err))
-		return ErrJSONUnmarshall
+		return err
 	}
 
 	return nil
 }
 
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful not notifcation is sent
-func (s *BuildTrackingServer) notifyIfFailed(build *Build) error {
+func (s *Server) notifyIfFailed(build *Build) error {
 	if build.hasFailed() {
 		s.logger.Info("detected failed build - sending notification", log.Int("buildNumber", intp(build.Number, 0)))
 		return s.notifyClient.sendNotification(build)
@@ -173,7 +154,7 @@ func (s *BuildTrackingServer) notifyIfFailed(build *Build) error {
 	return nil
 }
 
-func (s *BuildTrackingServer) startOldBuildCleaner(every, window time.Duration) func() {
+func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
 	ticker := time.NewTicker(every)
 	done := make(chan interface{})
 
@@ -213,7 +194,7 @@ func (s *BuildTrackingServer) startOldBuildCleaner(every, window time.Duration) 
 // processEvent processes a BuildEvent received from Buildkite. If the event is for a `build.finished` event we get the
 // full build which includes all recorded jobs for the build and send a notification.
 // processEvent delegates the decision to actually send a notifcation
-func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
+func (s *Server) processEvent(event *BuildEvent) {
 	s.logger.Info("processing event", log.String("eventName", event.Name), log.Int("buildNumber", event.buildNumber()), log.String("jobName", event.jobName()))
 	s.store.Add(event)
 	if event.isBuildFinished() {
@@ -225,7 +206,7 @@ func (s *BuildTrackingServer) processEvent(event *BuildEvent) {
 }
 
 // Server starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
-func (s *BuildTrackingServer) Serve() error {
+func (s *Server) Serve() error {
 	http.HandleFunc("/buildkite", s.handleEvent)
 	http.HandleFunc("/healthz", s.handleHealthz)
 	s.logger.Info("listening on :8080")
@@ -243,13 +224,14 @@ func main() {
 
 	channel := os.Getenv("SLACK_CHANNEL")
 	if channel == "" {
-		channel = DEFAULT_CHANNEL
+		channel = DefaultChannel
 	}
 
-	server, err := NewBuildTrackingServer(logger, MustGetTokenFromEnv(), channel)
+	serverConf, err := configFromEnv()
 	if err != nil {
-		logger.Fatal("failed to create BuildTracking server", log.Error(err))
+		logger.Fatal("failed to get config from env", log.Error(err))
 	}
+	server := NewServer(logger, *serverConf, channel)
 
 	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
 	defer stopFn()
