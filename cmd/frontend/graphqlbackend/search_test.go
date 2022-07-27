@@ -343,7 +343,6 @@ func BenchmarkSearchResults(b *testing.B) {
 		resolver := &searchResolver{
 			client: client.NewSearchClient(logtest.Scoped(b), db, z, nil),
 			db:     db,
-			logger: logtest.Scoped(b),
 			SearchInputs: &run.SearchInputs{
 				Plan:         plan,
 				Query:        plan.ToQ(),

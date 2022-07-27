@@ -340,7 +340,6 @@ func TestSearchResultsHydration(t *testing.T) {
 	resolver := &searchResolver{
 		client:       cli,
 		db:           db,
-		logger:       logtest.Scoped(t),
 		SearchInputs: searchInputs,
 		zoekt:        z,
 	}
@@ -579,7 +578,6 @@ func TestEvaluateAnd(t *testing.T) {
 			resolver := &searchResolver{
 				client:       cli,
 				db:           db,
-				logger:       logtest.Scoped(t),
 				SearchInputs: searchInputs,
 				zoekt:        z,
 			}
@@ -687,7 +685,6 @@ func TestSubRepoFiltering(t *testing.T) {
 				SearchInputs: searchInputs,
 				zoekt:        mockZoekt,
 				db:           db,
-				logger:       logtest.Scoped(t),
 			}
 
 			ctx := context.Background()
