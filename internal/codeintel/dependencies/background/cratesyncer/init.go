@@ -19,6 +19,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -72,7 +73,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 		gitserver.ArchiveOptions{
 			Treeish:   "HEAD",
 			Format:    "tar",
-			Pathspecs: []gitserver.Pathspec{},
+			Pathspecs: []gitdomain.Pathspec{},
 		},
 	)
 	if err != nil {

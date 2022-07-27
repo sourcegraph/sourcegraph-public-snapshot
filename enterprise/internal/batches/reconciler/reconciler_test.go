@@ -95,8 +95,8 @@ func TestReconcilerProcess_IntegrationTest(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			previousBatchSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID)
-			batchSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID)
+			previousBatchSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID, 0)
+			batchSpec := ct.CreateBatchSpec(t, ctx, store, "reconciler-test-batch-change", admin.ID, 0)
 			batchChange := ct.CreateBatchChange(t, ctx, store, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
 
 			// Create the specs.

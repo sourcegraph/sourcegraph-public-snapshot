@@ -14,6 +14,12 @@ import (
 )
 
 const (
+	sgAnalyticsVersionResourceKey = "sg.analytics_version"
+	// Increment to make breaking changes to spans and discard old spans
+	sgAnalyticsVersion = "v1.1"
+)
+
+const (
 	honeycombEndpoint  = "grpc://api.honeycomb.io:443"
 	otlpEndpointEnvKey = "OTEL_EXPORTER_OTLP_ENDPOINT"
 )

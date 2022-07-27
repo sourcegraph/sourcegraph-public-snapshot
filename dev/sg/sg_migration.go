@@ -16,7 +16,6 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/db"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/migration"
-	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
 	"github.com/sourcegraph/sourcegraph/dev/sg/root"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
@@ -172,7 +171,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 	// Try to read the `sg` configuration so we can read ENV vars from the
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
-	config, _ := sgconf.Get(configFile, configOverwriteFile)
+	config, _ := getConfig()
 	logger := log.Scoped("migrations.runner", "migration runner")
 	if config != nil {
 		getEnv = config.GetEnv
@@ -200,7 +199,7 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 // exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
 func localGitExpectedSchemaFactory(filename, version string) (schemaDescription descriptions.SchemaDescription, _ bool, _ error) {
 	ctx := context.Background()
-	output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s^:%s", version, filename)))
+	output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s:%s", version, filename)))
 
 	if err := output.Wait(); err != nil {
 		// See if there is an error indicating a missing object, but no other problems
@@ -221,11 +220,11 @@ func filterLocalGitErrors(filename, version string, err error) error {
 
 	missingMessages := []string{
 		// unknown revision
-		fmt.Sprintf("fatal: invalid object name '%s^'", version),
+		fmt.Sprintf("fatal: invalid object name '%s'", version),
 
 		// path unknown to the revision (regardless of repo state)
-		fmt.Sprintf("fatal: path '%s' does not exist in '%s^'", filename, version),
-		fmt.Sprintf("fatal: path '%s' exists on disk, but not in '%s^'", filename, version),
+		fmt.Sprintf("fatal: path '%s' does not exist in '%s'", filename, version),
+		fmt.Sprintf("fatal: path '%s' exists on disk, but not in '%s'", filename, version),
 	}
 	for _, missingMessage := range missingMessages {
 		if strings.Contains(err.Error(), missingMessage) {

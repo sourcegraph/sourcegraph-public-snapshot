@@ -116,6 +116,7 @@ env:
 
 commands:
   server:
+    description: Run an all-in-one sourcegraph/server image
     cmd: ./dev/run-server-image.sh
     env:
       TAG: insiders
@@ -142,6 +143,7 @@ commands:
       - cmd/frontend
 
   frontend:
+    description: Enterprise frontend
     cmd: |
       # TODO: This should be fixed
       export SOURCEGRAPH_LICENSE_GENERATION_KEY=$(cat ../dev-private/enterprise/dev/test-license-generation-key.pem)
@@ -320,16 +322,19 @@ commands:
       CADDY_VERSION: 2.4.5
 
   oss-web:
+    description: Open source version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
 
   web:
+    description: Enterprise version of the web app
     cmd: ./node_modules/.bin/gulp --color dev
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
 
   web-standalone-http:
+    description: Standalone web frontend (dev) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:dev --color
     install: |
       yarn --no-progress
@@ -339,6 +344,7 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   web-standalone-http-prod:
+    description: Standalone web frontend (production) with API proxy to a configurable URL
     cmd: yarn workspace @sourcegraph/web serve:prod
     install: yarn workspace @sourcegraph/web run build
     env:
@@ -347,8 +353,9 @@ commands:
       SOURCEGRAPH_API_URL: https://k8s.sgdev.org
 
   docsite:
+    description: Docsite instance serving the docs
     cmd: .bin/docsite_${DOCSITE_VERSION} -config doc/docsite.json serve -http=localhost:5080
-    install_func: installDocsite
+    install_func: 'installDocsite'
     env:
       DOCSITE_VERSION: v1.8.7 # Update DOCSITE_VERSION in all places (including outside this repo)
 
@@ -515,6 +522,7 @@ commands:
     #       PGUSER: sourcegraph
     #
     # You could also add an overwrite to add `redis-postgres` to the relevant command set(s).
+    description: Dockerized version of redis and postgres
     cmd: docker-compose -f dev/redis-postgres.yml up $COMPOSE_ARGS
     env:
       COMPOSE_ARGS: --force-recreate
@@ -663,6 +671,7 @@ commands:
 
   otel-collector:
     install: docker-images/opentelemetry-collector/build.sh
+    description: OpenTelemetry collector
     cmd: |
       JAEGER_HOST='host.docker.internal'
       if [[ "$OSTYPE" == "linux-gnu" ]]; then
@@ -695,6 +704,7 @@ commands:
   # This will execute `env`, a utility to print the process environment. Can
   # be used to debug which global vars `sg` uses.
   debug-env:
+    description: Debug env vars
     cmd: env
 
   bext:
@@ -933,7 +943,7 @@ commandsets:
       - web-standalone-http-prod
       - caddy
 
-  # For testing out OpenTelemetry stack
+  # For testing our OpenTelemetry stack
   otel:
     checks:
       - docker

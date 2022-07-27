@@ -918,20 +918,20 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							cleanUpBatchChanges(t, cstore)
 
 							batchSpecRandID, batchSpecID := createBatchSpec(t, cstore, tc.batchChangeAuthor)
-							batchChagneID := createBatchChange(t, cstore, "test-batch-change", tc.batchChangeAuthor, batchSpecID)
+							batchChangeID := createBatchChange(t, cstore, "test-batch-change", tc.batchChangeAuthor, batchSpecID)
 
 							// We add the changeset to the batch change. It doesn't
 							// matter for the addChangesetsToBatchChange mutation,
 							// since that is idempotent and we want to solely
 							// check for auth errors.
-							changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChagneID}}
+							changeset.BatchChanges = []btypes.BatchChangeAssoc{{BatchChangeID: batchChangeID}}
 							if err := cstore.UpdateChangeset(ctx, changeset); err != nil {
 								t.Fatal(err)
 							}
 
 							mutation := m.mutationFunc(
 								string(graphqlbackend.MarshalUserID(tc.batchChangeAuthor)),
-								string(marshalBatchChangeID(batchChagneID)),
+								string(marshalBatchChangeID(batchChangeID)),
 								string(marshalChangesetID(changeset.ID)),
 								string(marshalBatchSpecRandID(batchSpecRandID)),
 							)
@@ -947,17 +947,17 @@ query($includeLocallyExecutedSpecs: Boolean) {
 	t.Run("spec mutations", func(t *testing.T) {
 		mutations := []struct {
 			name         string
-			mutationFunc func(userID string) string
+			mutationFunc func(userID, bcID string) string
 		}{
 			{
 				name: "createChangesetSpec",
-				mutationFunc: func(_ string) string {
+				mutationFunc: func(_, _ string) string {
 					return `mutation { createChangesetSpec(changesetSpec: "{}") { type } }`
 				},
 			},
 			{
 				name: "createBatchSpec",
-				mutationFunc: func(userID string) string {
+				mutationFunc: func(userID, _ string) string {
 					return fmt.Sprintf(`
 					mutation {
 						createBatchSpec(namespace: %q, batchSpec: "{}", changesetSpecs: []) {
@@ -968,13 +968,13 @@ query($includeLocallyExecutedSpecs: Boolean) {
 			},
 			{
 				name: "createBatchSpecFromRaw",
-				mutationFunc: func(userID string) string {
+				mutationFunc: func(userID string, bcID string) string {
 					return fmt.Sprintf(`
 					mutation {
-						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing") {
+						createBatchSpecFromRaw(namespace: %q, batchSpec: "name: testing", batchChange: %q) {
 							id
 						}
-					}`, userID)
+					}`, userID, bcID)
 				},
 			},
 		}
@@ -991,10 +991,16 @@ query($includeLocallyExecutedSpecs: Boolean) {
 					{name: "site-admin", currentUser: adminID, wantAuthErr: false},
 				}
 
+				const batchChangeIDKind = "BatchChange"
+
 				for _, tc := range tests {
 					t.Run(tc.name, func(t *testing.T) {
 						cleanUpBatchChanges(t, cstore)
 
+						_, bsID := createBatchSpec(t, cstore, userID)
+						bcID := createBatchChange(t, cstore, "testing", userID, bsID)
+
+						batchChangeID := string(marshalBatchChangeID(bcID))
 						namespaceID := string(graphqlbackend.MarshalUserID(tc.currentUser))
 						if tc.currentUser == 0 {
 							// If we don't have a currentUser we try to create
@@ -1002,7 +1008,7 @@ query($includeLocallyExecutedSpecs: Boolean) {
 							// purposes of this test.
 							namespaceID = string(graphqlbackend.MarshalUserID(userID))
 						}
-						mutation := m.mutationFunc(namespaceID)
+						mutation := m.mutationFunc(namespaceID, batchChangeID)
 
 						assertAuthorizationResponse(t, ctx, s, nil, mutation, tc.currentUser, false, false, tc.wantAuthErr)
 					})

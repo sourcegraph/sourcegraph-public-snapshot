@@ -1,5 +1,28 @@
+# Build custom collector binary
+FROM golang:1.18.1-alpine@sha256:42d35674864fbb577594b60b84ddfba1be52b4d4298c961b46ba95e9fb4712e8 AS build
+
 ARG OTEL_COLLECTOR_VERSION
-FROM otel/opentelemetry-collector:${OTEL_COLLECTOR_VERSION}
+ENV OTEL_COLLECTOR_VERSION=${OTEL_COLLECTOR_VERSION}
+
+# Get some requirements for building the collector
+RUN apk add --no-cache gettext git gcc g++
+
+# Prep workspace for build
+RUN mkdir -p /build
+WORKDIR /build
+
+# Populate builder template with version variables
+COPY ./builder.template.yaml ./builder.template.yaml
+RUN envsubst <./builder.template.yaml >./builder.yaml
+
+# Run the collector builder
+RUN mkdir -p /cmd/otelcol-sourcegraph
+RUN go run go.opentelemetry.io/collector/cmd/builder@v$OTEL_COLLECTOR_VERSION \
+    --config ./builder.yaml \
+    --output-path=/cmd/otelcol-sourcegraph
+
+# Package the final distribution image
+FROM sourcegraph/alpine-3.14:159028_2022-07-07_1f3b17ce1db8@sha256:25d682b5fd069c716c2b29dcf757c0dc0ce29810a07f91e1347901920272b4a7
 
 ARG COMMIT_SHA="unknown"
 ARG DATE="unknown"
@@ -13,4 +36,13 @@ LABEL org.opencontainers.image.source=https://github.com/sourcegraph/sourcegraph
 LABEL org.opencontainers.image.documentation=https://docs.sourcegraph.com/
 LABEL com.sourcegraph.opentelemetry-collector.version=${OTEL_COLLECTOR_VERSION}
 
+# Set up a home directory
+RUN mkdir -p /otel-collector
+WORKDIR /otel-collector
+
+# Set up bundled configuration - see README
 COPY ./configs /etc/otel-collector/configs
+
+# Get the custom distribution we built, and set it to the default entrypoint
+COPY --from=build /cmd/otelcol-sourcegraph/otelcol-sourcegraph /bin/otelcol-sourcegraph
+ENTRYPOINT [ "/bin/otelcol-sourcegraph" ]
