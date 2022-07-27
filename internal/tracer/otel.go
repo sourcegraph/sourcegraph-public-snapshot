@@ -35,7 +35,7 @@ import (
 func newOTelBridgeTracer(logger log.Logger, opts *options) (opentracing.Tracer, oteltrace.TracerProvider, io.Closer, error) {
 	// We don't support OTEL_EXPORTER_OTLP_ENDPOINT yet, see newOTelCollectorExporter
 	// docstring.
-	endpoint := otlpenv.Endpoint()
+	endpoint := otlpenv.GetEndpoint()
 	logger = logger.Scoped("otel", "OpenTelemetry tracer").With(log.String("endpoint", endpoint))
 
 	// Ensure propagation between services continues to work. This is also done by another
@@ -80,22 +80,16 @@ func newOTelCollectorExporter(ctx context.Context, logger log.Logger, endpoint s
 	// Set up client to otel-collector - we replicate some of the logic used internally in
 	// https://github.com/open-telemetry/opentelemetry-go/blob/21c1641831ca19e3acf341cc11459c87b9791f2f/exporters/otlp/internal/otlpconfig/envconfig.go
 	// based on our own inferred endpoint.
-	//
-	// TODO this is kind of incorrect, and we should just set up all OTLP exporter stuff
-	// by default in the future - this should make it easier to comply with the configuration
-	// spec: https://github.com/sourcegraph/sourcegraph/issues/39398
-	// Right now, this logic does not work with 'OTEL_EXPORTER_OTLP_TRACE_ENDPOINT'.
 	var (
 		client          otlptrace.Client
-		protocol        = otlpenv.Protocol()
+		protocol        = otlpenv.GetProtocol()
 		trimmedEndpoint = trimSchema(endpoint)
 		insecure        = otlpenv.IsInsecure(endpoint)
 	)
 
 	// Work with different protocols
-	// https: //github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#specify-protocol
 	switch protocol {
-	case "grpc":
+	case otlpenv.ProtocolGRPC:
 		opts := []otlptracegrpc.Option{
 			otlptracegrpc.WithEndpoint(trimmedEndpoint),
 		}
@@ -104,7 +98,7 @@ func newOTelCollectorExporter(ctx context.Context, logger log.Logger, endpoint s
 		}
 		client = otlptracegrpc.NewClient(opts...)
 
-	case "http/json":
+	case otlpenv.ProtocolHTTPJSON:
 		opts := []otlptracehttp.Option{
 			otlptracehttp.WithEndpoint(trimmedEndpoint),
 		}

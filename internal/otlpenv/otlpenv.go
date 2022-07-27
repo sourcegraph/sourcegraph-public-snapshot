@@ -25,18 +25,33 @@ const (
 	defaultHTTPJSONCollectorEndpoint = "http://127.0.0.1:4318"
 )
 
-// Endpoint returns the root collector endpoint, NOT per-signal endpoints. We do not yet
-// support per-signal endpoints.
+// GetEndpoint returns the root collector endpoint, NOT per-signal endpoints. We do not
+// yet support per-signal endpoints.
 //
 // See: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options
-func Endpoint() string {
+func GetEndpoint() string {
 	return getWithDefault(defaultGRPCCollectorEndpoint,
 		"OTEL_EXPORTER_OTLP_ENDPOINT")
 }
 
-func Protocol() string {
-	return getWithDefault("grpc",
-		"OTEL_EXPORTER_OTLP_PROTOCOL")
+type Protocol string
+
+const (
+	// ProtocolGRPC is protobuf-encoded data using gRPC wire format over HTTP/2 connection
+	ProtocolGRPC Protocol = "grpc"
+	// ProtocolHTTPProto is protobuf-encoded data over HTTP connection
+	ProtocolHTTPProto Protocol = "http/proto"
+	// ProtocolHTTPJSON is JSON-encoded data over HTTP connection
+	ProtocolHTTPJSON Protocol = "http/json"
+)
+
+// GetProtocol returns the configured protocol for the root collector endpoint, NOT
+// per-signal endpoints. We do not yet support per-signal endpoints.
+//
+// See: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#specify-protocol
+func GetProtocol() Protocol {
+	return Protocol(getWithDefault(string(ProtocolGRPC),
+		"OTEL_EXPORTER_OTLP_PROTOCOL"))
 }
 
 func IsInsecure(endpoint string) bool {

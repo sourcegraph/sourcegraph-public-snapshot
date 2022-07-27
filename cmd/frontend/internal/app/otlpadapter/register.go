@@ -25,14 +25,14 @@ import (
 )
 
 // Register sets up adapter services and registers proxies on the router.
-func Register(ctx context.Context, logger log.Logger, protocol, endpoint string, r *mux.Router) {
+func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol, endpoint string, r *mux.Router) {
 	// Build an OTLP exporter that exports directly to the desired protocol and endpoint
 	var (
 		exporterFactory      component.ExporterFactory
 		signalExporterConfig config.Exporter
 	)
 	switch protocol {
-	case "grpc":
+	case otlpenv.ProtocolGRPC:
 		exporterFactory = otlpexporter.NewFactory()
 		config := exporterFactory.CreateDefaultConfig().(*otlpexporter.Config)
 		config.GRPCClientSettings.Endpoint = endpoint
@@ -40,13 +40,15 @@ func Register(ctx context.Context, logger log.Logger, protocol, endpoint string,
 			Insecure: otlpenv.IsInsecure(endpoint),
 		}
 		signalExporterConfig = config
-	case "http/json":
+
+	case otlpenv.ProtocolHTTPJSON:
 		exporterFactory = otlphttpexporter.NewFactory()
 		config := exporterFactory.CreateDefaultConfig().(*otlphttpexporter.Config)
 		config.HTTPClientSettings.Endpoint = endpoint
 		signalExporterConfig = config
+
 	default:
-		logger.Fatal("unexpected protocol", log.String("protocol", protocol))
+		logger.Fatal("unexpected protocol")
 	}
 
 	// Receive OTLP http/json signals

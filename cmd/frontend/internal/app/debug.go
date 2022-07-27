@@ -275,10 +275,10 @@ func addJaeger(r *mux.Router, db database.DB) {
 func addOpenTelemetryProtocolAdapter(r *mux.Router) {
 	var (
 		ctx      = context.Background()
-		endpoint = otlpenv.Endpoint()
-		protocol = otlpenv.Protocol()
+		endpoint = otlpenv.GetEndpoint()
+		protocol = otlpenv.GetProtocol()
 		logger   = sglog.Scoped("otlpAdapter", "OpenTelemetry protocol adapter and forwarder").
-				With(sglog.String("endpoint", endpoint), sglog.String("protocol", protocol))
+				With(sglog.String("endpoint", endpoint), sglog.String("protocol", string(protocol)))
 	)
 
 	// If no endpoint is configured, we export a no-op handler
