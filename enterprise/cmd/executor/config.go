@@ -92,6 +92,9 @@ func (c *Config) APIWorkerOptions(telemetryOptions apiclient.TelemetryOptions) a
 			// git repositories that make it into commands or stdout/stderr streams.
 			c.FrontendAuthorizationToken: "SECRET_REMOVED",
 		},
+
+		NodeExporterEndpoint:               c.NodeExporterURL,
+		DockerRegistryNodeExporterEndpoint: c.DockerRegistryNodeExporterURL,
 	}
 }
 
@@ -128,13 +131,11 @@ func (c *Config) ResourceOptions() command.ResourceOptions {
 
 func (c *Config) ClientOptions(telemetryOptions apiclient.TelemetryOptions) apiclient.Options {
 	return apiclient.Options{
-		ExecutorName:                       c.WorkerHostname,
-		PathPrefix:                         "/.executors/queue",
-		EndpointOptions:                    c.EndpointOptions(),
-		BaseClientOptions:                  c.BaseClientOptions(),
-		TelemetryOptions:                   telemetryOptions,
-		NodeExporterEndpoint:               c.NodeExporterURL,
-		DockerRegistryNodeExporterEndpoint: c.DockerRegistryNodeExporterURL,
+		ExecutorName:      c.WorkerHostname,
+		PathPrefix:        "/.executors/queue",
+		EndpointOptions:   c.EndpointOptions(),
+		BaseClientOptions: c.BaseClientOptions(),
+		TelemetryOptions:  telemetryOptions,
 	}
 }
 

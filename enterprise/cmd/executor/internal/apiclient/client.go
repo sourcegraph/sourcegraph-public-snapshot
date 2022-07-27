@@ -4,18 +4,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"path/filepath"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
 
 	otlog "github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"github.com/prometheus/common/expfmt"
 
 	"github.com/sourcegraph/log"
@@ -33,19 +30,6 @@ type Client struct {
 	logger          log.Logger
 	metricsGatherer prometheus.Gatherer
 	operations      *operations
-
-	nodeMetrics     metricsSyncPoint
-	registryMetrics metricsSyncPoint
-}
-
-type metricsSyncPoint struct {
-	notify *sync.Cond
-	result chan metricsResult
-}
-
-type metricsResult struct {
-	metrics map[string]*dto.MetricFamily
-	err     error
 }
 
 type Options struct {
@@ -63,14 +47,6 @@ type Options struct {
 
 	// TelemetryOptions captures additional parameters sent in heartbeat requests.
 	TelemetryOptions TelemetryOptions
-
-	// NodeExporterEndpoint is the URL of the local node_exporter endpoint, without
-	// the /metrics path
-	NodeExporterEndpoint string
-
-	// DockerRegsitryEndpoint is the URL of the intermediary caching docker registry,
-	// for scraping and forwarding metrics
-	DockerRegistryNodeExporterEndpoint string
 }
 
 type EndpointOptions struct {
@@ -81,27 +57,13 @@ type EndpointOptions struct {
 	Token string
 }
 
-func New(options Options, observationContext *observation.Context) *Client {
-	nodeMetrics := metricsSyncPoint{
-		notify: sync.NewCond(&sync.Mutex{}),
-		result: make(chan metricsResult, 1),
-	}
-	registryMetrics := metricsSyncPoint{
-		notify: sync.NewCond(&sync.Mutex{}),
-		result: make(chan metricsResult, 1),
-	}
-
-	go backgroundCollectNodeExporterMetrics(options.NodeExporterEndpoint+"/metrics", nodeMetrics)
-	go backgroundCollectNodeExporterMetrics(options.DockerRegistryNodeExporterEndpoint+"/metrics", registryMetrics)
-
+func New(options Options, metricsGatherer prometheus.Gatherer, observationContext *observation.Context) *Client {
 	return &Client{
 		options:         options,
 		client:          NewBaseClient(options.BaseClientOptions),
 		logger:          log.Scoped("executor-api-client", "The API client adapter for executors to use dbworkers over HTTP"),
-		metricsGatherer: prometheus.DefaultGatherer,
+		metricsGatherer: metricsGatherer,
 		operations:      newOperations(observationContext),
-		nodeMetrics:     nodeMetrics,
-		registryMetrics: registryMetrics,
 	}
 }
 
@@ -254,7 +216,7 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	// Add some timeout here so metrics don't wreck heartbeats.
 	metricCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
 	defer cancel()
-	metrics, err := c.collectMetrics(metricCtx, c.metricsGatherer)
+	metrics, err := gatherMetrics(metricCtx, c.metricsGatherer)
 	if err != nil {
 		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
 		// Continue, no metrics should not prevent heartbeats.
@@ -324,18 +286,11 @@ func intsToString(ints []int) string {
 	return strings.Join(segments, ", ")
 }
 
-// collectMetrics uses the given prometheus gatherer to collect all current
-// metrics and encodes them in the text format to be sent over the wire.
-func (c *Client) collectMetrics(ctx context.Context, gatherer prometheus.Gatherer) (string, error) {
-	// notify to start a scrape
-	c.nodeMetrics.notify.Signal()
-	c.registryMetrics.notify.Signal()
-
+func gatherMetrics(ctx context.Context, gatherer prometheus.Gatherer) (string, error) {
 	mfs, err := gatherer.Gather()
 	if err != nil {
-		return "", errors.Wrap(err, "getting default gatherer")
+		return "", err
 	}
-
 	var buf bytes.Buffer
 	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
 	for _, mf := range mfs {
@@ -348,96 +303,5 @@ func (c *Client) collectMetrics(ctx context.Context, gatherer prometheus.Gathere
 			return "", errors.Wrap(err, "encoding metric family")
 		}
 	}
-
-	if c.options.NodeExporterEndpoint != "" {
-		result := <-c.registryMetrics.result
-		if result.err != nil {
-			return buf.String(), errors.Wrap(result.err, "parsing node exporter metrics")
-		}
-		for key, mf := range result.metrics {
-			// Check if we should stop working.
-			if ctx.Err() != nil {
-				return "", ctx.Err()
-			}
-
-			if strings.HasPrefix(key, "go_") || strings.HasPrefix(key, "promhttp_") || strings.HasPrefix(key, "process_") {
-				continue
-			}
-
-			if err := enc.Encode(mf); err != nil {
-				return "", errors.Wrap(err, "encoding node exporter metric family")
-			}
-		}
-	}
-
-	if c.options.DockerRegistryNodeExporterEndpoint != "" {
-		result := <-c.registryMetrics.result
-		if result.err != nil {
-			return buf.String(), errors.Wrap(result.err, "parsing docker registry node exporter metrics")
-		}
-		for key, mf := range result.metrics {
-			// Check if we should stop working.
-			if ctx.Err() != nil {
-				return "", ctx.Err()
-			}
-
-			if strings.HasPrefix(key, "go_") || strings.HasPrefix(key, "promhttp_") || strings.HasPrefix(key, "process_") {
-				continue
-			}
-
-			// should only be 1 registry, so we give it a set instance value
-			metricLabelInstance := "sg_instance"
-			instanceName := "docker-regsitry"
-			for _, m := range mf.Metric {
-				m.Label = append(m.Label, &dto.LabelPair{Name: &metricLabelInstance, Value: &instanceName})
-			}
-
-			if err := enc.Encode(mf); err != nil {
-				return "", errors.Wrap(err, "encoding docker registry node exporter metric family")
-			}
-		}
-	}
-
 	return buf.String(), nil
-}
-
-// On notify, scrapes the specified endpoint for prometheus metrics and sends them down the
-// associated channel. If the endpoint is "", then the channel is closed so that subsequent
-// reads return an empty value instead of blocking indefinitely.
-func backgroundCollectNodeExporterMetrics(endpoint string, syncPoint metricsSyncPoint) {
-	if endpoint == "" {
-		close(syncPoint.result)
-		return
-	}
-
-	collect := func() (map[string]*dto.MetricFamily, error) {
-		resp, err := (&http.Client{
-			Timeout: 2 * time.Second,
-		}).Get(endpoint)
-		if err != nil {
-			return nil, err
-		}
-		defer resp.Body.Close()
-
-		b, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-
-		var parser expfmt.TextParser
-		mfMap, err := parser.TextToMetricFamilies(bytes.NewReader(b))
-		return mfMap, errors.Wrapf(err, "parsing node_exporter metrics, response: %s", string(b))
-	}
-
-	for {
-		syncPoint.notify.L.Lock()
-		syncPoint.notify.Wait()
-		mfMap, err := collect()
-		if err != nil {
-			syncPoint.result <- metricsResult{err: err}
-		} else {
-			syncPoint.result <- metricsResult{metrics: mfMap}
-		}
-		syncPoint.notify.L.Unlock()
-	}
 }
