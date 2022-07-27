@@ -46,6 +46,7 @@ var changesetSpecInsertColumns = []string{
 	"commit_author_name",
 	"commit_author_email",
 	"type",
+	"migrated",
 }
 
 // changesetSpecColumns are used by the changeset spec related Store methods to
@@ -128,6 +129,9 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 				dbutil.NullString{S: c.CommitAuthorName},
 				dbutil.NullString{S: c.CommitAuthorEmail},
 				c.Typ,
+				// Records created through this code path are always using the new
+				// schema, so mark it as migrated right away.
+				true,
 			); err != nil {
 				return err
 			}
@@ -151,6 +155,58 @@ func (s *Store) CreateChangesetSpec(ctx context.Context, cs ...*btypes.Changeset
 		inserter,
 	)
 }
+
+func (s *Store) MigrateChangesetSpec(ctx context.Context, spec *btypes.ChangesetSpec) (err error) {
+	ctx, _, endObservation := s.operations.migrateChangesetSpec.With(ctx, &err, observation.Args{LogFields: []log.Field{
+		log.Int64("ID", spec.ID),
+	}})
+	defer endObservation(1, observation.Args{})
+	published, err := json.Marshal(spec.Published)
+	if err != nil {
+		return err
+	}
+
+	// TODO: Read from spec column.
+	q := sqlf.Sprintf(
+		migrateChangesetSpecQueryFmtstr,
+		nullStringColumn(spec.ExternalID),
+		nullStringColumn(spec.HeadRef),
+		nullStringColumn(spec.Title),
+		nullInt32Column(int32(spec.HeadRepoID)),
+		nullStringColumn(spec.BaseRev),
+		nullStringColumn(spec.BaseRef),
+		nullStringColumn(spec.Body),
+		published,
+		nullStringColumn(spec.CommitMessage),
+		nullStringColumn(spec.CommitAuthorName),
+		nullStringColumn(spec.CommitAuthorEmail),
+		spec.Typ,
+		spec.ID,
+	)
+
+	return s.Exec(ctx, q)
+}
+
+var migrateChangesetSpecQueryFmtstr = `
+-- source: enterprise/internal/batches/store_changeset_specs.go:MigrateChangesetSpec
+UPDATE
+	changeset_specs
+SET
+	external_id = %s,
+	head_ref = %s,
+	title = %s,
+	head_repo_id = %s,
+	base_rev = %s,
+	base_ref = %s,
+	body = %s,
+	published = %s,
+	commit_message = %s,
+	commit_author_name = %s,
+	commit_author_email = %s,
+	type = %s
+WHERE
+	id = %s
+`
 
 // UpdateChangesetSpecBatchSpecID updates the given ChangesetSpecs to be owned by the given batch spec.
 func (s *Store) UpdateChangesetSpecBatchSpecID(ctx context.Context, cs []int64, batchSpec int64) (err error) {
@@ -324,6 +380,8 @@ type ListChangesetSpecsOpts struct {
 	RandIDs     []string
 	IDs         []int64
 	Type        batcheslib.ChangesetSpecDescriptionType
+
+	RequiresMigration bool
 }
 
 // ListChangesetSpecs lists ChangesetSpecs with the given filters.
@@ -385,6 +443,10 @@ func listChangesetSpecsQuery(opts *ListChangesetSpecsOpts) *sqlf.Query {
 			// Check that externalID is empty.
 			preds = append(preds, sqlf.Sprintf("changeset_specs.external_id IS NULL"))
 		}
+	}
+
+	if opts.RequiresMigration {
+		preds = append(preds, sqlf.Sprintf("changeset_specs.migrated IS FALSE"))
 	}
 
 	return sqlf.Sprintf(

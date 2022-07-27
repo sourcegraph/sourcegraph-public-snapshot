@@ -210,6 +210,7 @@ type operations struct {
 	getChangesetJob    *observation.Operation
 
 	createChangesetSpec                      *observation.Operation
+	migrateChangesetSpec                     *observation.Operation
 	updateChangesetSpecBatchSpecID           *observation.Operation
 	deleteChangesetSpec                      *observation.Operation
 	countChangesetSpecs                      *observation.Operation
@@ -346,6 +347,7 @@ func newOperations(observationContext *observation.Context) *operations {
 			getChangesetJob:    op("GetChangesetJob"),
 
 			createChangesetSpec:                      op("CreateChangesetSpec"),
+			migrateChangesetSpec:                     op("MigrateChangesetSpec"),
 			updateChangesetSpecBatchSpecID:           op("UpdateChangesetSpecBatchSpecID"),
 			deleteChangesetSpec:                      op("DeleteChangesetSpec"),
 			countChangesetSpecs:                      op("CountChangesetSpecs"),
