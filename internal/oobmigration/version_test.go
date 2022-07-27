@@ -38,7 +38,7 @@ func TestUpgradeRange(t *testing.T) {
 		{from: Version{3, 12}, to: Version{3, 12}, err: true},
 		{from: Version{3, 12}, to: Version{3, 13}, expected: []Version{{3, 12}, {3, 13}}},
 		{from: Version{3, 12}, to: Version{3, 16}, expected: []Version{{3, 12}, {3, 13}, {3, 14}, {3, 15}, {3, 16}}},
-		{from: Version{3, 45}, to: Version{4, 2}, expected: []Version{{3, 45}, {3, 46}, {3, 47}, {4, 0}, {4, 1}, {4, 2}}},
+		{from: Version{3, 42}, to: Version{4, 2}, expected: []Version{{3, 42}, {3, 43}, {4, 0}, {4, 1}, {4, 2}}},
 	}
 
 	for _, testCase := range testCases {

@@ -46,7 +46,7 @@ func (v Version) GitTag() string {
 // Next returns the next minor version immediately following the receiver.
 func (v Version) Next() Version {
 	lastMinorVersionInMajorRelease := map[int]int{
-		3: 47, // 3.47.0 -> 4.0.0
+		3: 43, // 3.43.0 -> 4.0.0
 	}
 
 	if minor, ok := lastMinorVersionInMajorRelease[v.Major]; ok && minor == v.Minor {
