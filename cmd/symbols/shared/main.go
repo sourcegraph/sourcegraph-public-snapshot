@@ -115,10 +115,14 @@ func Main(setup SetupFunc) {
 	go debugserver.NewServerRoutine(ready).Start()
 
 	// Create HTTP server
+	handler := api.NewHandler(searchFunc, gitserverClient.ReadFile, handleStatus, ctagsBinary)
+	handler = trace.HTTPMiddleware(logger, handler, conf.DefaultClient())
+	handler = ot.HTTPMiddleware(handler)
+	handler = actor.HTTPMiddleware(handler)
 	server := httpserver.NewFromAddr(addr, &http.Server{
 		ReadTimeout:  75 * time.Second,
 		WriteTimeout: 10 * time.Minute,
-		Handler:      actor.HTTPMiddleware(ot.HTTPMiddleware(trace.HTTPMiddleware(logger, api.NewHandler(searchFunc, handleStatus, ctagsBinary), conf.DefaultClient()))),
+		Handler:      handler,
 	})
 	routines = append(routines, server)
 
