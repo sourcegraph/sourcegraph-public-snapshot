@@ -89,6 +89,7 @@ import { WebHoverOverlay } from '../../components/shared'
 import { StatusBar } from '../../extensions/components/StatusBar'
 import { InsightDecorationContent } from '../../insights/components/InsightDecorationContent'
 import { InsightDecorationPopover } from '../../insights/components/InsightDecorationPopover'
+import { useCodeInsightsData } from '../../insights/hooks/useCodeInsightsData'
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 import { HoverThresholdProps } from '../RepoContainer'
 
@@ -182,7 +183,7 @@ const STATUS_BAR_VERTICAL_GAP_VAR = '--blob-status-bar-vertical-gap'
 // BEGIN STATIC CODE INSIGHTS TEST DATA
 const insightTokens = [
     {
-        name: 'AuthURLPrefix',
+        token: 'AuthURLPrefix',
         insights: [
             {
                 id: 'foo',
@@ -202,7 +203,7 @@ const insightTokens = [
         ],
     },
     {
-        name: '"/.auth"',
+        token: '"/.auth"',
         insights: [
             {
                 id: 'foo',
@@ -369,8 +370,111 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     >()
     const [insightDecorations, setInsightsDecorations] = useState<DecorationMapByLine>(new Map())
 
+    const { data } = useCodeInsightsData({
+        file: blobInfo.filePath,
+        repo: blobInfo.repoName,
+        revision: blobInfo.revision,
+    })
+
+    /**
+     *
+ [
+    {
+        "viewId": "2CVBE12Ou8AG21gyJJj97Qf34S7",
+        "title": "CodeInsightsQueryDefaults usage",
+        "lineNumbers": [
+          42,
+          41
+        ],
+        "text": [
+          "CodeInsightsQueryDefaults",
+          "CodeInsightsQueryDefaults"
+        ]
+    }
+]
+     */
+
+    let insightDecorationsData: InsightDecoration[] = useMemo(() => [], [])
+    const dataLoaded = useRef(false)
+
+    if (data && !dataLoaded.current) {
+        dataLoaded.current = true
+        const { relatedInsightsInline } = data
+        const linesWithInsightData: { [key: number]: any[] } = {}
+
+        for (const relatedInsight of relatedInsightsInline) {
+            for (const [index, line] of relatedInsight.lineNumbers.entries()) {
+                const lineData = linesWithInsightData[line]
+
+                if (!lineData) {
+                    linesWithInsightData[line] = [
+                        {
+                            token: relatedInsight.text[index],
+                            insights: [
+                                {
+                                    id: relatedInsight.viewId,
+                                    name: relatedInsight.title,
+                                    url: `/insights/insight/${relatedInsight.viewId}`,
+                                },
+                            ],
+                        },
+                    ]
+                } else {
+                    const token = lineData.find(tokenData => tokenData.token === relatedInsight.text[index])
+
+                    if (!token) {
+                        lineData.push({
+                            token: relatedInsight.text[index],
+                            insights: [
+                                {
+                                    id: relatedInsight.viewId,
+                                    name: relatedInsight.title,
+                                    url: `/insights/insight/${relatedInsight.viewId}`,
+                                },
+                            ],
+                        })
+                    } else {
+                        token.insights.push({
+                            id: relatedInsight.viewId,
+                            name: relatedInsight.title,
+                            url: `/insights/insight/${relatedInsight.viewId}`,
+                        })
+                    }
+                }
+            }
+        }
+
+        insightDecorationsData = Object.entries(linesWithInsightData).reduce((accumulator, lineData) => {
+            const [line, lineInsights] = lineData
+            const lineInt = parseInt(line, 10)
+
+            const decoration: InsightDecoration = {
+                range: {
+                    start: { line: lineInt, character: 0 },
+                    end: { line: lineInt, character: 0 },
+                },
+                content: (
+                    <InsightDecorationContent>
+                        <>
+                            Referenced in <strong>{lineInsights.length} insights</strong> 📈
+                        </>
+                    </InsightDecorationContent>
+                ),
+                popover: <InsightDecorationPopover tokens={lineInsights} />,
+                trigger: 'click',
+            }
+
+            return [...accumulator, decoration]
+        }, [] as InsightDecoration[])
+    }
+
+    console.log(
+        '🚀 ~ file: Blob.tsx ~ line 467 ~ insightDecorationsData=Object.entries ~ insightDecorationsData',
+        insightDecorationsData
+    )
+    useEffect(() => setInsightsDecorations(groupDecorationsByLine(insightDecorationsData)), [insightDecorationsData])
     // TODO: Update this to an API call
-    useEffect(() => setInsightsDecorations(groupDecorationsByLine([decoration])), [])
+    // useEffect(() => setInsightsDecorations(groupDecorationsByLine([decoration])), [])
 
     const popoverCloses = useMemo(() => new Subject<void>(), [])
     const nextPopoverClose = useCallback((click: void) => popoverCloses.next(click), [popoverCloses])

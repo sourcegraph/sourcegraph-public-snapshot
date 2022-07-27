@@ -175,7 +175,12 @@ const LineDecorator = React.memo<LineDecoratorProps>(
                 // Content is only available on Insight decorations
                 if ('content' in decoration && isDefined(decoration.content)) {
                     return (
-                        <Tippy content={decoration.popover} trigger={decoration.trigger} hideOnClick="toggle">
+                        <Tippy
+                            key={decoration.content.key}
+                            content={decoration.popover}
+                            trigger={decoration.trigger}
+                            hideOnClick="toggle"
+                        >
                             {decoration.content}
                         </Tippy>
                     )

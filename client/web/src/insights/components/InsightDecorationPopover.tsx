@@ -14,7 +14,7 @@ interface TokenInsight {
 }
 
 interface Token {
-    name: string
+    token: string
     insights: TokenInsight[]
 }
 
@@ -25,11 +25,11 @@ interface InsightDecorationPopoverProps {
 export const InsightDecorationPopover: FC<InsightDecorationPopoverProps> = ({ tokens }) => (
     <div className={styles.insightDecorationPopover}>
         {tokens.map(token => (
-            <div key={token.name} className={styles.insightDecorationSection}>
+            <div key={token.token} className={styles.insightDecorationSection}>
                 <div>
                     <span>{'{}'}</span>
                     <small className="ml-2">
-                        <strong>{token.name}</strong>
+                        <strong>{token.token}</strong>
                     </small>
                 </div>
                 <div className={classNames(styles.insightDecorationRow, styles.insightDecorationLineRef)}>
