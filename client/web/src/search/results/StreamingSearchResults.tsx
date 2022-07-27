@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react'
 
+import { mdiFilterOutline, mdiPoll } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
+import { noop } from 'lodash'
 import { Observable } from 'rxjs'
 
 import { asError } from '@sourcegraph/common'
@@ -11,6 +13,7 @@ import {
     SearchFiltersPanel,
     SearchSidebar,
     SidebarButtonStrip,
+    SidebarTab,
     StreamingProgress,
     StreamingSearchResultsList,
 } from '@sourcegraph/search-ui'
@@ -24,6 +27,7 @@ import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/sea
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { SidebarTabID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -231,7 +235,7 @@ export const StreamingSearchResults: React.FunctionComponent<
         [query, telemetryService, patternType, caseSensitive, props]
     )
     const [showMobileSidebar, setShowMobileSidebar] = useState(false)
-    const [selectedTab, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', SidebarTabID.FILTERS)
+    const { tabs, selectedTab, setSidebarTab } = useSidePanelTabs()
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
@@ -239,7 +243,12 @@ export const StreamingSearchResults: React.FunctionComponent<
         <div className={classNames(styles.container, !selectedTab && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={query} />
 
-            <SidebarButtonStrip className={styles.sidebarButtonStrip} />
+            <SidebarButtonStrip
+                tabs={tabs}
+                selectedTab={selectedTab}
+                className={styles.sidebarButtonStrip}
+                onSelectedTabs={setSidebarTab}
+            />
 
             <SearchSidebar
                 className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
@@ -345,4 +354,43 @@ const applyAdditionalFilters = (query: string, additionalFilters: string[]): str
         newQuery = updateFilters(newQuery, fieldValue[0], fieldValue[1])
     }
     return newQuery
+}
+
+interface UseSidePanelTabsReturnType {
+    tabs: SidebarTab[]
+    selectedTab: SidebarTabID | null | undefined
+    setSidebarTab: (id: SidebarTabID | null) => void
+}
+
+function useSidePanelTabs(): UseSidePanelTabsReturnType {
+    const [selectedTab, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', SidebarTabID.FILTERS)
+    const searchTrendsEnabled = useExperimentalFeatures(features => features.codeInsightsSearchResultTrends)
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
+    if (!coreWorkflowImprovementsEnabled) {
+        return {
+            tabs: [],
+            selectedTab: SidebarTabID.FILTERS,
+            setSidebarTab: noop,
+        }
+    }
+
+    const tabs = [
+        { tab: SidebarTabID.FILTERS, icon: mdiFilterOutline, name: 'Filters' },
+        ...(searchTrendsEnabled ? [{ tab: SidebarTabID.INSIGHTS, icon: mdiPoll, name: 'Insights' }] : []),
+    ]
+
+    if (selectedTab === SidebarTabID.INSIGHTS && !searchTrendsEnabled) {
+        return {
+            tabs,
+            selectedTab: null,
+            setSidebarTab,
+        }
+    }
+
+    return {
+        tabs,
+        selectedTab,
+        setSidebarTab,
+    }
 }
