@@ -21,6 +21,11 @@
 .cancel-button {
     font-size: 1rem;
     color: var(--jb-icon-color);
+    // btn-icon styles
+    padding: 0;
+    padding-left: 0.35rem;
+    background: transparent;
+    border: none;
 }
 
 .toggle-wrapper {
