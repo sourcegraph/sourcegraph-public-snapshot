@@ -63,12 +63,12 @@ func (v Version) Next() Version {
 // UpgradeRange returns all minor versions in the closed interval [from, to].
 // An error is returned if the interval would be empty.
 func UpgradeRange(from, to Version) ([]Version, error) {
-	if compareVersions(from, to) != VersionOrderBefore {
+	if CompareVersions(from, to) != VersionOrderBefore {
 		return nil, errors.Newf("invalid range (from=%s > to=%s)", from, to)
 	}
 
 	var versions []Version
-	for v := from; compareVersions(v, to) != VersionOrderAfter; v = v.Next() {
+	for v := from; CompareVersions(v, to) != VersionOrderAfter; v = v.Next() {
 		versions = append(versions, v)
 	}
 
