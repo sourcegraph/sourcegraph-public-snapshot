@@ -89,7 +89,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
     const connection = workspacesConnection.connection
 
     // Before we've ever previewed workspaces for this batch change, there's no reason to
-    // show the list or filters for the connection.
+    // show the list.
     const shouldShowConnection = hasPreviewed || !!connection?.nodes.length
 
     // We "cache" the last results of the workspaces preview so that we can continue to
