@@ -13,7 +13,7 @@
     }
 
     :global(.is-read-only-notebook) &:hover {
-        border: 1px solid transparent;
+        border-color: transparent;
     }
 }
 
