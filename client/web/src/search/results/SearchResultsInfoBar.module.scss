@@ -45,3 +45,13 @@
     display: block;
     flex-grow: 1;
 }
+
+.trend-button {
+    background-color: transparent;
+    border: none;
+}
+
+.trend-button-icon {
+    // important here is needed to override hover state styles in button component
+    fill: var(--primary) !important;
+}

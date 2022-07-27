@@ -1,6 +1,14 @@
 import React, { useMemo, useState } from 'react'
 
-import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
+import {
+    mdiBookmarkOutline,
+    mdiMenu,
+    mdiMenuDown,
+    mdiMenuUp,
+    mdiArrowExpandDown,
+    mdiArrowCollapseUp,
+    mdiPoll,
+} from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -11,12 +19,15 @@ import { ActionsContainer } from '@sourcegraph/shared/src/actions/ActionsContain
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
+import { SidebarTabID } from '@sourcegraph/shared/src/settings/temporary/searchSidebar'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
+import { useExperimentalFeatures } from '../../stores'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import {
@@ -113,6 +124,8 @@ export const SearchResultsInfoBar: React.FunctionComponent<
     React.PropsWithChildren<SearchResultsInfoBarProps>
 > = props => {
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+    const searchTrendsEnabled = useExperimentalFeatures(features => features.codeInsightsSearchResultTrends)
+    const [, setSidebarTab] = useTemporarySetting('search.sidebar.selectedTab', SidebarTabID.FILTERS)
 
     const canCreateMonitorFromQuery = useMemo(() => {
         if (!props.query) {
@@ -286,6 +299,19 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                 </Button>
 
                 {props.stats}
+
+                {searchTrendsEnabled && coreWorkflowImprovementsEnabled && (
+                    <Button
+                        outline={true}
+                        variant="secondary"
+                        size="sm"
+                        className={styles.trendButton}
+                        onClick={() => setSidebarTab(SidebarTabID.INSIGHTS)}
+                    >
+                        <Icon aria-hidden={true} svgPath={mdiPoll} className={styles.trendButtonIcon} /> +3.173% over
+                        last 30 days
+                    </Button>
+                )}
 
                 <div className={styles.expander} />
 
