@@ -21,6 +21,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -338,6 +339,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	resolver := &searchResolver{
+		client:       client.NewSearchClient(logtest.Scoped(t), db, z, nil),
 		db:           db,
 		logger:       logtest.Scoped(t),
 		SearchInputs: searchInputs,
@@ -576,6 +578,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 
 			resolver := &searchResolver{
+				client:       client.NewSearchClient(logtest.Scoped(t), db, z, nil),
 				db:           db,
 				logger:       logtest.Scoped(t),
 				SearchInputs: searchInputs,
@@ -681,6 +684,7 @@ func TestSubRepoFiltering(t *testing.T) {
 			}
 
 			resolver := searchResolver{
+				client:       client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil),
 				SearchInputs: searchInputs,
 				zoekt:        mockZoekt,
 				db:           db,
