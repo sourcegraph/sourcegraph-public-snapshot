@@ -61,7 +61,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 
 	opts := gitserver.ArchiveOptions{
 		Treeish:   string(commit),
-		Format:    "tar",
+		Format:    gitserver.ArchiveFormatTar,
 		Pathspecs: pathSpecs,
 	}
 

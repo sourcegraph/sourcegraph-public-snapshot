@@ -116,10 +116,10 @@ func serveRaw(db database.DB) handlerFunc {
 		// Allow users to override the negotiated content type so that e.g. browser
 		// users can easily download tar/zip archives by adding ?format=zip etc. to
 		// the URL.
-		switch r.URL.Query().Get("format") {
-		case "zip":
+		switch gitserver.ArchiveFormat(r.URL.Query().Get("format")) {
+		case gitserver.ArchiveFormatZip:
 			contentType = applicationZip
-		case "tar":
+		case gitserver.ArchiveFormatTar:
 			contentType = applicationXTar
 		}
 

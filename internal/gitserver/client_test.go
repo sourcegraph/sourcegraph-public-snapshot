@@ -262,7 +262,7 @@ func TestClient_Archive(t *testing.T) {
 				}
 			}
 
-			rc, err := cli.Archive(ctx, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
+			rc, err := cli.Archive(ctx, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
