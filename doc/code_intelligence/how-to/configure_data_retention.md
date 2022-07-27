@@ -1,4 +1,4 @@
-# Configure precise code intelligence data retention policies
+# Configure precise code graph data retention policies
 
 <style>
 img.screenshot {
@@ -11,21 +11,21 @@ img.screenshot {
 }
 </style>
 
-This guide shows how to configure the retention policies for precise code intelligence data. As code intelligence data ages, it gets less and less relevant. Users tend to need code intelligence on newer commits, tagged commits, and in branches. The data providing intelligence for an old commit on the main development branch is very unlikely to be used, but takes up valuable space in the database.
+This guide shows how to configure the retention policies for code graph data. As code graph data ages, it gets less and less relevant. Users tend to need code navigation on newer commits, tagged commits, and in branches. The data providing intelligence for an old commit on the main development branch is very unlikely to be used, but takes up valuable space in the database.
 
 Each policy has a number of configurable options, including:
 
 - The set of Git branches or tags to which the policy applies
-- How long to keep the associated code intelligence data
+- How long to keep the associated code graph data
 - For branches, whether or not to consider the _tip_ of the branch only, or all commits contained in that branch
 
-Note that we also track cross-repository dependencies and will not delete any data that is referenced by another precise code intelligence index. This ensures that we don't delete code intelligence for dependencies pinned to older versions (or dependencies that have reached a steady state and no longer receives frequent updates).
+Note that we also track cross-repository dependencies and will not delete any data that is referenced by another code graph data index. This ensures that we don't delete code graph data for dependencies pinned to older versions (or dependencies that have reached a steady state and no longer receives frequent updates).
 
 All upload records will be periodically compared against global data retention policies as well as their target repository's data retention policies. Uploads on the tip of the default branch for a repository will never expire regardless of age.
 
 ## Applying data retention policies globally
 
-Site admins may create data retention policies that are applied to _all repositories_ on your Sourcegraph instance. In order to view and edit these policies, navigate to the code intelligence configuration in the site-admin dashboard.
+Site admins may create data retention policies that are applied to _all repositories_ on your Sourcegraph instance. In order to view and edit these policies, navigate to the code graph configuration in the site-admin dashboard.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/global/list.png" class="screenshot" alt="Global data retention policy configuration list page">
 
@@ -45,7 +45,7 @@ New policies can be created to apply to a set of repositories that are matched b
 
 ## Applying data retention policies to a specific repository
 
-Data retention policies can also be created on a per-repository basis as commit and merge workflows differ wildly from project to project. In order to view and edit repository-specific policies, navigate to the code intelligence settings in the target repository's index page.
+Data retention policies can also be created on a per-repository basis as commit and merge workflows differ wildly from project to project. In order to view and edit repository-specific policies, navigate to the code graph settings in the target repository's index page.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.33/repository-page.png" class="screenshot" alt="Repository index page">
 

@@ -1,29 +1,29 @@
-# Code intelligence troubleshooting guide
+# Code navigation troubleshooting guide
 
-This guide gives specific instructions for troubleshooting code intelligence in your Sourcegraph instance.
+This guide gives specific instructions for troubleshooting code navigation in your Sourcegraph instance.
 
 ## When are issues related to code-intelligence?
 
 
-Issues are related to Sourcegraph code intelligence when the [LSIF indexer](./indexers.md) is one that we build and maintain.
+Issues are related to Sourcegraph code navigation when the [indexer](./indexers.md) is one that we build and maintain.
 
-A customer issue should **definitely** be routed to code intelligence if any of the following are true.
+A customer issue should **definitely** be routed to code navigation if any of the following are true.
 
-- Precise code intelligence queries are slow
-- Precise code intelligence queries yield unexpected results
+- Precise code navigation queries are slow
+- Precise code navigation queries yield unexpected results
 
-A customer issue should **possibly** be routed to code intelligence if any of the following are true.
+A customer issue should **possibly** be routed to code navigation if any of the following are true.
 
-- Search-based code intelligence queries are slow
-- Search-based code intelligence queries yield unexpected results
+- Search-based code navigation queries are slow
+- Search-based code navigation queries yield unexpected results
 
-A customer issue should **not** be routed to code intelligence if any of the following are true.
+A customer issue should **not** be routed to code navigation if any of the following are true.
 
 - The indexer is listed in [LSIF.dev](https://lsif.dev/) and _it is not_ one that we maintain. Instead, flag the indexers status and maintainer of the relevant indexer with the customer, and suggest they reach out directly
 
 ## Gathering evidence
 
-Before bringing a code intelligence issue to the engineering team, the site-admin or customer engineer should gather the following details. Not all of these details will be necessary for all classes of errors.
+Before bringing a code navigation issue to the engineering team, the site-admin or customer engineer should gather the following details. Not all of these details will be necessary for all classes of errors.
 
 #### Sourcegraph instance details
 
@@ -62,7 +62,7 @@ The following details should be supplied if the user administrates their own [ex
 
 #### Settings
 
-The following user settings should be supplied if there is an issue with _displaying_ code intelligence results. Only these settings should be necessary, but additional settings can be supplied after private settings such as passwords or secret keys have been removed.
+The following user settings should be supplied if there is an issue with _displaying_ code navigation results. Only these settings should be necessary, but additional settings can be supplied after private settings such as passwords or secret keys have been removed.
 
 - codeIntel.lsif
 - codeIntel.traceExtension
@@ -86,7 +86,7 @@ src api -query 'query ViewerSettings { viewerSettings { final } }' | jq -r '.dat
 
 #### Traces
 
-[Jaeger](https://docs.sourcegraph.com/admin/observability/tracing) traces should be supplied if there is a noticeable performance issue in receiving code intelligence results in the SPA. Depending on the type of user operation that is slow, we will need traces for different request types.
+[Jaeger](https://docs.sourcegraph.com/admin/observability/tracing) traces should be supplied if there is a noticeable performance issue in receiving code navigation results in the SPA. Depending on the type of user operation that is slow, we will need traces for different request types.
 
 | Send traces for _____ requests... | when latency _____ is high...                                       |
 | --------------------------------- | ------------------------------------------------------------------- |
