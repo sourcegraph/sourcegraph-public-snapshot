@@ -39,7 +39,7 @@ import { NotebookSymbolBlock } from '../blocks/symbol/NotebookSymbolBlock'
 import { NotebookBlockSeparator } from './NotebookBlockSeparator'
 import { NotebookCommandPaletteInput } from './NotebookCommandPaletteInput'
 import { NotebookOutline } from './NotebookOutline'
-import { focusBlock, useNotebookEventHandlers } from './useNotebookEventHandlers'
+import { focusBlockElement, useNotebookEventHandlers } from './useNotebookEventHandlers'
 
 import { Notebook, CopyNotebookProps } from '.'
 
@@ -145,6 +145,17 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
             [notebook, setBlocks, debouncedOnSerializeBlocks, telemetryService]
         )
 
+        const selectBlock = useCallback(
+            (blockId: string | null) => {
+                if (!isReadOnly) {
+                    setSelectedBlockId(blockId)
+                }
+            },
+            [isReadOnly, setSelectedBlockId]
+        )
+
+        const focusBlock = useCallback((blockId: string) => focusBlockElement(blockId, isReadOnly), [isReadOnly])
+
         // Update the blocks if the notebook instance changes (when new initializer blocks are provided)
         useEffect(() => setBlocks(notebook.getBlocks()), [notebook])
 
@@ -231,12 +242,12 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 ) {
                     notebook.runBlockById(addedBlock.id)
                 }
-                setSelectedBlockId(addedBlock.id)
+                selectBlock(addedBlock.id)
                 updateBlocks()
 
                 telemetryService.log('SearchNotebookAddBlock', { type: addedBlock.type }, { type: addedBlock.type })
             },
-            [notebook, isReadOnly, telemetryService, updateBlocks, setSelectedBlockId]
+            [notebook, isReadOnly, telemetryService, updateBlocks, selectBlock]
         )
 
         const onDeleteBlock = useCallback(
@@ -248,7 +259,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                 const block = notebook.getBlockById(id)
                 const blockToFocusAfterDelete = notebook.getNextBlockId(id) ?? notebook.getPreviousBlockId(id)
                 notebook.deleteBlockById(id)
-                setSelectedBlockId(blockToFocusAfterDelete)
+                selectBlock(blockToFocusAfterDelete)
                 if (blockToFocusAfterDelete) {
                     focusBlock(blockToFocusAfterDelete)
                 }
@@ -256,7 +267,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
 
                 telemetryService.log('SearchNotebookDeleteBlock', { type: block?.type }, { type: block?.type })
             },
-            [notebook, isReadOnly, telemetryService, setSelectedBlockId, updateBlocks]
+            [notebook, isReadOnly, telemetryService, selectBlock, updateBlocks, focusBlock]
         )
 
         const onMoveBlock = useCallback(
@@ -275,7 +286,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     { type: notebook.getBlockById(id)?.type, direction }
                 )
             },
-            [notebook, isReadOnly, telemetryService, updateBlocks]
+            [notebook, isReadOnly, telemetryService, updateBlocks, focusBlock]
         )
 
         const onDuplicateBlock = useCallback(
@@ -286,7 +297,7 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
 
                 const duplicateBlock = notebook.duplicateBlockById(id)
                 if (duplicateBlock) {
-                    setSelectedBlockId(duplicateBlock.id)
+                    selectBlock(duplicateBlock.id)
                     focusBlock(duplicateBlock.id)
                 }
                 if (duplicateBlock?.type === 'md') {
@@ -300,29 +311,39 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
                     { type: duplicateBlock?.type }
                 )
             },
-            [notebook, isReadOnly, telemetryService, setSelectedBlockId, updateBlocks]
+            [notebook, isReadOnly, telemetryService, selectBlock, updateBlocks, focusBlock]
         )
 
         const onFocusLastBlock = useCallback(() => {
             const lastBlockId = notebook.getLastBlockId()
             if (lastBlockId) {
-                setSelectedBlockId(lastBlockId)
+                selectBlock(lastBlockId)
                 focusBlock(lastBlockId)
             }
-        }, [notebook, setSelectedBlockId])
+        }, [notebook, selectBlock, focusBlock])
 
         const notebookEventHandlersProps = useMemo(
             () => ({
                 notebook,
                 selectedBlockId,
                 commandPaletteInputReference,
-                setSelectedBlockId,
+                isReadOnly,
+                selectBlock,
                 onMoveBlock,
                 onRunBlock,
                 onDeleteBlock,
                 onDuplicateBlock,
             }),
-            [notebook, onDeleteBlock, onDuplicateBlock, onMoveBlock, onRunBlock, selectedBlockId]
+            [
+                notebook,
+                onDeleteBlock,
+                onDuplicateBlock,
+                onMoveBlock,
+                onRunBlock,
+                selectedBlockId,
+                selectBlock,
+                isReadOnly,
+            ]
         )
         useNotebookEventHandlers(notebookEventHandlersProps)
 
@@ -487,7 +508,10 @@ export const NotebookComponent: React.FunctionComponent<React.PropsWithChildren<
         }
 
         return (
-            <div className={classNames(styles.searchNotebook)} ref={notebookElement}>
+            <div
+                className={classNames(styles.searchNotebook, isReadOnly && 'is-read-only-notebook')}
+                ref={notebookElement}
+            >
                 <div className="pb-1 px-3">
                     <Button
                         className="mr-2"
