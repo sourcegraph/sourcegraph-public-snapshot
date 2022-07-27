@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 )
 
 // Implementations returns the list of source locations that define the symbol at the given position.

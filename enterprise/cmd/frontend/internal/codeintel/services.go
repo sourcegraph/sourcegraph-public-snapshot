@@ -11,13 +11,13 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend/internal/codeintel/httpapi"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifuploadstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/repoupdater"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/uploads"
 	uploadshttp "github.com/sourcegraph/sourcegraph/internal/codeintel/uploads/transport/http"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -46,7 +46,7 @@ type Services struct {
 
 	// used by resolvers
 	UploadsSvc *uploads.Service
-	SymbolsSvc *symbols.Service
+	SymbolsSvc *codenav.Service
 }
 
 func NewServices(ctx context.Context, config *Config, siteConfig conftypes.WatchableSiteConfig, db database.DB) (*Services, error) {
@@ -77,7 +77,7 @@ func NewServices(ctx context.Context, config *Config, siteConfig conftypes.Watch
 	// Initialize services
 	lsif := database.NewDBWith(observationContext.Logger, codeIntelDB)
 	uploadSvc := uploads.GetService(db, lsif, gitserverClient)
-	symbolSvc := symbols.GetService(db, lsif, uploadSvc)
+	symbolSvc := codenav.GetService(db, lsif, uploadSvc)
 	indexEnqueuer := autoindexing.GetService(db, &autoindexing.DBStoreShim{Store: dbStore}, gitserverClient, repoUpdaterClient)
 
 	// Initialize http endpoints

@@ -3,7 +3,7 @@ package resolvers
 import (
 	"context"
 
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 )
 
 // Definitions returns the list of source locations that define the symbol at the given position.

@@ -3,8 +3,8 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 )
 
 // Hover returns the hover text and range for the symbol at the given position.

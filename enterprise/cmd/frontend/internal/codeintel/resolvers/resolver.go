@@ -238,6 +238,14 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	r.symbolsResolver.SetLocalCommitCache(r.gitserverClient)
 	r.symbolsResolver.SetMaximumIndexesPerMonikerSearch(r.maximumIndexesPerMonikerSearch)
 
+	r.symbolsResolver.SetRequestState(
+		dumps,
+		authz.DefaultSubRepoPermsChecker,
+		gitServer, args.Repo, string(args.Commit), args.Path,
+		r.gitserverClient,
+		r.maximumIndexesPerMonikerSearch,
+	)
+
 	return NewQueryResolver(
 		r.db,
 		r.dbStore,

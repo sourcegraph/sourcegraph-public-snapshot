@@ -15,10 +15,10 @@ import (
 	api "github.com/sourcegraph/sourcegraph/internal/api"
 	authz "github.com/sourcegraph/sourcegraph/internal/authz"
 	autoindexing "github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	dbstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	gitserver1 "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	lsifstore "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	shared "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	gitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	gitdomain "github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -8444,6 +8444,9 @@ type MockSymbolsResolver struct {
 	// function object controlling the behavior of the method
 	// SetMaximumIndexesPerMonikerSearch.
 	SetMaximumIndexesPerMonikerSearchFunc *SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc
+	// SetRequestStateFunc is an instance of a mock function object
+	// controlling the behavior of the method SetRequestState.
+	SetRequestStateFunc *SymbolsResolverSetRequestStateFunc
 	// SetUploadsDataLoaderFunc is an instance of a mock function object
 	// controlling the behavior of the method SetUploadsDataLoader.
 	SetUploadsDataLoaderFunc *SymbolsResolverSetUploadsDataLoaderFunc
@@ -8509,6 +8512,11 @@ func NewMockSymbolsResolver() *MockSymbolsResolver {
 		},
 		SetMaximumIndexesPerMonikerSearchFunc: &SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc{
 			defaultHook: func(int) {
+				return
+			},
+		},
+		SetRequestStateFunc: &SymbolsResolverSetRequestStateFunc{
+			defaultHook: func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int) {
 				return
 			},
 		},
@@ -8584,6 +8592,11 @@ func NewStrictMockSymbolsResolver() *MockSymbolsResolver {
 				panic("unexpected invocation of MockSymbolsResolver.SetMaximumIndexesPerMonikerSearch")
 			},
 		},
+		SetRequestStateFunc: &SymbolsResolverSetRequestStateFunc{
+			defaultHook: func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int) {
+				panic("unexpected invocation of MockSymbolsResolver.SetRequestState")
+			},
+		},
 		SetUploadsDataLoaderFunc: &SymbolsResolverSetUploadsDataLoaderFunc{
 			defaultHook: func([]dbstore.Dump) {
 				panic("unexpected invocation of MockSymbolsResolver.SetUploadsDataLoader")
@@ -8634,6 +8647,9 @@ func NewMockSymbolsResolverFrom(i SymbolsResolver) *MockSymbolsResolver {
 		},
 		SetMaximumIndexesPerMonikerSearchFunc: &SymbolsResolverSetMaximumIndexesPerMonikerSearchFunc{
 			defaultHook: i.SetMaximumIndexesPerMonikerSearch,
+		},
+		SetRequestStateFunc: &SymbolsResolverSetRequestStateFunc{
+			defaultHook: i.SetRequestState,
 		},
 		SetUploadsDataLoaderFunc: &SymbolsResolverSetUploadsDataLoaderFunc{
 			defaultHook: i.SetUploadsDataLoader,
@@ -9838,6 +9854,128 @@ func (c SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall) Args() []inter
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c SymbolsResolverSetMaximumIndexesPerMonikerSearchFuncCall) Results() []interface{} {
+	return []interface{}{}
+}
+
+// SymbolsResolverSetRequestStateFunc describes the behavior when the
+// SetRequestState method of the parent MockSymbolsResolver instance is
+// invoked.
+type SymbolsResolverSetRequestStateFunc struct {
+	defaultHook func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int)
+	hooks       []func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int)
+	history     []SymbolsResolverSetRequestStateFuncCall
+	mutex       sync.Mutex
+}
+
+// SetRequestState delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockSymbolsResolver) SetRequestState(v0 []dbstore.Dump, v1 authz.SubRepoPermissionChecker, v2 gitserver.Client, v3 *types.Repo, v4 string, v5 string, v6 shared.GitserverClient, v7 int) {
+	m.SetRequestStateFunc.nextHook()(v0, v1, v2, v3, v4, v5, v6, v7)
+	m.SetRequestStateFunc.appendCall(SymbolsResolverSetRequestStateFuncCall{v0, v1, v2, v3, v4, v5, v6, v7})
+	return
+}
+
+// SetDefaultHook sets function that is called when the SetRequestState
+// method of the parent MockSymbolsResolver instance is invoked and the hook
+// queue is empty.
+func (f *SymbolsResolverSetRequestStateFunc) SetDefaultHook(hook func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// SetRequestState method of the parent MockSymbolsResolver instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *SymbolsResolverSetRequestStateFunc) PushHook(hook func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *SymbolsResolverSetRequestStateFunc) SetDefaultReturn() {
+	f.SetDefaultHook(func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int) {
+		return
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *SymbolsResolverSetRequestStateFunc) PushReturn() {
+	f.PushHook(func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int) {
+		return
+	})
+}
+
+func (f *SymbolsResolverSetRequestStateFunc) nextHook() func([]dbstore.Dump, authz.SubRepoPermissionChecker, gitserver.Client, *types.Repo, string, string, shared.GitserverClient, int) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *SymbolsResolverSetRequestStateFunc) appendCall(r0 SymbolsResolverSetRequestStateFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of SymbolsResolverSetRequestStateFuncCall
+// objects describing the invocations of this function.
+func (f *SymbolsResolverSetRequestStateFunc) History() []SymbolsResolverSetRequestStateFuncCall {
+	f.mutex.Lock()
+	history := make([]SymbolsResolverSetRequestStateFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// SymbolsResolverSetRequestStateFuncCall is an object that describes an
+// invocation of method SetRequestState on an instance of
+// MockSymbolsResolver.
+type SymbolsResolverSetRequestStateFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 []dbstore.Dump
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 authz.SubRepoPermissionChecker
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 gitserver.Client
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 *types.Repo
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 string
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 string
+	// Arg6 is the value of the 7th argument passed to this method
+	// invocation.
+	Arg6 shared.GitserverClient
+	// Arg7 is the value of the 8th argument passed to this method
+	// invocation.
+	Arg7 int
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c SymbolsResolverSetRequestStateFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5, c.Arg6, c.Arg7}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c SymbolsResolverSetRequestStateFuncCall) Results() []interface{} {
 	return []interface{}{}
 }
 

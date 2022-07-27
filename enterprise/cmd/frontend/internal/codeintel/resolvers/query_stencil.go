@@ -3,8 +3,8 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 )
 
 // Stencil returns all ranges within a single document.

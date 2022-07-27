@@ -3,9 +3,9 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 )
 
 // Ranges returns code intelligence for the ranges that fall within the given range of lines. These

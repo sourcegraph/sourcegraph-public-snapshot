@@ -152,12 +152,22 @@
   path: github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore/migration
   interfaces:
     - GitServerClient
-- filename: internal/codeintel/symbols/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/internal/store
+- filename: internal/codeintel/codenav/store_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/store
   interfaces:
     - Store
-- filename: internal/codeintel/symbols/transport/graphql/mocks_test.go
-  path: github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/transport/graphql
+- filename: internal/codeintel/codenav/lsifstore_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/internal/lsifstore
+  interfaces:
+    - LsifStore
+- filename: internal/codeintel/codenav/uploadservice_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav
+  interfaces:
+    - UploadService
+    - GitTreeTranslator
+    - GitserverClient
+- filename: internal/codeintel/codenav/transport/graphql/mocks_test.go
+  path: github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/transport/graphql
   interfaces:
     - Service
     - GitserverClient

@@ -9,10 +9,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	symbolsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
-	symbolsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/symbols/shared"
 	gs "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -83,6 +83,13 @@ type SymbolsResolver interface {
 	SetLocalCommitCache(gitserverClient symbolsShared.GitserverClient)
 	SetMaximumIndexesPerMonikerSearch(maxNumber int)
 	SetAuthChecker(authChecker authz.SubRepoPermissionChecker)
+	SetRequestState(
+		uploads []dbstore.Dump,
+		authChecker authz.SubRepoPermissionChecker,
+		client internalGitserver.Client, repo *types.Repo, commit, path string,
+		gitclient symbolsShared.GitserverClient,
+		maxIndexes int,
+	)
 
 	LSIFUploads(ctx context.Context) (uploads []symbolsShared.Dump, err error)
 	Stencil(ctx context.Context, args symbolsShared.RequestArgs) (adjustedRanges []symbolsShared.Range, err error)
