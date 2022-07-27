@@ -319,6 +319,9 @@ func (s *bmStore) GetBookmark(ctx context.Context) (_ int, err error) {
 	defer func() { err = tx.Done(err) }()
 
 	val, found, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("select bookmark_id from event_logs_scrape_state order by id limit 1;")))
+	if err != nil {
+		return 0, err
+	}
 	if !found {
 		// generate a row and return the value
 		return basestore.ScanInt(tx.QueryRow(ctx, sqlf.Sprintf("INSERT INTO event_logs_scrape_state (bookmark_id) SELECT MAX(id) FROM event_logs RETURNING bookmark_id;")))
