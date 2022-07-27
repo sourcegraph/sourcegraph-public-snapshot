@@ -106,9 +106,6 @@ export const getEnabledExtensions = once(
                         extensionsAsCoreFeatures &&
                         MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
                     ) {
-                        console.log(
-                            `Ignoring extension ${extension.id} because it is being migrated to the core workflow`
-                        )
                         return false
                     }
 
@@ -123,7 +120,7 @@ export const getEnabledExtensions = once(
 
                     enabled.push(sideloadedExtension)
                 }
-                console.log({ enabled, configuredExtensions })
+
                 return enabled
             }),
             distinctUntilChanged((a, b) => areExtensionsSame(a, b)),
