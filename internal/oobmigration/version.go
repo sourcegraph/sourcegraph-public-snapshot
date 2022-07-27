@@ -38,6 +38,10 @@ func (v Version) String() string {
 	return fmt.Sprintf("%d.%d", v.Major, v.Minor)
 }
 
+func (v Version) GitTag() string {
+	return fmt.Sprintf("v%d.%d.0", v.Major, v.Minor)
+}
+
 type VersionOrder int
 
 const (
