@@ -252,7 +252,7 @@ type QueryInsights {
     """
     insight preview
     """
-    preview: [SearchInsightLivePreviewSeries]!
+    preview: [SearchInsightLivePreviewSeries!]!
 }
 
 type QueryInsightsNotAvailable {
