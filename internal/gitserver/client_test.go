@@ -116,15 +116,12 @@ func TestClient_RepoInfo(t *testing.T) {
 			t.Error("expected err, but got nil")
 		}
 
-		_ = "RepoInfo \"http://172.16.8.1:8080/repos\": RepoInfo: http status code: 500, body: \"test error message\""
-
 		expected := `
 2 errors occurred:
 		* RepoInfo "http://172.16.8.2:8080/repos": RepoInfo: http status code: 500, body: "test error message"
 		* RepoInfo "http://172.16.8.1:8080/repos": RepoInfo: http status code: 500, body: "test error message"
 `
 
-		// expected := `RepoInfo "http://172.16.8.1:8080/repos": RepoInfo: http status code: 500, body: "test error message"`
 		if cmp.Equal(expected, err.Error()) {
 			t.Errorf("mismatch in error message (-want +got):\n%s", cmp.Diff(expected, err.Error()))
 		}
