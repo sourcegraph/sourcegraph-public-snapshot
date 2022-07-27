@@ -79,6 +79,7 @@ RETURNING id
 		subscriptionID,
 		`eyJzaWciOnsiRm9ybWF0Ijoic3NoLXJzYSIsIkJsb2IiOiIuLi4iLCJSZXN0IjpudWxsfSwiaW5mbyI6ImV5SjJJam94TENKdUlqcGJNVEk0TERrd0xESTBOaXd5TkRRc05qWXNNVFFzTWpVMUxEZ3hYU3dpZENJNld5SmtaWFlpWFN3aWRTSTZPQ3dpWlNJNklqSXdNak10TURZdE1ERlVNVFk2TWpnNk16WmFJbjA9In0`,
 	).Scan(&licenseID)
+	require.NoError(t, err)
 
 	// Ensure there is no progress before migration
 	migrator := &licenseKeyFieldsMigrator{store: basestore.NewWithHandle(db.Handle())}
