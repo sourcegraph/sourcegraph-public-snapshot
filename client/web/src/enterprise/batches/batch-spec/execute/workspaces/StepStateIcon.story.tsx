@@ -15,11 +15,11 @@ export default config
 
 const options = [
     { label: 'Cache Found', value: { cachedResultFound: true } },
-    { label: 'Skipped', value: { skipped: true } },
+    { label: 'Failed', value: { startedAt: 'start-time', finishedAt: 'start-time', exitCode: 1 } },
     { label: 'Not Started', value: { startedAt: null } },
     { label: 'Running', value: { startedAt: 'start-time' } },
+    { label: 'Skipped', value: { skipped: true } },
     { label: 'Success', value: { startedAt: 'start-time', finishedAt: 'start-time', exitCode: 0 } },
-    { label: 'Failed', value: { startedAt: 'start-time', finishedAt: 'start-time', exitCode: 1 } },
 ]
 
 export const StepStateIconStory: Story = () => (
