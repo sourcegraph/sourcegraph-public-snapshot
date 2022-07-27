@@ -36,8 +36,8 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		return nil, err
 	}
 
-	client := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
-	inputs, err := client.Plan(
+	cli := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
+	inputs, err := cli.Plan(
 		ctx,
 		args.Version,
 		args.PatternType,
@@ -47,7 +47,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
-		var queryErr *run.QueryError
+		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
 			return NewSearchAlertResolver(search.AlertForQuery(queryErr.Query, queryErr.Err)).wrapSearchImplementer(db), nil
 		}
@@ -55,7 +55,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
-		client:       client,
+		client:       cli,
 		db:           db,
 		SearchInputs: inputs,
 		zoekt:        search.Indexed(),
