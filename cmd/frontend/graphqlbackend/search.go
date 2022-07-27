@@ -58,7 +58,6 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		client:       cli,
 		db:           db,
 		SearchInputs: inputs,
-		searcherURLs: search.SearcherURLs(),
 	}, nil
 }
 
@@ -71,8 +70,6 @@ type searchResolver struct {
 	client       client.SearchClient
 	SearchInputs *run.SearchInputs
 	db           database.DB
-
-	searcherURLs *endpoint.Map
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings
