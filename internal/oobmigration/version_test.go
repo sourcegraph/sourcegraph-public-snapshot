@@ -1,13 +1,16 @@
 package oobmigration
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/google/go-cmp/cmp"
+)
 
 func TestCompareVersions(t *testing.T) {
 	testCases := []struct {
 		left     Version
 		right    Version
 		expected VersionOrder
-		err      bool
 	}{
 		{left: NewVersion(3, 12), right: NewVersion(3, 12), expected: VersionOrderEqual},
 		{left: NewVersion(3, 11), right: NewVersion(3, 12), expected: VersionOrderBefore},
