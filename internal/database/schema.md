@@ -947,6 +947,21 @@ Check constraints:
 
 ```
 
+# Table "public.event_logs_scrape_state"
+```
+   Column    |  Type   | Collation | Nullable |                       Default                       
+-------------+---------+-----------+----------+-----------------------------------------------------
+ id          | integer |           | not null | nextval('event_logs_scrape_state_id_seq'::regclass)
+ bookmark_id | integer |           | not null | 
+Indexes:
+    "event_logs_scrape_state_pk" PRIMARY KEY, btree (id)
+
+```
+
+Contains state for the periodic telemetry job that scrapes events if enabled.
+
+**bookmark_id**: Bookmarks the maximum most recent successful event_logs.id that was scraped
+
 # Table "public.executor_heartbeats"
 ```
       Column      |           Type           | Collation | Nullable |                     Default                     

@@ -1433,6 +1433,25 @@ CREATE SEQUENCE event_logs_id_seq
 
 ALTER SEQUENCE event_logs_id_seq OWNED BY event_logs.id;
 
+CREATE TABLE event_logs_scrape_state (
+    id integer NOT NULL,
+    bookmark_id integer NOT NULL
+);
+
+COMMENT ON TABLE event_logs_scrape_state IS 'Contains state for the periodic telemetry job that scrapes events if enabled.';
+
+COMMENT ON COLUMN event_logs_scrape_state.bookmark_id IS 'Bookmarks the maximum most recent successful event_logs.id that was scraped';
+
+CREATE SEQUENCE event_logs_scrape_state_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE event_logs_scrape_state_id_seq OWNED BY event_logs_scrape_state.id;
+
 CREATE TABLE executor_heartbeats (
     id integer NOT NULL,
     hostname text NOT NULL,
@@ -3193,6 +3212,8 @@ ALTER TABLE ONLY discussion_threads_target_repo ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_seq'::regclass);
 
+ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
+
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
 ALTER TABLE ONLY explicit_permissions_bitbucket_projects_jobs ALTER COLUMN id SET DEFAULT nextval('explicit_permissions_bitbucket_projects_jobs_id_seq'::regclass);
@@ -3375,6 +3396,9 @@ ALTER TABLE ONLY discussion_threads_target_repo
 
 ALTER TABLE ONLY event_logs
     ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY event_logs_scrape_state
+    ADD CONSTRAINT event_logs_scrape_state_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_hostname_key UNIQUE (hostname);
