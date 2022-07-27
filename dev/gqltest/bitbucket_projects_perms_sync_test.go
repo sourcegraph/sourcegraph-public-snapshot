@@ -93,6 +93,9 @@ func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *t
 		UserPermissions: []types.UserPermission{{BindID: "gqltest@sourcegraph.com", Permission: "READ"}},
 		Unrestricted:    &unrestricted,
 	})
+	if err != nil {
+		t.Fatal(err)
+	}
 
 	// Wait up to 30 seconds for worker to finish the permissions sync.
 	err = waitForSyncJobToFinish()
