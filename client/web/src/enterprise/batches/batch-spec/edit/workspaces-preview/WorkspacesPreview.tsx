@@ -14,6 +14,7 @@ import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
+import { eventLogger } from '../../../../../tracking/eventLogger'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
@@ -147,7 +148,14 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             >
                 <Button
                     variant={isWorkspacesPreviewInProgress ? 'secondary' : 'success'}
-                    onClick={isWorkspacesPreviewInProgress ? cancel : () => preview(debouncedCode)}
+                    onClick={
+                        isWorkspacesPreviewInProgress
+                            ? cancel
+                            : () => {
+                                  eventLogger.log('batch_change_editor:preview_workspaces:clicked')
+                                  return preview(debouncedCode)
+                              }
+                    }
                     // The "Cancel" button is always enabled while the preview is in progress
                     disabled={!isWorkspacesPreviewInProgress && !!isPreviewDisabled}
                 >
