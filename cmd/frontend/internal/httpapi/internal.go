@@ -19,27 +19,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func servePhabricatorRepoCreate(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		var repo api.PhabricatorRepoCreateRequest
-		err := json.NewDecoder(r.Body).Decode(&repo)
-		if err != nil {
-			return err
-		}
-		phabRepo, err := db.Phabricator().CreateOrUpdate(r.Context(), repo.Callsign, repo.RepoName, repo.URL)
-		if err != nil {
-			return err
-		}
-		data, err := json.Marshal(phabRepo)
-		if err != nil {
-			return err
-		}
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(data)
-		return nil
-	}
-}
-
 // serveExternalServiceConfigs serves a JSON response that is an array of all
 // external service configs that match the requested kind.
 func serveExternalServiceConfigs(db database.DB) func(w http.ResponseWriter, r *http.Request) error {

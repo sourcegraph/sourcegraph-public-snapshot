@@ -32,7 +32,6 @@ const (
 	SendEmail              = "internal.send-email"
 	GitInfoRefs            = "internal.git.info-refs"
 	GitUploadPack          = "internal.git.upload-pack"
-	PhabricatorRepoCreate  = "internal.phabricator.repo.create"
 	ReposIndex             = "internal.repos.index"
 	Configuration          = "internal.configuration"
 	SearchConfiguration    = "internal.search-configuration"
@@ -86,7 +85,6 @@ func NewInternal(base *mux.Router) *mux.Router {
 	base.Path("/send-email").Methods("POST").Name(SendEmail)
 	base.Path("/git/{RepoName:.*}/info/refs").Methods("GET").Name(GitInfoRefs)
 	base.Path("/git/{RepoName:.*}/git-upload-pack").Methods("GET", "POST").Name(GitUploadPack)
-	base.Path("/phabricator/repo-create").Methods("POST").Name(PhabricatorRepoCreate)
 	base.Path("/external-services/configs").Methods("POST").Name(ExternalServiceConfigs)
 	base.Path("/repos/index").Methods("POST").Name(ReposIndex)
 	base.Path("/configuration").Methods("POST").Name(Configuration)
