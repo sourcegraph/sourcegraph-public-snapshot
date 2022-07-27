@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Version struct {
@@ -57,6 +58,21 @@ func (v Version) Next() Version {
 
 	// Bump minor version
 	return NewVersion(v.Major, v.Minor+1)
+}
+
+// UpgradeRange returns all minor versions in the closed interval [from, to].
+// An error is returned if the interval would be empty.
+func UpgradeRange(from, to Version) ([]Version, error) {
+	if compareVersions(from, to) != VersionOrderBefore {
+		return nil, errors.Newf("invalid range (from=%s > to=%s)", from, to)
+	}
+
+	var versions []Version
+	for v := from; compareVersions(v, to) != VersionOrderAfter; v = v.Next() {
+		versions = append(versions, v)
+	}
+
+	return versions, nil
 }
 
 type VersionOrder int
