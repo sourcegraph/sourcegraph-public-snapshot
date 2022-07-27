@@ -21,6 +21,8 @@ func NewVersion(major, minor int) Version {
 
 var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.\d+)?$`)
 
+// NewVersionFromString parses the major and minor version from the given string. If
+// the string does not look like a parseable version, a false-valued flag is returned.
 func NewVersionFromString(v string) (Version, bool) {
 	if matches := versionPattern.FindStringSubmatch(v); len(matches) >= 3 {
 		major, _ := strconv.Atoi(matches[1])
