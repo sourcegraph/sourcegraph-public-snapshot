@@ -19,6 +19,6 @@ var stitchedMigationsBySchemaName = map[string]stitch.StitchedMigration{}
 
 func init() {
 	if err := json.Unmarshal([]byte(upgradeDataPayloadContents), &stitchedMigationsBySchemaName); err != nil {
-		panic(err.Error())
+		panic(errors.Wrap(err.Error(), "parsing bundled upgrade data payload, check go generate produced valid json"))
 	}
 }
