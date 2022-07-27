@@ -17855,19 +17855,6 @@
         },
         {
           "Name": "extsvc_kind",
-          "Index": 11,
-          "TypeName": "text",
-          "IsNullable": true,
-          "Default": "",
-          "CharacterMaximumLength": 0,
-          "IsIdentity": false,
-          "IdentityGeneration": "",
-          "IsGenerated": "NEVER",
-          "GenerationExpression": "",
-          "Comment": ""
-        },
-        {
-          "Name": "failure_message",
           "Index": 3,
           "TypeName": "text",
           "IsNullable": true,
@@ -17880,8 +17867,21 @@
           "Comment": ""
         },
         {
+          "Name": "failure_message",
+          "Index": 7,
+          "TypeName": "text",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "finished_at",
-          "Index": 5,
+          "Index": 9,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17894,7 +17894,7 @@
         },
         {
           "Name": "id",
-          "Index": 1,
+          "Index": 5,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "nextval('webhook_build_jobs_id_seq'::regclass)",
@@ -17920,7 +17920,7 @@
         },
         {
           "Name": "num_failures",
-          "Index": 8,
+          "Index": 12,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -17933,7 +17933,7 @@
         },
         {
           "Name": "num_resets",
-          "Index": 7,
+          "Index": 11,
           "TypeName": "integer",
           "IsNullable": false,
           "Default": "0",
@@ -17946,7 +17946,7 @@
         },
         {
           "Name": "process_after",
-          "Index": 6,
+          "Index": 10,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -17959,7 +17959,7 @@
         },
         {
           "Name": "queued_at",
-          "Index": 12,
+          "Index": 4,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "now()",
@@ -17972,7 +17972,7 @@
         },
         {
           "Name": "repo_id",
-          "Index": 9,
+          "Index": 1,
           "TypeName": "integer",
           "IsNullable": true,
           "Default": "",
@@ -17985,7 +17985,7 @@
         },
         {
           "Name": "repo_name",
-          "Index": 10,
+          "Index": 2,
           "TypeName": "text",
           "IsNullable": true,
           "Default": "",
@@ -17998,7 +17998,7 @@
         },
         {
           "Name": "started_at",
-          "Index": 4,
+          "Index": 8,
           "TypeName": "timestamp with time zone",
           "IsNullable": true,
           "Default": "",
@@ -18011,7 +18011,7 @@
         },
         {
           "Name": "state",
-          "Index": 2,
+          "Index": 6,
           "TypeName": "text",
           "IsNullable": false,
           "Default": "'queued'::text",

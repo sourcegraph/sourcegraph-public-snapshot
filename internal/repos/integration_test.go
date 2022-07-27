@@ -34,7 +34,6 @@ func TestIntegration(t *testing.T) {
 		{"SyncRateLimiters", testSyncRateLimiters},
 		{"EnqueueSyncJobs", testStoreEnqueueSyncJobs},
 		{"EnqueueSingleSyncJob", testStoreEnqueueSingleSyncJob},
-		{"EnqueueSingleWebhookBuildJob", testStoreEnqueueSingleWebhookBuildJob},
 		{"ListExternalServiceUserIDsByRepoID", testStoreListExternalServiceUserIDsByRepoID},
 		{"ListExternalServicePrivateRepoIDsByUserID", testStoreListExternalServicePrivateRepoIDsByUserID},
 		{"Syncer/SyncWorker", testSyncWorkerPlumbing},
@@ -53,7 +52,6 @@ func TestIntegration(t *testing.T) {
 		{"Syncer/SyncRepoMaintainsOtherSources", testSyncRepoMaintainsOtherSources},
 		{"Syncer/SyncReposWithLastErrors", testSyncReposWithLastErrors},
 		{"Syncer/SyncReposWithLastErrorsHitRateLimit", testSyncReposWithLastErrorsHitsRateLimiter},
-		{"WebhookBuildWorker/WebhookBuildWorkerPlumbing", testWebhookBuilderPlumbing},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			store := repos.NewStore(logtest.Scoped(t), database.NewDB(logger, dbtest.NewDB(logger, t)))
