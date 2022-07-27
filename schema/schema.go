@@ -671,7 +671,8 @@ type Extensions struct {
 	// Disabled description: Disable all usage of extensions.
 	Disabled *bool `json:"disabled,omitempty"`
 	// RemoteRegistry description: The remote extension registry URL, or `false` to not use a remote extension registry. If not set, the default remote extension registry URL is used.
-	RemoteRegistry interface{} `json:"remoteRegistry,omitempty"`
+	RemoteRegistry         interface{} `json:"remoteRegistry,omitempty"`
+	EnableLegacyExtensions bool        `json:"enableLegacyExtensions,omitempty"`
 }
 type ExternalIdentity struct {
 	// AuthProviderID description: The value of the `configID` field of the targeted authentication provider.
@@ -1763,6 +1764,8 @@ type SettingsExperimentalFeatures struct {
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
 	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
 	ExtensionsAsCoreFeatures *bool `json:"extensionsAsCoreFeatures,omitempty"`
+	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
+	EnableLegacyExtensions *bool `json:"enableLegacyExtensions,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
