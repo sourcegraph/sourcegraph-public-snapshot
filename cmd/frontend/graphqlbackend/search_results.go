@@ -31,7 +31,6 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/execute"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -511,7 +510,7 @@ func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInput
 func (r *searchResolver) Results(ctx context.Context) (*SearchResultsResolver, error) {
 	start := time.Now()
 	agg := streaming.NewAggregatingStream()
-	alert, err := execute.Execute(ctx, agg, r.SearchInputs, r.JobClients())
+	alert, err := r.client.Execute(ctx, agg, r.SearchInputs)
 	srr := r.resultsToResolver(agg.Results, alert, agg.Stats)
 	srr.elapsed = time.Since(start)
 	logBatch(ctx, r.db, r.SearchInputs, srr, err)
