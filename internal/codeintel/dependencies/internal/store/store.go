@@ -827,7 +827,7 @@ func (s *store) GetLockfileIndex(ctx context.Context, opts GetLockfileIndexOpts)
 		getLockfileIndexQuery,
 		sqlf.Join(conds, "AND"),
 	)))
-	if err == sql.ErrNoRows {
+	if errors.Is(err, sql.ErrNoRows) {
 		return index, ErrLockfileIndexNotFound
 	}
 	return index, err
@@ -889,7 +889,7 @@ func (s *store) DeleteLockfileIndexByID(ctx context.Context, id int) (err error)
 	)
 	err = tx.QueryRow(ctx, sqlf.Sprintf(deleteLockfileIndexByIDQuery, id)).Scan(&repoID, &commit, &lockfile)
 	if err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			return ErrLockfileIndexNotFound
 		}
 		return err

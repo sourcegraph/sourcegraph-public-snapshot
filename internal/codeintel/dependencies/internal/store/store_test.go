@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"testing"
@@ -1408,8 +1409,8 @@ func TestDeleteLockfileIndexByID(t *testing.T) {
 
 		// Delete again
 		err = store.DeleteLockfileIndexByID(ctx, index.ID)
-		if err != ErrLockfileIndexNotFound {
-			t.Fatalf("wrong error: %s", err)
+		if !errors.Is(err, ErrLockfileIndexNotFound) {
+			t.Fatalf("wrong error: %s (%T)", err, err)
 		}
 	})
 
@@ -1447,7 +1448,7 @@ func TestDeleteLockfileIndexByID(t *testing.T) {
 
 		// Delete again
 		err = store.DeleteLockfileIndexByID(ctx, index.ID)
-		if err != ErrLockfileIndexNotFound {
+		if !errors.Is(err, ErrLockfileIndexNotFound) {
 			t.Fatalf("wrong error: %s", err)
 		}
 	})
