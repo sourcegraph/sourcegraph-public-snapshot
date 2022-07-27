@@ -2,6 +2,7 @@ package shared
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"time"
 
@@ -17,6 +18,9 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
+	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/debugserver"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -67,8 +71,12 @@ func Main(setup SetupFunc) {
 		},
 	}
 
+	// Initialize main DB connection.
+	sqlDB := mustInitializeFrontendDB(logger)
+	db := database.NewDB(logger, sqlDB)
+
 	// Run setup
-	gitserverClient := gitserver.NewClient(observationContext)
+	gitserverClient := gitserver.NewClient(db, observationContext)
 	repositoryFetcherConfig := types.LoadRepositoryFetcherConfig(env.BaseConfig{})
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, repositoryFetcherConfig.MaxTotalPathsLength, int64(repositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
 	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, gitserverClient, repositoryFetcher)
@@ -92,4 +100,17 @@ func Main(setup SetupFunc) {
 	// Mark health server as ready and go!
 	close(ready)
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
+}
+
+func mustInitializeFrontendDB(logger log.Logger) *sql.DB {
+	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
+		return serviceConnections.PostgresDSN
+	})
+
+	db, err := connections.EnsureNewFrontendDB(dsn, "symbols", &observation.TestContext)
+	if err != nil {
+		logger.Fatal("failed to connect to database", log.Error(err))
+	}
+
+	return db
 }

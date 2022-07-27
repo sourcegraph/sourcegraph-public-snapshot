@@ -4550,6 +4550,33 @@ with your code hosts connections or networking issues affecting communication wi
 
 <br />
 
+## symbols: mean_blocked_seconds_per_conn_request
+
+<p class="subtitle">mean blocked seconds per conn request</p>
+
+**Descriptions**
+
+- <span class="badge badge-warning">warning</span> symbols: 0.05s+ mean blocked seconds per conn request for 10m0s
+- <span class="badge badge-critical">critical</span> symbols: 0.1s+ mean blocked seconds per conn request for 15m0s
+
+**Next steps**
+
+- Increase SRC_PGSQL_MAX_OPEN together with giving more memory to the database if needed
+- Scale up Postgres memory / cpus [See our scaling guide](https://docs.sourcegraph.com/admin/config/postgres-conf)
+- Learn more about the related dashboard panel in the [dashboards reference](./dashboards.md#symbols-mean-blocked-seconds-per-conn-request).
+- **Silence this alert:** If you are aware of this alert and want to silence notifications for it, add the following to your site configuration and set a reminder to re-evaluate the alert:
+
+```json
+"observability.silenceAlerts": [
+  "warning_symbols_mean_blocked_seconds_per_conn_request",
+  "critical_symbols_mean_blocked_seconds_per_conn_request"
+]
+```
+
+<sub>*Managed by the [Sourcegraph Cloud DevOps team](https://handbook.sourcegraph.com/departments/engineering/teams/devops).*</sub>
+
+<br />
+
 ## symbols: frontend_internal_api_error_responses
 
 <p class="subtitle">frontend-internal API error responses every 5m by route</p>
