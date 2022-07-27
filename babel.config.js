@@ -55,7 +55,22 @@ module.exports = api => {
         },
       ],
     ],
-    plugins: [['@babel/plugin-transform-typescript', { isTSX: true }], 'babel-plugin-lodash'],
+    plugins: [
+      ['@babel/plugin-transform-typescript', { isTSX: true }],
+      'babel-plugin-lodash',
+      [
+        'webpack-chunkname',
+        {
+          getChunkName: (/** @type string */ importPath) => {
+            const chunkName = importPath
+              .replace(/[./]+/g, '_') // replace "." and "/" with "_".
+              .replace(/(^_+)/g, '') // remove all leading "_".
+
+            return `sg_${chunkName}`
+          },
+        },
+      ],
+    ],
     // Required for d3-array v1.2 (dependency of recharts). See https://github.com/babel/babel/issues/11038
     ignore: [new RegExp('d3-array/src/cumsum.js')],
   }
