@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"sort"
 	"strings"
 
 	"github.com/sourcegraph/log"
@@ -66,9 +65,6 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 
 	var resolvers []graphqlbackend.RelatedInsightsInlineResolver
 	for insightId, metadata := range seriesMatches {
-		sort.SliceStable(metadata.lineNumbers, func(i, j int) bool {
-			return metadata.lineNumbers[i] < metadata.lineNumbers[j]
-		})
 		resolvers = append(resolvers, &relatedInsightsInlineResolver{
 			viewID:           insightId,
 			title:            metadata.title,
