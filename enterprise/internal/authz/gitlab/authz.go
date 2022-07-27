@@ -136,7 +136,7 @@ var NewOAuthProvider = func(op OAuthProviderOp) authz.Provider {
 	return newOAuthProvider(op, nil, helper.RefreshToken)
 }
 
-// NewSudoProvider Ïis a mockable constructor for new SudoProvider instances.
+// NewSudoProvider is a mockable constructor for new SudoProvider instances.
 var NewSudoProvider = func(op SudoProviderOp) authz.Provider {
 	return newSudoProvider(op, nil)
 }
