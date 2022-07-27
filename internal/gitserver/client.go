@@ -1234,7 +1234,13 @@ func (c *ClientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 					msg = fmt.Sprintf("%s, failed to read response body, error: %v", msg, err)
 				}
 
-				msg = fmt.Sprintf("%s, body: %q", msg, string(content))
+				// strings.TrimSpace is needed to remove trailing \n characters that is added by the
+				// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
+				// the error message. And in translation that newline gets escapted into a \n
+				// character.  For what the error message would look in the UI without
+				// strings.TrimSpace, see attached screenshots in this pull request:
+				// https://github.com/sourcegraph/sourcegraph/pull/39358.
+				msg = fmt.Sprintf("%s, reason: %q", msg, strings.TrimSpace(string(content)))
 
 				o.err = &url.Error{
 					URL: resp.Request.URL.String(),
