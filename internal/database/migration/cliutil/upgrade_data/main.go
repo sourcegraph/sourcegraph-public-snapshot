@@ -55,7 +55,7 @@ func mainErr() error {
 	defer f.Close()
 
 	encoder := json.NewEncoder(f)
-	encoder.SetIndent("", "  ")
+	encoder.SetIndent("", "\t")
 
 	if err := encoder.Encode(stitchedMigrationBySchemaName); err != nil {
 		return err
