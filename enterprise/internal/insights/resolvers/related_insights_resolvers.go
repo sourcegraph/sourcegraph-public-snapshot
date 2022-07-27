@@ -58,6 +58,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}, offsetAndLengths: lineMatch.OffsetAndLengths}
 				} else if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
 					seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
+					seriesMatches[series.UniqueID].offsetAndLengths = append(seriesMatches[series.UniqueID].offsetAndLengths, lineMatch.OffsetAndLengths...)
 				}
 			}
 		}
