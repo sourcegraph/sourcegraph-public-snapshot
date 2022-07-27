@@ -459,8 +459,6 @@ func fromRepository(rm *result.RepoMatch, repoCache map[api.RepoID]*types.Search
 		Branches:     branches,
 	}
 
-	// TODO: should be building description match ranges here... repoCache already has metadata hydrated!!
-
 	if len(rm.DescriptionMatches) > 0 {
 		dms := make([]streamhttp.Range, len(rm.DescriptionMatches))
 		for i, rng := range rm.DescriptionMatches {
@@ -686,9 +684,6 @@ func (h *eventHandler) Send(event streaming.SearchEvent) {
 		}
 
 		eventMatch := fromMatch(match, repoMetadata, h.enableChunkMatches)
-
-		fmt.Printf("eventMatch: %v\n", eventMatch)
-
 		h.matchesBuf.Append(eventMatch)
 	}
 
