@@ -1,4 +1,14 @@
-# Deployment Overview
+#Deployment Overview
+
+Sourcegraph recommends [Sourcegraph Cloud](https://about.sourcegraph.com/) as the preferred method of deployment. In situations where Cloud isn't an option, Sourcegraph supports [Docker Compose](docker-compose/index.md) as the primary self-managed deployment type. If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md). 
+
+If your needs fall outside of these two, contact the Sourcegraph Customer Engineering team to collaborate on an custom solution. 
+
+Sourcegraph also provides a [resource estimator](#resource-planning) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+
+
+
+<!-- # Deployment Overview
 
 Sourcegraph supports two main deployment types: [Docker Compose](docker-compose/index.md) and [Kubernetes](kubernetes/index.md). Each deployment type will require a different level of investment and technical understanding. What works best depends on the needs and desired outcomes for your business. 
 
@@ -119,4 +129,4 @@ Sourcegraph provides a number of options to monitor the health and usage of your
 A new version of Sourcegraph is released every month (with patch releases in between as needed). We actively maintain the two most recent monthly releases of Sourcegraph. The [changelog](../../CHANGELOG.md) provides all information related to any changes that are/were in a release.
 
 Depending on your current version and the version you are looking to upgrade, there may be specific upgrade instruction and requirements. Checkout the [Upgrade docs](../updates/index.md) for additional information and instructions.
-
+ -->
