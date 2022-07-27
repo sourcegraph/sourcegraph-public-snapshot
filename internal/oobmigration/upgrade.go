@@ -34,13 +34,13 @@ func scheduleMigrationInterrupts(from, to Version, migrations []yamlMigration) (
 		}
 
 		introduced := Version{m.IntroducedVersionMajor, m.IntroducedVersionMinor}
-		if compareVersions(introduced, to) == VersionOrderAfter {
+		if CompareVersions(introduced, to) == VersionOrderAfter {
 			// Skip migrations introduced after the target instance version
 			continue
 		}
 
 		deprecated := Version{*m.DeprecatedVersionMajor, *m.DeprecatedVersionMinor}
-		if !(compareVersions(from, deprecated) == VersionOrderBefore && compareVersions(deprecated, to) == VersionOrderBefore) {
+		if !(CompareVersions(from, deprecated) == VersionOrderBefore && CompareVersions(deprecated, to) == VersionOrderBefore) {
 			// Skip migrations not deprecated within the the instance upgrade interval
 			continue
 		}
@@ -60,12 +60,12 @@ func scheduleMigrationInterrupts(from, to Version, migrations []yamlMigration) (
 	//       no previously chosen version falls within the interval.
 
 	sort.Slice(intervals, func(i, j int) bool {
-		return compareVersions(intervals[i].deprecated, intervals[j].deprecated) == VersionOrderBefore
+		return CompareVersions(intervals[i].deprecated, intervals[j].deprecated) == VersionOrderBefore
 	})
 
 	points := make([]Version, 0, len(intervals))
 	for _, interval := range intervals {
-		if len(points) == 0 || compareVersions(points[len(points)-1], interval.introduced) == VersionOrderBefore {
+		if len(points) == 0 || CompareVersions(points[len(points)-1], interval.introduced) == VersionOrderBefore {
 			points = append(points, interval.deprecated)
 		}
 	}
@@ -100,7 +100,7 @@ outer:
 		interupts = append(interupts, MigrationInterrupt{version, ids})
 	}
 	sort.Slice(interupts, func(i, j int) bool {
-		return compareVersions(interupts[i].Version, interupts[j].Version) == VersionOrderBefore
+		return CompareVersions(interupts[i].Version, interupts[j].Version) == VersionOrderBefore
 	})
 
 	return interupts, nil
