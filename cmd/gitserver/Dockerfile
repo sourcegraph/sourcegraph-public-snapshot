@@ -35,8 +35,7 @@ LABEL org.opencontainers.image.created=${DATE}
 LABEL org.opencontainers.image.version=${VERSION}
 LABEL com.sourcegraph.github.url=https://github.com/sourcegraph/sourcegraph/commit/${COMMIT_SHA}
 
-RUN apk add --no-cache asciidoctor
-RUN apk add --no-cache make build-base autoconf curl zlib-dev openssl libressl-dev expat gnu-libiconv gettext
+RUN apk add --no-cache make build-base autoconf curl zlib-dev openssl libressl-dev expat gnu-libiconv gettext asciidoc xmlto
 
 RUN wget -O git-2.35.2.tar.gz https://mirrors.edge.kernel.org/pub/software/scm/git/git-2.35.2.tar.gz
 RUN tar -xvf git-2.35.2.tar.gz
