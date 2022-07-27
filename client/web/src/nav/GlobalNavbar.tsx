@@ -55,7 +55,6 @@ import { useExperimentalFeatures, useNavbarQueryState } from '../stores'
 import { ThemePreferenceProps } from '../theme'
 import { userExternalServicesEnabledFromTags } from '../user/settings/cloud-ga'
 import { showDotComMarketing } from '../util/features'
-import { useExtensionsAsCoreFeaturesFromSettings } from '../util/settings'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
@@ -201,7 +200,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
-    const extensionsAsCoreFeatures = useExtensionsAsCoreFeaturesFromSettings(props.settingsCascade)
+    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
