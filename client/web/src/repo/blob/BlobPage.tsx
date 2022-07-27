@@ -279,10 +279,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             </RepoHeaderContributionPortal>
             <RepoHeaderContributionPortal
                 position="right"
-                id="blame-action"
+                id="toggle-blame"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {() => <ToggleBlameAction key="blame-action" />}
+                {() => <ToggleBlameAction key="toggle-blame" />}
             </RepoHeaderContributionPortal>
         </>
     )
