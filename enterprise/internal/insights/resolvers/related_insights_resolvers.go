@@ -55,7 +55,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 			for _, lineMatch := range match.LineMatches {
 				if seriesMatches[series.UniqueID] == nil {
 					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}, offsetAndLengths: lineMatch.OffsetAndLengths}
-				} else if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
+				} else {
 					seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
 					seriesMatches[series.UniqueID].offsetAndLengths = append(seriesMatches[series.UniqueID].offsetAndLengths, lineMatch.OffsetAndLengths...)
 				}
@@ -229,13 +229,4 @@ func (r *relatedInsightsResolver) ViewID() string {
 
 func (r *relatedInsightsResolver) Title() string {
 	return r.title
-}
-
-func containsInt(array []int32, findElement int32) bool {
-	for _, currentElement := range array {
-		if findElement == currentElement {
-			return true
-		}
-	}
-	return false
 }
