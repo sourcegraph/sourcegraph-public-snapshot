@@ -329,7 +329,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     filePath={result.path}
                                     startLine={group.startLine}
                                     endLine={group.endLine}
-                                    highlightRanges={[]} // HACK: To disable highlighting
+                                    highlightRanges={group.matches}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
                                     isFirst={index === 0}
                                     blobLines={group.blobLines}
