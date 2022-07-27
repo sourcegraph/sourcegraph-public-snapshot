@@ -15,11 +15,11 @@ type StitchedMigration struct {
 	LeafIDsByRev map[string][]int
 }
 
-// StitchDefinitions constructs a migration graph over time in two values. First, the migration graph itself
-// is formed by merging migration definitions as they were defined over time in Git. Second, the set of leaves
-// of the migration point at each of the given revisions is also constructed. This data is useful during
-// instance upgrades as these points in the graph represent the "edge" of the graph as it was defined for a
-// particular release.
+// StitchDefinitions constructs a migration graph over time in two values. First, the migration graph
+// itself is formed by merging migration definitions as they were defined over time in Git. Second, the set
+// of leaves of the migration point at each of the given revisions is also constructed. This data is useful
+// during instance upgrades as these points in the graph represent the "edge" of the graph as it was defined
+// for a particular release.
 //
 // Stitch is an undoing of squashing. We construct the migration graph by layering the definitions of the
 // migrations as they're defined in each of the given git revisions. Migration definitions with the same
