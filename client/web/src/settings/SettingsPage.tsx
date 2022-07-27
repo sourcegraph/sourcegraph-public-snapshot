@@ -6,7 +6,7 @@ import { overwriteSettings } from '@sourcegraph/shared/src/settings/edit'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
-import { useExtensionsAsCoreFeaturesFromSettings } from '../util/settings'
+import { extensionsAsCoreFeaturesEnabled } from '../util/settings'
 
 import { SettingsAreaPageProps } from './SettingsArea'
 import { SettingsFile } from './SettingsFile'
@@ -31,8 +31,7 @@ export class SettingsPage extends React.PureComponent<Props, State> {
     public state: State = {}
 
     public render(): JSX.Element | null {
-        // eslint-disable-next-line react-hooks/rules-of-hooks -- This is a function that can be called here safely
-        const extensionsAsCoreFeatures = useExtensionsAsCoreFeaturesFromSettings(this.props.settingsCascade)
+        const extensionsAsCoreFeatures = extensionsAsCoreFeaturesEnabled(this.props.settingsCascade)
 
         return (
             <SettingsFile
