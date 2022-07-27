@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Version struct {
@@ -21,6 +22,8 @@ func NewVersion(major, minor int) Version {
 
 var versionPattern = lazyregexp.New(`^v?(\d+)\.(\d+)(?:\.\d+)?$`)
 
+// NewVersionFromString parses the major and minor version from the given string. If
+// the string does not look like a parseable version, a false-valued flag is returned.
 func NewVersionFromString(v string) (Version, bool) {
 	if matches := versionPattern.FindStringSubmatch(v); len(matches) >= 3 {
 		major, _ := strconv.Atoi(matches[1])
@@ -34,6 +37,42 @@ func NewVersionFromString(v string) (Version, bool) {
 
 func (v Version) String() string {
 	return fmt.Sprintf("%d.%d", v.Major, v.Minor)
+}
+
+func (v Version) GitTag() string {
+	return fmt.Sprintf("v%d.%d.0", v.Major, v.Minor)
+}
+
+// Next returns the next minor version immediately following the receiver.
+func (v Version) Next() Version {
+	lastMinorVersionInMajorRelease := map[int]int{
+		3: 43, // 3.43.0 -> 4.0.0
+	}
+
+	if minor, ok := lastMinorVersionInMajorRelease[v.Major]; ok && minor == v.Minor {
+		// We're at terminal minor version for some major release
+		// :tada:
+		// Bump the major version and reset the minor version
+		return NewVersion(v.Major+1, 0)
+	}
+
+	// Bump minor version
+	return NewVersion(v.Major, v.Minor+1)
+}
+
+// UpgradeRange returns all minor versions in the closed interval [from, to].
+// An error is returned if the interval would be empty.
+func UpgradeRange(from, to Version) ([]Version, error) {
+	if compareVersions(from, to) != VersionOrderBefore {
+		return nil, errors.Newf("invalid range (from=%s > to=%s)", from, to)
+	}
+
+	var versions []Version
+	for v := from; compareVersions(v, to) != VersionOrderAfter; v = v.Next() {
+		versions = append(versions, v)
+	}
+
+	return versions, nil
 }
 
 type VersionOrder int
