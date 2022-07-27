@@ -1,6 +1,5 @@
-import React from 'react'
-import _ from 'lodash'
 import { mdiDownload } from '@mdi/js'
+import lodash from 'lodash'
 
 import { useLazyQuery } from '@sourcegraph/http-client'
 import { Button, Icon } from '@sourcegraph/wildcard'
@@ -12,17 +11,22 @@ interface IProps<IQuery, IVariables> {
     fileName: string
 }
 
-export const ExportButton = <IQuery, IVariables>({ query, variables, path, fileName }: IProps<IQuery, IVariables>) => {
+export function ExportButton<IQuery, IVariables>({
+    query,
+    variables,
+    path,
+    fileName,
+}: IProps<IQuery, IVariables>): JSX.Element {
     const [fetchCSV] = useLazyQuery<IQuery, IVariables>(query, {
         variables,
         onCompleted: data => {
-            let element = document.createElement('a')
-            element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(_.get(data, path)))
+            const element = document.createElement('a')
+            element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodeURIComponent(lodash.get(data, path)))
             element.setAttribute('download', `${fileName}.csv`)
             element.style.display = 'none'
-            document.body.appendChild(element)
+            document.body.append(element)
             element.click()
-            document.body.removeChild(element)
+            element.remove()
         },
     })
 

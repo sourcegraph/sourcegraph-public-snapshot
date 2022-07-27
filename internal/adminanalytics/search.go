@@ -117,22 +117,23 @@ func (s *Search) ExportCSV(ctx context.Context) (*string, error) {
 	}
 
 	for _, event := range events {
-		if fetcher, err := event.Fetcher(); err == nil {
-			if nodes, err := fetcher.Nodes(ctx); err == nil {
-				for _, node := range nodes {
-					rows = append(rows, fmt.Sprintf("%s,Total Events,%s,%v", event.Name, node.Date(), node.Count()))
-					rows = append(rows, fmt.Sprintf("%s,Unique Users,%s,%v", event.Name, node.Date(), node.UniqueUsers()))
-				}
-			} else {
-				return nil, err
-			}
-		} else {
+		fetcher, err := event.Fetcher()
+		if err != nil {
 			return nil, err
 		}
 
+		nodes, err := fetcher.Nodes(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, node := range nodes {
+			rows = append(rows, fmt.Sprintf("%s,Total Events,%s,%v", event.Name, node.Date(), node.Count()))
+			rows = append(rows, fmt.Sprintf("%s,Unique Users,%s,%v", event.Name, node.Date(), node.UniqueUsers()))
+		}
 	}
 
-	csv := strings.Join(rows[:], "\n")
+	csv := strings.Join(rows, "\n")
 
 	return &csv, nil
 }

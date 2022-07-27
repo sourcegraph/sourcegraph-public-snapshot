@@ -3,11 +3,17 @@ import React, { useMemo, useState, useEffect } from 'react'
 import classNames from 'classnames'
 import { RouteComponentProps } from 'react-router'
 
-import { useQuery, useLazyQuery } from '@sourcegraph/http-client'
+import { useQuery } from '@sourcegraph/http-client'
 import { Card, H3, Text, LoadingSpinner, AnchorLink, H4 } from '@sourcegraph/wildcard'
 
 import { LineChart, Series } from '../../../charts'
-import { AnalyticsDateRange, SearchStatisticsResult, SearchStatisticsVariables } from '../../../graphql-operations'
+import {
+    AnalyticsDateRange,
+    SearchStatisticsResult,
+    SearchStatisticsVariables,
+    ExportSearchStatisticsResult,
+    ExportSearchStatisticsVariables,
+} from '../../../graphql-operations'
 import { eventLogger } from '../../../tracking/eventLogger'
 import { AnalyticsPageTitle } from '../components/AnalyticsPageTitle'
 import { ChartContainer } from '../components/ChartContainer'
@@ -167,7 +173,7 @@ export const AnalyticsSearchPage: React.FunctionComponent<RouteComponentProps<{}
             <div className="d-flex justify-content-between align-items-end">
                 <AnalyticsPageTitle>Analytics / Search</AnalyticsPageTitle>
                 <div className="mb-4">
-                    <ExportButton
+                    <ExportButton<ExportSearchStatisticsResult, ExportSearchStatisticsVariables>
                         query={EXPORT_STATISTICS}
                         variables={{ dateRange }}
                         path="site.analytics.search.exportCSV"
