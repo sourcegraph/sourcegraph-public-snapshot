@@ -32,7 +32,7 @@ func (w *webhookBuildJob) Config() []env.Config {
 }
 
 func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	mainAppDb, err := workerdb.Init()
+	mainAppDB, err := workerdb.Init()
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 
 	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
 
-	handle := basestore.NewHandleWithDB(mainAppDb, sql.TxOptions{ReadOnly: false})
+	handle := basestore.NewHandleWithDB(mainAppDB, sql.TxOptions{ReadOnly: false})
 	baseStore := basestore.NewWithHandle(handle)
 	workerStore := webhookbuilder.CreateWorkerStore(baseStore.Handle())
 

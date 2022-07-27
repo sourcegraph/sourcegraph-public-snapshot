@@ -198,6 +198,8 @@ require (
 	sigs.k8s.io/yaml v1.3.0
 )
 
+require github.com/thanhpk/randstr v1.0.4 // indirect
+
 require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.101.0 // indirect
