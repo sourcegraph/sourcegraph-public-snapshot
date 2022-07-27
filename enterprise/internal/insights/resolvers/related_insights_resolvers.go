@@ -57,7 +57,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		for _, match := range mr.Matches {
 			for _, lineMatch := range match.LineMatches {
 				if seriesMatches[series.UniqueID] == nil {
-					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}}
+					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}, offsetAndLengths: lineMatch.OffsetAndLengths}
 				} else if !containsInt(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber) {
 					seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
 				}
@@ -70,20 +70,27 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		sort.SliceStable(metadata.lineNumbers, func(i, j int) bool {
 			return metadata.lineNumbers[i] < metadata.lineNumbers[j]
 		})
-		resolvers = append(resolvers, &relatedInsightsInlineResolver{viewID: insightId, title: metadata.title, lineNumbers: metadata.lineNumbers})
+		resolvers = append(resolvers, &relatedInsightsInlineResolver{
+			viewID:           insightId,
+			title:            metadata.title,
+			lineNumbers:      metadata.lineNumbers,
+			offsetAndLengths: metadata.offsetAndLengths,
+		})
 	}
 	return resolvers, nil
 }
 
 type relatedInsightInlineMetadata struct {
-	title       string
-	lineNumbers []int32
+	title            string
+	lineNumbers      []int32
+	offsetAndLengths [][2]int32
 }
 
 type relatedInsightsInlineResolver struct {
-	viewID      string
-	title       string
-	lineNumbers []int32
+	viewID           string
+	title            string
+	lineNumbers      []int32
+	offsetAndLengths [][2]int32
 
 	baseInsightResolver
 }
@@ -98,6 +105,14 @@ func (r *relatedInsightsInlineResolver) Title() string {
 
 func (r *relatedInsightsInlineResolver) LineNumbers() []int32 {
 	return r.lineNumbers
+}
+
+func (r *relatedInsightsInlineResolver) OffsetAndLengths() [][]int32 {
+	converted := [][]int32{}
+	for i := range r.offsetAndLengths {
+		converted = append(converted, r.offsetAndLengths[i][:])
+	}
+	return converted
 }
 
 func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {

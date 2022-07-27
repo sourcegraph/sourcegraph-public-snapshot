@@ -274,6 +274,10 @@ type RelatedInsightInline {
     An array of line numbers where matches are found
     """
     lineNumbers: [Int!]!
+    """
+    The offsets and lengths of the matches
+    """
+    offsetAndLengths: [[Int!]!]!
 }
 
 """
