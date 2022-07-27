@@ -10,6 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type StitchedMigration struct {
+	Definitions  *definition.Definitions
+	LeafIDsByRev map[string][]int
+}
+
 // StitchDefinitions constructs a migration graph over time in two values. First, the migration graph itself
 // is formed by merging migration definitions as they were defined over time in Git. Second, the set of leaves
 // of the migration point at each of the given revisions is also constructed. This data is useful during
@@ -22,10 +27,10 @@ import (
 //
 // NOTE: This should only be used at development or build time - the root parameter should point to a
 // valid git clone root directory. Resulting errors are apparent.
-func StitchDefinitions(schemaName, root string, revs []string) (*definition.Definitions, map[string][]int, error) {
+func StitchDefinitions(schemaName, root string, revs []string) (StitchedMigration, error) {
 	definitionMap, leafIDsByRev, err := overlayDefinitions(schemaName, root, revs)
 	if err != nil {
-		return nil, nil, err
+		return StitchedMigration{}, err
 	}
 
 	migrationDefinitions := make([]definition.Definition, 0, len(definitionMap))
@@ -35,10 +40,10 @@ func StitchDefinitions(schemaName, root string, revs []string) (*definition.Defi
 
 	definitions, err := definition.NewDefinitions(migrationDefinitions)
 	if err != nil {
-		return nil, nil, err
+		return StitchedMigration{}, err
 	}
 
-	return definitions, leafIDsByRev, nil
+	return StitchedMigration{definitions, leafIDsByRev}, nil
 }
 
 // overlayDefinitions combines the definitions defined at all of the given git revisions for the given schema,

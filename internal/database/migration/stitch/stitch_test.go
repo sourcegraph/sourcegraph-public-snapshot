@@ -223,23 +223,23 @@ func TestStitchAndApplyCodeinsightsDefinitions(t *testing.T) {
 // asserts that the resulting graph has the expected root and leaf values.
 func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoot int, expectedLeaves []int, expectedLeavesByRev map[string][]int) {
 	t.Run(fmt.Sprintf("stitch 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		definitions, leavesByRev, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
+		stitched, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
 		}
 
 		var leafIDs []int
-		for _, migration := range definitions.Leaves() {
+		for _, migration := range stitched.Definitions.Leaves() {
 			leafIDs = append(leafIDs, migration.ID)
 		}
 
-		if rootID := definitions.Root().ID; rootID != expectedRoot {
+		if rootID := stitched.Definitions.Root().ID; rootID != expectedRoot {
 			t.Fatalf("unexpected root migration. want=%d have=%d", expectedRoot, rootID)
 		}
 		if len(leafIDs) != len(expectedLeaves) || cmp.Diff(expectedLeaves, leafIDs) != "" {
 			t.Fatalf("unexpected leaf migrations. want=%v have=%v", expectedLeaves, leafIDs)
 		}
-		if diff := cmp.Diff(expectedLeavesByRev, leavesByRev); diff != "" {
+		if diff := cmp.Diff(expectedLeavesByRev, stitched.LeafIDsByRev); diff != "" {
 			t.Fatalf("unexpected all leave (-want +got):\n%s", diff)
 		}
 	})
@@ -250,7 +250,7 @@ func testStitchGraphShape(t *testing.T, schemaName string, from, to, expectedRoo
 // compared against the target version's description (in the git-tree).
 func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 	t.Run(fmt.Sprintf("upgrade 3.%d -> 3.%d", from, to), func(t *testing.T) {
-		definitions, _, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
+		stitched, err := StitchDefinitions(schemaName, repositoryRoot(t), makeRange(from, to))
 		if err != nil {
 			t.Fatalf("failed to stitch definitions: %s", err)
 		}
@@ -271,7 +271,7 @@ func testStitchApplication(t *testing.T, schemaName string, from, to int) {
 			{
 				Name:                schemaName,
 				MigrationsTableName: migrationsTableName,
-				Definitions:         definitions,
+				Definitions:         stitched.Definitions,
 			},
 		})
 
