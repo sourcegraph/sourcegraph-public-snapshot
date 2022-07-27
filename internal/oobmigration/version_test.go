@@ -17,7 +17,7 @@ func TestCompareVersions(t *testing.T) {
 	}
 
 	for _, testCase := range testCases {
-		order := compareVersions(testCase.left, testCase.right)
+		order := CompareVersions(testCase.left, testCase.right)
 		if order != testCase.expected {
 			t.Errorf("unexpected order. want=%d have=%d", testCase.expected, order)
 		}
