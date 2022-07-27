@@ -220,6 +220,9 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 
 	// Convert parameters to nodes
 	for _, parameter := range b.Parameters {
+		if parameter.Annotation.Labels.IsSet(query.IsPredicate) {
+			continue
+		}
 		newPred := queryParameterToPredicate(parameter, caseSensitive, diff)
 		if newPred != nil {
 			res = append(res, newPred)
