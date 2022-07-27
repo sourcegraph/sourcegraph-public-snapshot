@@ -26,6 +26,8 @@ type InsightsResolver interface {
 	RelatedInsightsForFile(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsResolver, error)
 	RelatedInsightsForRepo(ctx context.Context, args RelatedInsightsRepoArgs) ([]RelatedInsightsResolver, error)
 
+	QueryInsights(ctx context.Context, args QueryInsightsArgs) (QueryInsightsResult, error)
+
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
 	UpdateInsightsDashboard(ctx context.Context, args *UpdateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -43,7 +45,6 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
-	QueryInsight(ctx context.Context, args QueryInsightArgs) (QueryInsightResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
@@ -485,36 +486,21 @@ type RelatedInsightsResolver interface {
 	Title() string
 }
 
-type QueryInsightResolver interface {
-	ThirtyDayChange(ctx context.Context) (QueryInsightResultChange, error)
-	InsightPreview(ctx context.Context) (QueryInsightPreview, error)
+type QueryInsightsResolver interface {
+	ThirtyDayPercentChange(ctx context.Context) (int32, error)
+	Preview(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
 }
 
-type QueryInsightResultChange interface {
-	ToResultChange() (ResultChange, bool)
-	ToQueryInsightNotAvailable() (QueryInsightNotAvailable, bool)
-}
-
-type ResultChange interface {
-	Current(ctx context.Context) int32
-	Previous(ctx context.Context) int32
-	PercentChange(ctx context.Context) int32
-}
-
-type QueryInsightNotAvailable interface {
+type QueryInsightsNotAvailable interface {
 	Message(ctx context.Context) string
 }
 
-type QueryInsightArgs struct {
+type QueryInsightsArgs struct {
 	Query       string `json:"query"`
 	PatternType string `json:"patternType"`
 }
 
-type QueryInsightPreviewSeries interface {
-	Series(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
-}
-
-type QueryInsightPreview interface {
-	ToQueryInsightPreviewSeries() (QueryInsightPreviewSeries, bool)
-	ToQueryInsightNotAvailable() (QueryInsightNotAvailable, bool)
+type QueryInsightsResult interface {
+	ToQueryInsights() (QueryInsightsResolver, bool)
+	ToQueryInsightsNotAvailable() (QueryInsightsNotAvailable, bool)
 }
