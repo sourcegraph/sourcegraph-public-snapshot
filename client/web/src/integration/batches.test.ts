@@ -589,6 +589,9 @@ describe('Batches', () => {
         })
     })
 
+    // Possibly flaky test. Removing .skip temporarily in order to figure
+    // out the root cause of this as we're unable to reproduce locally.
+    // See https://github.com/sourcegraph/sourcegraph/issues/37233
     describe('Batch changes details', () => {
         for (const entityType of ['user', 'org'] as const) {
             it(`displays a single batch change for ${entityType}`, async () => {
@@ -609,6 +612,9 @@ describe('Batches', () => {
                 await driver.page.waitForSelector('.test-batch-change-details-page')
                 await percySnapshotWithVariants(driver.page, `Batch change details page ${entityType}`)
                 await accessibilityAudit(driver.page)
+
+                // we wait for the changesets to be loaded in the browser before proceeding
+                await driver.page.waitForSelector('.test-batches-expand-changeset')
 
                 await driver.page.click('.test-batches-expand-changeset')
                 // Expect one diff to be rendered.
