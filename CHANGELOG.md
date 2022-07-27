@@ -24,7 +24,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Changed
 
--
+- **Search: Queries with patterns surrounded by** `/.../` **will now be interpreted as regular expressions.** Existing recent searches (e.g., links in your home page) or code monitors are unaffected. If you happen to use an existing older link and want `/.../` to work as a regular expression, add `patterntype:standard` to the query. New queries and code monitors will interpret `/.../` as regular expressions. [#38141](https://github.com/sourcegraph/sourcegraph/pull/38141).
 
 ### Fixed
 

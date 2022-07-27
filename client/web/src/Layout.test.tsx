@@ -22,7 +22,7 @@ jest.mock('./theme', () => ({
 describe('Layout', () => {
     const defaultProps: LayoutProps = ({
         // Parsed query components
-        patternType: SearchPatternType.literal,
+        patternType: SearchPatternType.standard,
         setPatternType: () => {},
         caseSensitive: false,
         setCaseSensitivity: () => {},
@@ -59,7 +59,7 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=r:golang/oauth2+test+f:travis&patternType=regexp' })
 
-        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
+        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.standard })
 
         render(
             <MockedTestProvider>
@@ -78,7 +78,7 @@ describe('Layout', () => {
         const history = createBrowserHistory()
         history.replace({ search: 'q=&patternType=regexp' })
 
-        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.literal })
+        useNavbarQueryState.setState({ searchPatternType: SearchPatternType.standard })
 
         render(
             <MockedTestProvider>
@@ -90,7 +90,7 @@ describe('Layout', () => {
             </MockedTestProvider>
         )
 
-        expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.literal)
+        expect(useNavbarQueryState.getState().searchPatternType).toBe(SearchPatternType.standard)
     })
 
     it('should update caseSensitive if different between URL and context', () => {

@@ -225,7 +225,7 @@ func parseURLQuery(q url.Values) (*args, error) {
 
 	a := args{
 		Query:          get("q", ""),
-		Version:        get("v", "V2"),
+		Version:        get("v", "V3"),
 		PatternType:    get("t", ""),
 		DecorationKind: get("dk", "html"),
 	}

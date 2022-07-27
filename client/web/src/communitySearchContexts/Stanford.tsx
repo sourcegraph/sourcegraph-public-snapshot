@@ -13,29 +13,29 @@ export const stanford: CommunitySearchContextMetadata = {
     examples: [
         {
             title: 'Find all mentions of "machine learning" in Stanford projects.',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'machine learning',
         },
         {
             title:
                 'Explore the code of specific research groups like Hazy Research, a group that investigates machine learning models and automated training set creation.',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'repo:/HazyResearch/',
         },
         {
             title:
                 'Explore the code of a specific user or organization such as Stanford University School of Medicine.',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'repo:/susom/',
         },
         {
             title: 'Search for repositories related to introductory programming concepts.',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'repo:recursion',
         },
         {
             title: 'Explore the README files of thousands of projects.',
-            patternType: SearchPatternType.literal,
+            patternType: SearchPatternType.standard,
             query: 'file:README.txt',
         },
         {

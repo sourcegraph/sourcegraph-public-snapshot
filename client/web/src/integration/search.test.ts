@@ -277,15 +277,15 @@ describe('Search', () => {
                     await editor.focus()
                     await driver.page.keyboard.type('test')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal&case=yes')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard&case=yes')
                 })
 
                 test('Clicking toggle turns off case sensitivity and removes case= URL parameter', async () => {
-                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=literal&case=yes')
+                    await driver.page.goto(driver.sourcegraphBaseUrl + '/search?q=test&patternType=standard&case=yes')
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-case-sensitivity-toggle')
                     await driver.page.click('.test-case-sensitivity-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
                 })
             })
         })
@@ -325,7 +325,7 @@ describe('Search', () => {
                     await createEditorAPI(driver, queryInputSelector)
                     await driver.page.waitForSelector('.test-structural-search-toggle')
                     await driver.page.click('.test-structural-search-toggle')
-                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=literal')
+                    await driver.assertWindowLocation('/search?q=context:global+test&patternType=standard')
                 })
             })
         })
@@ -553,7 +553,7 @@ describe('Search', () => {
                 driver.page.waitForNavigation(),
                 driver.page.click('[data-testid="search-type-submit"]'),
             ])
-            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=literal')
+            await driver.assertWindowLocation('/search?q=context:global+test+type:commit&patternType=standard')
         })
     })
 })

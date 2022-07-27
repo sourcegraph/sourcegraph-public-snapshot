@@ -28,6 +28,7 @@ export function parseSearchURLPatternType(query: string): SearchPatternType | un
     const searchParameters = new URLSearchParams(query)
     const patternType = searchParameters.get('patternType')
     switch (patternType) {
+        case SearchPatternType.standard:
         case SearchPatternType.literal:
         case SearchPatternType.regexp:
         case SearchPatternType.structural:
