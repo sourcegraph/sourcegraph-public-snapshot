@@ -107,6 +107,10 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 	}, nil
 }
 
+func (r *Resolver) QueryInsight(ctx context.Context, args graphqlbackend.QueryInsightArgs) (graphqlbackend.QueryInsightResolver, error) {
+	return nil, nil
+}
+
 // 🚨 SECURITY
 // only add users / orgs if the user is non-anonymous. This will restrict anonymous users to only see
 // dashboards with a global grant.

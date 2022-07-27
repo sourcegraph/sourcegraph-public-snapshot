@@ -43,6 +43,7 @@ type InsightsResolver interface {
 	// Admin Management
 	UpdateInsightSeries(ctx context.Context, args *UpdateInsightSeriesArgs) (InsightSeriesMetadataPayloadResolver, error)
 	InsightSeriesQueryStatus(ctx context.Context) ([]InsightSeriesQueryStatusResolver, error)
+	QueryInsight(ctx context.Context, args QueryInsightArgs) (QueryInsightResolver, error)
 }
 
 type SearchInsightLivePreviewArgs struct {
@@ -482,4 +483,38 @@ type RelatedInsightsInlineResolver interface {
 type RelatedInsightsResolver interface {
 	ViewID() string
 	Title() string
+}
+
+type QueryInsightResolver interface {
+	ThirtyDayChange(ctx context.Context) (QueryInsightResultChange, error)
+	InsightPreview(ctx context.Context) (QueryInsightPreview, error)
+}
+
+type QueryInsightResultChange interface {
+	ToResultChange() (ResultChange, bool)
+	ToQueryInsightNotAvailable() (QueryInsightNotAvailable, bool)
+}
+
+type ResultChange interface {
+	Current(ctx context.Context) int32
+	Previous(ctx context.Context) int32
+	PercentChange(ctx context.Context) int32
+}
+
+type QueryInsightNotAvailable interface {
+	Message(ctx context.Context) string
+}
+
+type QueryInsightArgs struct {
+	Query       string `json:"query"`
+	PatternType string `json:"patternType"`
+}
+
+type QueryInsightPreviewSeries interface {
+	Series(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
+}
+
+type QueryInsightPreview interface {
+	ToQueryInsightPreviewSeries() (QueryInsightPreviewSeries, bool)
+	ToQueryInsightNotAvailable() (QueryInsightNotAvailable, bool)
 }

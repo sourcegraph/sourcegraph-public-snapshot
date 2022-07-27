@@ -224,7 +224,53 @@ extend type Query {
     Returns insights that match the given repo. This query is experimental and should be considered unstable in the API.
     """
     relatedInsightsForRepo(input: RelatedInsightsRepoInput!): [RelatedInsight!]!
+
+    """
+    Returns insights based on a search query. This is experimental and should be considered unstable in the API.
+    """
+    queryInsight(
+        """
+        The search query
+        """
+        query: String!
+        """
+        The search pattern type
+        """
+        patternType: SearchPatternType = literal
+    ): QueryInsight
 }
+
+"""
+Insight previews that are available based on a search query. This type is experimental and should be considered unstable in the API.
+"""
+type QueryInsight {
+    """
+    30 day change
+    """
+    thirtyDayChange: QueryInsightResultChange
+
+    """
+    insight preview
+    """
+    insightPreview: QueryInsightPreview
+}
+
+type QueryInsightNotAvailable {
+    message: String!
+}
+
+type ResultChange {
+    current: Int!
+    previous: Int!
+    percentChange: Int!
+}
+
+type QueryInsightPreviewSeries {
+    series: [SearchInsightLivePreviewSeries]!
+}
+union QueryInsightResultChange = ResultChange | QueryInsightNotAvailable
+
+union QueryInsightPreview = QueryInsightPreviewSeries | QueryInsightNotAvailable
 
 """
 Input for getting insights related to a file. This input type is experimental and should be considered unstable in the API.
