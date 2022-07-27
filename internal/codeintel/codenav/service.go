@@ -25,7 +25,7 @@ type service interface {
 	GetHover(ctx context.Context, bundleID int, path string, line, character int) (string, shared.Range, bool, error)
 	GetReferences(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ReferencesCursor) (_ []shared.UploadLocation, nextCursor shared.ReferencesCursor, err error)
 	GetImplementations(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ImplementationsCursor) (_ []shared.UploadLocation, nextCursor shared.ImplementationsCursor, err error)
-	GetDefinitions(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error)
+	GetDefinitions(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ []shared.UploadLocation, err error)
 	GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error)
 	GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error)
 	GetStencil(ctx context.Context, uploadID int, path string) (_ []shared.Range, err error)
@@ -117,7 +117,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	if cursor.Phase == "local" {
 		localLocations, hasMore, err := s.getPageLocalLocations(
 			ctx,
-			s.getRefLocationFn,
+			s.lsifstore.GetReferenceLocations,
 			adjustedUploads,
 			&cursor.LocalCursor,
 			args.Limit-len(locations),
@@ -189,14 +189,6 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	}
 
 	return referenceLocations, nextCursor, nil
-}
-
-// GetReferences returns the list of source locations that reference the symbol at the given position.
-func (s *Service) getRefLocationFn(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.getReferences.With(ctx, &err, observation.Args{})
-	defer endObservation(1, observation.Args{})
-
-	return s.lsifstore.GetReferenceLocations(ctx, uploadID, path, line, character, limit, offset)
 }
 
 // getUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
@@ -465,7 +457,7 @@ func (s *Service) getSourceRange(ctx context.Context, args shared.RequestArgs, r
 		return commit, rng, true, nil
 	}
 
-	if _, sourceRange, ok, err := requestState.gitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, commit, path, rng, true); err != nil {
+	if _, sourceRange, ok, err := requestState.GitTreeTranslator.GetTargetCommitRangeFromSourceRange(ctx, commit, path, rng, true); err != nil {
 		return "", shared.Range{}, false, errors.Wrap(err, "gitTreeTranslator.GetTargetCommitRangeFromSourceRange")
 	} else if ok {
 		return args.Commit, sourceRange, true, nil
@@ -668,12 +660,84 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 	return implementationLocations, nextCursor, nil
 }
 
+// s.lsifstore.GetDefinitionLocations(ctx, uploadID, path, line, character, limit, offset)
+
 // GetDefinitions returns the set of locations defining the symbol at the given position.
-func (s *Service) GetDefinitions(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.getDefinitions.With(ctx, &err, observation.Args{})
+func (s *Service) GetDefinitions(ctx context.Context, args shared.RequestArgs, requestState RequestState) (_ []shared.UploadLocation, err error) {
+	ctx, trace, endObservation := s.operations.getDefinitions.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
-	return s.lsifstore.GetDefinitionLocations(ctx, uploadID, path, line, character, limit, offset)
+	// Adjust the path and position for each visible upload based on its git difference to
+	// the target commit.
+	visibleUploads, err := s.getVisibleUploads(ctx, args.Line, args.Character, requestState)
+	if err != nil {
+		return nil, err
+	}
+
+	// Gather the "local" reference locations that are reachable via a referenceResult vertex.
+	// If the definition exists within the index, it should be reachable via an LSIF graph
+	// traversal and should not require an additional moniker search in the same index.
+	for i := range visibleUploads {
+		trace.Log(traceLog.Int("uploadID", visibleUploads[i].Upload.ID))
+
+		locations, _, err := s.lsifstore.GetDefinitionLocations(
+			ctx,
+			visibleUploads[i].Upload.ID,
+			visibleUploads[i].TargetPathWithoutRoot,
+			visibleUploads[i].TargetPosition.Line,
+			visibleUploads[i].TargetPosition.Character,
+			DefinitionsLimit,
+			0,
+		)
+		if err != nil {
+			return nil, errors.Wrap(err, "lsifStore.Definitions")
+		}
+		if len(locations) > 0 {
+			// If we have a local definition, we won't find a better one and can exit early
+			return s.getUploadLocations(ctx, args, requestState, locations)
+		}
+	}
+
+	// Gather all import monikers attached to the ranges enclosing the requested position
+	orderedMonikers, err := s.getOrderedMonikers(ctx, visibleUploads, "import")
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(
+		traceLog.Int("numMonikers", len(orderedMonikers)),
+		traceLog.String("monikers", monikersToString(orderedMonikers)),
+	)
+
+	// Determine the set of uploads over which we need to perform a moniker search. This will
+	// include all all indexes which define one of the ordered monikers. This should not include
+	// any of the indexes we have already performed an LSIF graph traversal in above.
+	uploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, orderedMonikers, requestState)
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(
+		traceLog.Int("numXrepoDefinitionUploads", len(uploads)),
+		traceLog.String("xrepoDefinitionUploads", uploadIDsToString(uploads)),
+	)
+
+	// Perform the moniker search
+	locations, _, err := s.getBulkMonikerLocations(ctx, uploads, orderedMonikers, "definitions", DefinitionsLimit, 0)
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(traceLog.Int("numXrepoLocations", len(locations)))
+
+	// Adjust the locations back to the appropriate range in the target commits. This adjusts
+	// locations within the repository the user is browsing so that it appears all definitions
+	// are occurring at the same commit they are looking at.
+
+	adjustedLocations, err := s.getUploadLocations(ctx, args, requestState, locations)
+	if err != nil {
+		return nil, err
+	}
+	trace.Log(traceLog.Int("numAdjustedXrepoLocations", len(adjustedLocations)))
+
+	return adjustedLocations, nil
 }
 
 func (s *Service) GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error) {
@@ -862,7 +926,7 @@ func (s *Service) getVisibleUpload(ctx context.Context, line, character int, upl
 		Character: character,
 	}
 
-	targetPath, targetPosition, ok, err := r.gitTreeTranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, position, false)
+	targetPath, targetPosition, ok, err := r.GitTreeTranslator.GetTargetCommitPositionFromSourcePosition(ctx, upload.Commit, position, false)
 	if err != nil || !ok {
 		return visibleUpload{}, false, errors.Wrap(err, "gitTreeTranslator.GetTargetCommitPositionFromSourcePosition")
 	}

@@ -14,7 +14,7 @@ import (
 
 type RequestState struct {
 	dataLoader                     *UploadsDataLoader
-	gitTreeTranslator              GitTreeTranslator
+	GitTreeTranslator              GitTreeTranslator
 	maximumIndexesPerMonikerSearch int
 	commitCache                    CommitCache
 	authChecker                    authz.SubRepoPermissionChecker
@@ -47,7 +47,7 @@ func (r *RequestState) SetLocalGitTreeTranslator(client gitserver.Client, repo *
 		path:   path,
 	}
 
-	r.gitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)
+	r.GitTreeTranslator = NewGitTreeTranslator(client, args, hunkCache)
 
 	return nil
 }
