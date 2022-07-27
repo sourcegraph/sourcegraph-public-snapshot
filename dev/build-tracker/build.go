@@ -29,9 +29,7 @@ func (b *Build) isFinished() bool {
 	case "canceled":
 		return true
 	}
-
 	return false
-
 }
 
 func (b *Build) authorName() string {
