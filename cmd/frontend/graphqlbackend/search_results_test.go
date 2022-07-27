@@ -23,7 +23,6 @@ import (
 	searchbackend "github.com/sourcegraph/sourcegraph/internal/search/backend"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -324,9 +323,9 @@ func TestSearchResultsHydration(t *testing.T) {
 
 	query := `foobar index:only count:350`
 	literalPatternType := "literal"
-	searchInputs, err := run.NewSearchInputs(
+	cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil)
+	searchInputs, err := cli.Plan(
 		ctx,
-		db,
 		"V2",
 		&literalPatternType,
 		query,
@@ -339,7 +338,7 @@ func TestSearchResultsHydration(t *testing.T) {
 	}
 
 	resolver := &searchResolver{
-		client:       client.NewSearchClient(logtest.Scoped(t), db, z, nil),
+		client:       cli,
 		db:           db,
 		logger:       logtest.Scoped(t),
 		SearchInputs: searchInputs,
@@ -563,9 +562,9 @@ func TestEvaluateAnd(t *testing.T) {
 			db.ReposFunc.SetDefaultReturn(repos)
 
 			literalPatternType := "literal"
-			searchInputs, err := run.NewSearchInputs(
+			cli := client.NewSearchClient(logtest.Scoped(t), db, z, nil)
+			searchInputs, err := cli.Plan(
 				context.Background(),
-				db,
 				"V2",
 				&literalPatternType,
 				tt.query,
@@ -578,7 +577,7 @@ func TestEvaluateAnd(t *testing.T) {
 			}
 
 			resolver := &searchResolver{
-				client:       client.NewSearchClient(logtest.Scoped(t), db, z, nil),
+				client:       cli,
 				db:           db,
 				logger:       logtest.Scoped(t),
 				SearchInputs: searchInputs,
@@ -669,9 +668,9 @@ func TestSubRepoFiltering(t *testing.T) {
 			})
 
 			literalPatternType := "literal"
-			searchInputs, err := run.NewSearchInputs(
+			cli := client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil)
+			searchInputs, err := cli.Plan(
 				context.Background(),
-				db,
 				"V2",
 				&literalPatternType,
 				tt.searchQuery,
@@ -684,7 +683,7 @@ func TestSubRepoFiltering(t *testing.T) {
 			}
 
 			resolver := searchResolver{
-				client:       client.NewSearchClient(logtest.Scoped(t), db, mockZoekt, nil),
+				client:       cli,
 				SearchInputs: searchInputs,
 				zoekt:        mockZoekt,
 				db:           db,
