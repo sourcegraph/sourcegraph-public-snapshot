@@ -42,10 +42,6 @@ func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, rec
 	return nil
 }
 
-type GitHubWebhookHandler struct {
-	client *github.V3Client
-}
-
 func handleCaseGitHub(ctx context.Context, logger log.Logger, w *webhookBuildHandler, wbj *webhookbuilder.Job) error {
 	svcs, err := w.store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{})
 	if err != nil || len(svcs) != 1 {

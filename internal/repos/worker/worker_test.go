@@ -2,10 +2,9 @@ package webhookbuilder
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"testing"
 
-	"github.com/hexops/autogold"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/actor"
@@ -33,8 +32,10 @@ func TestJobQueue(t *testing.T) {
 	t.Run(tc.extSvcKind, func(t *testing.T) {
 		recordID := 0
 		job, err := dequeueJob(ctx, workerBaseStore, recordID)
-		autogold.Want("0", (*Job)(nil)).Equal(t, job)
-		autogold.Want("1", "expected 1 job to dequeue, found 0").Equal(t, fmt.Sprint(err))
+		if err != nil && err.Error() != "expected 1 job to dequeue, found 0" {
+			t.Fatal(err)
+		}
+		assertEqual(t, nil, nil, job)
 
 		firstJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
 			RepoID:     1,
@@ -55,19 +56,36 @@ func TestJobQueue(t *testing.T) {
 		}
 
 		firstJob, err := dequeueJob(ctx, workerBaseStore, firstJobID)
-		autogold.Want("2", &Job{
+		assertEqual(t, err, &Job{
 			RepoID:     1,
 			RepoName:   "repo 1",
 			ExtSvcKind: tc.extSvcKind,
-		}).Equal(t, firstJob)
-		autogold.Want("3", "<nil>").Equal(t, fmt.Sprint(err))
+		}, firstJob)
 
 		secondJob, err := dequeueJob(ctx, workerBaseStore, secondJobID)
-		autogold.Want("4", &Job{
+		assertEqual(t, err, &Job{
 			RepoID:     2,
 			RepoName:   "repo 2",
 			ExtSvcKind: tc.extSvcKind,
-		}).Equal(t, secondJob)
-		autogold.Want("5", "<nil>").Equal(t, fmt.Sprint(err))
+		}, secondJob)
 	})
+}
+
+func assertEqual(t *testing.T, err error, want *Job, have *Job) {
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if have == nil {
+		if have != nil {
+			t.Fatal(errors.New("expected nil job, got non-nil job"))
+		}
+		return
+	}
+
+	if want.RepoID != have.RepoID ||
+		want.RepoName != have.RepoName ||
+		want.ExtSvcKind != have.ExtSvcKind {
+		t.Fatal(errors.New("have, want not the same"))
+	}
 }

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -142,8 +143,6 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 	var jobs []*Job
 
 	for rows.Next() {
-		var executionLogs []*any
-
 		var job Job
 		if err := rows.Scan(
 			// Webhook builder fields
@@ -161,7 +160,7 @@ func doScanJobs(rows *sql.Rows, err error) ([]*Job, error) {
 			&job.ProcessAfter,
 			&job.NumResets,
 			&job.NumFailures,
-			executionLogs,
+			pq.Array(&job.ExecutionLogs),
 		); err != nil {
 			return nil, err
 		}

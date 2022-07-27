@@ -14,6 +14,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+type GitHubWebhookHandler struct {
+	client *github.V3Client
+}
+
 func newGitHubWebhookHandler(client *github.V3Client) *GitHubWebhookHandler {
 	return &GitHubWebhookHandler{client: client}
 }
