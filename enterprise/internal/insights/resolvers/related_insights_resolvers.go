@@ -54,10 +54,15 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 		for _, match := range mr.Matches {
 			for _, lineMatch := range match.LineMatches {
 				if seriesMatches[series.UniqueID] == nil {
-					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{title: series.Title, lineNumbers: []int32{lineMatch.LineNumber}, offsetAndLengths: lineMatch.OffsetAndLengths}
+					seriesMatches[series.UniqueID] = &relatedInsightInlineMetadata{
+						title:            series.Title,
+						lineNumbers:      []int32{lineMatch.LineNumber},
+						offsetAndLengths: lineMatch.OffsetAndLengths,
+						lines:            []string{lineMatch.Line}}
 				} else {
 					seriesMatches[series.UniqueID].lineNumbers = append(seriesMatches[series.UniqueID].lineNumbers, lineMatch.LineNumber)
 					seriesMatches[series.UniqueID].offsetAndLengths = append(seriesMatches[series.UniqueID].offsetAndLengths, lineMatch.OffsetAndLengths...)
+					seriesMatches[series.UniqueID].lines = append(seriesMatches[series.UniqueID].lines, lineMatch.Line)
 				}
 			}
 		}
@@ -70,6 +75,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 			title:            metadata.title,
 			lineNumbers:      metadata.lineNumbers,
 			offsetAndLengths: metadata.offsetAndLengths,
+			lines:            metadata.lines,
 		})
 	}
 	return resolvers, nil
@@ -79,6 +85,7 @@ type relatedInsightInlineMetadata struct {
 	title            string
 	lineNumbers      []int32
 	offsetAndLengths [][2]int32
+	lines            []string
 }
 
 type relatedInsightsInlineResolver struct {
@@ -86,6 +93,7 @@ type relatedInsightsInlineResolver struct {
 	title            string
 	lineNumbers      []int32
 	offsetAndLengths [][2]int32
+	lines            []string
 
 	baseInsightResolver
 }
@@ -108,6 +116,10 @@ func (r *relatedInsightsInlineResolver) OffsetAndLengths() [][]int32 {
 		converted = append(converted, r.offsetAndLengths[i][:])
 	}
 	return converted
+}
+
+func (r *relatedInsightsInlineResolver) Lines() []string {
+	return r.lines
 }
 
 func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {

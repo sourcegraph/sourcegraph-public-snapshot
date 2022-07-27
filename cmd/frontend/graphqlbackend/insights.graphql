@@ -278,6 +278,10 @@ type RelatedInsightInline {
     The offsets and lengths of the matches
     """
     offsetAndLengths: [[Int!]!]!
+    """
+    The lines that the matches are found on
+    """
+    lines: [String!]!
 }
 
 """

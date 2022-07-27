@@ -478,6 +478,7 @@ type RelatedInsightsInlineResolver interface {
 	Title() string
 	LineNumbers() []int32
 	OffsetAndLengths() [][]int32
+	Lines() []string
 }
 
 type RelatedInsightsResolver interface {
