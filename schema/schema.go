@@ -1723,8 +1723,10 @@ type SettingsExperimentalFeatures struct {
 	// CodeInsightsGqlApi description: DEPRECATED: Enables gql api instead of using setting cascade as a main storage fro code insights entities
 	CodeInsightsGqlApi *bool `json:"codeInsightsGqlApi,omitempty"`
 	// CodeInsightsLandingPage description: DEPRECATED: Enables code insights landing page layout.
-	CodeInsightsLandingPage  *bool                     `json:"codeInsightsLandingPage,omitempty"`
-	CodeIntelRepositoryBadge *CodeIntelRepositoryBadge `json:"codeIntelRepositoryBadge,omitempty"`
+	CodeInsightsLandingPage *bool `json:"codeInsightsLandingPage,omitempty"`
+	// CodeInsightsSearchResultTrends description: Enables code insights trends button and side panel insight on the search result page.
+	CodeInsightsSearchResultTrends *bool                     `json:"codeInsightsSearchResultTrends,omitempty"`
+	CodeIntelRepositoryBadge       *CodeIntelRepositoryBadge `json:"codeIntelRepositoryBadge,omitempty"`
 	// CodeMonitoring description: Enables code monitoring.
 	CodeMonitoring *bool `json:"codeMonitoring,omitempty"`
 	// CodeMonitoringWebHooks description: Shows code monitor webhook and Slack webhook actions in the UI, allowing users to configure them.
