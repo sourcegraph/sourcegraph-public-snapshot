@@ -16,14 +16,17 @@ export function initOpenTelemetry(): void {
             }),
         })
 
-        const { openTelemetryTracing, externalURL } = window.context
+        const { openTelemetry, externalURL } = window.context
 
-        if (openTelemetryTracing) {
-            const url = isAbsoluteUrl(openTelemetryTracing.collectorURL)
-                ? openTelemetryTracing.collectorURL
-                : `${externalURL}/${openTelemetryTracing.collectorURL}`
+        if (openTelemetry) {
+            const url = isAbsoluteUrl(openTelemetry.endpoint)
+                ? openTelemetry.endpoint
+                : `${externalURL}/${openTelemetry.endpoint}`
 
-            const exporter = new OTLPTraceExporter({ url })
+            // As per https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#endpoint-urls-for-otlphttp
+            // non-signal-specific configuration should have signal-specific paths
+            // appended.
+            const exporter = new OTLPTraceExporter({ url: url + '/v1/traces' })
             const spanProcessor = new BatchSpanProcessor(exporter)
 
             provider.addSpanProcessor(spanProcessor)

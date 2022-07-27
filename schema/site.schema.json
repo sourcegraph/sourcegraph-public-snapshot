@@ -1182,58 +1182,20 @@
       "description": "Configuration for client observability",
       "type": "object",
       "additionalProperties": false,
-      "required": [
-        "openTelemetry.tracing",
-        "openTelemetry.metrics"
-      ],
       "properties": {
-        "openTelemetry.tracing": {
-          "description": "Configuration for OpenTelemetry tracing",
+        "openTelemetry": {
+          "description": "Configuration for the client OpenTelemetry exporter",
           "type": "object",
-          "required": [
-            "collectorURL"
-          ],
           "properties": {
-            "collectorURL": {
+            "endpoint": {
               "description": "OpenTelemetry tracing collector endpoint",
               "type": "string",
-              "examples": [
-                "/-/debug/otlp/traces",
-                "https://COLLECTOR_ENDPOINT/v1/traces"
-              ],
-              "default": "/-/debug/otlp/traces"
-            }
-          }
-        },
-        "openTelemetry.metrics": {
-          "description": "Configuration for OpenTelemetry metrics",
-          "type": "object",
-          "required": [
-            "collectorURL"
-          ],
-          "properties": {
-            "collectorURL": {
-              "description": "OpenTelemetry metrics collector endpoint",
-              "type": "string",
-              "examples": [
-                "/-/debug/otlp/metrics",
-                "https://COLLECTOR_ENDPOINT/v1/metrics"
-              ],
-              "default": "/-/debug/otlp/metrics"
+              "examples": ["/-/debug/otlp", "https://COLLECTOR_ENDPOINT"],
+              "default": "/-/debug/otlp"
             }
           }
         }
-      },
-      "examples": [
-        {
-          "openTelemetry.tracing": {
-            "collectorURL": "/-/debug/otlp/traces" 
-          },
-          "openTelemetry.metrics": {
-            "collectorURL": "/-/debug/otlp/metrics" 
-          }
-        }
-      ]
+      }
     },
     "observability.tracing": {
       "description": "Controls the settings for distributed tracing.",
