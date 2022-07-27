@@ -1287,7 +1287,7 @@ func testSearchClient(t *testing.T, client searchClient) {
 			{
 				name:   `file contains content predicate type diff`,
 				query:  `type:diff repo:go-diff file:contains(after_success)`, // matches .travis.yml and its 10 commits
-				counts: counts{Commit: 10},
+				counts: counts{Commit: 1},
 			},
 			{
 				name:   `select repo on 'and' operation`,
