@@ -88,9 +88,9 @@
         background: var(--code-bg);
     }
 
-    :global(.top-spacer) {
-        height: 0.5rem;
-    }
+    // :global(.top-spacer) {
+    //     height: 0.5rem;
+    // }
 
     :global(.bottom-spacer) {
         // Give room to view the last few lines of code

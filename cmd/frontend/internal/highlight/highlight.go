@@ -105,6 +105,10 @@ type Params struct {
 
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
+
+	// SkipHighlighting is an experimental feature is allow these queries to exit
+	// early for performance reasons
+	SkipHighlighting bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -391,6 +395,20 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// background.
 	code = strings.TrimSuffix(code, "\n")
 
+	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
+		errCollector.Collect(&err)
+		plainResponse, tableErr := generatePlainTable(code)
+		if tableErr != nil {
+			return nil, false, errors.CombineErrors(err, tableErr)
+		}
+		return plainResponse, true, nil
+	}
+
+	if p.SkipHighlighting {
+		// Return early for better perf
+		return unhighlightedCode(err, code)
+	}
+
 	var stabilizeTimeout time.Duration
 	if p.DisableTimeout {
 		// The user wants to wait longer for results, so the default 10s worker
@@ -426,15 +444,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	}
 
 	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
-
-	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
-		errCollector.Collect(&err)
-		plainResponse, tableErr := generatePlainTable(code)
-		if tableErr != nil {
-			return nil, false, errors.CombineErrors(err, tableErr)
-		}
-		return plainResponse, true, nil
-	}
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(

@@ -3359,6 +3359,10 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Experimental: Skip highlighting for performance
+        """
+        skipHighlighting: Boolean = false
     ): HighlightedDiffHunkBody!
 }
 
@@ -4383,6 +4387,10 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Experimental: Skip highlighting for performance
+        """
+        skipHighlighting: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4446,6 +4454,10 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Experimental: Skip highlighting for performance
+        """
+        skipHighlighting: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4547,6 +4559,10 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
+        """
+        Experimental: Skip highlighting for performance
+        """
+        skipHighlighting: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule

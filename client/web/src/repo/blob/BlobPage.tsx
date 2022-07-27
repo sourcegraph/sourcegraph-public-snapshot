@@ -19,7 +19,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { Alert, Button, LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -40,7 +40,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob } from './backend'
+import { fetchBlob, fetchSimpleBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -132,11 +132,58 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         }, [filePath, revision, repoName, repoUrl, props.telemetryService])
     )
 
+    const [, simpleBlobInfoOrError] = useEventObservable<
+        void,
+        (BlobInfo & { richHTML: string; aborted: boolean }) | null | ErrorLike
+    >(
+        useCallback(
+            (clicks: Observable<void>) =>
+                clicks.pipe(
+                    mapTo(true),
+                    startWith(false),
+                    switchMap(() =>
+                        fetchSimpleBlob({
+                            repoName,
+                            commitID,
+                            filePath,
+                            disableTimeout: false,
+                        })
+                    ),
+                    map(blob => {
+                        console.log('got something!!')
+                        if (blob === null) {
+                            return blob
+                        }
+
+                        const blobInfo: BlobInfo & {
+                            richHTML: string
+                            aborted: boolean
+                        } = {
+                            content: blob.content,
+                            html: blob.highlight.html,
+                            lsif: blob.highlight.lsif,
+                            repoName,
+                            revision,
+                            commitID,
+                            filePath,
+                            mode,
+                            // Properties used in `BlobPage` but not `Blob`
+                            richHTML: blob.richHTML,
+                            aborted: blob.highlight.aborted,
+                        }
+                        return blobInfo
+                    }),
+                    catchError((error): [ErrorLike] => [asError(error)])
+                ),
+            [repoName, revision, commitID, filePath, mode]
+        )
+    )
+
     // Bundle latest blob with all other file info to pass to `Blob`
     // Prevents https://github.com/sourcegraph/sourcegraph/issues/14965 by not allowing
     // components to use current file props while blob hasn't updated, since all information
     // is bundled in one object whose creation is blocked by `fetchBlob` emission.
-    const [nextFetchWithDisabledTimeout, blobInfoOrError] = useEventObservable<
+    const [nextFetchWithDisabledTimeout, advancedBlobInfoOrError] = useEventObservable<
         void,
         (BlobInfo & { richHTML: string; aborted: boolean }) | null | ErrorLike
     >(
@@ -154,6 +201,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         })
                     ),
                     map(blob => {
+                        console.log('Calling 2!!')
                         if (blob === null) {
                             return blob
                         }
@@ -190,8 +238,11 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         )
     )
 
+    const blobInfoOrError = advancedBlobInfoOrError || simpleBlobInfoOrError
+
     const onExtendTimeoutClick = useCallback(
         (event: React.MouseEvent): void => {
+            console.log('Calling!!')
             event.preventDefault()
             nextFetchWithDisabledTimeout()
         },
@@ -361,16 +412,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     location={props.location}
                     className={styles.border}
                 />
-            )}
-            {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
-                <div>
-                    <Alert variant="info">
-                        Syntax-highlighting this file took too long. &nbsp;
-                        <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
-                            Try again
-                        </Button>
-                    </Alert>
-                </div>
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
