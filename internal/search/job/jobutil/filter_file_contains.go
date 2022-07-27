@@ -94,7 +94,7 @@ func (j *fileContainsFilterJob) Run(ctx context.Context, clients job.RuntimeClie
 
 func (j *fileContainsFilterJob) filterEvent(ctx context.Context, searcherURLs *endpoint.Map, event streaming.SearchEvent) streaming.SearchEvent {
 	// Don't filter out files with zero chunks because if the file contained
-	// the a result, we still want to return a match for the file even if it
+	// a result, we still want to return a match for the file even if it
 	// has no matched ranges left.
 	filtered := event.Results[:0]
 	for _, res := range event.Results {
