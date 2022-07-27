@@ -21,7 +21,6 @@ import (
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
-	descriptions "github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -197,17 +196,17 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 // localGitExpectedSchemaFactory returns the description of the given schema at the given version via the
 // (assumed) local git clone. If the version is not resolvable as a git rev-like, or if the file does not
 // exist at that revision, then a false valued-flag is returned. All other failures are reported as errors.
-func localGitExpectedSchemaFactory(filename, version string) (schemaDescription descriptions.SchemaDescription, _ bool, _ error) {
+func localGitExpectedSchemaFactory(filename, version string) (schemaDescription schemas.SchemaDescription, _ bool, _ error) {
 	ctx := context.Background()
 	output := root.Run(run.Cmd(ctx, "git", "show", fmt.Sprintf("%s:%s", version, filename)))
 
 	if err := output.Wait(); err != nil {
 		// See if there is an error indicating a missing object, but no other problems
-		return descriptions.SchemaDescription{}, false, filterLocalGitErrors(filename, version, err)
+		return schemas.SchemaDescription{}, false, filterLocalGitErrors(filename, version, err)
 	}
 
 	if err := json.NewDecoder(output).Decode(&schemaDescription); err != nil {
-		return descriptions.SchemaDescription{}, false, err
+		return schemas.SchemaDescription{}, false, err
 	}
 
 	return schemaDescription, true, nil
