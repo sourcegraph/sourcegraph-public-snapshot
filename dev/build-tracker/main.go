@@ -174,7 +174,7 @@ func (s *Server) processEvent(event *Event) {
 	}
 }
 
-// Server starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
+// Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
 func (s *Server) Serve() error {
 	http.HandleFunc("/buildkite", s.handleEvent)
 	http.HandleFunc("/healthz", s.handleHealthz)
