@@ -71,7 +71,7 @@ func (s *Service) Symbol(ctx context.Context, opts SymbolOpts) (symbols []Symbol
 
 // GetHover returns the set of locations defining the symbol at the given position.
 func (s *Service) GetHover(ctx context.Context, uploadID int, path string, line int, character int) (_ string, _ shared.Range, _ bool, err error) {
-	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getHover.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.lsifstore.GetHover(ctx, uploadID, path, line, character)
@@ -670,21 +670,21 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 
 // GetDefinitions returns the set of locations defining the symbol at the given position.
 func (s *Service) GetDefinitions(ctx context.Context, uploadID int, path string, line int, character int, limit int, offset int) (_ []shared.Location, totalCount int, err error) {
-	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getDefinitions.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.lsifstore.GetDefinitionLocations(ctx, uploadID, path, line, character, limit, offset)
 }
 
 func (s *Service) GetDiagnostics(ctx context.Context, bundleID int, prefix string, limit, offset int) (_ []shared.Diagnostic, _ int, err error) {
-	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getDiagnostics.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.lsifstore.GetDiagnostics(ctx, bundleID, prefix, limit, offset)
 }
 
 func (s *Service) GetRanges(ctx context.Context, bundleID int, path string, startLine, endLine int) (_ []shared.CodeIntelligenceRange, err error) {
-	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getRanges.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.lsifstore.GetRanges(ctx, bundleID, path, startLine, endLine)
@@ -692,7 +692,7 @@ func (s *Service) GetRanges(ctx context.Context, bundleID int, path string, star
 
 // GetStencil returns the set of locations defining the symbol at the given position.
 func (s *Service) GetStencil(ctx context.Context, uploadID int, path string) (_ []shared.Range, err error) {
-	ctx, _, endObservation := s.operations.getImplementations.With(ctx, &err, observation.Args{})
+	ctx, _, endObservation := s.operations.getStencil.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
 	return s.lsifstore.GetStencil(ctx, uploadID, path)
