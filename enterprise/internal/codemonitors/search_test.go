@@ -30,10 +30,10 @@ func TestAddCodeMonitorHook(t *testing.T) {
 
 	t.Run("errors on non-commit search", func(t *testing.T) {
 		erroringJobs := []job.Job{
-			jobutil.NewParallelJob(&run.RepoSearchJob{}, &commit.SearchJob{}),
-			&run.RepoSearchJob{},
+			jobutil.NewParallelJob(&jobutil.RepoSearchJob{}, &commit.SearchJob{}),
+			&jobutil.RepoSearchJob{},
 			jobutil.NewAndJob(&searcher.SymbolSearchJob{}, &commit.SearchJob{}),
-			jobutil.NewTimeoutJob(0, &run.RepoSearchJob{}),
+			jobutil.NewTimeoutJob(0, &jobutil.RepoSearchJob{}),
 		}
 
 		for _, j := range erroringJobs {

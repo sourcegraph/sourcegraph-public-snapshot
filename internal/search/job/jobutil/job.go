@@ -450,7 +450,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(f.ToBasic().PatternString(), repoOptions); ok {
-					addJob(&run.RepoSearchJob{
+					addJob(&RepoSearchJob{
 						RepoOpts: repoOptions,
 					})
 				}
