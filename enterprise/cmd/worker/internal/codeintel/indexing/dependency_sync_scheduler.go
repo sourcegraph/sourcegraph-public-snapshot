@@ -104,6 +104,11 @@ func (h *dependencySyncSchedulerHandler) Handle(ctx context.Context, logger log.
 			// Indexers can potentially create package references with bad names,
 			// which are no longer recognized by the package manager. In such a
 			// case, it doesn't make sense to add a bad package as a dependency repo.
+			logger.Warn("package referenced by upload was invalid",
+				log.Error(err),
+				log.String("name", packageReference.Name),
+				log.String("version", packageReference.Version),
+				log.Int("dumpId", packageReference.DumpID))
 			continue
 		}
 		pkg := *pkgRef
