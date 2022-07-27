@@ -72,6 +72,7 @@ export function activateExtensions(
     mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
     createExtensionAPI: (extensionID: string) => typeof sourcegraph,
     mainThreadAPIInitializations: Observable<boolean>,
+    clientApplication: 'sourcegraph' | 'other',
     /**
      * Function that activates an extension.
      * Returns a promise that resolves once the extension is activated.
@@ -121,7 +122,11 @@ export function activateExtensions(
                     }
 
                     // Ignore extensions that are being migrated to the core workflow if the experimental feature is enabled
-                    if (extensionsAsCoreFeatures && MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)) {
+                    if (
+                        clientApplication === 'sourcegraph' &&
+                        extensionsAsCoreFeatures &&
+                        MIGRATED_TO_CORE_WORKFLOW_EXTENSION_IDS.has(extension.id)
+                    ) {
                         continue
                     }
 
