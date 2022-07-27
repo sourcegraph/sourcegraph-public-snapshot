@@ -108,6 +108,20 @@ func Register(ctx context.Context, logger log.Logger, protocol, endpoint string,
 				return &signalAdapter{Exporter: exporter, Receiver: receiver}, nil
 			},
 		},
+		{
+			PathPrefix: "/v1/logs",
+			CreateAdapter: func() (*signalAdapter, error) {
+				exporter, err := exporterFactory.CreateLogsExporter(ctx, signalExporterCreateSettings, signalExporterConfig)
+				if err != nil {
+					return nil, errors.Wrap(err, "CreateLogsExporter")
+				}
+				receiver, err := receiverFactory.CreateLogsReceiver(ctx, signalReceiverCreateSettings, signalReceiverConfig, exporter)
+				if err != nil {
+					return nil, errors.Wrap(err, "CreateLogsReceiver")
+				}
+				return &signalAdapter{Exporter: exporter, Receiver: receiver}, nil
+			},
+		},
 	}
 
 	// Finally, spin up redirectors for each signal and set up the appropriate endpoints.
