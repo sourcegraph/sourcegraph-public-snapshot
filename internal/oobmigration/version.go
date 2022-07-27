@@ -42,6 +42,23 @@ func (v Version) GitTag() string {
 	return fmt.Sprintf("v%d.%d.0", v.Major, v.Minor)
 }
 
+// Next returns the next minor version immediately following the receiver.
+func (v Version) Next() Version {
+	lastMinorVersionInMajorRelease := map[int]int{
+		// TODO: Determine last minor version in Sourcegraph v3; e.g., `3: 47, // 3.47.0 -> 4.0.0`
+	}
+
+	if minor, ok := lastMinorVersionInMajorRelease[v.Major]; ok && minor == v.Minor {
+		// We're at terminal minor version for some major release
+		// :tada:
+		// Bump the major version and reset the minor version
+		return NewVersion(v.Major+1, 0)
+	}
+
+	// Bump minor version
+	return NewVersion(v.Major, v.Minor+1)
+}
+
 type VersionOrder int
 
 const (
