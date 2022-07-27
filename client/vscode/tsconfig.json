@@ -22,6 +22,6 @@
     { "path": "../search" },
     { "path": "../search-ui" },
   ],
-  "include": ["./package.json", "**/*", ".*", "**/*.d.ts"],
-  "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist"],
+  "include": ["./package.json", "**/*", ".*", "**/*.d.ts", "./bundled-code-intel-extensions.json"],
+  "exclude": ["node_modules", "../../node_modules", ".vscode-test", "out", "dist", "code-intel-extensions"],
 }
