@@ -399,6 +399,60 @@ func (s *Store) MarkSkippedBatchSpecWorkspaces(ctx context.Context, batchSpecID 
 	return s.Exec(ctx, q)
 }
 
+// ListRetryBatchSpecWorkspacesOpts options to determine which btypes.BatchSpecWorkspace to retrieve for retrying.
+type ListRetryBatchSpecWorkspacesOpts struct {
+	BatchSpecID      int64
+	IncludeCompleted bool
+}
+
+// ListRetryBatchSpecWorkspaces lists all btypes.BatchSpecWorkspace to retry.
+func (s *Store) ListRetryBatchSpecWorkspaces(ctx context.Context, opts ListRetryBatchSpecWorkspacesOpts) (cs []*btypes.BatchSpecWorkspace, err error) {
+	ctx, _, endObservation := s.operations.listRetryBatchSpecWorkspaces.With(ctx, &err, observation.Args{})
+	defer endObservation(1, observation.Args{})
+
+	q := getListRetryBatchSpecWorkspacesQuery(&opts)
+	cs = make([]*btypes.BatchSpecWorkspace, 0)
+	err = s.query(ctx, q, func(sc dbutil.Scanner) error {
+		var c btypes.BatchSpecWorkspace
+		if err := sc.Scan(
+			&c.ID,
+			&jsonIDsSet{Assocs: &c.ChangesetSpecIDs},
+		); err != nil {
+			return err
+		}
+		cs = append(cs, &c)
+		return nil
+	})
+
+	return cs, err
+}
+
+func getListRetryBatchSpecWorkspacesQuery(opts *ListRetryBatchSpecWorkspacesOpts) *sqlf.Query {
+	preds := []*sqlf.Query{
+		sqlf.Sprintf("repo.deleted_at IS NULL"),
+		sqlf.Sprintf("batch_spec_workspaces.batch_spec_id = %s", opts.BatchSpecID),
+	}
+
+	if !opts.IncludeCompleted {
+		preds = append(preds, sqlf.Sprintf("batch_spec_workspace_execution_jobs.state != %s", btypes.BatchSpecWorkspaceExecutionJobStateCompleted))
+	}
+
+	return sqlf.Sprintf(
+		listRetryBatchSpecWorkspacesFmtstr,
+		sqlf.Join(preds, "\n AND "),
+	)
+}
+
+const listRetryBatchSpecWorkspacesFmtstr = `
+-- source: enterprise/internal/batches/store/batch_spec_workspace_execution_jobs.go:ListRetryBatchSpecWorkspaces
+SELECT batch_spec_workspaces.id, batch_spec_workspaces.changeset_spec_ids
+FROM batch_spec_workspaces
+		 INNER JOIN repo ON repo.id = batch_spec_workspaces.repo_id
+		 INNER JOIN batch_spec_workspace_execution_jobs
+					ON batch_spec_workspaces.id = batch_spec_workspace_execution_jobs.batch_spec_workspace_id
+WHERE %s
+`
+
 func scanBatchSpecWorkspace(wj *btypes.BatchSpecWorkspace, s dbutil.Scanner) error {
 	var stepCacheResults json.RawMessage
 

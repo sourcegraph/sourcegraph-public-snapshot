@@ -1,6 +1,9 @@
 package shared
 
 import (
+	"strings"
+	"time"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies/internal/lockfiles"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -9,6 +12,8 @@ import (
 // IndexFidelity describes the fidelity of the indexed dependency graph we
 // could get by parsing a lockfile.
 type IndexFidelity string
+
+func (i IndexFidelity) ToGraphQL() string { return strings.ToUpper(string(i)) }
 
 const (
 	// IndexFidelityFlat is the default fidelity if we couldn't build a graph
@@ -33,6 +38,8 @@ type LockfileIndex struct {
 	LockfileReferenceIDs []int
 	Lockfile             string
 	Fidelity             IndexFidelity
+	UpdatedAt            time.Time
+	CreatedAt            time.Time
 }
 
 type Repo struct {

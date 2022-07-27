@@ -251,6 +251,7 @@ export const FileDiffConnection: React.FunctionComponent<React.PropsWithChildren
     return (
         <FilteredFileDiffConnection
             {...props}
+            withCenteredSummary={true}
             nodeComponentProps={
                 props.nodeComponentProps
                     ? {

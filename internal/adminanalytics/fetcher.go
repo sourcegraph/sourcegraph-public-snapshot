@@ -69,7 +69,52 @@ func (f *AnalyticsFetcher) Nodes(ctx context.Context) ([]*AnalyticsNode, error) 
 		return nil, err
 	}
 
-	return nodes, nil
+	now := time.Now()
+	to := now
+	daysOffset := 1
+	from, err := getFromDate(f.dateRange, now)
+	if err != nil {
+		return nil, err
+	}
+
+	if f.dateRange == "LAST_THREE_MONTHS" {
+		to = now.AddDate(0, 0, -int(now.Weekday())+1) // monday of current week
+		daysOffset = 7
+	}
+
+	allNodes := make([]*AnalyticsNode, 0)
+
+	for date := to; date.After(from) || date.Equal(from); date = date.AddDate(0, 0, -daysOffset) {
+		var node *AnalyticsNode
+
+		for _, n := range nodes {
+			if bod(date).Equal(bod(n.Data.Date)) {
+				node = n
+				break
+			}
+		}
+
+		if node == nil {
+			node = &AnalyticsNode{
+				Data: AnalyticsNodeData{
+					Date:            bod(date),
+					Count:           0,
+					UniqueUsers:     0,
+					RegisteredUsers: 0,
+				},
+			}
+		}
+
+		allNodes = append(allNodes, node)
+	}
+
+	return allNodes, nil
+
+}
+
+func bod(t time.Time) time.Time {
+	year, month, day := t.Date()
+	return time.Date(year, month, day, 0, 0, 0, 0, t.Location())
 }
 
 type AnalyticsSummaryData struct {

@@ -129,6 +129,7 @@ type Symbol struct {
 	Name          string `json:"name"`
 	ContainerName string `json:"containerName"`
 	Kind          string `json:"kind"`
+	Line          int32  `json:"line"`
 }
 
 // EventCommitMatch is the generic results interface from GQL. There is a lot

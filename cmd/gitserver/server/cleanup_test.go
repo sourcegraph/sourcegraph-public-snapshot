@@ -547,6 +547,24 @@ func TestCleanupOldLocks(t *testing.T) {
 				},
 			},
 		},
+		{
+			name: "fresh_gc.pid",
+			files: []file{
+				{
+					name: "gc.pid",
+				},
+			},
+		},
+		{
+			name: "stale_gc.pid",
+			files: []file{
+				{
+					name:        "gc.pid",
+					age:         48 * time.Hour,
+					wantRemoved: true,
+				},
+			},
+		},
 	}
 
 	root := t.TempDir()
@@ -723,7 +741,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d)), true); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -734,7 +752,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		"github.com/bam/bam/.git",
 		"example.com/repo/.git",
 	} {
-		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d))); err != nil {
+		if err := s.removeRepoDirectory(GitDir(filepath.Join(root, d)), true); err != nil {
 			t.Fatalf("failed to remove %s: %s", d, err)
 		}
 	}
@@ -778,13 +796,66 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 		ReposDir: root,
 	}
 
-	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git"))); err != nil {
+	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), true); err != nil {
 		t.Fatal(err)
 	}
 
 	assertPaths(t, root,
 		".tmp",
 	)
+}
+
+func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+
+	repo := &types.Repo{
+		Name: api.RepoName("github.com/foo/baz/"),
+	}
+	if err := db.Repos().Create(ctx, repo); err != nil {
+		t.Fatal(err)
+	}
+
+	if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
+		RepoID:      repo.ID,
+		ShardID:     "test",
+		CloneStatus: types.CloneStatusCloned,
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	root := t.TempDir()
+	mkFiles(t, root, "github.com/foo/baz/.git/HEAD")
+	s := &Server{
+		Logger:   logtest.Scoped(t),
+		ReposDir: root,
+		DB:       db,
+		ctx:      ctx,
+	}
+
+	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), false); err != nil {
+		t.Fatal(err)
+	}
+
+	assertPaths(t, root, ".tmp")
+
+	r, err := db.Repos().GetByName(ctx, repo.Name)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	gsRepo, err := db.GitserverRepos().GetByID(ctx, r.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if gsRepo.CloneStatus != types.CloneStatusCloned {
+		t.Fatalf("Expected clone_status to be %s, but got %s", types.CloneStatusCloned, gsRepo.CloneStatus)
+	}
 }
 
 func TestHowManyBytesToFree(t *testing.T) {
@@ -1507,5 +1578,98 @@ error message
 				t.Fatalf("want %d, got %d", tt.wantRetries, got)
 			}
 		})
+	}
+}
+
+// We test whether the lock set by sg maintenance is respected by git gc.
+func TestGitGCRespectsLock(t *testing.T) {
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	err, unlock := lockRepoForGC(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd = exec.Command("git", "gc")
+	dir.Set(cmd)
+	b, err := cmd.CombinedOutput()
+	if err == nil {
+		t.Fatal("expected command to return with non-zero exit value")
+	}
+
+	// We check that git complains about the lockfile as expected. By comparing the
+	// output string we make sure we catch changes to Git. If the test fails here,
+	// this means that a new version of Git might have changed the logic around
+	// locking.
+	if !strings.Contains(string(b), "gc is already running on machine") {
+		t.Fatal("git gc should have complained about an existing lockfile")
+	}
+
+	err = unlock()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cmd = exec.Command("git", "gc")
+	dir.Set(cmd)
+	_, err = cmd.CombinedOutput()
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestSGMaintenanceRespectsLock(t *testing.T) {
+	logger, getLogs := logtest.Captured(t)
+
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	err, _ := lockRepoForGC(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = sgMaintenance(logger, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	cl := getLogs()
+	if len(cl) == 0 {
+		t.Fatal("expected at least 1 log message")
+	}
+
+	if !strings.Contains(cl[len(cl)-1].Message, "could not lock repository for sg maintenance") {
+		t.Fatal("expected sg maintenance to complain about the lockfile")
+	}
+}
+
+func TestSGMaintenanceRemovesLock(t *testing.T) {
+	logger := logtest.Scoped(t)
+
+	dir := GitDir(t.TempDir())
+	cmd := exec.Command("git", "--bare", "init")
+	dir.Set(cmd)
+	if err := cmd.Run(); err != nil {
+		t.Fatal(err)
+	}
+
+	err := sgMaintenance(logger, dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = os.Stat(dir.Path(gcLockFile))
+	if !errors.Is(err, fs.ErrNotExist) {
+		t.Fatal("sg maintenance should have removed the lockfile it created")
 	}
 }

@@ -26,7 +26,7 @@ services:
     environment:
       # 👇 Enables Rockskip
       - USE_ROCKSKIP=true
-      # 👇 Uses Rockskip for all the repositories over 1GB
+      # 👇 Uses Rockskip for all repositories over 1GB
       - ROCKSKIP_MIN_REPO_SIZE_MB=1000
 ```
 
@@ -40,9 +40,9 @@ symbols:
     # 👇 Enables Rockskip
     USE_ROCKSHIP:
       value: "true"
-    # 👇 Uses Rockskip for the repositories in the comma separated list
-    ROCKSKIP_REPOS:
-      value: "github.com/crossplane/crossplane,github.com/sgtest/megarepo"
+    # 👇 Uses Rockskip for all repositories over 1GB
+    ROCKSKIP_MIN_REPO_SIZE_MB:
+      value: "1000"
 ```
 
 For Kubernetes:
@@ -58,7 +58,7 @@ spec:
         # 👇 Enables Rockskip
         - name: USE_ROCKSKIP
           value: "true"
-        # 👇 Uses Rockskip for all the repositories over 1GB
+        # 👇 Uses Rockskip for all repositories over 1GB
         - name: ROCKSKIP_MIN_REPO_SIZE_MB
           value: "1000"
 ```

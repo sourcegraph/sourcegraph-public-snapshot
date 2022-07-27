@@ -2,10 +2,11 @@ import * as React from 'react'
 
 import classNames from 'classnames'
 
+import { ForwardReferenceComponent } from '@sourcegraph/wildcard'
+
 export interface IconProps {
     className?: string
     size?: number
-    'data-tooltip'?: string
 }
 
 function sizeProps(props: IconProps): { width: number; height: number; viewBox: string } {
@@ -101,8 +102,10 @@ export const WrapDisabledIcon: React.FunctionComponent<React.PropsWithChildren<I
 )
 
 // TODO: Rename name when refresh design is complete
-export const CloudAlertIconRefresh: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
+// eslint-disable-next-line react/display-name
+export const CloudAlertIconRefresh = React.forwardRef((props, reference) => (
     <svg
+        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -125,11 +128,14 @@ export const CloudAlertIconRefresh: React.FunctionComponent<React.PropsWithChild
             </clipPath>
         </defs>
     </svg>
-)
+)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
+CloudAlertIconRefresh.displayName = 'CloudAlertIconRefresh'
 
 // TODO: Rename name when refresh design is complete
-export const CloudSyncIconRefresh: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
+// eslint-disable-next-line react/display-name
+export const CloudSyncIconRefresh = React.forwardRef((props, reference) => (
     <svg
+        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -156,11 +162,14 @@ export const CloudSyncIconRefresh: React.FunctionComponent<React.PropsWithChildr
             </clipPath>
         </defs>
     </svg>
-)
+)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
+CloudSyncIconRefresh.displayName = 'CloudSyncIconRefresh'
 
 // TODO: Rename name when refresh design is complete
-export const CloudCheckIconRefresh: React.FunctionComponent<React.PropsWithChildren<IconProps>> = props => (
+// eslint-disable-next-line react/display-name
+export const CloudCheckIconRefresh = React.forwardRef((props, reference) => (
     <svg
+        ref={reference}
         {...props}
         {...sizeProps(props)}
         className={classNames('phabricator-icon mdi-icon', props.className)}
@@ -183,4 +192,5 @@ export const CloudCheckIconRefresh: React.FunctionComponent<React.PropsWithChild
             </clipPath>
         </defs>
     </svg>
-)
+)) as ForwardReferenceComponent<'svg', React.PropsWithChildren<IconProps>>
+CloudCheckIconRefresh.displayName = 'CloudCheckIconRefresh'

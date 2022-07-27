@@ -23,7 +23,7 @@ export function getSearchInsightUpdateInput(insight: MinimalSearchBasedInsightDa
         searchContexts: insight.filters.context ? [insight.filters.context] : [],
     }
 
-    const seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesCount, insight.seriesDisplayOptions)
+    const seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesDisplayOptions)
 
     return {
         dataSeries: insight.series.map<LineChartSearchInsightDataSeriesInput>(series => ({
@@ -49,7 +49,7 @@ export function getCaptureGroupInsightUpdateInput(
     const { step, filters, query, title, repositories, seriesDisplayOptions } = insight
     const [unit, value] = getStepInterval(step)
 
-    const _seriesDisplayOptions = parseSeriesDisplayOptions(insight.seriesCount, seriesDisplayOptions)
+    const _seriesDisplayOptions = parseSeriesDisplayOptions(seriesDisplayOptions)
 
     return {
         dataSeries: [
@@ -96,6 +96,7 @@ export function getComputeInsightUpdateInput(insight: MinimalComputeInsightData)
             repositoryScope: { repositories },
             // TODO: Remove this when BE supports seperate mutation for compute-powered insight
             timeScope: { stepInterval: { unit: TimeIntervalStepUnit.WEEK, value: 2 } },
+            generatedFromCaptureGroups: true,
         })),
         presentationOptions: {
             title: insight.title,

@@ -42,7 +42,6 @@ export const EditSearchBasedInsight: FC<EditSearchBasedInsightProps> = props => 
             ...sanitizedInsight,
             filters: insight.filters,
             seriesDisplayOptions: insight.seriesDisplayOptions,
-            seriesCount: insight.seriesCount,
         })
     }
 

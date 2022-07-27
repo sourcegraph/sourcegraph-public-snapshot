@@ -15,6 +15,8 @@ type ListLockfileIndexesArgs struct {
 
 type DependenciesResolver interface {
 	LockfileIndexes(ctx context.Context, args *ListLockfileIndexesArgs) (LockfileIndexConnectionResolver, error)
+
+	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type LockfileIndexConnectionResolver interface {
@@ -26,4 +28,9 @@ type LockfileIndexConnectionResolver interface {
 type LockfileIndexResolver interface {
 	ID() graphql.ID
 	Lockfile() string
+	Repository() *RepositoryResolver
+	Commit() *GitCommitResolver
+	Fidelity() string
+	UpdatedAt() DateTime
+	CreatedAt() DateTime
 }

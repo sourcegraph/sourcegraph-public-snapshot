@@ -606,29 +606,13 @@ func (r *Resolver) UpdateLineChartSearchInsight(ctx context.Context, args *graph
 				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
 		} else {
-			// If it's a frontend series, we can just update it.
-			existingRepos := getExistingSeriesRepositories(*series.SeriesId, views[0].Series)
-			if len(series.RepositoryScope.Repositories) > 0 && len(existingRepos) > 0 {
-				err = tx.UpdateFrontendSeries(ctx, store.UpdateFrontendSeriesArgs{
-					SeriesID:          *series.SeriesId,
-					Query:             series.Query,
-					Repositories:      series.RepositoryScope.Repositories,
-					StepIntervalUnit:  series.TimeScope.StepInterval.Unit,
-					StepIntervalValue: int(series.TimeScope.StepInterval.Value),
-					GroupBy:           lowercaseGroupBy(series.GroupBy),
-				})
-				if err != nil {
-					return nil, errors.Wrap(err, "UpdateFrontendSeries")
-				}
-			} else {
-				err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
-				if err != nil {
-					return nil, errors.Wrap(err, "RemoveViewSeries")
-				}
-				_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
-				if err != nil {
-					return nil, errors.Wrap(err, "createAndAttachSeries")
-				}
+			err = tx.RemoveSeriesFromView(ctx, *series.SeriesId, view.ID)
+			if err != nil {
+				return nil, errors.Wrap(err, "RemoveViewSeries")
+			}
+			_, err = createAndAttachSeries(ctx, tx, r.backfiller, r.insightEnqueuer, view, series)
+			if err != nil {
+				return nil, errors.Wrap(err, "createAndAttachSeries")
 			}
 
 			err = tx.UpdateViewSeries(ctx, *series.SeriesId, view.ID, types.InsightViewSeriesMetadata{

@@ -33,9 +33,21 @@ export const ENVIRONMENT_CONFIG = {
     WEBPACK_SERVE_INDEX: getEnvironmentBoolean('WEBPACK_SERVE_INDEX'),
     // Enables `StatoscopeWebpackPlugin` that allows to analyze application bundle.
     WEBPACK_BUNDLE_ANALYZER: getEnvironmentBoolean('WEBPACK_BUNDLE_ANALYZER'),
-
     // Allow overriding default Webpack naming behavior for debugging
     WEBPACK_USE_NAMED_CHUNKS: getEnvironmentBoolean('WEBPACK_USE_NAMED_CHUNKS'),
+
+    // The commit SHA the client bundle was built with.
+    COMMIT_SHA: process.env.COMMIT_SHA,
+    // New release candidate version.
+    RELEASE_CANDIDATE_VERSION: process.env.RELEASE_CANDIDATE_VERSION,
+    // Should sourcemaps be uploaded to Sentry.
+    SENTRY_UPLOAD_SOURCE_MAPS: getEnvironmentBoolean('SENTRY_UPLOAD_SOURCE_MAPS'),
+    // Sentry's Dotcom project's authentication token
+    SENTRY_DOT_COM_AUTH_TOKEN: process.env.SENTRY_DOT_COM_AUTH_TOKEN,
+    // Sentry organization
+    SENTRY_ORGANIZATION: process.env.SENTRY_ORGANIZATION,
+    // Sentry project
+    SENTRY_PROJECT: process.env.SENTRY_PROJECT,
 
     //  Webpack is the default web build tool, and esbuild is an experimental option (see
     //  https://docs.sourcegraph.com/dev/background-information/web/build#esbuild).

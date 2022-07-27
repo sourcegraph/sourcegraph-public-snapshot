@@ -35,12 +35,10 @@ interface Props extends Repo {
     startLine: number
     /** The 0-based (exclusive) line number that this code excerpt ends at */
     endLine: number
-    /** Whether or not this is the first result being shown or not. */
-    isFirst: boolean
     className?: string
     /** A function to fetch the range of lines this code excerpt will display. It will be provided
      * the same start and end lines properties that were provided as component props */
-    fetchHighlightedFileRangeLines: (isFirst: boolean, startLine: number, endLine: number) => Observable<string[]>
+    fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 
     viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
@@ -104,7 +102,6 @@ const visibilitySensorOffset = { bottom: -500 }
 export const CodeExcerpt: React.FunctionComponent<Props> = ({
     blobLines,
     fetchHighlightedFileRangeLines,
-    isFirst,
     startLine,
     endLine,
     highlightRanges,
@@ -133,13 +130,13 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     useEffect(() => {
         let subscription: Subscription | undefined
         if (isVisible) {
-            const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(isFirst, startLine, endLine)
+            const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
             subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
                 setBlobLinesOrError(blobLinesOrError)
             })
         }
         return () => subscription?.unsubscribe()
-    }, [blobLines, endLine, fetchHighlightedFileRangeLines, isFirst, isVisible, startLine])
+    }, [blobLines, endLine, fetchHighlightedFileRangeLines, isVisible, startLine])
 
     // Highlight the search matches
     useLayoutEffect(() => {

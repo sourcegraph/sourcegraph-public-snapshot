@@ -124,6 +124,7 @@ type HeartbeatRequest struct {
 	SrcCliVersion   string `json:"srcCliVersion"`
 }
 
-type CanceledRequest struct {
+type CanceledJobsRequest struct {
+	KnownJobIDs  []int  `json:"knownJobIds"`
 	ExecutorName string `json:"executorName"`
 }

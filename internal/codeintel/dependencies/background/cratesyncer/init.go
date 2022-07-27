@@ -12,12 +12,14 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
@@ -32,7 +34,7 @@ type syncer struct {
 	db                    database.DB
 	dbStore               *dbstore.Store
 	externalServicesStore database.ExternalServiceStore
-	gitClient             *gitserver.ClientImplementor
+	gitClient             gitserver.Client
 	interval              time.Duration
 }
 
@@ -71,7 +73,7 @@ func (s *syncer) Handle(ctx context.Context) error {
 		gitserver.ArchiveOptions{
 			Treeish:   "HEAD",
 			Format:    "tar",
-			Pathspecs: []gitserver.Pathspec{},
+			Pathspecs: []gitdomain.Pathspec{},
 		},
 	)
 	if err != nil {

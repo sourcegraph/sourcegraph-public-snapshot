@@ -1,14 +1,6 @@
 import React, { useMemo, useState } from 'react'
 
-import {
-    mdiFormatQuoteOpen,
-    mdiBookmarkOutline,
-    mdiMenu,
-    mdiMenuDown,
-    mdiMenuUp,
-    mdiArrowExpandDown,
-    mdiArrowCollapseUp,
-} from '@mdi/js'
+import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -21,11 +13,10 @@ import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { FilterKind, findFilter } from '@sourcegraph/shared/src/search/query/query'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, ButtonLink, Icon } from '@sourcegraph/wildcard'
+import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
-import { SearchPatternType } from '../../graphql-operations'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import {
@@ -115,27 +106,6 @@ const ExperimentalActionButton: React.FunctionComponent<
 }
 
 /**
- * A notice for when the user is searching literally and has quotes in their
- * query, in which case it is possible that they think their query `"foobar"`
- * will be searching literally for `foobar` (without quotes). This notice
- * informs them that this may be the case to avoid confusion.
- */
-const QuotesInterpretedLiterallyNotice: React.FunctionComponent<
-    React.PropsWithChildren<SearchResultsInfoBarProps>
-> = props =>
-    props.patternType === SearchPatternType.literal && props.query && props.query.includes('"') ? (
-        <small
-            className={styles.notice}
-            data-tooltip="Your search query is interpreted literally, including the quotes. Use the .* toggle to switch between literal and regular expression search."
-        >
-            <span>
-                <Icon aria-hidden={true} svgPath={mdiFormatQuoteOpen} />
-                Searching literally <strong>(including quotes)</strong>
-            </span>
-        </small>
-    ) : null
-
-/**
  * The info bar shown over the search results list that displays metadata
  * and a few actions like expand all and save query
  */
@@ -196,51 +166,52 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         }
 
         return (
-            <li
-                className={classNames('mr-2', createActionsStyles.button, styles.navItem)}
-                data-tooltip={
+            <Tooltip
+                content={
                     props.authenticatedUser && !canCreateMonitorFromQuery
                         ? 'Code monitors only support type:diff or type:commit searches.'
                         : undefined
                 }
-                data-placement="bottom"
+                placement="bottom"
             >
-                {/*
+                <li className={classNames('mr-2', createActionsStyles.button, styles.navItem)}>
+                    {/*
                     a11y-ignore
                     Rule: "color-contrast" (Elements must have sufficient color contrast)
                     GitHub issue: https://github.com/sourcegraph/sourcegraph/issues/33343
                 */}
-                <ExperimentalActionButton
-                    showExperimentalVersion={showActionButtonExperimentalVersion}
-                    nonExperimentalLinkTo={createCodeMonitorAction.url}
-                    isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
-                    className="a11y-ignore create-code-monitor-button"
-                    button={
-                        <>
-                            <Icon
-                                aria-hidden={true}
-                                className="mr-1"
-                                {...(typeof createCodeMonitorAction.icon === 'string'
-                                    ? { svgPath: createCodeMonitorAction.icon }
-                                    : { as: createCodeMonitorAction.icon })}
-                            />
-                            {createCodeMonitorAction.label}
-                        </>
-                    }
-                    icon={<CodeMonitorRadialGradientIcon />}
-                    title="Monitor code for changes"
-                    copyText="Create a monitor and get notified when your code changes. Free for registered users."
-                    telemetryService={props.telemetryService}
-                    source="Monitor"
-                    viewEventName="SearchResultMonitorCTAShown"
-                    returnTo={createCodeMonitorAction.url}
-                    ariaLabel={
-                        props.authenticatedUser && !canCreateMonitorFromQuery
-                            ? 'Code monitors only support type:diff or type:commit searches.'
-                            : undefined
-                    }
-                />
-            </li>
+                    <ExperimentalActionButton
+                        showExperimentalVersion={showActionButtonExperimentalVersion}
+                        nonExperimentalLinkTo={createCodeMonitorAction.url}
+                        isNonExperimentalLinkDisabled={!canCreateMonitorFromQuery}
+                        className="a11y-ignore create-code-monitor-button"
+                        button={
+                            <>
+                                <Icon
+                                    aria-hidden={true}
+                                    className="mr-1"
+                                    {...(typeof createCodeMonitorAction.icon === 'string'
+                                        ? { svgPath: createCodeMonitorAction.icon }
+                                        : { as: createCodeMonitorAction.icon })}
+                                />
+                                {createCodeMonitorAction.label}
+                            </>
+                        }
+                        icon={<CodeMonitorRadialGradientIcon />}
+                        title="Monitor code for changes"
+                        copyText="Create a monitor and get notified when your code changes. Free for registered users."
+                        telemetryService={props.telemetryService}
+                        source="Monitor"
+                        viewEventName="SearchResultMonitorCTAShown"
+                        returnTo={createCodeMonitorAction.url}
+                        ariaLabel={
+                            props.authenticatedUser && !canCreateMonitorFromQuery
+                                ? 'Code monitors only support type:diff or type:commit searches.'
+                                : undefined
+                        }
+                    />
+                </li>
+            </Tooltip>
         )
     }, [
         createCodeMonitorAction,
@@ -316,8 +287,6 @@ export const SearchResultsInfoBar: React.FunctionComponent<
 
                 {props.stats}
 
-                <QuotesInterpretedLiterallyNotice {...props} />
-
                 <div className={styles.expander} />
 
                 <ul className="nav align-items-center">
@@ -365,29 +334,30 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                     ) : (
                         <>
                             {createActions.map(createActionButton => (
-                                <li
+                                <Tooltip
                                     key={createActionButton.label}
-                                    className={classNames('nav-item mr-2', createActionsStyles.button)}
-                                    data-tooltip={createActionButton.tooltip}
-                                    data-placement="bottom"
+                                    content={createActionButton.tooltip}
+                                    placement="bottom"
                                 >
-                                    <ButtonLink
-                                        to={createActionButton.url}
-                                        className="text-decoration-none"
-                                        variant="secondary"
-                                        outline={true}
-                                        size="sm"
-                                    >
-                                        <Icon
-                                            aria-hidden={true}
-                                            className="mr-1"
-                                            {...(typeof createActionButton.icon === 'string'
-                                                ? { svgPath: createActionButton.icon }
-                                                : { as: createActionButton.icon })}
-                                        />
-                                        {createActionButton.label}
-                                    </ButtonLink>
-                                </li>
+                                    <li className={classNames('nav-item mr-2', createActionsStyles.button)}>
+                                        <ButtonLink
+                                            to={createActionButton.url}
+                                            className="text-decoration-none"
+                                            variant="secondary"
+                                            outline={true}
+                                            size="sm"
+                                        >
+                                            <Icon
+                                                aria-hidden={true}
+                                                className="mr-1"
+                                                {...(typeof createActionButton.icon === 'string'
+                                                    ? { svgPath: createActionButton.icon }
+                                                    : { as: createActionButton.icon })}
+                                            />
+                                            {createActionButton.label}
+                                        </ButtonLink>
+                                    </li>
+                                </Tooltip>
                             ))}
 
                             {createCodeMonitorButton}
@@ -407,29 +377,34 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                 <>
                                     <li className={styles.divider} aria-hidden="true" />
                                     <li className={classNames(styles.navItem)}>
-                                        <Button
-                                            aria-label={props.allExpanded ? 'Collapse' : 'Expand'}
-                                            onClick={props.onExpandAllResultsToggle}
-                                            className="text-decoration-none"
-                                            aria-live="polite"
-                                            data-tooltip={`${
+                                        <Tooltip
+                                            content={`${
                                                 props.allExpanded ? 'Hide' : 'Show'
                                             } more matches on all results`}
-                                            data-placement="bottom"
-                                            data-testid="search-result-expand-btn"
-                                            data-test-tooltip-content={`${
-                                                props.allExpanded ? 'Hide' : 'Show'
-                                            } more matches on all results`}
-                                            outline={true}
-                                            variant="secondary"
-                                            size="sm"
+                                            placement="bottom"
                                         >
-                                            <Icon
-                                                aria-hidden={true}
-                                                className="mr-0"
-                                                svgPath={props.allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown}
-                                            />
-                                        </Button>
+                                            <Button
+                                                aria-label={props.allExpanded ? 'Collapse' : 'Expand'}
+                                                onClick={props.onExpandAllResultsToggle}
+                                                className="text-decoration-none"
+                                                aria-live="polite"
+                                                data-testid="search-result-expand-btn"
+                                                data-test-tooltip-content={`${
+                                                    props.allExpanded ? 'Hide' : 'Show'
+                                                } more matches on all results`}
+                                                outline={true}
+                                                variant="secondary"
+                                                size="sm"
+                                            >
+                                                <Icon
+                                                    aria-hidden={true}
+                                                    className="mr-0"
+                                                    svgPath={
+                                                        props.allExpanded ? mdiArrowCollapseUp : mdiArrowExpandDown
+                                                    }
+                                                />
+                                            </Button>
+                                        </Tooltip>
                                     </li>
                                 </>
                             )}

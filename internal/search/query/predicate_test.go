@@ -90,8 +90,13 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 		}
 
 		valid := []test{
-			{`literal`, `test`, &RepoDependenciesPredicate{}},
-			{`regex with revs`, `^npm/@bar:baz`, &RepoDependenciesPredicate{}},
+			{`literal`, `repo`, &RepoDependenciesPredicate{RepoRev: "repo"}},
+			{`regex with revs`, `^github\.com/org/repo$@v3.0:v4.0`, &RepoDependenciesPredicate{RepoRev: `^github\.com/org/repo$@v3.0:v4.0`}},
+			{`regex with transitive:yes`, `^github\.com/org/repo$ transitive:yes`, &RepoDependenciesPredicate{RepoRev: `^github\.com/org/repo$`, Transitive: true}},
+			{`transitive:no`, `repo transitive:no`, &RepoDependenciesPredicate{RepoRev: "repo", Transitive: false}},
+			// transitive:only is ignored for now
+			{`transitive:only`, `repo transitive:only`, &RepoDependenciesPredicate{RepoRev: "repo", Transitive: false}},
+			{`transitive:horse`, `repo transitive:horse`, &RepoDependenciesPredicate{RepoRev: "repo", Transitive: false}},
 		}
 
 		for _, tc := range valid {
@@ -103,7 +108,7 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 				}
 
 				if !reflect.DeepEqual(tc.expected, p) {
-					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+					t.Fatalf("expected %+v, got %+v", tc.expected, p)
 				}
 			})
 		}
@@ -111,6 +116,7 @@ func TestRepoDependenciesPredicate(t *testing.T) {
 		invalid := []test{
 			{`empty`, ``, nil},
 			{`catch invalid regexp`, `([)`, nil},
+			{`only transitive`, `transitive:yes`, nil},
 		}
 
 		for _, tc := range invalid {
@@ -205,6 +211,50 @@ func TestRepoHasDescriptionPredicate(t *testing.T) {
 		for _, tc := range invalid {
 			t.Run(tc.name, func(t *testing.T) {
 				p := &RepoHasDescriptionPredicate{}
+				err := p.ParseParams(tc.params)
+				if err == nil {
+					t.Fatal("expected error but got none")
+				}
+			})
+		}
+	})
+}
+
+func TestFileHasOwnerPredicate(t *testing.T) {
+	t.Run("ParseParams", func(t *testing.T) {
+		type test struct {
+			name     string
+			params   string
+			expected *FileHasOwnerPredicate
+		}
+
+		valid := []test{
+			{`literal`, `test`, &FileHasOwnerPredicate{Owner: "test"}},
+			{`regexp`, `@octo-org/octocats`, &FileHasOwnerPredicate{Owner: "@octo-org/octocats"}},
+			{`regexp`, `test@example.com`, &FileHasOwnerPredicate{Owner: "test@example.com"}},
+		}
+
+		for _, tc := range valid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &FileHasOwnerPredicate{}
+				err := p.ParseParams(tc.params)
+				if err != nil {
+					t.Fatalf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(tc.expected, p) {
+					t.Fatalf("expected %#v, got %#v", tc.expected, p)
+				}
+			})
+		}
+
+		invalid := []test{
+			{`empty`, ``, nil},
+		}
+
+		for _, tc := range invalid {
+			t.Run(tc.name, func(t *testing.T) {
+				p := &FileHasOwnerPredicate{}
 				err := p.ParseParams(tc.params)
 				if err == nil {
 					t.Fatal("expected error but got none")

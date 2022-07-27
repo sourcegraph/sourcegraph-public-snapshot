@@ -74,7 +74,7 @@ func scanLockfileIndex(s dbutil.Scanner) (shared.LockfileIndex, error) {
 		referenceIDs pq.Int32Array
 	)
 
-	err := s.Scan(&i.ID, &i.RepositoryID, &commit, &referenceIDs, &i.Lockfile, &i.Fidelity)
+	err := s.Scan(&i.ID, &i.RepositoryID, &commit, &referenceIDs, &i.Lockfile, &i.Fidelity, &i.UpdatedAt, &i.CreatedAt)
 	if err != nil {
 		return i, err
 	}

@@ -152,7 +152,6 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     return (
         <Page>
             <PageHeader
-                path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
                 // TODO: As we haven't finished implementing support for orgs, we've
                 // temporary disabled setting a different namespace. Replace this line
@@ -162,7 +161,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 // actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={BatchChangesIcon}>Batch Changes</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && <GettingStarted className="mb-4" footer={<GettingStartedFooter />} />}
@@ -171,9 +174,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <H3 as={H2} className="align-self-end flex-1">
-                                    {`${lastTotalCount} batch changes`}
-                                </H3>
+                                <H3 className="align-self-end flex-1">{`${lastTotalCount} batch changes`}</H3>
                             )}
                             <H4 as={H3} className="mb-0 mr-2">
                                 Status

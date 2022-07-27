@@ -565,9 +565,17 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 			lastMinus = i
 		}
 	}
+
+	// Lines in highlightedBase and highlightedHead are 0-indexed.
+	baseLine := r.hunk.OrigStartLine - 1
+	headLine := r.hunk.NewStartLine - 1
+
 	// Empty "-" line that's not followed by an unchanged line, so cut it out
 	if lastMinus > -1 {
 		hunkLines = append(hunkLines[:lastMinus], hunkLines[lastMinus+1:]...)
+		// Removing the empty "-" line causes a mismatch in position between hunkLines and highlightedBase. hunkLines
+		// will be behind by one line.
+		baseLine++
 	}
 
 	// Even after all the logic above, we were still hitting out-of-bounds panics:
@@ -585,9 +593,6 @@ func (r *DiffHunk) Highlight(ctx context.Context, args *HighlightArgs) (*highlig
 	}
 
 	highlightedDiffHunkLineResolvers := make([]*highlightedDiffHunkLineResolver, len(hunkLines))
-	// Lines in highlightedBase and highlightedHead are 0-indexed.
-	baseLine := r.hunk.OrigStartLine - 1
-	headLine := r.hunk.NewStartLine - 1
 	for i, hunkLine := range hunkLines {
 		highlightedDiffHunkLineResolver := highlightedDiffHunkLineResolver{}
 		if hunkLine[0] == ' ' {

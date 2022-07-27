@@ -21,7 +21,7 @@ import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { ISearchContext } from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Badge, Button, useObservable, Icon, Input, ButtonLink } from '@sourcegraph/wildcard'
+import { Badge, Button, useObservable, Icon, Input, ButtonLink, Tooltip } from '@sourcegraph/wildcard'
 
 import { HighlightedSearchContextSpec } from './HighlightedSearchContextSpec'
 
@@ -75,9 +75,9 @@ export const SearchContextMenuItem: React.FunctionComponent<
             >
                 <HighlightedSearchContextSpec spec={spec} searchFilter={searchFilter} />
             </small>{' '}
-            <small className={styles.itemDescription} title={descriptionOrQuery}>
-                {descriptionOrQuery}
-            </small>
+            <Tooltip content={descriptionOrQuery}>
+                <small className={styles.itemDescription}>{descriptionOrQuery}</small>
+            </Tooltip>
             {isDefault && (
                 <Badge variant="secondary" className={classNames('text-uppercase', styles.itemDefault)}>
                     Default

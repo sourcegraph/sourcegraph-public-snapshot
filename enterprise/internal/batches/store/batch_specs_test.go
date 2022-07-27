@@ -662,7 +662,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 			jobs: []*btypes.BatchSpecWorkspaceExecutionJob{
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(99)},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCanceled, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(1)},
@@ -676,7 +676,7 @@ func TestStoreGetBatchSpecStats(t *testing.T) {
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(5)},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(55)},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateCompleted, StartedAt: minAgo(5), FinishedAt: minAgo(2)},
-				{State: btypes.BatchSpecWorkspaceExecutionJobStateFailed, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
+				{State: btypes.BatchSpecWorkspaceExecutionJobStateCanceled, StartedAt: minAgo(5), FinishedAt: minAgo(2), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateProcessing, StartedAt: minAgo(10), Cancel: true},
 				{State: btypes.BatchSpecWorkspaceExecutionJobStateQueued},
@@ -834,7 +834,7 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	user := bt.CreateTestUser(t, db, false)
 
 	// Create a batch spec with two changeset specs, one on each repo.
-	batchSpec := bt.CreateBatchSpec(t, ctx, s, "test", user.ID)
+	batchSpec := bt.CreateBatchSpec(t, ctx, s, "test", user.ID, 0)
 	bt.CreateChangesetSpec(t, ctx, s, bt.TestSpecOpts{
 		User:      user.ID,
 		Repo:      globalRepo.ID,
@@ -849,7 +849,7 @@ func TestStore_ListBatchSpecRepoIDs(t *testing.T) {
 	})
 
 	// Also create an empty batch spec, just for fun.
-	emptyBatchSpec := bt.CreateBatchSpec(t, ctx, s, "empty", user.ID)
+	emptyBatchSpec := bt.CreateBatchSpec(t, ctx, s, "empty", user.ID, 0)
 
 	// Set up repo permissions.
 	bt.MockRepoPermissions(t, db, user.ID, globalRepo.ID)

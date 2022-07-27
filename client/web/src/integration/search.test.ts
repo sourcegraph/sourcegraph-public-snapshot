@@ -33,8 +33,8 @@ const mockDefaultStreamEvents: SearchEvent[] = [
     {
         type: 'filters',
         data: [
-            { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'generic', limitHit: true },
-            { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'generic', limitHit: true },
+            { label: 'archived:yes', value: 'archived:yes', count: 5, kind: 'utility', limitHit: true },
+            { label: 'fork:yes', value: 'fork:yes', count: 46, kind: 'utility', limitHit: true },
             // Two repo filters to trigger the repository sidebar section
             {
                 label: 'github.com/Algorilla/manta-ray',
@@ -165,6 +165,7 @@ describe('Search', () => {
                                         containerName: 'jwtmiddleware',
                                         url: '/github.com/auth0/go-jwt-middleware/-/blob/jwtmiddleware.go#L56:1-56:14',
                                         kind: SymbolKind.FUNCTION,
+                                        line: 56,
                                     },
                                 ],
                                 path: 'jwtmiddleware.go',

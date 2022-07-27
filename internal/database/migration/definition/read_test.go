@@ -133,3 +133,30 @@ func testReadDefinitionsError(t *testing.T, name, expectedError string) {
 		t.Fatalf("unexpected error. want=%q got=%q", expectedError, err)
 	}
 }
+
+var testFrontmatter = `
+-- +++
+parent: 12345
+-- +++
+`
+
+func TestCanonicalizeQuery(t *testing.T) {
+	for _, testCase := range []struct {
+		name     string
+		input    string
+		expected string
+	}{
+		{"noop", "MY QUERY;", "MY QUERY;"},
+		{"whitespace", "  MY QUERY;  ", "MY QUERY;"},
+		{"yaml frontmatter", testFrontmatter + "\n\nMY QUERY;\n", "MY QUERY;"},
+		{"kitchen sink", "BEGIN;\n\nMY QUERY;\n\nCOMMIT;\n", "MY QUERY;"},
+		{"transactions", testFrontmatter + "\n\nMY QUERY;\n", "MY QUERY;"},
+		{"kitchen sink", testFrontmatter + "\n\nBEGIN;\n\nMY QUERY;\n\nCOMMIT;\n", "MY QUERY;"},
+	} {
+		t.Run(testCase.name, func(t *testing.T) {
+			if query := canonicalizeQuery(testCase.input); query != testCase.expected {
+				t.Errorf("unexpected canonical query. want=%q have=%q", testCase.expected, query)
+			}
+		})
+	}
+}

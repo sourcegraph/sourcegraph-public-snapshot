@@ -17,8 +17,13 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
     alert?.kind && alert.kind !== 'lucky-search-queries' ? null : (
         <div className={styles.root}>
             <H3>
-                Also showing additional results
-                <Tooltip content="We returned all the results for your query. We also added results for similar queries that might interest you.">
+                {alert?.title || 'Also showing additional results'}
+                <Tooltip
+                    content={
+                        alert?.description ||
+                        'We returned all the results for your query. We also added results for similar queries that might interest you.'
+                    }
+                >
                     <Icon className="ml-1" tabIndex={0} aria-label="More information" svgPath={mdiInformationOutline} />
                 </Tooltip>
             </H3>
@@ -44,3 +49,28 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
             </ul>
         </div>
     )
+
+export const luckySearchEvent = (alertTitle: string, descriptions: string[]): string[] => {
+    const rules = descriptions.map(entry => {
+        if (entry.match(/patterns as regular expressions/)) {
+            return 'Regexp'
+        }
+        if (entry.match(/unquote patterns/)) {
+            return 'Unquote'
+        }
+        if (entry.match(/AND patterns together/)) {
+            return 'And'
+        }
+        return 'Other'
+    })
+
+    const prefix = alertTitle.match(/No results for original query/)
+        ? 'SearchResultsAutoPure'
+        : 'SearchResultsAutoAdded'
+
+    const events = []
+    for (const rule of rules) {
+        events.push(`${prefix}${rule}`)
+    }
+    return events
+}
