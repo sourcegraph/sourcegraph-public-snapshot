@@ -80,6 +80,7 @@ type RepoStore interface {
 	GetByHashedName(context.Context, api.RepoHashedName) (*types.Repo, error)
 	GetFirstRepoNameByCloneURL(context.Context, string) (api.RepoName, error)
 	GetReposSetByIDs(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error)
+	GetRepoDescriptionsByIDs(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
 	List(context.Context, ReposListOptions) ([]*types.Repo, error)
 	ListIndexableRepos(context.Context, ListIndexableReposOptions) ([]types.MinimalRepo, error)
 	ListMinimalRepos(context.Context, ReposListOptions) ([]types.MinimalRepo, error)
@@ -286,6 +287,38 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 	}
 
 	return repoMap, nil
+}
+
+func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]string, err error) {
+	tr, ctx := trace.New(ctx, "repos.GetRepoDescriptionsByIDs", "")
+	defer func() {
+		if err != nil {
+			tr.SetError(err)
+		}
+		tr.Finish()
+	}()
+
+	opts := ReposListOptions{
+		Select: []string{"repo.id", "repo.description"},
+		IDs:    ids,
+	}
+
+	res := make(map[api.RepoID]string, len(ids))
+	scanDescriptions := func(rows *sql.Rows) error {
+		var repoID api.RepoID
+		var repoDescription string
+		if err := rows.Scan(
+			&repoID,
+			&dbutil.NullString{S: &repoDescription},
+		); err != nil {
+			return err
+		}
+
+		res[repoID] = repoDescription
+		return nil
+	}
+
+	return res, errors.Wrap(s.list(ctx, tr, opts, scanDescriptions), "fetch repo descriptions")
 }
 
 func (s *repoStore) Count(ctx context.Context, opt ReposListOptions) (ct int, err error) {
