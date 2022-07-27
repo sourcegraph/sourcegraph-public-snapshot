@@ -14,8 +14,9 @@ import (
 )
 
 const (
-	projectKey     = "SOURCEGRAPH"
-	clonedRepoName = "bbs/SOURCEGRAPH/jsonrpc2"
+	projectKey      = "SOURCEGRAPH"
+	clonedRepoName1 = "bbs/SOURCEGRAPH/jsonrpc2"
+	clonedRepoName2 = "bbs/SOURCEGRAPH/empty-repo-1"
 )
 
 func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
@@ -55,17 +56,81 @@ func TestBitbucketProjectsPermsSync_SetUnrestrictedPermissions(t *testing.T) {
 	}
 
 	// Perform the checks
-	permissionsInfo, err := client.RepositoryPermissionsInfo(clonedRepoName)
+	err = checkRepoPermissions(clonedRepoName1, true)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	if permissionsInfo.Permissions[0] != "READ" {
-		t.Fatal("READ permission hasn't been set", err)
+	err = checkRepoPermissions(clonedRepoName2, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBitbucketProjectsPermsSync_FromRestrictedToUnrestrictedPermissions(t *testing.T) {
+	if len(*bbsURL) == 0 || len(*bbsToken) == 0 || len(*bbsUsername) == 0 {
+		t.Skip("Environment variable BITBUCKET_SERVER_URL, BITBUCKET_SERVER_TOKEN, or BITBUCKET_SERVER_USERNAME is not set")
 	}
 
-	if !permissionsInfo.Unrestricted {
-		t.Fatal("unrestricted permission hasn't been set", err)
+	// External service setup
+	esID, err := setUpExternalService(t)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	defer func() {
+		err := client.DeleteExternalService(esID, false)
+		if err != nil {
+			t.Fatal(err)
+		}
+	}()
+
+	// Triggering the sync job to set permissions for existing user
+	unrestricted := false
+	err = client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
+		ProjectKey:      projectKey,
+		CodeHost:        esID,
+		UserPermissions: []types.UserPermission{{BindID: "gqltest@sourcegraph.com", Permission: "READ"}},
+		Unrestricted:    &unrestricted,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait up to 30 seconds for worker to finish the permissions sync.
+	err = waitForSyncJobToFinish()
+	if err != nil {
+		t.Fatal("Waiting for repository permissions to be synced:", err)
+	}
+
+	// Checking repo permissions
+	err = checkRepoPermissions(clonedRepoName1, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Triggering the sync job to set unrestricted permissions
+	unrestricted = true
+	err = client.SetRepositoryPermissionsForBitbucketProject(gqltestutil.BitbucketProjectPermsSyncArgs{
+		ProjectKey:      projectKey,
+		CodeHost:        esID,
+		UserPermissions: make([]types.UserPermission, 0),
+		Unrestricted:    &unrestricted,
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Wait up to 30 seconds for worker to finish the permissions sync.
+	err = waitForSyncJobToFinish()
+	if err != nil {
+		t.Fatal("Waiting for repository permissions to be synced:", err)
+	}
+
+	// Checking repo permissions
+	err = checkRepoPermissions(clonedRepoName1, true)
+	if err != nil {
+		t.Fatal(err)
 	}
 }
 
@@ -255,7 +320,7 @@ func setUpExternalService(t *testing.T) (esID string, err error) {
 			URL:                   *bbsURL,
 			Token:                 *bbsToken,
 			Username:              *bbsUsername,
-			Repos:                 []string{"SOURCEGRAPH/jsonrpc2"},
+			Repos:                 []string{"SOURCEGRAPH/jsonrpc2", "SOURCEGRAPH/empty-repo-1"},
 			RepositoryPathPattern: "bbs/{projectKey}/{repositorySlug}",
 		}),
 	})
@@ -266,9 +331,25 @@ func setUpExternalService(t *testing.T) (esID string, err error) {
 		return "", err
 	}
 
-	err = client.WaitForReposToBeCloned(clonedRepoName)
+	err = client.WaitForReposToBeCloned(clonedRepoName1)
 	if err != nil {
 		return "", err
 	}
 	return
+}
+
+func checkRepoPermissions(repoName string, wantUnrestricted bool) error {
+	permissionsInfo, err := client.RepositoryPermissionsInfo(repoName)
+	if err != nil {
+		return err
+	}
+
+	if permissionsInfo.Permissions[0] != "READ" {
+		return errors.New("READ permission hasn't been set")
+	}
+
+	if wantUnrestricted != permissionsInfo.Unrestricted {
+		return errors.Newf("unrestricted permissions mismatch. Want: '%v', get: '%v'", wantUnrestricted, permissionsInfo.Unrestricted)
+	}
+	return nil
 }
