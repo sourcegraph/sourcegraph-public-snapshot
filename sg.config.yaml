@@ -114,9 +114,9 @@ env:
   DISABLE_CODE_INSIGHTS: true
   ENABLE_STREAMING_REPOS_SYNCER: true
 
-  # OpenTelemetry in dev - use single http/json endpoint
-  OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
-  OTEL_EXPORTER_OTLP_PROTOCOL: http/json
+  # # OpenTelemetry in dev - use single http/json endpoint
+  # OTEL_EXPORTER_OTLP_ENDPOINT: http://127.0.0.1:4318
+  # OTEL_EXPORTER_OTLP_PROTOCOL: http/json
 
 commands:
   server:

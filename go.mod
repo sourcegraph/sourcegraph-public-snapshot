@@ -164,6 +164,7 @@ require (
 	github.com/xeonx/timeago v1.0.0-rc4
 	github.com/yuin/gopher-lua v0.0.0-20210529063254-f4c35e4016d9
 	go.etcd.io/bbolt v1.3.6
+	go.opentelemetry.io/collector v0.56.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.7.0
 	go.opentelemetry.io/contrib/propagators/ot v1.7.0
 	go.opentelemetry.io/otel v1.8.0
@@ -204,7 +205,6 @@ require (
 	github.com/knadh/koanf v1.4.2 // indirect
 	github.com/mostynb/go-grpc-compression v1.1.16 // indirect
 	github.com/rs/cors v1.8.2 // indirect
-	go.opentelemetry.io/collector v0.56.0 // indirect
 	go.opentelemetry.io/collector/pdata v0.56.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.33.0 // indirect
 	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.33.0 // indirect
@@ -388,7 +388,6 @@ require (
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
 	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
