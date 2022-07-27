@@ -97,7 +97,7 @@ func Main(setup SetupFunc) {
 	}
 
 	// Initialize main DB connection.
-	sqlDB := mustInitializeFrontendDB(logger)
+	sqlDB := mustInitializeFrontendDB(logger, observationContext)
 	db := database.NewDB(logger, sqlDB)
 
 	// Run setup
@@ -127,12 +127,12 @@ func Main(setup SetupFunc) {
 	goroutine.MonitorBackgroundRoutines(context.Background(), routines...)
 }
 
-func mustInitializeFrontendDB(logger log.Logger) *sql.DB {
+func mustInitializeFrontendDB(logger log.Logger, observationContext *observation.Context) *sql.DB {
 	dsn := conf.GetServiceConnectionValueAndRestartOnChange(func(serviceConnections conftypes.ServiceConnections) string {
 		return serviceConnections.PostgresDSN
 	})
 
-	db, err := connections.EnsureNewFrontendDB(dsn, "symbols", &observation.TestContext)
+	db, err := connections.EnsureNewFrontendDB(dsn, "symbols", observationContext)
 	if err != nil {
 		logger.Fatal("failed to connect to database", log.Error(err))
 	}
