@@ -128,10 +128,8 @@ func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, descriptionMatch
 				ID:   r.Repo.ID,
 				Rev:  rev,
 			}
-			if len(descriptionMatches) > 0 {
-				if dms, ok := descriptionMatches[r.Repo.ID]; ok {
-					rm.DescriptionMatches = dms
-				}
+			if dms, ok := descriptionMatches[r.Repo.ID]; ok {
+				rm.DescriptionMatches = dms
 			}
 
 			matches = append(matches, rm)
