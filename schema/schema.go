@@ -1256,10 +1256,8 @@ type ObservabilityAlerts struct {
 
 // ObservabilityClient description: Configuration for client observability
 type ObservabilityClient struct {
-	// OpenTelemetryMetrics description: Configuration for OpenTelemetry metrics
-	OpenTelemetryMetrics OpenTelemetryMetrics `json:"openTelemetry.metrics"`
-	// OpenTelemetryTracing description: Configuration for OpenTelemetry tracing
-	OpenTelemetryTracing OpenTelemetryTracing `json:"openTelemetry.tracing"`
+	// OpenTelemetry description: Configuration for the client OpenTelemetry exporter
+	OpenTelemetry *OpenTelemetry `json:"openTelemetry,omitempty"`
 }
 
 // ObservabilityTracing description: Controls the settings for distributed tracing.
@@ -1312,16 +1310,10 @@ type OpenIDConnectAuthProvider struct {
 	Type               string `json:"type"`
 }
 
-// OpenTelemetryMetrics description: Configuration for OpenTelemetry metrics
-type OpenTelemetryMetrics struct {
-	// CollectorURL description: OpenTelemetry metrics collector endpoint
-	CollectorURL string `json:"collectorURL"`
-}
-
-// OpenTelemetryTracing description: Configuration for OpenTelemetry tracing
-type OpenTelemetryTracing struct {
-	// CollectorURL description: OpenTelemetry tracing collector endpoint
-	CollectorURL string `json:"collectorURL"`
+// OpenTelemetry description: Configuration for the client OpenTelemetry exporter
+type OpenTelemetry struct {
+	// Endpoint description: OpenTelemetry tracing collector endpoint
+	Endpoint string `json:"endpoint,omitempty"`
 }
 
 // OrganizationInvitations description: Configuration for organization invitations.
