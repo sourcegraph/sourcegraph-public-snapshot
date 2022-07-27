@@ -1,4 +1,4 @@
-import { boolean, select, withKnobs } from '@storybook/addon-knobs'
+import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BatchSpecWorkspaceState } from '@sourcegraph/shared/src/graphql-operations'
@@ -19,24 +19,20 @@ export default config
 export const WorkspaceStateIconStory: Story = () => (
     <WebStory>
         {props => (
-            <WorkspaceStateIcon
-                state={select(
-                    'State',
-                    [
-                        BatchSpecWorkspaceState.PENDING,
-                        BatchSpecWorkspaceState.QUEUED,
-                        BatchSpecWorkspaceState.PROCESSING,
-                        BatchSpecWorkspaceState.SKIPPED,
-                        BatchSpecWorkspaceState.CANCELED,
-                        BatchSpecWorkspaceState.CANCELING,
-                        BatchSpecWorkspaceState.FAILED,
-                        BatchSpecWorkspaceState.COMPLETED,
-                    ],
-                    BatchSpecWorkspaceState.COMPLETED
-                )}
-                cachedResultFound={boolean('Cache Found', false)}
-                {...props}
-            />
+            <>
+                {Object.values(BatchSpecWorkspaceState)
+                    .sort()
+                    .map(value => (
+                        <div key={value} className="p-1">
+                            {value}:{' '}
+                            <WorkspaceStateIcon
+                                state={value}
+                                cachedResultFound={boolean('Cache Found', false)}
+                                {...props}
+                            />
+                        </div>
+                    ))}
+            </>
         )}
     </WebStory>
 )
