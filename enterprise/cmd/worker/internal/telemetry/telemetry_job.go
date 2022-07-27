@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/inconshreveable/log15"
 	"google.golang.org/protobuf/proto"
 
 	"github.com/keegancsmith/sqlf"
@@ -236,7 +235,6 @@ func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, 
 		Attributes:  masg.Attributes,
 		OrderingKey: masg.OrderingKey,
 	})
-	log15.Info("trying to send pubsub", "size", msgSize)
 	_, err = result.Get(ctx)
 	if err != nil {
 		return errors.Wrap(err, "result.Get")
