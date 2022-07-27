@@ -36,6 +36,7 @@ import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
+import { excludeExtensionsRoute } from './extensions/extensions'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
@@ -63,6 +64,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { useExtensionsAsCoreFeaturesFromSettings } from './util/settings'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
@@ -124,7 +126,9 @@ export interface LayoutProps
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
-    const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
+    const extensionsAsCoreFeatures = useExtensionsAsCoreFeaturesFromSettings(props.settingsCascade)
+    const routes = extensionsAsCoreFeatures ? excludeExtensionsRoute(props.routes) : props.routes
+    const routeMatch = routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
@@ -260,7 +264,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     }
                 >
                     <Switch>
-                        {props.routes.map(
+                        {routes.map(
                             ({ render, condition = () => true, ...route }) =>
                                 condition(context) && (
                                     <Route
