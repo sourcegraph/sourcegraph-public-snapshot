@@ -3,7 +3,10 @@ package telemetry
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/keegancsmith/sqlf"
 
@@ -69,15 +72,41 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
 	observationContext := &observation.Context{
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.NewRegistry(),
+		Registerer: prometheus.DefaultRegisterer,
 	}
-	operation := observationContext.Operation(observation.Op{})
-
-	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents)
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, operation)
+	handlerMetrics := newHandlerMetrics(observationContext)
+	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents, handlerMetrics)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, handlerMetrics.handler)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error
+
+func newHandlerMetrics(observationContext *observation.Context) *handlerMetrics {
+	redM := metrics.NewREDMetrics(
+		observationContext.Registerer,
+		"telemetry_job",
+		metrics.WithLabels("op"),
+	)
+
+	op := func(name string) *observation.Operation {
+		return observationContext.Operation(observation.Op{
+			Name:              fmt.Sprintf("apiworker.apiclient.%s", name),
+			MetricLabelValues: []string{name},
+			Metrics:           redM,
+		})
+	}
+	return &handlerMetrics{
+		sendEvents:  op("SendEvents"),
+		fetchEvents: op("FetchEvents"),
+		handler:     op("Handler"),
+	}
+}
+
+type handlerMetrics struct {
+	handler     *observation.Operation
+	sendEvents  *observation.Operation
+	fetchEvents *observation.Operation
+}
 
 type telemetryHandler struct {
 	logger             log.Logger
@@ -86,9 +115,10 @@ type telemetryHandler struct {
 	userEmailsStore    database.UserEmailsStore
 	bookmarkStore      bookmarkStore
 	sendEventsCallback sendEventsCallbackFunc
+	metrics            *handlerMetrics
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, sendEventsCallback sendEventsCallbackFunc, metrics *handlerMetrics) *telemetryHandler {
 	return &telemetryHandler{
 		logger:             logger,
 		eventLogStore:      store,
@@ -96,6 +126,7 @@ func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEm
 		globalStateStore:   globalStateStore,
 		userEmailsStore:    userEmailsStore,
 		bookmarkStore:      bookmarkStore,
+		metrics:            metrics,
 	}
 }
 
@@ -103,7 +134,7 @@ var disabledErr = errors.New("Usage telemetry export is disabled, but the backgr
 
 const MaxEventsCountDefault = 1000
 
-func (t *telemetryHandler) Handle(ctx context.Context) error {
+func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	if !isEnabled() {
 		return disabledErr
 	}
@@ -126,9 +157,9 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	}
 	t.logger.Info("fetching events from bookmark", log.Int("bookmark_id", bookmark))
 
-	all, err := t.eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
+	all, err := fetchEvents(ctx, bookmark, batchSize, t.eventLogStore, t.metrics)
 	if err != nil {
-		return errors.Wrap(err, "eventLogStore.ListExportableEvents")
+		return errors.Wrap(err, "fetchEvents")
 	}
 	if len(all) == 0 {
 		return nil
@@ -137,12 +168,34 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 	maxId := int(all[len(all)-1].ID)
 	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
 
-	err = t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
+	err = sendBatch(ctx, all, topicConfig, instanceMetadata, t.metrics, t.sendEventsCallback)
 	if err != nil {
-		return errors.Wrap(err, "telemetryHandler.sendEvents")
+		return errors.Wrap(err, "sendBatch")
 	}
 
 	return t.bookmarkStore.UpdateBookmark(ctx, maxId)
+}
+
+// sendBatch wraps the send events callback in a metric
+func sendBatch(ctx context.Context, events []*types.Event, topicConfig topicConfig, metadata instanceMetadata, metrics *handlerMetrics, callback sendEventsCallbackFunc) (err error) {
+	ctx, _, endObservation := metrics.sendEvents.With(ctx, &err, observation.Args{})
+	sentCount := 0
+	defer endObservation(float64(sentCount), observation.Args{})
+
+	err = callback(ctx, events, topicConfig, metadata)
+	if err != nil {
+		return err
+	}
+	sentCount = len(events)
+	return nil
+}
+
+// fetchEvents wraps the event data fetch in a metric
+func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore database.EventLogStore, metrics *handlerMetrics) (results []*types.Event, err error) {
+	ctx, _, endObservation := metrics.fetchEvents.With(ctx, &err, observation.Args{})
+	defer endObservation(float64(len(results)), observation.Args{})
+
+	return eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
 }
 
 // This package level client is to prevent race conditions when mocking this configuration in tests.
