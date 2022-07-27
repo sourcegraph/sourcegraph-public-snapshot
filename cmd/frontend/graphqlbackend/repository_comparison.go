@@ -344,7 +344,7 @@ func (r *fileDiffConnectionResolver) Nodes(ctx context.Context) ([]FileDiff, err
 }
 
 func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, error) {
-	fileDiffs, _, hasNextPage, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	fileDiffs, _, hasNextPage, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first, Paths: r.paths})
 	if err != nil {
 		return nil, err
 	}
@@ -356,7 +356,7 @@ func (r *fileDiffConnectionResolver) TotalCount(ctx context.Context) (*int32, er
 }
 
 func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil.PageInfo, error) {
-	_, afterIdx, hasNextPage, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	_, afterIdx, hasNextPage, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first, Paths: r.paths})
 	if err != nil {
 		return nil, err
 	}
@@ -371,7 +371,7 @@ func (r *fileDiffConnectionResolver) PageInfo(ctx context.Context) (*graphqlutil
 }
 
 func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, error) {
-	fileDiffs, _, _, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	fileDiffs, _, _, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first, Paths: r.paths})
 	if err != nil {
 		return nil, err
 	}
@@ -385,7 +385,7 @@ func (r *fileDiffConnectionResolver) DiffStat(ctx context.Context) (*DiffStat, e
 }
 
 func (r *fileDiffConnectionResolver) RawDiff(ctx context.Context) (string, error) {
-	fileDiffs, _, _, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first})
+	fileDiffs, _, _, err := r.compute(ctx, &FileDiffsConnectionArgs{After: r.after, First: r.first, Paths: r.paths})
 	if err != nil {
 		return "", err
 	}
