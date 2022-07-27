@@ -44,8 +44,8 @@ const (
 	VersionOrderAfter
 )
 
-// compareVersions returns the relationship between `a (op) b`.
-func compareVersions(a, b Version) VersionOrder {
+// CompareVersions returns the relationship between `a (op) b`.
+func CompareVersions(a, b Version) VersionOrder {
 	for _, pair := range [][2]int{
 		{a.Major, b.Major},
 		{a.Minor, b.Minor},
@@ -63,5 +63,5 @@ func compareVersions(a, b Version) VersionOrder {
 
 // pointIntersectsInterval returns true if point falls within the interval [lower, upper].
 func pointIntersectsInterval(lower, upper, point Version) bool {
-	return compareVersions(point, lower) != VersionOrderBefore && compareVersions(upper, point) != VersionOrderBefore
+	return CompareVersions(point, lower) != VersionOrderBefore && CompareVersions(upper, point) != VersionOrderBefore
 }
