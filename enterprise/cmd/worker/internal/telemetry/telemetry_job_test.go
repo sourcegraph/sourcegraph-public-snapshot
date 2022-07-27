@@ -236,7 +236,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
 
-	want := []*database.Event{
+	testData := []*database.Event{
 		{
 			Name:   "event1",
 			UserID: 1,
@@ -248,20 +248,13 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 			Source: "test",
 		},
 	}
-	err := db.EventLogs().BulkInsert(ctx, want)
+	err := db.EventLogs().BulkInsert(ctx, testData)
 	if err != nil {
 		t.Fatal(err)
 	}
-	expectEvents := func(t *testing.T, want []*database.Event) sendEventsCallbackFunc {
-		return func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
-			if len(event) != len(want) {
-				t.Error("got wrong event count")
-			}
-			if diff := cmp.Diff(want, event[0]); diff != "" {
-				t.Errorf("event mismatch (want/got): %s", diff)
-			}
-			return nil
-		}
+	err = basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (0);"))
+	if err != nil {
+		t.Error(err)
 	}
 
 	config := validEnabledConfiguration()
@@ -269,11 +262,21 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 	confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
 	handler := mockTelemetryHandler(t, noopHandler())
-	handler.eventLogStore = db.EventLogs()
+	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
 	handler.bookmarkStore = newBookmarkStore(db)
 
 	t.Run("first execution of handler should return first event", func(t *testing.T) {
-		handler.sendEventsCallback = expectEvents(t, want[:0])
+		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("first execution of handler should return first event", []*types.Event{{
+				ID:       1,
+				Name:     "event1",
+				UserID:   1,
+				Argument: "{}",
+				Source:   "test",
+				Version:  "0.0.0+dev",
+			}}).Equal(t, got)
+			return nil
+		}
 
 		err = handler.Handle(ctx)
 		if err != nil {
@@ -281,7 +284,17 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 		}
 	})
 	t.Run("second execution of handler should return second event", func(t *testing.T) {
-		handler.sendEventsCallback = expectEvents(t, want[:1])
+		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("second execution of handler should return second event", []*types.Event{{
+				ID:       2,
+				Name:     "event2",
+				UserID:   2,
+				Argument: "{}",
+				Source:   "test",
+				Version:  "0.0.0+dev",
+			}}).Equal(t, got)
+			return nil
+		}
 
 		err = handler.Handle(ctx)
 		if err != nil {
@@ -289,7 +302,12 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 		}
 	})
 	t.Run("third execution of handler should return no events", func(t *testing.T) {
-		handler.sendEventsCallback = expectEvents(t, nil)
+		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			if len(event) == 0 {
+				t.Error("expected empty events")
+			}
+			return nil
+		}
 
 		err = handler.Handle(ctx)
 		if err != nil {
