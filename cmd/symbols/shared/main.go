@@ -3,7 +3,10 @@ package shared
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"net/http"
+	"os"
+	"strconv"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -15,6 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/fetcher"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/gitserver"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/internal/api"
+	sqlite "github.com/sourcegraph/sourcegraph/cmd/symbols/internal/database"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -69,6 +73,27 @@ func Main(setup SetupFunc) {
 			Name:       "codeintel-symbols",
 			SampleRate: 5,
 		},
+	}
+
+	// Allow to do a sanity check of sqlite.
+	sanityCheck, err := strconv.ParseBool(env.Get("SANITY_CHECK", "false", "check that go-sqlite3 works then exit 0 if it's ok or 1 if not"))
+	if err != nil {
+		fmt.Printf("Invalid SANITY_CHECK value: %s\n", err.Error())
+		os.Exit(1)
+	}
+	if sanityCheck {
+		// Ensure we register our database driver before calling
+		// anything that tries to open a SQLite database.
+		sqlite.Init()
+
+		fmt.Print("Running sanity check...")
+		if err := sqlite.SanityCheck(); err != nil {
+			fmt.Println("failed ❌", err)
+			os.Exit(1)
+		}
+
+		fmt.Println("passed ✅")
+		os.Exit(0)
 	}
 
 	// Initialize main DB connection.
