@@ -111,7 +111,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 		return ws
 	}
 
-	newGitserverClient := func(commitMap map[api.CommitID]bool, branches map[string]api.CommitID) gitserver.Client {
+	newGitserverClient := func(commitMap map[api.CommitID]bool, branches map[string]api.CommitID) gitserver.Clienter {
 		gitserverClient := gitserver.NewMockClient()
 		gitserverClient.GetDefaultBranchFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (string, api.CommitID, error) {
 			if res, ok := defaultBranches[repo]; ok {
@@ -413,7 +413,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 	})
 }
 
-func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, gs gitserver.Client, u *types.User, matches map[string][]streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
+func resolveWorkspacesAndCompare(t *testing.T, s *store.Store, gs gitserver.Clienter, u *types.User, matches map[string][]streamhttp.EventMatch, spec *batcheslib.BatchSpec, want []*RepoWorkspace) {
 	t.Helper()
 
 	wr := &workspaceResolver{

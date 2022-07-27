@@ -71,5 +71,5 @@ type RuntimeClients struct {
 	DB           database.DB
 	Zoekt        zoekt.Streamer
 	SearcherURLs *endpoint.Map
-	Gitserver    gitserver.Client
+	Gitserver    gitserver.Clienter
 }

@@ -35,14 +35,14 @@ type PositionAdjuster interface {
 }
 
 type positionAdjuster struct {
-	client    gitserver.Client
+	client    gitserver.Clienter
 	repo      *types.Repo
 	commit    string
 	hunkCache HunkCache
 }
 
 // NewPositionAdjuster creates a new PositionAdjuster with the given repository and source commit.
-func NewPositionAdjuster(client gitserver.Client, repo *types.Repo, commit string, hunkCache HunkCache) PositionAdjuster {
+func NewPositionAdjuster(client gitserver.Clienter, repo *types.Repo, commit string, hunkCache HunkCache) PositionAdjuster {
 	return &positionAdjuster{
 		client:    client,
 		repo:      repo,

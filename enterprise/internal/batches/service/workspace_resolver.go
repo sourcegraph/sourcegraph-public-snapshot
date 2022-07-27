@@ -82,7 +82,7 @@ func NewWorkspaceResolver(s *store.Store) WorkspaceResolver {
 type workspaceResolver struct {
 	logger              log.Logger
 	store               *store.Store
-	gitserverClient     gitserver.Client
+	gitserverClient     gitserver.Clienter
 	frontendInternalURL string
 }
 
@@ -173,7 +173,7 @@ func (wr *workspaceResolver) determineRepositories(ctx context.Context, batchSpe
 // findIgnoredRepositories will hit gitserver for file info.
 const ignoredWorkspaceResolverConcurrency = 5
 
-func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Client, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
+func findIgnoredRepositories(ctx context.Context, gitserverClient gitserver.Clienter, repos []*RepoRevision) (map[*types.Repo]struct{}, error) {
 	type result struct {
 		repo           *RepoRevision
 		hasBatchIgnore bool
@@ -438,7 +438,7 @@ func (wr *workspaceResolver) runSearch(ctx context.Context, query string, onMatc
 	return err
 }
 
-func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gitserver.Client, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
+func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gitserver.Clienter, repo *types.Repo, fileMatches []string) (_ *RepoRevision, err error) {
 	tr, ctx := trace.New(ctx, "repoToRepoRevision", "")
 	defer func() {
 		tr.SetError(err)
@@ -461,7 +461,7 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gi
 
 const batchIgnoreFilePath = ".batchignore"
 
-func hasBatchIgnoreFile(ctx context.Context, gitserverClient gitserver.Client, r *RepoRevision) (_ bool, err error) {
+func hasBatchIgnoreFile(ctx context.Context, gitserverClient gitserver.Clienter, r *RepoRevision) (_ bool, err error) {
 	traceTitle := fmt.Sprintf("RepoID: %q", r.Repo.ID)
 	tr, ctx := trace.New(ctx, "hasBatchIgnoreFile", traceTitle)
 	defer func() {

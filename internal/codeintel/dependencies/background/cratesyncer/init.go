@@ -34,7 +34,7 @@ type syncer struct {
 	db                    database.DB
 	dbStore               *dbstore.Store
 	externalServicesStore database.ExternalServiceStore
-	gitClient             gitserver.Client
+	gitClient             gitserver.Clienter
 	interval              time.Duration
 }
 

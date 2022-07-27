@@ -70,7 +70,7 @@ func NewResolver(logger log.Logger, db database.DB, searcher *endpoint.Map, zoek
 type Resolver struct {
 	logger    log.Logger
 	db        database.DB
-	gitserver gitserver.Client
+	gitserver gitserver.Clienter
 	zoekt     zoekt.Streamer
 	searcher  *endpoint.Map
 }
