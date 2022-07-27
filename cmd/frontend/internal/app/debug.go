@@ -18,6 +18,9 @@ import (
 
 	sglog "github.com/sourcegraph/log"
 	"github.com/sourcegraph/log/std"
+	"go.opentelemetry.io/collector/component"
+	"go.opentelemetry.io/collector/exporter/otlpexporter"
+	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
@@ -274,6 +277,36 @@ func addJaeger(r *mux.Router, db database.DB) {
 // addOpenTelemetryProtocolTunnel registers handlers that forward OpenTelemetry protocol
 // (OTLP) requests in the http/json format to the configured backend.
 func addOpenTelemetryProtocolTunnel(r *mux.Router) {
+	ctx := context.Background()
+
+	exporterFactory := otlpexporter.NewFactory()
+	exporterConfig := exporterFactory.CreateDefaultConfig().(*otlpexporter.Config)
+
+	// Export to OTLP endpoint
+	exporterConfig.GRPCClientSettings.Endpoint = otlpenv.Endpoint()
+
+	exporter, err := exporterFactory.CreateTracesExporter(ctx, component.ExporterCreateSettings{}, exporterConfig)
+	if err != nil {
+		// TODO
+	}
+
+	// Receiv OTLP HTTP
+	receiverFactory := otlpreceiver.NewFactory()
+	receiverConfig := receiverFactory.CreateDefaultConfig().(*otlpreceiver.Config)
+	receiverConfig.HTTP.Endpoint = "/otlp"
+
+	// Start receiver, which exports to our OTLP instance
+	receiver, err := receiverFactory.CreateTracesReceiver(ctx,
+		component.ReceiverCreateSettings{},
+		receiverConfig,
+		exporter)
+	if err != nil {
+		// TODO
+	}
+	if err := receiver.Start(ctx, nil); err != nil {
+		// TODO
+	}
+
 	// The tunnel only forwards http/json OTLP requests.
 	endpoint := otlpenv.HTTPJSONEndpoint()
 

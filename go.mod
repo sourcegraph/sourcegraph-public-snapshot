@@ -45,7 +45,7 @@ require (
 	github.com/docker/docker-credential-helpers v0.6.4
 	github.com/fatih/color v1.13.0
 	github.com/felixge/fgprof v0.9.2
-	github.com/felixge/httpsnoop v1.0.2
+	github.com/felixge/httpsnoop v1.0.3
 	github.com/fsnotify/fsnotify v1.5.4
 	github.com/gen2brain/beeep v0.0.0-20210529141713-5586760f0cc1
 	github.com/getsentry/raven-go v0.2.0
@@ -119,7 +119,7 @@ require (
 	github.com/peterhellberg/link v1.1.0
 	github.com/prometheus/alertmanager v0.23.0
 	github.com/prometheus/client_golang v1.12.2
-	github.com/prometheus/common v0.32.1
+	github.com/prometheus/common v0.37.0
 	github.com/qustavo/sqlhooks/v2 v2.1.0
 	github.com/rafaeljusto/redigomock v2.4.0+incompatible
 	github.com/rjeczalik/notify v0.9.2
@@ -148,7 +148,7 @@ require (
 	github.com/sourcegraph/scip v0.1.0
 	github.com/sourcegraph/sourcegraph/enterprise/dev/ci/images v0.0.0-20220203145655-4d2a39d3038a
 	github.com/sourcegraph/sourcegraph/lib v0.0.0-20220511160847-5a43d3ea24eb
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.0
 	github.com/stripe/stripe-go v70.15.0+incompatible
 	github.com/stvp/tempredis v0.0.0-20181119212430-b82af8480203
 	github.com/temoto/robotstxt v1.1.2
@@ -200,6 +200,18 @@ require (
 )
 
 require (
+	github.com/golang/snappy v0.0.4 // indirect
+	github.com/knadh/koanf v1.4.2 // indirect
+	github.com/mostynb/go-grpc-compression v1.1.16 // indirect
+	github.com/rs/cors v1.8.2 // indirect
+	go.opentelemetry.io/collector v0.56.0 // indirect
+	go.opentelemetry.io/collector/pdata v0.56.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.33.0 // indirect
+	go.opentelemetry.io/contrib/instrumentation/net/http/otelhttp v0.33.0 // indirect
+	go.opentelemetry.io/otel/metric v0.31.0 // indirect
+)
+
+require (
 	bitbucket.org/creachadair/shell v0.0.7 // indirect
 	cloud.google.com/go v0.101.0 // indirect
 	cloud.google.com/go/compute v1.6.1 // indirect
@@ -242,7 +254,7 @@ require (
 	github.com/cockroachdb/logtags v0.0.0-20211118104740-dabe8e521a4f // indirect
 	github.com/cockroachdb/redact v1.1.3
 	github.com/containerd/typeurl v1.0.2 // indirect
-	github.com/cpuguy83/go-md2man/v2 v2.0.1 // indirect
+	github.com/cpuguy83/go-md2man/v2 v2.0.2 // indirect
 	github.com/dave/jennifer v1.5.0 // indirect
 	github.com/djherbis/buffer v1.2.0 // indirect
 	github.com/djherbis/nio/v3 v3.0.1 // indirect
@@ -320,7 +332,7 @@ require (
 	github.com/jpillora/backoff v1.0.0 // indirect
 	github.com/karlseguin/typed v1.1.8 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
-	github.com/klauspost/compress v1.15.1 // indirect
+	github.com/klauspost/compress v1.15.8 // indirect
 	github.com/klauspost/pgzip v1.2.5 // indirect
 	github.com/kr/pretty v0.3.0 // indirect
 	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
@@ -374,9 +386,9 @@ require (
 	github.com/sourcegraph/annotate v0.0.0-20160123013949-f4cad6c6324d // indirect
 	github.com/sourcegraph/syntaxhighlight v0.0.0-20170531221838-bd320f5d308e // indirect
 	github.com/spaolacci/murmur3 v1.1.0 // indirect
-	github.com/spf13/cobra v1.4.0 // indirect
+	github.com/spf13/cobra v1.5.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/stretchr/objx v0.3.0 // indirect
+	github.com/stretchr/objx v0.4.0 // indirect
 	github.com/tadvi/systray v0.0.0-20190226123456-11a2b8fa57af // indirect
 	github.com/tidwall/match v1.1.1 // indirect
 	github.com/tidwall/pretty v1.2.0 // indirect
@@ -400,7 +412,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220517211312-f3a8303e98df // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/grpc v1.46.2 // indirect
+	google.golang.org/grpc v1.48.0 // indirect
 	gopkg.in/alexcesaro/statsd.v2 v2.0.0 // indirect
 	gopkg.in/inf.v0 v0.9.1 // indirect
 	gopkg.in/square/go-jose.v2 v2.6.0 // indirect
