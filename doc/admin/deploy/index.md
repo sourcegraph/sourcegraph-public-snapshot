@@ -2,11 +2,23 @@
 
 Sourcegraph recommends [Sourcegraph Cloud](https://about.sourcegraph.com/) as the preferred method of deployment. In situations where Cloud isn't an option, Sourcegraph supports [Docker Compose](docker-compose/index.md) as the primary self-managed deployment type. If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md). 
 
-If your needs fall outside of these two, contact the Sourcegraph Customer Engineering team to collaborate on an custom solution. 
+If your needs fall outside of these two, [contact](https://about.sourcegraph.com/demo?_ga=2.46676263.187872373.1658949134-758565747.1655761211) the Sourcegraph Customer Engineering team to collaborate on a custom solution. 
 
-Sourcegraph also provides a [resource estimator](#resource-planning) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+##Resource Planning
+
+Sourcegraph provides a [resource estimator](#resource-planning) to help predict and plan the required resource for your deployment. This tool ensures you provision appropriate resources to scale your instance.
+
+The [Scaling Overview for Services](scale.md) doc provides a comprehensive overview of how each Sourcegraph service scales.
+
+## Deployment types
 
 
+
+| Deployment Type | Suggested for | Setup time | Resource isolation | Auto-healing | Multi-machine | Complexity |
+| ---------------------------------------------------------------------- | ---------------------------------------------------------------- | ----------------- | :----------------: | :----------: | :-----------: | :--------: |
+| [Cloud](kubernetes/helm.md) | Production deployments of any size | 5 - 90 minutes | YES | YES | YES | Easy|
+| [Docker Compose](docker-compose/index.md) | Production deployments where Cloud is not viable | 5 - 30 minutes | YES | YES | NO | Easy - Medium |
+| [Docker Single Container](docker-single-container/index.md) | Local testing _(Not recommended for production; no Code Insights support)_ | 1 minute | NO | NO | NO | Easy |
 
 <!-- # Deployment Overview
 
