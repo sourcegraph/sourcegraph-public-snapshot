@@ -250,11 +250,11 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 
 	xLocations := []shared.UploadLocation{
-		{Dump: remoteUploads[0], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange1},
-		{Dump: remoteUploads[0], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
-		{Dump: remoteUploads[0], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange3},
-		{Dump: remoteUploads[0], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
-		{Dump: remoteUploads[0], Path: "sub2/c.go", TargetCommit: "deadbeef2", TargetRange: testRange5},
+		{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange1},
+		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
+		{Dump: remoteUploads[1], Path: "sub2/a.go", TargetCommit: "deadbeef2", TargetRange: testRange3},
+		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
+		{Dump: remoteUploads[1], Path: "sub2/c.go", TargetCommit: "deadbeef2", TargetRange: testRange5},
 	}
 	expectedLocations := uploadLocationsToAdjustedLocations(xLocations)
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
@@ -413,8 +413,8 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	}
 	remoteUploads := uploadDumpToCodeNavDump(dumps)
 	expectedLocations := []shared.UploadLocation{
-		{Dump: remoteUploads[0], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
-		{Dump: remoteUploads[0], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
+		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange2},
+		{Dump: remoteUploads[1], Path: "sub2/b.go", TargetCommit: "deadbeef2", TargetRange: testRange4},
 	}
 	if diff := cmp.Diff(expectedLocations, adjustedLocations); diff != "" {
 		t.Errorf("unexpected locations (-want +got):\n%s", diff)
