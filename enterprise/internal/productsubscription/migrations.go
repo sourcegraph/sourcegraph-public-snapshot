@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/base64"
 	"encoding/json"
-	"strings"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -56,59 +55,22 @@ func (m *subscriptionAccountNumberMigrator) Progress(ctx context.Context) (float
 }
 
 func (m *subscriptionAccountNumberMigrator) Up(ctx context.Context) (err error) {
-	tx, err := m.store.Transact(ctx)
-	if err != nil {
-		return errors.Wrap(err, "start transaction")
-	}
-	defer func() { err = tx.Done(err) }()
-
-	// Select and lock a single record within this transaction. This ensures
-	// that many worker instances can run the same migration concurrently
-	// without them all trying to convert the same record.
-	rows, err := tx.Query(ctx, sqlf.Sprintf(`
-SELECT
-	product_subscriptions.id,
-	users.username
-FROM product_subscriptions
-JOIN users ON product_subscriptions.user_id = users.id
-WHERE product_subscriptions.account_number IS NULL
-LIMIT %s
-FOR UPDATE SKIP LOCKED
-`,
-		500,
-	))
-	if err != nil {
-		return errors.Wrap(err, "query rows")
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-
-	var updates []*sqlf.Query
-	for rows.Next() {
-		var subscriptionID string
-		var username string
-		if err = rows.Scan(&subscriptionID, &username); err != nil {
-			return errors.Wrap(err, "scan")
-		}
-
-		var accountNumber string
-		if i := strings.LastIndex(username, "-"); i > -1 {
-			accountNumber = username[i+1:]
-		}
-
-		updates = append(updates, sqlf.Sprintf("(%s, %s)", subscriptionID, accountNumber))
-	}
-
-	if err = tx.Exec(ctx, sqlf.Sprintf(`
+	return m.store.Exec(ctx, sqlf.Sprintf(`
+WITH candidates AS (
+	SELECT
+		product_subscriptions.id::uuid AS subscription_id,
+		COALESCE(split_part(users.username, '-', 2), '') AS account_number
+	FROM product_subscriptions
+	JOIN users ON product_subscriptions.user_id = users.id
+	WHERE product_subscriptions.account_number IS NULL
+	LIMIT 500
+	FOR UPDATE SKIP LOCKED
+)
 UPDATE product_subscriptions
-SET account_number = updates.account_number
-FROM (VALUES %s) AS updates(id, account_number)
-WHERE product_subscriptions.id = updates.id::uuid`,
-		sqlf.Join(updates, ", "),
-	)); err != nil {
-		return errors.Wrap(err, "update")
-	}
-
-	return nil
+SET account_number = candidates.account_number
+FROM candidates
+WHERE product_subscriptions.id = candidates.subscription_id
+`))
 }
 
 func (m *subscriptionAccountNumberMigrator) Down(_ context.Context) error {
