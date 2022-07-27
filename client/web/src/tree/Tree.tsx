@@ -9,6 +9,7 @@ import { Key } from 'ts-key-enum'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
+import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
@@ -19,7 +20,6 @@ import { TreeRoot } from './TreeRoot'
 import { getDomElement, scrollIntoView } from './util'
 
 import styles from './Tree.module.scss'
-import { Scalars } from '@sourcegraph/shared/src/graphql-operations'
 
 interface Props extends AbsoluteRepo, ExtensionsControllerProps, ThemeProps, TelemetryProps {
     history: H.History

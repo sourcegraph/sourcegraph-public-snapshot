@@ -1,13 +1,22 @@
 /* eslint jsx-a11y/click-events-have-key-events: warn, jsx-a11y/no-static-element-interactions: warn */
 import * as React from 'react'
-import * as H from 'history'
+import { useEffect, useState } from 'react'
 
 import { mdiSourceRepository } from '@mdi/js'
+import classNames from 'classnames'
+import * as H from 'history'
+import { escapeRegExp, isEqual } from 'lodash'
+import { NavLink } from 'react-router-dom'
 import { FileDecoration } from 'sourcegraph'
 
+import { gql, useQuery } from '@sourcegraph/http-client'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
+import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { Icon, LoadingSpinner } from '@sourcegraph/wildcard'
-import { gql, useQuery } from '@sourcegraph/http-client'
+
+import { InlineSymbolsResult, Scalars } from '../graphql-operations'
+import { parseBrowserRepoURL } from '../util/url'
 
 import {
     TreeLayerCell,
@@ -20,18 +29,10 @@ import {
     TreeRow,
 } from './components'
 import { FileDecorator } from './FileDecorator'
-import { maxEntries, TreeEntryInfo, treePadding } from './util'
 import { TreeLayerProps } from './TreeLayer'
-import { escapeRegExp, isEqual } from 'lodash'
+import { maxEntries, TreeEntryInfo, treePadding } from './util'
 
-import { InlineSymbolsResult, Scalars } from '../graphql-operations'
-import { NavLink } from 'react-router-dom'
-import classNames from 'classnames'
-import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
-import { parseBrowserRepoURL } from '../util/url'
 import styles from './File.module.scss'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
-import { useEffect, useState } from 'react'
 
 interface FileProps extends ThemeProps {
     fileDecorations?: FileDecoration[]
@@ -246,7 +247,7 @@ const Symbols: React.FunctionComponent<SymbolsProps> = ({ repoID, revision, acti
             content = (
                 <ul>
                     {symbols.map(symbol => (
-                        <li className={''}>
+                        <li key={symbol.url}>
                             <NavLink
                                 to={symbol.url}
                                 isActive={() => isSymbolActive(symbol.url)}
