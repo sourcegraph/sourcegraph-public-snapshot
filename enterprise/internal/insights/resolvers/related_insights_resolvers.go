@@ -4,6 +4,8 @@ import (
 	"context"
 	"strings"
 
+	"github.com/graph-gophers/graphql-go"
+	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
@@ -96,8 +98,8 @@ type relatedInsightsInlineResolver struct {
 	baseInsightResolver
 }
 
-func (r *relatedInsightsInlineResolver) ViewID() string {
-	return r.viewID
+func (r *relatedInsightsInlineResolver) ViewID() graphql.ID {
+	return relay.MarshalID("insight_view", r.viewID)
 }
 
 func (r *relatedInsightsInlineResolver) Title() string {
@@ -225,8 +227,8 @@ type relatedInsightsResolver struct {
 	baseInsightResolver
 }
 
-func (r *relatedInsightsResolver) ViewID() string {
-	return r.viewID
+func (r *relatedInsightsResolver) ViewID() graphql.ID {
+	return relay.MarshalID("insight_view", r.viewID)
 }
 
 func (r *relatedInsightsResolver) Title() string {
