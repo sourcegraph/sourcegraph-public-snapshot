@@ -2,7 +2,10 @@
 // based on the official spec: https://github.com/open-telemetry/opentelemetry-specification/blob/main/specification/protocol/exporter.md#configuration-options
 package otlpenv
 
-import "os"
+import (
+	"os"
+	"strings"
+)
 
 // getWithDefault returns def if no env in keys is set, or the first env from keys that is
 // set.
@@ -31,18 +34,11 @@ func Endpoint() string {
 		"OTEL_EXPORTER_OTLP_ENDPOINT")
 }
 
-// HTTPJSONEndpoint returns the configured collector endpoint compatible with
-func HTTPJSONEndpoint() string {
-	if GetProtocol() == "http/json" {
-		// If the default endpoint is the http/json protocol, then just use it directly
-		return Endpoint()
-	}
-	// Otherwsie get a custom value for the http/json protocol endpoint
-	return getWithDefault(defaultHTTPJSONCollectorEndpoint,
-		"OTEL_EXPORTER_OTLP_HTTP_JSON_ENDPOINT")
-}
-
-func GetProtocol() string {
+func Protocol() string {
 	return getWithDefault("grpc",
 		"OTEL_EXPORTER_OTLP_PROTOCOL")
+}
+
+func IsInsecure(endpoint string) bool {
+	return strings.HasPrefix(strings.ToLower(endpoint), "http://")
 }

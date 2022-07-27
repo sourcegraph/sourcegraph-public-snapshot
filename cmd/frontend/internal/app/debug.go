@@ -10,17 +10,16 @@ import (
 	"net/http"
 	"net/http/httputil"
 	"net/url"
-	"path"
 	"strings"
 	"time"
 
 	"github.com/gorilla/mux"
 
 	sglog "github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/std"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/debugproxies"
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/internal/app/otlpadapter"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
@@ -55,7 +54,7 @@ func addDebugHandlers(r *mux.Router, db database.DB) {
 	addGrafana(r, db)
 	addJaeger(r, db)
 	addSentry(r)
-	addOpenTelemetryProtocolTunnel(r)
+	addOpenTelemetryProtocolAdapter(r)
 
 	var rph debugproxies.ReverseProxyHandler
 
@@ -271,20 +270,20 @@ func addJaeger(r *mux.Router, db database.DB) {
 	}
 }
 
-// addOpenTelemetryProtocolTunnel registers handlers that forward OpenTelemetry protocol
+// addOpenTelemetryProtocolAdapter registers handlers that forward OpenTelemetry protocol
 // (OTLP) requests in the http/json format to the configured backend.
-func addOpenTelemetryProtocolTunnel(r *mux.Router) {
-	// The tunnel only forwards http/json OTLP requests.
-	endpoint := otlpenv.HTTPJSONEndpoint()
+func addOpenTelemetryProtocolAdapter(r *mux.Router) {
+	var (
+		ctx      = context.Background()
+		endpoint = otlpenv.Endpoint()
+		protocol = otlpenv.Protocol()
+		logger   = sglog.Scoped("otlpAdapter", "OpenTelemetry protocol adapter and forwarder").
+				With(sglog.String("endpoint", endpoint), sglog.String("protocol", protocol))
+	)
 
-	logger := sglog.Scoped("otlpTunnel", "OpenTelemetry protocol tunnel").
-		With(sglog.String("endpoint", endpoint))
-
-	target, err := url.Parse(endpoint)
-	if err != nil {
-		logger.Error("unable to parse OTLP export target",
-			sglog.String("endpoint", endpoint),
-			sglog.Error(err))
+	// If no endpoint is configured, we export a no-op handler
+	if endpoint == "" {
+		logger.Error("unable to parse OTLP export target")
 
 		r.PathPrefix("/otlp").HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			fmt.Fprintf(w, `OpenTelemetry protocol tunnel: please configure an exporter endpoint with OTEL_EXPORTER_OTLP_HTTP_JSON_ENDPOINT, or OTEL_EXPORTER_OTLP_ENDPOINT and OTEL_EXPORTER_OTLP_PROTOCOL=http/json`)
@@ -293,35 +292,8 @@ func addOpenTelemetryProtocolTunnel(r *mux.Router) {
 		return
 	}
 
-	const (
-		tunnelPrefix  = "/otlp"
-		tracesPrefix  = "/v1/traces"
-		metricsPrefix = "/v1/metrics"
-	)
-
-	var (
-		tracesTarget  = path.Join(target.Path, "/v1/traces")
-		metricsTarget = path.Join(target.Path, "/v1/metrics")
-	)
-
-	// Trace tunnel
-	r.PathPrefix(tunnelPrefix + tracesPrefix).Handler(&httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			req.URL.Scheme = target.Scheme
-			req.URL.Host = target.Host
-			req.URL.Path = tracesTarget
-		},
-		ErrorLog: std.NewLogger(logger.Scoped("traces", "traces tunnel"), sglog.LevelWarn),
-	})
-	// Metrics tunnel
-	r.PathPrefix(tunnelPrefix + metricsPrefix).Handler(&httputil.ReverseProxy{
-		Director: func(req *http.Request) {
-			req.URL.Scheme = target.Scheme
-			req.URL.Host = target.Host
-			req.URL.Path = metricsTarget
-		},
-		ErrorLog: std.NewLogger(logger.Scoped("metrics", "metrics tunnel"), sglog.LevelWarn),
-	})
+	// Register adapter endpoints
+	otlpadapter.Register(ctx, logger, protocol, endpoint, r)
 }
 
 // adminOnly is a HTTP middleware which only allows requests by admins.

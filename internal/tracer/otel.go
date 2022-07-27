@@ -4,7 +4,6 @@ import (
 	"context"
 	"io"
 	"regexp"
-	"strings"
 	"time"
 
 	"github.com/opentracing/opentracing-go"
@@ -88,9 +87,9 @@ func newOTelCollectorExporter(ctx context.Context, logger log.Logger, endpoint s
 	// Right now, this logic does not work with 'OTEL_EXPORTER_OTLP_TRACE_ENDPOINT'.
 	var (
 		client          otlptrace.Client
-		protocol        = otlpenv.GetProtocol()
+		protocol        = otlpenv.Protocol()
 		trimmedEndpoint = trimSchema(endpoint)
-		insecure        = isInsecureEndpoint(endpoint)
+		insecure        = otlpenv.IsInsecure(endpoint)
 	)
 
 	// Work with different protocols
@@ -152,10 +151,6 @@ func newResource(r log.Resource) *resource.Resource {
 		semconv.ServiceNamespaceKey.String(r.Namespace),
 		semconv.ServiceInstanceIDKey.String(r.InstanceID),
 		semconv.ServiceVersionKey.String(r.Version))
-}
-
-func isInsecureEndpoint(endpoint string) bool {
-	return strings.HasPrefix(strings.ToLower(endpoint), "http://")
 }
 
 var httpSchemeRegexp = regexp.MustCompile(`(?i)^http://|https://`)
