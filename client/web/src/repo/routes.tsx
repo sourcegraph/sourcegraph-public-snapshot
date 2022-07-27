@@ -48,7 +48,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     id="toggle-blame"
                     repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <ToggleBlameAction key="toggle-blame" />}
+                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
                 </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
@@ -88,7 +88,7 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                     id="toggle-blame"
                     repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <ToggleBlameAction key="toggle-blame" />}
+                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
                 </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
@@ -195,7 +195,7 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                     id="toggle-blame"
                     repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <ToggleBlameAction key="toggle-blame" />}
+                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
                 </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}

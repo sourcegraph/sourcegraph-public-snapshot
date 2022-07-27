@@ -282,7 +282,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 id="toggle-blame"
                 repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
             >
-                {() => <ToggleBlameAction key="toggle-blame" />}
+                {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
             </RepoHeaderContributionPortal>
         </>
     )
