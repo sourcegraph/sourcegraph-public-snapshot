@@ -876,10 +876,6 @@ func (s *store) DeleteLockfileIndexByID(ctx context.Context, id int) (err error)
 		endObservation(1, observation.Args{LogFields: []log.Field{}})
 	}()
 
-	if id == 0 {
-		return nil
-	}
-
 	tx, err := s.db.Transact(ctx)
 	if err != nil {
 		return err
