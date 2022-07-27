@@ -228,7 +228,7 @@ extend type Query {
     """
     Returns insights based on a search query. This is experimental and should be considered unstable in the API.
     """
-    queryInsights(
+    searchQueryInsights(
         """
         The search query
         """
@@ -237,13 +237,13 @@ extend type Query {
         The search pattern type
         """
         patternType: SearchPatternType = literal
-    ): QueryInsightsResult
+    ): SearchQueryInsightsResult
 }
 
 """
-QueryInsights are Insights that are available based on a search query. This type is experimental and should be considered unstable in the API.
+SearchQueryInsights are Insights that are available based on a search query. This type is experimental and should be considered unstable in the API.
 """
-type QueryInsights {
+type SearchQueryInsights {
     """
     30 day percentage change in result count rounded to nearest whole number
     """
@@ -255,11 +255,11 @@ type QueryInsights {
     preview: [SearchInsightLivePreviewSeries!]!
 }
 
-type QueryInsightsNotAvailable {
+type SearchQueryInsightsNotAvailable {
     message: String!
 }
 
-union QueryInsightsResult = QueryInsights | QueryInsightsNotAvailable
+union SearchQueryInsightsResult = SearchQueryInsights | SearchQueryInsightsNotAvailable
 
 """
 Input for getting insights related to a file. This input type is experimental and should be considered unstable in the API.

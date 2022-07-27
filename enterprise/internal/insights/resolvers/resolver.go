@@ -107,8 +107,8 @@ func (r *Resolver) InsightsDashboards(ctx context.Context, args *graphqlbackend.
 	}, nil
 }
 
-func (r *Resolver) QueryInsights(ctx context.Context, args graphqlbackend.QueryInsightsArgs) (graphqlbackend.QueryInsightsResult, error) {
-	return newQueryInsightUnionResolver(args.Query, args.PatternType)
+func (r *Resolver) SearchQueryInsights(ctx context.Context, args graphqlbackend.SearchQueryInsightsArgs) (graphqlbackend.SearchQueryInsightsResult, error) {
+	return newSearchQueryInsightUnionResolver(args.Query, args.PatternType)
 }
 
 // 🚨 SECURITY

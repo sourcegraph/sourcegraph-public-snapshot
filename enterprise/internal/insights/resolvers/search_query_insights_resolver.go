@@ -8,24 +8,24 @@ import (
 	searchquery "github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-var _ graphqlbackend.QueryInsightsResult = &queryInsightUnionResolver{}
+var _ graphqlbackend.SearchQueryInsightsResult = &searchQueryInsightUnionResolver{}
 
-type queryInsightsResolver struct {
+type searchQueryInsightsResolver struct {
 	query       string
 	patternType searchquery.SearchType
 
 	baseInsightResolver
 }
 
-func (r *queryInsightsResolver) Preview(ctx context.Context) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
+func (r *searchQueryInsightsResolver) Preview(ctx context.Context) ([]graphqlbackend.SearchInsightLivePreviewSeriesResolver, error) {
 	return nil, nil
 }
 
-func (r *queryInsightsResolver) ThirtyDayPercentChange(ctx context.Context) (int32, error) {
+func (r *searchQueryInsightsResolver) ThirtyDayPercentChange(ctx context.Context) (int32, error) {
 	return 0, nil
 }
 
-func newQueryInsightResolver(searchQuery, patternType string) (queryInsightsResolver, error) {
+func newSearchQueryInsightResolver(searchQuery, patternType string) (searchQueryInsightsResolver, error) {
 	var searchType query.SearchType
 	switch patternType {
 	case "literal":
@@ -37,30 +37,30 @@ func newQueryInsightResolver(searchQuery, patternType string) (queryInsightsReso
 	default:
 		searchType = searchquery.SearchTypeLiteral
 	}
-	return queryInsightsResolver{query: searchQuery, patternType: searchType}, nil
+	return searchQueryInsightsResolver{query: searchQuery, patternType: searchType}, nil
 
 }
 
-func newQueryInsightUnionResolver(searchQuery, patternType string) (graphqlbackend.QueryInsightsResult, error) {
+func newSearchQueryInsightUnionResolver(searchQuery, patternType string) (graphqlbackend.SearchQueryInsightsResult, error) {
 	// TODO(chwarwick): Replace with logic to determine if insights available for query
-	return &queryInsightUnionResolver{
+	return &searchQueryInsightUnionResolver{
 		resolver: &insightsNotAvailable{},
 	}, nil
 }
 
-// A  type to represent the GraphQL union QueryInsightResult
-type queryInsightUnionResolver struct {
+// A  type to represent the GraphQL union SearchQueryInsightResult
+type searchQueryInsightUnionResolver struct {
 	resolver any
 }
 
 // ToQueryInsightPreviewSeries is used by the GraphQL library to resolve type fragments for unions
-func (r *queryInsightUnionResolver) ToQueryInsights() (graphqlbackend.QueryInsightsResolver, bool) {
-	res, ok := r.resolver.(*queryInsightsResolver)
+func (r *searchQueryInsightUnionResolver) ToSearchQueryInsights() (graphqlbackend.SearchQueryInsightsResolver, bool) {
+	res, ok := r.resolver.(*searchQueryInsightsResolver)
 	return res, ok
 }
 
 // ToQueryInsightNotAvailable is used by the GraphQL library to resolve type fragments for unions
-func (r *queryInsightUnionResolver) ToQueryInsightsNotAvailable() (graphqlbackend.QueryInsightsNotAvailable, bool) {
+func (r *searchQueryInsightUnionResolver) ToSearchQueryInsightsNotAvailable() (graphqlbackend.SearchQueryInsightsNotAvailable, bool) {
 	res, ok := r.resolver.(*insightsNotAvailable)
 	return res, ok
 }

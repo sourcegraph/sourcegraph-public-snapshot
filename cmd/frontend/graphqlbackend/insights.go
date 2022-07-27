@@ -26,7 +26,7 @@ type InsightsResolver interface {
 	RelatedInsightsForFile(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsResolver, error)
 	RelatedInsightsForRepo(ctx context.Context, args RelatedInsightsRepoArgs) ([]RelatedInsightsResolver, error)
 
-	QueryInsights(ctx context.Context, args QueryInsightsArgs) (QueryInsightsResult, error)
+	SearchQueryInsights(ctx context.Context, args SearchQueryInsightsArgs) (SearchQueryInsightsResult, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -486,21 +486,21 @@ type RelatedInsightsResolver interface {
 	Title() string
 }
 
-type QueryInsightsResolver interface {
+type SearchQueryInsightsResolver interface {
 	ThirtyDayPercentChange(ctx context.Context) (int32, error)
 	Preview(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
 }
 
-type QueryInsightsNotAvailable interface {
+type SearchQueryInsightsNotAvailable interface {
 	Message(ctx context.Context) string
 }
 
-type QueryInsightsArgs struct {
+type SearchQueryInsightsArgs struct {
 	Query       string `json:"query"`
 	PatternType string `json:"patternType"`
 }
 
-type QueryInsightsResult interface {
-	ToQueryInsights() (QueryInsightsResolver, bool)
-	ToQueryInsightsNotAvailable() (QueryInsightsNotAvailable, bool)
+type SearchQueryInsightsResult interface {
+	ToSearchQueryInsights() (SearchQueryInsightsResolver, bool)
+	ToSearchQueryInsightsNotAvailable() (SearchQueryInsightsNotAvailable, bool)
 }

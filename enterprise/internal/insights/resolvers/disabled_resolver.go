@@ -95,6 +95,6 @@ func (r *disabledResolver) RelatedInsightsForRepo(ctx context.Context, args grap
 	return nil, errors.New(r.reason)
 }
 
-func (r *disabledResolver) QueryInsights(ctx context.Context, args graphqlbackend.QueryInsightsArgs) (graphqlbackend.QueryInsightsResult, error) {
+func (r *disabledResolver) SearchQueryInsights(ctx context.Context, args graphqlbackend.SearchQueryInsightsArgs) (graphqlbackend.SearchQueryInsightsResult, error) {
 	return nil, errors.New(r.reason)
 }
