@@ -471,10 +471,9 @@ func (rs Repos) Filter(pred func(*Repo) bool) (fs Repos) {
 
 // MinimalRepo represents a source code repository name, its ID and number of stars.
 type MinimalRepo struct {
-	ID          api.RepoID
-	Name        api.RepoName
-	Stars       int
-	Description string
+	ID    api.RepoID
+	Name  api.RepoName
+	Stars int
 }
 
 func (r *MinimalRepo) ToRepo() *Repo {
