@@ -36,13 +36,14 @@ type Changes struct {
 }
 
 type gitserverClient struct {
-	db         database.DB
-	operations *operations
+	innerClient gitserver.Client
+	operations  *operations
 }
 
-func NewClient(observationContext *observation.Context) GitserverClient {
+func NewClient(db database.DB, observationContext *observation.Context) GitserverClient {
 	return &gitserverClient{
-		operations: newOperations(observationContext),
+		innerClient: gitserver.NewClient(db),
+		operations:  newOperations(observationContext),
 	}
 }
 
@@ -66,7 +67,7 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 	}
 
 	// Note: the sub-repo perms checker is nil here because we do the sub-repo filtering at a higher level
-	return gitserver.NewClient(c.db).ArchiveReader(ctx, nil, repo, opts)
+	return c.innerClient.ArchiveReader(ctx, nil, repo, opts)
 }
 
 func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {
@@ -77,7 +78,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	output, err := gitserver.NewClient(c.db).DiffSymbols(ctx, repo, commitA, commitB)
+	output, err := c.innerClient.DiffSymbols(ctx, repo, commitA, commitB)
 
 	changes, err := parseGitDiffOutput(output)
 	if err != nil {
@@ -88,7 +89,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 }
 
 func (c *gitserverClient) GetRepoSize(ctx context.Context, repo api.RepoName) (int64, error) {
-	repoToInfo, err := gitserver.NewClient(c.db).RepoInfo(ctx, repo)
+	repoToInfo, err := c.innerClient.RepoInfo(ctx, repo)
 	if err != nil {
 		return 0, err
 	}
