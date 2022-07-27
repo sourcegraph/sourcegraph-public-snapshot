@@ -147,6 +147,7 @@ func (h *handler) handleHeartbeat(w http.ResponseWriter, r *http.Request) {
 			if err != nil {
 				// Just log the error but don't panic. The heartbeat is more important.
 				h.logger.Error("failed to decode metrics and apply labels for executor heartbeat", log.Error(err))
+				return
 			}
 
 			if err := h.metricsStore.Ingest(payload.ExecutorName, metrics); err != nil {
