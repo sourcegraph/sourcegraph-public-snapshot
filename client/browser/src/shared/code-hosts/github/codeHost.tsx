@@ -195,7 +195,7 @@ export const fileLineContainerResolver: ViewResolver<CodeView> = {
             // this is not a single-file code view
             return null
         }
-        const repositoryContent = fileLineContainer.closest('.repository-content')
+        const repositoryContent = fileLineContainer.closest('#repo-content-turbo-frame')
         if (!repositoryContent) {
             throw new Error('Could not find repository content element')
         }
