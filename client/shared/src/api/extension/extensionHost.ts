@@ -134,15 +134,7 @@ function createExtensionAndExtensionHostAPIs(
     const createExtensionAPI = createExtensionAPIFactory(extensionHostState, proxy, initData)
 
     // Activate extensions. Create extension APIs on extension activation.
-    subscription.add(
-        activateExtensions(
-            extensionHostState,
-            proxy,
-            createExtensionAPI,
-            mainThreadAPIInitializations,
-            initData.clientApplication
-        )
-    )
+    subscription.add(activateExtensions(extensionHostState, proxy, createExtensionAPI, mainThreadAPIInitializations))
 
     // Observe settings and update active loggers state
     subscription.add(setActiveLoggers(extensionHostState))

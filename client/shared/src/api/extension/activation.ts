@@ -65,7 +65,6 @@ export function activateExtensions(
     mainAPI: Remote<Pick<MainThreadAPI, 'getScriptURLForExtension' | 'logEvent'>>,
     createExtensionAPI: (extensionID: string) => typeof sourcegraph,
     mainThreadAPIInitializations: Observable<boolean>,
-    clientApplication: 'sourcegraph' | 'other',
     /**
      * Function that activates an extension.
      * Returns a promise that resolves once the extension is activated.
