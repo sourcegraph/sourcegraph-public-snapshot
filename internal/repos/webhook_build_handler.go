@@ -32,6 +32,5 @@ func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, rec
 
 func handleCaseGitHub(ctx context.Context, logger log.Logger, w *webhookBuildHandler, wbj *webhookbuilder.Job) error {
 	// TODO
-
 	return nil
 }

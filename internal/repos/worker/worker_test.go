@@ -72,6 +72,8 @@ func TestJobQueue(t *testing.T) {
 }
 
 func assertEqual(t *testing.T, err error, want *Job, have *Job) {
+	t.Helper()
+
 	if err != nil {
 		t.Fatal(err)
 	}
