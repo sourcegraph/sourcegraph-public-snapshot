@@ -6,7 +6,6 @@ export CNI_VERSION=v0.9.1
 export KERNEL_IMAGE="weaveworks/ignite-kernel:5.10.51"
 export EXECUTOR_FIRECRACKER_IMAGE="sourcegraph/ignite-ubuntu:insiders"
 export NODE_EXPORTER_VERSION=1.2.2
-export EXPORTER_EXPORTER_VERSION=0.4.5
 
 ## Install ops agent
 ## Reference: https://cloud.google.com/logging/docs/agent/ops-agent/installation
@@ -169,42 +168,6 @@ EOF
   systemctl enable node_exporter
 }
 
-function install_exporter_exporter() {
-  useradd --system --shell /bin/false exporter_exporter
-
-  wget https://github.com/QubitProducts/exporter_exporter/releases/download/v${EXPORTER_EXPORTER_VERSION}/exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64.tar.gz
-  tar xvfz exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64.tar.gz
-  mv exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64/exporter_exporter /usr/local/bin/exporter_exporter
-  rm -rf exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64 exporter_exporter-${EXPORTER_EXPORTER_VERSION}.linux-amd64.tar.gz
-
-  chown exporter_exporter:exporter_exporter /usr/local/bin/exporter_exporter
-
-  cat <<EOF >/usr/local/bin/exporter_exporter.yaml
-modules:
-  node:
-    method: http
-    http:
-      port: 9100
-  executor:
-    method: http
-    http:
-      port: 6060
-EOF
-
-  cat <<EOF >/etc/systemd/system/exporter_exporter.service
-[Unit]
-Description=Exporter Exporter
-[Service]
-User=exporter_exporter
-ExecStart=/usr/local/bin/exporter_exporter -config.file "/usr/local/bin/exporter_exporter.yaml"
-[Install]
-WantedBy=multi-user.target
-EOF
-
-  systemctl daemon-reload
-  systemctl enable exporter_exporter
-}
-
 # Install src-cli to the host system. It's needed for src steps outside of firecracker.
 function install_src_cli() {
   curl -f -L -o src-cli.tar.gz "https://github.com/sourcegraph/src-cli/releases/download/${SRC_CLI_VERSION}/src-cli_${SRC_CLI_VERSION}_linux_amd64.tar.gz"
@@ -252,7 +215,6 @@ install_ignite
 # Services
 install_executor
 install_node_exporter
-install_exporter_exporter
 
 # Service prep and cleanup
 generate_ignite_base_image
