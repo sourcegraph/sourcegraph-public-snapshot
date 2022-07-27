@@ -5,8 +5,6 @@ import (
 	"encoding/json"
 	"time"
 
-	"google.golang.org/protobuf/proto"
-
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
@@ -33,8 +31,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 
 	"github.com/sourcegraph/sourcegraph/internal/trace"
-
-	pb "google.golang.org/genproto/googleapis/pubsub/v1"
 )
 
 type telemetryJob struct {
@@ -228,13 +224,6 @@ func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, 
 		Data: marshal,
 	}
 	result := topic.Publish(ctx, masg)
-	// Calculate the size of the encoded proto message by accounting
-	// for the length of an individual PubSubMessage and Data/Attributes field.
-	msgSize := proto.Size(&pb.PubsubMessage{
-		Data:        masg.Data,
-		Attributes:  masg.Attributes,
-		OrderingKey: masg.OrderingKey,
-	})
 	_, err = result.Get(ctx)
 	if err != nil {
 		return errors.Wrap(err, "result.Get")
