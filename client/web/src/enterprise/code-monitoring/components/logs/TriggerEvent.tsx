@@ -59,7 +59,7 @@ export const TriggerEvent: React.FunctionComponent<
     return (
         <li>
             <div className="d-flex align-items-center">
-                <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
+                <Button onClick={toggleExpanded} className={classNames('d-block', styles.expandButton)}>
                     {expanded ? (
                         <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Collapse run." />
                     ) : (

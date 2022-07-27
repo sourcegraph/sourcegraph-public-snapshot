@@ -12,6 +12,7 @@ import { Button, Icon, Link, Text, Tooltip } from '@sourcegraph/wildcard'
 import { ItemPicker } from '../ItemPicker'
 
 import { TourContext } from './context'
+import { TourNewTabLink } from './TourNewTabLink'
 import { TourTaskType, TourLanguage, TourTaskStepType } from './types'
 import { isLanguageRequired, getTourTaskStepActionValue } from './utils'
 
@@ -37,7 +38,10 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
     const { language, onLanguageSelect, onStepClick, onRestart } = useContext(TourContext)
 
     const handleLinkClick = useCallback(
-        (event: React.MouseEvent<HTMLAnchorElement>, step: TourTaskStepType) => {
+        (
+            event: React.MouseEvent<HTMLElement, MouseEvent> | React.KeyboardEvent<HTMLElement>,
+            step: TourTaskStepType
+        ) => {
             onStepClick(step, language)
             if (isLanguageRequired(step) && !language) {
                 event.preventDefault()
@@ -145,18 +149,13 @@ export const TourTask: React.FunctionComponent<React.PropsWithChildren<TourTaskP
                                 </Link>
                             )}
                             {step.action.type === 'new-tab-link' && (
-                                <Link
-                                    className={classNames(
-                                        'flex-grow-1',
-                                        step.action.variant === 'button-primary' && 'btn btn-primary'
-                                    )}
+                                <TourNewTabLink
+                                    step={step}
+                                    variant={step.action.variant === 'button-primary' ? 'button' : 'link'}
+                                    className={classNames('flex-grow-1')}
                                     to={getTourTaskStepActionValue(step, language)}
-                                    onClick={event => handleLinkClick(event, step)}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                >
-                                    {step.label}
-                                </Link>
+                                    onClick={handleLinkClick}
+                                />
                             )}
                             {step.action.type === 'restart' && (
                                 <div className="flex-grow">

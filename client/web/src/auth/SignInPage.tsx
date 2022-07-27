@@ -75,7 +75,7 @@ export const SignInPage: React.FunctionComponent<React.PropsWithChildren<SignInP
                         <div className="mb-2" key={index}>
                             <Button
                                 href={maybeAddPostSignUpRedirect(provider.authenticationURL)}
-                                className="btn-block"
+                                display="block"
                                 variant="secondary"
                                 as="a"
                             >

@@ -59,7 +59,7 @@ export const OrgMemberNotification: React.FunctionComponent<React.PropsWithChild
 }) => (
     <Alert variant="success" className={classNames(styles.invitedNotification, className)}>
         <div className={styles.message}>{message}</div>
-        <Button className="btn-icon" title="Dismiss" onClick={onDismiss}>
+        <Button title="Dismiss" onClick={onDismiss}>
             <Icon aria-hidden={true} svgPath={mdiClose} />
         </Button>
     </Alert>

@@ -1,7 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
 import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
-import classNames from 'classnames'
 
 import { Badge, Button, Icon } from '@sourcegraph/wildcard'
 
@@ -49,7 +48,7 @@ export const CollapsibleDetailsWithStatus: React.FunctionComponent<
 
     return (
         <li className={styles.wrapper}>
-            <Button onClick={toggleExpanded} className={classNames('btn-icon d-block', styles.expandButton)}>
+            <Button onClick={toggleExpanded} className={styles.expandButton}>
                 {expanded ? (
                     <Icon svgPath={mdiChevronDown} className="mr-2" aria-label="Collapse details." />
                 ) : (

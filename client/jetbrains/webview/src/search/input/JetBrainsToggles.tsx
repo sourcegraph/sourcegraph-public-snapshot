@@ -137,7 +137,11 @@ export const JetBrainsToggles: React.FunctionComponent<React.PropsWithChildren<J
     return (
         <div className={classNames(className, styles.toggleContainer)}>
             {navbarSearchQuery !== '' && (
-                <Button className={classNames('btn-icon', props.className, styles.cancelButton)} onClick={clearSearch}>
+                <Button
+                    variant="icon"
+                    className={classNames(props.className, styles.cancelButton)}
+                    onClick={clearSearch}
+                >
                     <span aria-hidden="true">&times;</span>
                 </Button>
             )}

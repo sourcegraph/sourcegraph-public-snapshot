@@ -156,7 +156,7 @@ export const GoToCodeHostAction: React.FunctionComponent<
         id: TARGET_ID,
         onClick,
         onAuxClick: onClick,
-        className: 'btn-icon test-go-to-code-host',
+        className: 'test-go-to-code-host',
         'aria-label': descriptiveText,
     }
 

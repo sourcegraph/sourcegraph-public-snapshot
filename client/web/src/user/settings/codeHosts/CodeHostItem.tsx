@@ -164,13 +164,7 @@ export const CodeHostItem: React.FunctionComponent<React.PropsWithChildren<CodeH
                             variant="primary"
                         />
                     ) : loading ? (
-                        <LoaderButton
-                            type="button"
-                            className="btn btn-primary"
-                            loading={true}
-                            disabled={true}
-                            alwaysShowLabel={false}
-                        />
+                        <LoaderButton variant="primary" loading={true} disabled={true} alwaysShowLabel={false} />
                     ) : (
                         <Button onClick={useGitHubApp ? toAuthProvider : connectAction} variant="primary">
                             Connect
