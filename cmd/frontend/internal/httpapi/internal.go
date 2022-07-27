@@ -14,7 +14,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/jsonc"
 	"github.com/sourcegraph/sourcegraph/internal/txemail"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -114,25 +113,6 @@ func serveSendEmail(_ http.ResponseWriter, r *http.Request) error {
 		return err
 	}
 	return txemail.Send(r.Context(), msg)
-}
-
-func serveGitResolveRevision(db database.DB) func(w http.ResponseWriter, r *http.Request) error {
-	return func(w http.ResponseWriter, r *http.Request) error {
-		// used by zoekt-sourcegraph-mirror
-		vars := mux.Vars(r)
-		name := api.RepoName(vars["RepoName"])
-		spec := vars["Spec"]
-
-		// Do not to trigger a repo-updater lookup since this is a batch job.
-		commitID, err := gitserver.NewClient(db).ResolveRevision(r.Context(), name, spec, gitserver.ResolveRevisionOptions{})
-		if err != nil {
-			return err
-		}
-
-		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write([]byte(commitID))
-		return nil
-	}
 }
 
 // gitServiceHandler are handlers which redirect git clone requests to the
