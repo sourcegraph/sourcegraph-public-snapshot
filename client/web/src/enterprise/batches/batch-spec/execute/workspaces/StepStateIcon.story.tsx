@@ -1,4 +1,3 @@
-import { select, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../../components/WebStory'
@@ -9,24 +8,34 @@ const decorator: DecoratorFn = story => <div className="p-3">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute/workspaces/StepStateIcon',
-    decorators: [decorator, withKnobs],
+    decorators: [decorator],
 }
 
 export default config
 
-const options = {
-    'Cache Found': { cachedResultFound: true },
-    Skipped: { skipped: true },
-    'Not Started': { startedAt: null },
-    Running: { startedAt: 'start-time' },
-    Success: { startedAt: 'start-time', finishedAt: 'start-time', exitCode: 0 },
-    Failed: { startedAt: 'start-time', finishedAt: 'start-time', exitCode: 1 },
-}
+const options = [
+    { label: 'Cache Found', value: { cachedResultFound: true } },
+    { label: 'Skipped', value: { skipped: true } },
+    { label: 'Not Started', value: { startedAt: null } },
+    { label: 'Running', value: { startedAt: 'start-time' } },
+    { label: 'Success', value: { startedAt: 'start-time', finishedAt: 'start-time', exitCode: 0 } },
+    { label: 'Failed', value: { startedAt: 'start-time', finishedAt: 'start-time', exitCode: 1 } },
+]
 
 export const StepStateIconStory: Story = () => (
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
-    <WebStory>{props => <StepStateIcon step={select('State', options, options.Success)} {...props} />}</WebStory>
+    <WebStory>
+        {props => (
+            <>
+                {options.map(entry => (
+                    <div key={entry.label} className="p-1">
+                        {/* eslint-disable-next-line @typescript-eslint/ban-ts-comment */}
+                        {/* @ts-ignore */}
+                        {entry.label}: <StepStateIcon step={entry.value} {...props} />
+                    </div>
+                ))}
+            </>
+        )}
+    </WebStory>
 )
 
 StepStateIconStory.storyName = 'StepStateIcon'
