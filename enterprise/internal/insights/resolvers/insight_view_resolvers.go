@@ -357,9 +357,6 @@ func (i *insightViewResolver) IsFrozen(ctx context.Context) (bool, error) {
 func (i *insightViewResolver) SeriesCount(ctx context.Context) (*int32, error) {
 	_, err := i.computeDataSeries(ctx)
 	total := int32(i.totalSeries)
-	if total == 2 {
-		return nil, errors.New("2-series error")
-	}
 	return &total, err
 }
 
