@@ -50,7 +50,7 @@ func configFromEnv() (*config, error) {
 }
 
 func NewServer(logger log.Logger, c config, channel string) *Server {
-	serverLog := logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
+	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
 	return &Server{
 		logger:       serverLog,
 		store:        NewBuildStore(serverLog),
