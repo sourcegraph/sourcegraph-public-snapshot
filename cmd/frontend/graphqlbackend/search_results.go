@@ -31,7 +31,6 @@ import (
 	searchhoney "github.com/sourcegraph/sourcegraph/internal/honey/search"
 	"github.com/sourcegraph/sourcegraph/internal/rcache"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -438,16 +437,6 @@ func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs,
 	}
 }
 
-func (r *searchResolver) JobClients() job.RuntimeClients {
-	return job.RuntimeClients{
-		Logger:       r.logger,
-		DB:           r.db,
-		Zoekt:        r.zoekt,
-		SearcherURLs: r.searcherURLs,
-		Gitserver:    gitserver.NewClient(r.db),
-	}
-}
-
 func logPrometheusBatch(status, alertType, requestSource, requestName string, elapsed time.Duration) {
 	searchResponseCounter.WithLabelValues(
 		status,
@@ -609,7 +598,7 @@ func (r *searchResolver) Stats(ctx context.Context) (stats *searchResultsStats, 
 			return nil, err
 		}
 		agg := streaming.NewAggregatingStream()
-		alert, err := j.Run(ctx, r.JobClients(), agg)
+		alert, err := j.Run(ctx, r.client.JobClients(), agg)
 		if err != nil {
 			return nil, err // do not cache errors.
 		}
