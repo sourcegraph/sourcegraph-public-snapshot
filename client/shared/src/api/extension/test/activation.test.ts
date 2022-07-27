@@ -52,7 +52,6 @@ describe('Extension activation', () => {
                     return {} as typeof sourcegraph
                 },
                 of(true),
-                'sourcegraph',
                 noopPromise,
                 noopPromise
             )
