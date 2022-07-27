@@ -1,4 +1,3 @@
-import { select, withKnobs } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BatchSpecState } from '@sourcegraph/shared/src/graphql-operations'
@@ -11,7 +10,7 @@ const decorator: DecoratorFn = story => <div className="p-3">{story()}</div>
 
 const config: Meta = {
     title: 'web/batches/batch-spec/execute/BatchSpecStateBadge',
-    decorators: [decorator, withKnobs],
+    decorators: [decorator],
 }
 
 export default config
@@ -19,22 +18,15 @@ export default config
 export const BatchSpecStateBadgeStory: Story = () => (
     <WebStory>
         {props => (
-            <BatchSpecStateBadge
-                state={select(
-                    'State',
-                    [
-                        BatchSpecState.PENDING,
-                        BatchSpecState.QUEUED,
-                        BatchSpecState.PROCESSING,
-                        BatchSpecState.CANCELED,
-                        BatchSpecState.CANCELING,
-                        BatchSpecState.FAILED,
-                        BatchSpecState.COMPLETED,
-                    ],
-                    BatchSpecState.PENDING
-                )}
-                {...props}
-            />
+            <>
+                {Object.values(BatchSpecState)
+                    .sort()
+                    .map(value => (
+                        <div key={value} className="p-1">
+                            <BatchSpecStateBadge state={value} {...props} />
+                        </div>
+                    ))}
+            </>
         )}
     </WebStory>
 )
