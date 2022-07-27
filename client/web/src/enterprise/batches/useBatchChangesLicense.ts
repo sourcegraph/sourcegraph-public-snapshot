@@ -12,7 +12,7 @@ export interface UseBatchChangesLicenseResult {
      */
     licenseAndUsageInfo: GetLicenseAndUsageInfoResult | undefined
     /**
-     * Determines if the account is licensed for not.
+     * Determines if the account is licensed or not.
      */
     isUnlicensed: boolean
     /**
