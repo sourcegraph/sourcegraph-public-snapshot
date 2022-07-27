@@ -477,7 +477,7 @@ type RelatedInsightsInlineResolver interface {
 	ViewID() string
 	Title() string
 	LineNumbers() []int32
-	OffsetAndLengths() [][]int32
+	Text() []string
 }
 
 type RelatedInsightsResolver interface {
