@@ -123,8 +123,6 @@ func MetadataDecoder() (streamhttp.FrontendStreamDecoder, *MetadataResult) {
 		OnMatches: func(matches []streamhttp.EventMatch) {
 			for _, match := range matches {
 				switch match := match.(type) {
-				// Right now we only care about inline matches.
-				// Should be extended when we care about repo and file results.
 				case *streamhttp.EventContentMatch:
 					mr.Matches = append(mr.Matches, &SearchMatch{LineMatches: match.LineMatches})
 				case *streamhttp.EventPathMatch:
