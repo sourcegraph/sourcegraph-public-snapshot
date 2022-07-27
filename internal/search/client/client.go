@@ -10,10 +10,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/search"
-	"github.com/sourcegraph/sourcegraph/internal/search/execute"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
+	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -69,8 +70,19 @@ func (s *searchClient) Execute(
 	ctx context.Context,
 	stream streaming.Sender,
 	inputs *run.SearchInputs,
-) (*search.Alert, error) {
-	return execute.Execute(ctx, stream, inputs, s.JobClients())
+) (_ *search.Alert, err error) {
+	tr, ctx := trace.New(ctx, "Execute", "")
+	defer func() {
+		tr.SetError(err)
+		tr.Finish()
+	}()
+
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
+	if err != nil {
+		return nil, err
+	}
+
+	return planJob.Run(ctx, s.JobClients(), stream)
 }
 
 func (s *searchClient) JobClients() job.RuntimeClients {
