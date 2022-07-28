@@ -129,6 +129,8 @@ func MetadataDecoder() (streamhttp.FrontendStreamDecoder, *MetadataResult) {
 					mr.Matches = append(mr.Matches, &SearchMatch{LineMatches: match.LineMatches})
 				case *streamhttp.EventPathMatch:
 					mr.Matches = append(mr.Matches, &SearchMatch{Path: match.Path})
+				case *streamhttp.EventRepoMatch:
+					mr.Matches = append(mr.Matches, &SearchMatch{RepositoryName: match.Repository})
 				}
 			}
 		},

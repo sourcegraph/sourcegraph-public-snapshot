@@ -206,10 +206,8 @@ export const PoliciesNode: FunctionComponent<React.PropsWithChildren<PoliciesNod
             </div>
         </div>
 
-        <span className={classNames(styles.button, 'd-none d-md-inline')}>
-            <Link to={`./configuration/${policy.id}`} className="p-0">
-                <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
-            </Link>
-        </span>
+        <Link to={`./configuration/${policy.id}`} className="p-0">
+            <Icon svgPath={mdiChevronRight} inline={false} aria-label="Configure" />
+        </Link>
     </>
 )

@@ -20,7 +20,7 @@
 
 ## Why use Helm
 
-Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not only does this make customizations much easier (than either using Kustomize or manually editing Sourcegraph's manifest files) it also means that, when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section). 
+Our Helm chart has a lot of sensible defaults baked into the values.yaml. Not only does this make customizations much easier (than either using Kustomize or manually editing Sourcegraph's manifest files) it also means that, when an override file is used to make the changes, you _never_ have to deal with merge conflicts during upgrades (see more about customizations in the [configuration](#configuration) section).
 
 
 ## High-level overview of how to use Helm with Sourcegraph
@@ -281,8 +281,8 @@ If you have access to the ssh keys locally, you can run the command below to cre
 
 ```sh
 kubectl create secret generic gitserver-ssh \
-	    --from-file id_rsa=${HOME}/.ssh/id_rsa \
-	    --from-file known_hosts=${HOME}/.ssh/known_hosts
+      --from-file id_rsa=${HOME}/.ssh/id_rsa \
+      --from-file known_hosts=${HOME}/.ssh/known_hosts
 ```
 
 Alternatively, you may manually create the secret from a manifest file.
@@ -517,7 +517,7 @@ frontend:
 storageClass:
   create: true
   type: gp2 # This configures SSDs (recommended).
-#  provisioner: ebs.csi.aws.com # use this provisioner if using the self-managed Amazon EBS Container Storage Interface driver 
+#  provisioner: ebs.csi.aws.com # use this provisioner if using the self-managed Amazon EBS Container Storage Interface driver
 #  provisioner: kubernetes.io/aws-ebs # use this provisioner if using the Amazon EKS add-on
   volumeBindingMode: WaitForFirstConsumer
   reclaimPolicy: Retain

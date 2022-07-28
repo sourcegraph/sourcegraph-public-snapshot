@@ -83,7 +83,7 @@ func (r *Resolver) Paginate(ctx context.Context, opts search.RepoOptions, handle
 	}()
 
 	if opts.Limit == 0 {
-		opts.Limit = 500
+		opts.Limit = 4096
 	}
 
 	var errs error

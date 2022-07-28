@@ -22,6 +22,8 @@ import { CodeIntelLockfileNode } from '../components/CodeIntelLockfileIndexNode'
 
 import { LOCKFILE_INDEXES_LIST } from './queries'
 
+import styles from './CodeIntelLockfilesPage.module.scss'
+
 export interface CodeIntelLockfilesPageProps extends RouteComponentProps<{}>, TelemetryProps {}
 
 const DEFAULT_LOCKFILE_INDEXES_PAGE_SIZE = 50
@@ -45,7 +47,7 @@ export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<C
             return data.lockfileIndexes
         },
         options: {
-            fetchPolicy: 'cache-first',
+            fetchPolicy: 'cache-and-network',
         },
     })
 
@@ -64,7 +66,7 @@ export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<C
                     <ConnectionContainer>
                         {error && <ConnectionError errors={[error.message]} />}
                         {connection && (
-                            <ConnectionList>
+                            <ConnectionList className={styles.grid}>
                                 {connection.nodes.map(node => (
                                     <CodeIntelLockfileNode key={node.id} node={node} />
                                 ))}
@@ -79,7 +81,6 @@ export const CodeIntelLockfilesPage: FunctionComponent<React.PropsWithChildren<C
                                     noun="lockfile index"
                                     pluralNoun="lockfile indexes"
                                     hasNextPage={hasNextPage}
-                                    // connectionQuery={query}
                                     noSummaryIfAllNodesVisible={true}
                                     compact={true}
                                 />

@@ -10,7 +10,7 @@
 
 [Executors](executors.md) provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
 
-- [automatically indexing a repository for precise code intelligence](../code_intelligence/explanations/auto_indexing.md)
+- [automatically indexing a repository for precise code navigation](../code_intelligence/explanations/auto_indexing.md)
 - [running batch changes](../batch_changes/explanations/server_side.md)
 
 ## Requirements
@@ -70,6 +70,8 @@ Two variables must be supplied to the module in order for it to contact your Sou
 
 - `sourcegraph_external_url` ([Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_external_url%22&patternType=literal)): The **public** URL of your Sourcegraph instance. This corresponds to the `externalURL` value in your Sourcegraph instance's site-config and must be resolvable from the provisioned executor compute resources.
 - `sourcegraph_executor_proxy_password` ([Google](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-google-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal); [AWS](https://sourcegraph.com/search?q=context:global+repo:%5Egithub.com/sourcegraph/terraform-aws-executors%24+variable+%22sourcegraph_executor_proxy_password%22&patternType=literal)): The access token chosen and configured above.
+
+For Google Cloud, make sure the [IAM API](https://console.cloud.google.com/apis/api/iam.googleapis.com/overview) is enabled.
 
 Additional values may need to be supplied for a specific cloud provider. Refer to the relevant Terraform module documentation for specifics.
 
@@ -254,13 +256,13 @@ you@sourcegraph-executor-h0rv:~$ curl <your externalURL here>
 <a href="/sign-in?returnTo=%2F">Found</a>
 ```
 
-9. Go back to the site admin page, expand **Code intelligence**, click **Configuration**, click **Create new policy**, and fill in:
+9. Go back to the site admin page, expand **Code graph**, click **Configuration**, click **Create new policy**, and fill in:
   - Name: `TEST`
   - Click **add a repository pattern**
   - Repository pattern #1: set this to an existing repository on your Sourcegraph instance (e.g. `github.com/gorilla/mux`)
   - Type: `HEAD`
   - Auto-indexing: Enabled
-10. Go to that repository's page, click **Code Intelligence**, click **Auto-indexing**, and check to see if an indexing job has appeared. If nothing is there:
+10. Go to that repository's page, click **Code graph**, click **Auto-indexing**, and check to see if an indexing job has appeared. If nothing is there:
   - Try clicking **Enqueue**
   - Try setting a higher update frequency: `PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL=10s`
   - Try setting a lower delay: `PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_PROCESS_DELAY=10s`
