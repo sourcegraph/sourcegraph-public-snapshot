@@ -103,7 +103,6 @@ function getInlineExtensions(): Subscribable<ExecutableExtension[]> {
 
     for (let extensionName of extensions) {
         const { manifestURL, scriptURL } = getURLsForInlineExtension(extensionName)
-        console.log({ manifestURL, scriptURL })
         promises.push(
             fetch(manifestURL)
                 .then(response => checkOk(response).json())
