@@ -8,22 +8,33 @@ import (
 )
 
 type matchGroup struct {
-	fileMatch                   *result.FileMatch
-	group                       result.ChunkMatches
-	fileScore                   float64
-	distinctMatchesRatio        float64
+	fileMatch *result.FileMatch
+	group     result.ChunkMatches
+	// fileScore is the pre-calculated score based on file metadata (e.g., file name).
+	fileScore float64
+	// distinctMatchesRatio is the ratio between the number of distinct pattern matches in the group and
+	// the number of patterns in the query. It is the most basic measure of group relevancy. A relevant match group
+	// should contain a sufficent ratio of matches as defined by `DISTINCT_MATCHES_RATIO_THRESHOLD`.
+	distinctMatchesRatio float64
+	// distinctMatchesPerLineRatio is the ratio between the sum of distinct pattern matches per line and
+	// the total possible number of pattern matches. It is used to penalize long groups of matches with few distinct matches
+	// (small distinctMatchesPerLineRatio).
 	distinctMatchesPerLineRatio float64
-	keywordsPerLine             float64
+	// keywordsPerLineRatio is the ratio of lines in the group that start with a keyword.
+	keywordsPerLineRatio float64
 }
 
-// TODO: Thresholds are best effort for now
-func (g matchGroup) IsValid() bool {
-	return g.distinctMatchesRatio >= 0.75 && g.distinctMatchesPerLineRatio >= 0.66
+const (
+	DISTINCT_MATCHES_RATIO_THRESHOLD    = 0.75
+	DISTINCT_MATCHES_PER_LINE_THRESHOLD = 0.66
+)
+
+func (g matchGroup) IsRelevant() bool {
+	return g.distinctMatchesRatio >= DISTINCT_MATCHES_RATIO_THRESHOLD && g.distinctMatchesPerLineRatio >= DISTINCT_MATCHES_PER_LINE_THRESHOLD
 }
 
-// TODO: This should be a property
 func (g matchGroup) Score() float64 {
-	return g.distinctMatchesRatio + g.distinctMatchesPerLineRatio + g.keywordsPerLine + g.fileScore
+	return g.distinctMatchesRatio + g.distinctMatchesPerLineRatio + g.keywordsPerLineRatio + g.fileScore
 }
 
 func newChunkMatchGroup(fileMatch *result.FileMatch, fileScore float64, group result.ChunkMatches, numPatterns float64) matchGroup {
@@ -33,26 +44,24 @@ func newChunkMatchGroup(fileMatch *result.FileMatch, fileScore float64, group re
 	for _, chunkMatch := range group {
 		distinctMatchesPerLine := stringSet{}
 
-		matches := chunkMatch.MatchedContent()
-		linePreview := strings.TrimSpace(chunkMatch.AsLineMatches()[0].Preview)
-
-		// TODO: Not the best. We really should be using symbols data.
-		if hasKeywordPrefix(linePreview) {
+		// TODO(novoselrok): We should use symbols data if possible.
+		if hasKeywordPrefix(chunkMatch.Content) {
 			keywordCount += 1
 		}
 
-		for _, match := range matches {
+		for _, match := range chunkMatch.MatchedContent() {
 			matchLowerCase := strings.ToLower(match)
 			distinctMatches.Add(matchLowerCase)
 			distinctMatchesPerLine.Add(matchLowerCase)
 		}
+
 		distinctMatchesPerLineCount += len(distinctMatchesPerLine)
 	}
 
-	nLines := float64(len(group))
+	lineCount := float64(len(group))
 	distinctMatchesRatio := float64(len(distinctMatches)) / numPatterns
-	distinctMatchesPerLineRatio := float64(distinctMatchesPerLineCount) / (nLines * numPatterns)
-	keywordsPerLine := float64(keywordCount) / nLines
+	distinctMatchesPerLineRatio := float64(distinctMatchesPerLineCount) / (lineCount * numPatterns)
+	keywordsPerLine := float64(keywordCount) / lineCount
 
 	return matchGroup{fileMatch, group, fileScore, distinctMatchesRatio, distinctMatchesPerLineRatio, keywordsPerLine}
 }
@@ -74,15 +83,4 @@ func groupChunkMatches(fileMatch *result.FileMatch, fileScore float64, chunkMatc
 	}
 	groups = append(groups, newChunkMatchGroup(fileMatch, fileScore, chunkMatches[startIndex:], numPatterns))
 	return groups
-}
-
-func getFileScore(filePath string, patterns []string) float64 {
-	filePathLowerCase := strings.ToLower(filePath)
-	count := 0
-	for _, pattern := range patterns {
-		if strings.Contains(filePathLowerCase, pattern) {
-			count += 1
-		}
-	}
-	return float64(count) / float64(len(patterns))
 }

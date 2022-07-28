@@ -115,8 +115,6 @@ func transformPatterns(patterns []string) []string {
 	return transformedPatterns
 }
 
-// TODO: Quoted patterns
-// TODO: Split camel cased patterns, underscores, dashes, dots
 func basicQueryToSmartQuery(basicQuery query.Basic) (*smartQuery, error) {
 	rawParseTree, err := query.Parse(query.StringHuman(basicQuery.ToParseTree()), query.SearchTypeStandard)
 	if err != nil {

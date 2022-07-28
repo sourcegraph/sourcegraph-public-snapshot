@@ -37,6 +37,7 @@ func (j *smartJob) Run(ctx context.Context, clients job.RuntimeClients, stream s
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
+	// TODO(novoselrok): Use NewBatchingStream to batch the events before processing them.
 	smartStream := newSmartStream(stream, j.patterns)
 	return j.child.Run(ctx, clients, smartStream)
 }
@@ -67,14 +68,12 @@ func (j *smartJob) MapChildren(fn job.MapFunc) job.Job {
 	return &cp
 }
 
-// TODO: Can we somehow wait and aggregate _some amount_ of matches from multiple search events before sending them out?
-// TODO: That way we could have at least a pseudo-ranking system.
 func newSmartStream(parent streaming.Sender, patterns []string) streaming.Sender {
 	var mux sync.Mutex
 	return streaming.StreamFunc(func(e streaming.SearchEvent) {
 		mux.Lock()
 
-		validGroups := []matchGroup{}
+		relevantGroups := []matchGroup{}
 		for _, r := range e.Results {
 			fm, isFileMatch := r.(*result.FileMatch)
 			if isFileMatch && len(fm.ChunkMatches) > 0 {
@@ -82,20 +81,20 @@ func newSmartStream(parent streaming.Sender, patterns []string) streaming.Sender
 				groups := groupChunkMatches(fm, fileScore, fm.ChunkMatches, float64(len(patterns)))
 
 				for _, group := range groups {
-					if group.IsValid() {
-						validGroups = append(validGroups, group)
+					if group.IsRelevant() {
+						relevantGroups = append(relevantGroups, group)
 					}
 				}
 			}
 		}
 
-		sort.Slice(validGroups, func(i, j int) bool {
-			return validGroups[i].Score() > validGroups[j].Score()
+		sort.Slice(relevantGroups, func(i, j int) bool {
+			return relevantGroups[i].Score() > relevantGroups[j].Score()
 		})
 
 		selected := e.Results[:0]
 		// Flatten valid groups into a result stream (one match group per file).
-		for _, group := range validGroups {
+		for _, group := range relevantGroups {
 			selected = append(selected, &result.FileMatch{
 				File:         group.fileMatch.File,
 				ChunkMatches: group.group,
