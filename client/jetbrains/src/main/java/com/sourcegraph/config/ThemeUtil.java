@@ -1,6 +1,7 @@
 package com.sourcegraph.config;
 
 import com.google.gson.JsonObject;
+import com.intellij.ide.ui.laf.LafManagerImpl;
 import com.intellij.util.ui.UIUtil;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -26,7 +27,7 @@ public class ThemeUtil {
         for (Object key : keysList) {
             try {
                 Object value = UIManager.get(key);
-                if (value instanceof ColorUIResource) {
+                if (value instanceof ColorUIResource || value instanceof LafManagerImpl.IJColorUIResource) {
                     intelliJTheme.addProperty(key.toString(), getHexString(UIManager.getColor(key)));
                 }
             } catch (Exception e) {
