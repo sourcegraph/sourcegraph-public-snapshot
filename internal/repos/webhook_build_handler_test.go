@@ -159,9 +159,7 @@ func TestWebhookSyncIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// jobChan := make(chan int)
 		builder := repos.NewWebhookBuildJob(store)
-
 		routines, err := builder.Routines(ctx, logger)
 		if err != nil {
 			t.Fatal(err)
@@ -177,10 +175,6 @@ func TestWebhookSyncIntegration(t *testing.T) {
 
 		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token}, doer)
 		g := repos.NewGitHubWebhookHandler(client)
-
-		// Test Webhook
-		// Delete webhook
-
 		handler := webhooks.GitHubWebhook{
 			ExternalServices: store.ExternalServiceStore(),
 		}
@@ -249,9 +243,7 @@ func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger,
 
 	switch wbj.ExtSvcKind {
 	case "GITHUB":
-		if err := handleCaseGitHub(ctx, logger, h, wbj); err != nil {
-			return err
-		}
+		return handleCaseGitHub(ctx, logger, h, wbj)
 	}
 
 	return nil

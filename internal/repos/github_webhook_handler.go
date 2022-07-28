@@ -29,7 +29,6 @@ func (g *GitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
 }
 
 func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
-	fmt.Println("handleGitHubWebhook")
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
@@ -51,7 +50,6 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *
 	}
 
 	log.Scoped("GitHub handler", fmt.Sprintf("Successfully updated: %s", resp.Name))
-	// TODO
 	return nil
 }
 
