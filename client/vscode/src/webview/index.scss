@@ -1,7 +1,22 @@
-@import './forkedBranded.scss';
+@import '../../../branded/src/global-styles/base.scss';
 @import './theming/highlight.scss';
 @import './theming/monaco.scss';
 @import '../../../../node_modules/@vscode/codicons/dist/codicon.css';
+
+// Bootstrap configuration before Bootstrap is imported
+$popover-border-radius: var(--popover-border-radius);
+$grid-gutter-width: 1.5rem;
+
+// Tables
+
+$table-cell-padding: 0.625rem;
+$table-border-color: var(--border-color);
+
+$hr-border-color: var(--border-color);
+$hr-margin-y: 0.25rem;
+
+// Disable transitions
+$input-transition: none;
 
 :root {
     // v2/debt: redefine our CSS variables using VS Code's CSS variables
@@ -71,6 +86,9 @@
     --media-xl: 1200px;
 }
 
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/tabs/styles';
+
 // stylelint-disable-next-line selector-max-id
 html,
 body,
@@ -130,3 +148,20 @@ code {
         color: var(--vscode-input-foreground);
     }
 }
+
+// Replace the old '../../../branded/src/global-styles/card' file
+$card-spacer-y: 0.5rem;
+$card-spacer-x: 0.5rem;
+$card-bg: var(--card-bg);
+$card-border-color: var(--card-border-color);
+$card-cap-bg: var(--color-bg-2);
+
+.card {
+    --card-bg: var(--color-bg-1);
+    --card-border-color: var(--border-color);
+    --card-spacer-y: #{$card-spacer-y};
+    --card-spacer-x: #{$card-spacer-x};
+}
+
+/* stylelint-disable-next-line @sourcegraph/no-restricted-imports */
+@import 'bootstrap/scss/card';
