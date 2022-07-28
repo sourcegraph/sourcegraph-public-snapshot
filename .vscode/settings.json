@@ -56,10 +56,7 @@
   },
   "eslint.codeActionsOnSave.mode": "problems",
   "eslint.options": { "cache": true },
-  "eslint.workingDirectories": [
-    "./dev/release",
-    "./client/*",
-  ],
+  "eslint.workingDirectories": ["./dev/release", "./client/*"],
   "go.lintTool": "golangci-lint",
   "shellformat.flag": "-i 2 -ci",
   "vscode-graphql.useSchemaFileDefinitions": true,

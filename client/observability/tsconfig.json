@@ -7,13 +7,10 @@
     "outDir": "./out",
     "baseUrl": "./src",
   },
-  "include": [
-    "./src/**/*",
-    "./*.ts"
-  ],
+  "include": ["./src/**/*", "./*.ts"],
   "references": [
     {
-      "path": "../build-config"
+      "path": "../build-config",
     },
   ],
 }
