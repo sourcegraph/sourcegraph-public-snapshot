@@ -16,7 +16,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var slackTemplate = `:arrow_left: *{{.Environment}} deployment (<{{.BuildURL}}|build>{{if .TraceURL}}, <{{.TraceURL}}|trace>{{end}})*
+var slackTemplate = `:arrow_left: *{{.Environment}} deployment*
+<{{.BuildURL}}|:hammer: Build>{{if .TraceURL}} <{{.TraceURL}}|:footprints: Trace>{{end}}
 
 *Updated services:*
 {{- range .Services }}
