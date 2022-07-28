@@ -150,30 +150,3 @@ type RemoteCursor struct {
 	// The location offset within the associated batch of uploads.
 	LocationOffset int `json:"locationOffset"`
 }
-
-// func resolver(l Location) {
-// 	svc := GetService()
-// 	state := NewServiceState()
-
-// 	refs := svc.GetReferencesStateful(state, l)
-// 	defs := svc.GetDefsStateful(state, l)
-// 	impls := svc.GetImplsStateful(state, l)
-
-// 	svc.GetDefs(l)
-// }
-
-// func (svc *Service) GetDefsStateful(state, l) {
-
-// }
-
-// func (svc *Service) GetDefs(l) {
-// 	return svc.GetDefsStateful(NewServiceState(), l)
-// }
-
-// func NewServiceState() {
-// 	uploads := svc.GetUploads()
-// 	serviceState := ServiceState{
-// 		uploads: uploads,
-// 	}
-// 	return serviceState
-// }
