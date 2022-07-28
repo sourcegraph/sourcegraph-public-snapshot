@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -108,18 +109,13 @@ func TestWebhookSyncIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		sourcer := repos.NewFakeSourcer(nil, repos.NewFakeSource(svc, nil, repo))
-		syncer := &repos.Syncer{
-			Logger:  logger,
-			Sourcer: sourcer,
-			Store:   store,
-			Now:     time.Now,
+		job := &webhookbuilder.Job{
+			RepoID:     int32(repo.ID),
+			RepoName:   string(repo.Name),
+			ExtSvcKind: svc.Kind,
 		}
 
-		// conf.Get().ExperimentalFeatures.EnableWebhookSyncing = true
-		if err := syncer.SyncExternalService(ctx, svc.ID, time.Millisecond); err != nil {
-			t.Fatal(err)
-		}
+		webhookbuilder.EnqueueJob(ctx, basestore.NewWithHandle(store.Handle()), job)
 
 		accountData := json.RawMessage(`{}`)
 		authData := json.RawMessage(fmt.Sprintf(`
@@ -165,16 +161,12 @@ func TestWebhookSyncIntegration(t *testing.T) {
 
 		// Build the webhooks synchronously
 		webhookBuildHandler := NewFakeWebhookBuildHandler(store, doer)
-		job := &webhookbuilder.Job{
-			RepoID:     int32(repo.ID),
-			RepoName:   string(repo.Name),
-			ExtSvcKind: svc.Kind,
-		}
 
 		id, err := webhookBuildHandler.Handle(ctx, logger, job)
 		if err != nil {
 			t.Fatal(err)
 		}
+
 		logger.Info(fmt.Sprintf("Webhook ID: %v", id))
 
 		// Setting up the GitHub webhook handler

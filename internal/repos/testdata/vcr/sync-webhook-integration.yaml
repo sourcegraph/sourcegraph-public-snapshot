@@ -30,7 +30,7 @@ interactions:
       Content-Type:
       - application/json; charset=utf-8
       Date:
-      - Thu, 28 Jul 2022 17:16:56 GMT
+      - Thu, 28 Jul 2022 17:31:01 GMT
       Etag:
       - W/"dda4e239df7de2b18f9687a65d534b830b1a76575b684b58da99a01cee344f97"
       Referrer-Policy:
@@ -51,9 +51,9 @@ interactions:
       - github.v3; param=jean-grey-preview; format=json, github.mercy-preview; param=machine-man-preview;
         format=json
       X-Github-Request-Id:
-      - 56963636-c807-4126-a189-c64cfb059f7d
+      - 19e66f1f-0439-426e-88f5-dfe8a3d2b0de
       X-Runtime-Rack:
-      - "0.046591"
+      - "0.049579"
       X-Varied-Accept:
       - application/vnd.github.jean-grey-preview+json,application/vnd.github.mercy-preview+json
       X-Xss-Protection:
@@ -77,7 +77,7 @@ interactions:
       Content-Type:
       - application/json
       Date:
-      - Thu, 28 Jul 2022 17:16:56 GMT
+      - Thu, 28 Jul 2022 17:31:01 GMT
     status: 200 OK
     code: 200
     duration: ""
