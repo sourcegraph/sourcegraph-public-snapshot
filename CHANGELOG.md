@@ -17,6 +17,28 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Changesets that are not associated with any batch changes can have a retention period set using the site configuration `batchChanges.changesetsRetention`. [#36188](https://github.com/sourcegraph/sourcegraph/pull/36188)
+- Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
+- Code Insights over some repos now get 12 historic data points in addition to a current daily value and future points that align with the defined interval. [#37756](https://github.com/sourcegraph/sourcegraph/pull/37756)
+- Added `ROCKSKIP_MIN_REPO_SIZE_MB` to automatically use [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) for repositories over a certain size. [#38192](https://github.com/sourcegraph/sourcegraph/pull/38192)
+
+### Changed
+
+-
+
+### Fixed
+
+- Fix issue during code insight creation where selecting `"Run your insight over all your repositories"` reset the currently selected distance between data points. [#39261](https://github.com/sourcegraph/sourcegraph/pull/39261)
+- Fix issue where symbols in the side panel did not have file level permission filtering applied correctly. [#39592](https://github.com/sourcegraph/sourcegraph/pull/39592)
+
+### Removed
+
+-
+
+## 3.42.0
+
+### Added
+
 - Reattached changesets now display an action and factor into the stats when previewing batch changes. [#36359](https://github.com/sourcegraph/sourcegraph/issues/36359)
 - New site configuration option `"permissions.syncUsersMaxConcurrency"` to control the maximum number of user-centric permissions syncing jobs could be spawned concurrently. [#37918](https://github.com/sourcegraph/sourcegraph/issues/37918)
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
