@@ -23,6 +23,8 @@ func TestEmptyCustomGitFetch(t *testing.T) {
 }
 
 func TestCustomGitFetch(t *testing.T) {
+	// mock value for test
+	insecureEnableGitFetch = "true"
 	mappings := []*schema.CustomGitFetchMapping{
 		{
 			DomainPath: "github.com/foo/normal/one",
