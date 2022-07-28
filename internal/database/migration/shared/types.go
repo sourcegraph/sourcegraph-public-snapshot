@@ -1,4 +1,4 @@
-package storetypes
+package shared
 
 // IndexStatus describes the state of an index. Is{Valid,Ready,Live} is taken
 // from the `pg_index` system table. If the index is currently being created,
