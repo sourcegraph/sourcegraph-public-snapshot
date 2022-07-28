@@ -62,7 +62,9 @@ export const ENVIRONMENT_CONFIG = {
     SOURCEGRAPHDOTCOM_MODE: getEnvironmentBoolean('SOURCEGRAPHDOTCOM_MODE'),
 
     // Is reporting to Sentry enabled.
-    ENABLE_MONITORING: getEnvironmentBoolean('ENABLE_MONITORING'),
+    ENABLE_SENTRY: getEnvironmentBoolean('ENABLE_SENTRY'),
+    // Is OpenTelemetry instrumentation enabled.
+    ENABLE_OPEN_TELEMETRY: getEnvironmentBoolean('ENABLE_OPEN_TELEMETRY'),
 
     /**
      * ----------------------------------------
