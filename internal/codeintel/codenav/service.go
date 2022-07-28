@@ -299,10 +299,6 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	}
 	trace.Log(traceLog.Int("numReferenceLocations", len(referenceLocations)))
 
-	if cursor.Phase != "done" {
-		nextCursor = cursor
-	}
-
 	return referenceLocations, nextCursor, nil
 }
 
@@ -777,10 +773,6 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 		return nil, nextCursor, err
 	}
 	trace.Log(traceLog.Int("numImplementationsLocations", len(implementationLocations)))
-
-	if cursor.Phase != "done" {
-		nextCursor = cursor
-	}
 
 	return implementationLocations, nextCursor, nil
 }
