@@ -133,27 +133,18 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                 Signed in as <strong>@{props.authenticatedUser.username}</strong>
                             </MenuHeader>
                             <MenuDivider className={styles.dropdownDivider} />
-                            <MenuLink
-                                className={styles.dropdownItem}
-                                as={Link}
-                                to={props.authenticatedUser.settingsURL!}
-                            >
+                            <MenuLink as={Link} to={props.authenticatedUser.settingsURL!}>
                                 Settings
                             </MenuLink>
                             {props.showRepositorySection && (
                                 <MenuLink
-                                    className={styles.dropdownItem}
                                     as={Link}
                                     to={`/users/${props.authenticatedUser.username}/settings/repositories`}
                                 >
                                     Your repositories
                                 </MenuLink>
                             )}
-                            <MenuLink
-                                className={styles.dropdownItem}
-                                as={Link}
-                                to={`/users/${props.authenticatedUser.username}/searches`}
-                            >
+                            <MenuLink as={Link} to={`/users/${props.authenticatedUser.username}/searches`}>
                                 Saved searches
                             </MenuLink>
                             {isOpenBetaEnabled && (
@@ -213,12 +204,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                                     <MenuDivider className={styles.dropdownDivider} />
                                     <MenuHeader className={styles.dropdownHeader}>Your organizations</MenuHeader>
                                     {props.authenticatedUser.organizations.nodes.map(org => (
-                                        <MenuLink
-                                            className={styles.dropdownItem}
-                                            as={Link}
-                                            key={org.id}
-                                            to={org.settingsURL || org.url}
-                                        >
+                                        <MenuLink as={Link} key={org.id} to={org.settingsURL || org.url}>
                                             {org.displayName || org.name}
                                         </MenuLink>
                                     ))}
@@ -226,30 +212,23 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
                             {props.authenticatedUser.siteAdmin && (
-                                <MenuLink className={styles.dropdownItem} as={Link} to="/site-admin">
+                                <MenuLink as={Link} to="/site-admin">
                                     Site admin
                                 </MenuLink>
                             )}
-                            <MenuLink
-                                className={styles.dropdownItem}
-                                as={Link}
-                                to="/help"
-                                target="_blank"
-                                rel="noopener"
-                            >
+                            <MenuLink as={Link} to="/help" target="_blank" rel="noopener">
                                 Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
                             <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
                             {props.authenticatedUser.session?.canSignOut && (
-                                <MenuLink className={styles.dropdownItem} as={AnchorLink} to="/-/sign-out">
+                                <MenuLink as={AnchorLink} to="/-/sign-out">
                                     Sign out
                                 </MenuLink>
                             )}
                             <MenuDivider className={styles.dropdownDivider} />
                             {props.showDotComMarketing && (
                                 <MenuLink
-                                    className={styles.dropdownItem}
                                     as={AnchorLink}
                                     to="https://about.sourcegraph.com"
                                     target="_blank"
@@ -260,7 +239,6 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             )}
                             {codeHostIntegrationMessaging === 'browser-extension' && (
                                 <MenuLink
-                                    className={styles.dropdownItem}
                                     as={AnchorLink}
                                     to="/help/integration/browser_extension"
                                     target="_blank"
