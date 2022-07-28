@@ -1,4 +1,4 @@
-# Configure precise code graph data retention policies
+# Configure code graph data retention policies
 
 <style>
 img.screenshot {
