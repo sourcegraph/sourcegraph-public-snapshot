@@ -1282,7 +1282,7 @@ type ObservabilityAlerts struct {
 	Owners []string `json:"owners,omitempty"`
 }
 
-// ObservabilityClient description: Configuration for client observability
+// ObservabilityClient description: EXPERIMENTAL: Configuration for client observability
 type ObservabilityClient struct {
 	// OpenTelemetry description: Configuration for the client OpenTelemetry exporter
 	OpenTelemetry *OpenTelemetry `json:"openTelemetry,omitempty"`
@@ -1994,7 +1994,7 @@ type SiteConfiguration struct {
 	MaxReposToSearch int `json:"maxReposToSearch,omitempty"`
 	// ObservabilityAlerts description: Configure notifications for Sourcegraph's built-in alerts.
 	ObservabilityAlerts []*ObservabilityAlerts `json:"observability.alerts,omitempty"`
-	// ObservabilityClient description: Configuration for client observability
+	// ObservabilityClient description: EXPERIMENTAL: Configuration for client observability
 	ObservabilityClient *ObservabilityClient `json:"observability.client,omitempty"`
 	// ObservabilityLogSlowGraphQLRequests description: (debug) logs all GraphQL requests slower than the specified number of milliseconds.
 	ObservabilityLogSlowGraphQLRequests int `json:"observability.logSlowGraphQLRequests,omitempty"`
