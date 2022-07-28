@@ -14,7 +14,7 @@ describe('getBundleSizeStats', () => {
 
         expect(prettyStats).toEqual({
             'assets/scripts/app.bundle.js': { raw: 15, gzip: 6, brotli: 4 },
-            'assets/styles/app.123.bundle.css': { raw: 21, gzip: 6, brotli: 4 },
+            'assets/styles/app.123.bundle.css': { raw: 25, gzip: 6, brotli: 4 },
         })
     })
 })
