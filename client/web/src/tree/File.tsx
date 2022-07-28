@@ -28,9 +28,10 @@ import {
     TreeRowLabel,
     TreeRow,
 } from './components'
+import { MAX_TREE_ENTRIES } from './constants'
 import { FileDecorator } from './FileDecorator'
 import { TreeLayerProps } from './TreeLayer'
-import { maxEntries, TreeEntryInfo, treePadding } from './util'
+import { TreeEntryInfo, treePadding } from './util'
 
 import styles from './File.module.scss'
 
@@ -40,7 +41,6 @@ interface FileProps extends ThemeProps {
     depth: number
     index: number
     className?: string
-    maxEntries: number
     handleTreeClick: () => void
     noopRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
@@ -127,7 +127,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             </TreeLayerRowContentsText>
                         </TreeLayerRowContentsLink>
                     )}
-                    {props.index === maxEntries - 1 && (
+                    {props.index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
                             variant="warning"
                             style={treePadding(props.depth, true)}
