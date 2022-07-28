@@ -9,6 +9,11 @@ import (
 )
 
 type webhookBuildHandler struct {
+	store Store
+}
+
+func newWebhookBuildHandler(store Store) *webhookBuildHandler {
+	return &webhookBuildHandler{store: store}
 }
 
 func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
