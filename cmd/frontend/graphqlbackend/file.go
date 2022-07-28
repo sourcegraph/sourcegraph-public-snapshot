@@ -21,6 +21,7 @@ type FileResolver interface {
 	CanonicalURL() string
 	ExternalURLs(ctx context.Context) ([]*externallink.Resolver, error)
 	Highlight(ctx context.Context, args *HighlightArgs) (*highlightedFileResolver, error)
+	ScipHighlight(ctx context.Context, args *ScipHighlightArgs) (*highlightedFileResolver, error)
 
 	ToGitBlob() (*GitTreeEntryResolver, bool)
 	ToVirtualFile() (*virtualFileResolver, bool)

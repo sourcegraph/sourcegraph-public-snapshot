@@ -35,6 +35,18 @@ type HighlightArgs struct {
 	DisableTimeout     bool
 	IsLightTheme       *bool
 	HighlightLongLines bool
+
+	// ForceSCIP is used to tell the syntax-highlighter that it must return
+	// SCIP data and should not return any corresponding HTML.
+	//
+	// When the old BlobView is removed, this argument can be removed because
+	// we will always be returning scip.
+	ForceSCIP bool
+}
+
+type ScipHighlightArgs struct {
+	DisableTimeout     bool
+	HighlightLongLines bool
 }
 
 type highlightedFileResolver struct {
@@ -75,6 +87,10 @@ func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.Li
 	}
 
 	return highlight.SplitLineRanges(template.HTML(h.HTML()), args.Ranges)
+}
+
+func (h *highlightedFileResolver) SCIP() (string, error) {
+	return "", nil
 }
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {

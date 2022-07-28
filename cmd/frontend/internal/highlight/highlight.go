@@ -515,10 +515,24 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		}, false, nil
 	}
 
+	var document *scip.Document
+	if resp.LSIF != "" {
+		fmt.Println("=============================")
+		fmt.Println("Lsif:", resp.LSIF)
+		lsifDocument := new(scip.Document)
+		data, err := base64.StdEncoding.DecodeString(resp.LSIF)
+		err = proto.Unmarshal(data, lsifDocument)
+		if err == nil {
+			document = lsifDocument
+		}
+
+		fmt.Println("DOCUMENT:", document.Occurrences[0])
+	}
+
 	return &HighlightedCode{
 		code:     code,
 		html:     template.HTML(resp.Data),
-		document: nil,
+		document: document,
 	}, false, nil
 }
 

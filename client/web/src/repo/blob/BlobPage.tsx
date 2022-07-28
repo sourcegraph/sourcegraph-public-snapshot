@@ -42,7 +42,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob } from './backend'
+import { fetchBlob, fetchScipBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -54,18 +54,18 @@ import styles from './BlobPage.module.scss'
 
 interface Props
     extends AbsoluteRepoFile,
-        ModeSpec,
-        RepoHeaderContributionsLifecycleProps,
-        SettingsCascadeProps,
-        PlatformContextProps,
-        TelemetryProps,
-        ExtensionsControllerProps,
-        ThemeProps,
-        HoverThresholdProps,
-        BreadcrumbSetters,
-        SearchStreamingProps,
-        Pick<SearchContextProps, 'searchContextsEnabled'>,
-        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+    ModeSpec,
+    RepoHeaderContributionsLifecycleProps,
+    SettingsCascadeProps,
+    PlatformContextProps,
+    TelemetryProps,
+    ExtensionsControllerProps,
+    ThemeProps,
+    HoverThresholdProps,
+    BreadcrumbSetters,
+    SearchStreamingProps,
+    Pick<SearchContextProps, 'searchContextsEnabled'>,
+    Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
@@ -147,14 +147,15 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                 clicks.pipe(
                     mapTo(true),
                     startWith(false),
-                    switchMap(disableTimeout =>
-                        fetchBlob({
+                    switchMap(disableTimeout => {
+                        const fetcher = enableCodeMirror ? fetchScipBlob : fetchBlob
+                        return fetcher({
                             repoName,
                             commitID,
                             filePath,
                             disableTimeout,
                         })
-                    ),
+                    }),
                     map(blob => {
                         if (blob === null) {
                             return blob

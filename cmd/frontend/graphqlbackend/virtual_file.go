@@ -97,3 +97,19 @@ func (r *virtualFileResolver) Highlight(ctx context.Context, args *HighlightArgs
 		Revision: fmt.Sprintf("Preview file diff %s", r.stat.Name()),
 	})
 }
+
+func (r *virtualFileResolver) ScipHighlight(ctx context.Context, args *ScipHighlightArgs) (*highlightedFileResolver, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	highlightArgs := HighlightArgs{}
+	highlightArgs.ForceSCIP = true
+	highlightArgs.DisableTimeout = args.DisableTimeout
+	highlightArgs.HighlightLongLines = args.HighlightLongLines
+
+	return highlightContent(ctx, &highlightArgs, content, r.Path(), highlight.Metadata{
+		Revision: fmt.Sprintf("Preview file diff %s", r.stat.Name()),
+	})
+}

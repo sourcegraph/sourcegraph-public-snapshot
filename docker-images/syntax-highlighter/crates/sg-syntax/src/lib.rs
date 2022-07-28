@@ -1,7 +1,9 @@
 use std::path::Path;
 
+use protobuf::Message;
 use rocket::serde::json::{json, Value as JsonValue};
 use serde::Deserialize;
+use sg_treesitter::jsonify_err;
 use syntect::html::{highlighted_html_for_string, ClassStyle};
 use syntect::{
     highlighting::ThemeSet,
@@ -201,8 +203,20 @@ pub fn syntect_highlight(q: SourcegraphQuery) -> JsonValue {
             )
             .generate();
 
+            eprintln!("DOCUMENTING GENERATOR");
+            let document = sg_sciptect::DocumentGenerator::new(
+                syntax_set,
+                syntax_def,
+                &q.code,
+                q.line_length_limit,
+            )
+            .generate()
+            .write_to_bytes()
+            .unwrap();
+
             json!({
                 "data": output,
+                "lsif": base64::encode(&document),
                 "plaintext": syntax_def.name == "Plain Text",
             })
         } else {

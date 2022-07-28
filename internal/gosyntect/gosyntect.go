@@ -96,6 +96,7 @@ type response struct {
 	// Successful response fields.
 	Data      string `json:"data"`
 	Plaintext bool   `json:"plaintext"`
+	LSIF      string `json:"lsif"`
 
 	// Error response fields.
 	Error string `json:"error"`
@@ -223,6 +224,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 	}
 	return &Response{
 		Data:      r.Data,
+		LSIF:      r.LSIF,
 		Plaintext: r.Plaintext,
 	}, nil
 }

@@ -4384,6 +4384,13 @@ interface File2 {
         """
         highlightLongLines: Boolean = false
     ): HighlightedFile!
+    """
+    Fetch highlights for the blob via a SCIP Document
+    """
+    scipHighlight(
+        disableTimeout: Boolean!
+        highlightLongLines: Boolean = false
+    ): HighlightedScipDocument!
 }
 
 """
@@ -4447,6 +4454,13 @@ type VirtualFile implements File2 {
         """
         highlightLongLines: Boolean = false
     ): HighlightedFile!
+    """
+    Fetch highlights for the blob via a SCIP Document
+    """
+    scipHighlight(
+        disableTimeout: Boolean!
+        highlightLongLines: Boolean = false
+    ): HighlightedScipDocument!
 }
 
 """
@@ -4549,6 +4563,13 @@ type GitBlob implements TreeEntry & File2 {
         highlightLongLines: Boolean = false
     ): HighlightedFile!
     """
+    Fetch highlights for the blob via a SCIP Document
+    """
+    scipHighlight(
+        disableTimeout: Boolean!
+        highlightLongLines: Boolean = false
+    ): HighlightedScipDocument!
+    """
     Submodule metadata if this tree points to a submodule
     """
     submodule: Submodule
@@ -4612,13 +4633,24 @@ type HighlightedFile {
     """
     Base64 encoded JSON payload of LSIF Typed with syntax highlighting data.
     """
-    lsif: String!
+    lsif: String! @deprecated(reason: "use scip instead")
     """
     A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
     table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of
     the file.
     """
     lineRanges(ranges: [HighlightLineRange!]!): [[String!]!]!
+}
+
+type HighlightedScipDocument {
+    """
+    Whether or not it was aborted.
+    """
+    aborted: Boolean!
+    """
+    Base64 encoded JSON payload of a SCIP Document
+    """
+    scip: String!
 }
 
 """
