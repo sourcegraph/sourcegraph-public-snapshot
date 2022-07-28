@@ -91,12 +91,14 @@ export const ExtensionsArea: React.FunctionComponent<React.PropsWithChildren<Ext
 
     return (
         <Page className={styles.extensionsArea}>
-            <ExtensionsAreaHeader
-                {...props}
-                {...context}
-                actionButtons={props.extensionsAreaHeaderActionButtons}
-                isPrimaryHeader={props.location.pathname === props.match.path}
-            />
+            {props.extensionsAreaHeaderActionButtons ? (
+                <ExtensionsAreaHeader
+                    {...props}
+                    {...context}
+                    actionButtons={props.extensionsAreaHeaderActionButtons}
+                    isPrimaryHeader={props.location.pathname === props.match.path}
+                />
+            ) : null}
             <Switch>
                 {props.routes.map(
                     ({ path, exact, condition = () => true, render }) =>
