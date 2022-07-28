@@ -32,10 +32,10 @@ func (j *Job) RecordID() int {
 }
 
 var jobColumns = []*sqlf.Query{
-	sqlf.Sprintf("webhook_builder.repo_id"),
-	sqlf.Sprintf("webhook_builder.repo_name"),
-	sqlf.Sprintf("webhook_builder.extsvc_kind"),
-	sqlf.Sprintf("webhook_builder.queued_at"),
+	sqlf.Sprintf("webhook_build_jobs.repo_id"),
+	sqlf.Sprintf("webhook_build_jobs.repo_name"),
+	sqlf.Sprintf("webhook_build_jobs.extsvc_kind"),
+	sqlf.Sprintf("webhook_build_jobs.queued_at"),
 	sqlf.Sprintf("id"),
 	sqlf.Sprintf("state"),
 	sqlf.Sprintf("failure_message"),
