@@ -75,11 +75,16 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('./SiteAdminExternalAccountsPage'), 'SiteAdminExternalAccountsPage'),
         exact: true,
     },
-    {
-        path: '/registry/extensions',
-        render: lazyComponent(() => import('./SiteAdminRegistryExtensionsPage'), 'SiteAdminRegistryExtensionsPage'),
-        exact: true,
-    },
+    window.context.enableLegacyExtensions
+        ? {
+              path: '/registry/extensions',
+              render: lazyComponent(
+                  () => import('./SiteAdminRegistryExtensionsPage'),
+                  'SiteAdminRegistryExtensionsPage'
+              ),
+              exact: true,
+          }
+        : undefined,
 
     {
         path: '/batch-changes',
@@ -198,4 +203,4 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('../organizations/EarlyAccessOrgsCodeForm'), 'EarlyAccessOrgsCodeForm'),
         exact: true,
     },
-]
+].filter(Boolean) as readonly SiteAdminAreaRoute[]
