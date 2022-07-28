@@ -33,7 +33,7 @@ type GitserverRepoStore interface {
 	IteratePurgeableRepos(ctx context.Context, options IteratePurgableReposOptions, repoFn func(repo api.RepoName) error) error
 	TotalErroredCloudDefaultRepos(ctx context.Context) (int, error)
 	ListReposWithoutSize(ctx context.Context) (map[api.RepoName]api.RepoID, error)
-	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) error
+	UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (int, error)
 }
 
 var _ GitserverRepoStore = (*gitserverRepoStore)(nil)
@@ -603,37 +603,69 @@ WHERE gr.repo_size_bytes IS NULL
 `
 
 // UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
-func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (err error) {
-	inserter := func(inserter *batch.Inserter) error {
-		for repo, size := range repos {
-			if err := inserter.Insert(ctx, repo, shardID, size, "cloned", "now()"); err != nil {
-				return err
-			}
-		}
-		return nil
+func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (updated int, err error) {
+	type repoAndSize struct {
+		RepoID api.RepoID
+		Size   int64
+	}
+
+	toInsert := make([]repoAndSize, len(repos))
+	i := 0
+	for repo, size := range repos {
+		toInsert[i] = repoAndSize{RepoID: repo, Size: size}
+		i++
 	}
 
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	if err := batch.WithInserterWithReturn(
-		ctx,
-		tx.Handle(),
-		"gitserver_repos",
-		batch.MaxNumPostgresParameters,
-		[]string{"repo_id", "shard_id", "repo_size_bytes", "clone_status", "updated_at"},
-		"ON CONFLICT (repo_id) DO UPDATE SET (repo_size_bytes, shard_id, clone_status, updated_at) = (EXCLUDED.repo_size_bytes, gitserver_repos.shard_id, 'cloned', now())",
-		nil,
-		nil,
-		inserter,
-	); err != nil {
-		return err
+	// NOTE: We have two args per row, so rows*2 should be less then maximum
+	// postgres allows
+	const batchSize = batch.MaxNumPostgresParameters / 2
+	updatedRows := 0
+	for i := 0; i < len(toInsert); i += batchSize {
+		j := i + batchSize
+		if j > len(toInsert) {
+			j = len(toInsert)
+		}
+
+		batch := toInsert[i:j]
+
+		repoIdSizePairs := make([]*sqlf.Query, len(batch))
+		for i, b := range batch {
+			repoIdSizePairs[i] = sqlf.Sprintf("(%s::integer, %s::bigint)", b.RepoID, b.Size)
+		}
+		q := sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(repoIdSizePairs, ","))
+
+		res, err := tx.ExecResult(ctx, q)
+		if err != nil {
+			return 0, err
+		}
+		rowsAffected, err := res.RowsAffected()
+		if err != nil {
+			return 0, err
+		}
+		updatedRows += int(rowsAffected)
 	}
-	return nil
+	return updatedRows, nil
 }
+
+const updateRepoSizesQueryFmtstr = `
+UPDATE gitserver_repos AS gr
+SET
+    repo_size_bytes = tmp.repo_size_bytes
+FROM (VALUES
+-- (<repo_id>, <repo_size_bytes>),
+    %s
+) AS tmp(repo_id, repo_size_bytes) 
+WHERE
+	tmp.repo_id = gr.repo_id
+AND
+	tmp.repo_size_bytes != gr.repo_size_bytes;
+`
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be
 // represented in one of the following ways in Go:
