@@ -13,7 +13,7 @@ All notable changes to Sourcegraph [Browser Extensions](./README.md) are documen
 
 ## Unreleased
 
-- Fix command palette style regression on GitHub: [issues/39495](https://github.com/sourcegraph/sourcegraph/issues/39495), [pull/39580](https://github.com/sourcegraph/sourcegraph/pull/39580)
+- Fix command palette style regression on GitHub: [issues/39495](https://github.com/sourcegraph/sourcegraph/issues/39495), [issues/33433](https://github.com/sourcegraph/sourcegraph/issues/33433) [pull/39580](https://github.com/sourcegraph/sourcegraph/pull/39580)
 
 ## Chrome & Firefox v22.7.11.926
 
