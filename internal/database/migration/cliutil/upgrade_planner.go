@@ -2,6 +2,8 @@ package cliutil
 
 import (
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
 
@@ -95,4 +97,24 @@ func planUpgrade(versionRange []oobmigration.Version) (upgradePlan, error) {
 		stitchedDefinitionsBySchemaName: stitchedDefinitionsBySchemaName,
 		steps:                           steps,
 	}, nil
+}
+
+// filterStitchedMigrationsForTags returns a copy of the pre-compiled stitchedMap with references
+// to tags outside of the given set removed. This allows a migrator instance that knows the upgrade
+// path from X -> Y to also know the path from any partial upgrade X <= W -> Z <= Y.
+func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedMigration, error) {
+	stitchedMigrationBySchemaName := make(map[string]shared.StitchedMigration, len(schemas.SchemaNames))
+	for _, schemaName := range schemas.SchemaNames {
+		leafIDsByRev := make(map[string][]int, len(tags))
+		for _, tag := range tags {
+			leafIDsByRev[tag] = shared.StitchedMigationsBySchemaName[schemaName].LeafIDsByRev[tag]
+		}
+
+		stitchedMigrationBySchemaName[schemaName] = shared.StitchedMigration{
+			Definitions:  shared.StitchedMigationsBySchemaName[schemaName].Definitions,
+			LeafIDsByRev: leafIDsByRev,
+		}
+	}
+
+	return stitchedMigrationBySchemaName, nil
 }
