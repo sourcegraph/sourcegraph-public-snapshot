@@ -604,16 +604,19 @@ WHERE gr.repo_size_bytes IS NULL
 
 // UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
 func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (updated int, err error) {
+	// NOTE: We have two args per row, so rows*2 should be less then maximum
+	// postgres allows
+	const batchSize = batch.MaxNumPostgresParameters / 2
+	return s.updateRepoSizesWithBatchSize(ctx, shardID, repos, batchSize)
+}
+
+func (s *gitserverRepoStore) updateRepoSizesWithBatchSize(ctx context.Context, shardID string, repos map[api.RepoID]int64, batchSize int) (updated int, err error) {
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return 0, err
 	}
 	defer func() { err = tx.Done(err) }()
 
-	// NOTE: We have two args per row, so rows*2 should be less then maximum
-	// postgres allows
-	// const batchSize = batch.MaxNumPostgresParameters / 2
-	const batchSize = 3
 	batch := make([]*sqlf.Query, batchSize)
 
 	left := len(repos)

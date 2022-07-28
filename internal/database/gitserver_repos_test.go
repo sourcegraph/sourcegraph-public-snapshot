@@ -1075,6 +1075,24 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	if have, want := numUpdated, 1; have != want {
 		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
 	}
+
+	// update with different batch sizes
+	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
+	for _, batchSize := range []int64{1, 2, 3, 6} {
+		sizes = map[api.RepoID]int64{
+			repo1.ID: 123 + batchSize,
+			repo2.ID: 456 + batchSize,
+			repo3.ID: 789 + batchSize,
+		}
+
+		numUpdated, err = gitserverRepoStore.updateRepoSizesWithBatchSize(ctx, shardID, sizes, int(batchSize))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have, want := numUpdated, 3; have != want {
+			t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+		}
+	}
 }
 
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
