@@ -321,10 +321,10 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 				createTestGitserverRepos(ctx, t, db, tr.hasLastError, types.CloneStatusNotCloned, testRepo.ID)
 			}
 
-			foundRepos := make([]types.RepoGitserverStatus, 0, len(tc.testRepos))
+			foundRepos := make([]api.RepoName, 0, len(tc.testRepos))
 
 			// Iterate and collect repos
-			err := db.GitserverRepos().IterateWithNonemptyLastError(ctx, func(repo types.RepoGitserverStatus) error {
+			err := db.GitserverRepos().IterateWithNonemptyLastError(ctx, func(repo api.RepoName) error {
 				foundRepos = append(foundRepos, repo)
 				return nil
 			})
@@ -336,8 +336,8 @@ func TestIterateWithNonemptyLastError(t *testing.T) {
 					len(foundRepos))
 			}
 			for i, fr := range foundRepos {
-				if !fr.Name.Equal(tc.expectedReposFound[i]) {
-					t.Fatalf("expected repo %s got %s instead", fr.Name, tc.expectedReposFound[i])
+				if !fr.Equal(tc.expectedReposFound[i]) {
+					t.Fatalf("expected repo %s got %s instead", fr, tc.expectedReposFound[i])
 				}
 			}
 
@@ -740,42 +740,6 @@ func TestSetRepoSize(t *testing.T) {
 	}
 	if diff := cmp.Diff(fromDB, after); diff != "" {
 		t.Fatal(diff)
-	}
-}
-
-func TestGitserverRepoUpsertNullShard(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
-	logger := logtest.Scoped(t)
-	db := NewDB(logger, dbtest.NewDB(logger, t))
-	ctx := context.Background()
-
-	repo1 := &types.Repo{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		Description:  "",
-		ExternalRepo: api.ExternalRepoSpec{},
-		Sources:      nil,
-	}
-
-	// Create one test repo
-	err := db.Repos().Create(ctx, repo1)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	gitserverRepo := &types.GitserverRepo{
-		RepoID:        repo1.ID,
-		ShardID:       "",
-		CloneStatus:   types.CloneStatusNotCloned,
-		RepoSizeBytes: 100,
-	}
-
-	// Create one GitServerRepo
-	if err := db.GitserverRepos().Upsert(ctx, gitserverRepo); err == nil {
-		t.Fatal("Expected an error")
 	}
 }
 

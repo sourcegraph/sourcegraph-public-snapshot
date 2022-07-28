@@ -648,9 +648,7 @@ func buildCommitOpts(repo *types.Repo, spec *btypes.ChangesetSpec, pushOpts *pro
 		Patch:     diff + "\n",
 		TargetRef: desc.HeadRef,
 
-		// TODO: I think this comment is wrong. Also, why do we not want this?
-		// It would enable us to re-use branches, I think.
-		// CAUTION: `UniqueRef` means that we'll push to the branch even if it
+		// CAUTION: `UniqueRef` means that we'll push to a generated branch if it
 		// already exists.
 		// So when we retry publishing a changeset, this will overwrite what we
 		// pushed before.
