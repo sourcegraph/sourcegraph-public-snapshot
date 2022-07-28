@@ -1179,7 +1179,7 @@
       "examples": ["https://sourcegraph.example.com"]
     },
     "observability.client": {
-      "description": "Configuration for client observability",
+      "description": "EXPERIMENTAL: Configuration for client observability",
       "type": "object",
       "additionalProperties": false,
       "properties": {
