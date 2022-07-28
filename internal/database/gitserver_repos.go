@@ -612,28 +612,22 @@ func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string
 
 	// NOTE: We have two args per row, so rows*2 should be less then maximum
 	// postgres allows
-	const batchSize = batch.MaxNumPostgresParameters / 2
-	type repoAndSize struct {
-		RepoID api.RepoID
-		Size   int64
-	}
-	batch := make([]repoAndSize, batchSize)
+	// const batchSize = batch.MaxNumPostgresParameters / 2
+	const batchSize = 3
+	batch := make([]*sqlf.Query, batchSize)
 
 	left := len(repos)
 	currentCount := 0
 	updatedRows := 0
 	for repo, size := range repos {
-		batch[currentCount] = repoAndSize{RepoID: repo, Size: size}
+		batch[currentCount] = sqlf.Sprintf("(%s::integer, %s::bigint)", repo, size)
 
 		currentCount += 1
 
 		if currentCount == batchSize || currentCount == left {
-			repoIdSizePairs := make([]*sqlf.Query, currentCount)
-			for i, b := range batch[:currentCount] {
-				repoIdSizePairs[i] = sqlf.Sprintf("(%s::integer, %s::bigint)", b.RepoID, b.Size)
-			}
-
-			res, err := tx.ExecResult(ctx, sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(repoIdSizePairs, ",")))
+			// Important: we only take the elements of batch up to currentCount
+			q := sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(batch[:currentCount], ","))
+			res, err := tx.ExecResult(ctx, q)
 			if err != nil {
 				return 0, err
 			}
