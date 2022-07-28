@@ -19,14 +19,14 @@ func main() {
 
 func mainErr() error {
 	// This script is invoked via a go:generate directive in
-	// internal/database/migration/cliutil (upgrade_data.go)
+	// internal/database/migration/shared/upgradedata (embed.go)
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
-	repoRoot := filepath.Join(wd, "..", "..", "..", "..")
-	filepath := filepath.Join(wd, "upgrade_data", "payload.json")
+	repoRoot := filepath.Join(wd, "..", "..", "..", "..", "..")
+	filepath := filepath.Join(wd, "stitched-migration-graph.json")
 
 	versions, err := oobmigration.UpgradeRange(MinVersion, MaxVersion)
 	if err != nil {
