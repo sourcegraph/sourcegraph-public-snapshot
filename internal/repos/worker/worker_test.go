@@ -7,29 +7,21 @@ import (
 
 	"github.com/sourcegraph/log/logtest"
 
-	"github.com/sourcegraph/sourcegraph/internal/actor"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 )
 
 func TestJobQueue(t *testing.T) {
-	t.Parallel()
 	logger := logtest.Scoped(t)
-	ctx := actor.WithInternalActor(context.Background())
+	ctx := context.Background()
 
-	mainAppDB := database.NewDB(logger, dbtest.NewDB(logger, t))
-	workerBaseStore := basestore.NewWithHandle(mainAppDB.Handle())
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	workerBaseStore := basestore.NewWithHandle(db.Handle())
 
-	type testCase struct {
-		extSvcKind string
-	}
+	extSvcKind := "GITHUB"
 
-	tc := testCase{
-		extSvcKind: "GITHUB",
-	}
-
-	t.Run(tc.extSvcKind, func(t *testing.T) {
+	t.Run(extSvcKind, func(t *testing.T) {
 		recordID := 0
 		job, err := dequeueJob(ctx, workerBaseStore, recordID)
 		if err != nil && err.Error() != "expected 1 job to dequeue, found 0" {
@@ -40,7 +32,7 @@ func TestJobQueue(t *testing.T) {
 		firstJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
 			RepoID:     1,
 			RepoName:   "repo 1",
-			ExtSvcKind: tc.extSvcKind,
+			ExtSvcKind: extSvcKind,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -49,7 +41,7 @@ func TestJobQueue(t *testing.T) {
 		secondJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
 			RepoID:     2,
 			RepoName:   "repo 2",
-			ExtSvcKind: tc.extSvcKind,
+			ExtSvcKind: extSvcKind,
 		})
 		if err != nil {
 			t.Fatal(err)
@@ -59,14 +51,14 @@ func TestJobQueue(t *testing.T) {
 		assertEqual(t, err, &Job{
 			RepoID:     1,
 			RepoName:   "repo 1",
-			ExtSvcKind: tc.extSvcKind,
+			ExtSvcKind: extSvcKind,
 		}, firstJob)
 
 		secondJob, err := dequeueJob(ctx, workerBaseStore, secondJobID)
 		assertEqual(t, err, &Job{
 			RepoID:     2,
 			RepoName:   "repo 2",
-			ExtSvcKind: tc.extSvcKind,
+			ExtSvcKind: extSvcKind,
 		}, secondJob)
 	})
 }
