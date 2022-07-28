@@ -10,6 +10,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -35,9 +36,9 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		return nil, err
 	}
 
-	inputs, err := run.NewSearchInputs(
+	cli := client.NewSearchClient(logger, db, search.Indexed(), search.SearcherURLs())
+	inputs, err := cli.Plan(
 		ctx,
-		db,
 		args.Version,
 		args.PatternType,
 		args.Query,
@@ -46,7 +47,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		envvar.SourcegraphDotComMode(),
 	)
 	if err != nil {
-		var queryErr *run.QueryError
+		var queryErr *client.QueryError
 		if errors.As(err, &queryErr) {
 			return NewSearchAlertResolver(search.AlertForQuery(queryErr.Query, queryErr.Err)).wrapSearchImplementer(db), nil
 		}
@@ -54,6 +55,7 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 	}
 
 	return &searchResolver{
+		client:       cli,
 		db:           db,
 		SearchInputs: inputs,
 		zoekt:        search.Indexed(),
@@ -68,6 +70,7 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
+	client       client.SearchClient
 	SearchInputs *run.SearchInputs
 	db           database.DB
 	logger       log.Logger
