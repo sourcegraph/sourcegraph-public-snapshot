@@ -452,7 +452,7 @@ type CodeIntelRepositoryBadge struct {
 	ForNerds *bool `json:"forNerds,omitempty"`
 }
 
-// CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command.
+// CustomGitFetchMapping description: Mapping from Git clone URl domain/path to git fetch command. The `domainPath` field contains the Git clone URL domain/path part. The `fetch` field contains the custom git fetch command. MUST ALSO SET `INSECURE_ENABLE_CUSTOM_GIT_FETCH` to true.
 type CustomGitFetchMapping struct {
 	// DomainPath description: Git clone URL domain/path
 	DomainPath string `json:"domainPath"`
@@ -597,7 +597,7 @@ type ExperimentalFeatures struct {
 	ApidocsSearchIndexing string `json:"apidocs.search.indexing,omitempty"`
 	// BitbucketServerFastPerm description: DEPRECATED: Configure in Bitbucket Server config.
 	BitbucketServerFastPerm string `json:"bitbucketServerFastPerm,omitempty"`
-	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command.
+	// CustomGitFetch description: JSON array of configuration that maps from Git clone URL domain/path to custom git fetch command. MUST ALSO SET `INSECURE_ENABLE_CUSTOM_GIT_FETCH` to true.
 	CustomGitFetch []*CustomGitFetchMapping `json:"customGitFetch,omitempty"`
 	// DebugLog description: Turns on debug logging for specific debugging scenarios.
 	DebugLog *DebugLog `json:"debug.log,omitempty"`

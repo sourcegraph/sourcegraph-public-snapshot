@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"os/exec"
 	"path"
 	"strings"
@@ -11,13 +12,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var customGitFetch = conf.Cached(func() map[string][]string {
+var insecureEnableGitFetch = env.Get("INSECURE_ENABLE_CUSTOM_GIT_FETCH", "false", "enable custom git fetch")
+var customGitFetch = conf.Cached[map[string][]string](func() map[string][]string {
 	exp := conf.ExperimentalFeatures()
 	return buildCustomFetchMappings(exp.CustomGitFetch)
 })
 
 func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]string {
-	if c == nil {
+	if c == nil || insecureEnableGitFetch == "false" {
 		return map[string][]string{}
 	}
 
