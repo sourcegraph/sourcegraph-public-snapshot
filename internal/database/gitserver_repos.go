@@ -88,7 +88,6 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
 		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s, NOW())",
-			gr.RepoID,
 			gr.CloneStatus,
 			gr.ShardID,
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
@@ -100,16 +99,18 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 		values = append(values, q)
 	}
 
-	err := s.Exec(ctx, sqlf.Sprintf(`
+	err := s.Exec(ctx, sqlf.Sprintf(updateGitserverReposQueryFmtstr, sqlf.Join(values, ",")))
+
+	return errors.Wrap(err, "updating GitserverRepo")
+}
+
+const updateGitserverReposQueryFmtstr = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.Update
 UPDATE
 	gitserver_repos
 SET (clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at)
 VALUES(%s)
-`, sqlf.Join(values, ",")))
-
-	return errors.Wrap(err, "updating GitserverRepo")
-}
+`
 
 func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
 	count, _, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(totalErroredCloudDefaultReposQuery)))
@@ -120,11 +121,14 @@ const totalErroredCloudDefaultReposQuery = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.TotalErroredCloudDefaultRepos
 SELECT
 	COUNT(*)
-FROM repo
-JOIN gitserver_repos gr ON repo.id = gr.repo_id
-LEFT JOIN external_service_repos esr ON repo.id = esr.repo_id
-LEFT JOIN external_services es on esr.external_service_id = es.id
-WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS TRUE
+FROM gitserver_repos gr
+JOIN repo r ON r.id = gr.repo_id
+JOIN external_service_repos esr ON gr.repo_id = esr.repo_id
+JOIN external_services es on esr.external_service_id = es.id
+WHERE
+	gr.last_error != ''
+	AND repo.deleted_at IS NULL
+	AND es.cloud_default IS TRUE
 `
 
 func (s *gitserverRepoStore) IterateWithNonemptyLastError(ctx context.Context, repoFn func(repo api.RepoName) error) (err error) {
@@ -157,9 +161,12 @@ SELECT
 	repo.name
 FROM repo
 JOIN gitserver_repos gr ON repo.id = gr.repo_id
-LEFT JOIN external_service_repos esr ON repo.id = esr.repo_id
-LEFT JOIN external_services es on esr.external_service_id = es.id
-WHERE gr.last_error != '' AND repo.deleted_at is NULL AND es.cloud_default IS TRUE
+JOIN external_service_repos esr ON repo.id = esr.repo_id
+JOIN external_services es on esr.external_service_id = es.id
+WHERE
+	gr.last_error != ''
+	AND repo.deleted_at IS NULL
+	AND es.cloud_default IS TRUE
 `
 
 type IteratePurgableReposOptions struct {
@@ -183,7 +190,7 @@ func (s *gitserverRepoStore) IteratePurgeableRepos(ctx context.Context, options 
 	if options.Limit > 0 {
 		query = query + fmt.Sprintf(" LIMIT %d", options.Limit)
 	}
-	rows, err := s.Query(ctx, sqlf.Sprintf(query, deletedAtClause))
+	rows, err := s.Query(ctx, sqlf.Sprintf(query, deletedAtClause, types.CloneStatusCloned))
 	if err != nil {
 		return errors.Wrap(err, "fetching repos with nonempty last_error")
 	}
@@ -214,7 +221,7 @@ FROM repo
 JOIN gitserver_repos gr ON repo.id = gr.repo_id
 WHERE
 	(%s OR repo.blocked IS NOT NULL)
-	AND gr.clone_status = 'cloned'
+	AND gr.clone_status = %s
 ORDER BY deleted_at ASC
 `
 
@@ -234,7 +241,7 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 	preds := []*sqlf.Query{}
 
 	if !options.IncludeDeleted {
-		preds = append(preds, sqlf.Sprintf("repo.deleted_at is null"))
+		preds = append(preds, sqlf.Sprintf("repo.deleted_at IS NULL"))
 	}
 
 	if options.OnlyWithoutShard {
@@ -279,7 +286,7 @@ func (s *gitserverRepoStore) IterateRepoGitserverStatus(ctx context.Context, opt
 const iterateRepoGitserverQuery = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.IterateRepoGitserverStatus
 SELECT
-	repo.id,
+	gr.repo_id,
 	repo.name,
 	gr.clone_status,
 	gr.shard_id,
@@ -288,17 +295,26 @@ SELECT
 	gr.last_changed,
 	gr.repo_size_bytes,
 	gr.updated_at
-FROM repo
-JOIN gitserver_repos gr ON gr.repo_id = repo.id
+FROM gitserver_repos gr
+JOIN repo ON gr.repo_id = repo.id
 WHERE %s
 `
 
 func (s *gitserverRepoStore) GetByID(ctx context.Context, id api.RepoID) (*types.GitserverRepo, error) {
-	q := `
+	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByIDQueryFmtstr, id)))
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, &errGitserverRepoNotFound{}
+		}
+	}
+	return repo, nil
+}
+
+const getGitserverRepoByIDQueryFmtstr = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByID
 SELECT
 	repo_id,
-	-- We don't need this here, but the scanner likes to see it.
+	-- We don't need this here, but the scanner needs it.
 	'' as name,
 	clone_status,
 	shard_id,
@@ -311,7 +327,8 @@ FROM gitserver_repos
 WHERE repo_id = %s
 `
 
-	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, id)))
+func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
+	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(getGitserverRepoByNameQueryFmtstr, name)))
 	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil, &errGitserverRepoNotFound{}
@@ -320,32 +337,23 @@ WHERE repo_id = %s
 	return repo, nil
 }
 
-func (s *gitserverRepoStore) GetByName(ctx context.Context, name api.RepoName) (*types.GitserverRepo, error) {
-	q := `
+const getGitserverRepoByNameQueryFmtstr = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByName
 SELECT
-	g.repo_id,
-	r.name,
-	g.clone_status,
-	g.shard_id,
-	g.last_error,
-	g.last_fetched,
-	g.last_changed,
-	g.repo_size_bytes,
-	g.updated_at
-FROM gitserver_repos g
-JOIN repo r on r.id = g.repo_id
+	gr.repo_id,
+	-- We don't need this here, but the scanner needs it.
+	'' as name,
+	gr.clone_status,
+	gr.shard_id,
+	gr.last_error,
+	gr.last_fetched,
+	gr.last_changed,
+	gr.repo_size_bytes,
+	gr.updated_at
+FROM gitserver_repos gr
+JOIN repo r ON r.id = gr.repo_id
 WHERE r.name = %s
 `
-
-	repo, _, err := scanGitserverRepo(s.QueryRow(ctx, sqlf.Sprintf(q, name)))
-	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, &errGitserverRepoNotFound{}
-		}
-	}
-	return repo, nil
-}
 
 type errGitserverRepoNotFound struct{}
 
@@ -355,17 +363,17 @@ func (errGitserverRepoNotFound) NotFound() bool     { return true }
 const getByNamesQueryTemplate = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.GetByNames
 SELECT
-	g.repo_id,
+	gr.repo_id,
 	r.name,
-	g.clone_status,
-	g.shard_id,
-	g.last_error,
-	g.last_fetched,
-	g.last_changed,
-	g.repo_size_bytes,
-	g.updated_at
-FROM gitserver_repos g
-JOIN repo r on r.id = g.repo_id
+	gr.clone_status,
+	gr.shard_id,
+	gr.last_error,
+	gr.last_fetched,
+	gr.last_changed,
+	gr.repo_size_bytes,
+	gr.updated_at
+FROM gitserver_repos gr
+JOIN repo r on r.id = gr.repo_id
 WHERE r.name = ANY (%s)
 `
 
