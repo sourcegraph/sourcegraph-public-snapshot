@@ -1010,15 +1010,17 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 		repo1.ID: 100,
 		repo2.ID: 500,
 	}
-	if err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes); err != nil {
+	numUpdated, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if have, want := numUpdated, 2; have != want {
+		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
 	}
 
 	// Updating sizes in test data for further diff comparison
 	gitserverRepo1.RepoSizeBytes = sizes[gitserverRepo1.RepoID]
-	gitserverRepo1.CloneStatus = types.CloneStatusCloned
 	gitserverRepo2.RepoSizeBytes = sizes[gitserverRepo2.RepoID]
-	gitserverRepo2.CloneStatus = types.CloneStatusCloned
 
 	// Checking repo diffs, excluding UpdatedAt. This is to verify that nothing except repo_size_bytes
 	// has changed
@@ -1036,6 +1038,15 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 	if diff := cmp.Diff(gitserverRepo2, after2, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
+	}
+
+	// update again to make sure they're not updated again
+	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if have, want := numUpdated, 0; have != want {
+		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
 	}
 }
 
