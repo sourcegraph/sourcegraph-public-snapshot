@@ -35,6 +35,8 @@ import { TreeNode } from './Tree'
 import { TreeRootContext } from './TreeContext'
 import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
+import styles from './Tree.module.scss'
+
 const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
 })
@@ -203,7 +205,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                             <tr>
                                 <TreeLayerCell>
                                     {treeOrError === LOADING ? (
-                                        <div className="d-flex">
+                                        <div className={styles.treeLoadingSpinner}>
                                             <LoadingSpinner className="tree-page__entries-loader mr-2" />
                                             Loading tree
                                         </div>

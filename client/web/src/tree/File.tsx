@@ -197,7 +197,7 @@ export const SYMBOLS_QUERY = gql`
 
 interface SymbolsProps
     extends Pick<TreeLayerProps, 'repoID' | 'revision' | 'activePath' | 'location'>,
-    Pick<React.HTMLAttributes<HTMLDivElement>, 'style'> { }
+        Pick<React.HTMLAttributes<HTMLDivElement>, 'style'> {}
 
 const Symbols: React.FunctionComponent<SymbolsProps> = ({ repoID, revision, activePath, location, style }) => {
     const { data, loading, error } = useQuery<InlineSymbolsResult>(SYMBOLS_QUERY, {
