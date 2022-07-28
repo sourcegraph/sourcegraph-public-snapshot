@@ -28,11 +28,6 @@ func newCommitCache(client shared.GitserverClient) CommitCache {
 	}
 }
 
-// set marks the given repository and commit as valid and resolvable by gitserver.
-func (c *commitCache) set(repositoryID int, commit string) {
-	c.setInternal(repositoryID, commit, true)
-}
-
 // AreCommitsResolvable determines if the given commits are resolvable for the given repositories.
 // If we do not know the answer from a previous call to set or AreCommitsResolvable, we ask gitserver
 // to resolve the remaining commits and store the results for subsequent calls. This method

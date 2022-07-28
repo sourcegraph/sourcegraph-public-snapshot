@@ -12,7 +12,6 @@ import (
 	symbolsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/lsifstore"
 	gs "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
@@ -78,11 +77,15 @@ type IndexEnqueuer interface {
 }
 
 type SymbolsResolver interface {
-	SetUploadsDataLoader(uploads []dbstore.Dump)
-	SetLocalGitTreeTranslator(client internalGitserver.Client, repo *types.Repo, commit, path string) error
-	SetLocalCommitCache(gitserverClient symbolsShared.GitserverClient)
-	SetMaximumIndexesPerMonikerSearch(maxNumber int)
-	SetAuthChecker(authChecker authz.SubRepoPermissionChecker)
+	Definitions(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, err error)
+	Diagnostics(ctx context.Context, args symbolsShared.RequestArgs) (diagnosticsAtUploads []symbolsShared.DiagnosticAtUpload, _ int, err error)
+	Hover(ctx context.Context, args symbolsShared.RequestArgs) (string, symbolsShared.Range, bool, error)
+	Implementations(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
+	LSIFUploads(ctx context.Context) (uploads []symbolsShared.Dump, err error)
+	Ranges(ctx context.Context, args symbolsShared.RequestArgs, startLine, endLine int) (adjustedRanges []symbolsShared.AdjustedCodeIntelligenceRange, err error)
+	References(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
+	Stencil(ctx context.Context, args symbolsShared.RequestArgs) (adjustedRanges []symbolsShared.Range, err error)
+
 	SetRequestState(
 		uploads []dbstore.Dump,
 		authChecker authz.SubRepoPermissionChecker,
@@ -90,21 +93,6 @@ type SymbolsResolver interface {
 		gitclient symbolsShared.GitserverClient,
 		maxIndexes int,
 	)
-
-	LSIFUploads(ctx context.Context) (uploads []symbolsShared.Dump, err error)
-	Stencil(ctx context.Context, args symbolsShared.RequestArgs) (adjustedRanges []symbolsShared.Range, err error)
-	Hover(ctx context.Context, args symbolsShared.RequestArgs) (string, symbolsShared.Range, bool, error)
-	Definitions(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, err error)
-	References(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
-	Implementations(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
-	Diagnostics(ctx context.Context, args symbolsShared.RequestArgs) (diagnosticsAtUploads []symbolsShared.DiagnosticAtUpload, _ int, err error)
-	Ranges(ctx context.Context, args symbolsShared.RequestArgs, startLine, endLine int) (adjustedRanges []symbolsShared.AdjustedCodeIntelligenceRange, err error)
-}
-
-type GitTreeTranslator interface {
-	GetTargetCommitPath(ctx context.Context, commit, path string, reverse bool) (string, bool, error)
-	GetTargetCommitPosition(ctx context.Context, commit, path string, px lsifstore.Position, reverse bool) (string, lsifstore.Position, bool, error)
-	GetTargetCommitRange(ctx context.Context, commit, path string, rx lsifstore.Range, reverse bool) (string, lsifstore.Range, bool, error)
 }
 
 type (

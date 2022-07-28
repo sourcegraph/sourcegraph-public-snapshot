@@ -52,6 +52,7 @@ func newOperations(observationContext *observation.Context) *operations {
 
 		getReferences:                        op("getReferences"),
 		getImplementations:                   op("getImplementations"),
+		getDiagnostics:                       op("getDiagnostics"),
 		getHover:                             op("getHover"),
 		getDefinitions:                       op("getDefinitions"),
 		getRanges:                            op("getRanges"),
@@ -64,6 +65,8 @@ func newOperations(observationContext *observation.Context) *operations {
 		getDumpsByIDs:                        op("GetDumpsByIDs"),
 	}
 }
+
+var serviceObserverThreshold = time.Second
 
 func observeResolver(ctx context.Context, err *error, operation *observation.Operation, threshold time.Duration, observationArgs observation.Args) (context.Context, observation.TraceLogger, func()) {
 	start := time.Now()

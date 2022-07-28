@@ -3,7 +3,6 @@ package shared
 import (
 	"time"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/precise"
 )
 
@@ -86,29 +85,6 @@ type Dump struct {
 	Indexer           string     `json:"indexer"`
 	IndexerVersion    string     `json:"indexerVersion"`
 	AssociatedIndexID *int       `json:"associatedIndex"`
-}
-
-// scanDumps scans a slice of dumps from the return value of `*Store.query`.
-func scanDump(s dbutil.Scanner) (dump Dump, err error) {
-	return dump, s.Scan(
-		&dump.ID,
-		&dump.Commit,
-		&dump.Root,
-		&dump.VisibleAtTip,
-		&dump.UploadedAt,
-		&dump.State,
-		&dump.FailureMessage,
-		&dump.StartedAt,
-		&dump.FinishedAt,
-		&dump.ProcessAfter,
-		&dump.NumResets,
-		&dump.NumFailures,
-		&dump.RepositoryID,
-		&dump.RepositoryName,
-		&dump.Indexer,
-		&dbutil.NullString{S: &dump.IndexerVersion},
-		&dump.AssociatedIndexID,
-	)
 }
 
 // AdjustedCodeIntelligenceRange stores definition, reference, and hover information for all ranges

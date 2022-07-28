@@ -1,4 +1,4 @@
-package graphql
+package codenav
 
 import (
 	"context"
@@ -19,16 +19,28 @@ import (
 
 func TestStencil(t *testing.T) {
 	// Set up mocks
+	mockStore := NewMockStore()
+	mockLsifStore := NewMockLsifStore()
+	mockUploadSvc := NewMockUploadService()
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
 	mockGitServer := gitserver.NewClient(mockDB)
 	mockGitserverClient := NewMockGitserverClient()
-	mockSvc := NewMockService()
 
-	// Init resolver and set local request context
-	resolver := New(mockSvc, 50, &observation.TestContext)
-	resolver.SetLocalCommitCache(mockGitserverClient)
-	resolver.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath)
+	// Init service
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+
+	// Set up request state
+	mockRequestState := RequestState{}
+	mockRequestState.SetLocalCommitCache(mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
+	uploads := []dbstore.Dump{
+		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
+		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
+		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
+		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+	}
+	mockRequestState.SetUploadsDataLoader(uploads)
 
 	expectedRanges := []shared.Range{
 		{Start: shared.Position{Line: 10, Character: 20}, End: shared.Position{Line: 10, Character: 30}},
@@ -42,16 +54,9 @@ func TestStencil(t *testing.T) {
 		{Start: shared.Position{Line: 18, Character: 20}, End: shared.Position{Line: 18, Character: 30}},
 		{Start: shared.Position{Line: 19, Character: 20}, End: shared.Position{Line: 19, Character: 30}},
 	}
-	mockSvc.GetStencilFunc.PushReturn(nil, nil)
-	mockSvc.GetStencilFunc.PushReturn(expectedRanges, nil)
+	mockLsifStore.GetStencilFunc.PushReturn(nil, nil)
+	mockLsifStore.GetStencilFunc.PushReturn(expectedRanges, nil)
 
-	uploads := []dbstore.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
-	}
-	resolver.SetUploadsDataLoader(uploads)
 	mockRequest := shared.RequestArgs{
 		RepositoryID: 42,
 		Commit:       mockCommit,
@@ -60,7 +65,7 @@ func TestStencil(t *testing.T) {
 		Character:    20,
 		Limit:        50,
 	}
-	ranges, err := resolver.Stencil(context.Background(), mockRequest)
+	ranges, err := svc.GetStencil(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
 		t.Fatalf("unexpected error querying hover: %s", err)
 	}

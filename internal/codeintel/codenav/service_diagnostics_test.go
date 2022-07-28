@@ -1,4 +1,4 @@
-package graphql
+package codenav
 
 import (
 	"context"
@@ -22,16 +22,28 @@ import (
 
 func TestDiagnostics(t *testing.T) {
 	// Set up mocks
+	mockStore := NewMockStore()
+	mockLsifStore := NewMockLsifStore()
+	mockUploadSvc := NewMockUploadService()
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
 	mockGitServer := gitserver.NewClient(mockDB)
 	mockGitserverClient := NewMockGitserverClient()
-	mockSvc := NewMockService()
 
-	// Init resolver and set local request context
-	resolver := New(mockSvc, 50, &observation.TestContext)
-	resolver.SetLocalCommitCache(mockGitserverClient)
-	resolver.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath)
+	// Init service
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+
+	// Set up request state
+	mockRequestState := RequestState{}
+	mockRequestState.SetLocalCommitCache(mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
+	uploads := []dbstore.Dump{
+		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
+		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
+		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
+		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+	}
+	mockRequestState.SetUploadsDataLoader(uploads)
 
 	diagnostics := []shared.Diagnostic{
 		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
@@ -40,18 +52,9 @@ func TestDiagnostics(t *testing.T) {
 		{DiagnosticData: precise.DiagnosticData{Code: "c4"}},
 		{DiagnosticData: precise.DiagnosticData{Code: "c5"}},
 	}
-
-	mockSvc.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
-	mockSvc.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
-	mockSvc.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
-
-	uploads := []dbstore.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
-	}
-	resolver.SetUploadsDataLoader(uploads)
+	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
+	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
+	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
 	mockRequest := shared.RequestArgs{
 		RepositoryID: 42,
@@ -61,7 +64,7 @@ func TestDiagnostics(t *testing.T) {
 		Character:    20,
 		Limit:        5,
 	}
-	adjustedDiagnostics, totalCount, err := resolver.Diagnostics(context.Background(), mockRequest)
+	adjustedDiagnostics, totalCount, err := svc.GetDiagnostics(context.Background(), mockRequest, mockRequestState)
 	if err != nil {
 		t.Fatalf("unexpected error querying diagnostics: %s", err)
 	}
@@ -82,7 +85,7 @@ func TestDiagnostics(t *testing.T) {
 	}
 
 	var limits []int
-	for _, call := range mockSvc.GetDiagnosticsFunc.History() {
+	for _, call := range mockLsifStore.GetDiagnosticsFunc.History() {
 		limits = append(limits, call.Arg3)
 	}
 	if diff := cmp.Diff([]int{5, 4, 1, 0}, limits); diff != "" {
@@ -92,36 +95,28 @@ func TestDiagnostics(t *testing.T) {
 
 func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	// Set up mocks
+	mockStore := NewMockStore()
+	mockLsifStore := NewMockLsifStore()
+	mockUploadSvc := NewMockUploadService()
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
 	mockGitServer := gitserver.NewClient(mockDB)
 	mockGitserverClient := NewMockGitserverClient()
-	mockSvc := NewMockService()
 
-	// Init resolver and set local request context
-	resolver := New(mockSvc, 50, &observation.TestContext)
-	resolver.SetLocalCommitCache(mockGitserverClient)
-	resolver.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath)
+	// Init service
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
 
-	diagnostics := []shared.Diagnostic{
-		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c4"}},
-		{DiagnosticData: precise.DiagnosticData{Code: "c5"}},
-	}
-
-	mockSvc.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
-	mockSvc.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
-	mockSvc.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
-
+	// Set up request state
+	mockRequestState := RequestState{}
+	mockRequestState.SetLocalCommitCache(mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
 	uploads := []dbstore.Dump{
 		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
 		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
 		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
 		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
 	}
-	resolver.SetUploadsDataLoader(uploads)
+	mockRequestState.SetUploadsDataLoader(uploads)
 
 	// Applying sub-repo permissions
 	checker := authz.NewMockSubRepoPermissionChecker()
@@ -134,7 +129,18 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 		}
 		return authz.None, nil
 	})
-	resolver.SetAuthChecker(checker)
+	mockRequestState.SetAuthChecker(checker)
+
+	diagnostics := []shared.Diagnostic{
+		{DiagnosticData: precise.DiagnosticData{Code: "c1"}},
+		{DiagnosticData: precise.DiagnosticData{Code: "c2"}},
+		{DiagnosticData: precise.DiagnosticData{Code: "c3"}},
+		{DiagnosticData: precise.DiagnosticData{Code: "c4"}},
+		{DiagnosticData: precise.DiagnosticData{Code: "c5"}},
+	}
+	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[0:1], 1, nil)
+	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[1:4], 3, nil)
+	mockLsifStore.GetDiagnosticsFunc.PushReturn(diagnostics[4:], 26, nil)
 
 	ctx := actor.WithActor(context.Background(), &actor.Actor{UID: 1})
 	mockRequest := shared.RequestArgs{
@@ -145,7 +151,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 		Character:    20,
 		Limit:        5,
 	}
-	adjustedDiagnostics, totalCount, err := resolver.Diagnostics(ctx, mockRequest)
+	adjustedDiagnostics, totalCount, err := svc.GetDiagnostics(ctx, mockRequest, mockRequestState)
 	if err != nil {
 		t.Fatalf("unexpected error querying diagnostics: %s", err)
 	}
@@ -164,7 +170,7 @@ func TestDiagnosticsWithSubRepoPermissions(t *testing.T) {
 	}
 
 	var limits []int
-	for _, call := range mockSvc.GetDiagnosticsFunc.History() {
+	for _, call := range mockLsifStore.GetDiagnosticsFunc.History() {
 		limits = append(limits, call.Arg3)
 	}
 	if diff := cmp.Diff([]int{5, 5, 2, 2}, limits); diff != "" {

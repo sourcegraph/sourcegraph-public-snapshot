@@ -2,6 +2,7 @@ package codenav
 
 import (
 	"fmt"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -68,4 +69,50 @@ func rangeContainsPosition(r shared.Range, pos shared.Position) bool {
 	}
 
 	return true
+}
+
+func sortRanges(ranges []shared.Range) []shared.Range {
+	sort.Slice(ranges, func(i, j int) bool {
+		iStart := ranges[i].Start
+		jStart := ranges[j].Start
+
+		if iStart.Line < jStart.Line {
+			// iStart comes first
+			return true
+		} else if iStart.Line > jStart.Line {
+			// jStart comes first
+			return false
+		}
+		// otherwise, starts on same line
+
+		if iStart.Character < jStart.Character {
+			// iStart comes first
+			return true
+		} else if iStart.Character > jStart.Character {
+			// jStart comes first
+			return false
+		}
+		// otherwise, starts at same character
+
+		iEnd := ranges[i].End
+		jEnd := ranges[j].End
+
+		if jEnd.Line < iEnd.Line {
+			// ranges[i] encloses ranges[j] (we want smaller first)
+			return false
+		} else if jStart.Line < jEnd.Line {
+			// ranges[j] encloses ranges[i] (we want smaller first)
+			return true
+		}
+		// otherwise, ends on same line
+
+		if jStart.Character < jEnd.Character {
+			// ranges[j] encloses ranges[i] (we want smaller first)
+			return true
+		}
+
+		return false
+	})
+
+	return ranges
 }

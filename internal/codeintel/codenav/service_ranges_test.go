@@ -1,4 +1,4 @@
-package graphql
+package codenav
 
 import (
 	"context"
@@ -19,16 +19,28 @@ import (
 
 func TestRanges(t *testing.T) {
 	// Set up mocks
+	mockStore := NewMockStore()
+	mockLsifStore := NewMockLsifStore()
+	mockUploadSvc := NewMockUploadService()
 	mockLogger := logtest.Scoped(t)
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
 	mockGitServer := gitserver.NewClient(mockDB)
 	mockGitserverClient := NewMockGitserverClient()
-	mockSvc := NewMockService()
 
-	// Init resolver and set local request context
-	resolver := New(mockSvc, 50, &observation.TestContext)
-	resolver.SetLocalCommitCache(mockGitserverClient)
-	resolver.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath)
+	// Init service
+	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
+
+	// Set up request state
+	mockRequestState := RequestState{}
+	mockRequestState.SetLocalCommitCache(mockGitserverClient)
+	mockRequestState.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath, 50)
+	uploads := []dbstore.Dump{
+		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
+		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
+		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
+		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
+	}
+	mockRequestState.SetUploadsDataLoader(uploads)
 
 	testLocation1 := shared.Location{DumpID: 50, Path: "a.go", Range: testRange1}
 	testLocation2 := shared.Location{DumpID: 51, Path: "b.go", Range: testRange2}
@@ -47,17 +59,9 @@ func TestRanges(t *testing.T) {
 		{Range: testRange5, HoverText: "text5", Definitions: []shared.Location{testLocation8}, References: nil, Implementations: []shared.Location{}},
 	}
 
-	mockSvc.GetRangesFunc.PushReturn(ranges[0:1], nil)
-	mockSvc.GetRangesFunc.PushReturn(ranges[1:4], nil)
-	mockSvc.GetRangesFunc.PushReturn(ranges[4:], nil)
-
-	uploads := []dbstore.Dump{
-		{ID: 50, Commit: "deadbeef", Root: "sub1/"},
-		{ID: 51, Commit: "deadbeef", Root: "sub2/"},
-		{ID: 52, Commit: "deadbeef", Root: "sub3/"},
-		{ID: 53, Commit: "deadbeef", Root: "sub4/"},
-	}
-	resolver.SetUploadsDataLoader(uploads)
+	mockLsifStore.GetRangesFunc.PushReturn(ranges[0:1], nil)
+	mockLsifStore.GetRangesFunc.PushReturn(ranges[1:4], nil)
+	mockLsifStore.GetRangesFunc.PushReturn(ranges[4:], nil)
 
 	mockRequest := shared.RequestArgs{
 		RepositoryID: 42,
@@ -67,7 +71,7 @@ func TestRanges(t *testing.T) {
 		Character:    20,
 		Limit:        50,
 	}
-	adjustedRanges, err := resolver.Ranges(context.Background(), mockRequest, 10, 20)
+	adjustedRanges, err := svc.GetRanges(context.Background(), mockRequest, mockRequestState, 10, 20)
 	if err != nil {
 		t.Fatalf("unexpected error querying ranges: %s", err)
 	}

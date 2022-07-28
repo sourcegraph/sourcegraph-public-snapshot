@@ -210,53 +210,29 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 	})
 	defer endObservation()
 
+	repoId := int(args.Repo.ID)
+	commit := string(args.Commit)
 	cachedCommitChecker := newCachedCommitChecker(r.gitserverClient)
-	cachedCommitChecker.set(int(args.Repo.ID), string(args.Commit))
-
-	dumps, err := r.findClosestDumps(
-		ctx,
-		cachedCommitChecker,
-		int(args.Repo.ID),
-		string(args.Commit),
-		args.Path,
-		args.ExactPath,
-		args.ToolName,
-	)
-	if err != nil || len(dumps) == 0 {
-		return nil, err
-	}
-
-	gitServer := gitserver.NewClient(r.db)
+	cachedCommitChecker.set(repoId, commit)
 
 	// Maintain a map from identifers to hydrated upload records from the database. We use
 	// this map as a quick lookup when constructing the resulting location set. Any additional
 	// upload records pulled back from the database while processing this page will be added
 	// to this map.
-	r.symbolsResolver.SetUploadsDataLoader(dumps)
-	r.symbolsResolver.SetAuthChecker(authz.DefaultSubRepoPermsChecker)
-	r.symbolsResolver.SetLocalGitTreeTranslator(gitServer, args.Repo, string(args.Commit), args.Path)
-	r.symbolsResolver.SetLocalCommitCache(r.gitserverClient)
-	r.symbolsResolver.SetMaximumIndexesPerMonikerSearch(r.maximumIndexesPerMonikerSearch)
+	dumps, err := r.findClosestDumps(ctx, cachedCommitChecker, repoId, commit, args.Path, args.ExactPath, args.ToolName)
+	if err != nil || len(dumps) == 0 {
+		return nil, err
+	}
 
 	r.symbolsResolver.SetRequestState(
 		dumps,
 		authz.DefaultSubRepoPermsChecker,
-		gitServer, args.Repo, string(args.Commit), args.Path,
+		gitserver.NewClient(r.db), args.Repo, commit, args.Path,
 		r.gitserverClient,
 		r.maximumIndexesPerMonikerSearch,
 	)
 
-	return NewQueryResolver(
-		r.db,
-		r.dbStore,
-		r.lsifStore,
-		cachedCommitChecker,
-		int(args.Repo.ID),
-		string(args.Commit),
-		args.Path,
-		r.operations,
-		r.symbolsResolver,
-	), nil
+	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.symbolsResolver), nil
 }
 
 func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {

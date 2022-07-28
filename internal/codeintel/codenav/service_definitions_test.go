@@ -31,10 +31,6 @@ func TestDefinitions(t *testing.T) {
 	mockGitServer := gitserver.NewClient(mockDB)
 	mockGitserverClient := NewMockGitserverClient()
 
-	// // Init resolver and set local request context
-	// resolver := New(mockSvc, 50, &observation.TestContext)
-	// resolver.SetLocalCommitCache(mockGitserverClient)
-	// resolver.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath)
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
 
@@ -93,11 +89,6 @@ func TestDefinitionsWithSubRepoPermissions(t *testing.T) {
 	mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
 	mockGitServer := gitserver.NewClient(mockDB)
 	mockGitserverClient := NewMockGitserverClient()
-
-	// // Init resolver and set local request context
-	// resolver := New(mockSvc, 50, &observation.TestContext)
-	// resolver.SetLocalCommitCache(mockGitserverClient)
-	// resolver.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{}, mockCommit, mockPath)
 
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
@@ -195,14 +186,6 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 	mockUploadSvc.GetDumpsWithDefinitionsForMonikersFunc.PushReturn(dumps, nil)
 
-	// // Init resolver and set local request context
-	// resolver := New(mockSvc, 50, &observation.TestContext)
-	// resolver.SetLocalCommitCache(mockGitserverClient)
-	// err := resolver.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{ID: 42}, mockCommit, mockPath)
-	// if err != nil {
-	// 	t.Fatalf("unexpected error setting local git tree translator: %s", err)
-	// }
-
 	// upload #150's commit no longer exists; all others do
 	mockGitserverClient.CommitsExistFunc.SetDefaultHook(func(ctx context.Context, rcs []codeintelgitserver.RepositoryCommit) (exists []bool, _ error) {
 		for _, rc := range rcs {
@@ -290,28 +273,7 @@ func TestDefinitionsRemote(t *testing.T) {
 	}
 }
 
-func mockedGitTreeTranslator() GitTreeTranslator {
-	mockPositionAdjuster := NewMockGitTreeTranslator()
-	mockPositionAdjuster.GetTargetCommitPathFromSourcePathFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, _ bool) (string, bool, error) {
-		return commit, true, nil
-	})
-	mockPositionAdjuster.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, pos shared.Position, _ bool) (string, shared.Position, bool, error) {
-		return commit, pos, true, nil
-	})
-	mockPositionAdjuster.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rx shared.Range, _ bool) (string, shared.Range, bool, error) {
-		return commit, rx, true, nil
-	})
-
-	return mockPositionAdjuster
-}
-
 func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
-	// // Set up mocks
-	// mockLogger := logtest.Scoped(t)
-	// mockDB := database.NewDB(mockLogger, dbtest.NewDB(mockLogger, t))
-	// mockGitServer := gitserver.NewClient(mockDB)
-	// mockGitserverClient := NewMockGitserverClient()
-	// mockSvc := NewMockService()
 	// Set up mocks
 	mockStore := NewMockStore()
 	mockLsifStore := NewMockLsifStore()
@@ -324,13 +286,6 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 	// Init service
 	svc := newService(mockStore, mockLsifStore, mockUploadSvc, &observation.TestContext)
 
-	// // Init resolver and set local request context
-	// resolver := New(mockSvc, 50, &observation.TestContext)
-	// resolver.SetLocalCommitCache(mockGitserverClient)
-	// err := resolver.SetLocalGitTreeTranslator(mockGitServer, &types.Repo{ID: 42}, mockCommit, mockPath)
-	// if err != nil {
-	// 	t.Fatalf("unexpected error setting local git tree translator: %s", err)
-	// }
 	// Set up request state
 	mockRequestState := RequestState{}
 	mockRequestState.SetLocalCommitCache(mockGitserverClient)
@@ -447,6 +402,21 @@ func TestDefinitionsRemoteWithSubRepoPermissions(t *testing.T) {
 			t.Errorf("unexpected ids (-want +got):\n%s", diff)
 		}
 	}
+}
+
+func mockedGitTreeTranslator() GitTreeTranslator {
+	mockPositionAdjuster := NewMockGitTreeTranslator()
+	mockPositionAdjuster.GetTargetCommitPathFromSourcePathFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, _ bool) (string, bool, error) {
+		return commit, true, nil
+	})
+	mockPositionAdjuster.GetTargetCommitPositionFromSourcePositionFunc.SetDefaultHook(func(ctx context.Context, commit string, pos shared.Position, _ bool) (string, shared.Position, bool, error) {
+		return commit, pos, true, nil
+	})
+	mockPositionAdjuster.GetTargetCommitRangeFromSourceRangeFunc.SetDefaultHook(func(ctx context.Context, commit string, path string, rx shared.Range, _ bool) (string, shared.Range, bool, error) {
+		return commit, rx, true, nil
+	})
+
+	return mockPositionAdjuster
 }
 
 func uploadLocationsToAdjustedLocations(location []shared.UploadLocation) []shared.UploadLocation {

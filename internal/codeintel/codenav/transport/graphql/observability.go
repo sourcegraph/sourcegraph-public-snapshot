@@ -5,20 +5,23 @@ import (
 	"fmt"
 	"time"
 
+	traceLog "github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
 type operations struct {
-	symbol      *observation.Operation
-	hover       *observation.Operation
-	definitions *observation.Operation
-	references  *observation.Operation
-	diagnostics *observation.Operation
-	stencil     *observation.Operation
-	ranges      *observation.Operation
+	symbol          *observation.Operation
+	hover           *observation.Operation
+	definitions     *observation.Operation
+	references      *observation.Operation
+	implementations *observation.Operation
+	diagnostics     *observation.Operation
+	stencil         *observation.Operation
+	ranges          *observation.Operation
 }
 
 func newOperations(observationContext *observation.Context) *operations {
@@ -41,11 +44,12 @@ func newOperations(observationContext *observation.Context) *operations {
 		symbol: op("Symbol"),
 		hover:  op("Hover"),
 
-		definitions: op("Definitions"),
-		references:  op("References"),
-		diagnostics: op("Diagnostics"),
-		stencil:     op("Stencil"),
-		ranges:      op("Ranges"),
+		definitions:     op("Definitions"),
+		references:      op("References"),
+		implementations: op("Implementations"),
+		diagnostics:     op("Diagnostics"),
+		stencil:         op("Stencil"),
+		ranges:          op("Ranges"),
 	}
 }
 
@@ -76,4 +80,17 @@ func lowSlowRequest(logger log.Logger, duration time.Duration, err *error) {
 		fields = append(fields, log.Error(*err))
 	}
 	logger.Warn("Slow codeintel request", fields...)
+}
+
+func getObservationArgs(args shared.RequestArgs) observation.Args {
+	return observation.Args{
+		LogFields: []traceLog.Field{
+			traceLog.Int("repositoryID", args.RepositoryID),
+			traceLog.String("commit", args.Commit),
+			traceLog.String("path", args.Path),
+			traceLog.Int("line", args.Line),
+			traceLog.Int("character", args.Character),
+			traceLog.Int("limit", args.Limit),
+		},
+	}
 }
