@@ -57,10 +57,10 @@ func configFromEnv() (*config, error) {
 func NewServer(logger log.Logger, c config, channel string) *Server {
 	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
 	return &Server{
-		logger:       serverLog,
-		store:        NewBuildStore(serverLog),
+		logger:       logger,
+		store:        NewBuildStore(logger),
 		bkToken:      c.BuildkiteToken,
-		notifyClient: NewNotificationClient(serverLog, c.SlackToken, c.GithubToken, channel),
+		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, channel),
 	}
 }
 
