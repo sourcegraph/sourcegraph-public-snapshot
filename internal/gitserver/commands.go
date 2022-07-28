@@ -2396,12 +2396,14 @@ func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, c
 	return parts[0], duration, true, nil
 }
 
+type ArchiveFormat string
+
 const (
 	// ArchiveFormatZip indicates a zip archive is desired.
-	ArchiveFormatZip = "zip"
+	ArchiveFormatZip ArchiveFormat = "zip"
 
 	// ArchiveFormatTar indicates a tar archive is desired.
-	ArchiveFormatTar = "tar"
+	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
 // ArchiveReader streams back the file contents of an archived git repo.
