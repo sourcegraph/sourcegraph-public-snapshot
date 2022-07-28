@@ -26,6 +26,24 @@ type RequestState struct {
 	authChecker authz.SubRepoPermissionChecker
 }
 
+func NewRequestState(
+	uploads []dbstore.Dump,
+	authChecker authz.SubRepoPermissionChecker,
+	client gitserver.Client, repo *types.Repo, commit, path string,
+	gitclient shared.GitserverClient,
+	maxIndexes int,
+	hunkCacheSize int,
+) *RequestState {
+	r := &RequestState{}
+	r.SetUploadsDataLoader(uploads)
+	r.SetAuthChecker(authChecker)
+	r.SetLocalGitTreeTranslator(client, repo, commit, path, hunkCacheSize)
+	r.SetLocalCommitCache(gitclient)
+	r.SetMaximumIndexesPerMonikerSearch(maxIndexes)
+
+	return r
+}
+
 func (r *RequestState) GetCacheUploads() []shared.Dump {
 	return r.dataLoader.uploads
 }

@@ -7,15 +7,13 @@ import (
 	"github.com/grafana/regexp"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/autoindexing"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	symbolsShared "github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/gitserver"
 	gs "github.com/sourcegraph/sourcegraph/internal/gitserver"
-	internalGitserver "github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
-	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
 )
 
@@ -77,22 +75,24 @@ type IndexEnqueuer interface {
 }
 
 type SymbolsResolver interface {
-	Definitions(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, err error)
-	Diagnostics(ctx context.Context, args symbolsShared.RequestArgs) (diagnosticsAtUploads []symbolsShared.DiagnosticAtUpload, _ int, err error)
-	Hover(ctx context.Context, args symbolsShared.RequestArgs) (string, symbolsShared.Range, bool, error)
-	Implementations(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
-	LSIFUploads(ctx context.Context) (uploads []symbolsShared.Dump, err error)
-	Ranges(ctx context.Context, args symbolsShared.RequestArgs, startLine, endLine int) (adjustedRanges []symbolsShared.AdjustedCodeIntelligenceRange, err error)
-	References(ctx context.Context, args symbolsShared.RequestArgs) (_ []symbolsShared.UploadLocation, _ string, err error)
-	Stencil(ctx context.Context, args symbolsShared.RequestArgs) (adjustedRanges []symbolsShared.Range, err error)
+	Definitions(ctx context.Context, args symbolsShared.RequestArgs, requestState codenav.RequestState) (_ []symbolsShared.UploadLocation, err error)
+	Diagnostics(ctx context.Context, args symbolsShared.RequestArgs, requestState codenav.RequestState) (diagnosticsAtUploads []symbolsShared.DiagnosticAtUpload, _ int, err error)
+	Hover(ctx context.Context, args symbolsShared.RequestArgs, requestState codenav.RequestState) (string, symbolsShared.Range, bool, error)
+	Implementations(ctx context.Context, args symbolsShared.RequestArgs, requestState codenav.RequestState) (_ []symbolsShared.UploadLocation, _ string, err error)
+	LSIFUploads(ctx context.Context, requestState codenav.RequestState) (uploads []symbolsShared.Dump, err error)
+	Ranges(ctx context.Context, args symbolsShared.RequestArgs, requestState codenav.RequestState, startLine, endLine int) (adjustedRanges []symbolsShared.AdjustedCodeIntelligenceRange, err error)
+	References(ctx context.Context, args symbolsShared.RequestArgs, requestState codenav.RequestState) (_ []symbolsShared.UploadLocation, _ string, err error)
+	Stencil(ctx context.Context, args symbolsShared.RequestArgs, requestState codenav.RequestState) (adjustedRanges []symbolsShared.Range, err error)
 
-	SetRequestState(
-		uploads []dbstore.Dump,
-		authChecker authz.SubRepoPermissionChecker,
-		client internalGitserver.Client, repo *types.Repo, commit, path string,
-		gitclient symbolsShared.GitserverClient,
-		maxIndexes int,
-	)
+	GetHunkCacheSize() int
+
+	// SetRequestState(
+	// 	uploads []dbstore.Dump,
+	// 	authChecker authz.SubRepoPermissionChecker,
+	// 	client internalGitserver.Client, repo *types.Repo, commit, path string,
+	// 	gitclient symbolsShared.GitserverClient,
+	// 	maxIndexes int,
+	// )
 }
 
 type (

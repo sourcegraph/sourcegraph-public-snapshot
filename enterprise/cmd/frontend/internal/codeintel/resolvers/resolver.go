@@ -9,6 +9,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	policies "github.com/sourcegraph/sourcegraph/internal/codeintel/policies/enterprise"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -224,15 +225,24 @@ func (r *resolver) QueryResolver(ctx context.Context, args *gql.GitBlobLSIFDataA
 		return nil, err
 	}
 
-	r.symbolsResolver.SetRequestState(
+	// r.symbolsResolver.SetRequestState(
+	// 	dumps,
+	// 	authz.DefaultSubRepoPermsChecker,
+	// 	gitserver.NewClient(r.db), args.Repo, commit, args.Path,
+	// 	r.gitserverClient,
+	// 	r.maximumIndexesPerMonikerSearch,
+	// )
+
+	reqState := codenav.NewRequestState(
 		dumps,
 		authz.DefaultSubRepoPermsChecker,
 		gitserver.NewClient(r.db), args.Repo, commit, args.Path,
 		r.gitserverClient,
 		r.maximumIndexesPerMonikerSearch,
+		r.symbolsResolver.GetHunkCacheSize(),
 	)
 
-	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.symbolsResolver), nil
+	return NewQueryResolver(repoId, commit, args.Path, r.operations, r.symbolsResolver, *reqState), nil
 }
 
 func (r *resolver) GetConfigurationPolicies(ctx context.Context, opts dbstore.GetConfigurationPoliciesOptions) ([]dbstore.ConfigurationPolicy, int, error) {

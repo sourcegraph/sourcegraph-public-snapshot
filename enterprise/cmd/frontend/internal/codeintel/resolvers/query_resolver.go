@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/codenav/shared"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
@@ -32,25 +33,27 @@ type queryResolver struct {
 	operations *operations
 
 	symbolsResolver SymbolsResolver
+	requestState    codenav.RequestState
 }
 
 // NewQueryResolver create a new query resolver with the given services. The methods of this
 // struct return queries for the given repository, commit, and path, and will query only the
 // bundles associated with the given dump objects.
-func NewQueryResolver(repositoryID int, commit string, path string, operations *operations, symbolsResolver SymbolsResolver) QueryResolver {
+func NewQueryResolver(repositoryID int, commit string, path string, operations *operations, symbolsResolver SymbolsResolver, requestState codenav.RequestState) QueryResolver {
 	return &queryResolver{
 		operations:      operations,
 		repositoryID:    repositoryID,
 		commit:          commit,
 		path:            path,
 		symbolsResolver: symbolsResolver,
+		requestState:    requestState,
 	}
 }
 
 // LSIFUploads returns the list of dbstore.Uploads for the store.Dumps determined to be applicable
 // for answering code-intel queries.
 func (r *queryResolver) LSIFUploads(ctx context.Context) ([]dbstore.Upload, error) {
-	uploads, err := r.symbolsResolver.LSIFUploads(ctx)
+	uploads, err := r.symbolsResolver.LSIFUploads(ctx, r.requestState)
 	if err != nil {
 		return []dbstore.Upload{}, err
 	}
@@ -72,7 +75,7 @@ func (r *queryResolver) Ranges(ctx context.Context, startLine, endLine int) (adj
 		Commit:       r.commit,
 		Path:         r.path,
 	}
-	rngs, err := r.symbolsResolver.Ranges(ctx, args, startLine, endLine)
+	rngs, err := r.symbolsResolver.Ranges(ctx, args, r.requestState, startLine, endLine)
 	if err != nil {
 		return nil, err
 	}
@@ -89,7 +92,7 @@ func (r *queryResolver) Stencil(ctx context.Context) (adjustedRanges []lsifstore
 		Commit:       r.commit,
 		Path:         r.path,
 	}
-	ranges, err := r.symbolsResolver.Stencil(ctx, args)
+	ranges, err := r.symbolsResolver.Stencil(ctx, args, r.requestState)
 	for _, r := range ranges {
 		adjustedRanges = append(adjustedRanges, sharedRangeTolsifstoreRange(r))
 	}
@@ -104,7 +107,7 @@ func (r *queryResolver) Diagnostics(ctx context.Context, limit int) (adjustedDia
 		Path:         r.path,
 		Limit:        limit,
 	}
-	diag, cursor, err := r.symbolsResolver.Diagnostics(ctx, args)
+	diag, cursor, err := r.symbolsResolver.Diagnostics(ctx, args, r.requestState)
 	if err != nil {
 		return nil, 0, err
 	}
@@ -123,7 +126,7 @@ func (r *queryResolver) Hover(ctx context.Context, line, character int) (_ strin
 		Line:         line,
 		Character:    character,
 	}
-	text, rnge, ok, err := r.symbolsResolver.Hover(ctx, args)
+	text, rnge, ok, err := r.symbolsResolver.Hover(ctx, args, r.requestState)
 	return text, sharedRangeTolsifstoreRange(rnge), ok, err
 }
 
@@ -136,7 +139,7 @@ func (r *queryResolver) Definitions(ctx context.Context, line, character int) (_
 		Line:         line,
 		Character:    character,
 	}
-	defs, err := r.symbolsResolver.Definitions(ctx, args)
+	defs, err := r.symbolsResolver.Definitions(ctx, args, r.requestState)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +158,7 @@ func (r *queryResolver) References(ctx context.Context, line, character, limit i
 		Limit:        limit,
 		RawCursor:    rawCursor,
 	}
-	refs, cursor, err := r.symbolsResolver.References(ctx, args)
+	refs, cursor, err := r.symbolsResolver.References(ctx, args, r.requestState)
 	if err != nil {
 		return nil, "", err
 	}
@@ -176,7 +179,7 @@ func (r *queryResolver) Implementations(ctx context.Context, line, character int
 		Limit:        limit,
 		RawCursor:    rawCursor,
 	}
-	impl, cursor, err := r.symbolsResolver.Implementations(ctx, args)
+	impl, cursor, err := r.symbolsResolver.Implementations(ctx, args, r.requestState)
 	if err != nil {
 		return nil, "", err
 	}
