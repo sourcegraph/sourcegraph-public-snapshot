@@ -18,7 +18,7 @@ import { FileDecoration } from 'sourcegraph'
 import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
-import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 
 import { getFileDecorations } from '../backend/features'
 import { requestGraphQL } from '../backend/graphql'
@@ -43,6 +43,7 @@ export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
     entryInfo: TreeEntryInfo
     fileDecorations?: FileDecoration[]
     onHover: (filePath: string) => void
+    repoID: Scalars['ID']
 }
 
 const LOADING = 'loading' as const
@@ -329,6 +330,9 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                 linkRowClick={this.linkRowClick}
                                 isActive={isActive}
                                 isSelected={isSelected}
+                                repoID={this.props.repoID}
+                                revision={this.props.revision}
+                                location={this.props.location}
                             />
                         )}
                     </tbody>
