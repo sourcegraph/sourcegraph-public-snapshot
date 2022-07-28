@@ -106,7 +106,7 @@ func (r *resolver) Implementations(ctx context.Context, args shared.RequestArgs,
 		return nil, "", errors.Wrap(err, "svc.GetImplementations")
 	}
 
-	if cursor.Phase != "done" {
+	if implsCursor.Phase != "done" {
 		nextCursor = encodeImplementationsCursor(implsCursor)
 	}
 
@@ -169,7 +169,7 @@ func (r *resolver) References(ctx context.Context, args shared.RequestArgs, requ
 		return nil, "", errors.Wrap(err, "svc.GetReferences")
 	}
 
-	if cursor.Phase != "done" {
+	if refCursor.Phase != "done" {
 		nextCursor = encodeReferencesCursor(refCursor)
 	}
 

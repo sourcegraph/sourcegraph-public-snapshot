@@ -185,7 +185,7 @@ func (s *Service) GetHover(ctx context.Context, args shared.RequestArgs, request
 }
 
 // GetReferences returns the list of source locations that reference the symbol at the given position.
-func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ReferencesCursor) (_ []shared.UploadLocation, nextCursor shared.ReferencesCursor, err error) {
+func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ReferencesCursor) (_ []shared.UploadLocation, _ shared.ReferencesCursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getReferences, serviceObserverThreshold, observation.Args{
 		LogFields: []traceLog.Field{
 			traceLog.Int("repositoryID", args.RepositoryID),
@@ -207,7 +207,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	// need to look in all uploads and merge the results.
 	adjustedUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState)
 	if err != nil {
-		return nil, nextCursor, err
+		return nil, cursor, err
 	}
 
 	// Update the cursors with the updated visible uploads.
@@ -218,7 +218,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	// the database.
 	if cursor.OrderedMonikers == nil {
 		if cursor.OrderedMonikers, err = s.getOrderedMonikers(ctx, adjustedUploads, "import", "export"); err != nil {
-			return nil, nextCursor, err
+			return nil, cursor, err
 		}
 	}
 	trace.Log(
@@ -240,7 +240,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 			trace,
 		)
 		if err != nil {
-			return nil, nextCursor, err
+			return nil, cursor, err
 		}
 		locations = append(locations, localLocations...)
 
@@ -258,7 +258,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 			cursor.RemoteCursor.UploadBatchIDs = []int{}
 			definitionUploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedMonikers, requestState)
 			if err != nil {
-				return nil, nextCursor, err
+				return nil, cursor, err
 			}
 			for i := range definitionUploads {
 				found := false
@@ -277,7 +277,7 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 		for len(locations) < args.Limit {
 			remoteLocations, hasMore, err := s.getPageRemoteLocations(ctx, "references", adjustedUploads, cursor.OrderedMonikers, &cursor.RemoteCursor, args.Limit-len(locations), trace, args, requestState)
 			if err != nil {
-				return nil, nextCursor, err
+				return nil, cursor, err
 			}
 			locations = append(locations, remoteLocations...)
 
@@ -295,11 +295,11 @@ func (s *Service) GetReferences(ctx context.Context, args shared.RequestArgs, re
 	// are occurring at the same commit they are looking at.
 	referenceLocations, err := s.getUploadLocations(ctx, args, requestState, locations)
 	if err != nil {
-		return nil, nextCursor, err
+		return nil, cursor, err
 	}
 	trace.Log(traceLog.Int("numReferenceLocations", len(referenceLocations)))
 
-	return referenceLocations, nextCursor, nil
+	return referenceLocations, cursor, nil
 }
 
 // getUploadsWithDefinitionsForMonikers returns the set of uploads that provide any of the given monikers.
@@ -657,7 +657,7 @@ func (s *Service) getBulkMonikerLocations(ctx context.Context, uploads []shared.
 // DefinitionsLimit is maximum the number of locations returned from Definitions.
 const DefinitionsLimit = 100
 
-func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ImplementationsCursor) (_ []shared.UploadLocation, nextCursor shared.ImplementationsCursor, err error) {
+func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArgs, requestState RequestState, cursor shared.ImplementationsCursor) (_ []shared.UploadLocation, _ shared.ImplementationsCursor, err error) {
 	ctx, trace, endObservation := observeResolver(ctx, &err, s.operations.getImplementations, serviceObserverThreshold, observation.Args{
 		LogFields: []traceLog.Field{
 			traceLog.Int("repositoryID", args.RepositoryID),
@@ -676,7 +676,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 	// which case we don't need to hit the database.
 	visibleUploads, cursorsToVisibleUploads, err := s.getVisibleUploadsFromCursor(ctx, args.Line, args.Character, &cursor.CursorsToVisibleUploads, requestState)
 	if err != nil {
-		return nil, nextCursor, err
+		return nil, cursor, err
 	}
 
 	// Update the cursors with the updated visible uploads.
@@ -687,7 +687,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 	// the database.
 	if cursor.OrderedImplementationMonikers == nil {
 		if cursor.OrderedImplementationMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, precise.Implementation); err != nil {
-			return nil, nextCursor, err
+			return nil, cursor, err
 		}
 	}
 	trace.Log(
@@ -697,7 +697,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 
 	if cursor.OrderedExportMonikers == nil {
 		if cursor.OrderedExportMonikers, err = s.getOrderedMonikers(ctx, visibleUploads, "export"); err != nil {
-			return nil, nextCursor, err
+			return nil, cursor, err
 		}
 	}
 	trace.Log(
@@ -713,7 +713,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 		for len(locations) < args.Limit {
 			localLocations, hasMore, err := s.getPageLocalLocations(ctx, s.lsifstore.GetImplementationLocations, visibleUploads, &cursor.LocalCursor, args.Limit-len(locations), trace)
 			if err != nil {
-				return nil, nextCursor, err
+				return nil, cursor, err
 			}
 			locations = append(locations, localLocations...)
 
@@ -730,7 +730,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 	if cursor.Phase == "dependencies" {
 		uploads, err := s.getUploadsWithDefinitionsForMonikers(ctx, cursor.OrderedImplementationMonikers, requestState)
 		if err != nil {
-			return nil, nextCursor, err
+			return nil, cursor, err
 		}
 		trace.Log(
 			traceLog.Int("numGetUploadsWithDefinitionsForMonikers", len(uploads)),
@@ -739,7 +739,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 
 		definitionLocations, _, err := s.getBulkMonikerLocations(ctx, uploads, cursor.OrderedImplementationMonikers, "definitions", DefinitionsLimit, 0)
 		if err != nil {
-			return nil, nextCursor, err
+			return nil, cursor, err
 		}
 		locations = append(locations, definitionLocations...)
 
@@ -751,7 +751,7 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 		for len(locations) < args.Limit {
 			remoteLocations, hasMore, err := s.getPageRemoteLocations(ctx, "implementations", visibleUploads, cursor.OrderedExportMonikers, &cursor.RemoteCursor, args.Limit-len(locations), trace, args, requestState)
 			if err != nil {
-				return nil, nextCursor, err
+				return nil, cursor, err
 			}
 			locations = append(locations, remoteLocations...)
 
@@ -770,11 +770,11 @@ func (s *Service) GetImplementations(ctx context.Context, args shared.RequestArg
 
 	implementationLocations, err := s.getUploadLocations(ctx, args, requestState, locations)
 	if err != nil {
-		return nil, nextCursor, err
+		return nil, cursor, err
 	}
 	trace.Log(traceLog.Int("numImplementationsLocations", len(implementationLocations)))
 
-	return implementationLocations, nextCursor, nil
+	return implementationLocations, cursor, nil
 }
 
 // GetDefinitions returns the set of locations defining the symbol at the given position.
