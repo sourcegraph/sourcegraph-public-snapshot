@@ -5,25 +5,27 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"strings"
-	"text/template"
 	"time"
+
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/team"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-var slackTemplate = `:arrow_left: *{{.Environment}}* deployment (<{{.BuildURL}}|build>)
+var slackTemplate = `:arrow_left: *{{.Environment}} deployment (<{{.BuildURL}}|build>{{if .TraceURL}}, <{{.TraceURL}}|trace>{{end}})*
 
-- Services:
+*Updated services:*
 {{- range .Services }}
-    - ` + "`" + `{{ . }}` + "`" + `
+	• ` + "`" + `{{ . }}` + "`" + `
 {{- end }}
 
-- Pull Requests:
+Pull Requests:
 {{- range .PullRequests }}
-    - <{{ .WebURL }}|{{ .Name }}> {{ .AuthorSlackID }}
+	• <{{ .WebURL }}|{{ .Name }}> {{ .AuthorSlackID }}
 {{- end }}`
 
 type slackSummaryPresenter struct {
@@ -31,6 +33,20 @@ type slackSummaryPresenter struct {
 	BuildURL     string
 	Services     []string
 	PullRequests []pullRequestPresenter
+	TraceURL     string
+}
+
+func (presenter *slackSummaryPresenter) toString() string {
+	tmpl, err := template.New("deployment-status-slack-summary").Parse(slackTemplate)
+	if err != nil {
+		logger.Fatal("can't parse Slack summary", log.Error(err))
+	}
+	var sb strings.Builder
+	err = tmpl.Execute(&sb, presenter)
+	if err != nil {
+		logger.Fatal("can't execute Slack template", log.Error(err))
+	}
+	return sb.String()
 }
 
 type pullRequestPresenter struct {
@@ -39,7 +55,7 @@ type pullRequestPresenter struct {
 	WebURL        string
 }
 
-func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *DeploymentReport, traceURL string) (string, error) {
+func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *DeploymentReport, traceURL string) (*slackSummaryPresenter, error) {
 	presenter := &slackSummaryPresenter{
 		Environment: report.Environment,
 		BuildURL:    report.BuildkiteBuildURL,
@@ -84,11 +100,11 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 			if shouldNotify {
 				user := pr.GetUser()
 				if user == nil {
-					return "", errors.Newf("pull request %d has no user", pr.GetNumber())
+					return nil, errors.Newf("pull request %d has no user", pr.GetNumber())
 				}
 				teammate, err := teammates.ResolveByGitHubHandle(ctx, user.GetLogin())
 				if err != nil {
-					return "", err
+					return nil, err
 				}
 				authorSlackID = fmt.Sprintf("<@%s>", teammate.SlackID)
 			}
@@ -101,28 +117,15 @@ func slackSummary(ctx context.Context, teammates team.TeammateResolver, report *
 		})
 	}
 
-	tmpl, err := template.New("deployment-status-slack-summary").Parse(slackTemplate)
-	if err != nil {
-		return "", err
-	}
-	var sb strings.Builder
-	err = tmpl.Execute(&sb, presenter)
-	if err != nil {
-		return "", err
-	}
-
 	if traceURL != "" {
-		_, err = sb.WriteString(fmt.Sprintf("\n<%s|Deployment trace>", traceURL))
-		if err != nil {
-			return "", err
-		}
+		presenter.TraceURL = traceURL
 	}
 
-	return sb.String(), nil
+	return presenter, nil
 }
 
 // postSlackUpdate attempts to send the given summary to at each of the provided webhooks.
-func postSlackUpdate(webhook string, summary string) error {
+func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
 	if webhook == "" {
 		return nil
 	}
@@ -138,15 +141,61 @@ func postSlackUpdate(webhook string, summary string) error {
 	}
 
 	var blocks []slackBlock
-	for _, s := range strings.Split(summary, "\n\n") {
-		blocks = append(blocks, slackBlock{
-			Type: "section",
-			Text: &slackText{
-				Type: "mrkdwn",
-				Text: s,
-			},
-		})
+	var headerText string
+	if len(presenter.TraceURL) != 0 {
+		headerText = fmt.Sprintf(":arrow_left: %s deployment (<%s|build>, <%s|trace>)", presenter.Environment, presenter.BuildURL, presenter.TraceURL)
+	} else {
+		headerText = fmt.Sprintf(":arrow_left: %s deployment (<%s|build>)", presenter.Environment, presenter.BuildURL)
 	}
+
+	servicesContent := &slackText{
+		Type: "mrkdwn",
+		Text: "*Updated services:*\n",
+	}
+	for _, service := range presenter.Services {
+		servicesContent.Text += fmt.Sprintf("\t• `%s`\n", service)
+	}
+
+	pullRequestsBlocks := []slackBlock{{
+		Type: "section",
+		Text: &slackText{
+			Type: "mrkdwn",
+			Text: "*Pull Requests:*\n",
+		},
+	}}
+	for _, pullRequest := range presenter.PullRequests {
+		currentTextBlock := pullRequestsBlocks[len(pullRequestsBlocks)-1].Text
+		pullRequestText := fmt.Sprintf("\t• <%s|%s> %s\n", pullRequest.WebURL, pullRequest.Name, pullRequest.AuthorSlackID)
+
+		if len(currentTextBlock.Text)+len(pullRequestText) < 3000 {
+			// this PR text still fits within the character limit of a text block
+			currentTextBlock.Text += pullRequestText
+		} else {
+			// this PR text exceeds the limit so a new section block is required
+			pullRequestsBlocks = append(pullRequestsBlocks, slackBlock{
+				Type: "section",
+				Text: &slackText{
+					Type: "mrkdwn",
+					// add empty character to fix dumb Slack autoformatting
+					Text: "\u200e" + pullRequestText,
+				},
+			})
+		}
+	}
+
+	blocks = append(blocks,
+		slackBlock{
+			Type: "header",
+			Text: &slackText{
+				Type: "plain_text",
+				Text: headerText,
+			},
+		},
+		slackBlock{
+			Type: "section",
+			Text: servicesContent,
+		})
+	blocks = append(blocks, pullRequestsBlocks...)
 
 	// Generate request
 	body, err := json.MarshalIndent(struct {
