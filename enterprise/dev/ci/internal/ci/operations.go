@@ -665,7 +665,7 @@ func candidateImageStepKey(app string) string {
 // tags once the e2e tests pass.
 //
 // Version is the actual version of the code, and
-func buildCandidateDockerImage(app, version, tag string, pipelineRuntype runtype.RunType) operations.Operation {
+func buildCandidateDockerImage(app, version, tag string, uploadSourcemaps bool) operations.Operation {
 	return func(pipeline *bk.Pipeline) {
 		image := strings.ReplaceAll(app, "/", "-")
 		localImage := "sourcegraph/" + image + ":" + version
@@ -680,7 +680,7 @@ func buildCandidateDockerImage(app, version, tag string, pipelineRuntype runtype
 
 		// Add Sentry environment variables if we are building off main branch
 		// to enable building the webapp with source maps enabled
-		if !pipelineRuntype.Is(runtype.MainBranch) {
+		if uploadSourcemaps {
 			cmds = append(cmds,
 				bk.Env("SENTRY_UPLOAD_SOURCE_MAPS", "1"),
 				bk.Env("SENTRY_ORGANIZATION", "sourcegraph"),
