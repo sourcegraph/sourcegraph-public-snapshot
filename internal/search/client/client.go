@@ -16,7 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -33,12 +32,12 @@ type SearchClient interface {
 		protocol search.Protocol,
 		settings *schema.Settings,
 		sourcegraphDotComMode bool,
-	) (*run.SearchInputs, error)
+	) (*search.Inputs, error)
 
 	Execute(
 		ctx context.Context,
 		stream streaming.Sender,
-		inputs *run.SearchInputs,
+		inputs *search.Inputs,
 	) (_ *search.Alert, err error)
 
 	JobClients() job.RuntimeClients
@@ -68,7 +67,7 @@ func (s *searchClient) Plan(
 	protocol search.Protocol,
 	settings *schema.Settings,
 	sourcegraphDotComMode bool,
-) (_ *run.SearchInputs, err error) {
+) (_ *search.Inputs, err error) {
 	tr, ctx := trace.New(ctx, "NewSearchInputs", searchQuery)
 	defer func() {
 		tr.SetError(err)
@@ -106,7 +105,7 @@ func (s *searchClient) Plan(
 	}
 	tr.LazyPrintf("parsing done")
 
-	inputs := &run.SearchInputs{
+	inputs := &search.Inputs{
 		Plan:                plan,
 		Query:               plan.ToQ(),
 		OriginalQuery:       searchQuery,
@@ -125,7 +124,7 @@ func (s *searchClient) Plan(
 func (s *searchClient) Execute(
 	ctx context.Context,
 	stream streaming.Sender,
-	inputs *run.SearchInputs,
+	inputs *search.Inputs,
 ) (_ *search.Alert, err error) {
 	tr, ctx := trace.New(ctx, "Execute", "")
 	defer func() {

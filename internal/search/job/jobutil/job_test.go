@@ -10,7 +10,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/printer"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
@@ -572,7 +571,7 @@ func TestNewPlanJob(t *testing.T) {
 			plan, err := query.Pipeline(query.Init(tc.query, tc.searchType))
 			require.NoError(t, err)
 
-			inputs := &run.SearchInputs{
+			inputs := &search.Inputs{
 				UserSettings:        &schema.Settings{},
 				PatternType:         query.SearchTypeLiteral,
 				Protocol:            tc.protocol,
@@ -590,7 +589,7 @@ func TestNewPlanJob(t *testing.T) {
 func TestToEvaluateJob(t *testing.T) {
 	test := func(input string, protocol search.Protocol) string {
 		q, _ := query.ParseLiteral(input)
-		inputs := &run.SearchInputs{
+		inputs := &search.Inputs{
 			UserSettings:        &schema.Settings{},
 			PatternType:         query.SearchTypeLiteral,
 			Protocol:            protocol,

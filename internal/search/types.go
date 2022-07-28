@@ -8,12 +8,40 @@ import (
 	otlog "github.com/opentracing/opentracing-go/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
+	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
+	"github.com/sourcegraph/sourcegraph/schema"
 )
+
+// Inputs contains fields we set before kicking off search.
+type Inputs struct {
+	Plan                query.Plan // the comprehensive query plan
+	Query               query.Q    // the current basic query being evaluated, one part of query.Plan
+	OriginalQuery       string     // the raw string of the original search query
+	PatternType         query.SearchType
+	UserSettings        *schema.Settings
+	OnSourcegraphDotCom bool
+	Features            *featureflag.FlagSet
+	Protocol            Protocol
+}
+
+// MaxResults computes the limit for the query.
+func (inputs Inputs) MaxResults() int {
+	return inputs.Query.MaxResults(inputs.DefaultLimit())
+}
+
+// DefaultLimit is the default limit to use if not specified in query.
+func (inputs Inputs) DefaultLimit() int {
+	if inputs.Protocol == Batch || inputs.PatternType == query.SearchTypeStructural {
+		return limits.DefaultMaxSearchResults
+	}
+	return limits.DefaultMaxSearchResultsStreaming
+}
 
 type Protocol int
 

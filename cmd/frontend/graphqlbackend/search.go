@@ -9,7 +9,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 	"github.com/sourcegraph/sourcegraph/schema"
@@ -66,7 +65,7 @@ func (r *schemaResolver) Search(ctx context.Context, args *SearchArgs) (SearchIm
 // searchResolver is a resolver for the GraphQL type `Search`
 type searchResolver struct {
 	client       client.SearchClient
-	SearchInputs *run.SearchInputs
+	SearchInputs *search.Inputs
 	db           database.DB
 }
 

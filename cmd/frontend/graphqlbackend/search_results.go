@@ -34,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
@@ -358,7 +357,7 @@ var (
 // function may only be called after a search result is performed, because it
 // relies on the invariant that query and pattern error checking has already
 // been performed.
-func LogSearchLatency(ctx context.Context, db database.DB, si *run.SearchInputs, durationMs int32) {
+func LogSearchLatency(ctx context.Context, db database.DB, si *search.Inputs, durationMs int32) {
 	tr, ctx := trace.New(ctx, "LogSearchLatency", "")
 	defer tr.Finish()
 	var types []string
@@ -453,7 +452,7 @@ func logPrometheusBatch(status, alertType, requestSource, requestName string, el
 	).Observe(elapsed.Seconds())
 }
 
-func logBatch(ctx context.Context, db database.DB, searchInputs *run.SearchInputs, srr *SearchResultsResolver, err error) {
+func logBatch(ctx context.Context, db database.DB, searchInputs *search.Inputs, srr *SearchResultsResolver, err error) {
 	var wg sync.WaitGroup
 	defer wg.Wait()
 	wg.Add(1)
