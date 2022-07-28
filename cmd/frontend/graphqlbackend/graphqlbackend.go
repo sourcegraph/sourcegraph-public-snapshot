@@ -61,6 +61,7 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 	ctx = context.WithValue(ctx, sgtrace.GraphQLQueryKey, queryString)
 
 	_, disableLog := os.LookupEnv("NO_GRAPHQL_LOG")
+	_, logAllRequests := os.LookupEnv("LOG_ALL_GRAPHQL_REQUESTS")
 
 	// Note: We don't care about the error here, we just extract the username if
 	// we get a non-nil user object.
@@ -84,8 +85,12 @@ func (t *prometheusTracer) TraceQuery(ctx context.Context, queryString string, o
 
 	if !disableLog {
 		lvl("serving GraphQL request", "name", requestName, "userID", currentUserID, "source", requestSource)
-		if requestName == "unknown" {
-			log.Printf(`logging complete query for unnamed GraphQL request above name=%s userID=%d source=%s:
+		if requestName == "unknown" || logAllRequests {
+			reason := ""
+			if requestName == "unknown" {
+				reason = "for unnamed GraphQL request above "
+			}
+			log.Printf(`logging complete query %sname=%s userID=%d source=%s:
 QUERY
 -----
 %s
@@ -94,7 +99,7 @@ VARIABLES
 ---------
 %v
 
-`, requestName, currentUserID, requestSource, queryString, variables)
+`, reason, requestName, currentUserID, requestSource, queryString, variables)
 		}
 	}
 
@@ -357,6 +362,7 @@ func NewSchema(
 	orgRepositoryResolver OrgRepositoryResolver,
 	notebooks NotebooksResolver,
 	compute ComputeResolver,
+	dependencies DependenciesResolver,
 ) (*graphql.Schema, error) {
 	resolver := newSchemaResolver(db)
 	schemas := []string{mainSchema}
@@ -452,6 +458,16 @@ func NewSchema(
 		schemas = append(schemas, computeSchema)
 	}
 
+	if dependencies != nil {
+		EnterpriseResolvers.dependenciesResolver = dependencies
+		resolver.DependenciesResolver = dependencies
+		schemas = append(schemas, dependenciesSchema)
+		// Register NodeByID handlers.
+		for kind, res := range dependencies.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
+	}
+
 	return graphql.ParseSchema(
 		strings.Join(schemas, "\n"),
 		resolver,
@@ -484,6 +500,7 @@ type schemaResolver struct {
 	SearchContextsResolver
 	OrgRepositoryResolver
 	NotebooksResolver
+	DependenciesResolver
 }
 
 // newSchemaResolver will return a new, safely instantiated schemaResolver with some
@@ -541,6 +558,9 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorByID(ctx, db, id, r)
 		},
+		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return externalServiceSyncJobByID(ctx, db, id)
+		},
 	}
 	return r
 }
@@ -559,6 +579,7 @@ var EnterpriseResolvers = struct {
 	searchContextsResolver SearchContextsResolver
 	orgRepositoryResolver  OrgRepositoryResolver
 	notebooksResolver      NotebooksResolver
+	dependenciesResolver   DependenciesResolver
 }{}
 
 // DEPRECATED

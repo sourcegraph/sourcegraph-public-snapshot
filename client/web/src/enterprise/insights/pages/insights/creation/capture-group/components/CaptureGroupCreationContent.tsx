@@ -1,4 +1,4 @@
-import { FC, useCallback } from 'react'
+import { FC, ReactNode, useCallback } from 'react'
 
 import { noop } from 'lodash'
 
@@ -6,24 +6,21 @@ import {
     CreationUiLayout,
     CreationUIForm,
     CreationUIPreview,
-    useAsyncInsightTitleValidator,
     useField,
     FormChangeEvent,
     SubmissionErrors,
     useForm,
     createRequiredValidator,
+    insightStepValueValidator,
+    insightRepositoriesValidator,
+    insightRepositoriesAsyncValidator,
+    insightTitleValidator,
 } from '../../../../../components'
-import { Insight } from '../../../../../core'
 import { LineChartLivePreview } from '../../LineChartLivePreview'
-import {
-    repositoriesExistValidator,
-    repositoriesFieldValidator,
-    requiredStepValueField,
-} from '../../search-insight/components/search-insight-creation-content/validators'
 import { CaptureGroupFormFields } from '../types'
 import { searchQueryValidator } from '../utils/search-query-validator'
 
-import { CaptureGroupCreationForm } from './CaptureGoupCreationForm'
+import { CaptureGroupCreationForm, RenderPropertyInputs } from './CaptureGoupCreationForm'
 
 const INITIAL_VALUES: CaptureGroupFormFields = {
     repositories: '',
@@ -35,22 +32,20 @@ const INITIAL_VALUES: CaptureGroupFormFields = {
     dashboardReferenceCount: 0,
 }
 
-const titleRequiredValidator = createRequiredValidator('Title is a required field.')
 const queryRequiredValidator = createRequiredValidator('Query is a required field.')
 
 interface CaptureGroupCreationContentProps {
-    mode: 'creation' | 'edit'
+    touched: boolean
     initialValues?: Partial<CaptureGroupFormFields>
     className?: string
-    insight?: Insight
-
+    children: (inputs: RenderPropertyInputs) => ReactNode
     onSubmit: (values: CaptureGroupFormFields) => SubmissionErrors | Promise<SubmissionErrors> | void
     onChange?: (event: FormChangeEvent<CaptureGroupFormFields>) => void
     onCancel: () => void
 }
 
 export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> = props => {
-    const { mode, className, initialValues = {}, onSubmit, onChange = noop, onCancel, insight } = props
+    const { touched, className, initialValues = {}, children, onSubmit, onChange = noop } = props
 
     // Search query validators
     const validateChecks = useCallback((value: string | undefined) => {
@@ -70,20 +65,15 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
 
     const form = useForm<CaptureGroupFormFields>({
         initialValues: { ...INITIAL_VALUES, ...initialValues },
-        touched: mode === 'edit',
+        touched,
         onSubmit,
         onChange,
-    })
-
-    const asyncTitleValidator = useAsyncInsightTitleValidator({
-        mode,
-        initialTitle: form.formAPI.initialValues.title,
     })
 
     const title = useField({
         name: 'title',
         formApi: form.formAPI,
-        validators: { sync: titleRequiredValidator, async: asyncTitleValidator },
+        validators: { sync: insightTitleValidator },
     })
 
     const allReposMode = useField({
@@ -93,8 +83,6 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
             // Reset form values in case if All repos mode was activated
             if (checked) {
                 repositories.input.onChange('')
-                step.input.onChange('months')
-                stepValue.input.onChange('1')
             }
         },
     })
@@ -105,9 +93,9 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
         name: 'repositories',
         formApi: form.formAPI,
         validators: {
-            // Turn off any validations for the repositories field in we are in all repos mode
-            sync: !isAllReposMode ? repositoriesFieldValidator : undefined,
-            async: !isAllReposMode ? repositoriesExistValidator : undefined,
+            // Turn off any validations for the repositories' field in we are in all repos mode
+            sync: !isAllReposMode ? insightRepositoriesValidator : undefined,
+            async: !isAllReposMode ? insightRepositoriesAsyncValidator : undefined,
         },
         disabled: isAllReposMode,
     })
@@ -126,9 +114,7 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
     const stepValue = useField({
         name: 'stepValue',
         formApi: form.formAPI,
-        validators: {
-            sync: requiredStepValueField,
-        },
+        validators: { sync: insightStepValueValidator },
     })
 
     const handleFormReset = (): void => {
@@ -156,7 +142,6 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
         <CreationUiLayout className={className}>
             <CreationUIForm
                 as={CaptureGroupCreationForm}
-                mode={mode}
                 form={form}
                 title={title}
                 repositories={repositories}
@@ -166,10 +151,10 @@ export const CaptureGroupCreationContent: FC<CaptureGroupCreationContentProps> =
                 isFormClearActive={hasFilledValue}
                 allReposMode={allReposMode}
                 dashboardReferenceCount={initialValues.dashboardReferenceCount}
-                insight={insight}
-                onCancel={onCancel}
                 onFormReset={handleFormReset}
-            />
+            >
+                {children}
+            </CreationUIForm>
 
             <CreationUIPreview
                 as={LineChartLivePreview}

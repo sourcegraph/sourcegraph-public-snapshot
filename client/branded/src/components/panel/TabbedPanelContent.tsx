@@ -25,7 +25,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon } from '@sourcegraph/wildcard'
+import { Button, useObservable, Tab, TabList, TabPanel, TabPanels, Tabs, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { registerPanelToolbarContributions } from './views/contributions'
 import { EmptyPanelView } from './views/EmptyPanelView'
@@ -60,7 +60,7 @@ export interface PanelViewWithComponent extends PanelViewData {
     /**
      * The React element to render in the panel view.
      */
-    reactElement?: React.ReactFragment
+    reactElement?: React.ReactNode
 
     // Should the content of the panel be put inside a wrapper container with padding or not.
     noWrapper?: boolean
@@ -75,7 +75,7 @@ export interface PanelViewWithComponent extends PanelViewData {
 interface TabbedPanelItem {
     id: string
 
-    label: React.ReactFragment
+    label: React.ReactNode
     /**
      * Controls the relative order of panel items. The items are laid out from highest priority (at the beginning)
      * to lowest priority (at the end). The default is 0.
@@ -325,16 +325,16 @@ export const TabbedPanelContent = React.memo<TabbedPanelContentProps>(props => {
                                 />
                             </>
                         )}
-                        <Button
-                            onClick={handlePanelClose}
-                            variant="icon"
-                            className={classNames('ml-2', styles.dismissButton)}
-                            title="Close panel"
-                            data-tooltip="Close panel"
-                            data-placement="left"
-                        >
-                            <Icon aria-hidden={true} svgPath={mdiClose} />
-                        </Button>
+                        <Tooltip content="Close panel" placement="left">
+                            <Button
+                                onClick={handlePanelClose}
+                                variant="icon"
+                                className={classNames('ml-2', styles.dismissButton)}
+                                title="Close panel"
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiClose} />
+                            </Button>
+                        </Tooltip>
                     </div>
                 }
             >

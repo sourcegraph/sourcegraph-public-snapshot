@@ -1,9 +1,11 @@
-import InformationOutlineIcon from 'mdi-react/InformationOutlineIcon'
+import { mdiInformationOutline } from '@mdi/js'
 
 import { formatSearchParameters } from '@sourcegraph/common'
 import { SyntaxHighlightedSearchQuery } from '@sourcegraph/search-ui'
 import { AggregateStreamingSearchResults } from '@sourcegraph/shared/src/search/stream'
 import { Link, H3, createLinkUrl, Tooltip, Icon } from '@sourcegraph/wildcard'
+
+import { SearchPatternType } from '../../graphql-operations'
 
 import styles from './QuerySuggestion.module.scss'
 
@@ -15,15 +17,14 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
     alert?.kind && alert.kind !== 'lucky-search-queries' ? null : (
         <div className={styles.root}>
             <H3>
-                Also showing results for:
-                <Tooltip content="We returned all the results for your query. We also added results you might be interested in for similar queries. Below are similar queries we ran.">
-                    <Icon
-                        size="sm"
-                        className="ml-1"
-                        as={InformationOutlineIcon}
-                        tabIndex={0}
-                        aria-label="More information"
-                    />
+                {alert?.title || 'Also showing additional results'}
+                <Tooltip
+                    content={
+                        alert?.description ||
+                        'We returned all the results for your query. We also added results for similar queries that might interest you.'
+                    }
+                >
+                    <Icon className="ml-1" tabIndex={0} aria-label="More information" svgPath={mdiInformationOutline} />
                 </Tooltip>
             </H3>
             <ul className={styles.container}>
@@ -36,7 +37,10 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
                             })}
                         >
                             <span className={styles.suggestion}>
-                                <SyntaxHighlightedSearchQuery query={entry.query} />
+                                <SyntaxHighlightedSearchQuery
+                                    query={entry.query}
+                                    searchPatternType={SearchPatternType.standard}
+                                />
                             </span>
                             <i>{`— ${entry.description}`}</i>
                         </Link>
@@ -45,3 +49,28 @@ export const LuckySearch: React.FunctionComponent<React.PropsWithChildren<LuckyS
             </ul>
         </div>
     )
+
+export const luckySearchEvent = (alertTitle: string, descriptions: string[]): string[] => {
+    const rules = descriptions.map(entry => {
+        if (entry.match(/patterns as regular expressions/)) {
+            return 'Regexp'
+        }
+        if (entry.match(/unquote patterns/)) {
+            return 'Unquote'
+        }
+        if (entry.match(/AND patterns together/)) {
+            return 'And'
+        }
+        return 'Other'
+    })
+
+    const prefix = alertTitle.match(/No results for original query/)
+        ? 'SearchResultsAutoPure'
+        : 'SearchResultsAutoAdded'
+
+    const events = []
+    for (const rule of rules) {
+        events.push(`${prefix}${rule}`)
+    }
+    return events
+}

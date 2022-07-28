@@ -422,6 +422,7 @@ func fromSymbolMatch(fm *result.FileMatch, repoCache map[api.RepoID]*types.Searc
 			Name:          sym.Symbol.Name,
 			ContainerName: sym.Symbol.Parent,
 			Kind:          kindString,
+			Line:          int32(sym.Symbol.Line),
 		})
 	}
 
@@ -479,17 +480,18 @@ func fromCommit(commit *result.CommitMatch, repoCache map[api.RepoID]*types.Sear
 	}
 
 	commitEvent := &streamhttp.EventCommitMatch{
-		Type:       streamhttp.CommitMatchType,
-		Label:      commit.Label(),
-		URL:        commit.URL().String(),
-		Detail:     commit.Detail(),
-		Repository: string(commit.Repo.Name),
-		OID:        string(commit.Commit.ID),
-		Message:    string(commit.Commit.Message),
-		AuthorName: commit.Commit.Author.Name,
-		AuthorDate: commit.Commit.Author.Date,
-		Content:    hls.Value,
-		Ranges:     ranges,
+		Type:         streamhttp.CommitMatchType,
+		Label:        commit.Label(),
+		URL:          commit.URL().String(),
+		Detail:       commit.Detail(),
+		Repository:   string(commit.Repo.Name),
+		RepositoryID: int32(commit.Repo.ID),
+		OID:          string(commit.Commit.ID),
+		Message:      string(commit.Commit.Message),
+		AuthorName:   commit.Commit.Author.Name,
+		AuthorDate:   commit.Commit.Author.Date,
+		Content:      hls.Value,
+		Ranges:       ranges,
 	}
 
 	if r, ok := repoCache[commit.Repo.ID]; ok {

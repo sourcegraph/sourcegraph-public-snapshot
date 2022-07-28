@@ -2,7 +2,7 @@ import { FunctionComponent, useCallback, useEffect, useMemo, useState } from 're
 
 import { useApolloClient } from '@apollo/client'
 import classNames from 'classnames'
-import { RouteComponentProps } from 'react-router'
+import { RouteComponentProps, useLocation } from 'react-router'
 import { of } from 'rxjs'
 
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -102,6 +102,7 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
     ...props
 }) => {
     useEffect(() => telemetryService.logViewEvent('CodeIntelUploads'), [telemetryService])
+    const location = useLocation<{ message: string; modal: string }>()
 
     const apolloClient = useApolloClient()
     const queryLsifUploads = useCallback(
@@ -124,21 +125,21 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
 
     const [deleteStatus, setDeleteStatus] = useState({ isDeleting: false, message: '', state: '' })
     useEffect(() => {
-        if (history.location.state) {
+        if (location.state) {
             setDeleteStatus({
                 isDeleting: true,
-                message: history.location.state.message,
-                state: history.location.state.modal,
+                message: location.state.message,
+                state: location.state.modal,
             })
         }
-    }, [history.location.state])
+    }, [location.state])
 
     return (
         <div className="code-intel-uploads">
-            <PageTitle title="Precise code intelligence uploads" />
+            <PageTitle title="Code graph data uploads" />
             <PageHeader
                 headingElement="h2"
-                path={[{ text: 'Precise code intelligence uploads' }]}
+                path={[{ text: 'Code graph data uploads' }]}
                 description={`LSIF indexes uploaded to Sourcegraph from CI or from auto-indexing ${
                     repo ? 'for this repository' : 'over all repositories'
                 }.`}

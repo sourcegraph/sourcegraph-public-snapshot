@@ -120,8 +120,8 @@ export const SEARCH_RESULT: AggregateStreamingSearchResults = {
         skipped: [],
     },
     filters: [
-        { value: 'file:\\.yml$', label: 'file:\\.yml$', count: 1, limitHit: false, kind: 'file' },
-        { value: 'case:yes', label: 'case:yes', count: 0, limitHit: false, kind: 'case' },
+        { value: 'file:\\.yml$', label: 'YAML', count: 1, limitHit: false, kind: 'file' },
+        { value: 'case:yes', label: 'Make search case sensitive', count: 0, limitHit: false, kind: 'utility' },
         {
             value: 'repo:^github\\.com/golang/oauth2$',
             label: 'github.com/golang/oauth2',

@@ -5,7 +5,7 @@ import { useMergeRefs } from 'use-callback-ref'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { useSearchParameters } from '@sourcegraph/wildcard'
 
-import { Insight, isBackendInsight } from '../../../core'
+import { Insight, isBackendInsight, isComputeInsight } from '../../../core'
 
 import { BackendInsightView } from './backend-insight/BackendInsight'
 import { BuiltInInsight } from './built-in-insight/BuiltInInsight'
@@ -44,6 +44,11 @@ export const SmartInsight = forwardRef<HTMLElement, SmartInsightProps>((props, r
                 innerRef={mergedReference}
             />
         )
+    }
+
+    if (isComputeInsight(insight)) {
+        // Compute-powered insight card isn't implemented yet
+        return null
     }
 
     // Search based extension and lang stats insight are handled by built-in fetchers

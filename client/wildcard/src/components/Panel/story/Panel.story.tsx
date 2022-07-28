@@ -105,6 +105,7 @@ export const Simple: Story = () => {
                 defaultSize={200}
                 storageKey={`size-cache-${position}`}
                 className={styles.panel}
+                ariaLabel="Storybook panel"
             >
                 <PanelBodyContent position={position}>
                     <b>{position}</b> panel content
@@ -114,14 +115,16 @@ export const Simple: Story = () => {
     )
 }
 
-export const WithChildren: Story = props => {
+// props must be undefined somewhere, and Storybook docs addon causes Storybook to crash.
+// Setting a default parameter is a workaround to this issue
+export const WithChildren: Story = (props = {}) => {
     const [tabIndex, setTabIndex] = React.useState(0)
     const activeTab = panels[tabIndex]
 
     const closePanel = () => setTabIndex(-1)
 
     return (
-        <Panel {...props}>
+        <Panel {...props} ariaLabel="Storybook panel">
             <Tabs index={tabIndex} size="small">
                 <div className={classNames('tablist-wrapper d-flex justify-content-between sticky-top')}>
                     <TabList>

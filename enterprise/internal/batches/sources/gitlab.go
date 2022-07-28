@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
@@ -516,4 +517,8 @@ func (s *GitLabSource) getFork(ctx context.Context, targetRepo *types.Repo, name
 	remoteRepo.Metadata = fork
 
 	return &remoteRepo, nil
+}
+
+func (*GitLabSource) IsPushResponseArchived(s string) bool {
+	return strings.Contains(s, "ERROR: You are not allowed to push code to this project")
 }

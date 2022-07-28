@@ -3,7 +3,7 @@
  * depended on by other modules is not included here.
  */
 export interface Config {
-    browser: 'firefox' | 'chrome'
+    browser: 'chrome'
     sudoToken: string
     sudoUsername: string
     gitHubClientID: string
@@ -69,8 +69,8 @@ const configFields: ConfigFields = {
         description: 'The browser to use.',
         defaultValue: 'chrome',
         parser: (value: string) => {
-            if (!['firefox', 'chrome'].includes(value)) {
-                throw new Error('BROWSER must be "chrome" or "firefox"')
+            if (value !== 'chrome') {
+                throw new Error('BROWSER must be "chrome"')
             }
             return value
         },

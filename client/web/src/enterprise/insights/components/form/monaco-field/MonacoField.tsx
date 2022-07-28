@@ -84,7 +84,7 @@ export const MonacoField = forwardRef<HTMLInputElement, MonacoFieldProps>((props
     useImperativeHandle(reference, () => null)
 
     const { enhancedThemePreference } = useTheme()
-    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'monaco')
+    const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
     const monacoOptions = useMemo(() => ({ ...MONACO_OPTIONS, readOnly: disabled }), [disabled])
 
     return (

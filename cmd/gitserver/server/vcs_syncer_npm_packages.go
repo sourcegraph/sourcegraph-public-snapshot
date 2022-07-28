@@ -7,8 +7,10 @@ import (
 	"io/fs"
 	"os"
 	"path"
+	"strings"
 
 	"github.com/sourcegraph/log"
+	"github.com/sourcegraph/sourcegraph/internal/api"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
@@ -25,7 +27,7 @@ func NewNpmPackagesSyncer(
 	svc *dependencies.Service,
 	client npm.Client,
 ) VCSSyncer {
-	placeholder, err := reposource.ParseNpmPackageVersion("@sourcegraph/placeholder@1.0.0")
+	placeholder, err := reposource.ParseNpmVersionedPackage("@sourcegraph/placeholder@1.0.0")
 	if err != nil {
 		panic(fmt.Sprintf("expected placeholder package to parse but got %v", err))
 	}
@@ -46,35 +48,62 @@ type npmPackagesSyncer struct {
 	client npm.Client
 }
 
-func (npmPackagesSyncer) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseNpmPackageVersion(dep)
+var _ packagesSource = &npmPackagesSyncer{}
+var _ packagesDownloadSource = &npmPackagesSyncer{}
+
+func (npmPackagesSyncer) ParseVersionedPackageFromNameAndVersion(name reposource.PackageName, version string) (reposource.VersionedPackage, error) {
+	return reposource.ParseNpmVersionedPackage(string(name) + "@" + version)
 }
 
-func (npmPackagesSyncer) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (npmPackagesSyncer) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseNpmVersionedPackage(dep)
+}
+
+func (s *npmPackagesSyncer) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return s.ParsePackageFromRepoName(api.RepoName("npm/" + strings.TrimPrefix(string(name), "@")))
+}
+func (npmPackagesSyncer) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	pkg, err := reposource.ParseNpmPackageFromRepoURL(repoName)
 	if err != nil {
 		return nil, err
 	}
-	return &reposource.NpmPackageVersion{NpmPackageName: pkg}, nil
+	return &reposource.NpmVersionedPackage{NpmPackageName: pkg}, nil
 }
 
-func (s *npmPackagesSyncer) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	dep, err := reposource.ParseNpmPackageVersion(name + "@" + version)
+func (s npmPackagesSyncer) GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error) {
+	dep, err := reposource.ParseNpmVersionedPackage(string(name) + "@")
 	if err != nil {
 		return nil, err
 	}
 
-	info, err := s.client.GetDependencyInfo(ctx, dep)
+	err = s.updateTarballURL(ctx, dep)
 	if err != nil {
 		return nil, err
 	}
 
-	dep.TarballURL = info.Dist.TarballURL
 	return dep, nil
 }
 
-func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.PackageVersion) error {
-	tgz, err := npm.FetchSources(ctx, s.client, dep.(*reposource.NpmPackageVersion))
+// updateTarballURL sends a GET request to find the URL to download the tarball of this package, and
+// sets the `NpmVersionedPackage.TarballURL` field accordingly.
+func (s *npmPackagesSyncer) updateTarballURL(ctx context.Context, dep *reposource.NpmVersionedPackage) error {
+	f, err := s.client.GetDependencyInfo(ctx, dep)
+	if err != nil {
+		return err
+	}
+	dep.TarballURL = f.Dist.TarballURL
+	return nil
+}
+
+func (s *npmPackagesSyncer) Download(ctx context.Context, dir string, dep reposource.VersionedPackage) error {
+	npmDep := dep.(*reposource.NpmVersionedPackage)
+	if npmDep.TarballURL == "" {
+		err := s.updateTarballURL(ctx, npmDep)
+		if err != nil {
+			return err
+		}
+	}
+	tgz, err := npm.FetchSources(ctx, s.client, npmDep)
 	if err != nil {
 		return errors.Wrap(err, "fetch tarball")
 	}

@@ -3,6 +3,7 @@ package repos
 import (
 	"context"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
 	"github.com/sourcegraph/sourcegraph/internal/conf/reposource"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/jvmpackages/coursier"
@@ -41,8 +42,8 @@ type jvmPackagesSource struct {
 
 var _ packagesSource = &jvmPackagesSource{}
 
-func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.PackageVersion, error) {
-	mavenDependency, err := reposource.ParseMavenPackageVersion(name + ":" + version)
+func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (reposource.VersionedPackage, error) {
+	mavenDependency, err := reposource.ParseMavenVersionedPackage(name + ":" + version)
 	if err != nil {
 		return nil, err
 	}
@@ -54,10 +55,14 @@ func (s *jvmPackagesSource) Get(ctx context.Context, name, version string) (repo
 	return mavenDependency, nil
 }
 
-func (jvmPackagesSource) ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error) {
-	return reposource.ParseMavenPackageVersion(dep)
+func (jvmPackagesSource) ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error) {
+	return reposource.ParseMavenVersionedPackage(dep)
 }
 
-func (jvmPackagesSource) ParsePackageFromRepoName(repoName string) (reposource.Package, error) {
+func (jvmPackagesSource) ParsePackageFromName(name reposource.PackageName) (reposource.Package, error) {
+	return reposource.ParseMavenPackageFromName(name)
+}
+
+func (jvmPackagesSource) ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error) {
 	return reposource.ParseMavenPackageFromRepoName(repoName)
 }

@@ -3,7 +3,7 @@ import React, { MouseEvent, KeyboardEvent, useCallback, useMemo } from 'react'
 import classNames from 'classnames'
 import * as H from 'history'
 import { useHistory } from 'react-router'
-import { Observable } from 'rxjs'
+import { Observable, of } from 'rxjs'
 import { map } from 'rxjs/operators'
 
 import { HoverMerged } from '@sourcegraph/client-api'
@@ -21,7 +21,9 @@ import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
 import { IHighlightLineRange } from '@sourcegraph/shared/src/schema'
 import { ContentMatch, SymbolMatch, PathMatch, getFileMatchUrl } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { SymbolIcon } from '@sourcegraph/shared/src/symbols/SymbolIcon'
+import { SymbolTag } from '@sourcegraph/shared/src/symbols/SymbolTag'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { codeCopiedEvent } from '@sourcegraph/shared/src/tracking/event-log-creators'
 import { useCodeIntelViewerUpdates } from '@sourcegraph/shared/src/util/useCodeIntelViewerUpdates'
@@ -38,8 +40,6 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     grouped: MatchGroup[]
     /* Clicking on a match opens the link in a new tab */
     openInNewTab?: boolean
-    /* Called when the first result has fully loaded. */
-    onFirstResultLoad?: () => void
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
@@ -148,6 +148,7 @@ function navigateToFileOnMiddleMouseButtonClick(event: MouseEvent<HTMLElement>):
 }
 
 export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<FileMatchProps>> = props => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
     // If optimizeHighlighting is enabled, compile a list of the highlighted file ranges we want to
     // fetch (instead of the entire file.)
     const optimizeHighlighting =
@@ -156,17 +157,10 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const {
-        result,
-        grouped,
-        fetchHighlightedFileLineRanges,
-        telemetryService,
-        onFirstResultLoad,
-        extensionsController,
-    } = props
+    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
 
-    const fetchHighlightedFileRangeLines = React.useCallback(
-        (isFirst, startLine, endLine) => {
+    const fetchHighlightedFileMatchLineRanges = React.useCallback(
+        (startLine: number, endLine: number) => {
             const startTime = Date.now()
             return fetchHighlightedFileLineRanges(
                 {
@@ -186,13 +180,11 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 false
             ).pipe(
                 map(lines => {
-                    if (isFirst && onFirstResultLoad) {
-                        onFirstResultLoad()
-                    }
+                    const endTime = Date.now()
                     telemetryService.log(
                         'search.latencies.frontend.code-load',
-                        { durationMs: Date.now() - startTime },
-                        { durationMs: Date.now() - startTime }
+                        { durationMs: endTime - startTime },
+                        { durationMs: endTime - startTime }
                     )
                     return optimizeHighlighting
                         ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
@@ -200,7 +192,51 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 })
             )
         },
-        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService, onFirstResultLoad]
+        [result, fetchHighlightedFileLineRanges, grouped, optimizeHighlighting, telemetryService]
+    )
+
+    const fetchHighlightedSymbolMatchLineRanges = React.useCallback(
+        (startLine: number, endLine: number) => {
+            if (result.type !== 'symbol') {
+                return of([])
+            }
+
+            const startTime = Date.now()
+            return fetchHighlightedFileLineRanges(
+                {
+                    repoName: result.repository,
+                    commitID: result.commit || '',
+                    filePath: result.path,
+                    disableTimeout: false,
+                    ranges: optimizeHighlighting
+                        ? result.symbols.map(
+                              (symbol): IHighlightLineRange => ({
+                                  startLine: symbol.line - 1,
+                                  endLine: symbol.line,
+                              })
+                          )
+                        : [{ startLine: 0, endLine: 2147483647 }], // entire file,
+                },
+                false
+            ).pipe(
+                map(lines => {
+                    const endTime = Date.now()
+                    telemetryService.log(
+                        'search.latencies.frontend.code-load',
+                        { durationMs: endTime - startTime },
+                        { durationMs: endTime - startTime }
+                    )
+                    return optimizeHighlighting
+                        ? lines[
+                              result.symbols.findIndex(
+                                  symbol => symbol.line - 1 === startLine && symbol.line === endLine
+                              )
+                          ]
+                        : lines[0].slice(startLine, endLine)
+                })
+            )
+        },
+        [result, fetchHighlightedFileLineRanges, optimizeHighlighting, telemetryService]
     )
 
     const createCodeExcerptLink = (group: MatchGroup): string => {
@@ -273,7 +309,13 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
     const openInNewTabProps = props.openInNewTab ? { target: '_blank', rel: 'noopener noreferrer' } : undefined
 
     return (
-        <div className={styles.fileMatchChildren} data-testid="file-match-children">
+        <div
+            className={classNames(
+                styles.fileMatchChildren,
+                coreWorkflowImprovementsEnabled && result.type === 'symbol' && styles.symbols
+            )}
+            data-testid="file-match-children"
+        >
             {result.repoLastFetched && <LastSyncedIcon lastSyncedTime={result.repoLastFetched} />}
             {/* Path */}
             {result.type === 'path' && (
@@ -283,7 +325,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
             )}
 
             {/* Symbols */}
-            {((result.type === 'symbol' && result.symbols) || []).map(symbol => (
+            {((!coreWorkflowImprovementsEnabled && result.type === 'symbol' && result.symbols) || []).map(symbol => (
                 <Link
                     to={symbol.url}
                     className={classNames('test-file-match-children-item', styles.item)}
@@ -299,8 +341,41 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                 </Link>
             ))}
 
+            {((coreWorkflowImprovementsEnabled && result.type === 'symbol' && result.symbols) || []).map(symbol => (
+                <div
+                    key={`symbol:${symbol.name}${String(symbol.containerName)}${symbol.url}`}
+                    className={styles.symbol}
+                >
+                    <div className="mr-2 flex-shrink-0">
+                        <SymbolTag kind={symbol.kind} />
+                    </div>
+                    <div
+                        className={styles.symbolCodeExcerpt}
+                        data-href={symbol.url}
+                        onClick={navigateToFile}
+                        onMouseUp={navigateToFileOnMiddleMouseButtonClick}
+                        onKeyDown={navigateToFile}
+                        role="link"
+                        tabIndex={0}
+                    >
+                        <CodeExcerpt
+                            repoName={result.repository}
+                            commitID={result.commit || ''}
+                            filePath={result.path}
+                            startLine={symbol.line - 1}
+                            endLine={symbol.line}
+                            fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
+                            viewerUpdates={viewerUpdates}
+                            hoverifier={props.hoverifier}
+                            onCopy={logEventOnCopy}
+                            highlightRanges={[]}
+                        />
+                    </div>
+                </div>
+            ))}
+
             {/* Line matches */}
-            {grouped && (
+            {grouped.length > 0 && (
                 <div>
                     {grouped.map((group, index) => (
                         <div
@@ -330,8 +405,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     startLine={group.startLine}
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
-                                    fetchHighlightedFileRangeLines={fetchHighlightedFileRangeLines}
-                                    isFirst={index === 0}
+                                    fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}
                                     hoverifier={props.hoverifier}

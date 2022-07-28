@@ -191,7 +191,12 @@ func checkSourcegraphDatabase(ctx context.Context, out *std.Output, args CheckAr
 	// This check runs only in the `sourcegraph/sourcegraph` repository, so
 	// we try to parse the globalConf and use its `Env` to configure the
 	// Postgres connection.
-	config, _ := sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
+	var config *sgconf.Config
+	if args.DisableOverwrite {
+		config, _ = sgconf.GetWithoutOverwrites(args.ConfigFile)
+	} else {
+		config, _ = sgconf.Get(args.ConfigFile, args.ConfigOverwriteFile)
+	}
 	if config == nil {
 		return errors.New("failed to read sg.config.yaml. This step of `sg setup` needs to be run in the `sourcegraph` repository")
 	}
@@ -375,13 +380,6 @@ func checkRustVersion(ctx context.Context, out *std.Output, args CheckArgs) erro
 	}
 
 	return check.Version("cargo", parts[1], constraint)
-}
-
-// check1password defines the 1password dependency check which is uniform across platforms.
-func check1password() check.CheckFunc {
-	return check.Combine(
-		check.WrapErrMessage(check.InPath("op"), "The 1password CLI, 'op', is required"),
-		check.CommandOutputContains("op account list", "team-sourcegraph.1password.com"))
 }
 
 func forceASDFPluginAdd(ctx context.Context, plugin string, source string) error {

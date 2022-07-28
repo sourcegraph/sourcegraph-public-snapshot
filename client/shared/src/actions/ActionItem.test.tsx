@@ -185,7 +185,8 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         userEvent.click(screen.getByRole('button'))
 
-        await new Promise<void>(resolve => setTimeout(resolve))
+        // we should wait for the button to be enabled again after got errors. Otherwise it will be flaky
+        await waitFor(() => expect(screen.getByLabelText('d')).toBeEnabled())
 
         expect(asFragment()).toMatchSnapshot()
     })
@@ -211,7 +212,7 @@ describe('ActionItem', () => {
         // to result in the setState call.)
         userEvent.click(screen.getByRole('button'))
 
-        await new Promise<void>(resolve => setTimeout(resolve))
+        await waitFor(() => expect(screen.getByLabelText('Error: x')).toBeInTheDocument())
 
         expect(asFragment()).toMatchSnapshot()
     })

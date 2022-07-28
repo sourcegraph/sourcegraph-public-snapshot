@@ -4,8 +4,8 @@ img.terminal-screenshot {
 }
 </style>
 
-This guide is meant to provide instructions for how to enable precise code intelligence for any programming language.
-The general steps for enabling precise code intelligence are as follows:
+This guide is meant to provide instructions for how to enable precise code navigation for any programming language.
+The general steps for enabling precise code navigation are as follows:
 
 1. Install Sourcegraph CLI
 2. Install LSIF Indexer
@@ -23,7 +23,7 @@ $ chmod +x /usr/local/bin/src
 
 ### 2. Install LSIF indexer
 
-An LSIF indexer is a command line tool that performs code analysis of source code and outputs a file with metadata containing all the definitions, references, and hover documentation in a project in LSIF. The LSIF file is then uploaded to Sourcegraph to power code intelligence features.
+An LSIF indexer is a command line tool that performs code analysis of source code and outputs a file with metadata containing all the definitions, references, and hover documentation in a project in LSIF. The LSIF file is then uploaded to Sourcegraph to power code navigation features.
 
 Install the indexer for the required programming language of your repository by following the instructions in the indexer's README:
 
@@ -64,23 +64,23 @@ The `src-cli` upload command will try to infer the repository and git commit by 
 
 Successful output will appear similar to the following example.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/uploads/src-lsif-upload.gif" class="screenshot terminal-screenshot" alt="Uploading a precise code intelligence index via the Sourcegraph CLI">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/uploads/src-lsif-upload.gif" class="screenshot terminal-screenshot" alt="Uploading a code graph index via the Sourcegraph CLI">
 
 ## Automate code indexing
 
-Now that you have successfully enabled code intelligence for your repository, you can automate source code indexing to ensure precise code intelligence stays up to date with the most recent code changes in the repository. See our [continuous integration guide](adding_lsif_to_workflows.md) to setup automation.
+Now that you have successfully enabled code navigation for your repository, you can automate source code indexing to ensure precise code navigation stays up to date with the most recent code changes in the repository. See our [continuous integration guide](adding_lsif_to_workflows.md) to setup automation.
 
 ## Troubleshooting
 
 ### Testing
 
-> NOTE: Make sure you have configured your Sourcegraph instance and [enabled precise code intelligence](../explanations/precise_code_intelligence.md#enabling-lsif-on-your-sourcegraph-instance).
+> NOTE: Make sure you have configured your Sourcegraph instance and [enabled precise code navigation](../explanations/precise_code_intelligence.md#enabling-lsif-on-your-sourcegraph-instance).
 
 Once LSIF data has uploaded, open the Sourcegraph UI or your code host (i.e. GitHub) and navigate to any code file that was part of the repository that was analyzed by the LSIF indexer. Hover over a symbol, variable or function name in the file, you should now see rich LSIF metadata as the source for hover-tooltips, definitions, and references.
 
 ### Error Logs
 
-To view LSIF indexer processing failures go to **Repository settings > Code intelligence > Activity for this repository** in your Sourcegraph instance. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
+To view code graph indexer processing failures go to **Repository settings > Code Graph > Activity for this repository** in your Sourcegraph instance. Failures can occur if the LSIF data is invalid (e.g., malformed indexer output), or problems were encountered during processing (e.g., system-level bug, flaky connections, etc). Try again or [file an issue](https://github.com/sourcegraph/sourcegraph/issues/new) if the problem persists.
 
 ### Common Errors
 

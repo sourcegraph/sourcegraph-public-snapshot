@@ -1,11 +1,8 @@
 import * as React from 'react'
 
+import { mdiCog, mdiPlus } from '@mdi/js'
 import * as H from 'history'
 import { isEqual } from 'lodash'
-import AddIcon from 'mdi-react/AddIcon'
-import DeleteIcon from 'mdi-react/DeleteIcon'
-import RadioactiveIcon from 'mdi-react/RadioactiveIcon'
-import SettingsIcon from 'mdi-react/SettingsIcon'
 import { RouteComponentProps } from 'react-router'
 import { merge, of, Subject, Subscription } from 'rxjs'
 import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators'
@@ -13,7 +10,7 @@ import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
-import { Button, Link, Alert, Icon, H2, Text } from '@sourcegraph/wildcard'
+import { Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../auth'
 import { CopyableText } from '../components/CopyableText'
@@ -59,8 +56,8 @@ interface UserNodeState {
 }
 
 const nukeDetails = `
-- By deleting a user, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
-- By nuking a user, the user and ALL associated data is deleted forever (you CANNOT undo this). When deleting data at a user's request, nuking is used.
+- When deleting a user normally, the user and ALL associated data is marked as deleted in the DB and never served again. You could undo this by running DB commands manually.
+- By deleting a user forever, the user and ALL associated data will be permanently removed from the DB (you CANNOT undo this). When deleting data at a user's request, "Delete forever" is used.
 
 Beware this includes e.g. deleting extensions authored by the user, deleting ANY settings authored or updated by the user, etc.
 
@@ -134,15 +131,16 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                     <div>
                         {window.context.sourcegraphDotComMode && (
                             <>
-                                <Button
-                                    onClick={() => this.toggleOrgCreationTag(orgCreationLabel === 'Enable')}
-                                    disabled={this.state.loading}
-                                    data-tooltip={`${orgCreationLabel} user tag to allow user to create organizations`}
-                                    variant="secondary"
-                                    size="sm"
-                                >
-                                    {orgCreationLabel} org creation
-                                </Button>{' '}
+                                <Tooltip content={`${orgCreationLabel} user tag to allow user to create organizations`}>
+                                    <Button
+                                        onClick={() => this.toggleOrgCreationTag(orgCreationLabel === 'Enable')}
+                                        disabled={this.state.loading}
+                                        variant="secondary"
+                                        size="sm"
+                                    >
+                                        {orgCreationLabel} org creation
+                                    </Button>
+                                </Tooltip>{' '}
                             </>
                         )}
                         {!window.context.sourcegraphDotComMode && (
@@ -152,20 +150,21 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                     size="sm"
                                     as={Link}
                                 >
-                                    <Icon as={SettingsIcon} aria-hidden={true} /> Settings
+                                    <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
                                 </Button>
                             ) &&
                             ' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <Button
-                                onClick={this.invalidateSessions}
-                                disabled={this.state.loading}
-                                data-tooltip="Force the user to re-authenticate on their next request"
-                                variant="secondary"
-                                size="sm"
-                            >
-                                Force sign-out
-                            </Button>
+                            <Tooltip content="Force the user to re-authenticate on their next request">
+                                <Button
+                                    onClick={this.invalidateSessions}
+                                    disabled={this.state.loading}
+                                    variant="secondary"
+                                    size="sm"
+                                >
+                                    Force sign-out
+                                </Button>
+                            </Tooltip>
                         )}{' '}
                         {window.context.resetPasswordEnabled && (
                             <Button
@@ -199,15 +198,8 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 </Button>
                             ))}{' '}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
-                            <Button
-                                onClick={this.deleteUser}
-                                disabled={this.state.loading}
-                                data-tooltip="Delete user"
-                                variant="danger"
-                                size="sm"
-                                aria-label="Delete User"
-                            >
-                                <Icon as={DeleteIcon} aria-hidden={true} />
+                            <Button onClick={this.deleteUser} disabled={this.state.loading} variant="danger" size="sm">
+                                Delete
                             </Button>
                         )}
                         {this.props.node.id !== this.props.authenticatedUser.id && (
@@ -215,12 +207,10 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
                                 className="ml-1"
                                 onClick={this.nukeUser}
                                 disabled={this.state.loading}
-                                data-tooltip="Nuke user (click for more information)"
                                 variant="danger"
                                 size="sm"
-                                aria-label="Nuke user (click for more information)"
                             >
-                                <Icon as={RadioactiveIcon} aria-hidden={true} />
+                                Delete forever
                             </Button>
                         )}
                     </div>
@@ -333,7 +323,7 @@ class UserNode extends React.PureComponent<UserNodeProps, UserNodeState> {
     private doDeleteUser = (hard: boolean): void => {
         let message = `Delete the user ${this.props.node.username}?`
         if (hard) {
-            message = `Nuke the user ${this.props.node.username}?${nukeDetails}`
+            message = `Delete the user ${this.props.node.username} forever?${nukeDetails}`
         }
         if (!window.confirm(message)) {
             return
@@ -420,7 +410,7 @@ export class SiteAdminAllUsersPage extends React.Component<Props, State> {
                     <H2 className="mb-0">Users</H2>
                     <div>
                         <Button to="/site-admin/users/new" variant="primary" as={Link}>
-                            <Icon as={AddIcon} aria-hidden={true} /> Create user account
+                            <Icon aria-hidden={true} svgPath={mdiPlus} /> Create user account
                         </Button>
                     </div>
                 </div>

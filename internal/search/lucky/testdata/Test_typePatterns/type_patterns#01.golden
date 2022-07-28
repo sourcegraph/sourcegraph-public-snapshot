@@ -1,0 +1,4 @@
+{
+  "Input": "context:global code monitor commit",
+  "Query": "context:global type:commit code monitor"
+}

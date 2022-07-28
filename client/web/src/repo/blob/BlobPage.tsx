@@ -31,6 +31,8 @@ import { SearchStreamingProps } from '../../search'
 import { useNotepad, useExperimentalFeatures } from '../../stores'
 import { basename } from '../../util/path'
 import { toTreeURL } from '../../util/url'
+import { ToggleBlameAction } from '../actions/ToggleBlameAction'
+import { useBlameDecorations } from '../blame/useBlameDecorations'
 import { FilePathBreadcrumbs } from '../FilePathBreadcrumbs'
 import { HoverThresholdProps } from '../RepoContainer'
 import { RepoHeaderContributionsLifecycleProps } from '../RepoHeader'
@@ -42,6 +44,7 @@ import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
 import { fetchBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
+import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
 import { useBlobPanelViews } from './panel/BlobPanel'
 import { RenderedFile } from './RenderedFile'
@@ -79,6 +82,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     const { repoName, revision, commitID, filePath, isLightTheme, useBreadcrumb, mode, repoUrl } = props
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext ?? false)
+    const enableCodeMirror = useExperimentalFeatures(features => features.enableCodeMirrorFileView ?? false)
     const lineOrRange = useMemo(() => parseQueryAndHash(props.location.search, props.location.hash), [
         props.location.search,
         props.location.hash,
@@ -157,13 +161,20 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         }
 
                         // Replace html with lsif generated HTML, if available
-                        if (blob.highlight.lsif && blob.highlight.lsif !== '{}') {
-                            blob.highlight.html = renderLsifHtml(blob.highlight.lsif, blob.content)
+                        if (!enableCodeMirror && blob.highlight.lsif) {
+                            const html = renderLsifHtml(blob.highlight.lsif, blob.content)
+                            if (html) {
+                                blob.highlight.html = html
+                            }
                         }
 
-                        const blobInfo: BlobInfo & { richHTML: string; aborted: boolean } = {
+                        const blobInfo: BlobInfo & {
+                            richHTML: string
+                            aborted: boolean
+                        } = {
                             content: blob.content,
                             html: blob.highlight.html,
+                            lsif: blob.highlight.lsif,
                             repoName,
                             revision,
                             commitID,
@@ -177,7 +188,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     }),
                     catchError((error): [ErrorLike] => [asError(error)])
                 ),
-            [repoName, revision, commitID, filePath, mode]
+            [repoName, revision, commitID, filePath, mode, enableCodeMirror]
         )
     )
 
@@ -200,6 +211,8 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
     }
 
     useBlobPanelViews(props)
+
+    const blameDecorations = useBlameDecorations({ repoName, commitID, filePath })
 
     const isSearchNotebook =
         blobInfoOrError &&
@@ -272,6 +285,13 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     />
                 )}
             </RepoHeaderContributionPortal>
+            <RepoHeaderContributionPortal
+                position="right"
+                id="toggle-blame"
+                repoHeaderContributionsLifecycleProps={props.repoHeaderContributionsLifecycleProps}
+            >
+                {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
+            </RepoHeaderContributionPortal>
         </>
     )
 
@@ -316,6 +336,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         )
     }
 
+    const Component = enableCodeMirror ? CodeMirrorBlob : Blob
     return (
         <>
             {alwaysRender}
@@ -364,8 +385,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (
-                <Blob
-                    className={classNames('test-repo-blob', styles.blob, styles.border)}
+                <Component
+                    data-testid="repo-blob"
+                    className={classNames(styles.blob, styles.border)}
                     blobInfo={blobInfoOrError}
                     wrapCode={wrapCode}
                     platformContext={props.platformContext}
@@ -378,6 +400,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     location={props.location}
                     disableStatusBar={false}
                     disableDecorations={false}
+                    role="region"
+                    ariaLabel="File blob"
+                    blameDecorations={blameDecorations}
                 />
             )}
         </>

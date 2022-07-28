@@ -3,7 +3,6 @@ package store
 import (
 	"context"
 	"fmt"
-	"sort"
 	"strconv"
 	"testing"
 	"time"
@@ -602,7 +601,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 	t.Run("GetRewirerMappings", func(t *testing.T) {
 		// Create some test data
 		user := ct.CreateTestUser(t, s.DatabaseDB(), true)
-		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID)
+		batchSpec := ct.CreateBatchSpec(t, ctx, s, "get-rewirer-mappings", user.ID, 0)
 		var mappings = make(btypes.RewirerMappings, 3)
 		changesetSpecIDs := make([]int64, 0, cap(mappings))
 		for i := 0; i < cap(mappings); i++ {
@@ -803,7 +802,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			t.Fatal(err)
 		}
 
-		conflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID)
+		conflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
 		conflictingRef := "refs/heads/conflicting-head-ref"
 		for _, opts := range []ct.TestSpecOpts{
 			{ExternalID: "4321", Repo: repo.ID, BatchSpec: conflictingBatchSpec.ID},
@@ -829,7 +828,7 @@ func testStoreChangesetSpecs(t *testing.T, ctx context.Context, s *Store, clock 
 			}
 		}
 
-		nonConflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID)
+		nonConflictingBatchSpec := ct.CreateBatchSpec(t, ctx, s, "no-conflicts", user.ID, 0)
 		for _, opts := range []ct.TestSpecOpts{
 			{ExternalID: "1234", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
 			{HeadRef: "refs/heads/branch-1", Repo: repo.ID, BatchSpec: nonConflictingBatchSpec.ID},
@@ -864,7 +863,7 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Create old batch spec and batch change
-	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
+	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
 
 	// Create an archived changeset with a changeset spec
@@ -891,7 +890,7 @@ func testStoreGetRewirerMappingWithArchivedChangesets(t *testing.T, ctx context.
 	ct.CreateChangeset(t, ctx, s, opts)
 
 	// Get preview for new batch spec without any changeset specs
-	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
+	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
 	mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
 		BatchSpecID:   newBatchSpec.ID,
 		BatchChangeID: batchChange.ID,
@@ -922,8 +921,8 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need old and new batch specs.
-	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
-	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
+	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
+	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
 
 	// That's enough to create a batch change, so let's do that.
 	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
@@ -940,12 +939,14 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 			btypes.ChangesetStateRetrying:    {ReconcilerState: btypes.ReconcilerStateErrored},
 			btypes.ChangesetStateFailed:      {ReconcilerState: btypes.ReconcilerStateFailed},
 			btypes.ChangesetStateScheduled:   {ReconcilerState: btypes.ReconcilerStateScheduled},
-			btypes.ChangesetStateUnpublished: {PublicationState: btypes.ChangesetPublicationStateUnpublished},
-			btypes.ChangesetStateDraft:       {ExternalState: btypes.ChangesetExternalStateDraft},
-			btypes.ChangesetStateOpen:        {ExternalState: btypes.ChangesetExternalStateOpen},
-			btypes.ChangesetStateClosed:      {ExternalState: btypes.ChangesetExternalStateClosed},
-			btypes.ChangesetStateMerged:      {ExternalState: btypes.ChangesetExternalStateMerged},
-			btypes.ChangesetStateDeleted:     {ExternalState: btypes.ChangesetExternalStateDeleted},
+			btypes.ChangesetStateProcessing:  {ReconcilerState: btypes.ReconcilerStateQueued, PublicationState: btypes.ChangesetPublicationStateUnpublished},
+			btypes.ChangesetStateUnpublished: {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStateUnpublished},
+			btypes.ChangesetStateDraft:       {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateDraft},
+			btypes.ChangesetStateOpen:        {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateOpen},
+			btypes.ChangesetStateClosed:      {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateClosed},
+			btypes.ChangesetStateMerged:      {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateMerged},
+			btypes.ChangesetStateDeleted:     {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateDeleted},
+			btypes.ChangesetStateReadOnly:    {ReconcilerState: btypes.ReconcilerStateCompleted, PublicationState: btypes.ChangesetPublicationStatePublished, ExternalState: btypes.ChangesetExternalStateReadOnly},
 		}
 	)
 	for state, opts := range states {
@@ -998,42 +999,6 @@ func testStoreChangesetSpecsCurrentState(t *testing.T, ctx context.Context, s *S
 			}
 		})
 	}
-
-	// Finally, PROCESSING is special, and should match everything that isn't
-	// retrying, failed, scheduled, or completed.
-	t.Run(string(btypes.ChangesetStateProcessing), func(t *testing.T) {
-		want := []int64{}
-		for state, changeset := range changesets {
-			switch state {
-			case btypes.ChangesetStateRetrying:
-			case btypes.ChangesetStateFailed:
-			case btypes.ChangesetStateScheduled:
-			default:
-				want = append(want, changeset.ID)
-			}
-		}
-
-		state := btypes.ChangesetStateProcessing
-		mappings, err := s.GetRewirerMappings(ctx, GetRewirerMappingsOpts{
-			BatchSpecID:   newBatchSpec.ID,
-			BatchChangeID: batchChange.ID,
-			CurrentState:  &state,
-		})
-		if err != nil {
-			t.Errorf("unexpected error: %+v", err)
-		}
-
-		have := []int64{}
-		for _, mapping := range mappings {
-			have = append(have, mapping.ChangesetID)
-		}
-
-		sort.Slice(have, func(i, j int) bool { return have[i] < have[j] })
-		sort.Slice(want, func(i, j int) bool { return want[i] < want[j] })
-		if diff := cmp.Diff(have, want); diff != "" {
-			t.Errorf("unexpected changesets (-have +want):\n%s", diff)
-		}
-	})
 }
 
 func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.Context, s *Store, _ ct.Clock) {
@@ -1053,8 +1018,8 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need old and new batch specs.
-	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID)
-	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID)
+	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "old", user.ID, 0)
+	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "new", user.ID, 0)
 
 	// That's enough to create a batch change, so let's do that.
 	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
@@ -1103,6 +1068,8 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5678",
 		ExternalState:       btypes.ChangesetExternalStateOpen,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
 		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]any{
 			"Title": "foo",
@@ -1115,6 +1082,8 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5679",
 		ExternalState:       btypes.ChangesetExternalStateOpen,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
 		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]any{
 			"Title": "bar",
@@ -1127,6 +1096,8 @@ func testStoreChangesetSpecsCurrentStateAndTextSearch(t *testing.T, ctx context.
 		ExternalServiceType: repo.ExternalRepo.ServiceType,
 		ExternalID:          "5680",
 		ExternalState:       btypes.ChangesetExternalStateClosed,
+		ReconcilerState:     btypes.ReconcilerStateCompleted,
+		PublicationState:    btypes.ChangesetPublicationStatePublished,
 		OwnedByBatchChange:  batchChange.ID,
 		Metadata: map[string]any{
 			"Title": "foo",
@@ -1219,7 +1190,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 	user := ct.CreateTestUser(t, s.DatabaseDB(), false)
 
 	// Next, we need a batch spec.
-	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)
+	oldBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
 
 	// That's enough to create a batch change, so let's do that.
 	batchChange := ct.CreateBatchChange(t, ctx, s, "text", user.ID, oldBatchSpec.ID)
@@ -1300,7 +1271,7 @@ func testStoreChangesetSpecsTextSearch(t *testing.T, ctx context.Context, s *Sto
 		},
 	})
 	// Cool. Now let's set up a new batch spec.
-	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID)
+	newBatchSpec := ct.CreateBatchSpec(t, ctx, s, "text", user.ID, 0)
 
 	// And we need all new changeset specs to go into that spec.
 	newTrackedGitHub := ct.CreateChangesetSpec(t, ctx, s, ct.TestSpecOpts{

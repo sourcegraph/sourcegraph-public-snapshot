@@ -6,6 +6,12 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 ## Unreleased
 
+## 3.41 -> 3.42
+
+Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
+
 ## 3.40 -> 3.41
 
 - `caddy` is upgraded to version 2.5.1 and contains a breaking change from version 2.5.0. Incoming `X-Forwarded-*` headers will no longer be trusted automatically. In order to preserve existing product functionality, the Caddyfile was updated to trust all incoming `X-Forwarded-*` headers. [#828](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/828)
@@ -201,7 +207,7 @@ This release introduces a second database instance, `codeintel-db`. If you have 
 
 ### If you wish to keep existing LSIF data
 
-> Warning: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code intelligence.
+> Warning: **Do not upgrade out of the 3.21.x release branch** until you have seen the log message indicating the completion of the LSIF data migration, or verified that the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume is empty. Otherwise, you risk data loss for precise code navigation.
 
 If you had LSIF data uploaded prior to upgrading to 3.21.0, there is a background migration that moves all existing LSIF data into the `codeintel-db` upon upgrade. Once this process completes, the `/lsif-storage/dbs` directory on the precise-code-intel-bundle-manager volume should be empty, and the bundle manager should print the following log message:
 
@@ -261,9 +267,9 @@ No manual migration is required.
 
 Please upgrade to the [`v3.15.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.15.1/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
 
-### (Optional) Keeping LSIF data
+### (Optional) Keeping code graph data
 
-If your users have uploaded LSIF precise code intelligence data, you may keep it by running the following command after you have ran `docker-compose up` with the new v3.15.1 version:
+If your users have uploaded code graph data, you may keep it by running the following command after you have ran `docker-compose up` with the new v3.15.1 version:
 
 ```
 docker run --rm -it -v /var/lib/docker:/docker alpine:latest sh -c 'cp -R /docker/volumes/docker-compose_lsif-server/_data/* /docker/volumes/docker-compose_precise-code-intel-bundle-manager/_data/'

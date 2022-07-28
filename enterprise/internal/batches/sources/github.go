@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -322,4 +323,8 @@ func githubGetUserFork(ctx context.Context, targetRepo *types.Repo, client githu
 	remoteRepo.Metadata = fork
 
 	return &remoteRepo, nil
+}
+
+func (GithubSource) IsPushResponseArchived(s string) bool {
+	return strings.Contains(s, "This repository was archived so it is read-only.")
 }

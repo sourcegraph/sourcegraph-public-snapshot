@@ -13,10 +13,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/featureflag"
 	"github.com/sourcegraph/sourcegraph/internal/search"
+	codeownershipjob "github.com/sourcegraph/sourcegraph/internal/search/codeownership"
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
+	"github.com/sourcegraph/sourcegraph/internal/search/lucky"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
@@ -43,7 +45,10 @@ func NewPlanJob(inputs *run.SearchInputs, plan query.Plan) (job.Job, error) {
 	jobTree := NewOrJob(children...)
 
 	if inputs.PatternType == query.SearchTypeLucky {
-		jobTree = NewFeelingLuckySearchJob(jobTree, inputs, plan)
+		newJob := func(b query.Basic) (job.Job, error) {
+			return NewBasicJob(inputs, b)
+		}
+		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
 	}
 
 	return NewAlertJob(inputs, jobTree), nil
@@ -56,6 +61,22 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		children = append(children, j)
 	}
 
+	features := toFeatures(inputs.Features)
+
+	// Modify the input query if the user specified `file:contains.content()`
+	fileContainsPatterns := b.FileContainsContent()
+	originalQuery := b
+	if len(fileContainsPatterns) > 0 {
+		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
+		for _, pat := range fileContainsPatterns {
+			newNodes = append(newNodes, query.Pattern{Value: pat})
+		}
+		if b.Pattern != nil {
+			newNodes = append(newNodes, b.Pattern)
+		}
+		b.Pattern = query.Operator{Operands: newNodes, Kind: query.And}
+	}
+
 	{
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
@@ -64,7 +85,6 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		resultTypes := computeResultTypes(types, b, inputs.PatternType)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
-		features := toFeatures(inputs.Features)
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
 
@@ -95,7 +115,6 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				addJob(&repoPagerJob{
 					child:            &reposPartialJob{job},
 					repoOpts:         repoOptions,
-					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
 			}
@@ -119,7 +138,6 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 				addJob(&repoPagerJob{
 					child:            &reposPartialJob{job},
 					repoOpts:         repoOptions,
-					useIndex:         b.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(b.ToParseTree()),
 				})
 			}
@@ -130,7 +148,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
 			addJob(&commit.SearchJob{
-				Query:                commit.QueryToGitQuery(b, diff),
+				Query:                commit.QueryToGitQuery(originalQuery, diff),
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
@@ -156,6 +174,18 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 	}
 
 	basicJob := NewParallelJob(children...)
+
+	{ // Apply file:contains() post-filter
+		if len(fileContainsPatterns) > 0 {
+			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
+		}
+	}
+
+	{ // Apply code ownership post-search filter
+		if includeOwners, excludeOwners := b.FileHasOwner(); features.CodeOwnershipFilters == true && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
+			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
+		}
+	}
 
 	{ // Apply selectors
 		if v, _ := b.ToParseTree().StringValue(query.FieldSelect); v != "" {
@@ -209,19 +239,13 @@ func orderSearcherJob(j job.Job) job.Job {
 	// This job will be sequentially ordered after any Zoekt jobs. We assume
 	// at most one searcher job exists.
 	var pagedSearcherJob job.Job
-	collector := Mapper{
-		MapJob: func(current job.Job) job.Job {
-			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.Partial().(*searcher.TextSearchJob); ok {
-					pagedSearcherJob = pager
-					return &NoopJob{}
-				}
-			}
-			return current
-		},
-	}
-
-	newJob := collector.Map(j)
+	newJob := job.MapType(j, func(pager *repoPagerJob) job.Job {
+		if job.HasDescendent[*searcher.TextSearchJob](pager) {
+			pagedSearcherJob = pager
+			return &NoopJob{}
+		}
+		return pager
+	})
 
 	if pagedSearcherJob == nil {
 		// No searcher job, nothing to worry about.
@@ -230,24 +254,23 @@ func orderSearcherJob(j job.Job) job.Job {
 
 	// Map the tree to execute paged searcher jobs after any Zoekt jobs.
 	// We assume at most one of either two Zoekt search jobs may exist.
-	seenZoektRepoSearch, seenZoektGlobalSearch := false, false
-	orderer := Mapper{
-		MapJob: func(current job.Job) job.Job {
-			if pager, ok := current.(*repoPagerJob); ok {
-				if _, ok := pager.child.Partial().(*zoekt.RepoSubsetTextSearchJob); ok && !seenZoektRepoSearch {
-					seenZoektRepoSearch = true
-					return NewSequentialJob(false, current, pagedSearcherJob)
-				}
-			}
-			if _, ok := current.(*zoekt.GlobalTextSearchJob); ok && !seenZoektGlobalSearch {
-				seenZoektGlobalSearch = true
-				return NewSequentialJob(false, current, pagedSearcherJob)
-			}
-			return current
-		},
-	}
+	seenZoektRepoSearch := false
+	newJob = job.MapType(newJob, func(pager *repoPagerJob) job.Job {
+		if job.HasDescendent[*zoekt.RepoSubsetTextSearchJob](pager) {
+			seenZoektRepoSearch = true
+			return NewSequentialJob(false, pager, pagedSearcherJob)
+		}
+		return pager
+	})
 
-	newJob = orderer.Map(newJob)
+	seenZoektGlobalSearch := false
+	newJob = job.MapType(newJob, func(current *zoekt.GlobalTextSearchJob) job.Job {
+		if !seenZoektGlobalSearch {
+			seenZoektGlobalSearch = true
+			return NewSequentialJob(false, current, pagedSearcherJob)
+		}
+		return current
+	})
 
 	if !seenZoektRepoSearch && !seenZoektGlobalSearch {
 		// There were no Zoekt jobs, so no need to modify the tree. Return original.
@@ -273,7 +296,7 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 	features := toFeatures(searchInputs.Features)
 	repoOptions := toRepoOptions(f.ToBasic(), searchInputs.UserSettings)
 
-	repoUniverseSearch, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
+	_, skipRepoSubsetSearch, _ := jobMode(f.ToBasic(), resultTypes, searchInputs.PatternType, searchInputs.OnSourcegraphDotCom)
 
 	var allJobs []job.Job
 	addJob := func(job job.Job) {
@@ -301,7 +324,6 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 				addJob(&repoPagerJob{
 					child:            &reposPartialJob{searcherJob},
 					repoOpts:         repoOptions,
-					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
 			}
@@ -319,7 +341,6 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 				addJob(&repoPagerJob{
 					child:            &reposPartialJob{symbolSearchJob},
 					repoOpts:         repoOptions,
-					useIndex:         f.Index(),
 					containsRefGlobs: query.ContainsRefGlobs(f.ToBasic().ToParseTree()),
 				})
 			}
@@ -429,19 +450,8 @@ func NewFlatJob(searchInputs *run.SearchInputs, f query.Flat) (job.Job, error) {
 
 			if valid() {
 				if repoOptions, ok := addPatternAsRepoFilter(f.ToBasic().PatternString(), repoOptions); ok {
-					var mode search.GlobalSearchMode
-					if repoUniverseSearch {
-						mode = search.ZoektGlobalSearch
-					}
-					if skipRepoSubsetSearch {
-						mode = search.SkipUnindexed
-					}
 					addJob(&run.RepoSearchJob{
-						RepoOpts:                     repoOptions,
-						Features:                     features,
-						FilePatternsReposMustInclude: patternInfo.FilePatternsReposMustInclude,
-						FilePatternsReposMustExclude: patternInfo.FilePatternsReposMustExclude,
-						Mode:                         mode,
+						RepoOpts: repoOptions,
 					})
 				}
 			}
@@ -527,7 +537,6 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 	langInclude, langExclude := b.IncludeExcludeValues(query.FieldLang)
 	filesInclude = append(filesInclude, mapSlice(langInclude, query.LangToFileRegexp)...)
 	filesExclude = append(filesExclude, mapSlice(langExclude, query.LangToFileRegexp)...)
-	filesReposMustInclude, filesReposMustExclude := b.RepoContainsFile()
 	selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
 	count := count(b, p)
 
@@ -559,8 +568,6 @@ func toTextPatternInfo(b query.Basic, resultTypes result.Types, p search.Protoco
 		// Values dependent on parameters.
 		IncludePatterns:              filesInclude,
 		ExcludePattern:               query.UnionRegExps(filesExclude),
-		FilePatternsReposMustInclude: filesReposMustInclude,
-		FilePatternsReposMustExclude: filesReposMustExclude,
 		PatternMatchesPath:           resultTypes.Has(result.TypePath),
 		PatternMatchesContent:        resultTypes.Has(result.TypeFile),
 		Languages:                    langInclude,
@@ -626,19 +633,22 @@ func toRepoOptions(b query.Basic, userSettings *schema.Settings) search.RepoOpti
 	searchContextSpec := b.FindValue(query.FieldContext)
 
 	return search.RepoOptions{
-		RepoFilters:       repoFilters,
-		MinusRepoFilters:  minusRepoFilters,
-		Dependencies:      b.Dependencies(),
-		Dependents:        b.Dependents(),
-		SearchContextSpec: searchContextSpec,
-		ForkSet:           b.Fork() != nil,
-		OnlyForks:         fork == query.Only,
-		NoForks:           fork == query.No,
-		ArchivedSet:       b.Archived() != nil,
-		OnlyArchived:      archived == query.Only,
-		NoArchived:        archived == query.No,
-		Visibility:        visibility,
-		CommitAfter:       b.RepoContainsCommitAfter(),
+		RepoFilters:         repoFilters,
+		MinusRepoFilters:    minusRepoFilters,
+		Dependencies:        b.Dependencies(),
+		Dependents:          b.Dependents(),
+		DescriptionPatterns: b.RepoHasDescription(),
+		SearchContextSpec:   searchContextSpec,
+		ForkSet:             b.Fork() != nil,
+		OnlyForks:           fork == query.Only,
+		NoForks:             fork == query.No,
+		ArchivedSet:         b.Archived() != nil,
+		OnlyArchived:        archived == query.Only,
+		NoArchived:          archived == query.No,
+		Visibility:          visibility,
+		HasFileContent:      b.RepoHasFileContent(),
+		CommitAfter:         b.RepoContainsCommitAfter(),
+		UseIndex:            b.Index(),
 	}
 }
 
@@ -797,6 +807,7 @@ func toFeatures(flagSet *featureflag.FlagSet) search.Features {
 	return search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
+		CodeOwnershipFilters:    flagSet.GetBoolOr("code-ownership", false),
 	}
 }
 

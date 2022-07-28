@@ -80,7 +80,7 @@ func (s *Syncer) Run(ctx context.Context, store Store, opts RunOptions) error {
 		s.initialUnmodifiedDiffFromStore(ctx, store)
 	}
 
-	worker, resetter := NewSyncWorker(ctx, store.Handle(), &syncHandler{
+	worker, resetter := NewSyncWorker(ctx, s.Logger.Scoped("syncWorker", ""), store.Handle(), &syncHandler{
 		syncer:          s,
 		store:           store,
 		minSyncInterval: opts.MinSyncInterval,
@@ -208,7 +208,7 @@ func (s *Syncer) initialUnmodifiedDiffFromStore(ctx context.Context, store Store
 type Diff struct {
 	Added      types.Repos
 	Deleted    types.Repos
-	Modified   types.Repos
+	Modified   ReposModified
 	Unmodified types.Repos
 }
 
@@ -217,7 +217,7 @@ func (d *Diff) Sort() {
 	for _, ds := range []types.Repos{
 		d.Added,
 		d.Deleted,
-		d.Modified,
+		d.Modified.Repos(),
 		d.Unmodified,
 	} {
 		sort.Sort(ds)
@@ -234,7 +234,7 @@ func (d Diff) Repos() types.Repos {
 	for _, rs := range []types.Repos{
 		d.Added,
 		d.Deleted,
-		d.Modified,
+		d.Modified.Repos(),
 		d.Unmodified,
 	} {
 		all = append(all, rs...)
@@ -245,6 +245,38 @@ func (d Diff) Repos() types.Repos {
 
 func (d Diff) Len() int {
 	return len(d.Deleted) + len(d.Modified) + len(d.Added) + len(d.Unmodified)
+}
+
+// RepoModified tracks the modifications applied to a single repository after a
+// sync.
+type RepoModified struct {
+	Repo     *types.Repo
+	Modified types.RepoModified
+}
+
+type ReposModified []RepoModified
+
+// Repos returns all modified repositories.
+func (rm ReposModified) Repos() types.Repos {
+	repos := make(types.Repos, len(rm))
+	for i := range rm {
+		repos[i] = rm[i].Repo
+	}
+
+	return repos
+}
+
+// ReposModified returns only the repositories that had a specific field
+// modified in the sync.
+func (rm ReposModified) ReposModified(modified types.RepoModified) types.Repos {
+	repos := types.Repos{}
+	for _, pair := range rm {
+		if pair.Modified&modified == modified {
+			repos = append(repos, pair.Repo)
+		}
+	}
+
+	return repos
 }
 
 // SyncRepo syncs a single repository by name and associates it with an external service.
@@ -720,7 +752,8 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		stored = types.Repos{existing}
 		fallthrough
 	case 1: // Existing repo, update.
-		if !stored[0].Update(sourced) {
+		modified := stored[0].Update(sourced)
+		if modified == types.RepoUnmodified {
 			d.Unmodified = append(d.Unmodified, stored[0])
 			break
 		}
@@ -730,7 +763,7 @@ func (s *Syncer) sync(ctx context.Context, svc *types.ExternalService, sourced *
 		}
 
 		*sourced = *stored[0]
-		d.Modified = append(d.Modified, stored[0])
+		d.Modified = append(d.Modified, RepoModified{Repo: stored[0], Modified: modified})
 	case 0: // New repo, create.
 		if !svc.IsSiteOwned() { // enforce user and org repo limits
 			siteAdded, err := tx.CountNamespacedRepos(ctx, 0, 0)
@@ -783,7 +816,7 @@ func (s *Syncer) delete(ctx context.Context, svc *types.ExternalService, seen ma
 func observeDiff(diff Diff) {
 	for state, repos := range map[string]types.Repos{
 		"added":      diff.Added,
-		"modified":   diff.Modified,
+		"modified":   diff.Modified.Repos(),
 		"deleted":    diff.Deleted,
 		"unmodified": diff.Unmodified,
 	} {

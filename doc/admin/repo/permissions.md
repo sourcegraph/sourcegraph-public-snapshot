@@ -4,7 +4,7 @@ Sourcegraph can be configured to enforce repository permissions from code hosts.
 
 - [GitHub / GitHub Enterprise](#github)
 - [GitLab](#gitlab)
-- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server)
+- [Bitbucket Server / Bitbucket Data Center](#bitbucket-server-bitbucket-data-center)
 - [Unified SSO](https://unknwon.io/posts/200915_setup-sourcegraph-gitlab-keycloak/)
 - [Explicit permissions API](#explicit-permissions-api)
 
@@ -237,7 +237,7 @@ Scroll to the bottom and check the *Allow 2-Legged OAuth* checkbox, then write y
 
 <img src="https://imgur.com/1qxEAye.png" width="800">
 
-Go to your Sourcegraph's *Manage repositories* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
+Go to your Sourcegraph's *Manage code hosts* page (i.e. `https://sourcegraph.example.com/site-admin/external-services`) and either edit or create a new *Bitbucket Server / Bitbucket Data Center* connection. Add the following settings:
 
 ```json
 {
@@ -461,14 +461,16 @@ To enable the permissions API, add the following to the [site configuration](../
 
 The `bindID` value specifies how to uniquely identify users when setting permissions:
 
-- `email`: You can [set permissions](#settings-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account).
-- `username`: You can [set permissions](#settings-repository-permissions-for-users) for users by specifying their Sourcegraph usernames.
+- `email`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their email addresses (which must be verified emails associated with their Sourcegraph user account).
+- `username`: You can [set permissions](#setting-repository-permissions-for-users) for users by specifying their Sourcegraph usernames.
 
 If the permissions API is enabled, all other repository permissions mechanisms are disabled.
 
-After you enable the permissions API, you must [set permissions](#settings-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
+After you enable the permissions API, you must [set permissions](#setting-repository-permissions-for-users) to allow users to view repositories (site admins bypass all permissions checks and can always view all repositories).
 
 > NOTE: If you were previously using [background permissions syncing](#background-permissions-syncing), e.g. using [GitHub permissions](#github), then those permissions are used as the initial state after enabling explicit permissions. Otherwise, the initial state is for all repositories to have an empty set of authorized users, so users will not be able to view any repositories.
+
+<span class="virtual-br"></span>
 
 > NOTE: If you're using Sourcegraph with multiple code hosts, it's not possible to use the explicit permissions API for some repositories and inherit code host permissions for others. (See [RFC 626: Permissions mechanisms in parallel](https://docs.google.com/document/d/1nWbmfM5clAH4pi_4tEt6zDtqN1-z1DuHlQ7A5KAijf8/edit#) for a design document about future support for this situation.)
 
@@ -562,6 +564,8 @@ mutation {
 ```
 
 This will return an empty respoinse immediately while also enqueuing a background task to set permissions for all the repositories that belong to the project as identified by the `projectKey` in the API request.
+
+> NOTE: This sets the permissions for all repositories for `projectKey` on Sourcegraph at the time of the API call. If a new repository is added for `projectKey` it will remain hidden until you call `setRepositoryPermissionsForBitbucketProject` again.
 
 #### Querying project permissions task status
 

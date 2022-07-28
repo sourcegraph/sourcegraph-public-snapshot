@@ -105,7 +105,6 @@ describe('SearchPage', () => {
         authenticatedUser: authUser,
         globbing: false,
         platformContext: {} as any,
-        keyboardShortcuts: [],
         searchContextsEnabled: true,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},
@@ -113,8 +112,6 @@ describe('SearchPage', () => {
         isLightTheme: true,
         fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
         fetchSearchContexts: mockFetchSearchContexts,
-        hasUserAddedRepositories: false,
-        hasUserAddedExternalServices: false,
         getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
     }
 

@@ -1,28 +1,8 @@
-import { getSanitizedRepositories } from '../../../../../components'
-import {
-    MinimalSearchBasedInsightData,
-    InsightExecutionType,
-    InsightType,
-    SearchBasedInsightSeries,
-} from '../../../../../core'
+import { SeriesSortDirection, SeriesSortMode } from '../../../../../../../graphql-operations'
+import { getSanitizedRepositories, getSanitizedSeries } from '../../../../../components'
+import { MinimalSearchBasedInsightData, InsightExecutionType, InsightType } from '../../../../../core'
+import { MAX_NUMBER_OF_SERIES } from '../../../../../core/backend/gql-backend/methods/get-backend-insight-data/deserializators'
 import { CreateInsightFormFields } from '../types'
-
-export function getSanitizedLine(line: SearchBasedInsightSeries): SearchBasedInsightSeries {
-    return {
-        id: line.id,
-        name: line.name.trim(),
-        stroke: line.stroke,
-        // Query field is a reg exp field for code insight query setting
-        // Native html input element adds escape symbols by itself
-        // to prevent this behavior below we replace double escaping
-        // with just one series of escape characters e.g. - //
-        query: line.query.replace(/\\\\/g, '\\'),
-    }
-}
-
-export function getSanitizedSeries(rawSeries: SearchBasedInsightSeries[]): SearchBasedInsightSeries[] {
-    return rawSeries.map(getSanitizedLine)
-}
 
 /**
  * Function converter from form shape insight to insight as it is
@@ -42,6 +22,13 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
                 excludeRepoRegexp: '',
                 includeRepoRegexp: '',
                 context: '',
+                seriesDisplayOptions: {
+                    limit: `${MAX_NUMBER_OF_SERIES}`,
+                    sortOptions: {
+                        direction: SeriesSortDirection.DESC,
+                        mode: SeriesSortMode.RESULT_COUNT,
+                    },
+                },
             },
         }
     }
@@ -58,6 +45,13 @@ export function getSanitizedSearchInsight(rawInsight: CreateInsightFormFields): 
             excludeRepoRegexp: '',
             includeRepoRegexp: '',
             context: '',
+            seriesDisplayOptions: {
+                limit: `${MAX_NUMBER_OF_SERIES}`,
+                sortOptions: {
+                    direction: SeriesSortDirection.DESC,
+                    mode: SeriesSortMode.RESULT_COUNT,
+                },
+            },
         },
     }
 }

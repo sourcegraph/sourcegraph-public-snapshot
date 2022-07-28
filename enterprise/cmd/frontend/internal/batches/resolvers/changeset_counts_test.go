@@ -104,7 +104,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		t.Fatalf("Failed to Upsert external service: %s", err)
 	}
 
-	githubSrc, err := repos.NewGithubSource(db.ExternalServices(), githubExtSvc, cf)
+	githubSrc, err := repos.NewGithubSource(logger, db.ExternalServices(), githubExtSvc, cf)
 	if err != nil {
 		t.Fatal(t)
 	}
@@ -182,7 +182,7 @@ func TestChangesetCountsOverTimeIntegration(t *testing.T) {
 		}
 	}
 
-	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, New(cstore), nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -3,7 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { Maybe } from '@sourcegraph/shared/src/graphql-operations'
-import { Icon } from '@sourcegraph/wildcard'
+import { ForwardReferenceComponent, Icon } from '@sourcegraph/wildcard'
 
 import styles from './UserAvatar.module.scss'
 
@@ -15,7 +15,6 @@ interface Props {
         username?: Maybe<string>
     }
     className?: string
-    ['data-tooltip']?: string
     targetID?: string
     alt?: string
     /**
@@ -27,62 +26,76 @@ interface Props {
 /**
  * UserAvatar displays the avatar of a user.
  */
-export const UserAvatar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
-    size,
-    user,
-    className,
-    targetID,
-    inline,
-    // Exclude children since neither <img /> nor mdi-react icons receive them
-    children,
-    ...otherProps
-}) => {
-    if (user?.avatarURL) {
-        let url = user.avatarURL
-        try {
-            const urlObject = new URL(user.avatarURL)
-            if (size) {
-                urlObject.searchParams.set('s', size.toString())
+// eslint-disable-next-line react/display-name
+export const UserAvatar = React.forwardRef(
+    (
+        {
+            size,
+            user,
+            className,
+            targetID,
+            inline,
+            // Exclude children since neither <img /> nor mdi-react icons receive them
+            children,
+            ...otherProps
+        }: React.PropsWithChildren<Props>,
+        reference
+    ) => {
+        if (user?.avatarURL) {
+            let url = user.avatarURL
+            try {
+                const urlObject = new URL(user.avatarURL)
+                if (size) {
+                    urlObject.searchParams.set('s', size.toString())
+                }
+                url = urlObject.href
+            } catch {
+                // noop
             }
-            url = urlObject.href
-        } catch {
-            // noop
+
+            const imgProps = {
+                className: classNames(styles.userAvatar, className),
+                src: url,
+                id: targetID,
+                role: 'presentation',
+                ...otherProps,
+            }
+
+            if (inline) {
+                return (
+                    <Icon
+                        ref={reference as React.ForwardedRef<SVGSVGElement>}
+                        as="img"
+                        aria-hidden={true}
+                        {...imgProps}
+                    />
+                )
+            }
+
+            return <img ref={reference} alt="" {...imgProps} />
         }
 
-        const imgProps = {
-            className: classNames(styles.userAvatar, className),
-            src: url,
+        const name = user?.displayName || user?.username || ''
+        const getInitials = (fullName: string): string => {
+            const names = fullName.split(' ')
+            const initials = names.map(name => name.charAt(0).toLowerCase())
+            if (initials.length > 1) {
+                return `${initials[0]}${initials[initials.length - 1]}`
+            }
+            return initials[0]
+        }
+
+        const props = {
             id: targetID,
-            role: 'presentation',
-            ...otherProps,
+            className: classNames(styles.userAvatar, className),
+            children: <span className={styles.initials}>{getInitials(name)}</span>,
         }
 
         if (inline) {
-            return <Icon as="img" aria-hidden={true} {...imgProps} />
+            return <Icon ref={reference as React.ForwardedRef<SVGSVGElement>} as="div" aria-hidden={true} {...props} />
         }
 
-        return <img alt="" {...imgProps} />
+        return <div ref={reference} {...props} />
     }
-
-    const name = user?.displayName || user?.username || ''
-    const getInitials = (fullName: string): string => {
-        const names = fullName.split(' ')
-        const initials = names.map(name => name.charAt(0).toLowerCase())
-        if (initials.length > 1) {
-            return `${initials[0]}${initials[initials.length - 1]}`
-        }
-        return initials[0]
-    }
-
-    const props = {
-        id: targetID,
-        className: classNames(styles.userAvatar, className),
-        children: <span className={styles.initials}>{getInitials(name)}</span>,
-    }
-
-    if (inline) {
-        return <Icon as="div" aria-hidden={true} {...props} />
-    }
-
-    return <div {...props} />
-}
+) as ForwardReferenceComponent<'img', React.PropsWithChildren<Props>>
+UserAvatar.displayName = 'UserAvatar'

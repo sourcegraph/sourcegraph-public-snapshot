@@ -4,9 +4,9 @@ import { mdiEye } from '@mdi/js'
 import { useLocation } from 'react-router'
 
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
-import { createLinkUrl, DeprecatedTooltipController, Icon } from '@sourcegraph/wildcard'
+import { createLinkUrl, DeprecatedTooltipController, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
-import { RepoHeaderActionButtonLink } from '../../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
 
 import { getURLForMode } from './utils'
@@ -38,22 +38,23 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
 
     if (actionType === 'dropdown') {
         return (
-            <RepoHeaderActionButtonLink to={createLinkUrl(getURLForMode(location, otherMode))} file={true}>
+            <RepoHeaderActionMenuLink as={Link} to={createLinkUrl(getURLForMode(location, otherMode))} file={true}>
                 <Icon aria-hidden={true} svgPath={mdiEye} />
                 <span>{label}</span>
-            </RepoHeaderActionButtonLink>
+            </RepoHeaderActionMenuLink>
         )
     }
 
     return (
-        <RepoHeaderActionButtonLink
-            className="btn-icon"
-            file={false}
-            to={createLinkUrl(getURLForMode(location, otherMode))}
-            data-tooltip={label}
-        >
-            <Icon aria-hidden={true} svgPath={mdiEye} />{' '}
-            <span className="d-none d-lg-inline ml-1">{mode === 'rendered' ? 'Raw' : 'Formatted'}</span>
-        </RepoHeaderActionButtonLink>
+        <Tooltip content={label}>
+            <RepoHeaderActionButtonLink
+                className="btn-icon"
+                file={false}
+                to={createLinkUrl(getURLForMode(location, otherMode))}
+            >
+                <Icon aria-hidden={true} svgPath={mdiEye} />{' '}
+                <span className="d-none d-lg-inline ml-1">{mode === 'rendered' ? 'Raw' : 'Formatted'}</span>
+            </RepoHeaderActionButtonLink>
+        </Tooltip>
     )
 }

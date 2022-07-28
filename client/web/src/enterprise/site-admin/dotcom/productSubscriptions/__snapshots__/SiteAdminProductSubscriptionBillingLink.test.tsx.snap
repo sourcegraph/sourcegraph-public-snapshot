@@ -15,7 +15,7 @@ exports[`SiteAdminProductSubscriptionBillingLink linked billing 1`] = `
         View billing subscription 
         <svg
           aria-hidden="true"
-          class="iconInline ml-1"
+          class="mdi-icon iconInline ml-1"
           fill="currentColor"
           height="24"
           role="img"

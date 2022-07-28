@@ -7609,12 +7609,12 @@ type MockIndexEnqueuer struct {
 func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		InferIndexConfigurationFunc: &IndexEnqueuerInferIndexConfigurationFunc{
-			defaultHook: func(context.Context, int, string) (r0 *config.IndexConfiguration, r1 []config.IndexJobHint, r2 error) {
+			defaultHook: func(context.Context, int, string, bool) (r0 *config.IndexConfiguration, r1 []config.IndexJobHint, r2 error) {
 				return
 			},
 		},
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
-			defaultHook: func(context.Context, int, string, string, bool) (r0 []dbstore.Index, r1 error) {
+			defaultHook: func(context.Context, int, string, string, bool, bool) (r0 []dbstore.Index, r1 error) {
 				return
 			},
 		},
@@ -7626,12 +7626,12 @@ func NewMockIndexEnqueuer() *MockIndexEnqueuer {
 func NewStrictMockIndexEnqueuer() *MockIndexEnqueuer {
 	return &MockIndexEnqueuer{
 		InferIndexConfigurationFunc: &IndexEnqueuerInferIndexConfigurationFunc{
-			defaultHook: func(context.Context, int, string) (*config.IndexConfiguration, []config.IndexJobHint, error) {
+			defaultHook: func(context.Context, int, string, bool) (*config.IndexConfiguration, []config.IndexJobHint, error) {
 				panic("unexpected invocation of MockIndexEnqueuer.InferIndexConfiguration")
 			},
 		},
 		QueueIndexesFunc: &IndexEnqueuerQueueIndexesFunc{
-			defaultHook: func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
+			defaultHook: func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error) {
 				panic("unexpected invocation of MockIndexEnqueuer.QueueIndexes")
 			},
 		},
@@ -7656,24 +7656,24 @@ func NewMockIndexEnqueuerFrom(i IndexEnqueuer) *MockIndexEnqueuer {
 // InferIndexConfiguration method of the parent MockIndexEnqueuer instance
 // is invoked.
 type IndexEnqueuerInferIndexConfigurationFunc struct {
-	defaultHook func(context.Context, int, string) (*config.IndexConfiguration, []config.IndexJobHint, error)
-	hooks       []func(context.Context, int, string) (*config.IndexConfiguration, []config.IndexJobHint, error)
+	defaultHook func(context.Context, int, string, bool) (*config.IndexConfiguration, []config.IndexJobHint, error)
+	hooks       []func(context.Context, int, string, bool) (*config.IndexConfiguration, []config.IndexJobHint, error)
 	history     []IndexEnqueuerInferIndexConfigurationFuncCall
 	mutex       sync.Mutex
 }
 
 // InferIndexConfiguration delegates to the next hook function in the queue
 // and stores the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) InferIndexConfiguration(v0 context.Context, v1 int, v2 string) (*config.IndexConfiguration, []config.IndexJobHint, error) {
-	r0, r1, r2 := m.InferIndexConfigurationFunc.nextHook()(v0, v1, v2)
-	m.InferIndexConfigurationFunc.appendCall(IndexEnqueuerInferIndexConfigurationFuncCall{v0, v1, v2, r0, r1, r2})
+func (m *MockIndexEnqueuer) InferIndexConfiguration(v0 context.Context, v1 int, v2 string, v3 bool) (*config.IndexConfiguration, []config.IndexJobHint, error) {
+	r0, r1, r2 := m.InferIndexConfigurationFunc.nextHook()(v0, v1, v2, v3)
+	m.InferIndexConfigurationFunc.appendCall(IndexEnqueuerInferIndexConfigurationFuncCall{v0, v1, v2, v3, r0, r1, r2})
 	return r0, r1, r2
 }
 
 // SetDefaultHook sets function that is called when the
 // InferIndexConfiguration method of the parent MockIndexEnqueuer instance
 // is invoked and the hook queue is empty.
-func (f *IndexEnqueuerInferIndexConfigurationFunc) SetDefaultHook(hook func(context.Context, int, string) (*config.IndexConfiguration, []config.IndexJobHint, error)) {
+func (f *IndexEnqueuerInferIndexConfigurationFunc) SetDefaultHook(hook func(context.Context, int, string, bool) (*config.IndexConfiguration, []config.IndexJobHint, error)) {
 	f.defaultHook = hook
 }
 
@@ -7682,7 +7682,7 @@ func (f *IndexEnqueuerInferIndexConfigurationFunc) SetDefaultHook(hook func(cont
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *IndexEnqueuerInferIndexConfigurationFunc) PushHook(hook func(context.Context, int, string) (*config.IndexConfiguration, []config.IndexJobHint, error)) {
+func (f *IndexEnqueuerInferIndexConfigurationFunc) PushHook(hook func(context.Context, int, string, bool) (*config.IndexConfiguration, []config.IndexJobHint, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7691,19 +7691,19 @@ func (f *IndexEnqueuerInferIndexConfigurationFunc) PushHook(hook func(context.Co
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *IndexEnqueuerInferIndexConfigurationFunc) SetDefaultReturn(r0 *config.IndexConfiguration, r1 []config.IndexJobHint, r2 error) {
-	f.SetDefaultHook(func(context.Context, int, string) (*config.IndexConfiguration, []config.IndexJobHint, error) {
+	f.SetDefaultHook(func(context.Context, int, string, bool) (*config.IndexConfiguration, []config.IndexJobHint, error) {
 		return r0, r1, r2
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *IndexEnqueuerInferIndexConfigurationFunc) PushReturn(r0 *config.IndexConfiguration, r1 []config.IndexJobHint, r2 error) {
-	f.PushHook(func(context.Context, int, string) (*config.IndexConfiguration, []config.IndexJobHint, error) {
+	f.PushHook(func(context.Context, int, string, bool) (*config.IndexConfiguration, []config.IndexJobHint, error) {
 		return r0, r1, r2
 	})
 }
 
-func (f *IndexEnqueuerInferIndexConfigurationFunc) nextHook() func(context.Context, int, string) (*config.IndexConfiguration, []config.IndexJobHint, error) {
+func (f *IndexEnqueuerInferIndexConfigurationFunc) nextHook() func(context.Context, int, string, bool) (*config.IndexConfiguration, []config.IndexJobHint, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7747,6 +7747,9 @@ type IndexEnqueuerInferIndexConfigurationFuncCall struct {
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
 	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 *config.IndexConfiguration
@@ -7761,7 +7764,7 @@ type IndexEnqueuerInferIndexConfigurationFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c IndexEnqueuerInferIndexConfigurationFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
@@ -7773,24 +7776,24 @@ func (c IndexEnqueuerInferIndexConfigurationFuncCall) Results() []interface{} {
 // IndexEnqueuerQueueIndexesFunc describes the behavior when the
 // QueueIndexes method of the parent MockIndexEnqueuer instance is invoked.
 type IndexEnqueuerQueueIndexesFunc struct {
-	defaultHook func(context.Context, int, string, string, bool) ([]dbstore.Index, error)
-	hooks       []func(context.Context, int, string, string, bool) ([]dbstore.Index, error)
+	defaultHook func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error)
+	hooks       []func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error)
 	history     []IndexEnqueuerQueueIndexesFuncCall
 	mutex       sync.Mutex
 }
 
 // QueueIndexes delegates to the next hook function in the queue and stores
 // the parameter and result values of this invocation.
-func (m *MockIndexEnqueuer) QueueIndexes(v0 context.Context, v1 int, v2 string, v3 string, v4 bool) ([]dbstore.Index, error) {
-	r0, r1 := m.QueueIndexesFunc.nextHook()(v0, v1, v2, v3, v4)
-	m.QueueIndexesFunc.appendCall(IndexEnqueuerQueueIndexesFuncCall{v0, v1, v2, v3, v4, r0, r1})
+func (m *MockIndexEnqueuer) QueueIndexes(v0 context.Context, v1 int, v2 string, v3 string, v4 bool, v5 bool) ([]dbstore.Index, error) {
+	r0, r1 := m.QueueIndexesFunc.nextHook()(v0, v1, v2, v3, v4, v5)
+	m.QueueIndexesFunc.appendCall(IndexEnqueuerQueueIndexesFuncCall{v0, v1, v2, v3, v4, v5, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the QueueIndexes method
 // of the parent MockIndexEnqueuer instance is invoked and the hook queue is
 // empty.
-func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool) ([]dbstore.Index, error)) {
+func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error)) {
 	f.defaultHook = hook
 }
 
@@ -7798,7 +7801,7 @@ func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultHook(hook func(context.Context
 // QueueIndexes method of the parent MockIndexEnqueuer instance invokes the
 // hook at the front of the queue and discards it. After the queue is empty,
 // the default hook function is invoked for any future action.
-func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int, string, string, bool) ([]dbstore.Index, error)) {
+func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -7807,19 +7810,19 @@ func (f *IndexEnqueuerQueueIndexesFunc) PushHook(hook func(context.Context, int,
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *IndexEnqueuerQueueIndexesFunc) SetDefaultReturn(r0 []dbstore.Index, r1 error) {
-	f.SetDefaultHook(func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
+	f.SetDefaultHook(func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *IndexEnqueuerQueueIndexesFunc) PushReturn(r0 []dbstore.Index, r1 error) {
-	f.PushHook(func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
+	f.PushHook(func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error) {
 		return r0, r1
 	})
 }
 
-func (f *IndexEnqueuerQueueIndexesFunc) nextHook() func(context.Context, int, string, string, bool) ([]dbstore.Index, error) {
+func (f *IndexEnqueuerQueueIndexesFunc) nextHook() func(context.Context, int, string, string, bool, bool) ([]dbstore.Index, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -7867,6 +7870,9 @@ type IndexEnqueuerQueueIndexesFuncCall struct {
 	// Arg4 is the value of the 5th argument passed to this method
 	// invocation.
 	Arg4 bool
+	// Arg5 is the value of the 6th argument passed to this method
+	// invocation.
+	Arg5 bool
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []dbstore.Index
@@ -7878,7 +7884,7 @@ type IndexEnqueuerQueueIndexesFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c IndexEnqueuerQueueIndexesFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4, c.Arg5}
 }
 
 // Results returns an interface slice containing the results of this

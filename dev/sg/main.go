@@ -13,6 +13,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/analytics"
+	"github.com/sourcegraph/sourcegraph/dev/sg/internal/background"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/secrets"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/sgconf"
 	"github.com/sourcegraph/sourcegraph/dev/sg/internal/std"
@@ -27,7 +28,7 @@ func main() {
 	// workaround because we don't have control over the bash completion flag, which is
 	// part of urfave/cli internals.
 	if os.Args[len(os.Args)-1] == "--generate-bash-completion" {
-		batchCompletionMode = true
+		bashCompletionsMode = true
 	}
 
 	if err := sg.RunContext(context.Background(), os.Args); err != nil {
@@ -38,7 +39,8 @@ func main() {
 		if std.Out == nil {
 			std.Out = std.NewOutput(os.Stdout, false)
 		}
-		std.Out.WriteFailuref(err.Error())
+		// Do not treat error message as a format string
+		std.Out.WriteFailuref("%s", err.Error())
 		os.Exit(1)
 	}
 }
@@ -52,6 +54,8 @@ var (
 	// configOverwriteFile is the path to use with sgconf.Get - it must not be used before
 	// flag initialization.
 	configOverwriteFile string
+	// disableOverwrite causes configuration to ignore configOverwriteFile.
+	disableOverwrite bool
 
 	// Global verbose mode
 	verbose bool
@@ -64,18 +68,18 @@ var (
 	// slice.
 	postInitHooks []func(cmd *cli.Context)
 
-	// batchCompletionMode determines if we are in bash completion mode. In this mode,
+	// bashCompletionsMode determines if we are in bash completion mode. In this mode,
 	// sg should respond quickly, so most setup tasks (e.g. postInitHooks) are skipped.
 	//
 	// Do not run complicated tasks, etc. in Before or After hooks when in this mode.
-	batchCompletionMode bool
+	bashCompletionsMode bool
 )
 
 const sgBugReportTemplate = "https://github.com/sourcegraph/sourcegraph/issues/new?template=sg_bug.md"
 
 // sg is the main sg CLI application.
 //
-//go:generate go run . help -full -output ./doc/dev/background-information/sg/reference.md
+//go:generate go run . -disable-overwrite help -full -output ./doc/dev/background-information/sg/reference.md
 var sg = &cli.App{
 	Usage:       "The Sourcegraph developer tool!",
 	Description: "Learn more: https://docs.sourcegraph.com/dev/background-information/sg",
@@ -109,6 +113,13 @@ var sg = &cli.App{
 			Destination: &configOverwriteFile,
 		},
 		&cli.BoolFlag{
+			Name:        "disable-overwrite",
+			Usage:       "disable loading additional sg configuration from overwrite file (see -overwrite)",
+			EnvVars:     []string{"SG_DISABLE_OVERWRITE"},
+			Value:       false,
+			Destination: &disableOverwrite,
+		},
+		&cli.BoolFlag{
 			Name:    "skip-auto-update",
 			Usage:   "prevent sg from automatically updating itself",
 			EnvVars: []string{"SG_SKIP_AUTO_UPDATE"},
@@ -121,61 +132,63 @@ var sg = &cli.App{
 			Value:   BuildCommit == "dev", // Default to skip in dev
 		},
 		&cli.BoolFlag{
-			Name:    "disable-output-detection",
-			Usage:   "use fixed output configuration instead of detecting terminal capabilities",
-			EnvVars: []string{"SG_DISABLE_OUTPUT_DETECTION"},
+			Name:        "disable-output-detection",
+			Usage:       "use fixed output configuration instead of detecting terminal capabilities",
+			EnvVars:     []string{"SG_DISABLE_OUTPUT_DETECTION"},
+			Destination: &std.DisableOutputDetection,
 		},
 	},
 	Before: func(cmd *cli.Context) (err error) {
-		if batchCompletionMode {
-			// All other setup pertains to running commands - to keep completions fast,
-			// we skip all other setup.
+		// Add feedback flag to all commands and subcommands - we add this here, before
+		// we exit in bashCompletionsMode, so that '--feedback' is available via
+		// autocompletions.
+		addFeedbackFlags(cmd.App.Commands)
+
+		// All other setup pertains to running commands - to keep completions fast,
+		// we skip all other setup when in bashCompletions mode.
+		if bashCompletionsMode {
 			return nil
 		}
 
-		var (
-			start                  = time.Now()
-			disableAnalytics       = cmd.Bool("disable-analytics")
-			disableOutputDetection = cmd.Bool("disable-output-detection")
-		)
+		// Lots of setup happens in Before - we want to make sure anything that
+		// we collect a generate a helpful message here if anything goes wrong.
+		defer func() {
+			if p := recover(); p != nil {
+				std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
+					sgBugReportTemplate)
+				message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
+				err = cli.NewExitError(message, 1)
+			}
+		}()
 
 		// Let sg components register pre-interrupt hooks
 		interrupt.Listen()
 
 		// Configure global output
-		if disableOutputDetection {
-			std.Out = std.NewFixedOutput(cmd.App.Writer, verbose)
-		} else {
-			std.Out = std.NewOutput(cmd.App.Writer, verbose)
+		std.Out = std.NewOutput(cmd.App.Writer, verbose)
+
+		// Set up analytics and hooks for each command - do this as the first context
+		// setup
+		if !cmd.Bool("disable-analytics") {
+			cmd.Context, err = analytics.WithContext(cmd.Context, cmd.App.Version)
+			if err != nil {
+				std.Out.WriteWarningf("Failed to initialize analytics: " + err.Error())
+			}
+
+			// Ensure analytics are persisted
+			interrupt.Register(func() { analytics.Persist(cmd.Context) })
+
+			// Add analytics to each command
+			addAnalyticsHooks([]string{"sg"}, cmd.App.Commands)
 		}
 
-		// Initialize context
+		// Initialize context after analytics are set up
 		cmd.Context, err = usershell.Context(cmd.Context)
 		if err != nil {
 			std.Out.WriteWarningf("Unable to infer user shell context: " + err.Error())
 		}
-
-		// Set up analytics and hooks for each command.
-		if !disableAnalytics {
-			cmd.Context = analytics.WithContext(cmd.Context, cmd.App.Version)
-			addAnalyticsHooks(start, []string{"sg"}, cmd.App.Commands)
-
-			// Lots of setup happens in Before - we want to make sure anything that
-			// happens here is tracked. We set this up here after setting up output and
-			// some initial safe setup.
-			defer func() {
-				if p := recover(); p != nil {
-					std.Out.WriteWarningf("Encountered panic - please open an issue with the command output:\n\t%s",
-						sgBugReportTemplate)
-					message := fmt.Sprintf("%v:\n%s", p, getRelevantStack())
-					err = cli.NewExitError(message, 1)
-
-					event := analytics.LogEvent(cmd.Context, "sg_before", nil, start, "panic")
-					event.Properties["error_details"] = err.Error()
-					analytics.Persist(cmd.Context, "sg", cmd.FlagNames())
-				}
-			}()
-		}
+		cmd.Context = background.Context(cmd.Context, verbose)
+		interrupt.Register(func() { background.Wait(cmd.Context, std.Out) })
 
 		// Configure logger, for commands that use components that use loggers
 		os.Setenv("SRC_DEVELOPMENT", "true")
@@ -185,9 +198,6 @@ var sg = &cli.App{
 
 		// Add autosuggestion hooks to commands with subcommands but no action
 		addSuggestionHooks(cmd.App.Commands)
-
-		// Add feedback subcommand to all commands and subcommands
-		addFeedbackFlags(cmd.App.Commands)
 
 		// Validate configuration flags, which is required for sgconf.Get to work everywhere else.
 		if configFile == "" {
@@ -212,17 +222,27 @@ var sg = &cli.App{
 
 		// Check for updates, unless we are running update manually.
 		if cmd.Args().First() != "update" {
-			err := checkSgVersionAndUpdate(cmd.Context, cmd.Bool("skip-auto-update"))
-			if err != nil {
-				std.Out.WriteWarningf("update check: %s", err)
-				// Do not exit here, so we don't break user flow when they want to
-				// run `sg` but updating fails
-			}
+			background.Run(cmd.Context, func(ctx context.Context, out *std.Output) {
+				err := checkSgVersionAndUpdate(ctx, out, cmd.Bool("skip-auto-update"))
+				if err != nil {
+					out.WriteWarningf("update check: %s", err)
+				}
+			})
 		}
 
 		// Call registered hooks last
 		for _, hook := range postInitHooks {
 			hook(cmd)
+		}
+
+		return nil
+	},
+	After: func(cmd *cli.Context) error {
+		if !bashCompletionsMode {
+			// Wait for background jobs to finish up, iff not in autocomplete mode
+			background.Wait(cmd.Context, std.Out)
+			// Persist analytics
+			analytics.Persist(cmd.Context)
 		}
 
 		return nil
@@ -274,7 +294,8 @@ var sg = &cli.App{
 		// Render error
 		errMsg := err.Error()
 		if errMsg != "" {
-			std.Out.WriteFailuref(errMsg)
+			// Do not treat error message as a format string
+			std.Out.WriteFailuref("%s", errMsg)
 		}
 
 		// Determine exit code
@@ -300,4 +321,11 @@ func loadSecrets() (*secrets.Store, error) {
 	}
 	fp := filepath.Join(homePath, secrets.DefaultFile)
 	return secrets.LoadFromFile(fp)
+}
+
+func getConfig() (*sgconf.Config, error) {
+	if disableOverwrite {
+		return sgconf.GetWithoutOverwrites(configFile)
+	}
+	return sgconf.Get(configFile, configOverwriteFile)
 }

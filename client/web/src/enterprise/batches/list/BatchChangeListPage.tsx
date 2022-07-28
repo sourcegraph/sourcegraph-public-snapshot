@@ -44,6 +44,7 @@ import {
     GetLicenseAndUsageInfoResult,
     GetLicenseAndUsageInfoVariables,
 } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 
 import { BATCH_CHANGES, BATCH_CHANGES_BY_NAMESPACE, GET_LICENSE_AND_USAGE_INFO } from './backend'
 import { BatchChangeListFilters } from './BatchChangeListFilters'
@@ -152,7 +153,6 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
     return (
         <Page>
             <PageHeader
-                path={[{ icon: BatchChangesIcon, text: 'Batch Changes' }]}
                 className="test-batches-list-page mb-3"
                 // TODO: As we haven't finished implementing support for orgs, we've
                 // temporary disabled setting a different namespace. Replace this line
@@ -162,7 +162,11 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                 // actions={canCreate ? <NewBatchChangeButton to={`${location.pathname}/create`} /> : null}
                 headingElement={headingElement}
                 description="Run custom code over hundreds of repositories and manage the resulting changesets."
-            />
+            >
+                <PageHeader.Heading as="h2" styleAs="h1">
+                    <PageHeader.Breadcrumb icon={BatchChangesIcon}>Batch Changes</PageHeader.Breadcrumb>
+                </PageHeader.Heading>
+            </PageHeader>
             <BatchChangesListIntro isLicensed={licenseAndUsageInfo?.batchChanges || licenseAndUsageInfo?.campaigns} />
             <BatchChangeListTabHeader selectedTab={selectedTab} setSelectedTab={setSelectedTab} />
             {selectedTab === 'gettingStarted' && <GettingStarted className="mb-4" footer={<GettingStartedFooter />} />}
@@ -171,9 +175,7 @@ export const BatchChangeListPage: React.FunctionComponent<React.PropsWithChildre
                     <ConnectionContainer>
                         <div className={styles.filtersRow}>
                             {(licenseAndUsageInfo?.allBatchChanges.totalCount || 0) > 0 && (
-                                <H3 as={H2} className="align-self-end flex-1">
-                                    {`${lastTotalCount} batch changes`}
-                                </H3>
+                                <H3 className="align-self-end flex-1">{`${lastTotalCount} batch changes`}</H3>
                             )}
                             <H4 as={H3} className="mb-0 mr-2">
                                 Status
@@ -307,7 +309,10 @@ const BatchChangeListTabHeader: React.FunctionComponent<
                 <li className="nav-item">
                     <Link
                         to=""
-                        onClick={onSelectGettingStarted}
+                        onClick={event => {
+                            onSelectGettingStarted(event)
+                            eventLogger.log('batch_change_homepage:getting_started:clicked')
+                        }}
                         className={classNames('nav-link', selectedTab === 'gettingStarted' && 'active')}
                         role="button"
                         data-testid="test-getting-started-btn"

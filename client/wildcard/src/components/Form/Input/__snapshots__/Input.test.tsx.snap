@@ -24,7 +24,7 @@ exports[`Input Renders status 'loading' correctly 1`] = `
   <div
     aria-label="Loading"
     aria-live="polite"
-    class="loadingSpinner spinner"
+    class="mdi-icon loadingSpinner spinner"
     role="img"
   />
 </div>

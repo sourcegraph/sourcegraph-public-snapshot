@@ -165,8 +165,8 @@ func (s *SearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream 
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, s)
 	defer func() { finish(alert, err) }()
 
-	repos := &searchrepos.Resolver{DB: clients.DB, Opts: s.RepoOpts}
-	return nil, repos.Paginate(ctx, func(page *searchrepos.Resolved) error {
+	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
+	return nil, repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		indexed, unindexed, err := zoektutil.PartitionRepos(
 			ctx,
 			clients.Logger,
@@ -192,16 +192,27 @@ func (*SearchJob) Name() string {
 	return "StructuralSearchJob"
 }
 
-func (s *SearchJob) Tags() []log.Field {
-	return []log.Field{
-		trace.Stringer("query", s.ZoektArgs.Query),
-		log.String("type", string(s.ZoektArgs.Typ)),
-		log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
-		trace.Printf("select", "%q", s.ZoektArgs.Select),
-		trace.Stringer("patternInfo", s.SearcherArgs.PatternInfo),
-		log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
-		log.String("useIndex", string(s.UseIndex)),
-		log.Bool("containsRefGlobs", s.ContainsRefGlobs),
-		trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+func (s *SearchJob) Fields(v job.Verbosity) (res []log.Field) {
+	switch v {
+	case job.VerbosityMax:
+		res = append(res,
+			log.Bool("useFullDeadline", s.SearcherArgs.UseFullDeadline),
+			log.Bool("containsRefGlobs", s.ContainsRefGlobs),
+			log.String("useIndex", string(s.UseIndex)),
+			trace.Printf("select", "%q", s.ZoektArgs.Select),
+			log.Int32("fileMatchLimit", s.ZoektArgs.FileMatchLimit),
+		)
+		fallthrough
+	case job.VerbosityBasic:
+		res = append(res,
+			trace.Stringer("query", s.ZoektArgs.Query),
+			log.String("type", string(s.ZoektArgs.Typ)),
+			trace.Scoped("patternInfo", s.SearcherArgs.PatternInfo.Fields()...),
+			trace.Scoped("repoOpts", s.RepoOpts.Tags()...),
+		)
 	}
+	return res
 }
+
+func (s *SearchJob) Children() []job.Describer       { return nil }
+func (s *SearchJob) MapChildren(job.MapFunc) job.Job { return s }

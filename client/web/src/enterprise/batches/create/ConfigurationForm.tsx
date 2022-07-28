@@ -14,7 +14,7 @@ import {
     // SettingsOrgSubject,
     // SettingsUserSubject,
 } from '@sourcegraph/shared/src/settings/settings'
-import { Button, Container, Input, Icon, RadioButton } from '@sourcegraph/wildcard'
+import { Button, Container, Input, Icon, RadioButton, Tooltip } from '@sourcegraph/wildcard'
 
 import {
     BatchChangeFields,
@@ -119,10 +119,16 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 }
 
                 const template = renderTemplate(nameInput)
+                const batchChangeID = args.data?.createEmptyBatchChange.id
 
-                return args.data?.createEmptyBatchChange.id && template
+                return batchChangeID && template
                     ? createBatchSpecFromRaw({
-                          variables: { namespace: selectedNamespace.id, spec: template, noCache: false },
+                          variables: {
+                              namespace: selectedNamespace.id,
+                              spec: template,
+                              noCache: false,
+                              batchChange: batchChangeID,
+                          },
                       }).then(() => Promise.resolve(args))
                     : Promise.resolve(args)
             })
@@ -150,6 +156,7 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                     disabled={true}
                 />
                 <Input
+                    autoFocus={true}
                     label="Batch change name"
                     value={nameInput}
                     onChange={onNameChange}
@@ -171,12 +178,9 @@ export const ConfigurationForm: React.FunctionComponent<React.PropsWithChildren<
                 <hr className="my-3" />
                 <strong className="d-block mb-2">
                     Visibility
-                    <Icon
-                        aria-label="Coming soon"
-                        data-tooltip="Coming soon"
-                        className="ml-1"
-                        svgPath={mdiInformationOutline}
-                    />
+                    <Tooltip content="Coming soon">
+                        <Icon aria-label="Coming soon" className="ml-1" svgPath={mdiInformationOutline} />
+                    </Tooltip>
                 </strong>
                 <div className="form-group mb-1">
                     <RadioButton
