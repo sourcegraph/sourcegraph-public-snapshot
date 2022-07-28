@@ -319,6 +319,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 await execa('git', ['branch', branch])
                 await execa('git', ['push', 'origin', branch])
                 await postMessage(message, config.slackAnnounceChannel)
+                console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.version} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
             }
@@ -369,16 +370,21 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
             ensureReleaseBranchUpToDate(branch)
-            await createTag(
-                await getAuthenticatedGitHubClient(),
-                {
-                    owner: 'sourcegraph',
-                    repo: 'sourcegraph',
-                    branch,
-                    tag,
-                },
-                config.dryRun.tags || false
-            )
+            try {
+                await createTag(
+                    await getAuthenticatedGitHubClient(),
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        branch,
+                        tag,
+                    },
+                    config.dryRun.tags || false
+                )
+                console.log(`To check the status of the build, run:\nsg ci status -branch ${tag} --wait\n`)
+            } catch (error) {
+                console.error(`Failed to create tag: ${tag}`, error)
+            }
         },
     },
     {
