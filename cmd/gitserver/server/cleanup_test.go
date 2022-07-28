@@ -86,7 +86,7 @@ update gitserver_repos set repo_size_bytes = 5 where repo_id = 3;
 			t.Fatal(err)
 		}
 		if repo.RepoSizeBytes == 0 {
-			t.Fatalf("repo_size_bytes is not updated: %d", repo.RepoSizeBytes)
+			t.Fatalf("repo %d - repo_size_bytes is not updated: %d", i, repo.RepoSizeBytes)
 		}
 	}
 
