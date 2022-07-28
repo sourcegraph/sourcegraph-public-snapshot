@@ -3345,6 +3345,10 @@ type FileDiffHunk {
     The hunk body, with lines prefixed with '-', '+', or ' '.
     """
     body: String!
+    # """
+    # Format the hunk.
+    # """
+    # format: HighlightedDiffHunkBody!
     """
     Highlight the hunk.
     """
@@ -3359,10 +3363,6 @@ type FileDiffHunk {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        """
-        Experimental: Skip highlighting for performance
-        """
-        skipHighlighting: Boolean = false
     ): HighlightedDiffHunkBody!
 }
 
@@ -4374,6 +4374,10 @@ interface File2 {
     """
     externalURLs: [ExternalLink!]!
     """
+    Format the file.
+    """
+    format: HighlightedFile!
+    """
     Highlight the file.
     """
     highlight(
@@ -4387,10 +4391,6 @@ interface File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        """
-        Experimental: Skip highlighting for performance
-        """
-        skipHighlighting: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4441,6 +4441,10 @@ type VirtualFile implements File2 {
     """
     externalURLs: [ExternalLink!]!
     """
+    Format the file.
+    """
+    format: HighlightedFile!
+    """
     Highlight the file.
     """
     highlight(
@@ -4454,10 +4458,6 @@ type VirtualFile implements File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        """
-        Experimental: Skip highlighting for performance
-        """
-        skipHighlighting: Boolean = false
     ): HighlightedFile!
 }
 
@@ -4546,6 +4546,10 @@ type GitBlob implements TreeEntry & File2 {
     """
     blame(startLine: Int!, endLine: Int!): [Hunk!]!
     """
+    Format the blob contents.
+    """
+    format: HighlightedFile!
+    """
     Highlight the blob contents.
     """
     highlight(
@@ -4559,10 +4563,6 @@ type GitBlob implements TreeEntry & File2 {
         rendering efficiently.
         """
         highlightLongLines: Boolean = false
-        """
-        Experimental: Skip highlighting for performance
-        """
-        skipHighlighting: Boolean = false
     ): HighlightedFile!
     """
     Submodule metadata if this tree points to a submodule

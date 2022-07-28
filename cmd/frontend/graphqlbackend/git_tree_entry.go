@@ -123,6 +123,17 @@ func (r *GitTreeEntryResolver) Highlight(ctx context.Context, args *HighlightArg
 	})
 }
 
+func (r *GitTreeEntryResolver) Format(ctx context.Context) (*highlightedFileResolver, error) {
+	content, err := r.Content(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return highlightContent(ctx, &HighlightArgs{FormatOnly: true}, content, r.Path(), highlight.Metadata{
+		RepoName: r.commit.repoResolver.Name(),
+		Revision: string(r.commit.oid),
+	})
+}
+
 func (r *GitTreeEntryResolver) Commit() *GitCommitResolver { return r.commit }
 
 func (r *GitTreeEntryResolver) Repository() *RepositoryResolver { return r.commit.repoResolver }

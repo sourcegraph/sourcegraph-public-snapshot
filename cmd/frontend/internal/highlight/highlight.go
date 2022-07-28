@@ -106,9 +106,9 @@ type Params struct {
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
 
-	// SkipHighlighting is an experimental feature is allow these queries to exit
+	// FormatOnly is an experimental feature is allow these queries to exit
 	// early for performance reasons
-	SkipHighlighting bool
+	FormatOnly bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -404,7 +404,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return plainResponse, true, nil
 	}
 
-	if p.SkipHighlighting {
+	if p.FormatOnly {
 		// Return early for better perf
 		return unhighlightedCode(err, code)
 	}

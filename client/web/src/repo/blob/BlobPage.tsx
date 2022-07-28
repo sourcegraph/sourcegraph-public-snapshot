@@ -19,7 +19,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { LoadingSpinner, useEventObservable } from '@sourcegraph/wildcard'
+import { useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -42,7 +42,7 @@ import { ToggleHistoryPanel } from './actions/ToggleHistoryPanel'
 import { ToggleLineWrap } from './actions/ToggleLineWrap'
 import { ToggleRenderedFileMode } from './actions/ToggleRenderedFileMode'
 import { getModeFromURL } from './actions/utils'
-import { fetchBlob, fetchSimpleBlob } from './backend'
+import { fetchBlob, fetchFormattedBlob } from './backend'
 import { Blob, BlobInfo } from './Blob'
 import { Blob as CodeMirrorBlob } from './CodeMirrorBlob'
 import { GoToRawAction } from './GoToRawAction'
@@ -144,15 +144,13 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     mapTo(true),
                     startWith(false),
                     switchMap(() =>
-                        fetchSimpleBlob({
+                        fetchFormattedBlob({
                             repoName,
                             commitID,
                             filePath,
-                            disableTimeout: false,
                         })
                     ),
                     map(blob => {
-                        console.log('got something!!')
                         if (blob === null) {
                             return blob
                         }
@@ -162,8 +160,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             aborted: boolean
                         } = {
                             content: blob.content,
-                            html: blob.highlight.html,
-                            lsif: blob.highlight.lsif,
+                            html: blob.format.html,
                             repoName,
                             revision,
                             commitID,
@@ -171,7 +168,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                             mode,
                             // Properties used in `BlobPage` but not `Blob`
                             richHTML: blob.richHTML,
-                            aborted: blob.highlight.aborted,
+                            aborted: blob.format.aborted,
                         }
                         return blobInfo
                     }),
@@ -203,7 +200,6 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                         })
                     ),
                     map(blob => {
-                        console.log('Calling 2!!')
                         if (blob === null) {
                             return blob
                         }
@@ -367,9 +363,9 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         return (
             <div className={styles.placeholder}>
                 {alwaysRender}
-                <div className="d-flex mt-3 justify-content-center">
+                {/* <div className="d-flex mt-3 justify-content-center">
                     <LoadingSpinner />
-                </div>
+                </div> */}
             </div>
         )
     }

@@ -6,48 +6,48 @@ import { dataOrThrowErrors, gql } from '@sourcegraph/http-client'
 import { ParsedRepoURI, makeRepoURI } from '@sourcegraph/shared/src/util/url'
 
 import { requestGraphQL } from '../../backend/graphql'
-import { BlobFileFields, BlobResult, BlobVariables } from '../../graphql-operations'
+import {
+    BlobFileFields,
+    BlobResult,
+    BlobVariables,
+    FormattedBlobFileFIelds,
+    FormattedBlobResult,
+    FormattedBlobVariables,
+} from '../../graphql-operations'
 
-function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout: boolean }): string {
-    return makeRepoURI(parsed) + String(parsed.disableTimeout)
+function fetchBlobCacheKey(parsed: ParsedRepoURI & { disableTimeout?: boolean }): string {
+    if (parsed.disableTimeout !== undefined) {
+        return makeRepoURI(parsed) + String(parsed.disableTimeout)
+    }
+
+    return makeRepoURI(parsed)
 }
 
-const GET_BLOB = gql`
-    query Blob(
-        $repoName: String!
-        $commitID: String!
-        $filePath: String!
-        $disableTimeout: Boolean!
-        $skipHighlighting: Boolean!
-    ) {
-        repository(name: $repoName) {
-            commit(rev: $commitID) {
-                file(path: $filePath) {
-                    ...BlobFileFields
+export const fetchFormattedBlob = memoizeObservable(
+    (args: { repoName: string; commitID: string; filePath: string }): Observable<FormattedBlobFileFIelds | null> =>
+        requestGraphQL<FormattedBlobResult, FormattedBlobVariables>(
+            gql`
+                query FormattedBlob($repoName: String!, $commitID: String!, $filePath: String!) {
+                    repository(name: $repoName) {
+                        commit(rev: $commitID) {
+                            file(path: $filePath) {
+                                ...FormattedBlobFileFIelds
+                            }
+                        }
+                    }
                 }
-            }
-        }
-    }
 
-    fragment BlobFileFields on File2 {
-        content
-        richHTML
-        highlight(disableTimeout: $disableTimeout, skipHighlighting: $skipHighlighting) {
-            aborted
-            html
-            lsif
-        }
-    }
-`
-
-export const fetchSimpleBlob = memoizeObservable(
-    (args: {
-        repoName: string
-        commitID: string
-        filePath: string
-        disableTimeout: boolean
-    }): Observable<BlobFileFields | null> =>
-        requestGraphQL<BlobResult, BlobVariables>(GET_BLOB, { ...args, skipHighlighting: true }).pipe(
+                fragment FormattedBlobFileFIelds on File2 {
+                    content
+                    richHTML
+                    format {
+                        aborted
+                        html
+                    }
+                }
+            `,
+            args
+        ).pipe(
             map(dataOrThrowErrors),
             map(data => {
                 if (!data.repository?.commit) {
@@ -66,7 +66,30 @@ export const fetchBlob = memoizeObservable(
         filePath: string
         disableTimeout: boolean
     }): Observable<BlobFileFields | null> =>
-        requestGraphQL<BlobResult, BlobVariables>(GET_BLOB, { ...args, skipHighlighting: false }).pipe(
+        requestGraphQL<BlobResult, BlobVariables>(
+            gql`
+                query Blob($repoName: String!, $commitID: String!, $filePath: String!, $disableTimeout: Boolean!) {
+                    repository(name: $repoName) {
+                        commit(rev: $commitID) {
+                            file(path: $filePath) {
+                                ...BlobFileFields
+                            }
+                        }
+                    }
+                }
+
+                fragment BlobFileFields on File2 {
+                    content
+                    richHTML
+                    highlight(disableTimeout: $disableTimeout) {
+                        aborted
+                        html
+                        lsif
+                    }
+                }
+            `,
+            args
+        ).pipe(
             map(dataOrThrowErrors),
             map(data => {
                 if (!data.repository?.commit) {

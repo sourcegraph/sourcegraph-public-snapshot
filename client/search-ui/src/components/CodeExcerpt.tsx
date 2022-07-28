@@ -110,7 +110,11 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     className,
     onCopy,
 }) => {
-    const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [advancedBlobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [lazyBlobLinesOrError, setLazyBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+
+    const blobLinesOrError = advancedBlobLinesOrError || lazyBlobLinesOrError
+
     const [isVisible, setIsVisible] = useState(false)
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
@@ -129,13 +133,17 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     // Get the syntax highlighted blob lines
     useEffect(() => {
         let subscription: Subscription | undefined
+        let lazySubscription: Subscription | undefined
+
         if (isVisible) {
-            const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine)
+            const observable = blobLines ? of(blobLines) : fetchHighlightedFileRangeLines(startLine, endLine, false)
             subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
                 setBlobLinesOrError(blobLinesOrError)
             })
         }
-        return () => subscription?.unsubscribe()
+        return () => {
+            subscription?.unsubscribe()
+        }
     }, [blobLines, endLine, fetchHighlightedFileRangeLines, isVisible, startLine])
 
     // Highlight the search matches
