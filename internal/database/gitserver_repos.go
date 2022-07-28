@@ -654,6 +654,7 @@ func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string
 }
 
 const updateRepoSizesQueryFmtstr = `
+-- source: internal/database/gitserver_repos.go:gitserverRepoStore.UpdateRepoSizes
 UPDATE gitserver_repos AS gr
 SET
     repo_size_bytes = tmp.repo_size_bytes
