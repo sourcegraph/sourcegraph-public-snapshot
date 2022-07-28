@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
 
 	"github.com/keegancsmith/sqlf"
@@ -66,7 +68,43 @@ func (t *telemetryJob) Routines(ctx context.Context, logger log.Logger) ([]gorou
 
 	return []goroutine.BackgroundRoutine{
 		newBackgroundTelemetryJob(logger, db),
+		queueSizeMetricJob(db),
 	}, nil
+}
+
+func queueSizeMetricJob(db database.DB) goroutine.BackgroundRoutine {
+	gauge := promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: "src",
+		Name:      "telemetry_job_queue_size",
+		Help:      "Current number of events waiting to be scraped.",
+	})
+	job := &queueSizeJob{
+		db:        db,
+		sizeGauge: gauge,
+	}
+	return goroutine.NewPeriodicGoroutine(context.Background(), time.Minute*5, job)
+}
+
+type queueSizeJob struct {
+	db        database.DB
+	sizeGauge prometheus.Gauge
+}
+
+func (j *queueSizeJob) Handle(ctx context.Context) error {
+	bookmarkStore := newBookmarkStore(j.db)
+	bookmark, err := bookmarkStore.GetBookmark(ctx)
+	if err != nil {
+		return errors.Wrap(err, "queueSizeJob.GetBookmark")
+	}
+
+	store := basestore.NewWithHandle(j.db.Handle())
+	val, err := basestore.ScanInt(store.QueryRow(ctx, sqlf.Sprintf("select count(*) from event_logs where id > %d and name in (select event_name from event_logs_export_allowlist);", bookmark)))
+	if err != nil {
+		return errors.Wrap(err, "queueSizeJob.GetCount")
+	}
+	j.sizeGauge.Set(float64(val))
+
+	return nil
 }
 
 func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.BackgroundRoutine {
@@ -138,7 +176,6 @@ func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 	if !isEnabled() {
 		return disabledErr
 	}
-
 	topicConfig, err := getTopicConfig()
 	if err != nil {
 		return errors.Wrap(err, "getTopicConfig")
@@ -180,7 +217,7 @@ func (t *telemetryHandler) Handle(ctx context.Context) (err error) {
 func sendBatch(ctx context.Context, events []*types.Event, topicConfig topicConfig, metadata instanceMetadata, metrics *handlerMetrics, callback sendEventsCallbackFunc) (err error) {
 	ctx, _, endObservation := metrics.sendEvents.With(ctx, &err, observation.Args{})
 	sentCount := 0
-	defer endObservation(float64(sentCount), observation.Args{})
+	defer func() { endObservation(float64(sentCount), observation.Args{}) }()
 
 	err = callback(ctx, events, topicConfig, metadata)
 	if err != nil {
@@ -193,7 +230,7 @@ func sendBatch(ctx context.Context, events []*types.Event, topicConfig topicConf
 // fetchEvents wraps the event data fetch in a metric
 func fetchEvents(ctx context.Context, bookmark, batchSize int, eventLogStore database.EventLogStore, metrics *handlerMetrics) (results []*types.Event, err error) {
 	ctx, _, endObservation := metrics.fetchEvents.With(ctx, &err, observation.Args{})
-	defer endObservation(float64(len(results)), observation.Args{})
+	defer func() { endObservation(float64(len(results)), observation.Args{}) }()
 
 	return eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
 }
