@@ -2,12 +2,12 @@ package server
 
 import (
 	"context"
-	"github.com/sourcegraph/sourcegraph/internal/env"
 	"os/exec"
 	"path"
 	"strings"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
+	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/vcs"
 	"github.com/sourcegraph/sourcegraph/schema"
 )
