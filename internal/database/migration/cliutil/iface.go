@@ -24,7 +24,7 @@ type Store interface {
 type OutputFactory func() *output.Output
 
 type RunnerFactory func(ctx context.Context, schemaNames []string) (Runner, error)
-type RunnerFactoryWithSchemas func(ctx context.Context, schemas []*schemas.Schema) (Runner, error)
+type RunnerFactoryWithSchemas func(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (Runner, error)
 
 type runnerShim struct {
 	*runner.Runner

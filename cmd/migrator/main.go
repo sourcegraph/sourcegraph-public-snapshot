@@ -76,15 +76,10 @@ func mainErr(ctx context.Context, args []string) error {
 }
 
 func newRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
-	return newRunnerWithSchemas(ctx, schemas.FilterSchemasByName(schemas.Schemas, schemaNames))
+	return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
 }
 
-func newRunnerWithSchemas(ctx context.Context, schemas []*schemas.Schema) (cliutil.Runner, error) {
-	schemaNames := make([]string, 0, len(schemas))
-	for _, schema := range schemas {
-		schemaNames = append(schemaNames, schema.Name)
-	}
-
+func newRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
 	logger := log.Scoped("runner", "")
 	observationContext := &observation.Context{
 		Logger:     logger,
