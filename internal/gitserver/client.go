@@ -547,6 +547,7 @@ func (c *clientImplementor) Archive(ctx context.Context, repo api.RepoName, opt 
 	if ClientMocks.Archive != nil {
 		return ClientMocks.Archive(ctx, repo, opt)
 	}
+	// thisisaneedle
 	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
 	span.SetTag("Repo", repo)
 	span.SetTag("Treeish", opt.Treeish)
