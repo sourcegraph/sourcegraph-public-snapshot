@@ -336,7 +336,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             if (!trackingIssue) {
                 throw new Error(`Tracking issue for version ${release.version} not found - has it been created yet?`)
             }
-            const latestTag = (await getLatestTag('sourcegraph','sourcegraph')).toString()
+            const latestTag = (await getLatestTag('sourcegraph', 'sourcegraph')).toString()
             const latestBuildURL = `https://buildkite.com/sourcegraph/sourcegraph/builds?branch=${latestTag}`
             const latestBuildMessage = `Latest release build: ${latestTag}. See the build status [here](${latestBuildURL}) `
             const blockingQuery = 'is:open org:sourcegraph label:release-blocker'
