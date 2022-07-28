@@ -8060,7 +8060,7 @@
           "Name": "external_service_id",
           "Index": 8,
           "TypeName": "bigint",
-          "IsNullable": true,
+          "IsNullable": false,
           "Default": "",
           "CharacterMaximumLength": 0,
           "IsIdentity": false,
