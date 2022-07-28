@@ -71,8 +71,7 @@ func (w *webhookBuildHandler) handleCaseGitHub(ctx context.Context, logger log.L
 	}
 
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, cli)
-	builder := NewWebhookBuilder(client)
-	id, err := builder.FindSyncWebhook(ctx, wbj.RepoName)
+	id, err := client.FindSyncWebhook(ctx, wbj.RepoName)
 	if err != nil {
 		return err
 	}
@@ -86,7 +85,7 @@ func (w *webhookBuildHandler) handleCaseGitHub(ctx context.Context, logger log.L
 		return errors.Wrap(err, "add secret to external service")
 	}
 
-	_, err = builder.CreateSyncWebhook(ctx, wbj.RepoName, globals.ExternalURL().Host, secret)
+	_, err = client.CreateSyncWebhook(ctx, wbj.RepoName, globals.ExternalURL().Host, secret)
 	if err != nil {
 		return errors.Wrap(err, "create webhook")
 	}
