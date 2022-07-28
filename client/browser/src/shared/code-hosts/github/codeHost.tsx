@@ -719,9 +719,9 @@ export const githubCodeHost: GithubCodeHost = {
     notificationClassNames,
     commandPaletteClassProps: {
         buttonClassName: 'Header-link d-flex flex-items-baseline',
-        popoverClassName: 'Box',
+        popoverClassName: classNames('Box', styles.commandPalettePopover),
         formClassName: 'p-1',
-        inputClassName: 'form-control input-sm header-search-input jump-to-field',
+        inputClassName: 'form-control input-sm header-search-input jump-to-field-active',
         listClassName: 'p-0 m-0 js-navigation-container jump-to-suggestions-results-container',
         selectedListItemClassName: 'navigation-focus',
         listItemClassName:
