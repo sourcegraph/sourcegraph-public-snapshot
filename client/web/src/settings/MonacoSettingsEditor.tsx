@@ -270,7 +270,7 @@ function setDiagnosticsOptions(
     jsonSchema: JSONSchema | undefined,
     extensionsAsCoreFeatures: boolean
 ): void {
-    const schema = settingsSchema
+    const schema = { ...settingsSchema, properties: { ...settingsSchema.properties } }
     if (extensionsAsCoreFeatures) {
         // eslint-disable-next-line @typescript-eslint/ban-ts-comment -- we need to remove this key conditionally, but not from the schema
         // @ts-ignore
