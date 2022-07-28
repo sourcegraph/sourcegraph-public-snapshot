@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/protocol"
 	"github.com/sourcegraph/sourcegraph/internal/lazyregexp"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	repoupdaterprotocol "github.com/sourcegraph/sourcegraph/internal/repoupdater/protocol"
@@ -33,23 +32,17 @@ type repositoryMirrorInfoResolver struct {
 	repoUpdateSchedulerInfoResult *repoupdaterprotocol.RepoUpdateSchedulerInfoResult
 	repoUpdateSchedulerInfoErr    error
 
-	// memoize the gitserver RepoInfo call
-	repoInfoOnce     sync.Once
-	repoInfoResponse *protocol.RepoInfo
-	repoInfoErr      error
+	// memoize the gitserverRepo
+	gsRepoOnce sync.Once
+	gsRepo     *types.GitserverRepo
+	gsRepoErr  error
 }
 
-func (r *repositoryMirrorInfoResolver) gitserverRepoInfo(ctx context.Context) (*protocol.RepoInfo, error) {
-	r.repoInfoOnce.Do(func() {
-		resp, err := gitserver.NewClient(r.db).RepoInfo(ctx, r.repository.RepoName())
-		info := resp.Results[r.repository.RepoName()]
-		var infoErr error
-		if info.Error != "" {
-			infoErr = errors.New(info.Error)
-		}
-		r.repoInfoResponse, r.repoInfoErr = info.RepoInfo, errors.CombineErrors(err, infoErr)
+func (r *repositoryMirrorInfoResolver) computeGitserverRepo(ctx context.Context) (*types.GitserverRepo, error) {
+	r.gsRepoOnce.Do(func() {
+		r.gsRepo, r.gsRepoErr = r.db.GitserverRepos().GetByID(ctx, r.repository.IDInt32())
 	})
-	return r.repoInfoResponse, r.repoInfoErr
+	return r.gsRepo, r.gsRepoErr
 }
 
 func (r *repositoryMirrorInfoResolver) repoUpdateSchedulerInfo(ctx context.Context) (*repoupdaterprotocol.RepoUpdateSchedulerInfoResult, error) {
@@ -102,6 +95,7 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 
 	cloneURLs := repo.CloneURLs()
 	if len(cloneURLs) == 0 {
+		// TODO: Can this happen? Why?
 		return "", errors.Errorf("no sources for %q", repo)
 	}
 
@@ -109,42 +103,47 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 }
 
 func (r *repositoryMirrorInfoResolver) Cloned(ctx context.Context) (bool, error) {
-	info, err := r.db.GitserverRepos().GetByID(ctx, r.repository.IDInt32())
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return false, err
 	}
+
 	return info.CloneStatus == types.CloneStatusCloned, nil
 }
 
 func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (bool, error) {
-	info, err := r.db.GitserverRepos().GetByID(ctx, r.repository.IDInt32())
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return false, err
 	}
+
 	return info.CloneStatus == types.CloneStatusCloning, nil
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	info, err := r.gitserverRepoInfo(ctx)
+	info, err := gitserver.NewClient(r.db).RepoInfo(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
-	return strptr(info.CloneProgress), nil
+
+	return strptr(info.Results[r.repository.RepoName()].CloneProgress), nil
 }
 
 func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {
-	info, err := r.db.GitserverRepos().GetByID(ctx, r.repository.IDInt32())
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	return strptr(info.LastError), nil
 }
 
 func (r *repositoryMirrorInfoResolver) UpdatedAt(ctx context.Context) (*DateTime, error) {
-	info, err := r.db.GitserverRepos().GetByID(ctx, r.repository.IDInt32())
+	info, err := r.computeGitserverRepo(ctx)
 	if err != nil {
 		return nil, err
 	}
+
 	if info.LastFetched.IsZero() {
 		return nil, nil
 	}
