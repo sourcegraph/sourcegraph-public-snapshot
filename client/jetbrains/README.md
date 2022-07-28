@@ -44,23 +44,23 @@ The plugin works with all JetBrains IDEs, including:
 
 You can configure the plugin at three levels:
 
-1. **Application level:** This is what you edit by default when you go to Settings and make changes in the UI. 
-    - Advanced tip: App-level settings are stored in a file called `sourcegraph.xml` together with the rest of the IDE settings. [This article](https://intellij-support.jetbrains.com/hc/en-us/articles/206544519-Directories-used-by-the-IDE-to-store-settings-caches-plugins-and-logs) will help you find it if you should need it for anything.
+1. **Application level:** This is what you edit by default when you go to Settings and make changes in the UI.
+   - Advanced tip: App-level settings are stored in a file called `sourcegraph.xml` together with the rest of the IDE settings. [This article](https://intellij-support.jetbrains.com/hc/en-us/articles/206544519-Directories-used-by-the-IDE-to-store-settings-caches-plugins-and-logs) will help you find it if you should need it for anything.
 2. **Project level:** You can set up project-level settings in a less intuitive way:
    1. Create a new file at `{project root}/.idea/sourcegraph.xml` if it doesn't exist, with this content:
-        ```xml
-        <?xml version="1.0" encoding="UTF-8"?>
-        <project version="4">
-          <component name="Config">
-            <option name="instanceType" value="DOTCOM" />
-            <option name="url" value="https://company.sourcegraph.com/" />
-            <option name="accessToken" value="" />
-            <option name="defaultBranch" value="main" />
-            <option name="remoteUrlReplacements" value="" />
-            <option name="isGlobbingEnabled" value="false" />
-          </component>
-        </project>
-        ```
+      ```xml
+      <?xml version="1.0" encoding="UTF-8"?>
+      <project version="4">
+        <component name="Config">
+          <option name="instanceType" value="DOTCOM" />
+          <option name="url" value="https://company.sourcegraph.com/" />
+          <option name="accessToken" value="" />
+          <option name="defaultBranch" value="main" />
+          <option name="remoteUrlReplacements" value="" />
+          <option name="isGlobbingEnabled" value="false" />
+        </component>
+      </project>
+      ```
       If the file already exists, then just add the option lines next to the original ones.
    2. Reopen your project to let the IDE catch up with the changes. Now you have custom settings enabled for this project. In the future, when you have this project open and you edit your settings in the Settings UI, they will be saved to the **project-level** file.
    3. To remove the project-level settings, open the XML again and remove the lines you want to set on the app level.
@@ -104,7 +104,7 @@ The publishing process is based on the [intellij-platform-plugin-template](https
 ### Publishing from your local machine
 
 1. Update `pluginVersion` in `gradle.properties`
-    - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
+   - To create pre-release builds with the same version as a previous one, append `.{N}`. For example, `1.0.0-alpha`, then `1.0.0-alpha.1`, `1.0.0-alpha.2`, and so on.
 2. Describe the changes in the `[Unreleased]` section of `client/jetbrains/CHANGELOG.md`
 3. Run `PUBLISH_TOKEN=<YOUR TOKEN HERE> ./scripts/release.sh` from inside the `client/jetbrains` directory (You can [generate tokens on the JetBrains marketplace](https://plugins.jetbrains.com/author/me/tokens)).
 
