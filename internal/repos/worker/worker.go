@@ -3,6 +3,7 @@ package webhookbuilder
 import (
 	"context"
 	"database/sql"
+	"fmt"
 	"time"
 
 	"github.com/keegancsmith/sqlf"
@@ -131,7 +132,7 @@ func scanWebhookBuildJobs(rows *sql.Rows, err error) (workerutil.Record, bool, e
 	if err != nil || len(records) == 0 {
 		return &Job{}, false, err
 	}
-
+	fmt.Println("DEQ:", records[0])
 	return records[0], true, nil
 }
 

@@ -3,7 +3,6 @@ package repos
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/url"
 
 	"github.com/sourcegraph/log"
@@ -84,8 +83,6 @@ func handleCaseGitHub(ctx context.Context, logger log.Logger, w *webhookBuildHan
 		if err != nil {
 			return errors.Wrap(err, "create webhook")
 		}
-
-		fmt.Println("Successfully created!")
 	}
 
 	return nil
@@ -108,7 +105,6 @@ func addSecretToExtSvc(svc *types.ExternalService, org, secret string) error {
 	}
 
 	svc.Config = string(newConfig)
-	// TODO
 
 	return nil
 }

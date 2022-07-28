@@ -164,6 +164,11 @@ func TestWebhookSyncIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		// jobChan := make(chan int, 0)
+		// 1. Don't need dequeue function
+		// 2. How to ensure a webhook is created
+
+		// Build the webhooks
 		builder := repos.NewWebhookBuildJob(store)
 		routines, err := builder.Routines(ctx, logger)
 		if err != nil {
@@ -171,6 +176,7 @@ func TestWebhookSyncIntegration(t *testing.T) {
 		}
 		go goroutine.MonitorBackgroundRoutines(ctx, routines...)
 
+		// Setting up the GitHub webhook handler
 		repoUpdaterClient := newClient(fmt.Sprintf("http://%s", serverURL), doer)
 		g := NewFakeGitHubWebhookHandler(repoUpdaterClient)
 		handler := webhooks.GitHubWebhook{
@@ -178,8 +184,7 @@ func TestWebhookSyncIntegration(t *testing.T) {
 		}
 		g.Register(&handler)
 
-		// setting up the internal server
-		// that repoupdater listens to
+		// Setting up the internal HTTP server
 		server := &repoupdater.Server{
 			Logger:                logger,
 			Store:                 store,
@@ -199,23 +204,24 @@ func TestWebhookSyncIntegration(t *testing.T) {
 
 		// mock the Github PushEvent
 		// e.g. user makes a commit
-		payloadBytes, err := os.ReadFile(filepath.Join("testdata", "github-ping.json"))
+		payload, err := os.ReadFile(filepath.Join("testdata", "github-ping.json"))
 		if err != nil {
 			t.Fatal(err)
 		}
 
 		url := fmt.Sprintf("%s/github-webhooks", globals.ExternalURL())
-		req, err := http.NewRequest("POST", url, bytes.NewReader([]byte(payloadBytes)))
+		req, err := http.NewRequest("POST", url, bytes.NewReader([]byte(payload)))
 		if err != nil {
 			t.Fatal(err)
 		}
 		req.Header.Set("X-Github-Event", "push")
-		req.Header.Set("X-Hub-Signature", sign(t, payloadBytes, []byte("secret")))
+		req.Header.Set("X-Hub-Signature", sign(t, payload, []byte("secret")))
 
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 		resp := rec.Result()
 
+		// Repo is enqueued into repo updater
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			t.Fatalf("Non-200 status code: %v", resp.StatusCode)
 		}
@@ -226,6 +232,10 @@ type fakeWebhookBuildHandler struct {
 	store   repos.Store
 	doer    *httpcli.Doer
 	jobChan chan int
+}
+
+func NewFakeWebhookBuildHandler(store repos.Store, jobChan chan int) *fakeWebhookBuildHandler {
+	return &fakeWebhookBuildHandler{store: store, jobChan: jobChan}
 }
 
 func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
