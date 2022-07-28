@@ -30,13 +30,13 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 
 		b = finishedBuild(3, "failed", time.Now().AddDate(0, 0, -1))
 		server.store.builds[*b.Number] = b
-		builds := server.store.AllFinishedBuilds()
+		builds := server.store.FinishedBuilds()
 
 		stopFunc := server.startOldBuildCleaner(10*time.Millisecond, 24*time.Hour)
 		time.Sleep(20 * time.Millisecond)
 		stopFunc()
 
-		builds = server.store.AllFinishedBuilds()
+		builds = server.store.FinishedBuilds()
 
 		if len(builds) != 0 {
 			t.Errorf("Not all old builds removed. Got %d, wanted %d", len(builds), 0)
@@ -57,7 +57,7 @@ func TestOldBuildsGetDeleted(t *testing.T) {
 		time.Sleep(20 * time.Millisecond)
 		stopFunc()
 
-		builds := server.store.AllFinishedBuilds()
+		builds := server.store.FinishedBuilds()
 
 		if len(builds) != 1 {
 			t.Errorf("Expected one build to be left over. Got %d, wanted %d", len(builds), 1)

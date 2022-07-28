@@ -15,8 +15,12 @@ var ErrInvalidToken = errors.New("buildkite token is invalid")
 var ErrInvalidHeader = errors.New("Header of request is invalid")
 var ErrUnwantedEvent = errors.New("Unwanted event received")
 
+var nowFunc func() time.Time = time.Now
+
 const DefaultChannel = "#william-buildchecker-webhook-test"
 
+// Server is the http server that listens for events from Buildkite. The server tracks builds and their associated jobs
+// with the use of a BuildStore. Once a build is finished and has failed, the server sends a notification.
 type Server struct {
 	logger       log.Logger
 	store        *BuildStore
@@ -49,6 +53,7 @@ func configFromEnv() (*config, error) {
 	return &c, nil
 }
 
+// NewServer creatse a new server to listen for Buildkite webhook events.
 func NewServer(logger log.Logger, c config, channel string) *Server {
 	serverLog := logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
 	return &Server{
@@ -139,7 +144,7 @@ func (s *Server) startOldBuildCleaner(every, window time.Duration) func() {
 			select {
 			case <-ticker.C:
 				oldBuilds := make([]int, 0)
-				now := time.Now()
+				now := nowFunc()
 				for _, b := range s.store.FinishedBuilds() {
 					finishedAt := *b.FinishedAt
 					delta := now.Sub(finishedAt.Time)

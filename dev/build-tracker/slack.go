@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -16,6 +15,7 @@ import (
 	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 	"github.com/sourcegraph/sourcegraph/dev/team"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type NotificationClient struct {
@@ -50,27 +50,27 @@ func (c *NotificationClient) getTeammateForBuild(build *Build) (*team.Teammate, 
 }
 
 func (c *NotificationClient) send(build *Build) error {
-	notifcationLogger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
-	notifcationLogger.Debug("creating slack json", log.Int("buildNumber", build.number()))
+	logger := c.logger.With(log.Int("buildNumber", build.number()), log.String("channel", c.channel))
+	logger.Debug("creating slack json", log.Int("buildNumber", build.number()))
 
 	teammate, err := c.getTeammateForBuild(build)
 	if err != nil {
-		notifcationLogger.Error("failed to find teammate", log.Error(err))
+		logger.Error("failed to find teammate", log.Error(err))
 	}
 
-	blocks, err := createMessageBlocks(notifcationLogger, teammate, build)
+	blocks, err := createMessageBlocks(logger, teammate, build)
 	if err != nil {
 		return err
 	}
 
-	notifcationLogger.Debug("sending notification")
+	logger.Debug("sending notification")
 	_, _, err = c.slack.PostMessage(c.channel, slack.MsgOptionBlocks(blocks...))
 	if err != nil {
-		notifcationLogger.Error("failed to post message", log.Error(err))
+		logger.Error("failed to post message", log.Error(err))
 		return err
 	}
 
-	notifcationLogger.Info("notification posted")
+	logger.Info("notification posted")
 	return nil
 }
 
@@ -123,7 +123,7 @@ func grafanaURLFor(build *Build) (string, error) {
 
 	result, err := json.Marshal(data)
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "failed to marshall GrafanaPayload")
 	}
 
 	query := url.PathEscape(string(result))
@@ -163,8 +163,8 @@ func slackMention(teammate *team.Teammate, build *Build) string {
 func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Build) ([]slack.Block, error) {
 	msg, _, _ := strings.Cut(build.message(), "\n")
 	msg += fmt.Sprintf(" (%s)", build.commit()[:7])
-	failedSection := fmt.Sprintf(":git: *Message:* %s\n\n", commitLink(msg, build.commit()))
-	failedSection += ":clipboard: *Failed jobs:*\n\n"
+	failedSection := fmt.Sprintf("%s\n\n", commitLink(msg, build.commit()))
+	failedSection += "*Failed jobs*\n\n"
 	for _, j := range build.Jobs {
 		if j.ExitStatus != nil && *j.ExitStatus != 0 && !j.SoftFailed {
 			failedSection += fmt.Sprintf("• %s", *j.Name)
@@ -185,6 +185,14 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 		slack.NewHeaderBlock(
 			slack.NewTextBlockObject(slack.PlainTextType, fmt.Sprintf(":red_circle: Build %d failed", build.number()), true, false),
 		),
+		slack.NewSectionBlock(
+			nil,
+			[]*slack.TextBlockObject{
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Author:* %s", author)},
+				{Type: slack.MarkdownType, Text: fmt.Sprintf("*Pipeline:* %s", build.Pipeline.name())},
+			},
+			nil,
+		),
 		&slack.DividerBlock{
 			Type: slack.MBTDivider,
 		},
@@ -193,20 +201,9 @@ func createMessageBlocks(logger log.Logger, teammate *team.Teammate, build *Buil
 			Type: slack.MBTDivider,
 		},
 		slack.NewSectionBlock(
-			nil,
-			[]*slack.TextBlockObject{
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:bust_in_silhouette: Author:* %s", author)},
-				{Type: slack.MarkdownType, Text: fmt.Sprintf("*:building_construction: Pipeline:* %s", build.Pipeline.name())},
-			},
-			nil,
-		),
-		&slack.DividerBlock{
-			Type: slack.MBTDivider,
-		},
-		slack.NewSectionBlock(
 			&slack.TextBlockObject{
 				Type: slack.MarkdownType,
-				Text: `:books: *More information on flakes* :point_down:
+				Text: `:books: *More information on flakes*
 • *<https://docs.sourcegraph.com/dev/background-information/ci#flakes|How to disable flakey tests>*
 • *<https://docs.sourcegraph.com/dev/how-to/testing#assessing-flaky-client-steps|Recognizing flakey client steps and how to fix them>*
 
