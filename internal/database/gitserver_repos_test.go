@@ -990,24 +990,18 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	ctx := context.Background()
 
 	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:         "github.com/sourcegraph/repo1",
-		URI:          "github.com/sourcegraph/repo1",
-		ExternalRepo: api.ExternalRepoSpec{},
-		ShardID:      shardID,
+		Name:    "github.com/sourcegraph/repo1",
+		ShardID: shardID,
 	})
 
 	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:         "github.com/sourcegraph/repo2",
-		URI:          "github.com/sourcegraph/repo2",
-		ExternalRepo: api.ExternalRepoSpec{},
-		ShardID:      shardID,
+		Name:    "github.com/sourcegraph/repo2",
+		ShardID: shardID,
 	})
 
 	repo3, gitserverRepo3 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:         "github.com/sourcegraph/repo3",
-		URI:          "github.com/sourcegraph/repo3",
-		ExternalRepo: api.ExternalRepoSpec{},
-		ShardID:      shardID,
+		Name:    "github.com/sourcegraph/repo3",
+		ShardID: shardID,
 	})
 
 	// Setting repo sizes in DB

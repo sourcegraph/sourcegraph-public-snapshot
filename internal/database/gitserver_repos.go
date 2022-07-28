@@ -661,7 +661,7 @@ FROM (VALUES
 WHERE
 	tmp.repo_id = gr.repo_id
 AND
-	(gr.repo_size_bytes IS NULL OR tmp.repo_size_bytes != gr.repo_size_bytes);
+	tmp.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes;
 `
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be

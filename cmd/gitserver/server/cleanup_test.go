@@ -71,9 +71,9 @@ func TestCleanup_computeStats(t *testing.T) {
 	s.testSetup(t)
 
 	if _, err := s.DB.ExecContext(context.Background(), `
-insert into repo(id, name, fork) values (1, 'a', false), (2, 'b/d', false), (3, 'c', false);
-update gitserver_repos set shard_id = 1;
-update gitserver_repos set repo_size_bytes = 5 where repo_id = 3;
+INSERT INTO repo(id, name) VALUES (1, 'a'), (2, 'b/d'), (3, 'c');
+UPDATE gitserver_repos SET shard_id = 1;
+UPDATE gitserver_repos SET repo_size_bytes = 5 where repo_id = 3;
 `); err != nil {
 		t.Fatalf("unexpected error while inserting test data: %s", err)
 	}
