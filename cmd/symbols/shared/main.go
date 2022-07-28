@@ -104,7 +104,7 @@ func Main(setup SetupFunc) {
 	gitserverClient := gitserver.NewClient(db, observationContext)
 	repositoryFetcherConfig := types.LoadRepositoryFetcherConfig(env.BaseConfig{})
 	repositoryFetcher := fetcher.NewRepositoryFetcher(gitserverClient, repositoryFetcherConfig.MaxTotalPathsLength, int64(repositoryFetcherConfig.MaxFileSizeKb)*1000, observationContext)
-	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext /*TODO: need a db in symbols*/, nil, gitserverClient, repositoryFetcher)
+	searchFunc, handleStatus, newRoutines, ctagsBinary, err := setup(observationContext, db, gitserverClient, repositoryFetcher)
 	if err != nil {
 		logger.Fatal("Failed to set up", log.Error(err))
 	}

@@ -5,7 +5,6 @@ import (
 	"database/sql"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/sourcegraph/go-ctags"
 	"github.com/sourcegraph/log"
@@ -18,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/rockskip"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -62,13 +62,11 @@ func main() {
 					if _, ok := repoToSize[string(args.Repo)]; ok {
 						size = repoToSize[string(args.Repo)]
 					} else {
-						ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-						defer cancel()
 						info, err := db.GitserverRepos().GetByName(ctx, args.Repo)
 						if err != nil {
 							return sqliteSearchFunc(ctx, args)
 						}
-						size = info.RepoSizeBytes
+						size := info.RepoSizeBytes
 						repoToSize[string(args.Repo)] = size
 					}
 
