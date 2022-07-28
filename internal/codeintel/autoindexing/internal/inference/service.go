@@ -355,7 +355,7 @@ func (s *Service) resolveFileContents(
 	}
 	opts := gitserver.ArchiveOptions{
 		Treeish:   invocationContext.commit,
-		Format:    "tar",
+		Format:    gitserver.ArchiveFormatTar,
 		Pathspecs: pathspecs,
 	}
 	rc, err := invocationContext.gitService.Archive(ctx, invocationContext.repo, opts)

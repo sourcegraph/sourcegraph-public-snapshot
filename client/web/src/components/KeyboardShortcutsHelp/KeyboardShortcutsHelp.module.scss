@@ -10,3 +10,11 @@
     margin-bottom: 1rem;
     padding: 0 0.5rem;
 }
+
+.modal-footer {
+    display: flex;
+    border-top: 1px solid var(--border-color);
+    margin-top: 1rem;
+    margin-bottom: 0;
+    padding: 1rem 0.5rem 0;
+}

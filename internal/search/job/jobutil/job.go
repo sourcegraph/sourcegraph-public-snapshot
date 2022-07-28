@@ -61,6 +61,22 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		children = append(children, j)
 	}
 
+	features := toFeatures(inputs.Features)
+
+	// Modify the input query if the user specified `file:contains.content()`
+	fileContainsPatterns := b.FileContainsContent()
+	originalQuery := b
+	if len(fileContainsPatterns) > 0 {
+		newNodes := make([]query.Node, 0, len(fileContainsPatterns)+1)
+		for _, pat := range fileContainsPatterns {
+			newNodes = append(newNodes, query.Pattern{Value: pat})
+		}
+		if b.Pattern != nil {
+			newNodes = append(newNodes, b.Pattern)
+		}
+		b.Pattern = query.Operator{Operands: newNodes, Kind: query.And}
+	}
+
 	{
 		// This block generates jobs that can be built directly from
 		// a basic query rather than first being expanded into
@@ -69,7 +85,6 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 		resultTypes := computeResultTypes(types, b, inputs.PatternType)
 		fileMatchLimit := int32(computeFileMatchLimit(b, inputs.Protocol))
 		selector, _ := filter.SelectPathFromString(b.FindValue(query.FieldSelect)) // Invariant: select is validated
-		features := toFeatures(inputs.Features)
 		repoOptions := toRepoOptions(b, inputs.UserSettings)
 		repoUniverseSearch, skipRepoSubsetSearch, runZoektOverRepos := jobMode(b, resultTypes, inputs.PatternType, inputs.OnSourcegraphDotCom)
 
@@ -133,7 +148,7 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 			repoOptionsCopy := repoOptions
 			repoOptionsCopy.OnlyCloned = true
 			addJob(&commit.SearchJob{
-				Query:                commit.QueryToGitQuery(b, diff),
+				Query:                commit.QueryToGitQuery(originalQuery, diff),
 				RepoOpts:             repoOptionsCopy,
 				Diff:                 diff,
 				Limit:                int(fileMatchLimit),
@@ -160,8 +175,14 @@ func NewBasicJob(inputs *run.SearchInputs, b query.Basic) (job.Job, error) {
 
 	basicJob := NewParallelJob(children...)
 
+	{ // Apply file:contains() post-filter
+		if len(fileContainsPatterns) > 0 {
+			basicJob = NewFileContainsFilterJob(fileContainsPatterns, originalQuery.Pattern, b.IsCaseSensitive(), basicJob)
+		}
+	}
+
 	{ // Apply code ownership post-search filter
-		if includeOwners, excludeOwners := b.FileHasOwner(); len(includeOwners) > 0 || len(excludeOwners) > 0 {
+		if includeOwners, excludeOwners := b.FileHasOwner(); features.CodeOwnershipFilters == true && (len(includeOwners) > 0 || len(excludeOwners) > 0) {
 			basicJob = codeownershipjob.New(basicJob, includeOwners, excludeOwners)
 		}
 	}
@@ -786,6 +807,7 @@ func toFeatures(flagSet *featureflag.FlagSet) search.Features {
 	return search.Features{
 		ContentBasedLangFilters: flagSet.GetBoolOr("search-content-based-lang-detection", false),
 		HybridSearch:            flagSet.GetBoolOr("search-hybrid", false),
+		CodeOwnershipFilters:    flagSet.GetBoolOr("code-ownership", false),
 	}
 }
 

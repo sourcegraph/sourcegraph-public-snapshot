@@ -7866,7 +7866,7 @@ func NewMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
-			defaultHook: func(context.Context, LimitOffset) (r0 []*types.Event, r1 error) {
+			defaultHook: func(context.Context, int, int) (r0 []*types.Event, r1 error) {
 				return
 			},
 		},
@@ -8058,7 +8058,7 @@ func NewStrictMockEventLogStore() *MockEventLogStore {
 			},
 		},
 		ListExportableEventsFunc: &EventLogStoreListExportableEventsFunc{
-			defaultHook: func(context.Context, LimitOffset) ([]*types.Event, error) {
+			defaultHook: func(context.Context, int, int) ([]*types.Event, error) {
 				panic("unexpected invocation of MockEventLogStore.ListExportableEvents")
 			},
 		},
@@ -11325,24 +11325,24 @@ func (c EventLogStoreListAllFuncCall) Results() []interface{} {
 // ListExportableEvents method of the parent MockEventLogStore instance is
 // invoked.
 type EventLogStoreListExportableEventsFunc struct {
-	defaultHook func(context.Context, LimitOffset) ([]*types.Event, error)
-	hooks       []func(context.Context, LimitOffset) ([]*types.Event, error)
+	defaultHook func(context.Context, int, int) ([]*types.Event, error)
+	hooks       []func(context.Context, int, int) ([]*types.Event, error)
 	history     []EventLogStoreListExportableEventsFuncCall
 	mutex       sync.Mutex
 }
 
 // ListExportableEvents delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockEventLogStore) ListExportableEvents(v0 context.Context, v1 LimitOffset) ([]*types.Event, error) {
-	r0, r1 := m.ListExportableEventsFunc.nextHook()(v0, v1)
-	m.ListExportableEventsFunc.appendCall(EventLogStoreListExportableEventsFuncCall{v0, v1, r0, r1})
+func (m *MockEventLogStore) ListExportableEvents(v0 context.Context, v1 int, v2 int) ([]*types.Event, error) {
+	r0, r1 := m.ListExportableEventsFunc.nextHook()(v0, v1, v2)
+	m.ListExportableEventsFunc.appendCall(EventLogStoreListExportableEventsFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
 }
 
 // SetDefaultHook sets function that is called when the ListExportableEvents
 // method of the parent MockEventLogStore instance is invoked and the hook
 // queue is empty.
-func (f *EventLogStoreListExportableEventsFunc) SetDefaultHook(hook func(context.Context, LimitOffset) ([]*types.Event, error)) {
+func (f *EventLogStoreListExportableEventsFunc) SetDefaultHook(hook func(context.Context, int, int) ([]*types.Event, error)) {
 	f.defaultHook = hook
 }
 
@@ -11351,7 +11351,7 @@ func (f *EventLogStoreListExportableEventsFunc) SetDefaultHook(hook func(context
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *EventLogStoreListExportableEventsFunc) PushHook(hook func(context.Context, LimitOffset) ([]*types.Event, error)) {
+func (f *EventLogStoreListExportableEventsFunc) PushHook(hook func(context.Context, int, int) ([]*types.Event, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -11360,19 +11360,19 @@ func (f *EventLogStoreListExportableEventsFunc) PushHook(hook func(context.Conte
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *EventLogStoreListExportableEventsFunc) SetDefaultReturn(r0 []*types.Event, r1 error) {
-	f.SetDefaultHook(func(context.Context, LimitOffset) ([]*types.Event, error) {
+	f.SetDefaultHook(func(context.Context, int, int) ([]*types.Event, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *EventLogStoreListExportableEventsFunc) PushReturn(r0 []*types.Event, r1 error) {
-	f.PushHook(func(context.Context, LimitOffset) ([]*types.Event, error) {
+	f.PushHook(func(context.Context, int, int) ([]*types.Event, error) {
 		return r0, r1
 	})
 }
 
-func (f *EventLogStoreListExportableEventsFunc) nextHook() func(context.Context, LimitOffset) ([]*types.Event, error) {
+func (f *EventLogStoreListExportableEventsFunc) nextHook() func(context.Context, int, int) ([]*types.Event, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -11411,7 +11411,10 @@ type EventLogStoreListExportableEventsFuncCall struct {
 	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
-	Arg1 LimitOffset
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 int
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 []*types.Event
@@ -11423,7 +11426,7 @@ type EventLogStoreListExportableEventsFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c EventLogStoreListExportableEventsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
 }
 
 // Results returns an interface slice containing the results of this

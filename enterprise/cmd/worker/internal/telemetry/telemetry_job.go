@@ -5,6 +5,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 
 	"cloud.google.com/go/pubsub"
@@ -25,6 +29,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
@@ -68,7 +73,8 @@ func newBackgroundTelemetryJob(logger log.Logger, db database.DB) goroutine.Back
 	}
 	operation := observationContext.Operation(observation.Op{})
 
-	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), sendEvents), operation)
+	th := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), newBookmarkStore(db), sendEvents)
+	return goroutine.NewPeriodicGoroutineWithMetrics(context.Background(), time.Minute*1, th, operation)
 }
 
 type sendEventsCallbackFunc func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error
@@ -78,22 +84,24 @@ type telemetryHandler struct {
 	eventLogStore      database.EventLogStore
 	globalStateStore   database.GlobalStateStore
 	userEmailsStore    database.UserEmailsStore
+	bookmarkStore      bookmarkStore
 	sendEventsCallback sendEventsCallbackFunc
 }
 
-func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
+func newTelemetryHandler(logger log.Logger, store database.EventLogStore, userEmailsStore database.UserEmailsStore, globalStateStore database.GlobalStateStore, bookmarkStore bookmarkStore, sendEventsCallback sendEventsCallbackFunc) *telemetryHandler {
 	return &telemetryHandler{
 		logger:             logger,
 		eventLogStore:      store,
 		sendEventsCallback: sendEventsCallback,
 		globalStateStore:   globalStateStore,
 		userEmailsStore:    userEmailsStore,
+		bookmarkStore:      bookmarkStore,
 	}
 }
 
 var disabledErr = errors.New("Usage telemetry export is disabled, but the background job is attempting to execute. This means the configuration was disabled without restarting the worker service. This job is aborting, and no telemetry will be exported.")
 
-const MaxEventsCountDefault = 5000
+const MaxEventsCountDefault = 1000
 
 func (t *telemetryHandler) Handle(ctx context.Context) error {
 	if !isEnabled() {
@@ -112,10 +120,13 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 
 	batchSize := getBatchSize()
 
-	all, err := t.eventLogStore.ListExportableEvents(ctx, database.LimitOffset{
-		Limit:  batchSize,
-		Offset: 0, // currently static, will become dynamic with https://github.com/sourcegraph/sourcegraph/issues/39089
-	})
+	bookmark, err := t.bookmarkStore.GetBookmark(ctx)
+	if err != nil {
+		return errors.Wrap(err, "GetBookmark")
+	}
+	t.logger.Info("fetching events from bookmark", log.Int("bookmark_id", bookmark))
+
+	all, err := t.eventLogStore.ListExportableEvents(ctx, bookmark, batchSize)
 	if err != nil {
 		return errors.Wrap(err, "eventLogStore.ListExportableEvents")
 	}
@@ -125,7 +136,13 @@ func (t *telemetryHandler) Handle(ctx context.Context) error {
 
 	maxId := int(all[len(all)-1].ID)
 	t.logger.Info("telemetryHandler executed", log.Int("event count", len(all)), log.Int("maxId", maxId))
-	return t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
+
+	err = t.sendEventsCallback(ctx, all, topicConfig, instanceMetadata)
+	if err != nil {
+		return errors.Wrap(err, "telemetryHandler.sendEvents")
+	}
+
+	return t.bookmarkStore.UpdateBookmark(ctx, maxId)
 }
 
 // This package level client is to prevent race conditions when mocking this configuration in tests.
@@ -203,9 +220,10 @@ func sendEvents(ctx context.Context, events []*types.Event, config topicConfig, 
 
 	topic := client.Topic(config.topicName)
 	defer topic.Stop()
-	result := topic.Publish(ctx, &pubsub.Message{
+	masg := &pubsub.Message{
 		Data: marshal,
-	})
+	}
+	result := topic.Publish(ctx, masg)
 	_, err = result.Get(ctx)
 	if err != nil {
 		return errors.Wrap(err, "result.Get")
@@ -278,4 +296,39 @@ func getInitialAdminEmail(ctx context.Context, store database.UserEmailsStore) (
 		return "", err
 	}
 	return info, nil
+}
+
+type bmStore struct {
+	*basestore.Store
+}
+
+func newBookmarkStore(db database.DB) bookmarkStore {
+	return &bmStore{Store: basestore.NewWithHandle(db.Handle())}
+}
+
+type bookmarkStore interface {
+	GetBookmark(ctx context.Context) (int, error)
+	UpdateBookmark(ctx context.Context, val int) error
+}
+
+func (s *bmStore) GetBookmark(ctx context.Context) (_ int, err error) {
+	tx, err := s.Transact(ctx)
+	if err != nil {
+		return 0, err
+	}
+	defer func() { err = tx.Done(err) }()
+
+	val, found, err := basestore.ScanFirstInt(tx.Query(ctx, sqlf.Sprintf("select bookmark_id from event_logs_scrape_state order by id limit 1;")))
+	if err != nil {
+		return 0, err
+	}
+	if !found {
+		// generate a row and return the value
+		return basestore.ScanInt(tx.QueryRow(ctx, sqlf.Sprintf("INSERT INTO event_logs_scrape_state (bookmark_id) SELECT MAX(id) FROM event_logs RETURNING bookmark_id;")))
+	}
+	return val, err
+}
+
+func (s *bmStore) UpdateBookmark(ctx context.Context, val int) error {
+	return s.Exec(ctx, sqlf.Sprintf("UPDATE event_logs_scrape_state SET bookmark_id = %S WHERE id = (SELECT id FROM event_logs_scrape_state ORDER BY id LIMIT 1);", val))
 }

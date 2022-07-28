@@ -5,7 +5,7 @@
 ## Usage
 
 ```
-'src code-intel' manages code intelligence data on a Sourcegraph instance.
+'src code-intel' manages code graph data on a Sourcegraph instance.
 
 Usage:
 

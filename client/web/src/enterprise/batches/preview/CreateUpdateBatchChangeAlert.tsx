@@ -9,6 +9,7 @@ import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryServi
 import { Button, Alert, Link, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { MultiSelectContext } from '../MultiSelectContext'
 
 import { createBatchChange, applyBatchChange } from './backend'
@@ -102,7 +103,14 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                                 'test-batches-confirm-apply-btn text-nowrap',
                                 isLoading === true || (!viewerCanAdminister && 'disabled')
                             )}
-                            onClick={onApply}
+                            onClick={() => {
+                                if (batchChange) {
+                                    eventLogger.log('batch_change_execution_preview:apply_update:clicked')
+                                } else {
+                                    eventLogger.log('batch_change_execution_preview:apply:clicked')
+                                }
+                                return onApply()
+                            }}
                             disabled={!canApply}
                         >
                             Apply

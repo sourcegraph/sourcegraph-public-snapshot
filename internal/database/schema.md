@@ -947,6 +947,21 @@ Check constraints:
 
 ```
 
+# Table "public.event_logs_scrape_state"
+```
+   Column    |  Type   | Collation | Nullable |                       Default                       
+-------------+---------+-----------+----------+-----------------------------------------------------
+ id          | integer |           | not null | nextval('event_logs_scrape_state_id_seq'::regclass)
+ bookmark_id | integer |           | not null | 
+Indexes:
+    "event_logs_scrape_state_pk" PRIMARY KEY, btree (id)
+
+```
+
+Contains state for the periodic telemetry job that scrapes events if enabled.
+
+**bookmark_id**: Bookmarks the maximum most recent successful event_logs.id that was scraped
+
 # Table "public.executor_heartbeats"
 ```
       Column      |           Type           | Collation | Nullable |                     Default                     
@@ -2794,6 +2809,30 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
     versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
+
+```
+
+# Table "public.webhook_build_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                    Default                     
+-------------------+--------------------------+-----------+----------+------------------------------------------------
+ repo_id           | integer                  |           |          | 
+ repo_name         | text                     |           |          | 
+ extsvc_kind       | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ id                | integer                  |           | not null | nextval('webhook_build_jobs_id_seq'::regclass)
+ state             | text                     |           | not null | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ execution_logs    | json[]                   |           |          | 
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+Indexes:
+    "webhook_build_jobs_queued_at_idx" btree (queued_at)
 
 ```
 

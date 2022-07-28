@@ -16,19 +16,14 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/shared"
 	"github.com/sourcegraph/sourcegraph/cmd/symbols/types"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/rockskip"
-	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/env"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func main() {
@@ -102,12 +97,11 @@ func SetupRockskip(observationContext *observation.Context, gitserverClient symb
 		logger.Fatal("failed to load configuration", log.Error(err))
 	}
 
-	db := mustInitializeCodeIntelDB(logger)
-	git := NewGitserver(repositoryFetcher)
+	codeintelDB := mustInitializeCodeIntelDB(logger)
 	createParser := func() (ctags.Parser, error) {
 		return symbolsParser.SpawnCtags(log.Scoped("parser", "ctags parser"), config.Ctags)
 	}
-	server, err := rockskip.NewService(db, git, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
+	server, err := rockskip.NewService(codeintelDB, gitserverClient, repositoryFetcher, createParser, config.MaxConcurrentlyIndexing, config.MaxRepos, config.LogQueries, config.IndexRequestsQueueSize, config.SymbolsCacheSize, config.PathSymbolsCacheSize)
 	if err != nil {
 		return nil, nil, nil, config.Ctags.Command, err
 	}
@@ -153,49 +147,6 @@ func mustInitializeCodeIntelDB(logger log.Logger) *sql.DB {
 	}
 
 	return db
-}
-
-type Gitserver struct {
-	repositoryFetcher fetcher.RepositoryFetcher
-}
-
-func NewGitserver(repositoryFetcher fetcher.RepositoryFetcher) Gitserver {
-	return Gitserver{repositoryFetcher: repositoryFetcher}
-}
-
-func (g Gitserver) LogReverseEach(repo string, db database.DB, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	return gitserver.NewClient(db).LogReverseEach(repo, commit, n, onLogEntry)
-}
-
-func (g Gitserver) RevListEach(repo string, db database.DB, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	return gitserver.NewClient(db).RevList(repo, commit, onCommit)
-}
-
-func (g Gitserver) ArchiveEach(repo string, commit string, paths []string, onFile func(path string, contents []byte) error) error {
-	if len(paths) == 0 {
-		return nil
-	}
-
-	args := search.SymbolsParameters{Repo: api.RepoName(repo), CommitID: api.CommitID(commit)}
-	parseRequestOrErrors := g.repositoryFetcher.FetchRepositoryArchive(context.TODO(), args.Repo, args.CommitID, paths)
-	defer func() {
-		// Ensure the channel is drained
-		for range parseRequestOrErrors {
-		}
-	}()
-
-	for parseRequestOrError := range parseRequestOrErrors {
-		if parseRequestOrError.Err != nil {
-			return errors.Wrap(parseRequestOrError.Err, "FetchRepositoryArchive")
-		}
-
-		err := onFile(parseRequestOrError.ParseRequest.Path, parseRequestOrError.ParseRequest.Data)
-		if err != nil {
-			return err
-		}
-	}
-
-	return nil
 }
 
 func sliceContains(slice []string, s string) bool {

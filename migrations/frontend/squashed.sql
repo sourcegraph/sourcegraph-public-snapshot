@@ -1433,6 +1433,25 @@ CREATE SEQUENCE event_logs_id_seq
 
 ALTER SEQUENCE event_logs_id_seq OWNED BY event_logs.id;
 
+CREATE TABLE event_logs_scrape_state (
+    id integer NOT NULL,
+    bookmark_id integer NOT NULL
+);
+
+COMMENT ON TABLE event_logs_scrape_state IS 'Contains state for the periodic telemetry job that scrapes events if enabled.';
+
+COMMENT ON COLUMN event_logs_scrape_state.bookmark_id IS 'Bookmarks the maximum most recent successful event_logs.id that was scraped';
+
+CREATE SEQUENCE event_logs_scrape_state_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE event_logs_scrape_state_id_seq OWNED BY event_logs_scrape_state.id;
+
 CREATE TABLE executor_heartbeats (
     id integer NOT NULL,
     hostname text NOT NULL,
@@ -3091,6 +3110,31 @@ CREATE TABLE versions (
     first_version text NOT NULL
 );
 
+CREATE SEQUENCE webhook_build_jobs_id_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE TABLE webhook_build_jobs (
+    repo_id integer,
+    repo_name text,
+    extsvc_kind text,
+    queued_at timestamp with time zone DEFAULT now(),
+    id integer DEFAULT nextval('webhook_build_jobs_id_seq'::regclass) NOT NULL,
+    state text DEFAULT 'queued'::text NOT NULL,
+    failure_message text,
+    started_at timestamp with time zone,
+    finished_at timestamp with time zone,
+    process_after timestamp with time zone,
+    num_resets integer DEFAULT 0 NOT NULL,
+    num_failures integer DEFAULT 0 NOT NULL,
+    execution_logs json[],
+    last_heartbeat_at timestamp with time zone,
+    worker_hostname text DEFAULT ''::text NOT NULL
+);
+
 CREATE TABLE webhook_logs (
     id bigint NOT NULL,
     received_at timestamp with time zone DEFAULT now() NOT NULL,
@@ -3167,6 +3211,8 @@ ALTER TABLE ONLY discussion_threads ALTER COLUMN id SET DEFAULT nextval('discuss
 ALTER TABLE ONLY discussion_threads_target_repo ALTER COLUMN id SET DEFAULT nextval('discussion_threads_target_repo_id_seq'::regclass);
 
 ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_seq'::regclass);
+
+ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
 
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
 
@@ -3350,6 +3396,9 @@ ALTER TABLE ONLY discussion_threads_target_repo
 
 ALTER TABLE ONLY event_logs
     ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY event_logs_scrape_state
+    ADD CONSTRAINT event_logs_scrape_state_pk PRIMARY KEY (id);
 
 ALTER TABLE ONLY executor_heartbeats
     ADD CONSTRAINT executor_heartbeats_hostname_key UNIQUE (hostname);
@@ -3879,6 +3928,8 @@ CREATE UNIQUE INDEX users_billing_customer_id ON users USING btree (billing_cust
 CREATE INDEX users_created_at_idx ON users USING btree (created_at);
 
 CREATE UNIQUE INDEX users_username ON users USING btree (username) WHERE (deleted_at IS NULL);
+
+CREATE INDEX webhook_build_jobs_queued_at_idx ON webhook_build_jobs USING btree (queued_at);
 
 CREATE INDEX webhook_logs_external_service_id_idx ON webhook_logs USING btree (external_service_id);
 

@@ -1,8 +1,8 @@
 # Deploying Sourcegraph executors
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -10,7 +10,7 @@
 
 [Executors](executors.md) provide a sandbox that can run resource-intensive or untrusted tasks on behalf of the Sourcegraph instance, such as:
 
-- [automatically indexing a repository for precise code intelligence](../code_intelligence/explanations/auto_indexing.md)
+- [automatically indexing a repository for precise code navigation](../code_intelligence/explanations/auto_indexing.md)
 - [running batch changes](../batch_changes/explanations/server_side.md)
 
 ## Requirements
@@ -256,13 +256,13 @@ you@sourcegraph-executor-h0rv:~$ curl <your externalURL here>
 <a href="/sign-in?returnTo=%2F">Found</a>
 ```
 
-9. Go back to the site admin page, expand **Code intelligence**, click **Configuration**, click **Create new policy**, and fill in:
+9. Go back to the site admin page, expand **Code graph**, click **Configuration**, click **Create new policy**, and fill in:
   - Name: `TEST`
   - Click **add a repository pattern**
   - Repository pattern #1: set this to an existing repository on your Sourcegraph instance (e.g. `github.com/gorilla/mux`)
   - Type: `HEAD`
   - Auto-indexing: Enabled
-10. Go to that repository's page, click **Code Intelligence**, click **Auto-indexing**, and check to see if an indexing job has appeared. If nothing is there:
+10. Go to that repository's page, click **Code graph**, click **Auto-indexing**, and check to see if an indexing job has appeared. If nothing is there:
   - Try clicking **Enqueue**
   - Try setting a higher update frequency: `PRECISE_CODE_INTEL_AUTO_INDEXING_TASK_INTERVAL=10s`
   - Try setting a lower delay: `PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_PROCESS_DELAY=10s`

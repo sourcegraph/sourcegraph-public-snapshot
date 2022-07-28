@@ -1,7 +1,6 @@
 import React from 'react'
 
 import '../SourcegraphWebApp.scss'
-import { KEYBOARD_SHORTCUTS } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 
 import { SourcegraphWebApp } from '../SourcegraphWebApp'
 
@@ -47,7 +46,6 @@ export const EnterpriseWebApp: React.FunctionComponent<React.PropsWithChildren<u
         repoSettingsAreaRoutes={enterpriseRepoSettingsAreaRoutes}
         repoSettingsSidebarGroups={enterpriseRepoSettingsSidebarGroups}
         routes={enterpriseRoutes}
-        keyboardShortcuts={KEYBOARD_SHORTCUTS}
         codeIntelligenceEnabled={true}
         codeIntelligenceBadgeMenu={CodeIntelligenceBadgeMenu}
         codeIntelligenceBadgeContent={CodeIntelligenceBadgeContent}

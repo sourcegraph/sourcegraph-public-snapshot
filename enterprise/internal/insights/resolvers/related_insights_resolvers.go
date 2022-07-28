@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"sort"
 	"strings"
 
 	"github.com/graph-gophers/graphql-go"
@@ -12,6 +13,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -30,6 +32,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 	if err != nil {
 		return nil, errors.Wrap(err, "GetAll")
 	}
+	allSeries = limitSeries(allSeries)
 
 	seriesMatches := map[string]*relatedInsightInlineMetadata{}
 	for _, series := range allSeries {
@@ -127,6 +130,7 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 	if err != nil {
 		return nil, errors.Wrap(err, "GetAll")
 	}
+	allSeries = limitSeries(allSeries)
 
 	var resolvers []graphqlbackend.RelatedInsightsResolver
 	matchedInsightViews := map[string]bool{}
@@ -180,6 +184,7 @@ func (r *Resolver) RelatedInsightsForRepo(ctx context.Context, args graphqlbacke
 	if err != nil {
 		return nil, errors.Wrap(err, "GetAll")
 	}
+	allSeries = limitSeries(allSeries)
 
 	var resolvers []graphqlbackend.RelatedInsightsResolver
 	matchedInsightViews := map[string]bool{}
@@ -233,4 +238,15 @@ func (r *relatedInsightsResolver) ViewID() graphql.ID {
 
 func (r *relatedInsightsResolver) Title() string {
 	return r.title
+}
+
+// Limiting the number of series/queries to 50 will have no impact on the vast majority of customers.
+// However, our own test environments have hundreds of insights and we need to limit these queries in some way
+// so that the endpoints do not time out.
+// This returns the 50 most recent series.
+func limitSeries(series []types.InsightViewSeries) []types.InsightViewSeries {
+	sort.SliceStable(series, func(i, j int) bool {
+		return series[i].CreatedAt.After(series[j].CreatedAt)
+	})
+	return series[:minInt(50, int32(len(series)))]
 }

@@ -33,7 +33,7 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
 - Whether new user signup is allowed (true/false)
 - Whether a repository has ever been added (true/false)
 - Whether a code search has ever been executed (true/false)
-- Whether code intelligence has ever been used (true/false)
+- Whether code navigation has ever been used (true/false)
 - Aggregate counts of current daily, weekly, and monthly users
 - Aggregate counts of current daily, weekly, and monthly users, by whether they are using code host integrations
 - Aggregate daily, weekly, and monthly latencies (in ms) of search queries
@@ -45,10 +45,10 @@ This telemetry can be disabled using the `disableNonCriticalTelemetry` option in
   - The number of queries with only patterns (e.g., without filters like `repo:` or `file:`)
   - The number of queries with three or more patterns
 - Aggregate daily, weekly, and monthly user counts of search queries with the above properties
-- Code intelligence usage data
-  - Total number of repositories with and without an uploaded precise code intel index
-  - Total number of code intelligence queries (e.g., hover tooltips) per week grouped by language
-  - Number of users performing code intelligence queries (e.g., hover tooltips) per week grouped by language
+- Code navigation usage data
+  - Total number of repositories with and without an uploaded precise code navigation index
+  - Total number of code navigation queries (e.g., hover tooltips) per week grouped by language
+  - Number of users performing code navigation queries (e.g., hover tooltips) per week grouped by language
 <!-- depends-on-source: ~/internal/usagestats/batches.go -->
 - Batch Changes usage data
   - Total count of page views on the batch change apply page
