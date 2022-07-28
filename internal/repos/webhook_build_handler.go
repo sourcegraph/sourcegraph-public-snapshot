@@ -24,6 +24,10 @@ type webhookBuildHandler struct {
 	store Store
 }
 
+func newWebhookBuildHandler(store Store) *webhookBuildHandler {
+	return &webhookBuildHandler{store: store}
+}
+
 func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	wbj, ok := record.(*webhookbuilder.Job)
 	if !ok {
@@ -32,13 +36,13 @@ func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, rec
 
 	switch wbj.ExtSvcKind {
 	case "GITHUB":
-		return handleCaseGitHub(ctx, logger, w, wbj)
+		return w.handleCaseGitHub(ctx, logger, wbj)
 	}
 
 	return nil
 }
 
-func handleCaseGitHub(ctx context.Context, logger log.Logger, w *webhookBuildHandler, wbj *webhookbuilder.Job) error {
+func (w *webhookBuildHandler) handleCaseGitHub(ctx context.Context, logger log.Logger, wbj *webhookbuilder.Job) error {
 	svcs, err := w.store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{})
 	if err != nil || len(svcs) != 1 {
 		return errors.Wrap(err, "get external service")
@@ -73,16 +77,18 @@ func handleCaseGitHub(ctx context.Context, logger log.Logger, w *webhookBuildHan
 		return err
 	}
 
-	if id == 0 {
-		secret := randstr.Hex(32)
-		if err := addSecretToExtSvc(svc, "someOrg", secret); err != nil {
-			return errors.Wrap(err, "add secret to external service")
-		}
+	if id != 0 {
+		return nil
+	}
 
-		_, err = handler.CreateSyncWebhook(ctx, wbj.RepoName, globals.ExternalURL().Host, secret)
-		if err != nil {
-			return errors.Wrap(err, "create webhook")
-		}
+	secret := randstr.Hex(32)
+	if err := addSecretToExtSvc(svc, "someOrg", secret); err != nil {
+		return errors.Wrap(err, "add secret to external service")
+	}
+
+	_, err = handler.CreateSyncWebhook(ctx, wbj.RepoName, globals.ExternalURL().Host, secret)
+	if err != nil {
+		return errors.Wrap(err, "create webhook")
 	}
 
 	return nil

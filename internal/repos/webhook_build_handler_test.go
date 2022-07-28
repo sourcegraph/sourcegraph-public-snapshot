@@ -34,7 +34,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
-	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -164,25 +163,26 @@ func TestWebhookSyncIntegration(t *testing.T) {
 			t.Fatal(err)
 		}
 
-		// jobChan := make(chan int, 0)
-		// 1. Don't need dequeue function
-		// 2. How to ensure a webhook is created
+		// Build the webhooks synchronously
+		webhookBuildHandler := NewFakeWebhookBuildHandler(store, doer)
+		job := &webhookbuilder.Job{
+			RepoID:     int32(repo.ID),
+			RepoName:   string(repo.Name),
+			ExtSvcKind: svc.Kind,
+		}
 
-		// Build the webhooks
-		builder := repos.NewWebhookBuildJob(store)
-		routines, err := builder.Routines(ctx, logger)
+		id, err := webhookBuildHandler.Handle(ctx, logger, job)
 		if err != nil {
 			t.Fatal(err)
 		}
-		go goroutine.MonitorBackgroundRoutines(ctx, routines...)
+		logger.Info(fmt.Sprintf("Webhook ID: %v", id))
 
 		// Setting up the GitHub webhook handler
-		repoUpdaterClient := newClient(fmt.Sprintf("http://%s", serverURL), doer)
-		g := NewFakeGitHubWebhookHandler(repoUpdaterClient)
-		handler := webhooks.GitHubWebhook{
+		g := NewFakeGitHubWebhookHandler(doer)
+		router := webhooks.GitHubWebhook{
 			ExternalServices: store.ExternalServiceStore(),
 		}
-		g.Register(&handler)
+		g.Register(&router)
 
 		// Setting up the internal HTTP server
 		server := &repoupdater.Server{
@@ -218,7 +218,7 @@ func TestWebhookSyncIntegration(t *testing.T) {
 		req.Header.Set("X-Hub-Signature", sign(t, payload, []byte("secret")))
 
 		rec := httptest.NewRecorder()
-		handler.ServeHTTP(rec, req)
+		router.ServeHTTP(rec, req)
 		resp := rec.Result()
 
 		// Repo is enqueued into repo updater
@@ -229,85 +229,81 @@ func TestWebhookSyncIntegration(t *testing.T) {
 }
 
 type fakeWebhookBuildHandler struct {
-	store   repos.Store
-	doer    *httpcli.Doer
-	jobChan chan int
+	store repos.Store
+	doer  httpcli.Doer
 }
 
-func NewFakeWebhookBuildHandler(store repos.Store, jobChan chan int) *fakeWebhookBuildHandler {
-	return &fakeWebhookBuildHandler{store: store, jobChan: jobChan}
+func NewFakeWebhookBuildHandler(store repos.Store, doer httpcli.Doer) *fakeWebhookBuildHandler {
+	return &fakeWebhookBuildHandler{store: store, doer: doer}
 }
 
-func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) (int, error) {
 	wbj, ok := record.(*webhookbuilder.Job)
 	if !ok {
-		h.jobChan <- 0
-		return errors.Errorf("expected repos.WhBuildJob, got %T", record)
+		return 0, errors.Newf("expected repos.WhBuildJob, got %T", record)
 	}
 
 	switch wbj.ExtSvcKind {
 	case "GITHUB":
-		return handleCaseGitHub(ctx, logger, h, wbj)
+		return h.handleCaseGitHub(ctx, logger, wbj)
 	}
 
-	return nil
+	return 0, errors.Newf("the job is not supported by any code hosts")
 }
 
-func handleCaseGitHub(ctx context.Context, logger log.Logger, h *fakeWebhookBuildHandler, wbj *webhookbuilder.Job) error {
+func (h *fakeWebhookBuildHandler) handleCaseGitHub(ctx context.Context, logger log.Logger, wbj *webhookbuilder.Job) (int, error) {
 	svcs, err := h.store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{})
 	if err != nil || len(svcs) != 1 {
-		return errors.Wrap(err, "get external service")
+		return 0, errors.Wrap(err, "get external service")
 	}
 	svc := svcs[0]
 
 	baseURL, err := url.Parse("")
 	if err != nil {
-		return errors.Wrap(err, "parse base URL")
+		return 0, errors.Wrap(err, "parse base URL")
 	}
 
 	accts, err := h.store.UserExternalAccountsStore().List(ctx, database.ExternalAccountsListOptions{})
 	if err != nil {
-		return errors.Wrap(err, "get accounts")
+		return 0, errors.Wrap(err, "get accounts")
 	}
 
 	_, token, err := github.GetExternalAccountData(&accts[0].AccountData)
 	if err != nil {
-		return errors.Wrap(err, "get token")
+		return 0, errors.Wrap(err, "get token")
 	}
 
-	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, *h.doer)
+	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, h.doer)
 	g := repos.NewGitHubWebhookHandler(client)
 
 	id, err := g.FindSyncWebhook(ctx, wbj.RepoName)
 	if err != nil && err.Error() != "unable to find webhook" {
-		return errors.Wrap(err, "find webhook")
+		return 0, errors.Wrap(err, "find webhook")
 	}
 
 	if id != 0 {
-		h.jobChan <- id
-		return nil
+		return id, nil
 	}
 
 	secret := randstr.Hex(32)
 	if err := addSecretToExtSvc(svc, "someOrg", secret); err != nil {
-		return errors.Wrap(err, "add secret to External Service")
+		return 0, errors.Wrap(err, "add secret to External Service")
 	}
 
 	id, err = g.CreateSyncWebhook(ctx, wbj.RepoName, fmt.Sprintf("https://%s", globals.ExternalURL().Host), secret)
 	if err != nil {
-		return errors.Wrap(err, "create webhook")
+		return 0, errors.Wrap(err, "create webhook")
 	}
 
-	h.jobChan <- id
-	return nil
+	return id, nil
 }
 
 type fakeGitHubWebhookHandler struct {
-	client *ru.Client
+	doer httpcli.Doer
 }
 
-func NewFakeGitHubWebhookHandler(client *ru.Client) *fakeGitHubWebhookHandler {
-	return &fakeGitHubWebhookHandler{client: client}
+func NewFakeGitHubWebhookHandler(doer httpcli.Doer) *fakeGitHubWebhookHandler {
+	return &fakeGitHubWebhookHandler{doer: doer}
 }
 
 func (f *fakeGitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
@@ -325,7 +321,8 @@ func (f *fakeGitHubWebhookHandler) fakeHandleGitHubWebhook(ctx context.Context, 
 	fullName := *event.Repo.URL
 	repoName := api.RepoName(fullName[8:])
 
-	resp, err := f.client.EnqueueRepoUpdate(ctx, repoName)
+	repoUpdaterClient := newClient(fmt.Sprintf("http://%s", serverURL), f.doer)
+	resp, err := repoUpdaterClient.EnqueueRepoUpdate(ctx, repoName)
 	if err != nil {
 		return err
 	}
