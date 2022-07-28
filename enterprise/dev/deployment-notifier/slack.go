@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/slack-go/slack"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/dev/team"
@@ -40,12 +41,12 @@ type slackSummaryPresenter struct {
 func (presenter *slackSummaryPresenter) toString() string {
 	tmpl, err := template.New("deployment-status-slack-summary").Parse(slackTemplate)
 	if err != nil {
-		logger.Fatal("can't parse Slack summary", log.Error(err))
+		logger.Fatal("failed to parse Slack summary", log.Error(err))
 	}
 	var sb strings.Builder
 	err = tmpl.Execute(&sb, presenter)
 	if err != nil {
-		logger.Fatal("can't execute Slack template", log.Error(err))
+		logger.Fatal("failed to execute Slack template", log.Error(err))
 	}
 	return sb.String()
 }
@@ -137,26 +138,26 @@ func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
 	}
 
 	type slackBlock struct {
-		Type string     `json:"type"`
-		Text *slackText `json:"text,omitempty"`
+		Type slack.MessageBlockType `json:"type"`
+		Text *slackText             `json:"text,omitempty"`
 		// For type 'context'
 		Elements []*slackText `json:"elements,omitempty"`
 	}
 
 	var blocks []slackBlock
 	buildInfoContent := []*slackText{{
-		Type: "mrkdwn",
+		Type: slack.MarkdownType,
 		Text: fmt.Sprintf("<%s|:hammer: Build>", presenter.BuildURL),
 	}}
 	if presenter.TraceURL != "" {
 		buildInfoContent = append(buildInfoContent, &slackText{
-			Type: "mrkdwn",
+			Type: slack.MarkdownType,
 			Text: fmt.Sprintf("<%s|:footprints: Trace>\n", presenter.TraceURL),
 		})
 	}
 
 	servicesContent := &slackText{
-		Type: "mrkdwn",
+		Type: slack.MarkdownType,
 		Text: "*Updated services:*\n",
 	}
 	for _, service := range presenter.Services {
@@ -164,9 +165,9 @@ func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
 	}
 
 	pullRequestsBlocks := []slackBlock{{
-		Type: "section",
+		Type: slack.MBTSection,
 		Text: &slackText{
-			Type: "mrkdwn",
+			Type: slack.MarkdownType,
 			Text: "*Pull Requests:*\n",
 		},
 	}}
@@ -180,9 +181,9 @@ func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
 		} else {
 			// this PR text exceeds the limit so a new section block is required
 			pullRequestsBlocks = append(pullRequestsBlocks, slackBlock{
-				Type: "section",
+				Type: slack.MBTSection,
 				Text: &slackText{
-					Type: "mrkdwn",
+					Type: slack.MarkdownType,
 					// add empty character to fix dumb Slack autoformatting
 					Text: "\u200e" + pullRequestText,
 				},
@@ -192,18 +193,18 @@ func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
 
 	blocks = append(blocks,
 		slackBlock{
-			Type: "header",
+			Type: slack.MBTHeader,
 			Text: &slackText{
-				Type: "plain_text",
+				Type: slack.PlainTextType,
 				Text: fmt.Sprintf(":arrow_left: %s deployment", presenter.Environment),
 			},
 		},
 		slackBlock{
-			Type:     "context",
+			Type:     slack.MBTContext,
 			Elements: buildInfoContent,
 		},
 		slackBlock{
-			Type: "section",
+			Type: slack.MBTSection,
 			Text: servicesContent,
 		})
 	blocks = append(blocks, pullRequestsBlocks...)
