@@ -315,7 +315,7 @@ func structuralSearchWithZoekt(ctx context.Context, p *protocol.Request, sender 
 		p.Branch = "HEAD"
 	}
 	branchRepos := []zoektquery.BranchRepos{{Branch: p.Branch, Repos: roaring.BitmapOf(uint32(p.RepoID))}}
-	err = zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, nil, p.Repo, sender)
+	err = zoektSearch(ctx, patternInfo, branchRepos, time.Since, p.IndexerEndpoints, p.Repo, sender)
 	if err != nil {
 		return err
 	}
