@@ -110,6 +110,4 @@ livenessProbe:
 Git command [git rev-parse HEAD] failed (stderr: ""): strconv.Atoi: parsing "": invalid syntax
 ```
 
-This error occurs when the service mesh, like istio, drops the [Trailer response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer) for http1 by default. Enable trailers in your instance to resolve this issue. See our `envoy` examples in [Kubernetes with Helm](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) and [Kubernetes without Helm](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) for details. 
-
-
+This error occurs when the service mesh, like istio, drops the [Trailer response header](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Trailer) for http1 by default. Enable trailers in your instance to resolve this issue. See our `envoy` examples in [Kubernetes with Helm](https://github.com/sourcegraph/deploy-sourcegraph-helm/tree/main/charts/sourcegraph/examples) and [Kubernetes without Helm](https://github.com/sourcegraph/deploy-sourcegraph/tree/master/overlays) for details.

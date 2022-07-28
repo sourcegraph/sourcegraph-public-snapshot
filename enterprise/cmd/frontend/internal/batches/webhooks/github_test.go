@@ -17,6 +17,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	gh "github.com/google/go-github/v43/github"
 
+	"github.com/sourcegraph/log/logtest"
+
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/sources"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/batches/store"
@@ -73,7 +75,7 @@ func testGitHubWebhook(db database.DB, userID int32) func(*testing.T) {
 			t.Fatal(t)
 		}
 
-		githubSrc, err := repos.NewGithubSource(db.ExternalServices(), extSvc, cf)
+		githubSrc, err := repos.NewGithubSource(logtest.Scoped(t), db.ExternalServices(), extSvc, cf)
 		if err != nil {
 			t.Fatal(t)
 		}

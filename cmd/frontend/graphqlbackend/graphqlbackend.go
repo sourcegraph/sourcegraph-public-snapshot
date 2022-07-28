@@ -462,6 +462,10 @@ func NewSchema(
 		EnterpriseResolvers.dependenciesResolver = dependencies
 		resolver.DependenciesResolver = dependencies
 		schemas = append(schemas, dependenciesSchema)
+		// Register NodeByID handlers.
+		for kind, res := range dependencies.NodeResolvers() {
+			resolver.nodeByIDFns[kind] = res
+		}
 	}
 
 	return graphql.ParseSchema(
@@ -553,6 +557,9 @@ func newSchemaResolver(db database.DB) *schemaResolver {
 		},
 		"Executor": func(ctx context.Context, id graphql.ID) (Node, error) {
 			return executorByID(ctx, db, id, r)
+		},
+		"ExternalServiceSyncJob": func(ctx context.Context, id graphql.ID) (Node, error) {
+			return externalServiceSyncJobByID(ctx, db, id)
 		},
 	}
 	return r

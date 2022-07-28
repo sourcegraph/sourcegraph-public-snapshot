@@ -6,8 +6,11 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/keegancsmith/sqlf"
+	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/license"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -17,6 +20,10 @@ type dbLicense struct {
 	ProductSubscriptionID string // UUID
 	LicenseKey            string
 	CreatedAt             time.Time
+	LicenseVersion        *int
+	LicenseTags           []string
+	LicenseUserCount      *int
+	LicenseExpiresAt      *time.Time
 }
 
 // errLicenseNotFound occurs when a database operation expects a specific Sourcegraph
@@ -28,22 +35,28 @@ type dbLicenses struct {
 	db database.DB
 }
 
-// Create creates a new product license entry given a license key.
-func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey string) (id string, err error) {
+// Create creates a new product license entry for the given subscription.
+func (s dbLicenses) Create(ctx context.Context, subscriptionID, licenseKey string, version int, info license.Info) (id string, err error) {
 	if mocks.licenses.Create != nil {
 		return mocks.licenses.Create(subscriptionID, licenseKey)
 	}
 
 	uuid, err := uuid.NewRandom()
 	if err != nil {
-		return "", err
+		return "", errors.Wrap(err, "new UUID")
 	}
-	if err := s.db.QueryRowContext(ctx, `
-INSERT INTO product_licenses(id, product_subscription_id, license_key) VALUES($1, $2, $3) RETURNING id
+
+	var expiresAt *time.Time
+	if !info.ExpiresAt.IsZero() {
+		expiresAt = &info.ExpiresAt
+	}
+	if err = s.db.QueryRowContext(ctx, `
+INSERT INTO product_licenses(id, product_subscription_id, license_key, license_version, license_tags, license_user_count, license_expires_at)
+VALUES($1, $2, $3, $4, $5, $6, $7) RETURNING id
 `,
-		uuid, subscriptionID, licenseKey,
+		uuid, subscriptionID, licenseKey, dbutil.NewNullInt64(int64(version)), pq.Array(info.Tags), dbutil.NewNullInt64(int64(info.UserCount)), dbutil.NullTime{Time: expiresAt},
 	).Scan(&id); err != nil {
-		return "", err
+		return "", errors.Wrap(err, "insert")
 	}
 	return id, nil
 }
@@ -109,7 +122,16 @@ func (s dbLicenses) List(ctx context.Context, opt dbLicensesListOptions) ([]*dbL
 
 func (s dbLicenses) list(ctx context.Context, conds []*sqlf.Query, limitOffset *database.LimitOffset) ([]*dbLicense, error) {
 	q := sqlf.Sprintf(`
-SELECT id, product_subscription_id, license_key, created_at FROM product_licenses
+SELECT
+	id,
+	product_subscription_id,
+	license_key,
+	created_at,
+	license_version,
+	license_tags,
+	license_user_count,
+	license_expires_at
+FROM product_licenses
 WHERE (%s)
 ORDER BY created_at DESC
 %s`,
@@ -126,7 +148,7 @@ ORDER BY created_at DESC
 	var results []*dbLicense
 	for rows.Next() {
 		var v dbLicense
-		if err := rows.Scan(&v.ID, &v.ProductSubscriptionID, &v.LicenseKey, &v.CreatedAt); err != nil {
+		if err := rows.Scan(&v.ID, &v.ProductSubscriptionID, &v.LicenseKey, &v.CreatedAt, &v.LicenseVersion, pq.Array(&v.LicenseTags), &v.LicenseUserCount, &v.LicenseExpiresAt); err != nil {
 			return nil, err
 		}
 		results = append(results, &v)

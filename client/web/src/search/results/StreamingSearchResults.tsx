@@ -41,7 +41,7 @@ import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
 import { DidYouMean } from '../suggestion/DidYouMean'
-import { LuckySearch } from '../suggestion/LuckySearch'
+import { LuckySearch, luckySearchEvent } from '../suggestion/LuckySearch'
 
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
@@ -164,6 +164,19 @@ export const StreamingSearchResults: React.FunctionComponent<
             telemetryService.log('SearchResultsFetchFailed', {
                 code_search: { error_message: asError(results.error).message },
             })
+        }
+    }, [results, telemetryService])
+
+    // Log lucky search events
+    useEffect(() => {
+        if (results?.alert?.kind === 'lucky-search-queries' && results?.alert?.title && results.alert.proposedQueries) {
+            const events = luckySearchEvent(
+                results.alert.title,
+                results.alert.proposedQueries.map(entry => entry.description || '')
+            )
+            for (const event of events) {
+                telemetryService.log(event)
+            }
         }
     }, [results, telemetryService])
 

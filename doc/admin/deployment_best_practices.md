@@ -52,9 +52,9 @@ _It is possible to migrate your data to a Docker-Compose or Kubernetes deploymen
 
 ## Additional Support Information
 
-### Precise Code Intel and Batch Changes
+### Precise Code navigation and Batch Changes
 
-- The list of languages currently supported for precise code intelligence can be found [here](https://docs.sourcegraph.com/code_intelligence/references/indexers)
+- The list of languages currently supported for precise code navigation can be found [here](https://docs.sourcegraph.com/code_intelligence/references/indexers)
 - Requirements to set-up Batch Changes can be found [here](https://docs.sourcegraph.com/batch_changes/references/requirements)
 
 ### Browsers Extensions

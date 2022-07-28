@@ -35,7 +35,7 @@ func TestReconcilerWorkerView(t *testing.T) {
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
 	user := ct.CreateTestUser(t, db, true)
-	spec := ct.CreateBatchSpec(t, ctx, cstore, "test-batch-change", user.ID)
+	spec := ct.CreateBatchSpec(t, ctx, cstore, "test-batch-change", user.ID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test-batch-change", user.ID, spec.ID)
 	repos, _ := ct.CreateTestRepos(t, ctx, cstore.DatabaseDB(), 2)
 	repo := repos[0]

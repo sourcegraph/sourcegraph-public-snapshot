@@ -1,9 +1,10 @@
 import React, { FunctionComponent } from 'react'
 
-import classNames from 'classnames'
+import { mdiChevronRight } from '@mdi/js'
 
-import { Link, H3, Code } from '@sourcegraph/wildcard'
+import { Link, H3, Code, Icon } from '@sourcegraph/wildcard'
 
+import { Timestamp } from '../../../../components/time/Timestamp'
 import { LockfileIndexFields } from '../../../../graphql-operations'
 
 import styles from './CodeIntelLockfileIndexNode.module.scss'
@@ -18,7 +19,7 @@ export const CodeIntelLockfileNode: FunctionComponent<React.PropsWithChildren<Co
     <>
         <span className={styles.separator} />
 
-        <div className={classNames(styles.information, 'd-flex flex-column')}>
+        <div className="d-flex flex-column">
             <div className="m-0">
                 <H3 className="m-0 d-block d-md-inline">
                     <Link to={node.repository.url}>{node.repository.name}</Link>
@@ -33,7 +34,23 @@ export const CodeIntelLockfileNode: FunctionComponent<React.PropsWithChildren<Co
                     </Link>
                     . Dependency graph fidelity: {node.fidelity}.
                 </span>
+
+                <small className="text-mute">
+                    Indexed <Timestamp date={node.createdAt} />.{' '}
+                    {node.createdAt !== node.updatedAt && (
+                        <>
+                            Updated <Timestamp date={node.updatedAt} />{' '}
+                        </>
+                    )}
+                    .
+                </small>
             </div>
         </div>
+
+        <span className="d-none d-md-inline">
+            <Link to={`./lockfiles/${node.id}`}>
+                <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
+            </Link>
+        </span>
     </>
 )

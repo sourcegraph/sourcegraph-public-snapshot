@@ -27,6 +27,7 @@ import { SearchTemplatesBanner } from '../../create/SearchTemplatesBanner'
 import { useInsightTemplates } from '../../create/useInsightTemplates'
 import { useSearchTemplate } from '../../create/useSearchTemplate'
 import { BatchSpecContextProvider, useBatchSpecContext, BatchSpecContextState } from '../BatchSpecContext'
+import { ActionsMenu, ActionsMenuMode } from '../execute/ActionsMenu'
 import { ActionButtons } from '../header/ActionButtons'
 import { BatchChangeHeader } from '../header/BatchChangeHeader'
 import { TabBar, TabsConfig, TabKey } from '../TabBar'
@@ -259,7 +260,13 @@ const MemoizedEditBatchSpecPageContent: React.FunctionComponent<
                     title={{ to: batchChange.url, text: batchChange.name }}
                     description={batchChange.description ?? undefined}
                 />
-                <ActionButtons>{actionButtons}</ActionButtons>
+                {activeTabKey === 'configuration' ? (
+                    <ActionButtons>
+                        <ActionsMenu defaultMode={ActionsMenuMode.ActionsOnlyClose} />
+                    </ActionButtons>
+                ) : (
+                    <ActionButtons>{actionButtons}</ActionButtons>
+                )}
             </div>
             <TabBar activeTabKey={activeTabKey} tabsConfig={tabsConfig} />
 

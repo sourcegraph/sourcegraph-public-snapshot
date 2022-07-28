@@ -1364,14 +1364,14 @@ func TestRepos_ListMinimalRepos_fork(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		assertJSONEqual(t, nil, repos)
+		assertJSONEqual(t, []types.MinimalRepo{}, repos)
 	}
 	{
 		repos, err := db.Repos().ListMinimalRepos(ctx, ReposListOptions{})
 		if err != nil {
 			t.Fatal(err)
 		}
-		assertJSONEqual(t, append(append([]types.MinimalRepo(nil), mine...), yours...), repos)
+		assertJSONEqual(t, append(append([]types.MinimalRepo{}, mine...), yours...), repos)
 	}
 }
 
@@ -1395,8 +1395,8 @@ func TestRepos_ListMinimalRepos_cloned(t *testing.T) {
 	}{
 		{"OnlyCloned", ReposListOptions{OnlyCloned: true}, yours},
 		{"NoCloned", ReposListOptions{NoCloned: true}, mine},
-		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, nil},
-		{"Default", ReposListOptions{}, append(append([]types.MinimalRepo(nil), mine...), yours...)},
+		{"NoCloned && OnlyCloned", ReposListOptions{NoCloned: true, OnlyCloned: true}, []types.MinimalRepo{}},
+		{"Default", ReposListOptions{}, append(append([]types.MinimalRepo{}, mine...), yours...)},
 	}
 
 	for _, test := range tests {
@@ -1824,7 +1824,7 @@ func TestRepos_ListMinimalRepos_externalServiceID(t *testing.T) {
 	}{
 		{"Some", ReposListOptions{ExternalServiceIDs: []int64{service1.ID}}, repoNamesFromRepos(mine)},
 		{"Default", ReposListOptions{}, repoNamesFromRepos(append(mine, yours...))},
-		{"NonExistant", ReposListOptions{ExternalServiceIDs: []int64{1000}}, nil},
+		{"NonExistant", ReposListOptions{ExternalServiceIDs: []int64{1000}}, []types.MinimalRepo{}},
 	}
 
 	for _, test := range tests {
@@ -2151,7 +2151,7 @@ func TestRepos_ListMinimalRepos_externalRepoContains(t *testing.T) {
 					},
 				},
 			},
-			want: nil,
+			want: []types.MinimalRepo{},
 		},
 	}
 

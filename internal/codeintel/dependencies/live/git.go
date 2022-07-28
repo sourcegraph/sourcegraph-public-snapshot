@@ -28,7 +28,7 @@ func (s *gitService) GetCommits(ctx context.Context, repoCommits []api.RepoCommi
 	return gitserver.NewClient(s.db).GetCommits(ctx, repoCommits, ignoreErrors, s.checker)
 }
 
-func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, pathspecs ...gitserver.Pathspec) ([]string, error) {
+func (s *gitService) LsFiles(ctx context.Context, repo api.RepoName, commits api.CommitID, pathspecs ...gitdomain.Pathspec) ([]string, error) {
 	return gitserver.NewClient(s.db).LsFiles(ctx, s.checker, repo, commits, pathspecs...)
 }
 

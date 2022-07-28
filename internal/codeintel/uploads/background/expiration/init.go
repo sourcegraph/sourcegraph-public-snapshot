@@ -3,6 +3,8 @@ package expiration
 import (
 	"context"
 
+	"github.com/sourcegraph/log"
+
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 )
 
@@ -12,5 +14,6 @@ func NewExpirer(uploadSvc UploadService, policySvc PolicyService, policyMatcher 
 		policySvc:     policySvc,
 		policyMatcher: policyMatcher,
 		metrics:       metrics,
+		logger:        log.Scoped("Expirer", ""),
 	})
 }

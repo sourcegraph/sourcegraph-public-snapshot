@@ -3,7 +3,7 @@ package autoindexing
 import (
 	"context"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	store "github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/lib/codeintel/autoindex/config"
@@ -42,6 +42,7 @@ func (s *IndexEnqueuer) getIndexRecords(ctx context.Context, repositoryID int, c
 // explicitly via a GraphQL query parameter. If no configuration was supplield then a false valued
 // flag is returned.
 func makeExplicitConfigurationFactory(configuration string) configurationFactoryFunc {
+	logger := log.Scoped("explicitConfigurationFactory", "")
 	return func(ctx context.Context, repositoryID int, commit string, _ bool) ([]store.Index, bool, error) {
 		if configuration == "" {
 			return nil, false, nil
@@ -52,7 +53,7 @@ func makeExplicitConfigurationFactory(configuration string) configurationFactory
 			// We failed here, but do not try to fall back on another method as having
 			// an explicit config supplied via parameter should always take precedence,
 			// even if it's broken.
-			log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+			logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 			return nil, true, nil
 		}
 
@@ -76,7 +77,7 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInDatabase(ctx context.C
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the database should always take precedence, even
 		// if it's broken.
-		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+		s.logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 		return nil, true, nil
 	}
 
@@ -105,7 +106,7 @@ func (s *IndexEnqueuer) getIndexRecordsFromConfigurationInRepository(ctx context
 		// We failed here, but do not try to fall back on another method as having
 		// an explicit config in the repository should always take precedence over
 		// an auto-inferred configuration, even if it's broken.
-		log15.Warn("Failed to unmarshal index configuration", "repository_id", repositoryID, "error", err)
+		s.logger.Warn("Failed to unmarshal index configuration", log.Int("repository_id", repositoryID), log.Error(err))
 		return nil, true, nil
 	}
 

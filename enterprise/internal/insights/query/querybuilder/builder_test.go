@@ -6,6 +6,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func TestWithDefaults(t *testing.T) {
@@ -327,6 +328,100 @@ func TestComputeInsightCommandQuery(t *testing.T) {
 			if diff := cmp.Diff(test.want, string(got)); diff != "" {
 				t.Errorf("%s failed (want/got): %s", test.name, diff)
 			}
+		})
+	}
+}
+
+func TestIsSingleRepoQuery(t *testing.T) {
+
+	tests := []struct {
+		name       string
+		inputQuery string
+		mapType    MapType
+		want       bool
+	}{
+		{
+			name:       "repo as simple text string",
+			inputQuery: "repo:abc123@12346f fork:yes archived:yes findme",
+			mapType:    Lang,
+			want:       false,
+		},
+		{
+			name:       "repo contains",
+			inputQuery: "repo:contains.file(CHANGELOG) TEST",
+			mapType:    Lang,
+			want:       false,
+		},
+		{
+			name:       "repo or",
+			inputQuery: "repo:^(repo1|repo2)$ test",
+			mapType:    Lang,
+			want:       false,
+		},
+		{
+			name:       "single repo with revision specified",
+			inputQuery: `repo:^github\.com/sgtest/java-langserver$@v1 test`,
+			mapType:    Lang,
+			want:       true,
+		},
+		{
+			name:       "single repo",
+			inputQuery: `repo:^github\.com/sgtest/java-langserver$ test`,
+			mapType:    Lang,
+			want:       true,
+		},
+		{
+			name:       "query without repo filter",
+			inputQuery: `test`,
+			mapType:    Lang,
+			want:       false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := IsSingleRepoQuery(BasicQuery(test.inputQuery))
+			if err != nil {
+				t.Error(err)
+			}
+			if diff := cmp.Diff(test.want, got); diff != "" {
+				t.Errorf("%s failed (want/got): %s", test.name, diff)
+			}
+
+		})
+	}
+}
+
+func TestIsSingleRepoQueryMultipleSteps(t *testing.T) {
+
+	tests := []struct {
+		name       string
+		inputQuery string
+		mapType    MapType
+		want       error
+	}{
+		{
+			name:       "2 step query different repos",
+			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ OR repo:^github\.com/sourcegraph-testing/zap$) test`,
+			mapType:    Lang,
+			want:       QueryNotSupported,
+		},
+		{
+			name:       "2 step query same repo",
+			inputQuery: `(repo:^github\.com/sourcegraph/sourcegraph$ test) OR (repo:^github\.com/sourcegraph/sourcegraph$ todo)`,
+			mapType:    Lang,
+			want:       QueryNotSupported,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := IsSingleRepoQuery(BasicQuery(test.inputQuery))
+			if !errors.Is(err, test.want) {
+				t.Error(err)
+			}
+			if diff := cmp.Diff(false, got); diff != "" {
+				t.Errorf("%s failed (want/got): %s", test.name, diff)
+			}
+
 		})
 	}
 }

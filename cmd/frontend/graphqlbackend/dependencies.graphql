@@ -16,6 +16,14 @@ extend type Query {
     ): LockfileIndexConnection!
 }
 
+extend type Mutation {
+    """
+    Deletes the lockfile index. All associated data will be deleted, except for
+    package repos that were added to the instance as a result of indexing.
+    """
+    deleteLockfileIndex(lockfileIndex: ID!): EmptyResponse!
+}
+
 """
 A list of lockfile indexes.
 """
@@ -87,4 +95,14 @@ type LockfileIndex implements Node {
     The fidelity of the dependency graph.
     """
     fidelity: LockfileIndexFidelity!
+
+    """
+    The date and time when the lockfile index was created.
+    """
+    createdAt: DateTime!
+
+    """
+    The date and time when the lockfile index was updated.
+    """
+    updatedAt: DateTime!
 }

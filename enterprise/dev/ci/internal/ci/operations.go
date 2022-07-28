@@ -365,7 +365,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
 			bk.AutomaticRetry(3),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent"),
+			bk.Cmd("./dev/ci/yarn-install-with-retry.sh"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
 		}
@@ -706,7 +706,9 @@ func buildCandidateDockerImage(app, version, tag string) operations.Operation {
 
 		if _, err := os.Stat(filepath.Join("docker-images", app)); err == nil {
 			// Building Docker image located under $REPO_ROOT/docker-images/
-			cmds = append(cmds, bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
+			cmds = append(cmds,
+				bk.Cmd("ls -lah "+filepath.Join("docker-images", app, "build.sh")),
+				bk.Cmd(filepath.Join("docker-images", app, "build.sh")))
 		} else {
 			// Building Docker images located under $REPO_ROOT/cmd/
 			cmdDir := func() string {

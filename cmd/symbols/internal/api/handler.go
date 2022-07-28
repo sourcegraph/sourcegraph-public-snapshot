@@ -17,6 +17,7 @@ import (
 
 func NewHandler(
 	searchFunc types.SearchFunc,
+	readFileFunc squirrel.ReadFileFunc,
 	handleStatus func(http.ResponseWriter, *http.Request),
 	ctagsBinary string,
 ) http.Handler {
@@ -24,9 +25,9 @@ func NewHandler(
 	mux.HandleFunc("/search", handleSearchWith(searchFunc))
 	mux.HandleFunc("/healthz", handleHealthCheck)
 	mux.HandleFunc("/list-languages", handleListLanguages(ctagsBinary))
-	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler)
+	mux.HandleFunc("/localCodeIntel", squirrel.LocalCodeIntelHandler(readFileFunc))
 	mux.HandleFunc("/debugLocalCodeIntel", squirrel.DebugLocalCodeIntelHandler)
-	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc))
+	mux.HandleFunc("/symbolInfo", squirrel.NewSymbolInfoHandler(searchFunc, readFileFunc))
 	if handleStatus != nil {
 		mux.HandleFunc("/status", handleStatus)
 	}

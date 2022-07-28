@@ -6,7 +6,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
@@ -26,13 +25,7 @@ func Execute(
 		tr.Finish()
 	}()
 
-	plan := inputs.Plan
-	plan, err = predicate.Expand(ctx, clients, inputs, plan)
-	if err != nil {
-		return nil, err
-	}
-
-	planJob, err := jobutil.NewPlanJob(inputs, plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
 		return nil, err
 	}

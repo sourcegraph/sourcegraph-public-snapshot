@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -63,7 +63,7 @@ func (s *scheduler) handle(ctx context.Context) (err error) {
 }
 
 func (s *scheduler) handleError(err error) {
-	log15.Error("Failed to schedule index jobs", "err", err)
+	s.logger.Error("Failed to schedule index jobs", log.Error(err))
 }
 
 func (s *scheduler) handleRepository(

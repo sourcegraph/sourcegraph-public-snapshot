@@ -89,7 +89,7 @@ Clarification and discussion about key concepts, architecture, and development s
   - [Build process](background-information/web/build.md)
 - [Developing the GraphQL API](background-information/graphql_api.md)
 - [Developing batch changes](background-information/batch_changes/index.md)
-- [Developing code intelligence](background-information/codeintel/index.md)
+- [Developing code navigation](background-information/codeintel/index.md)
 - [Developing code insights](background-information/insights/index.md)
 - [Developing code monitoring](background-information/codemonitoring/index.md)
 - [Developing observability](background-information/observability/index.md)

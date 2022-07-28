@@ -13,8 +13,15 @@ type ListLockfileIndexesArgs struct {
 	After *string
 }
 
+type DeleteLockfileIndexArgs struct {
+	LockfileIndex graphql.ID
+}
+
 type DependenciesResolver interface {
 	LockfileIndexes(ctx context.Context, args *ListLockfileIndexesArgs) (LockfileIndexConnectionResolver, error)
+	DeleteLockfileIndex(ctx context.Context, args *DeleteLockfileIndexArgs) (*EmptyResponse, error)
+
+	NodeResolvers() map[string]NodeByIDFunc
 }
 
 type LockfileIndexConnectionResolver interface {
@@ -29,4 +36,6 @@ type LockfileIndexResolver interface {
 	Repository() *RepositoryResolver
 	Commit() *GitCommitResolver
 	Fidelity() string
+	UpdatedAt() DateTime
+	CreatedAt() DateTime
 }
