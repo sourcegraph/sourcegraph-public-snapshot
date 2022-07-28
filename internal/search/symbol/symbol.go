@@ -56,6 +56,9 @@ func indexedSymbolsBranch(ctx context.Context, repo *types.MinimalRepo, commit s
 }
 
 func filterZoektResults(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, results []*result.SymbolMatch) ([]*result.SymbolMatch, error) {
+	if !authz.SubRepoEnabled(checker) {
+		return results, nil
+	}
 	// Filter out results from files we don't have access to:
 	act := actor.FromContext(ctx)
 	filtered := results[:0]
