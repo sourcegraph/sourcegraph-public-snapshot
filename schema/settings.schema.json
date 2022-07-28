@@ -348,6 +348,14 @@
           "!go": {
             "pointer": true
           }
+        },
+        "enableLazyBlobSyntaxHighlighting": {
+          "description": "Fetch un-highlighted blob contents to render immediately, decorate with syntax highlighting once loaded.",
+          "type": "boolean",
+          "default": false,
+          "!go": {
+            "pointer": true
+          }
         }
       },
       "group": "Experimental"
