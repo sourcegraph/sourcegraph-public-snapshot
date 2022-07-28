@@ -14,6 +14,7 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -75,6 +76,10 @@ func mainErr(ctx context.Context, args []string) error {
 }
 
 func newRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+	return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
+}
+
+func newRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
 	logger := log.Scoped("runner", "")
 	observationContext := &observation.Context{
 		Logger:     logger,
@@ -90,7 +95,7 @@ func newRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
 	}
-	r, err := connections.RunnerFromDSNs(logger, dsns, appName, storeFactory)
+	r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}

@@ -167,6 +167,15 @@ sg migration squash
 )
 
 func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+	filesystemSchemas, err := getFilesystemSchemas()
+	if err != nil {
+		return nil, err
+	}
+
+	return makeRunnerWithSchemas(ctx, schemaNames, filesystemSchemas)
+}
+
+func makeRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
 	// Try to read the `sg` configuration so we can read ENV vars from the
 	// configuration and use process env as fallback.
 	var getEnv func(string) string
@@ -180,10 +189,6 @@ func makeRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, erro
 
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, store.NewOperations(&observation.TestContext)))
-	}
-	schemas, err := getFilesystemSchemas()
-	if err != nil {
-		return nil, err
 	}
 	r, err := connections.RunnerFromDSNsWithSchemas(logger, postgresdsn.RawDSNsBySchema(schemaNames, getEnv), "sg", storeFactory, schemas)
 	if err != nil {
