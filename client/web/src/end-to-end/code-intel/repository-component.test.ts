@@ -205,7 +205,7 @@ describe('Repository component', () => {
             await driver.page.waitForSelector('[data-testid="tree-row"]', { visible: true })
             expect(
                 await driver.page.evaluate(() => document.querySelectorAll('[data-testid="tree-row"]').length)
-            ).toEqual(1)
+            ).toEqual(2)
         })
 
         test('responds to keyboard shortcuts', async () => {

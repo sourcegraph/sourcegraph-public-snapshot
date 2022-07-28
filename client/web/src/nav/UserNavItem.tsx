@@ -6,8 +6,7 @@ import classNames from 'classnames'
 // eslint-disable-next-line no-restricted-imports
 
 import { Toggle } from '@sourcegraph/branded/src/components/Toggle'
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
-import { KEYBOARD_SHORTCUT_SHOW_HELP } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import {
@@ -41,27 +40,11 @@ export interface UserNavItemProps extends ThemeProps, ThemePreferenceProps {
         'username' | 'avatarURL' | 'settingsURL' | 'organizations' | 'siteAdmin' | 'session' | 'displayName'
     >
     showDotComMarketing: boolean
-    keyboardShortcutForSwitchTheme?: KeyboardShortcut
     codeHostIntegrationMessaging: 'browser-extension' | 'native-integration'
     showRepositorySection?: boolean
     position?: Position
     menuButtonRef?: React.Ref<HTMLButtonElement>
-}
-
-/**
- * Triggers Keyboard Shortcut help when the button is clicked in the Menu Nav item
- */
-
-const showKeyboardShortcutsHelp = (): void => {
-    const keybinding = KEYBOARD_SHORTCUT_SHOW_HELP.keybindings[0]
-    const shiftKey = !!keybinding.held?.includes('Shift')
-    const altKey = !!keybinding.held?.includes('Alt')
-    const metaKey = !!keybinding.held?.includes('Meta')
-    const ctrlKey = !!keybinding.held?.includes('Control')
-
-    for (const key of keybinding.ordered) {
-        document.dispatchEvent(new KeyboardEvent('keydown', { key, shiftKey, metaKey, ctrlKey, altKey }))
-    }
+    showKeyboardShortcutsHelp: () => void
 }
 
 /**
@@ -98,10 +81,11 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
     // Target ID for tooltip
     const targetID = 'target-user-avatar'
     const [isOpenBetaEnabled] = useFeatureFlag('open-beta-enabled')
+    const keyboardShortcutSwitchTheme = useKeyboardShortcut('switchTheme')
 
     return (
         <>
-            {props.keyboardShortcutForSwitchTheme?.keybindings.map((keybinding, index) => (
+            {keyboardShortcutSwitchTheme?.keybindings.map((keybinding, index) => (
                 // `Shortcut` doesn't update its states when `onMatch` changes
                 // so we put `themePreference` in `key` binding to make it
                 <Shortcut key={`${themePreference}-${index}`} {...keybinding} onMatch={onThemeCycle} />
@@ -239,7 +223,7 @@ export const UserNavItem: React.FunctionComponent<React.PropsWithChildren<UserNa
                             >
                                 Help <Icon aria-hidden={true} svgPath={mdiOpenInNew} />
                             </MenuLink>
-                            <MenuItem onSelect={showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
+                            <MenuItem onSelect={props.showKeyboardShortcutsHelp}>Keyboard shortcuts</MenuItem>
 
                             {props.authenticatedUser.session?.canSignOut && (
                                 <MenuLink className={styles.dropdownItem} as={AnchorLink} to="/-/sign-out">

@@ -54,7 +54,7 @@ func (srs *searchResultsStats) getResults(ctx context.Context) (result.Matches, 
 			return
 		}
 		agg := streaming.NewAggregatingStream()
-		_, err = j.Run(ctx, srs.sr.JobClients(), agg)
+		_, err = j.Run(ctx, srs.sr.client.JobClients(), agg)
 		if err != nil {
 			srs.err = err
 			return

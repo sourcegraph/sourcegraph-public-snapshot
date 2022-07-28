@@ -480,7 +480,7 @@ func addrForKey(key string, addrs []string) string {
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
 	Treeish   string               // the tree or commit to produce an archive for
-	Format    string               // format of the resulting archive (usually "tar" or "zip")
+	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
 }
 
@@ -524,7 +524,7 @@ func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, o
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
-		"format":  {opt.Format},
+		"format":  {string(opt.Format)},
 	}
 
 	for _, pathspec := range opt.Pathspecs {
