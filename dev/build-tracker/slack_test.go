@@ -29,7 +29,6 @@ func TestSlack(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	println(config.SlackToken)
 
 	client := NewNotificationClient(logger, config.SlackToken, config.GithubToken, DefaultChannel)
 

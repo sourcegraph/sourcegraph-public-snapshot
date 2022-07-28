@@ -55,7 +55,7 @@ func configFromEnv() (*config, error) {
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
 func NewServer(logger log.Logger, c config, channel string) *Server {
-	serverLog := logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
+	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
 	return &Server{
 		logger:       serverLog,
 		store:        NewBuildStore(serverLog),
@@ -179,7 +179,7 @@ func (s *Server) processEvent(event *Event) {
 	}
 }
 
-// Server starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
+// Serve starts the http server and listens for buildkite build events to be sent on the route "/buildkite"
 func (s *Server) Serve() error {
 	http.HandleFunc("/buildkite", s.handleEvent)
 	http.HandleFunc("/healthz", s.handleHealthz)
