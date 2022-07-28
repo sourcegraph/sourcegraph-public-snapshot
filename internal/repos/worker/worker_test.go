@@ -29,37 +29,33 @@ func TestJobQueue(t *testing.T) {
 		}
 		assertEqual(t, nil, nil, job)
 
-		firstJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
+		firstJob := &Job{
 			RepoID:     1,
 			RepoName:   "repo 1",
 			ExtSvcKind: extSvcKind,
-		})
+		}
+
+		firstJobID, err := EnqueueJob(ctx, workerBaseStore, firstJob)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		secondJobID, err := EnqueueJob(ctx, workerBaseStore, &Job{
-			RepoID:     2,
+		secondJob := &Job{
+			RepoID:     1,
 			RepoName:   "repo 2",
 			ExtSvcKind: extSvcKind,
-		})
+		}
+
+		secondJobID, err := EnqueueJob(ctx, workerBaseStore, secondJob)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		firstJob, err := dequeueJob(ctx, workerBaseStore, firstJobID)
-		assertEqual(t, err, &Job{
-			RepoID:     1,
-			RepoName:   "repo 1",
-			ExtSvcKind: extSvcKind,
-		}, firstJob)
+		firstDequeuedJob, err := dequeueJob(ctx, workerBaseStore, firstJobID)
+		assertEqual(t, err, firstJob, firstDequeuedJob)
 
-		secondJob, err := dequeueJob(ctx, workerBaseStore, secondJobID)
-		assertEqual(t, err, &Job{
-			RepoID:     2,
-			RepoName:   "repo 2",
-			ExtSvcKind: extSvcKind,
-		}, secondJob)
+		secondDequeuedJob, err := dequeueJob(ctx, workerBaseStore, secondJobID)
+		assertEqual(t, err, secondJob, secondDequeuedJob)
 	})
 }
 

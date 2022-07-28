@@ -164,7 +164,6 @@ func doScanWebhookBuildJobs(rows *sql.Rows, err error) ([]*Job, error) {
 		); err != nil {
 			return nil, err
 		}
-
 		jobs = append(jobs, &job)
 	}
 	if err := rows.Err(); err != nil {
