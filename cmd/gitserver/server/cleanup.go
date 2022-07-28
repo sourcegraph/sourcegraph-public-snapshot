@@ -514,8 +514,6 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		cleanupLogger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	// Repo sizes are set only once during the first janitor run.
-	// There is no need for a second run because all repo sizes will be set until this moment
 	err = s.setRepoSizes(context.Background(), repoToSize)
 	if err != nil {
 		cleanupLogger.Error("setting repo sizes", log.Error(err))
