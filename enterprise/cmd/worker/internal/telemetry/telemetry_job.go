@@ -128,7 +128,7 @@ func newHandlerMetrics(observationContext *observation.Context) *handlerMetrics 
 
 	op := func(name string) *observation.Operation {
 		return observationContext.Operation(observation.Op{
-			Name:              fmt.Sprintf("apiworker.apiclient.%s", name),
+			Name:              fmt.Sprintf("telemetry_job.telemetry_handler.%s", name),
 			MetricLabelValues: []string{name},
 			Metrics:           redM,
 		})
