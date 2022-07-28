@@ -9,6 +9,11 @@ receivers:
     protocols:
       grpc:
       http:
+  fluentforward:
+    endpoint: "0.0.0.0:24224"
+
+processors:
+  batch:
 
 exporters:
   jaeger:
@@ -16,16 +21,23 @@ exporters:
     endpoint: "$JAEGER_HOST:14250"
     tls:
       insecure: true
+  logging:
+    logLevel: debug
 
 extensions:
   health_check:
     port: 13133
   zpages:
-   endpoint: "localhost:55679"
+   endpoint: "0.0.0.0:55679"
 
 service:
   extensions: [health_check,zpages]
   pipelines:
     traces:
       receivers: [otlp]
-      exporters: [jaeger]
+      exporters: [jaeger,logging]
+    logs:
+      receivers: [fluentforward]
+      # processors: [batch]
+      exporters: [logging]
+
