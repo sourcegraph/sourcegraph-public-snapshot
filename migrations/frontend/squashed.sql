@@ -3743,7 +3743,7 @@ CREATE INDEX discussion_threads_target_repo_repo_id_path_idx ON discussion_threa
 
 CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id);
 
-CREATE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
+CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
 
 CREATE INDEX event_logs_name ON event_logs USING btree (name);
 
