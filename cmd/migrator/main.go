@@ -95,7 +95,7 @@ func newRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []*
 	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
 		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
 	}
-	r, err := connections.RunnerFromDSNs(logger, dsns, appName, storeFactory)
+	r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
 	if err != nil {
 		return nil, err
 	}
