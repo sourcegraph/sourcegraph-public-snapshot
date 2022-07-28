@@ -30,7 +30,6 @@ if [ "$BUILDKITE_BRANCH" == "main" ]; then
   # Non-zero exit code and not a soft fail: upload the logs.
   echo "--- Uploading build logs: this only runs if your build has already failed, check the logs above, NOT below!"
   ./enterprise/dev/ci/scripts/upload-build-logs.sh
-
 fi
 
 # upload raw annotations as artifacts if they are available for easier access
