@@ -8,7 +8,6 @@ import (
 
 	"github.com/sourcegraph/log"
 	"github.com/thanhpk/randstr"
-	"github.com/tidwall/gjson"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/internal/database"
@@ -46,8 +45,7 @@ func handleCaseGitHub(ctx context.Context, logger log.Logger, w *webhookBuildHan
 		return errors.Wrap(err, "get external service")
 	}
 	svc := svcs[0]
-
-	baseURL, err := url.Parse(gjson.Get(svc.Config, "url").String())
+	baseURL, err := url.Parse("")
 	if err != nil {
 		return errors.Wrap(err, "parse base URL")
 	}
@@ -70,8 +68,7 @@ func handleCaseGitHub(ctx context.Context, logger log.Logger, w *webhookBuildHan
 	}
 
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, cli)
-	handler := newGitHubWebhookHandler(client)
-
+	handler := NewGitHubWebhookHandler(client)
 	id, err := handler.FindSyncWebhook(ctx, wbj.RepoName)
 	if err != nil {
 		return err

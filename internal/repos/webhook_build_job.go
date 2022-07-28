@@ -2,14 +2,12 @@ package repos
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 
 	"github.com/opentracing/opentracing-go"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
-	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -21,6 +19,11 @@ import (
 )
 
 type webhookBuildJob struct {
+	store Store
+}
+
+func NewWebhookBuildJob(store Store) *webhookBuildJob {
+	return &webhookBuildJob{store: store}
 }
 
 func (w *webhookBuildJob) Description() string {
@@ -32,11 +35,6 @@ func (w *webhookBuildJob) Config() []env.Config {
 }
 
 func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]goroutine.BackgroundRoutine, error) {
-	mainAppDB, err := workerdb.Init()
-	if err != nil {
-		return nil, err
-	}
-
 	observationContext := &observation.Context{
 		Logger:     logger.Scoped("background", "background webhook build job"),
 		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
@@ -45,12 +43,11 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 
 	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
 
-	handle := basestore.NewHandleWithDB(mainAppDB, sql.TxOptions{ReadOnly: false})
-	baseStore := basestore.NewWithHandle(handle)
-	workerStore := webhookbuilder.CreateWorkerStore(baseStore.Handle())
+	baseStore := basestore.NewWithHandle(w.store.Handle())
+	workerStore := webhookbuilder.CreateWorkerStore(w.store.Handle())
 
 	return []goroutine.BackgroundRoutine{
-		webhookbuilder.NewWorker(ctx, &webhookBuildHandler{}, workerStore, webhookBuildWorkerMetrics),
+		webhookbuilder.NewWorker(ctx, &webhookBuildHandler{store: w.store}, workerStore, webhookBuildWorkerMetrics),
 		webhookbuilder.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
 		webhookbuilder.NewCleaner(ctx, baseStore, observationContext),
 	}, nil

@@ -20,7 +20,7 @@ type GitHubWebhookHandler struct {
 	client *github.V3Client
 }
 
-func newGitHubWebhookHandler(client *github.V3Client) *GitHubWebhookHandler {
+func NewGitHubWebhookHandler(client *github.V3Client) *GitHubWebhookHandler {
 	return &GitHubWebhookHandler{client: client}
 }
 
@@ -29,6 +29,7 @@ func (g *GitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
 }
 
 func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
+	fmt.Println("handleGitHubWebhook")
 	event, ok := payload.(*gh.PushEvent)
 	if !ok {
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)

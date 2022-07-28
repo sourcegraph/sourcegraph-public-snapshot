@@ -16,9 +16,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/errcode"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
+	webhookbuilder "github.com/sourcegraph/sourcegraph/internal/repos/worker"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
@@ -628,6 +630,15 @@ func (s *Syncer) SyncExternalService(
 			}
 
 			continue
+		}
+
+		if true {
+			job := &webhookbuilder.Job{
+				RepoID:     int32(sourced.ID),
+				RepoName:   string(sourced.Name),
+				ExtSvcKind: svc.Kind,
+			}
+			webhookbuilder.EnqueueJob(ctx, basestore.NewWithHandle(s.Store.Handle()), job)
 		}
 
 		for _, r := range diff.Repos() {

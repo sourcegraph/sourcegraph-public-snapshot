@@ -29,9 +29,11 @@ import (
 	"github.com/sourcegraph/sourcegraph/cmd/repo-updater/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
+	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
@@ -47,8 +49,12 @@ import (
 
 var updateWebhooks = flag.Bool("updateWebhooks", false, "update testdata for webhook build worker integration test")
 
-func testWebhookBuilder(store repos.Store, db database.DB) func(*testing.T) {
-	return func(t *testing.T) {
+func TestWebhookSyncIntegration(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	t.Run("Webhook sync integration test", func(t *testing.T) {
 		ctx := context.Background()
 		logger := logtest.Scoped(t)
 
@@ -58,6 +64,8 @@ func testWebhookBuilder(store repos.Store, db database.DB) func(*testing.T) {
 		}
 		token := os.Getenv("ACCESS_TOKEN")
 
+		db := database.NewDB(logger, dbtest.NewDB(logger, t))
+		store := repos.NewStore(logger, db)
 		esStore := store.ExternalServiceStore()
 		repoStore := store.RepoStore()
 
@@ -151,32 +159,14 @@ func testWebhookBuilder(store repos.Store, db database.DB) func(*testing.T) {
 			t.Fatal(err)
 		}
 
-		jobChan := make(chan int)
-		whBuildHandler := &fakeWhBuildHandler{
-			store:              store,
-			doer:               &doer,
-			jobChan:            jobChan,
-			minWhBuildInterval: func() time.Duration { return time.Minute },
+		// jobChan := make(chan int)
+		builder := repos.NewWebhookBuildJob(store)
+
+		routines, err := builder.Routines(ctx, logger)
+		if err != nil {
+			t.Fatal(err)
 		}
-
-		whBuildWorker, _ := repos.newWebhookBuildWorker(ctx, store.Handle(), whBuildHandler, repos.WebhookBuildOptions{
-			NumHandlers:    3,
-			WorkerInterval: 1 * time.Millisecond,
-		})
-
-		go whBuildWorker.Start()
-		defer whBuildWorker.Stop()
-
-		var id int
-
-	loop:
-		select {
-		case id = <-jobChan:
-			logger.Info(fmt.Sprintf("Channel received: %d", id))
-			break loop
-		case <-time.After(5 * time.Second):
-			t.Fatal("Timeout")
-		}
+		go goroutine.MonitorBackgroundRoutines(ctx, routines...)
 
 		// this is in response to line 1514 in
 		// internal/extsvc/github/common.go
@@ -186,7 +176,7 @@ func testWebhookBuilder(store repos.Store, db database.DB) func(*testing.T) {
 		}
 
 		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token}, doer)
-		g := repos.newGitHubWebhookHandler(client)
+		g := repos.NewGitHubWebhookHandler(client)
 
 		// Test Webhook
 		// Delete webhook
@@ -236,21 +226,21 @@ func testWebhookBuilder(store repos.Store, db database.DB) func(*testing.T) {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 		resp := rec.Result()
+		fmt.Println("resp:", resp)
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			t.Fatalf("Non-200 status code: %v", resp.StatusCode)
 		}
-	}
+	})
 }
 
-type fakeWhBuildHandler struct {
-	store              repos.Store
-	doer               *httpcli.Doer
-	jobChan            chan int
-	minWhBuildInterval func() time.Duration
+type fakeWebhookBuildHandler struct {
+	store   repos.Store
+	doer    *httpcli.Doer
+	jobChan chan int
 }
 
-func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
+func (h *fakeWebhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
 	wbj, ok := record.(*webhookbuilder.Job)
 	if !ok {
 		h.jobChan <- 0
@@ -259,7 +249,7 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 
 	switch wbj.ExtSvcKind {
 	case "GITHUB":
-		if err := activateGitHubHandler(ctx, logger, h, wbj); err != nil {
+		if err := handleCaseGitHub(ctx, logger, h, wbj); err != nil {
 			return err
 		}
 	}
@@ -267,7 +257,7 @@ func (h *fakeWhBuildHandler) Handle(ctx context.Context, logger log.Logger, reco
 	return nil
 }
 
-func activateGitHubHandler(ctx context.Context, logger log.Logger, h *fakeWhBuildHandler, wbj *webhookbuilder.Job) error {
+func handleCaseGitHub(ctx context.Context, logger log.Logger, h *fakeWebhookBuildHandler, wbj *webhookbuilder.Job) error {
 	svcs, err := h.store.ExternalServiceStore().List(ctx, database.ExternalServicesListOptions{})
 	if err != nil || len(svcs) != 1 {
 		return errors.Wrap(err, "get external service")
@@ -290,7 +280,7 @@ func activateGitHubHandler(ctx context.Context, logger log.Logger, h *fakeWhBuil
 	}
 
 	client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token.AccessToken}, *h.doer)
-	g := repos.NewGitHubWebhookAPI(client)
+	g := repos.NewGitHubWebhookHandler(client)
 
 	id, err := g.FindSyncWebhook(ctx, wbj.RepoName)
 	if err != nil && err.Error() != "unable to find webhook" {
@@ -316,27 +306,6 @@ func activateGitHubHandler(ctx context.Context, logger log.Logger, h *fakeWhBuil
 	return nil
 }
 
-func addSecretToExtSvc(svc *types.ExternalService, org, secret string) error {
-	var config schema.GitHubConnection
-	err := json.Unmarshal([]byte(svc.Config), &config)
-	if err != nil {
-		return errors.Wrap(err, "unmarshal config")
-	}
-
-	config.Webhooks = append(config.Webhooks, &schema.GitHubWebhook{
-		Org: org, Secret: secret,
-	})
-
-	newConfig, err := json.Marshal(config)
-	if err != nil {
-		return errors.Wrap(err, "marshal config")
-	}
-
-	svc.Config = string(newConfig)
-
-	return nil
-}
-
 func newClient(serverURL string, doer httpcli.Doer) *ru.Client {
 	return &ru.Client{
 		URL:        serverURL,
@@ -355,6 +324,27 @@ func webhookURLBuilderWithID(repoName string, hookID int) (string, error) {
 		return fmt.Sprintf("https://api.github.com/repos%s/hooks/%d", u.Path, hookID), nil
 	}
 	return fmt.Sprintf("https://%s/api/v3/repos%s/hooks/%d", u.Host, u.Path, hookID), nil
+}
+
+func addSecretToExtSvc(svc *types.ExternalService, org, secret string) error {
+	var config schema.GitHubConnection
+	err := json.Unmarshal([]byte(svc.Config), &config)
+	if err != nil {
+		return errors.Wrap(err, "unmarshal config")
+	}
+
+	config.Webhooks = append(config.Webhooks, &schema.GitHubWebhook{
+		Org: org, Secret: secret,
+	})
+
+	newConfig, err := json.Marshal(config)
+	if err != nil {
+		return errors.Wrap(err, "marshal new config")
+	}
+
+	svc.Config = string(newConfig)
+
+	return nil
 }
 
 func sign(t *testing.T, message, secret []byte) string {
