@@ -12,7 +12,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 	workerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
-	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 func NewWorker(ctx context.Context, handler workerutil.Handler, workerStore workerstore.Store, metrics workerutil.WorkerMetrics) *workerutil.Worker {
@@ -81,49 +80,6 @@ INSERT INTO webhook_build_jobs (
 	extsvc_kind
 ) VALUES (%s, %s, %s)
 RETURNING id
-`
-
-func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (*Job, error) {
-	tx, err := workerBaseStore.Transact(ctx)
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = tx.Done(err) }()
-
-	rows, err := tx.Query(ctx, sqlf.Sprintf(dequeueJobFmtStr, recordID))
-	if err != nil {
-		return nil, err
-	}
-
-	jobs, err := doScanWebhookBuildJobs(rows, nil)
-	if err != nil {
-		return nil, err
-	}
-	if len(jobs) != 1 {
-		return nil, errors.Newf("expected 1 job to dequeue, found %v", len(jobs))
-	}
-
-	return jobs[0], nil
-}
-
-const dequeueJobFmtStr = `
--- source: internal/repos/worker/worker.go:dequeueJob
-SELECT
-	repo_id,
-	repo_name,
-	extsvc_kind,
-	queued_at,
-	id,
-	state,
-	failure_message,
-	started_at,
-	finished_at,
-	process_after,
-	num_resets,
-	num_failures,
-	execution_logs
-FROM webhook_build_jobs
-WHERE id = %s
 `
 
 func scanWebhookBuildJobs(rows *sql.Rows, err error) (workerutil.Record, bool, error) {
