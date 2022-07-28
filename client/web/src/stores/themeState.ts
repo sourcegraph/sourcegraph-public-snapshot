@@ -1,5 +1,4 @@
-import create, { GetState, SetState } from 'zustand'
-import { persist, StoreApiWithPersist } from 'zustand/middleware'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 
 /**
  * The user preference for the theme.
@@ -29,20 +28,15 @@ export const readStoredThemePreference = (value?: string): ThemePreference => {
 }
 
 export interface ThemeState {
-    theme: ThemePreference
-    setTheme: (theme: ThemePreference) => void
+    themePreference: ThemePreference
+    setThemePreference: (theme: ThemePreference) => void
 }
 
-export const useThemeState = create<ThemeState>(
-    persist<ThemeState, SetState<ThemeState>, GetState<ThemeState>, StoreApiWithPersist<ThemeState>>(
-        (set): ThemeState => ({
-            theme: readStoredThemePreference(),
-            setTheme: theme => set({ theme }),
-        }),
-        {
-            name: LIGHT_THEME_LOCAL_STORAGE_KEY,
-            serialize: state => state.state.theme ?? ThemePreference.System,
-            deserialize: string => ({ state: { theme: readStoredThemePreference(string) } }),
-        }
-    )
-)
+export function useThemeState(): ThemeState {
+    const [theme, setTheme] = useTemporarySetting('user.themePreference', ThemePreference.System)
+
+    return {
+        themePreference: readStoredThemePreference(theme),
+        setThemePreference: setTheme,
+    }
+}

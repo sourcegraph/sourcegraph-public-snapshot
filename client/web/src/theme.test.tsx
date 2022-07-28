@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-floating-promises */
 import { renderHook, act } from '@testing-library/react'
 
-import { useThemeState } from './stores'
 import { ThemePreference } from './stores/themeState'
 import { useThemeProps } from './theme'
 
@@ -17,6 +16,10 @@ jest.mock('@sourcegraph/wildcard', () => {
         useObservable: () => undefined,
     }
 })
+
+// jest.mock('@sourcegraph/shared/src/settings/temporary/useTemporarySetting', () => ({
+//     useTemporarySetting: () => ['system', () => {}],
+// }))
 
 const mockSystemTheme = (systemTheme: 'light' | 'dark') => {
     window.matchMedia = query => {
@@ -39,7 +42,6 @@ describe('useTheme()', () => {
             expect(result.current.themePreference).toBe(ThemePreference.System)
             expect(document.documentElement.classList).toContain('theme-light')
             expect(document.documentElement.classList).not.toContain('theme-dark')
-            expect(localStorage.getItem('light-theme')).toBe('system')
         })
 
         it('dark', () => {
@@ -51,7 +53,6 @@ describe('useTheme()', () => {
             expect(result.current.themePreference).toBe(ThemePreference.System)
             expect(document.documentElement.classList).toContain('theme-dark')
             expect(document.documentElement.classList).not.toContain('theme-light')
-            expect(localStorage.getItem('light-theme')).toBe('system')
         })
     })
 
@@ -59,36 +60,34 @@ describe('useTheme()', () => {
         it('light', () => {
             mockSystemTheme('dark')
             const { result } = renderHook(() => useThemeProps())
-            act(() => useThemeState.setState({ theme: ThemePreference.Light }))
+            act(() => result.current.onThemePreferenceChange(ThemePreference.Light))
 
             expect(result.current.isLightTheme).toBe(true)
             expect(result.current.themePreference).toBe(ThemePreference.Light)
             expect(document.documentElement.classList).toContain('theme-light')
             expect(document.documentElement.classList).not.toContain('theme-dark')
-            expect(localStorage.getItem('light-theme')).toBe(ThemePreference.Light)
         })
 
         it('dark', () => {
             mockSystemTheme('light')
             const { result } = renderHook(() => useThemeProps())
-            act(() => useThemeState.setState({ theme: ThemePreference.Dark }))
+            act(() => result.current.onThemePreferenceChange(ThemePreference.Dark))
 
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.Dark)
             expect(document.documentElement.classList).toContain('theme-dark')
             expect(document.documentElement.classList).not.toContain('theme-light')
-            expect(localStorage.getItem('light-theme')).toBe(ThemePreference.Dark)
         })
 
         it('system', () => {
             mockSystemTheme('dark')
             const { result } = renderHook(() => useThemeProps())
-            act(() => useThemeState.setState({ theme: ThemePreference.System }))
+            act(() => result.current.onThemePreferenceChange(ThemePreference.System))
+
             expect(result.current.isLightTheme).toBe(false)
             expect(result.current.themePreference).toBe(ThemePreference.System)
             expect(document.documentElement.classList).toContain('theme-dark')
             expect(document.documentElement.classList).not.toContain('theme-light')
-            expect(localStorage.getItem('light-theme')).toBe(ThemePreference.System)
         })
     })
 
@@ -106,7 +105,6 @@ describe('useTheme()', () => {
         expect(result.current.themePreference).toBe(ThemePreference.Dark)
         expect(document.documentElement.classList).toContain('theme-dark')
         expect(document.documentElement.classList).not.toContain('theme-light')
-        expect(localStorage.getItem('light-theme')).toBe(ThemePreference.Dark)
 
         // Change to system.
         act(() => {
@@ -116,6 +114,5 @@ describe('useTheme()', () => {
         expect(result.current.themePreference).toBe(ThemePreference.System)
         expect(document.documentElement.classList).toContain('theme-light')
         expect(document.documentElement.classList).not.toContain('theme-dark')
-        expect(localStorage.getItem('light-theme')).toBe(ThemePreference.System)
     })
 })

@@ -29,7 +29,7 @@ export const useTheme = (): ThemeState => {
     )
     const systemIsLightTheme = useObservable(systemIsLightThemeObservable) ?? systemIsLightThemeInitialValue
 
-    const [themePreference, setThemePreference] = useThemeState(state => [state.theme, state.setTheme])
+    const { themePreference, setThemePreference } = useThemeState()
     const enhancedThemePreference =
         themePreference === ThemePreference.System
             ? systemIsLightTheme
