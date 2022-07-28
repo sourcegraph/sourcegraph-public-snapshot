@@ -32,6 +32,13 @@ func Search(query string, opts Opts, client api.Client, decoder Decoder) error {
 		req.URL.RawQuery = q.Encode()
 	}
 
+	{
+		// Consume chunk matches for streaming search.
+		q := req.URL.Query()
+		q.Add("cm", "t")
+		req.URL.RawQuery = q.Encode()
+	}
+
 	// Send request.
 	resp, err := client.Do(req)
 	if err != nil {

@@ -17,12 +17,28 @@ type EventContentMatch struct {
 	// Type is always ContentMatchType. Included here for marshalling.
 	Type MatchType `json:"type"`
 
-	Path       string   `json:"path"`
-	Repository string   `json:"repository"`
-	Branches   []string `json:"branches,omitempty"`
-	Commit     string   `json:"commit,omitempty"`
+	Path         string       `json:"path"`
+	Repository   string       `json:"repository"`
+	Branches     []string     `json:"branches,omitempty"`
+	Commit       string       `json:"commit,omitempty"`
+	ChunkMatches []ChunkMatch `json:"chunkMatches"`
+}
 
-	LineMatches []EventLineMatch `json:"lineMatches"`
+type ChunkMatch struct {
+	Content      string   `json:"content"`
+	ContentStart Location `json:"contentStart"`
+	Ranges       []Range  `json:"ranges"`
+}
+
+type Location struct {
+	Offset int `json:"offset"`
+	Line   int `json:"line"`
+	Column int `json:"column"`
+}
+
+type Range struct {
+	Start Location `json:"start"`
+	End   Location `json:"end"`
 }
 
 func (e *EventContentMatch) eventMatch() {}

@@ -43,11 +43,32 @@ var event = []streaming.EventMatch{
 		Repository: "org/repo",
 		Branches:   nil,
 		Commit:     "",
-		LineMatches: []streaming.EventLineMatch{
+		ChunkMatches: []streaming.ChunkMatch{
 			{
-				Line:             "foo bar foo",
-				LineNumber:       4,
-				OffsetAndLengths: [][2]int32{{0, 3}, {8, 3}},
+				Content:      "foo bar foo",
+				ContentStart: streaming.Location{Line: 4},
+				Ranges: []streaming.Range{
+					{
+						Start: streaming.Location{Offset: 0},
+						End:   streaming.Location{Offset: 3},
+					},
+					{
+						Start: streaming.Location{Offset: 0},
+						End:   streaming.Location{Offset: 3},
+					},
+					{
+						Start: streaming.Location{Offset: 1},
+						End:   streaming.Location{Offset: 2},
+					},
+					{
+						Start: streaming.Location{Offset: 1},
+						End:   streaming.Location{Offset: 3},
+					},
+					{
+						Start: streaming.Location{Offset: 8},
+						End:   streaming.Location{Offset: 11},
+					},
+				},
 			},
 		},
 	},
