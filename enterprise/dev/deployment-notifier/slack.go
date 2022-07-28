@@ -138,14 +138,20 @@ func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
 	type slackBlock struct {
 		Type string     `json:"type"`
 		Text *slackText `json:"text,omitempty"`
+		// For type 'context'
+		Elements []*slackText `json:"elements,omitempty"`
 	}
 
 	var blocks []slackBlock
-	var headerText string
-	if len(presenter.TraceURL) != 0 {
-		headerText = fmt.Sprintf(":arrow_left: %s deployment (<%s|build>, <%s|trace>)", presenter.Environment, presenter.BuildURL, presenter.TraceURL)
-	} else {
-		headerText = fmt.Sprintf(":arrow_left: %s deployment (<%s|build>)", presenter.Environment, presenter.BuildURL)
+	buildInfoContent := []*slackText{{
+		Type: "mrkdwn",
+		Text: fmt.Sprintf("<%s|:hammer: Build>", presenter.BuildURL),
+	}}
+	if presenter.TraceURL != "" {
+		buildInfoContent = append(buildInfoContent, &slackText{
+			Type: "mrkdwn",
+			Text: fmt.Sprintf("<%s|:footprints: Trace>\n", presenter.TraceURL),
+		})
 	}
 
 	servicesContent := &slackText{
@@ -188,8 +194,12 @@ func postSlackUpdate(webhook string, presenter *slackSummaryPresenter) error {
 			Type: "header",
 			Text: &slackText{
 				Type: "plain_text",
-				Text: headerText,
+				Text: fmt.Sprintf(":arrow_left: %s deployment", presenter.Environment),
 			},
+		},
+		slackBlock{
+			Type:     "context",
+			Elements: buildInfoContent,
 		},
 		slackBlock{
 			Type: "section",
