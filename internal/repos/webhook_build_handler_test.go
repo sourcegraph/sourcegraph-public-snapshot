@@ -17,6 +17,7 @@ import (
 	"testing"
 	"time"
 
+	gh "github.com/google/go-github/v43/github"
 	"github.com/joho/godotenv"
 	"github.com/thanhpk/randstr"
 
@@ -47,7 +48,10 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var updateWebhooks = flag.Bool("updateWebhooks", false, "update testdata for webhook build worker integration test")
+var (
+	updateWebhooks = flag.Bool("updateWebhooks", false, "update testdata for webhook build worker integration test")
+	serverURL      = "127.0.0.1:8080"
+)
 
 func TestWebhookSyncIntegration(t *testing.T) {
 	if testing.Short() {
@@ -89,6 +93,7 @@ func TestWebhookSyncIntegration(t *testing.T) {
 			Repos:    []string{string(repo.Name)},
 			Webhooks: []*schema.GitHubWebhook{{Org: "ghe.sgdev.org", Secret: "secret"}},
 		}
+
 		bs, err := json.Marshal(ghConn)
 		if err != nil {
 			t.Fatal(err)
@@ -166,24 +171,12 @@ func TestWebhookSyncIntegration(t *testing.T) {
 		}
 		go goroutine.MonitorBackgroundRoutines(ctx, routines...)
 
-		// this is in response to line 1514 in
-		// internal/extsvc/github/common.go
-		baseURL, err := url.Parse("")
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		client := github.NewV3Client(logger, svc.URN(), baseURL, &auth.OAuthBearerToken{Token: token}, doer)
-		g := repos.NewGitHubWebhookHandler(client)
+		repoUpdaterClient := newClient(fmt.Sprintf("http://%s", serverURL), doer)
+		g := NewFakeGitHubWebhookHandler(repoUpdaterClient)
 		handler := webhooks.GitHubWebhook{
 			ExternalServices: store.ExternalServiceStore(),
 		}
 		g.Register(&handler)
-
-		payloadBytes, err := os.ReadFile(filepath.Join("testdata", "webhook-build-worker.json"))
-		if err != nil {
-			t.Fatal(err)
-		}
 
 		// setting up the internal server
 		// that repoupdater listens to
@@ -195,9 +188,6 @@ func TestWebhookSyncIntegration(t *testing.T) {
 			RateLimitSyncer:       repos.NewRateLimitSyncer(ratelimit.DefaultRegistry, store.ExternalServiceStore(), repos.RateLimitSyncerOpts{}),
 		}
 
-		serverURL := "127.0.0.1:8080"
-
-		ru.DefaultClient = newClient(fmt.Sprintf("http://%s", serverURL), doer)
 		httpSrv := httpserver.NewFromAddr(serverURL, &http.Server{
 			ReadTimeout:  75 * time.Second,
 			WriteTimeout: 10 * time.Minute,
@@ -209,6 +199,11 @@ func TestWebhookSyncIntegration(t *testing.T) {
 
 		// mock the Github PushEvent
 		// e.g. user makes a commit
+		payloadBytes, err := os.ReadFile(filepath.Join("testdata", "github-ping.json"))
+		if err != nil {
+			t.Fatal(err)
+		}
+
 		url := fmt.Sprintf("%s/github-webhooks", globals.ExternalURL())
 		req, err := http.NewRequest("POST", url, bytes.NewReader([]byte(payloadBytes)))
 		if err != nil {
@@ -220,7 +215,6 @@ func TestWebhookSyncIntegration(t *testing.T) {
 		rec := httptest.NewRecorder()
 		handler.ServeHTTP(rec, req)
 		resp := rec.Result()
-		fmt.Println("resp:", resp)
 
 		if resp.StatusCode < 200 || resp.StatusCode >= 300 {
 			t.Fatalf("Non-200 status code: %v", resp.StatusCode)
@@ -295,6 +289,38 @@ func handleCaseGitHub(ctx context.Context, logger log.Logger, h *fakeWebhookBuil
 	}
 
 	h.jobChan <- id
+	return nil
+}
+
+type fakeGitHubWebhookHandler struct {
+	client *ru.Client
+}
+
+func NewFakeGitHubWebhookHandler(client *ru.Client) *fakeGitHubWebhookHandler {
+	return &fakeGitHubWebhookHandler{client: client}
+}
+
+func (f *fakeGitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
+	router.Register(f.fakeHandleGitHubWebhook, "push")
+}
+
+func (f *fakeGitHubWebhookHandler) fakeHandleGitHubWebhook(ctx context.Context, extSvc *types.ExternalService, payload any) error {
+	event, ok := payload.(*gh.PushEvent)
+	if !ok {
+		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
+	}
+
+	repos.DefineNotify()
+
+	fullName := *event.Repo.URL
+	repoName := api.RepoName(fullName[8:])
+
+	resp, err := f.client.EnqueueRepoUpdate(ctx, repoName)
+	if err != nil {
+		return err
+	}
+
+	log.Scoped("GitHub handler", fmt.Sprintf("Successfully updated: %s", resp.Name))
 	return nil
 }
 

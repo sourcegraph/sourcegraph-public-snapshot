@@ -34,13 +34,6 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *
 		return errors.Newf("expected GitHub.PushEvent, got %T", payload)
 	}
 
-	notify = func(ch chan struct{}) {
-		select {
-		case ch <- struct{}{}:
-		default:
-		}
-	}
-
 	fullName := *event.Repo.URL
 	repoName := api.RepoName(fullName[8:])
 

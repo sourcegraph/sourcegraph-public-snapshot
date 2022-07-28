@@ -3,6 +3,7 @@ package repos
 import (
 	"container/heap"
 	"context"
+	"fmt"
 	"math/rand"
 	"strings"
 	"sync"
@@ -550,6 +551,7 @@ func (q *updateQueue) enqueue(repo configuredRepo, p priority) (updated bool) {
 			Priority: p,
 		})
 		notify(q.notifyEnqueue)
+		fmt.Println("done notifying!")
 		return false
 	}
 
