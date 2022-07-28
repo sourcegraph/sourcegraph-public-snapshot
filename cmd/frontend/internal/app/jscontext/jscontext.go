@@ -113,6 +113,8 @@ type JSContext struct {
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
+
+	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -239,6 +241,8 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
+
+		EnableLegacyExtensions: true,
 	}
 }
 
