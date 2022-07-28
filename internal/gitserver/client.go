@@ -392,12 +392,12 @@ type Client interface {
 	// TODO: Rename to something like PersonCount?
 	ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error)
 
-	LogReverseEach(repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
+	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
+	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
 
-	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-	RevList(repo string, commit string, onCommit func(commit string) (bool, error)) error
-
-	RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error
+	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
+	// onCommit function for each.
+	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (bool, error)) error
 
 	Addrs() []string
 }
@@ -480,7 +480,7 @@ func addrForKey(key string, addrs []string) string {
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
 	Treeish   string               // the tree or commit to produce an archive for
-	Format    string               // format of the resulting archive (usually "tar" or "zip")
+	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
 }
 
@@ -524,7 +524,7 @@ func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, o
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
-		"format":  {opt.Format},
+		"format":  {string(opt.Format)},
 	}
 
 	for _, pathspec := range opt.Pathspecs {

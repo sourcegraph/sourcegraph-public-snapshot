@@ -1,5 +1,6 @@
-import React, { Suspense, useEffect, useMemo } from 'react'
+import React, { Suspense, useCallback, useEffect, useMemo, useState } from 'react'
 
+import { Shortcut } from '@slimsag/react-shortcuts'
 import classNames from 'classnames'
 import { Redirect, Route, RouteComponentProps, Switch, matchPath } from 'react-router'
 import { Observable } from 'rxjs'
@@ -10,11 +11,7 @@ import { SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import {
-    KeyboardShortcutsProps,
-    KEYBOARD_SHORTCUT_SHOW_HELP,
-} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
-import { KeyboardShortcutsHelp } from '@sourcegraph/shared/src/keyboardShortcuts/KeyboardShortcutsHelp'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -32,10 +29,12 @@ import { communitySearchContextsRoutes } from './communitySearchContexts/routes'
 import { AppRouterContainer } from './components/AppRouterContainer'
 import { useBreadcrumbs } from './components/Breadcrumbs'
 import { ErrorBoundary } from './components/ErrorBoundary'
+import { KeyboardShortcutsHelp } from './components/KeyboardShortcutsHelp/KeyboardShortcutsHelp'
 import { useScrollToLocationHash } from './components/useScrollToLocationHash'
 import { GlobalContributions } from './contributions'
 import { ExtensionAreaRoute } from './extensions/extension/ExtensionArea'
 import { ExtensionAreaHeaderNavItem } from './extensions/extension/ExtensionAreaHeader'
+import { excludeExtensionsRoute } from './extensions/extensions'
 import { ExtensionsAreaRoute } from './extensions/ExtensionsArea'
 import { ExtensionsAreaHeaderActionButton } from './extensions/ExtensionsAreaHeader'
 import { useFeatureFlag } from './featureFlags/useFeatureFlag'
@@ -63,6 +62,7 @@ import { UserAreaRoute } from './user/area/UserArea'
 import { UserAreaHeaderNavItem } from './user/area/UserAreaHeader'
 import { UserSettingsAreaRoute } from './user/settings/UserSettingsArea'
 import { UserSettingsSidebarItems } from './user/settings/UserSettingsSidebar'
+import { useExtensionsAsCoreFeaturesFromSettings } from './util/settings'
 import { parseBrowserRepoURL } from './util/url'
 
 import styles from './Layout.module.scss'
@@ -72,7 +72,6 @@ export interface LayoutProps
         SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeyboardShortcutsProps,
         TelemetryProps,
         ActivationProps,
         SearchContextProps,
@@ -124,7 +123,9 @@ export interface LayoutProps
 const CONTRAST_COMPLIANT_CLASSNAME = 'theme-contrast-compliant-syntax-highlighting'
 
 export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps>> = props => {
-    const routeMatch = props.routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
+    const extensionsAsCoreFeatures = useExtensionsAsCoreFeaturesFromSettings(props.settingsCascade)
+    const routes = extensionsAsCoreFeatures ? excludeExtensionsRoute(props.routes) : props.routes
+    const routeMatch = routes.find(({ path, exact }) => matchPath(props.location.pathname, { path, exact }))?.path
     const isSearchRelatedPage = (routeMatch === '/:repoRevAndRest+' || routeMatch?.startsWith('/search')) ?? false
     const minimalNavLinks = routeMatch === '/cncf'
     const isSearchHomepage = props.location.pathname === '/search' && !parseSearchURLQuery(props.location.search)
@@ -179,6 +180,11 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
 
     useScrollToLocationHash(props.location)
 
+    const showHelpShortcut = useKeyboardShortcut('keyboardShortcutsHelp')
+    const [keyboardShortcutsHelpOpen, setKeyboardShortcutsHelpOpen] = useState(false)
+    const showKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(true), [])
+    const hideKeyboardShortcutsHelp = useCallback(() => setKeyboardShortcutsHelpOpen(false), [])
+
     // Note: this was a poor UX and is disabled for now, see https://github.com/sourcegraph/sourcegraph/issues/30192
     // const [tosAccepted, setTosAccepted] = useState(true) // Assume TOS has been accepted so that we don't show the TOS modal on initial load
     // useEffect(() => setTosAccepted(!props.authenticatedUser || props.authenticatedUser.tosAccepted), [
@@ -216,10 +222,10 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                 coreWorkflowImprovementsEnabled && 'core-workflow-improvements-enabled'
             )}
         >
-            <KeyboardShortcutsHelp
-                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_HELP}
-                keyboardShortcuts={props.keyboardShortcuts}
-            />
+            {showHelpShortcut?.keybindings.map((keybinding, index) => (
+                <Shortcut key={index} {...keybinding} onMatch={showKeyboardShortcutsHelp} />
+            ))}
+            <KeyboardShortcutsHelp isOpen={keyboardShortcutsHelpOpen} onDismiss={hideKeyboardShortcutsHelp} />
             <GlobalAlerts
                 authenticatedUser={props.authenticatedUser}
                 settingsCascade={props.settingsCascade}
@@ -248,6 +254,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     minimalNavLinks={minimalNavLinks}
                     isSearchAutoFocusRequired={!isSearchAutoFocusRequired}
                     isRepositoryRelatedPage={isRepositoryRelatedPage}
+                    showKeyboardShortcutsHelp={showKeyboardShortcutsHelp}
                 />
             )}
             {needsSiteInit && !isSiteInit && <Redirect to="/site-admin/init" />}
@@ -260,7 +267,7 @@ export const Layout: React.FunctionComponent<React.PropsWithChildren<LayoutProps
                     }
                 >
                     <Switch>
-                        {props.routes.map(
+                        {routes.map(
                             ({ render, condition = () => true, ...route }) =>
                                 condition(context) && (
                                     <Route

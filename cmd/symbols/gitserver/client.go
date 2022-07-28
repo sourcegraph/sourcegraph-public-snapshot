@@ -12,6 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
+	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -26,6 +27,16 @@ type GitserverClient interface {
 
 	// GetRepoSize returns the repo size in bytes.
 	GetRepoSize(context.Context, api.RepoName) (int64, error)
+
+	// ReadFile returns the file content for the given file at a repo commit.
+	ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error)
+
+	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
+	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
+
+	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
+	// onCommit function for each.
+	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error
 }
 
 // Changes are added, deleted, and modified paths.
@@ -36,13 +47,14 @@ type Changes struct {
 }
 
 type gitserverClient struct {
-	db         database.DB
-	operations *operations
+	innerClient gitserver.Client
+	operations  *operations
 }
 
-func NewClient(observationContext *observation.Context) GitserverClient {
+func NewClient(db database.DB, observationContext *observation.Context) GitserverClient {
 	return &gitserverClient{
-		operations: newOperations(observationContext),
+		innerClient: gitserver.NewClient(db),
+		operations:  newOperations(observationContext),
 	}
 }
 
@@ -61,12 +73,12 @@ func (c *gitserverClient) FetchTar(ctx context.Context, repo api.RepoName, commi
 
 	opts := gitserver.ArchiveOptions{
 		Treeish:   string(commit),
-		Format:    "tar",
+		Format:    gitserver.ArchiveFormatTar,
 		Pathspecs: pathSpecs,
 	}
 
 	// Note: the sub-repo perms checker is nil here because we do the sub-repo filtering at a higher level
-	return gitserver.NewClient(c.db).ArchiveReader(ctx, nil, repo, opts)
+	return c.innerClient.ArchiveReader(ctx, nil, repo, opts)
 }
 
 func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commitA, commitB api.CommitID) (_ Changes, err error) {
@@ -77,7 +89,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 	}})
 	defer endObservation(1, observation.Args{})
 
-	output, err := gitserver.NewClient(c.db).DiffSymbols(ctx, repo, commitA, commitB)
+	output, err := c.innerClient.DiffSymbols(ctx, repo, commitA, commitB)
 
 	changes, err := parseGitDiffOutput(output)
 	if err != nil {
@@ -88,7 +100,7 @@ func (c *gitserverClient) GitDiff(ctx context.Context, repo api.RepoName, commit
 }
 
 func (c *gitserverClient) GetRepoSize(ctx context.Context, repo api.RepoName) (int64, error) {
-	repoToInfo, err := gitserver.NewClient(c.db).RepoInfo(ctx, repo)
+	repoToInfo, err := c.innerClient.RepoInfo(ctx, repo)
 	if err != nil {
 		return 0, err
 	}
@@ -97,6 +109,22 @@ func (c *gitserverClient) GetRepoSize(ctx context.Context, repo api.RepoName) (i
 		return 0, errors.Errorf("repo %q not found", repo)
 	}
 	return info.Size, nil
+}
+
+func (c *gitserverClient) ReadFile(ctx context.Context, repoCommitPath types.RepoCommitPath) ([]byte, error) {
+	data, err := c.innerClient.ReadFile(ctx, api.RepoName(repoCommitPath.Repo), api.CommitID(repoCommitPath.Commit), repoCommitPath.Path, nil)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to get file contents")
+	}
+	return data, nil
+}
+
+func (g *gitserverClient) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	return g.innerClient.LogReverseEach(ctx, repo, commit, n, onLogEntry)
+}
+
+func (g *gitserverClient) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	return g.innerClient.RevList(ctx, repo, commit, onCommit)
 }
 
 var NUL = []byte{0}

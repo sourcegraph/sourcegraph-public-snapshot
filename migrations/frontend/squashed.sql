@@ -1429,7 +1429,7 @@ CREATE TABLE event_logs_export_allowlist (
     event_name text NOT NULL
 );
 
-COMMENT ON TABLE event_logs_export_allowlist IS 'An allowlist of events that are approved for export if the scraping job is nabled';
+COMMENT ON TABLE event_logs_export_allowlist IS 'An allowlist of events that are approved for export if the scraping job is enabled';
 
 COMMENT ON COLUMN event_logs_export_allowlist.event_name IS 'Name of the event that corresponds to event_logs.name';
 
@@ -3743,7 +3743,7 @@ CREATE INDEX discussion_threads_target_repo_repo_id_path_idx ON discussion_threa
 
 CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id);
 
-CREATE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
+CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
 
 CREATE INDEX event_logs_name ON event_logs USING btree (name);
 

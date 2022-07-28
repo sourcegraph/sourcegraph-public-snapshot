@@ -7294,7 +7294,7 @@
     },
     {
       "Name": "event_logs_export_allowlist",
-      "Comment": "An allowlist of events that are approved for export if the scraping job is nabled",
+      "Comment": "An allowlist of events that are approved for export if the scraping job is enabled",
       "Columns": [
         {
           "Name": "event_name",
@@ -7325,6 +7325,16 @@
       ],
       "Indexes": [
         {
+          "Name": "event_logs_export_allowlist_event_name_idx",
+          "IsPrimaryKey": false,
+          "IsUnique": true,
+          "IsExclusion": false,
+          "IsDeferrable": false,
+          "IndexDefinition": "CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name)",
+          "ConstraintType": "",
+          "ConstraintDefinition": ""
+        },
+        {
           "Name": "event_logs_export_allowlist_pkey",
           "IsPrimaryKey": true,
           "IsUnique": true,
@@ -7333,16 +7343,6 @@
           "IndexDefinition": "CREATE UNIQUE INDEX event_logs_export_allowlist_pkey ON event_logs_export_allowlist USING btree (id)",
           "ConstraintType": "p",
           "ConstraintDefinition": "PRIMARY KEY (id)"
-        },
-        {
-          "Name": "event_logs_export_allowlist_event_name_idx",
-          "IsPrimaryKey": false,
-          "IsUnique": false,
-          "IsExclusion": false,
-          "IsDeferrable": false,
-          "IndexDefinition": "CREATE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name)",
-          "ConstraintType": "",
-          "ConstraintDefinition": ""
         }
       ],
       "Constraints": null,
