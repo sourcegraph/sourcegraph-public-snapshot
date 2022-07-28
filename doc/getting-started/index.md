@@ -67,15 +67,15 @@ Sourcegraph gives you code navigation in:
 
 - **code files in Sourcegraph's web UI**
 
-![Hover tooltip](../code_intelligence/img/hover-tooltip.png)
+![Hover tooltip](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/hover-tooltip.png)
 
 - **diffs in your code review tool**, via [integrations](../integration/index.md)
 
-![GitHub pull request integration](../code_intelligence/img/github-pr.png)
+![GitHub pull request integration](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/github-pr.png)
 
 - **code files on your code host**, via [integrations](../integration/index.md)
 
-![GitHub file integration](../code_intelligence/img/github-file.png)
+![GitHub file integration](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/github-file.png)
 
 Read the [code navigation documentation](../code_intelligence/index.md) to learn more and to set it up.
 

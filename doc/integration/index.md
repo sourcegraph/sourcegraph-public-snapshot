@@ -28,4 +28,4 @@ Sourcegraph integrates with your other tools to help you search, navigate, and r
   - [Sourcegraph for Raycast](https://www.raycast.com/bobheadxi/sourcegraph) (unofficial): search code, browse notebooks, and manage batch changes from the Raycast launcher
 - [GraphQL API](../api/graphql/index.md): create custom tools using Sourcegraph data
 
-![GitHub pull request integration](../code_intelligence/img/github-pr.png)
+![GitHub pull request integration](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/github-pr.png)
