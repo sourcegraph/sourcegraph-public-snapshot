@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -38,7 +39,7 @@ func mainErr() error {
 		versionTags = append(versionTags, version.GitTag())
 	}
 
-	stitchedMigrationBySchemaName := map[string]stitch.StitchedMigration{}
+	stitchedMigrationBySchemaName := map[string]shared.StitchedMigration{}
 	for _, schemaName := range schemas.SchemaNames {
 		stitched, err := stitch.StitchDefinitions(schemaName, repoRoot, versionTags)
 		if err != nil {

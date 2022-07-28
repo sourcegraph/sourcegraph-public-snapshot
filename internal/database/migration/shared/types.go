@@ -1,5 +1,19 @@
 package shared
 
+import "github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+
+// StitchedMigration represents a "virtual" migration graph constructed over time.
+type StitchedMigration struct {
+	// Definitions is a graph formed by concatenating and canonicalizing schema migration graphs over
+	// several releases. This should contain all migrations defined in the associated version range.
+	Definitions *definition.Definitions
+
+	// LeafIDsByRev is a map from schema name to the set of identifiers of leaf migration for that
+	// schema. This is used to determine the points in the graph that are associated with a particular
+	// minor release.
+	LeafIDsByRev map[string][]int
+}
+
 // IndexStatus describes the state of an index. Is{Valid,Ready,Live} is taken
 // from the `pg_index` system table. If the index is currently being created,
 // then the remaining reference fields will be populated describing the index

@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 )
 
 //go:generate go run ./cmd/generator
@@ -16,7 +16,7 @@ var upgradeDataPayloadContents string
 
 // stitchedMigationsBySchemaName is a map from schema name to migration upgrade metadata.
 // The data backing the map is updated by `go generating` this package.
-var stitchedMigationsBySchemaName = map[string]stitch.StitchedMigration{}
+var stitchedMigationsBySchemaName = map[string]shared.StitchedMigration{}
 
 func init() {
 	if err := json.Unmarshal([]byte(upgradeDataPayloadContents), &stitchedMigationsBySchemaName); err != nil {
