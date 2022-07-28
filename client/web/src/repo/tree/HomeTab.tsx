@@ -81,7 +81,6 @@ export const HomeTab: React.FunctionComponent<React.PropsWithChildren<Props>> = 
                         })
                     ),
                     map(blob => {
-                        console.log('Did something!!')
                         if (blob === null) {
                             setRichHTML(null)
                             return blob

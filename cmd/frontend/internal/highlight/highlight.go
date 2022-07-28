@@ -106,8 +106,9 @@ type Params struct {
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
 
-	// FormatOnly is an experimental feature is allow these queries to exit
-	// early for performance reasons
+	// FormatOnly, if true, will skip highlighting and only return the code
+	// in a formatted table view. This is useful if we want to display code
+	// as quickly as possible, without waiting for highlighting.
 	FormatOnly bool
 }
 
@@ -405,7 +406,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	}
 
 	if p.FormatOnly {
-		// Return early for better perf
 		return unhighlightedCode(err, code)
 	}
 

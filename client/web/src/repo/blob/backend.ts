@@ -41,7 +41,6 @@ export const fetchFormattedBlob = memoizeObservable(
                     content
                     richHTML
                     format {
-                        aborted
                         html
                     }
                 }

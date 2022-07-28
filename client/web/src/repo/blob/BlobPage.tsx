@@ -19,7 +19,7 @@ import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepoFile, ModeSpec, parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
-import { useEventObservable } from '@sourcegraph/wildcard'
+import { Alert, Button, useEventObservable } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BreadcrumbSetters } from '../../components/Breadcrumbs'
@@ -134,7 +134,7 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         }, [filePath, revision, repoName, repoUrl, props.telemetryService])
     )
 
-    const [, simpleBlobInfoOrError] = useEventObservable<
+    const [, formattedBlobInfoOrError] = useEventObservable<
         void,
         (BlobInfo & { richHTML: string; aborted: boolean }) | null | ErrorLike
     >(
@@ -236,11 +236,10 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
         )
     )
 
-    const blobInfoOrError = advancedBlobInfoOrError || simpleBlobInfoOrError
+    const blobInfoOrError = advancedBlobInfoOrError || formattedBlobInfoOrError
 
     const onExtendTimeoutClick = useCallback(
         (event: React.MouseEvent): void => {
-            console.log('Calling!!')
             event.preventDefault()
             nextFetchWithDisabledTimeout()
         },
@@ -419,6 +418,16 @@ export const BlobPage: React.FunctionComponent<React.PropsWithChildren<Props>> =
                     location={props.location}
                     className={styles.border}
                 />
+            )}
+            {!blobInfoOrError.richHTML && blobInfoOrError.aborted && (
+                <div>
+                    <Alert variant="info">
+                        Syntax-highlighting this file took too long. &nbsp;
+                        <Button onClick={onExtendTimeoutClick} variant="primary" size="sm">
+                            Try again
+                        </Button>
+                    </Alert>
+                </div>
             )}
             {/* Render the (unhighlighted) blob also in the case highlighting timed out */}
             {renderMode === 'code' && (

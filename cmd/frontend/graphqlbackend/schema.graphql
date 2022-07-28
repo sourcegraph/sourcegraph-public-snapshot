@@ -3345,10 +3345,6 @@ type FileDiffHunk {
     The hunk body, with lines prefixed with '-', '+', or ' '.
     """
     body: String!
-    # """
-    # Format the hunk.
-    # """
-    # format: HighlightedDiffHunkBody!
     """
     Highlight the hunk.
     """
@@ -4376,7 +4372,7 @@ interface File2 {
     """
     Format the file.
     """
-    format: HighlightedFile!
+    format: FormattedFile!
     """
     Highlight the file.
     """
@@ -4443,7 +4439,7 @@ type VirtualFile implements File2 {
     """
     Format the file.
     """
-    format: HighlightedFile!
+    format: FormattedFile!
     """
     Highlight the file.
     """
@@ -4548,7 +4544,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Format the blob contents.
     """
-    format: HighlightedFile!
+    format: FormattedFile!
     """
     Highlight the blob contents.
     """
@@ -4611,6 +4607,16 @@ type GitBlob implements TreeEntry & File2 {
         """
         recursiveSingleChild: Boolean = false
     ): Boolean!
+}
+
+"""
+A formatted file.
+"""
+type FormattedFile {
+    """
+    The HTML table that can be used to display the formatted file.
+    """
+    html: String!
 }
 
 """
