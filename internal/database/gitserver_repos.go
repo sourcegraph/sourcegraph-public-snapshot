@@ -604,18 +604,6 @@ WHERE gr.repo_size_bytes IS NULL
 
 // UpdateRepoSizes sets repo sizes according to input map. Key is repoID, value is repo_size_bytes.
 func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string, repos map[api.RepoID]int64) (updated int, err error) {
-	type repoAndSize struct {
-		RepoID api.RepoID
-		Size   int64
-	}
-
-	toInsert := make([]repoAndSize, len(repos))
-	i := 0
-	for repo, size := range repos {
-		toInsert[i] = repoAndSize{RepoID: repo, Size: size}
-		i++
-	}
-
 	tx, err := s.Store.Transact(ctx)
 	if err != nil {
 		return 0, err
@@ -625,31 +613,42 @@ func (s *gitserverRepoStore) UpdateRepoSizes(ctx context.Context, shardID string
 	// NOTE: We have two args per row, so rows*2 should be less then maximum
 	// postgres allows
 	const batchSize = batch.MaxNumPostgresParameters / 2
-	updatedRows := 0
-	for i := 0; i < len(toInsert); i += batchSize {
-		j := i + batchSize
-		if j > len(toInsert) {
-			j = len(toInsert)
-		}
-
-		batch := toInsert[i:j]
-
-		repoIdSizePairs := make([]*sqlf.Query, len(batch))
-		for i, b := range batch {
-			repoIdSizePairs[i] = sqlf.Sprintf("(%s::integer, %s::bigint)", b.RepoID, b.Size)
-		}
-		q := sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(repoIdSizePairs, ","))
-
-		res, err := tx.ExecResult(ctx, q)
-		if err != nil {
-			return 0, err
-		}
-		rowsAffected, err := res.RowsAffected()
-		if err != nil {
-			return 0, err
-		}
-		updatedRows += int(rowsAffected)
+	type repoAndSize struct {
+		RepoID api.RepoID
+		Size   int64
 	}
+	batch := make([]repoAndSize, batchSize)
+
+	left := len(repos)
+	currentCount := 0
+	updatedRows := 0
+	for repo, size := range repos {
+		batch[currentCount] = repoAndSize{RepoID: repo, Size: size}
+
+		currentCount += 1
+
+		if currentCount == batchSize || currentCount == left {
+			repoIdSizePairs := make([]*sqlf.Query, currentCount)
+			for i, b := range batch[:currentCount] {
+				repoIdSizePairs[i] = sqlf.Sprintf("(%s::integer, %s::bigint)", b.RepoID, b.Size)
+			}
+
+			res, err := tx.ExecResult(ctx, sqlf.Sprintf(updateRepoSizesQueryFmtstr, sqlf.Join(repoIdSizePairs, ",")))
+			if err != nil {
+				return 0, err
+			}
+
+			rowsAffected, err := res.RowsAffected()
+			if err != nil {
+				return 0, err
+			}
+			updatedRows += int(rowsAffected)
+
+			left -= currentCount
+			currentCount = 0
+		}
+	}
+
 	return updatedRows, nil
 }
 
