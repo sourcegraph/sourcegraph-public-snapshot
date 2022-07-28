@@ -9,14 +9,14 @@ import { SemanticResourceAttributes } from '@opentelemetry/semantic-conventions'
 import isAbsoluteUrl from 'is-absolute-url'
 
 export function initOpenTelemetry(): void {
-    if (process.env.NODE_ENV === 'production' || process.env.ENABLE_OPEN_TELEMETRY) {
+    const { openTelemetry, externalURL } = window.context
+
+    if (openTelemetry && (process.env.NODE_ENV === 'production' || process.env.ENABLE_OPEN_TELEMETRY)) {
         const provider = new WebTracerProvider({
             resource: new Resource({
                 [SemanticResourceAttributes.SERVICE_NAME]: 'web-app',
             }),
         })
-
-        const { openTelemetry, externalURL } = window.context
 
         if (openTelemetry) {
             const url = isAbsoluteUrl(openTelemetry.endpoint)
