@@ -516,14 +516,6 @@ cc @${config.captainGitHubUsername}
                         ...prBodyAndDraftState(
                             ((): string[] => {
                                 const items: string[] = []
-                                if (notPatchRelease) {
-                                    items.push('Update the upgrade guides in `doc/admin/updates`')
-                                } else {
-                                    items.push(
-                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/releases#changelogmd).',
-                                        'If any specific upgrade steps are required, update the upgrade guides in `doc/admin/updates`'
-                                    )
-                                }
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
                                     'Run `yarn run release release:finalize` to generate the tags required. CI will not pass until this command is run.',
