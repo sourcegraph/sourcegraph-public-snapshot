@@ -8,6 +8,8 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/sourcegraph/log"
 
+	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	basestore "github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
@@ -19,11 +21,10 @@ import (
 )
 
 type webhookBuildJob struct {
-	store Store
 }
 
-func NewWebhookBuildJob(store Store) *webhookBuildJob {
-	return &webhookBuildJob{store: store}
+func NewWebhookBuildJob() *webhookBuildJob {
+	return &webhookBuildJob{}
 }
 
 func (w *webhookBuildJob) Description() string {
@@ -43,11 +44,18 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 
 	webhookBuildWorkerMetrics, webhookBuildResetterMetrics := newWebhookBuildWorkerMetrics(observationContext, "webhook_build_worker")
 
-	baseStore := basestore.NewWithHandle(w.store.Handle())
-	workerStore := webhookbuilder.CreateWorkerStore(w.store.Handle())
+	mainAppDB, err := workerdb.Init()
+	if err != nil {
+		return nil, err
+	}
+
+	db := database.NewDB(logger, mainAppDB)
+	store := NewStore(logger, db)
+	baseStore := basestore.NewWithHandle(store.Handle())
+	workerStore := webhookbuilder.CreateWorkerStore(store.Handle())
 
 	return []goroutine.BackgroundRoutine{
-		webhookbuilder.NewWorker(ctx, &webhookBuildHandler{store: w.store}, workerStore, webhookBuildWorkerMetrics),
+		webhookbuilder.NewWorker(ctx, newWebHookBuildHandler(store), workerStore, webhookBuildWorkerMetrics),
 		webhookbuilder.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
 		webhookbuilder.NewCleaner(ctx, baseStore, observationContext),
 	}, nil
