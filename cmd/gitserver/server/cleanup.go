@@ -530,7 +530,8 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 	}
 }
 
-// setRepoSizes uses calculated sizes of repos to update database entries of repos with actual sizes
+// setRepoSizes uses calculated sizes of repos to update database entries of repos
+// with actual sizes, but only up to 10,000 in one run.
 func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]int64) error {
 	logger := s.Logger.Scoped("cleanup.setRepoSizes", "setRepoSizes does cleanup of database entries")
 
@@ -548,6 +549,17 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	// repo sizes in the database, but this is totally acceptable.
 	if reposNumber > 10000 {
 		reposNumber = 10000
+	}
+
+	reposToUpdate := make(map[api.RepoName]int64, reposNumber)
+	count := 0
+	// random nature of map traversal yields a different subset of repos every time this function is called
+	for repoName, size := range repoToSize {
+		if count >= reposNumber {
+			break
+		}
+		reposToUpdate[repoName] = size
+		count++
 	}
 
 	// updating repos
