@@ -3,12 +3,10 @@ package graphqlbackend
 import (
 	"context"
 
-	"github.com/google/zoekt"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/envvar"
 	"github.com/sourcegraph/sourcegraph/internal/database"
-	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/client"
 	"github.com/sourcegraph/sourcegraph/internal/search/run"
@@ -58,9 +56,6 @@ func NewBatchSearchImplementer(ctx context.Context, logger log.Logger, db databa
 		client:       cli,
 		db:           db,
 		SearchInputs: inputs,
-		zoekt:        search.Indexed(),
-		searcherURLs: search.SearcherURLs(),
-		logger:       logger,
 	}, nil
 }
 
@@ -73,10 +68,6 @@ type searchResolver struct {
 	client       client.SearchClient
 	SearchInputs *run.SearchInputs
 	db           database.DB
-	logger       log.Logger
-
-	zoekt        zoekt.Streamer
-	searcherURLs *endpoint.Map
 }
 
 var MockDecodedViewerFinalSettings *schema.Settings
