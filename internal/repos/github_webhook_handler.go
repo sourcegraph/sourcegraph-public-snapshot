@@ -10,19 +10,12 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/webhooks"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/extsvc/github"
 	"github.com/sourcegraph/sourcegraph/internal/repoupdater"
 	"github.com/sourcegraph/sourcegraph/internal/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-type GitHubWebhookHandler struct {
-	client *github.V3Client
-}
-
-func NewGitHubWebhookHandler(client *github.V3Client) *GitHubWebhookHandler {
-	return &GitHubWebhookHandler{client: client}
-}
+type GitHubWebhookHandler struct{}
 
 func (g *GitHubWebhookHandler) Register(router *webhooks.GitHubWebhook) {
 	router.Register(g.handleGitHubWebhook, "push")
@@ -44,20 +37,4 @@ func (g *GitHubWebhookHandler) handleGitHubWebhook(ctx context.Context, extSvc *
 
 	log.Scoped("GitHub handler", fmt.Sprintf("Successfully updated: %s", resp.Name))
 	return nil
-}
-
-func (g *GitHubWebhookHandler) CreateSyncWebhook(ctx context.Context, repoName, targetURL, secret string) (int, error) {
-	return g.client.CreateSyncWebhook(ctx, repoName, targetURL, secret)
-}
-
-func (g *GitHubWebhookHandler) ListSyncWebhook(ctx context.Context, repoName string) ([]github.WebhookPayload, error) {
-	return g.client.ListSyncWebhooks(ctx, repoName)
-}
-
-func (g *GitHubWebhookHandler) FindSyncWebhook(ctx context.Context, repoName string) (int, error) {
-	return g.client.FindSyncWebhook(ctx, repoName)
-}
-
-func (g *GitHubWebhookHandler) DeleteSyncWebhook(ctx context.Context, repoName string, hookID int) (bool, error) {
-	return g.client.DeleteSyncWebhook(ctx, repoName, hookID)
 }
