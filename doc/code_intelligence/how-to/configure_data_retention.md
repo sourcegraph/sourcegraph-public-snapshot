@@ -1,4 +1,4 @@
-# Configure precise code graph data retention policies
+# Configure code graph data retention policies
 
 <style>
 img.screenshot {
@@ -27,21 +27,21 @@ All upload records will be periodically compared against global data retention p
 
 Site admins may create data retention policies that are applied to _all repositories_ on your Sourcegraph instance. In order to view and edit these policies, navigate to the code graph configuration in the site-admin dashboard.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/global/list.png" class="screenshot" alt="Global data retention policy configuration list page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/global-list.png" class="screenshot" alt="Global data retention policy configuration list page">
 
 By default, there are three _protected_ policies which cannot be deleted or disabled. These policies refer to all tagged commits (associated data being kept for one year by default), the tip of all branches (associated data being kept for three months by default), and the HEAD of the default branch (associated data being kept forever by default) for all repositories. Protected policies cannot be deleted or disabled, but the retention length can be modified to suit your instance's usage patterns.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/global/protected.png" class="screenshot" alt="Protected global data retention policy edit page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/global-protected.png" class="screenshot" alt="Protected global data retention policy edit page">
 
 New policies can also be created to apply to the HEAD of the default branch, or to apply to any arbitrary Git branch or tag pattern. For example, you may want to never expire any data for any major version tags in your organization.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/global/create.png" class="screenshot" alt="Global data retention policy configuration edit page">
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/global/post-create.png" class="screenshot" alt="Global data retention policy configuration created confirmation">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/retention-create.png" class="screenshot" alt="Global data retention policy configuration edit page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/retention-post-create.png" class="screenshot" alt="Global data retention policy configuration created confirmation">
 
-New policies can be created to apply to a set of repositories that are matched by name. For example, you may want to change duration retention on branches that exist within a particular set of repositories (in this example, repositories in the same organization matching `lsif-*`).
+New policies can be created to apply to a set of repositories that are matched by name. For example, you may want to change duration retention on branches that exist within a particular set of repositories (in this example, repositories in the same organization matching `scip-*`).
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/global/create-repo-list.png" class="screenshot" alt="Global data retention policy with repository patterns configuration edit page">
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/global/post-create-repo-list.png" class="screenshot" alt="Global data retention policy with repository patterns configuration created confirmation">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/retention-create-repo-list.png" class="screenshot" alt="Global data retention policy with repository patterns configuration edit page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/retention-post-create-repo-list.png" class="screenshot" alt="Global data retention policy with repository patterns configuration created confirmation">
 
 ## Applying data retention policies to a specific repository
 
@@ -51,9 +51,7 @@ Data retention policies can also be created on a per-repository basis as commit 
 
 The settings page will show all policies that apply to the given repository, including both repository-specific policies as well as global policies that match the repository.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/repo/list.png" class="screenshot" alt="Repository-specific data retention policy configuration list page">
-
 In this example, we create the _`:bestcoder:` branch retention policy_ that ensures all commits visible to the tip of any branch matching the pattern `ef/*` will not be removed regardless of age.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/repo/create.png" class="screenshot" alt="Repository-specific data retention policy configuration edit page">
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/retention/repo/post-create.png" class="screenshot" alt="Repository-specific data retention policy configuration created confirmation">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/retention-repo-create.png" class="screenshot" alt="Repository-specific data retention policy configuration edit page">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/retention-repo-post-create.png" class="screenshot" alt="Repository-specific data retention policy configuration created confirmation">

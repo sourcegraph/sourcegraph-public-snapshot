@@ -30,6 +30,7 @@ docker-images/syntax-highlighter/crates/
 docker-images/syntax-highlighter/target/
 storybook-static/
 browser/code-intel-extensions/
+vscode/code-intel-extensions/
 .buildkite-cache/
 lib/codeintel/reprolang/
 cmd/symbols/squirrel/language-file-extensions.json

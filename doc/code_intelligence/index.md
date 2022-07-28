@@ -77,6 +77,7 @@ Here's how you go from search-based code navigation to **automatically-updating,
     - [Index a TypeScript or JavaScript repository](how-to/index_a_typescript_and_javascript_repository.md#manual-indexing)
     - [Index a C++ repository](how-to/index_a_cpp_repository.md)
     - [Index a Java, Scala & Kotlin repository](https://sourcegraph.github.io/scip-java/docs/getting-started.html)
+    - [Index a Python repository](https://github.com/sourcegraph/scip-python)
 
 1. _Optional_: automate the uploading of indexes by [adding indexing and uploading to your CI setup](how-to/adding_lsif_to_workflows.md).
 1. Get **automatic precise code navigation** by [enabling auto-indexing](how-to/enable_auto_indexing.md) which makes Sourcegraph automatically index the your repositories and enable precise code navigation for them.

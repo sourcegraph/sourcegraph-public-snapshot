@@ -42,7 +42,7 @@ Alternatively, users can see code graph data uploads for a particular repository
 
 Administrators of a Sourcegraph instance can see a global view of code graph data uploads across all repositories from the _Site Admin_ page.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/uploads/site-admin-list.png" class="screenshot" alt="Global list of code graphd data uploads across all repositories">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/site-admin-list.png" class="screenshot" alt="Global list of code graphd data uploads across all repositories">
 
 ## Repository commit graph
 
@@ -55,8 +55,8 @@ While this flag is set, the repository's commit graph is considered _stale_. Thi
 
 The state of a repository's commit graph can be seen in the code graph data page in the target repository's index page.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/uploads/list-stale-commit-graph.png" class="screenshot" alt="Stale repository commit graph notice">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/list-stale-commit-graph.png" class="screenshot" alt="Stale repository commit graph notice">
 
 Once the commit graph has updated (and no subsequent changes to that repository's uploads have occurred), the repository commit graph is no longer considered stale.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/uploads/list-states.png" class="screenshot" alt="Up-to-date repository commit graph notice">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/rename/list-states.png" class="screenshot" alt="Up-to-date repository commit graph notice">

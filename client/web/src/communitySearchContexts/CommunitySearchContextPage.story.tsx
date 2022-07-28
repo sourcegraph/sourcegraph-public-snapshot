@@ -124,7 +124,6 @@ const commonProps = () =>
         caseSensitive: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER },
         platformContext: PLATFORM_CONTEXT,
-        keyboardShortcuts: [],
         setCaseSensitivity: action('setCaseSensitivity'),
         activation: undefined,
         isSourcegraphDotCom: true,

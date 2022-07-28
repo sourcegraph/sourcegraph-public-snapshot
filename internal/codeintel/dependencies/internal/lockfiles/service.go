@@ -88,7 +88,7 @@ func (s *Service) StreamDependencies(ctx context.Context, repo api.RepoName, rev
 
 	opts := gitserver.ArchiveOptions{
 		Treeish:   rev,
-		Format:    "zip",
+		Format:    gitserver.ArchiveFormatZip,
 		Pathspecs: pathspecs,
 	}
 

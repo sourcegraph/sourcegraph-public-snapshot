@@ -37,7 +37,7 @@ The instructions to setup dependency navigation are different depending on what 
 * **Java, Scala, Kotlin**: Setup [auto-indexing](auto_indexing.md) and a [JVM dependencies code host](../../integration/jvm.md).
 * **JavaScript, TypeScript**: Setup [auto-indexing](auto_indexing.md) and a [npm dependencies code host](../../integration/npm.md).
 
-> NOTE: This feature is in Experimental phase and is not available for other language ecosystems at the moment.
+> NOTE: This feature is in Beta phase and is not available for other language ecosystems at the moment.
 
 ## Find implementations
 
