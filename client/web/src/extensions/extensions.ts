@@ -167,10 +167,3 @@ export function applyWIPFilter(
         return true
     })
 }
-
-export function excludeExtensionsRoute(routes: readonly LayoutRouteProps<any>[]): readonly LayoutRouteProps<any>[] {
-    const extensionsRouteIndex = routes.findIndex(route => route.path === PageRoutes.Extensions)
-    return extensionsRouteIndex > -1
-        ? [...routes.slice(0, extensionsRouteIndex), ...routes.slice(extensionsRouteIndex + 1)]
-        : routes
-}
