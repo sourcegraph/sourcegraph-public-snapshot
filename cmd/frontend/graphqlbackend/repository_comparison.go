@@ -469,6 +469,10 @@ type fileDiffHighlighter struct {
 	highlightAborted bool
 }
 
+func (r *fileDiffHighlighter) ScipHighlight(ctx context.Context, args *ScipHighlightArgs) (*highlightedFileResolver, error) {
+	return nil, nil
+}
+
 func (r *fileDiffHighlighter) Highlight(ctx context.Context, args *HighlightArgs) ([]template.HTML, []template.HTML, bool, error) {
 	r.highlightOnce.Do(func() {
 		highlightFile := func(ctx context.Context, file FileResolver) ([]template.HTML, error) {

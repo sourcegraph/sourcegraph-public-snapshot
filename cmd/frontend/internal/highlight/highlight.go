@@ -30,6 +30,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/gosyntect"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/trace/ot"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/highlights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -105,6 +106,11 @@ type Params struct {
 
 	// Metadata provides optional metadata about the code we're highlighting.
 	Metadata Metadata
+
+	// ForceSCIP (to be removed once codemirror is only method for highlighting)
+	// makes syntax-highlighter return SCIP encoded data regarless of the
+	// highlighting engine used to generate the highlights.
+	ForceSCIP bool
 }
 
 // Metadata contains metadata about a request to highlight code. It is used to
@@ -316,6 +322,36 @@ func identifyError(err error) (bool, string) {
 	return problem != "", problem
 }
 
+func scipCode(ctx context.Context, p Params) (*gosyntect.Response, error) {
+	// Only able to be called with ForceSCIP
+	if !p.ForceSCIP {
+		return nil, errors.New("scipCode only enabled while ForceSCIP on")
+	}
+
+	var stabilizeTimeout time.Duration
+	if p.DisableTimeout {
+		// The user wants to wait longer for results, so the default 10s worker
+		// timeout is too aggressive. We will let it try to highlight the file
+		// for 30s and will then terminate the process. Note this means in the
+		// worst case one of syntect_server's threads could be stuck at 100%
+		// CPU for 30s.
+		stabilizeTimeout = 30 * time.Second
+	}
+
+	langQuery := DetectSyntaxHighlightingLanguage(p.Filepath, string(p.Content))
+	scipParams := gosyntect.ScipQueryArguments{
+		Filepath:         p.Filepath,
+		Engine:           langQuery.Engine,
+		Language:         langQuery.Language,
+		Code:             string(p.Content),
+		StabilizeTimeout: stabilizeTimeout,
+		Tracer:           ot.GetTracer(ctx),
+	}
+
+	fmt.Println("Params:", scipParams)
+	return client.ScipHighlight(ctx, &scipParams)
+}
+
 // Code highlights the given file content with the given filepath (must contain
 // at least the file name + extension) and returns the properly escaped HTML
 // table representing the highlighted code.
@@ -325,11 +361,11 @@ func identifyError(err error) (bool, string) {
 //
 // In the event the input content is binary, ErrBinary is returned.
 func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted bool, err error) {
+	p.Filepath = normalizeFilepath(p.Filepath)
+
 	if Mocks.Code != nil {
 		return Mocks.Code(p)
 	}
-
-	p.Filepath = normalizeFilepath(p.Filepath)
 
 	filetypeQuery := DetectSyntaxHighlightingLanguage(p.Filepath, string(p.Content))
 
@@ -338,7 +374,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	// like that? Otherwise there is no feedback that this configuration isn't currently working,
 	// which is a bit of a confusing situation for the user.
 	if !client.IsTreesitterSupported(filetypeQuery.Language) {
-		filetypeQuery.Engine = EngineSyntect
+		filetypeQuery.Engine = highlights.EngineSyntect
 	}
 
 	ctx, errCollector, trace, endObservation := getHighlightOp().WithErrorsAndLogger(ctx, &err, observation.Args{LogFields: []otlog.Field{
@@ -349,7 +385,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		otlog.Int("sizeBytes", len(p.Content)),
 		otlog.Bool("highlightLongLines", p.HighlightLongLines),
 		otlog.Bool("disableTimeout", p.DisableTimeout),
-		otlog.String("syntaxEngine", engineToDisplay[filetypeQuery.Engine]),
+		otlog.String("syntaxEngine", highlights.EngineTypeToName(filetypeQuery.Engine)),
 	}})
 	defer endObservation(1, observation.Args{})
 
@@ -406,6 +442,8 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		maxLineLength = 2000
 	}
 
+	// TODO: Figure out how to flip between these here
+	// ForceSCIP:        p.ForceSCIP,
 	query := &gosyntect.Query{
 		Code:             code,
 		Filepath:         p.Filepath,
@@ -421,11 +459,21 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	//       whatever we were calculating before)
 	//    2. We are using treesitter. Always have syntect use the language provided in that
 	//       case to make sure that we have normalized the names of the language by then.
-	if filetypeQuery.LanguageOverride || filetypeQuery.Engine == EngineTreeSitter {
+	if filetypeQuery.LanguageOverride || filetypeQuery.Engine == highlights.EngineTreeSitter {
 		query.Filetype = filetypeQuery.Language
 	}
 
-	resp, err := client.Highlight(ctx, query, filetypeQuery.Engine == EngineTreeSitter)
+	var resp *gosyntect.Response
+	// This is effectively the "codemirror" path.
+	//
+	// The rest of this code could most likely be deleted at some point in the
+	// future when we just have codemirror everywhere.
+	if p.ForceSCIP {
+		fmt.Println("Doing Scip Code...")
+		resp, err = scipCode(ctx, p)
+	} else {
+		resp, err = client.Highlight(ctx, query, filetypeQuery.Engine == highlights.EngineTreeSitter)
+	}
 
 	unhighlightedCode := func(err error, code string) (*HighlightedCode, bool, error) {
 		errCollector.Collect(&err)
@@ -435,6 +483,8 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		}
 		return plainResponse, true, nil
 	}
+
+	fmt.Println("==> Respone:", resp, err)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
@@ -478,7 +528,7 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		return unhighlightedCode(err, code)
 	}
 
-	if filetypeQuery.Engine == EngineTreeSitter {
+	if !p.ForceSCIP && filetypeQuery.Engine == highlights.EngineTreeSitter {
 		document := new(scip.Document)
 		data, err := base64.StdEncoding.DecodeString(resp.Data)
 

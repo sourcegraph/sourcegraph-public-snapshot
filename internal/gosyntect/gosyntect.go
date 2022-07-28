@@ -11,6 +11,7 @@ import (
 
 	"github.com/opentracing-contrib/go-stdlib/nethttp"
 	opentracing "github.com/opentracing/opentracing-go"
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/highlights"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -57,6 +58,65 @@ type Query struct {
 
 	// Tracer, if not nil, will be used to record opentracing spans associated with the query.
 	Tracer opentracing.Tracer
+}
+
+type ScipQueryArguments struct {
+	// Syntax highlighting engine to use.
+	//   For valid names, see: highlight.EnginTypeToName
+	Engine highlights.EngineType
+
+	// Filepath is the file path of the code. It can be the full file path, or
+	// just the name and extension.
+	//
+	// See: https://github.com/sourcegraph/syntect_server#supported-file-extensions
+	Filepath string
+
+	// Filetype is the language name.
+	Language string
+
+	// Code is the literal code to highlight.
+	Code string
+
+	// StabilizeTimeout, if non-zero, overrides the default syntect_server
+	// http-server-stabilizer timeout of 10s. This is most useful when a user
+	// is requesting to highlight a very large file and is willing to wait
+	// longer, but it is important this not _always_ be a long duration because
+	// the worker's threads could get stuck at 100% CPU for this amount of
+	// time if the user's request ends up being a problematic one.
+	StabilizeTimeout time.Duration `json:"-"`
+
+	// Tracer, if not nil, will be used to record opentracing spans associated with the query.
+	Tracer opentracing.Tracer
+}
+
+type scipQueryRequest struct {
+	// Syntax highlighting engine to use.
+	//   For valid names, see: highlight.EnginTypeToName
+	Engine string `json:"engine"`
+
+	// The contents of the code
+	Code string `json:"code"`
+
+	// Filepath is the file path of the code. It can be the full file path, or
+	// just the name and extension.
+	//
+	// See: https://github.com/sourcegraph/syntect_server#supported-file-extensions
+	Filepath string `json:"filepath"`
+
+	// Language is the language name
+	Language string `json:"language"`
+
+	// LineLengthLimit is the maximum line length to parse (ignored for some engines)
+	LineLengthLimit int `json:"line_length_limit"`
+}
+
+type scipResponse struct {
+	// Base64 encoded string of a single SCIP Data
+	Data string `json:"data"`
+
+	// Error response fields.
+	Error string `json:"error"`
+	Code  string `json:"code"`
 }
 
 // Response represents a response to a code highlighting query.
@@ -121,8 +181,8 @@ type Client struct {
 
 var client = &http.Client{Transport: &nethttp.Transport{}}
 
-func normalizeFiletype(filetype string) string {
-	normalized := strings.ToLower(filetype)
+func normalizeLang(language string) string {
+	normalized := strings.ToLower(language)
 	if mapped, ok := enryLanguageMappings[normalized]; ok {
 		normalized = mapped
 	}
@@ -131,7 +191,7 @@ func normalizeFiletype(filetype string) string {
 }
 
 func (c *Client) IsTreesitterSupported(filetype string) bool {
-	_, contained := supportedFiletypes[normalizeFiletype(filetype)]
+	_, contained := supportedFiletypes[normalizeLang(filetype)]
 	return contained
 }
 
@@ -144,7 +204,7 @@ func (c *Client) IsTreesitterSupported(filetype string) bool {
 // options later, so it's OK for the first iteration.
 func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*Response, error) {
 	// Normalize filetype
-	q.Filetype = normalizeFiletype(q.Filetype)
+	q.Filetype = normalizeLang(q.Filetype)
 
 	if useTreeSitter && !c.IsTreesitterSupported(q.Filetype) {
 		return nil, errors.New("Not a valid treesitter filetype")
@@ -204,28 +264,91 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
 		return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
 	}
-	if r.Error != "" {
-		var err error
-		switch r.Code {
-		case "invalid_theme":
-			err = ErrInvalidTheme
-		case "resource_not_found":
-			// resource_not_found is returned in the event of a 404, indicating a bug
-			// in gosyntect.
-			err = errors.New("gosyntect internal error: resource_not_found")
-		case "panic":
-			err = ErrPanic
-		case "hss_worker_timeout":
-			err = ErrHSSWorkerTimeout
-		default:
-			err = errors.Errorf("unknown error=%q code=%q", r.Error, r.Code)
-		}
-		return nil, errors.Wrap(err, c.syntectServer)
+
+	if err = c.transformResponseError(r.Error, r.Code); err != nil {
+		return nil, err
 	}
+
 	return &Response{
 		Data:      r.Data,
 		LSIF:      r.LSIF,
 		Plaintext: r.Plaintext,
+	}, nil
+}
+
+// ScipHighlight is used to force SCIP representation and hit the new endpoint
+// for highlighting in the syntax-highlighter. At somepoint, I would be OK with
+// removing Highlight() and upgrading this to just become `Highlight` but we're
+// in the transition of codemirror for now.
+func (c *Client) ScipHighlight(ctx context.Context, q *ScipQueryArguments) (*Response, error) {
+	fmt.Println("Scip Highlight...")
+	engine, err := highlights.EngineTypeToNameChecked(q.Engine)
+	if err != nil {
+		return nil, err
+	}
+
+	request := scipQueryRequest{
+		Engine:   engine,
+		Code:     q.Code,
+		Filepath: q.Filepath,
+		Language: normalizeLang(q.Language),
+
+		// TODO: Maybe this should be changed? For now I will just pass this directly
+		LineLengthLimit: 200,
+	}
+
+	// Build the request.
+	jsonQuery, err := json.Marshal(request)
+	if err != nil {
+		return nil, errors.Wrap(err, "encoding query")
+	}
+
+	req, err := http.NewRequest("POST", c.url("/scip"), bytes.NewReader(jsonQuery))
+	if err != nil {
+		return nil, errors.Wrap(err, "building request")
+	}
+	req.Header.Set("Content-Type", "application/json")
+	if q.StabilizeTimeout != 0 {
+		req.Header.Set("X-Stabilize-Timeout", q.StabilizeTimeout.String())
+	}
+
+	// Add tracing to the request.
+	tracer := q.Tracer
+	if tracer == nil {
+		tracer = opentracing.NoopTracer{}
+	}
+	req = req.WithContext(ctx)
+	req, ht := nethttp.TraceRequest(tracer, req,
+		nethttp.OperationName("Highlight"),
+		nethttp.ClientTrace(false))
+	defer ht.Finish()
+
+	// Perform the request.
+	resp, err := client.Do(req)
+	if err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("making request to %s", c.url("/")))
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusBadRequest {
+		return nil, ErrRequestTooLarge
+	}
+
+	// Decode the response.
+	var r scipResponse
+	if err := json.NewDecoder(resp.Body).Decode(&r); err != nil {
+		return nil, errors.Wrap(err, fmt.Sprintf("decoding JSON response from %s", c.url("/")))
+
+	}
+	if err = c.transformResponseError(r.Error, r.Code); err != nil {
+		return nil, err
+	}
+
+	fmt.Println("ScipHighlight:", r.Data)
+	return &Response{
+		Data:      "",
+		LSIF:      r.Data,
+		Plaintext: false,
 	}, nil
 }
 
@@ -238,4 +361,27 @@ func New(syntectServer string) *Client {
 	return &Client{
 		syntectServer: strings.TrimSuffix(syntectServer, "/"),
 	}
+}
+
+func (c *Client) transformResponseError(errMsg string, errCode string) error {
+	if errMsg == "" {
+		return nil
+	}
+
+	var err error
+	switch errCode {
+	case "invalid_theme":
+		err = ErrInvalidTheme
+	case "resource_not_found":
+		// resource_not_found is returned in the event of a 404, indicating a bug
+		// in gosyntect.
+		err = errors.New("gosyntect internal error: resource_not_found")
+	case "panic":
+		err = ErrPanic
+	case "hss_worker_timeout":
+		err = ErrHSSWorkerTimeout
+	default:
+		err = errors.Errorf("unknown error=%q code=%q", errMsg, errCode)
+	}
+	return errors.Wrap(err, c.syntectServer)
 }

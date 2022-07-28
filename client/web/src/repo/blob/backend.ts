@@ -108,7 +108,7 @@ export const fetchScipBlob = memoizeObservable(
                 //  codemirror
                 const result: BlobFileFields = {
                     content: file.content,
-                    richHTML: file.richHTML,
+                    richHTML: '',
                     highlight: {
                         aborted: file.scipHighlight.aborted,
                         lsif: file.scipHighlight.scip,

@@ -3,6 +3,7 @@ package highlight
 import (
 	"fmt"
 	"path/filepath"
+
 	"strings"
 
 	"github.com/go-enry/go-enry/v2"
@@ -10,18 +11,11 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/conf/conftypes"
-)
-
-type EngineType int
-
-const (
-	EngineInvalid EngineType = iota
-	EngineTreeSitter
-	EngineSyntect
+	"github.com/sourcegraph/sourcegraph/lib/codeintel/highlights"
 )
 
 type SyntaxEngineQuery struct {
-	Engine           EngineType
+	Engine           highlights.EngineType
 	Language         string
 	LanguageOverride bool
 }
@@ -49,8 +43,8 @@ var highlightConfig = syntaxHighlightConfig{
 }
 
 type syntaxEngineConfig struct {
-	Default   EngineType
-	Overrides map[string]EngineType
+	Default   highlights.EngineType
+	Overrides map[string]highlights.EngineType
 }
 
 // engineConfig is the effective configuration at any given time
@@ -58,11 +52,11 @@ type syntaxEngineConfig struct {
 // this to determine what engine should be used for highlighting.
 var engineConfig = syntaxEngineConfig{
 	// This sets the default syntax engine for the sourcegraph server.
-	Default: EngineSyntect,
+	Default: highlights.EngineSyntect,
 
 	// Individual languages (e.g. "c#") can set an override engine to
 	// apply highlighting
-	Overrides: map[string]EngineType{},
+	Overrides: map[string]highlights.EngineType{},
 }
 
 // baseEngineConfig is the configuration that we set up by default,
@@ -71,32 +65,32 @@ var engineConfig = syntaxEngineConfig{
 // Eventually, we will switch from having `Default` be EngineSyntect and move
 // to having it be EngineTreeSitter.
 var baseEngineConfig = syntaxEngineConfig{
-	Default: EngineSyntect,
-	Overrides: map[string]EngineType{
-		"c#":      EngineTreeSitter,
-		"jsonnet": EngineTreeSitter,
+	Default: highlights.EngineSyntect,
+	Overrides: map[string]highlights.EngineType{
+		"c#":      highlights.EngineTreeSitter,
+		"jsonnet": highlights.EngineTreeSitter,
 	},
 }
 
 func init() {
 	// Validation only: Do NOT set any values in the configuration in this function.
 	conf.ContributeValidator(func(c conftypes.SiteConfigQuerier) (problems conf.Problems) {
-		highlights := c.SiteConfig().SyntaxHighlighting
-		if highlights == nil {
+		hl_config := c.SiteConfig().SyntaxHighlighting
+		if hl_config == nil {
 			return
 		}
 
-		if _, ok := engineNameToEngineType(highlights.Engine.Default); !ok {
-			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", highlights.Engine.Default)))
+		if _, ok := highlights.EngineNameToEngineType(hl_config.Engine.Default); !ok {
+			problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", hl_config.Engine.Default)))
 		}
 
-		for _, engine := range highlights.Engine.Overrides {
-			if _, ok := engineNameToEngineType(engine); !ok {
+		for _, engine := range hl_config.Engine.Overrides {
+			if _, ok := highlights.EngineNameToEngineType(engine); !ok {
 				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid highlights.Engine.Default: `%s`.", engine)))
 			}
 		}
 
-		for _, pattern := range highlights.Languages.Patterns {
+		for _, pattern := range hl_config.Languages.Patterns {
 			if _, err := regexp.Compile(pattern.Pattern); err != nil {
 				problems = append(problems, conf.NewSiteProblem(fmt.Sprintf("Not a valid regexp: `%s`. See the valid syntax: https://golang.org/pkg/regexp/", pattern.Pattern)))
 			}
@@ -124,7 +118,7 @@ func init() {
 				return
 			}
 
-			if defaultEngine, ok := engineNameToEngineType(config.SyntaxHighlighting.Engine.Default); ok {
+			if defaultEngine, ok := highlights.EngineNameToEngineType(config.SyntaxHighlighting.Engine.Default); ok {
 				engineConfig.Default = defaultEngine
 			}
 
@@ -135,12 +129,12 @@ func init() {
 			// previously in the table from the last configuration.
 			//
 			// After that, we set the values from the new configuration
-			engineConfig.Overrides = map[string]EngineType{}
+			engineConfig.Overrides = map[string]highlights.EngineType{}
 			for name, engine := range baseEngineConfig.Overrides {
 				engineConfig.Overrides[name] = engine
 			}
 			for name, engine := range config.SyntaxHighlighting.Engine.Overrides {
-				if overrideEngine, ok := engineNameToEngineType(engine); ok {
+				if overrideEngine, ok := highlights.EngineNameToEngineType(engine); ok {
 					engineConfig.Overrides[strings.ToLower(name)] = overrideEngine
 				}
 			}
@@ -154,23 +148,6 @@ func init() {
 			}
 		})
 	}()
-}
-
-var engineToDisplay map[EngineType]string = map[EngineType]string{
-	EngineInvalid:    "invalid",
-	EngineSyntect:    "syntect",
-	EngineTreeSitter: "tree-sitter",
-}
-
-func engineNameToEngineType(engineName string) (engine EngineType, ok bool) {
-	switch engineName {
-	case "tree-sitter":
-		return EngineTreeSitter, true
-	case "syntect":
-		return EngineSyntect, true
-	default:
-		return EngineInvalid, false
-	}
 }
 
 // Matches against config. Only returns values if there is a match.

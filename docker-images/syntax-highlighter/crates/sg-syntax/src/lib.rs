@@ -70,6 +70,36 @@ pub struct SourcegraphQuery {
     pub code: String,
 }
 
+#[derive(Deserialize, Default)]
+pub enum SyntaxEngine {
+    #[default]
+    #[serde(rename = "syntect")]
+    Syntect,
+
+    #[serde(rename = "tree-sitter")]
+    TreeSitter,
+}
+
+#[derive(Deserialize, Default)]
+pub struct ScipHighlightQuery {
+    // Which highlighting engine to use.
+    pub engine: SyntaxEngine,
+
+    // Contents of the file
+    pub code: String,
+
+    // The language defined by the server. Required to tree-sitter to use for the filetype name.
+    // default empty string value for backwards compat with clients who do not specify this field.
+    pub language: Option<String>,
+
+    // filepath is only used if language is None.
+    pub filepath: String,
+
+    // line_length_limit is used to limit syntect problems when
+    // parsing very long lines
+    pub line_length_limit: Option<usize>,
+}
+
 pub fn determine_filetype(q: &SourcegraphQuery) -> String {
     let filetype = SYNTAX_SET.with(|syntax_set| match determine_language(q, syntax_set) {
         Ok(language) => language.name.clone(),

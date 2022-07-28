@@ -998,6 +998,10 @@ func (d *dummyFileResolver) Highlight(ctx context.Context, args *HighlightArgs) 
 	return nil, errors.New("not implemented")
 }
 
+func (d *dummyFileResolver) ScipHighlight(ctx context.Context, args *ScipHighlightArgs) (*highlightedFileResolver, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return nil, false
 }

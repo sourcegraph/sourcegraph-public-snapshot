@@ -90,7 +90,8 @@ func (h *highlightedFileResolver) LineRanges(args *struct{ Ranges []highlight.Li
 }
 
 func (h *highlightedFileResolver) SCIP() (string, error) {
-	return "", nil
+	// return h.ls, nil
+	return h.LSIF(), nil
 }
 
 func highlightContent(ctx context.Context, args *HighlightArgs, content, path string, metadata highlight.Metadata) (*highlightedFileResolver, error) {
@@ -105,6 +106,7 @@ func highlightContent(ctx context.Context, args *HighlightArgs, content, path st
 		Filepath:           path,
 		DisableTimeout:     args.DisableTimeout,
 		HighlightLongLines: args.HighlightLongLines,
+		ForceSCIP:          args.ForceSCIP,
 		SimulateTimeout:    simulateTimeout,
 		Metadata:           metadata,
 	})
