@@ -31,6 +31,9 @@ type Store interface {
 	// ExternalServiceStore returns a database.ExternalServiceStore using the same
 	// database handle.
 	ExternalServiceStore() database.ExternalServiceStore
+	// UserExternalAccountsStore returns a database.UserExternalAccountsStore using the same
+	// database handle.
+	UserExternalAccountsStore() database.UserExternalAccountsStore
 
 	// SetMetrics updates metrics for the store in place.
 	SetMetrics(m StoreMetrics)
@@ -134,6 +137,10 @@ func (s *store) GitserverReposStore() database.GitserverRepoStore {
 
 func (s *store) ExternalServiceStore() database.ExternalServiceStore {
 	return database.ExternalServicesWith(s.Logger, s)
+}
+
+func (s *store) UserExternalAccountsStore() database.UserExternalAccountsStore {
+	return database.ExternalAccountsWith(s.Logger, s)
 }
 
 func (s *store) SetMetrics(m StoreMetrics) { s.Metrics = m }
