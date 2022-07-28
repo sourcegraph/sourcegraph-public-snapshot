@@ -73,6 +73,9 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                     isSingleChild: false,
                                                     submodule: null,
                                                 }}
+                                                location={props.location}
+                                                repoID={props.repoID}
+                                                revision={props.revision}
                                                 depth={sharedProps.depth}
                                                 index={0}
                                                 isLightTheme={sharedProps.isLightTheme}
