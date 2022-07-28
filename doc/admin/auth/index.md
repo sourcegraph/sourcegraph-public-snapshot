@@ -38,9 +38,8 @@ order:
 - If you are using an identity provider that supports OpenID Connect (including Google accounts),
   use the [OpenID Connect provider](#openid-connect).
 - If you wish to use LDAP and cannot use the GitHub/GitLab OAuth provider as described above, or if
-  you wish to use another authentication mechanism that is not yet supported, please [contact
-  us](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md) (we respond
-  promptly).
+  you wish to use another authentication mechanism that is not yet supported, please submit a [feature
+  request](https://github.com/sourcegraph/sourcegraph/issues/new?template=feature_request.md).
 
 Most users will use only one auth provider, but you can use multiple auth providers if desired to
 enable sign-in via multiple services. Identities from different providers will be mapped to a
