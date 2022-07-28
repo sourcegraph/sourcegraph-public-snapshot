@@ -55,7 +55,7 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	workerStore := webhookbuilder.CreateWorkerStore(store.Handle())
 
 	return []goroutine.BackgroundRoutine{
-		webhookbuilder.NewWorker(ctx, newWebHookBuildHandler(store), workerStore, webhookBuildWorkerMetrics),
+		webhookbuilder.NewWorker(ctx, newWebhookBuildHandler(store), workerStore, webhookBuildWorkerMetrics),
 		webhookbuilder.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
 		webhookbuilder.NewCleaner(ctx, baseStore, observationContext),
 	}, nil
