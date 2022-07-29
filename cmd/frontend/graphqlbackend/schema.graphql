@@ -4387,10 +4387,7 @@ interface File2 {
     """
     Fetch highlights for the blob via a SCIP Document
     """
-    scipHighlight(
-        disableTimeout: Boolean!
-        highlightLongLines: Boolean = false
-    ): HighlightedScipDocument!
+    scipHighlight(disableTimeout: Boolean!, highlightLongLines: Boolean = false): HighlightedScipDocument!
 }
 
 """
@@ -4457,10 +4454,7 @@ type VirtualFile implements File2 {
     """
     Fetch highlights for the blob via a SCIP Document
     """
-    scipHighlight(
-        disableTimeout: Boolean!
-        highlightLongLines: Boolean = false
-    ): HighlightedScipDocument!
+    scipHighlight(disableTimeout: Boolean!, highlightLongLines: Boolean = false): HighlightedScipDocument!
 }
 
 """
@@ -4565,10 +4559,7 @@ type GitBlob implements TreeEntry & File2 {
     """
     Fetch highlights for the blob via a SCIP Document
     """
-    scipHighlight(
-        disableTimeout: Boolean!
-        highlightLongLines: Boolean = false
-    ): HighlightedScipDocument!
+    scipHighlight(disableTimeout: Boolean!, highlightLongLines: Boolean = false): HighlightedScipDocument!
     """
     Submodule metadata if this tree points to a submodule
     """

@@ -54,18 +54,18 @@ import styles from './BlobPage.module.scss'
 
 interface Props
     extends AbsoluteRepoFile,
-    ModeSpec,
-    RepoHeaderContributionsLifecycleProps,
-    SettingsCascadeProps,
-    PlatformContextProps,
-    TelemetryProps,
-    ExtensionsControllerProps,
-    ThemeProps,
-    HoverThresholdProps,
-    BreadcrumbSetters,
-    SearchStreamingProps,
-    Pick<SearchContextProps, 'searchContextsEnabled'>,
-    Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
+        ModeSpec,
+        RepoHeaderContributionsLifecycleProps,
+        SettingsCascadeProps,
+        PlatformContextProps,
+        TelemetryProps,
+        ExtensionsControllerProps,
+        ThemeProps,
+        HoverThresholdProps,
+        BreadcrumbSetters,
+        SearchStreamingProps,
+        Pick<SearchContextProps, 'searchContextsEnabled'>,
+        Pick<StreamingSearchResultsListProps, 'fetchHighlightedFileLineRanges'> {
     location: H.Location
     history: H.History
     repoID: Scalars['ID']
