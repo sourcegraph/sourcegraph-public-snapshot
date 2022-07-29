@@ -44,7 +44,7 @@ func TestTransformPattern(t *testing.T) {
 	}
 }
 
-func TestCasicQueryToKeywordQuery(t *testing.T) {
+func TestQueryStringToKeywordQuery(t *testing.T) {
 	tests := []struct {
 		query        string
 		wantQuery    string
