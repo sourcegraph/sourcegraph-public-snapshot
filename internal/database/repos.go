@@ -292,9 +292,7 @@ func (s *repoStore) GetReposSetByIDs(ctx context.Context, ids ...api.RepoID) (ma
 func (s *repoStore) GetRepoDescriptionsByIDs(ctx context.Context, ids ...api.RepoID) (_ map[api.RepoID]string, err error) {
 	tr, ctx := trace.New(ctx, "repos.GetRepoDescriptionsByIDs", "")
 	defer func() {
-		if err != nil {
-			tr.SetError(err)
-		}
+		tr.SetError(err)
 		tr.Finish()
 	}()
 
