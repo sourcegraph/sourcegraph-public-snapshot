@@ -14,6 +14,8 @@ type RepoMatch struct {
 
 	// rev optionally specifies a revision to go to for search results.
 	Rev string
+
+	DescriptionMatches []Range
 }
 
 func (r RepoMatch) RepoName() types.MinimalRepo {

@@ -30,8 +30,17 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
+		descriptionMatches := make(map[api.RepoID][]result.Range)
+		if len(s.DescriptionPatterns) > 0 {
+			repoDescriptionsSet, err := s.repoDescriptions(ctx, clients.DB, page.RepoRevs)
+			if err != nil {
+				return err
+			}
+			descriptionMatches = s.descriptionMatchRanges(repoDescriptionsSet)
+		}
+
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(page.RepoRevs),
+			Results: repoRevsToRepoMatches(page.RepoRevs, descriptionMatches),
 		})
 
 		return nil
@@ -107,15 +116,19 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 func (s *RepoSearchJob) Children() []job.Describer       { return nil }
 func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func repoRevsToRepoMatches(repos []*search.RepositoryRevisions) []result.Match {
+func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, descriptionMatches map[api.RepoID][]result.Range) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
 	for _, r := range repos {
 		for _, rev := range r.Revs {
-			matches = append(matches, &result.RepoMatch{
+			rm := result.RepoMatch{
 				Name: r.Repo.Name,
 				ID:   r.Repo.ID,
 				Rev:  rev,
-			})
+			}
+			if ranges, ok := descriptionMatches[r.Repo.ID]; ok {
+				rm.DescriptionMatches = ranges
+			}
+			matches = append(matches, &rm)
 		}
 	}
 	return matches
