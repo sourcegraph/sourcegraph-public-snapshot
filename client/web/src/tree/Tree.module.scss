@@ -1,3 +1,5 @@
+$row-vertical-spacing: 0.25rem;
+
 .tree {
     isolation: isolate;
     flex: 1 1 auto;
@@ -28,8 +30,8 @@
     display: flex;
     color: inherit;
     align-items: center;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
+    padding-top: $row-vertical-spacing;
+    padding-bottom: $row-vertical-spacing;
     cursor: pointer;
 }
 
@@ -98,4 +100,11 @@
 .row-label {
     margin-left: 0.25rem;
     color: inherit;
+}
+
+.tree-loading-spinner {
+    display: flex;
+    align-items: center;
+    padding-top: $row-vertical-spacing;
+    padding-bottom: $row-vertical-spacing;
 }

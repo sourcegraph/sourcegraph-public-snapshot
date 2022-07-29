@@ -7,22 +7,29 @@ import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { useExperimentalFeatures } from '../../stores'
 import { useBlameVisibility } from '../blame/useBlameVisibility'
-import { RepoHeaderActionButtonLink } from '../components/RepoHeaderActions'
+import { RepoHeaderActionButtonLink, RepoHeaderActionMenuItem } from '../components/RepoHeaderActions'
 
 import styles from './ToggleBlameAction.module.scss'
 
-export const ToggleBlameAction: React.FC = () => {
+export const ToggleBlameAction: React.FC<{ actionType?: 'nav' | 'dropdown' }> = ({ actionType }) => {
     const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
     const [isBlameVisible, setIsBlameVisible] = useBlameVisibility()
 
-    const descriptiveText = isBlameVisible
-        ? 'Hide Git blame line annotations'
-        : 'Show Git blame line annotations for the whole file'
+    const descriptiveText = `${isBlameVisible ? 'Hide' : 'Show'} Git blame line annotations`
 
     const toggleBlameState = useCallback(() => setIsBlameVisible(isVisible => !isVisible), [setIsBlameVisible])
 
     if (!extensionsAsCoreFeatures) {
         return null
+    }
+
+    if (actionType === 'dropdown') {
+        return (
+            <RepoHeaderActionMenuItem file={true} onSelect={toggleBlameState}>
+                <Icon aria-hidden={true} svgPath={mdiGit} />
+                <span>{descriptiveText}</span>
+            </RepoHeaderActionMenuItem>
+        )
     }
 
     return (

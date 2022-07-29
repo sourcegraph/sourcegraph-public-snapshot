@@ -36,7 +36,7 @@ func TestBulkOperationResolver(t *testing.T) {
 	clock := func() time.Time { return now }
 	cstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
 
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test", userID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "test", userID, 0)
 	batchChange := ct.CreateBatchChange(t, ctx, cstore, "test", userID, batchSpec.ID)
 	repos, _ := ct.CreateTestRepos(t, ctx, db, 3)
 	changeset1 := ct.CreateChangeset(t, ctx, cstore, ct.TestChangesetOpts{

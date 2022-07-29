@@ -45,10 +45,10 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 </RepositoryGitDataContainer>
                 <RepoHeaderContributionPortal
                     position="right"
-                    id="blame-action"
+                    id="toggle-blame"
                     repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <ToggleBlameAction key="blame-action" />}
+                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
                 </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
@@ -85,10 +85,10 @@ export const repoContainerRoutes: readonly RepoContainerRoute[] = [
                 </RepositoryGitDataContainer>
                 <RepoHeaderContributionPortal
                     position="right"
-                    id="blame-action"
+                    id="toggle-blame"
                     repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <ToggleBlameAction key="blame-action" />}
+                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
                 </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}
@@ -192,10 +192,10 @@ export const repoRevisionContainerRoutes: readonly RepoRevisionContainerRoute[] 
                 </RepositoryGitDataContainer>
                 <RepoHeaderContributionPortal
                     position="right"
-                    id="blame-action"
+                    id="toggle-blame"
                     repoHeaderContributionsLifecycleProps={context.repoHeaderContributionsLifecycleProps}
                 >
-                    {() => <ToggleBlameAction key="blame-action" />}
+                    {({ actionType }) => <ToggleBlameAction key="toggle-blame" actionType={actionType} />}
                 </RepoHeaderContributionPortal>
                 <ActionItemsBar
                     extensionsController={context.extensionsController}

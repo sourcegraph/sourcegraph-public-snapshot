@@ -560,7 +560,7 @@ func TestExecutor_ExecutePlan(t *testing.T) {
 	for name, tc := range tests {
 		t.Run(name, func(t *testing.T) {
 			// Create necessary associations.
-			batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "executor-test-batch-change", admin.ID)
+			batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "executor-test-batch-change", admin.ID, 0)
 			batchChange := ct.CreateBatchChange(t, ctx, cstore, "executor-test-batch-change", admin.ID, batchSpec.ID)
 
 			// Create the changesetSpec with associations wired up correctly.
@@ -837,7 +837,7 @@ func TestLoadChangesetSource(t *testing.T) {
 
 	repo, _ := ct.CreateTestRepo(t, ctx, db)
 
-	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "reconciler-test-batch-change", admin.ID)
+	batchSpec := ct.CreateBatchSpec(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, 0)
 	adminBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", admin.ID, batchSpec.ID)
 	userBatchChange := ct.CreateBatchChange(t, ctx, cstore, "reconciler-test-batch-change", user.ID, batchSpec.ID)
 
@@ -1146,7 +1146,7 @@ func TestExecutor_UserCredentialsForGitserver(t *testing.T) {
 				defer func() { cstore.UserCredentials().Delete(ctx, cred.ID) }()
 			}
 
-			batchSpec := ct.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID)
+			batchSpec := ct.CreateBatchSpec(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, 0)
 			batchChange := ct.CreateBatchChange(t, ctx, cstore, fmt.Sprintf("reconciler-credentials-%d", i), tt.user.ID, batchSpec.ID)
 
 			plan.Changeset = &btypes.Changeset{

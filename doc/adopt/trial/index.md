@@ -1,6 +1,6 @@
 # Running a Sourcegraph trial/POC
 
-If you're still fuzzy (all the code intelligence puns intended) on how Sourcegraph can help your team [please reach out](https://about.sourcegraph.com/contact) — we love talking to prospective users, and we can share how some of the world's leading software companies use Sourcegraph internally.
+If you're still fuzzy (all the code navigation puns intended) on how Sourcegraph can help your team [please reach out](https://about.sourcegraph.com/contact) — we love talking to prospective users, and we can share how some of the world's leading software companies use Sourcegraph internally.
 
 However, if you already know deep down in your bones that Sourcegraph will greatly benefit your teams and you want to verify your hunch, or perhaps you need to prove out the ROI value to your manager; either way, one great way of accomplishing either is by running a Sourcegraph trial or POC (proof of concept) within your team.
 
@@ -72,7 +72,7 @@ A typical message to the team looks like:
 
 ## 4. Deploy integrations
 
-Sourcegraph is most useful when it's at your fingertips. Our [integrations](../../integration/index.md), including our [Chrome and Firefox extensions](../../integration/browser_extension.md) which provide code intelligence in GitHub, GitLab, Bitbucket, Phabricator, and more, and also provide a search shortcut from the browser URL bar:
+Sourcegraph is most useful when it's at your fingertips. Our [integrations](../../integration/index.md), including our [Chrome and Firefox extensions](../../integration/browser_extension.md) which provide code navigation in GitHub, GitLab, Bitbucket, Phabricator, and more, and also provide a search shortcut from the browser URL bar:
 
 ![Sourcegraph browser extension](https://sourcegraphstatic.com/BrowserExtension.gif)
 

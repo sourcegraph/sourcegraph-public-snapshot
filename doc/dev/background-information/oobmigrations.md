@@ -23,6 +23,7 @@ An out-of-band migration is defined with the following data:
 - the version when the migration was _introduced_ (e.g. `3.25.0`)
 - the version when the migration was _deprecated_ (if any)
 - a flag indicating whether or not the migration is _non-destructive_
+- a flag indicating whether or not the migration is enterprise-only
 
 Each out-of-band migration is associated with a _migrator_ instance, which periodically runs in the background of Sourcegraph instances between the version the migration was _introduced_ (inclusive) and the version the migration was marked as _deprecated_ (exclusive). Each migrator instance enables three behaviors:
 
@@ -36,7 +37,7 @@ For every registered migrator, the migration runner will periodically check for 
 
 Site-admins will be prevented from upgrading beyond the version where an incomplete migration has been deprecated. i.e., site-admin must wait for these migrations to finish before an upgrade. Otherwise, the instance will have data in a format that is no longer readable by the new version. In these cases, the instance will shut down with an error message similar to what happens when an in-band migration fails to apply.
 
-The `Site Admin > Maintenance > Migrations` page shows the current progress of each out-of-band migration, as well as disclaimers warning when an immediate upgrade would fail due to an incomplete migration.
+The **Site Admin > Maintenance > Migrations** page shows the current progress of each out-of-band migration, as well as disclaimers warning when an immediate upgrade would fail due to an incomplete migration.
 
 #### Downgrades
 
@@ -74,9 +75,10 @@ The first step is to declare metadata for a new migration. Add a new entry to th
   team: skunkworks                        -- Team owning migration
   component: db.skunk_payloads            -- Component being migrated
   description: Re-encode our skunky data  -- Human-readable description
+  non_destructive: true                   -- Can be read with previous version without down migration
+  is_enterprise: true                     -- Should not run in OSS versions or the migration code is only available in enterprise
   introduced_major_version: 3             -- The current major release
   introduced_minor_version: 34            -- The current minor release
-  non_destructive: true                   -- Can be read with previous version without down migration
 ```
 
 #### Step 2: Modify reads
@@ -179,6 +181,10 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	// We don't have access to a connection pool and hence cannot write and read
+	// from a result set in parallel within in transaction. Therefore, we need to
+	// collect all results before executing update commands.
+	updates := make(map[int]string) // id -> payload
 	for rows.Next() {
 		var id int
 		var payload string
@@ -186,9 +192,13 @@ func (m *migrator) Up(ctx context.Context) (err error) {
 			return err
 		}
 
+		updates[id] = oldToNew(payload)
+	}
+
+	for id, payload := range updates {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			"UPDATE skunk_payloads SET payload2 = %s WHERE id = %s",
-			oldToNew(payload),
+			payload,
 			id,
 		)); err != nil {
 			return err
@@ -229,6 +239,10 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
+	// We don't have access to a connection pool and hence cannot write and read
+	// from a result set in parallel within in transaction. Therefore, we need to
+	// collect all results before executing update commands.
+	updates := make(map[int]string) // id -> payload
 	for rows.Next() {
 		var id int
 		var payload string
@@ -236,11 +250,15 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 			return err
 		}
 
+		updates[id] = newToOld(payload)
+	}
+
+	for id, payload := range updates {
 		if err := tx.Exec(ctx, sqlf.Sprintf(
 			"UPDATE skunk_payloads SET payload = %s WHERE id = %s",
-			newToOld(payload),
+			payload,
 			id,
-		)); err != nil{
+		)); err != nil {
 			return err
 		}
 	}
@@ -252,9 +270,10 @@ func (m *migrator) Down(ctx context.Context) (err error) {
 Lastly, in order for this migration to run, we need to [register it to the out of band migrator runner instance](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24%40main+file:.*.go+%28outOfBandMigration%29%3Frunner%5C.Register%5C%28&patternType=regexp) in the OSS or enterprise `worker` service.
 
 ```go
-migrator := database.NewMigrator(db)
-if err := outOfBandMigrationRunner.Register(migrator.ID(), migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
-	log.Fatalf("failed to run skunk payloads job: %v", err)
+// `db` is the database.DB
+migrator := NewMigrator(basestore.NewWithHandle(db.Handle()))
+if err := outOfBandMigrationRunner.Register(42, migrator, oobmigration.MigratorOptions{Interval: 3 * time.Second}); err != nil {
+	return err
 }
 ```
 
@@ -271,9 +290,10 @@ New fields can be added to the existing migration metadata entry in the file `in
   team: skunkworks
   component: db.skunk_payloads
   description: Re-encode our skunky data
+  non_destructive: true
+  is_enterprise: true 
   introduced_major_version: 3
   introduced_minor_version: 34
-  non_destructive: true
   # NEW FIELDS:
   deprecated_major_version: 3   -- The current major release
   deprecated_minor_version: 39  -- The current minor release

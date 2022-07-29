@@ -90,6 +90,7 @@ type CreateBatchSpecFromRawArgs struct {
 	Execute          bool
 	NoCache          bool
 	Namespace        graphql.ID
+	BatchChange      graphql.ID
 }
 
 type ReplaceBatchSpecInputArgs struct {

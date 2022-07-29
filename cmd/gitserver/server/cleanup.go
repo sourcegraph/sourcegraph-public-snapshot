@@ -514,8 +514,6 @@ func (s *Server) cleanupRepos(gitServerAddrs []string) {
 		cleanupLogger.Error("failed to write periodic stats", log.Error(err))
 	}
 
-	// Repo sizes are set only once during the first janitor run.
-	// There is no need for a second run because all repo sizes will be set until this moment
 	err = s.setRepoSizes(context.Background(), repoToSize)
 	if err != nil {
 		cleanupLogger.Error("setting repo sizes", log.Error(err))
@@ -567,18 +565,19 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	}
 
 	// updating repos
-	err = s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
 	if err != nil {
 		return err
 	}
-	logger.Info("repos had their sizes updated",
-		log.Int("reposToUpdate", len(reposToUpdate)))
+	if updatedRepos > 0 {
+		logger.Info("repos had their sizes updated", log.Int("updatedRepos", updatedRepos))
+	}
 
 	return nil
 }
 
 // fetchRepos returns up to count random repos found by names (i.e. keys) in repoToSize map
-func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]*types.Repo, error) {
+func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int64, count int) ([]types.MinimalRepo, error) {
 	reposToUpdateNames := make([]string, count)
 	idx := 0
 	// random nature of map traversal yields a different subset of repos every time this function is called
@@ -590,7 +589,7 @@ func (s *Server) fetchRepos(ctx context.Context, repoToSize map[api.RepoName]int
 		idx++
 	}
 
-	foundRepos, err := s.DB.Repos().List(ctx, database.ReposListOptions{
+	foundRepos, err := s.DB.Repos().ListMinimalRepos(ctx, database.ReposListOptions{
 		Names:          reposToUpdateNames,
 		LimitOffset:    &database.LimitOffset{Limit: count},
 		IncludeBlocked: true,

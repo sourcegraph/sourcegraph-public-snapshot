@@ -25,6 +25,7 @@ import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
+import { eventLogger } from '../../tracking/eventLogger'
 import { fetchSearchResults } from '../backend'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
@@ -381,6 +382,14 @@ export const SearchResultsInfoBar: React.FunctionComponent<
                                             variant="secondary"
                                             outline={true}
                                             size="sm"
+                                            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+                                            onClick={
+                                                createActionButton.eventToLog
+                                                    ? () => {
+                                                          eventLogger.log(createActionButton.eventToLog!)
+                                                      }
+                                                    : undefined
+                                            }
                                         >
                                             <Icon
                                                 aria-hidden={true}

@@ -1,12 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 
-import { mdiMagnify, mdiAlert } from '@mdi/js'
+import { mdiAlert, mdiMagnify } from '@mdi/js'
 import classNames from 'classnames'
 import { animated, useSpring } from 'react-spring'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { CodeSnippet } from '@sourcegraph/branded/src/components/CodeSnippet'
-import { Button, useAccordion, useStopwatch, Icon, H4, Tooltip } from '@sourcegraph/wildcard'
+import { Button, H4, Icon, Tooltip, useAccordion, useStopwatch } from '@sourcegraph/wildcard'
 
 import { Connection } from '../../../../../components/FilteredConnection'
 import {
@@ -14,6 +14,7 @@ import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
+import { eventLogger } from '../../../../../tracking/eventLogger'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
 
@@ -89,7 +90,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
     const connection = workspacesConnection.connection
 
     // Before we've ever previewed workspaces for this batch change, there's no reason to
-    // show the list or filters for the connection.
+    // show the list.
     const shouldShowConnection = hasPreviewed || !!connection?.nodes.length
 
     // We "cache" the last results of the workspaces preview so that we can continue to
@@ -147,7 +148,14 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             >
                 <Button
                     variant={isWorkspacesPreviewInProgress ? 'secondary' : 'success'}
-                    onClick={isWorkspacesPreviewInProgress ? cancel : () => preview(debouncedCode)}
+                    onClick={
+                        isWorkspacesPreviewInProgress
+                            ? cancel
+                            : () => {
+                                  eventLogger.log('batch_change_editor:preview_workspaces:clicked')
+                                  return preview(debouncedCode)
+                              }
+                    }
                     // The "Cancel" button is always enabled while the preview is in progress
                     disabled={!isWorkspacesPreviewInProgress && !!isPreviewDisabled}
                 >
@@ -259,7 +267,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     {ctaButton}
                 </div>
             )}
-            {shouldShowConnection && (
+            {(hasPreviewed || isReadOnly) && (
                 <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
             )}
             {shouldShowConnection && (

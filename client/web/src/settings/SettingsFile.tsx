@@ -43,6 +43,8 @@ interface Props extends ThemeProps, TelemetryProps {
      * if any.
      */
     commitError?: Error
+
+    extensionsAsCoreFeatures: boolean
 }
 
 interface State {
@@ -199,6 +201,7 @@ export class SettingsFile extends React.PureComponent<Props, State> {
                         monacoRef={this.monacoRef}
                         isLightTheme={this.props.isLightTheme}
                         onDidSave={this.save}
+                        extensionsAsCoreFeatures={this.props.extensionsAsCoreFeatures}
                     />
                 </React.Suspense>
             </div>

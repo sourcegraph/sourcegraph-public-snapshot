@@ -150,7 +150,7 @@ func run(logger log.Logger) error {
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
 				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
-					Format:  "tar",
+					Format:  gitserver.ArchiveFormatTar,
 				})
 			},
 			FetchTarPaths: func(ctx context.Context, repo api.RepoName, commit api.CommitID, paths []string) (io.ReadCloser, error) {
@@ -160,7 +160,7 @@ func run(logger log.Logger) error {
 				}
 				return git.Archive(ctx, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
-					Format:    "tar",
+					Format:    gitserver.ArchiveFormatTar,
 					Pathspecs: pathspecs,
 				})
 			},

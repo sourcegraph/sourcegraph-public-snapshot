@@ -11,11 +11,12 @@ import (
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/querybuilder"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/query/streaming"
 	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/store"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/insights/types"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 var _ graphqlbackend.RelatedInsightsInlineResolver = &relatedInsightsInlineResolver{}
-var _ graphqlbackend.RelatedInsightsForFileResolver = &relatedInsightsForFileResolver{}
+var _ graphqlbackend.RelatedInsightsResolver = &relatedInsightsResolver{}
 
 func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsInlineResolver, error) {
 	validator := PermissionsValidatorFromBase(&r.baseInsightResolver)
@@ -29,6 +30,7 @@ func (r *Resolver) RelatedInsightsInline(ctx context.Context, args graphqlbacken
 	if err != nil {
 		return nil, errors.Wrap(err, "GetAll")
 	}
+	allSeries = limitSeries(allSeries)
 
 	seriesMatches := map[string]*relatedInsightInlineMetadata{}
 	for _, series := range allSeries {
@@ -98,7 +100,7 @@ func (r *relatedInsightsInlineResolver) LineNumbers() []int32 {
 	return r.lineNumbers
 }
 
-func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsForFileResolver, error) {
+func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbackend.RelatedInsightsArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {
 	validator := PermissionsValidatorFromBase(&r.baseInsightResolver)
 	validator.loadUserContext(ctx)
 
@@ -111,8 +113,9 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 	if err != nil {
 		return nil, errors.Wrap(err, "GetAll")
 	}
+	allSeries = limitSeries(allSeries)
 
-	var resolvers []graphqlbackend.RelatedInsightsForFileResolver
+	var resolvers []graphqlbackend.RelatedInsightsResolver
 	matchedInsightViews := map[string]bool{}
 	for _, series := range allSeries {
 		// We stop processing if we have matched on this insight view before.
@@ -143,7 +146,7 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 		for _, match := range mr.Matches {
 			if len(match.Path) > 0 && strings.EqualFold(match.Path, args.Input.File) {
 				matchedInsightViews[series.UniqueID] = true
-				resolvers = append(resolvers, &relatedInsightsForFileResolver{viewID: series.UniqueID, title: series.Title})
+				resolvers = append(resolvers, &relatedInsightsResolver{viewID: series.UniqueID, title: series.Title})
 			}
 		}
 	}
@@ -151,18 +154,72 @@ func (r *Resolver) RelatedInsightsForFile(ctx context.Context, args graphqlbacke
 	return resolvers, nil
 }
 
-type relatedInsightsForFileResolver struct {
+func (r *Resolver) RelatedInsightsForRepo(ctx context.Context, args graphqlbackend.RelatedInsightsRepoArgs) ([]graphqlbackend.RelatedInsightsResolver, error) {
+	validator := PermissionsValidatorFromBase(&r.baseInsightResolver)
+	validator.loadUserContext(ctx)
+
+	allSeries, err := r.insightStore.GetAll(ctx, store.InsightQueryArgs{
+		Repo:                     args.Input.Repo,
+		ContainingQuerySubstring: "select:repo",
+		UserID:                   validator.userIds,
+		OrgID:                    validator.orgIds,
+	})
+	if err != nil {
+		return nil, errors.Wrap(err, "GetAll")
+	}
+	allSeries = limitSeries(allSeries)
+
+	var resolvers []graphqlbackend.RelatedInsightsResolver
+	matchedInsightViews := map[string]bool{}
+	for _, series := range allSeries {
+		// We stop processing if we have matched on this insight view before.
+		if _, ok := matchedInsightViews[series.UniqueID]; ok {
+			continue
+		}
+
+		decoder, metadataResult := streaming.MetadataDecoder()
+		modifiedQuery, err := querybuilder.SingleRepoQuery(querybuilder.BasicQuery(series.Query), args.Input.Repo, args.Input.Revision, querybuilder.CodeInsightsQueryDefaults(false))
+		if err != nil {
+			return nil, errors.Wrap(err, "SingleRepoQuery")
+		}
+		err = streaming.Search(ctx, modifiedQuery.String(), decoder)
+		if err != nil {
+			return nil, errors.Wrap(err, "streaming.Search")
+		}
+		mr := *metadataResult
+		if len(mr.Errors) > 0 {
+			r.logger.Warn("file related insights errors", log.Strings("errors", mr.Errors))
+		}
+		if len(mr.Alerts) > 0 {
+			r.logger.Warn("file related insights alerts", log.Strings("alerts", mr.Alerts))
+		}
+		if len(mr.SkippedReasons) > 0 {
+			r.logger.Warn("file related insights skipped", log.Strings("reasons", mr.SkippedReasons))
+		}
+
+		for _, match := range mr.Matches {
+			if len(match.RepositoryName) > 0 && strings.EqualFold(match.RepositoryName, args.Input.Repo) {
+				matchedInsightViews[series.UniqueID] = true
+				resolvers = append(resolvers, &relatedInsightsResolver{viewID: series.UniqueID, title: series.Title})
+			}
+		}
+	}
+
+	return resolvers, nil
+}
+
+type relatedInsightsResolver struct {
 	viewID string
 	title  string
 
 	baseInsightResolver
 }
 
-func (r *relatedInsightsForFileResolver) ViewID() string {
+func (r *relatedInsightsResolver) ViewID() string {
 	return r.viewID
 }
 
-func (r *relatedInsightsForFileResolver) Title() string {
+func (r *relatedInsightsResolver) Title() string {
 	return r.title
 }
 
@@ -173,4 +230,15 @@ func containsInt(array []int32, findElement int32) bool {
 		}
 	}
 	return false
+}
+
+// Limiting the number of series/queries to 50 will have no impact on the vast majority of customers.
+// However, our own test environments have hundreds of insights and we need to limit these queries in some way
+// so that the endpoints do not time out.
+// This returns the 50 most recent series.
+func limitSeries(series []types.InsightViewSeries) []types.InsightViewSeries {
+	sort.SliceStable(series, func(i, j int) bool {
+		return series[i].CreatedAt.After(series[j].CreatedAt)
+	})
+	return series[:minInt(50, int32(len(series)))]
 }

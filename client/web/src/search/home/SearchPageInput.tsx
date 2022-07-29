@@ -14,7 +14,6 @@ import {
 } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps, isSettingsValid } from '@sourcegraph/shared/src/settings/settings'
@@ -40,7 +39,6 @@ interface Props
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        KeyboardShortcutsProps,
         TelemetryProps,
         PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL' | 'requestGraphQL'>,
         Pick<SubmitSearchParameters, 'source'>,
