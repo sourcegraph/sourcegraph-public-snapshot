@@ -148,8 +148,8 @@ func run(logger log.Logger) error {
 	service := &search.Service{
 		Store: &search.Store{
 			FetchTar: func(ctx context.Context, repo api.RepoName, commit api.CommitID) (io.ReadCloser, error) {
-				// We pass in a nil checker here since searcher needs access to all data in the
-				// archive
+				// We pass in a nil sub-repo permissions checker here since searcher needs access
+				// to all data in the archive
 				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish: string(commit),
 					Format:  gitserver.ArchiveFormatTar,
@@ -160,8 +160,8 @@ func run(logger log.Logger) error {
 				for i, p := range paths {
 					pathspecs[i] = gitdomain.PathspecLiteral(p)
 				}
-				// We pass in a nil checker here since searcher needs access to all data in the
-				// archive
+				// We pass in a nil sub-repo permissions checker here since searcher needs access
+				// to all data in the archive
 				return git.ArchiveReader(ctx, nil, repo, gitserver.ArchiveOptions{
 					Treeish:   string(commit),
 					Format:    gitserver.ArchiveFormatTar,
