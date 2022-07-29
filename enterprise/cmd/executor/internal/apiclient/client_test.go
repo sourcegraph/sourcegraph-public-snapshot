@@ -444,9 +444,8 @@ func testRoute(t *testing.T, spec routeSpec, f func(client *Client)) {
 		},
 	}
 
-	client := New(options, &observation.TestContext)
-	client.metricsGatherer = prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil })
-	f(client)
+	client := New(options, prometheus.GathererFunc(func() ([]*dto.MetricFamily, error) { return nil, nil }), &observation.TestContext)
+		f(client)
 }
 
 func testServer(t *testing.T, spec routeSpec) *httptest.Server {
