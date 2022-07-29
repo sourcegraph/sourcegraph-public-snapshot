@@ -149,9 +149,9 @@ type MockClient struct {
 	// RendezvousAddrForRepoFunc is an instance of a mock function object
 	// controlling the behavior of the method RendezvousAddrForRepo.
 	RendezvousAddrForRepoFunc *ClientRendezvousAddrForRepoFunc
-	// RepoInfoFunc is an instance of a mock function object controlling the
-	// behavior of the method RepoInfo.
-	RepoInfoFunc *ClientRepoInfoFunc
+	// RepoCloneProgressFunc is an instance of a mock function object
+	// controlling the behavior of the method RepoCloneProgress.
+	RepoCloneProgressFunc *ClientRepoCloneProgressFunc
 	// ReposStatsFunc is an instance of a mock function object controlling
 	// the behavior of the method ReposStats.
 	ReposStatsFunc *ClientReposStatsFunc
@@ -390,8 +390,8 @@ func NewMockClient() *MockClient {
 				return
 			},
 		},
-		RepoInfoFunc: &ClientRepoInfoFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (r0 *protocol.RepoInfoResponse, r1 error) {
+		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
+			defaultHook: func(context.Context, ...api.RepoName) (r0 *protocol.RepoCloneProgressResponse, r1 error) {
 				return
 			},
 		},
@@ -652,9 +652,9 @@ func NewStrictMockClient() *MockClient {
 				panic("unexpected invocation of MockClient.RendezvousAddrForRepo")
 			},
 		},
-		RepoInfoFunc: &ClientRepoInfoFunc{
-			defaultHook: func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-				panic("unexpected invocation of MockClient.RepoInfo")
+		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
+			defaultHook: func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+				panic("unexpected invocation of MockClient.RepoCloneProgress")
 			},
 		},
 		ReposStatsFunc: &ClientReposStatsFunc{
@@ -832,8 +832,8 @@ func NewMockClientFrom(i Client) *MockClient {
 		RendezvousAddrForRepoFunc: &ClientRendezvousAddrForRepoFunc{
 			defaultHook: i.RendezvousAddrForRepo,
 		},
-		RepoInfoFunc: &ClientRepoInfoFunc{
-			defaultHook: i.RepoInfo,
+		RepoCloneProgressFunc: &ClientRepoCloneProgressFunc{
+			defaultHook: i.RepoCloneProgress,
 		},
 		ReposStatsFunc: &ClientReposStatsFunc{
 			defaultHook: i.ReposStats,
@@ -5500,34 +5500,35 @@ func (c ClientRendezvousAddrForRepoFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
-// ClientRepoInfoFunc describes the behavior when the RepoInfo method of the
-// parent MockClient instance is invoked.
-type ClientRepoInfoFunc struct {
-	defaultHook func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	hooks       []func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)
-	history     []ClientRepoInfoFuncCall
+// ClientRepoCloneProgressFunc describes the behavior when the
+// RepoCloneProgress method of the parent MockClient instance is invoked.
+type ClientRepoCloneProgressFunc struct {
+	defaultHook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	hooks       []func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)
+	history     []ClientRepoCloneProgressFuncCall
 	mutex       sync.Mutex
 }
 
-// RepoInfo delegates to the next hook function in the queue and stores the
-// parameter and result values of this invocation.
-func (m *MockClient) RepoInfo(v0 context.Context, v1 ...api.RepoName) (*protocol.RepoInfoResponse, error) {
-	r0, r1 := m.RepoInfoFunc.nextHook()(v0, v1...)
-	m.RepoInfoFunc.appendCall(ClientRepoInfoFuncCall{v0, v1, r0, r1})
+// RepoCloneProgress delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockClient) RepoCloneProgress(v0 context.Context, v1 ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
+	r0, r1 := m.RepoCloneProgressFunc.nextHook()(v0, v1...)
+	m.RepoCloneProgressFunc.appendCall(ClientRepoCloneProgressFuncCall{v0, v1, r0, r1})
 	return r0, r1
 }
 
-// SetDefaultHook sets function that is called when the RepoInfo method of
-// the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientRepoInfoFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)) {
+// SetDefaultHook sets function that is called when the RepoCloneProgress
+// method of the parent MockClient instance is invoked and the hook queue is
+// empty.
+func (f *ClientRepoCloneProgressFunc) SetDefaultHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// RepoInfo method of the parent MockClient instance invokes the hook at the
-// front of the queue and discards it. After the queue is empty, the default
-// hook function is invoked for any future action.
-func (f *ClientRepoInfoFunc) PushHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error)) {
+// RepoCloneProgress method of the parent MockClient instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *ClientRepoCloneProgressFunc) PushHook(hook func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -5535,20 +5536,20 @@ func (f *ClientRepoInfoFunc) PushHook(hook func(context.Context, ...api.RepoName
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *ClientRepoInfoFunc) SetDefaultReturn(r0 *protocol.RepoInfoResponse, r1 error) {
-	f.SetDefaultHook(func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+func (f *ClientRepoCloneProgressFunc) SetDefaultReturn(r0 *protocol.RepoCloneProgressResponse, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientRepoInfoFunc) PushReturn(r0 *protocol.RepoInfoResponse, r1 error) {
-	f.PushHook(func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+func (f *ClientRepoCloneProgressFunc) PushReturn(r0 *protocol.RepoCloneProgressResponse, r1 error) {
+	f.PushHook(func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 		return r0, r1
 	})
 }
 
-func (f *ClientRepoInfoFunc) nextHook() func(context.Context, ...api.RepoName) (*protocol.RepoInfoResponse, error) {
+func (f *ClientRepoCloneProgressFunc) nextHook() func(context.Context, ...api.RepoName) (*protocol.RepoCloneProgressResponse, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -5561,26 +5562,26 @@ func (f *ClientRepoInfoFunc) nextHook() func(context.Context, ...api.RepoName) (
 	return hook
 }
 
-func (f *ClientRepoInfoFunc) appendCall(r0 ClientRepoInfoFuncCall) {
+func (f *ClientRepoCloneProgressFunc) appendCall(r0 ClientRepoCloneProgressFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of ClientRepoInfoFuncCall objects describing
-// the invocations of this function.
-func (f *ClientRepoInfoFunc) History() []ClientRepoInfoFuncCall {
+// History returns a sequence of ClientRepoCloneProgressFuncCall objects
+// describing the invocations of this function.
+func (f *ClientRepoCloneProgressFunc) History() []ClientRepoCloneProgressFuncCall {
 	f.mutex.Lock()
-	history := make([]ClientRepoInfoFuncCall, len(f.history))
+	history := make([]ClientRepoCloneProgressFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// ClientRepoInfoFuncCall is an object that describes an invocation of
-// method RepoInfo on an instance of MockClient.
-type ClientRepoInfoFuncCall struct {
+// ClientRepoCloneProgressFuncCall is an object that describes an invocation
+// of method RepoCloneProgress on an instance of MockClient.
+type ClientRepoCloneProgressFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -5589,7 +5590,7 @@ type ClientRepoInfoFuncCall struct {
 	Arg1 []api.RepoName
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 *protocol.RepoInfoResponse
+	Result0 *protocol.RepoCloneProgressResponse
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -5599,7 +5600,7 @@ type ClientRepoInfoFuncCall struct {
 // invocation. The variadic slice argument is flattened in this array such
 // that one positional argument and three variadic arguments would result in
 // a slice of four, not two.
-func (c ClientRepoInfoFuncCall) Args() []interface{} {
+func (c ClientRepoCloneProgressFuncCall) Args() []interface{} {
 	trailing := []interface{}{}
 	for _, val := range c.Arg1 {
 		trailing = append(trailing, val)
@@ -5610,7 +5611,7 @@ func (c ClientRepoInfoFuncCall) Args() []interface{} {
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c ClientRepoInfoFuncCall) Results() []interface{} {
+func (c ClientRepoCloneProgressFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

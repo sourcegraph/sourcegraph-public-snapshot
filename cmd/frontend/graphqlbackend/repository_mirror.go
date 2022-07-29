@@ -121,12 +121,17 @@ func (r *repositoryMirrorInfoResolver) CloneInProgress(ctx context.Context) (boo
 }
 
 func (r *repositoryMirrorInfoResolver) CloneProgress(ctx context.Context) (*string, error) {
-	info, err := gitserver.NewClient(r.db).RepoInfo(ctx, r.repository.RepoName())
+	progress, err := gitserver.NewClient(r.db).RepoCloneProgress(ctx, r.repository.RepoName())
 	if err != nil {
 		return nil, err
 	}
 
-	return strptr(info.Results[r.repository.RepoName()].CloneProgress), nil
+	result, ok := progress.Results[r.repository.RepoName()]
+	if !ok {
+		return nil, errors.New("got empty result for repo from RepoCloneProgress")
+	}
+
+	return strptr(result.CloneProgress), nil
 }
 
 func (r *repositoryMirrorInfoResolver) LastError(ctx context.Context) (*string, error) {

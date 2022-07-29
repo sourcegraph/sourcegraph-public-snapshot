@@ -16,43 +16,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-func (s *Server) repoInfo(ctx context.Context, repo api.RepoName) (*protocol.RepoInfo, error) {
-	dir := s.dir(repo)
-	resp := protocol.RepoInfo{}
-
-	resp.CloneProgress, _ = s.locker.Status(dir)
-
-	return &resp, nil
-}
-
-func (s *Server) handleRepoInfo(w http.ResponseWriter, r *http.Request) {
-	var req protocol.RepoInfoRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-
-	resp := protocol.RepoInfoResponse{
-		Results: make(map[api.RepoName]protocol.RepoInfoResult, len(req.Repos)),
-	}
-	for _, repoName := range req.Repos {
-		result, err := s.repoInfo(r.Context(), repoName)
-		var errMsg string
-		if err != nil {
-			errMsg = err.Error()
-		}
-		resp.Results[repoName] = protocol.RepoInfoResult{
-			RepoInfo: result,
-			Error:    errMsg,
-		}
-	}
-
-	if err := json.NewEncoder(w).Encode(resp); err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
-}
-
 func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
 	b, err := os.ReadFile(filepath.Join(s.ReposDir, reposStatsName))
 	if errors.Is(err, os.ErrNotExist) {
@@ -67,6 +30,40 @@ func (s *Server) handleReposStats(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")
 	_, _ = w.Write(b)
+}
+
+func (s *Server) repoCloneProgress(repo api.RepoName) *protocol.RepoCloneProgress {
+	dir := s.dir(repo)
+	resp := protocol.RepoCloneProgress{
+		Cloned: repoCloned(dir),
+	}
+	resp.CloneProgress, resp.CloneInProgress = s.locker.Status(dir)
+	if isAlwaysCloningTest(repo) {
+		resp.CloneInProgress = true
+		resp.CloneProgress = "This will never finish cloning"
+	}
+	return &resp
+}
+
+func (s *Server) handleRepoCloneProgress(w http.ResponseWriter, r *http.Request) {
+	var req protocol.RepoCloneProgressRequest
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	resp := protocol.RepoCloneProgressResponse{
+		Results: make(map[api.RepoName]*protocol.RepoCloneProgress, len(req.Repos)),
+	}
+	for _, repoName := range req.Repos {
+		result := s.repoCloneProgress(repoName)
+		resp.Results[repoName] = result
+	}
+
+	if err := json.NewEncoder(w).Encode(resp); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 }
 
 func (s *Server) handleRepoDelete(w http.ResponseWriter, r *http.Request) {
@@ -91,7 +88,6 @@ func (s *Server) deleteRepo(ctx context.Context, repo api.RepoName) error {
 	if err != nil {
 		return errors.Wrap(err, "removing repo directory")
 	}
-	// TODO: This is duplicative?
 	err = s.setCloneStatus(ctx, repo, types.CloneStatusNotCloned)
 	if err != nil {
 		return errors.Wrap(err, "setting clone status after delete")
