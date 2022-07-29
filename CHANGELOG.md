@@ -35,6 +35,13 @@ All notable changes to Sourcegraph are documented in this file.
 
 -
 
+## 3.42.1
+
+### Fixed
+
+- Reverted git version to avoid an issue with commit-graph that could cause repository corruptions [#39537](https://github.com/sourcegraph/sourcegraph/pull/39537)
+- Fixed an issue with symbols where they were not respecting sub-repository permissions [#39592](https://github.com/sourcegraph/sourcegraph/pull/39592)
+
 ## 3.42.0
 
 ### Added
