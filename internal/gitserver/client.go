@@ -164,9 +164,6 @@ type Client interface {
 	// AddrForRepo returns the gitserver address to use for the given repo name.
 	AddrForRepo(context.Context, api.RepoName) (string, error)
 
-	// Archive produces an archive from a Git repository.
-	Archive(context.Context, api.RepoName, ArchiveOptions) (io.ReadCloser, error)
-
 	// ArchiveReader streams back the file contents of an archived git repo.
 	ArchiveReader(ctx context.Context, checker authz.SubRepoPermissionChecker, repo api.RepoName, options ArchiveOptions) (io.ReadCloser, error)
 
@@ -183,19 +180,12 @@ type Client interface {
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
 	// GetDefaultBranch returns the name of the default branch and the commit it's
-	// currently at from the given repository.
+	// currently at from the given repository. If short is true, then `main` instead
+	// of `refs/heads/main` would be returned.
 	//
 	// If the repository is empty or currently being cloned, empty values and no
 	// error are returned.
-	GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
-
-	// GetDefaultBranchShort returns the short name of the default branch for the
-	// given repository and the commit it's currently at. A short name would return
-	// something like `main` instead of `refs/heads/main`.
-	//
-	// If the repository is empty or currently being cloned, empty values and no
-	// error are returned.
-	GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
+	GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error)
 
 	// GetObject fetches git object data in the supplied repo
 	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)
@@ -541,67 +531,6 @@ func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, o
 		Path:     "/archive",
 		RawQuery: q.Encode(),
 	}, nil
-}
-
-func (c *clientImplementor) Archive(ctx context.Context, repo api.RepoName, opt ArchiveOptions) (_ io.ReadCloser, err error) {
-	if ClientMocks.Archive != nil {
-		return ClientMocks.Archive(ctx, repo, opt)
-	}
-	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
-	span.SetTag("Repo", repo)
-	span.SetTag("Treeish", opt.Treeish)
-	defer func() {
-		if err != nil {
-			ext.Error.Set(span, true)
-			span.LogFields(log.Error(err))
-		}
-		span.Finish()
-	}()
-
-	// Check that ctx is not expired.
-	if err := ctx.Err(); err != nil {
-		deadlineExceededCounter.Inc()
-		return nil, err
-	}
-
-	u, err := c.archiveURL(ctx, repo, opt)
-	if err != nil {
-		return nil, err
-	}
-
-	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
-	if err != nil {
-		return nil, err
-	}
-
-	switch resp.StatusCode {
-	case http.StatusOK:
-		return &archiveReader{
-			base: &cmdReader{
-				rc:      resp.Body,
-				trailer: resp.Trailer,
-			},
-			repo: repo,
-			spec: opt.Treeish,
-		}, nil
-	case http.StatusNotFound:
-		var payload protocol.NotFoundPayload
-		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
-			resp.Body.Close()
-			return nil, err
-		}
-		resp.Body.Close()
-		return nil, &badRequestError{
-			error: &gitdomain.RepoNotExistError{
-				Repo:            repo,
-				CloneInProgress: payload.CloneInProgress,
-				CloneProgress:   payload.CloneProgress,
-			},
-		}
-	default:
-		resp.Body.Close()
-		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
-	}
 }
 
 type badRequestError struct{ error }

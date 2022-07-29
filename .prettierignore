@@ -6,7 +6,7 @@ client/browser/build
 **/coverage
 internal/database/schema*.md
 internal/database/schema*.json
-internal/database/migration/cliutil/upgrade_data/payload.json
+internal/database/migration/shared/upgradedata/stitched-migration-graph.json
 cmd/xlang-python/python-langserver/
 package-lock.json
 package.json
@@ -30,6 +30,7 @@ docker-images/syntax-highlighter/crates/
 docker-images/syntax-highlighter/target/
 storybook-static/
 browser/code-intel-extensions/
+vscode/code-intel-extensions/
 .buildkite-cache/
 lib/codeintel/reprolang/
 cmd/symbols/squirrel/language-file-extensions.json

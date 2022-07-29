@@ -1,6 +1,11 @@
 # Updating a Docker Compose Sourcegraph instance
 
-This page lists the changes that are relevant for [upgrading Sourcegraph on Docker Compose](upgrade_docker-compose.md). You can also view the [product changelog](../../../CHANGELOG.md). 
+This page lists the changes that are relevant for [upgrading Sourcegraph on Docker Compose](../deploy/docker-compose/upgrade.md). You can also view the [product changelog](../../../CHANGELOG.md). 
+
+## Upgrade procedure
+
+1. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your instance.
+
 
 <!-- GENERATE UPGRADE GUIDE ON RELEASE (release tooling uses this to add entries) -->
 
@@ -8,16 +13,16 @@ This page lists the changes that are relevant for [upgrading Sourcegraph on Dock
 
 ## 3.41 -> 3.42
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.42).*
 
 ## 3.40 -> 3.41
 
 - `caddy` is upgraded to version 2.5.1 and contains a breaking change from version 2.5.0. Incoming `X-Forwarded-*` headers will no longer be trusted automatically. In order to preserve existing product functionality, the Caddyfile was updated to trust all incoming `X-Forwarded-*` headers. [#828](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/828)
 - The Postgres DBs `frontend` and `codeintel-db` are now given 1 hour to begin accepting connections before Kubernetes restarts the containers. [#4136](https://github.com/sourcegraph/deploy-sourcegraph/pull/4136)
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
 
@@ -25,13 +30,13 @@ Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade yo
 
 - `cadvisor` now defaults to run in `privileged` mode. This allows `cadvisor` to collect out of memory events happening to containers which can be used to discover underprovisoned resources. [#804](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/804)
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.40).*
 
 ## 3.39.0 -> 3.39.1
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
 
@@ -43,13 +48,13 @@ We made a number of changes to our built-in postgres databases (the `pgsql`, `co
 - Increased the minimal memory requirement of `pgsql` and `codeintel-db` from `2GB` to `4GB`
 -`codeinsights-db` container no longer uses TimescaleDB and is now based on the standard Postgres image [sourcegraph/deploy-sourcegraph-docker#780](https://github.com/sourcegraph/deploy-sourcegraph-docker/pull/780). Metrics scraping is also enabled.
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.39).*
 
 ## 3.38.0 -> 3.38.1
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.38).*
 
@@ -59,7 +64,7 @@ Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade yo
 
 This release adds the requirement that the environment variables `SRC_GIT_SERVERS`, `SEARCHER_URL`, `SYMBOLS_URL`, and `INDEXED_SEARCH_SERVERS` are set for the worker process.
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.37).*
 
@@ -67,13 +72,13 @@ Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade yo
 
 This release adds a new container that runs database migrations (`migrator`) independently of the frontend container. Confirm the environment variables on this new container match your database settings. [Docs](../deploy/docker-compose/index.md#database-migrations)
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.36).*
 
 ## 3.35 -> 3.36
 
-No manual migration is required - follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.35).*
 
@@ -89,26 +94,26 @@ There is a [known issue](../../code_insights/how-tos/Troubleshooting.md#oob-migr
 
 The `query-runner` service has been decommissioned in the 3.35 release and will be removed during the upgrade.
 
-Follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+Follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 To delete the `query-runner` service, specify `--remove-orphans` to your `docker-compose` command.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.34).*
 
 ## 3.33 -> 3.34
 
-No manual migration is required - follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.33).*
 
 ## 3.32 -> 3.33
 
-No manual migration is required - follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.32).*
 
 ## 3.31 -> 3.32
 
-No manual migration is required - follow the [standard upgrade procedure](upgrade_docker-compose.md) to upgrade your deployment.
+No manual migration is required - follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to upgrade your deployment.
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.31).*
 
@@ -136,7 +141,7 @@ All users that use our bundled (built-in) database instances **must** read throu
 
 No manual migration required.
 
-Please upgrade to the [`v3.30.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.30.2/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.30.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.30.2/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## 3.28 -> 3.29
 
@@ -156,7 +161,7 @@ This upgrade adds a new `worker` service that runs a number of background jobs t
 
 If you are using an external database, [upgrade your database](https://docs.sourcegraph.com/admin/postgres#upgrading-external-postgresql-instances) to Postgres 12 or above prior to upgrading Sourcegraph. No action is required if you are using the supplied supplied database images.
 
-Afterwards, please upgrade to the [`v3.27.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.27.0/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Afterwards, please upgrade to the [`v3.27.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.27.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 *How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.26).*
 
@@ -164,7 +169,7 @@ Afterwards, please upgrade to the [`v3.27.0` tag of deploy-sourcegraph-docker](h
 
 No manual migration required.
 
-Please upgrade to the [`v3.26.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.26.0/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.26.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.26.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 > NOTE: ⚠️ From **3.27** onwards we will only support PostgreSQL versions **starting from 12**.
 
@@ -175,19 +180,19 @@ Please upgrade to the [`v3.26.0` tag of deploy-sourcegraph-docker](https://githu
 
 ## 3.23 -> 3.24
 
-Please upgrade to the [`v3.24.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.24.0/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.24.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.24.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## 3.22 -> 3.23
 
 No manual migration required.
 
-Please upgrade to the [`v3.23.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.23.0/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.23.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.23.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## 3.21 -> 3.22
 
 No manual migration required.
 
-Please upgrade to the [`v3.22.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.22.0/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.22.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.22.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 This upgrade removes the `code intel bundle manager`. This service has been deprecated and all references to it have been removed.
 
@@ -197,11 +202,11 @@ This upgrade also adds a MinIO container that doesn't require any custom configu
 
 No manual migration required.
 
-Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.20.1/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.20.1/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## 3.20.1 -> 3.21.0
 
-Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v.3.21.0/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.21.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v.3.21.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 This release introduces a second database instance, `codeintel-db`. If you have configured Sourcegraph with an external database, then update the `CODEINTEL_PG*` environment variables to point to a new external database as described in the [external database documentation](../external_services/postgres.md). Again, these must not point to the same database or the Sourcegraph instance will refuse to start.
 
@@ -223,49 +228,49 @@ docker exec -it precise-code-intel-bundle-manager sh -c 'rm -rf /lsif-storage/db
 
 No manual migration required.
 
-Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.20.1/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.20.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.20.1/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## 3.19.1 -> 3.19.2
 
 No manual migration required.
 
-Please upgrade to the [`v3.19.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.19.2/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.19.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.19.2/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## 3.18.0-1 -> 3.19.1
 
 No manual migration required.
 
-Please upgrade to the [`v3.19.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.19.1/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.19.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.19.1/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## 3.18.0 -> 3.18.0-1
 
 This release fixes `observability.alerts` in the site configuration. No manual migration required.
 
-Please upgrade to the [`v3.18.0-1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/3.18/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.18.0-1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/3.18/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## v3.17.2 -> 3.18.0
 
 No manual migration required.
 
-Please upgrade to the [`v3.18.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/3.18/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.18.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/3.18/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## v3.16.0 -> v3.17.2
 
 No manual migration is required.
 
-Please upgrade to the [`v3.17.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.17.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## v3.15.1 -> v3.16.0
 
 No manual migration is required.
 
-Please upgrade to the [`v3.16.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.16.0` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.16.0/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## (v3.14.2, v3.14.4) -> v3.15.1
 
 No manual migration is required.
 
-Please upgrade to the [`v3.15.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.15.1/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.15.1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.15.1/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ### (Optional) Keeping code graph data
 
@@ -286,19 +291,19 @@ docker restart precise-code-intel-bundle-manager
 
 No manual migration is required.
 
-Please upgrade to the [`v3.14.4` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.4/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.14.4` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.4/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## v3.14.0 -> v3.14.2
 
 No manual migration is required.
 
-Please upgrade to the [`v3.14.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.2/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please upgrade to the [`v3.14.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.2/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 ## v3.13 -> 3.14
 
 No manual migration is required.
 
-Please be sure to upgrade to the [`v3.14.0-1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.0-1/docker-compose) by following the [standard upgrade procedure](upgrade_docker-compose.md).
+Please be sure to upgrade to the [`v3.14.0-1` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.14.0-1/docker-compose) by following the [standard upgrade procedure](../deploy/docker-compose/upgrade.md).
 
 If you have upgrade to `v3.14.0` already (not the `v3.14.0-1` version) and are experiencing restarts of lsif-server, please run the following on the host machine to correct it:
 
@@ -309,7 +314,7 @@ docker restart lsif-server
 
 ## v3.12 -> v3.13
 
-A manual migration is required. Please follow the [standard upgrade procedure](upgrade_docker-compose.md) to take down the current deployment, perform the manual migration, and then upgrade using the [`v3.13.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.13.2/docker-compose).
+A manual migration is required. Please follow the [standard upgrade procedure](../deploy/docker-compose/upgrade.md) to take down the current deployment, perform the manual migration, and then upgrade using the [`v3.13.2` tag of deploy-sourcegraph-docker](https://github.com/sourcegraph/deploy-sourcegraph-docker/tree/v3.13.2/docker-compose).
 
 ### Manual migration step: adjust file permissions
 

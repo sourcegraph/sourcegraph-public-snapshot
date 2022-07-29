@@ -127,8 +127,8 @@ export const enterpriseSiteAdminSidebarGroups: SiteAdminSideBarGroups = [
     codeIntelGroup,
     usersGroup,
     maintenanceGroup,
-    extensionsGroup,
+    window.context.enableLegacyExtensions ? extensionsGroup : undefined,
     batchChangesGroup,
     businessGroup,
     apiConsoleGroup,
-]
+].filter(Boolean) as SiteAdminSideBarGroups

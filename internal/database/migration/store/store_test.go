@@ -18,7 +18,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 )
 
@@ -507,8 +507,8 @@ func TestIndexStatus(t *testing.T) {
 	// sessions holding advisory locks. We may happen to hit one of the earlier phases
 	// if we're quick enough, so we'll keep polling progress until we hit the target.
 	blockingPhase := "waiting for old snapshots"
-	nonblockingPhasePrefixes := make([]string, 0, len(storetypes.CreateIndexConcurrentlyPhases))
-	for _, prefix := range storetypes.CreateIndexConcurrentlyPhases {
+	nonblockingPhasePrefixes := make([]string, 0, len(shared.CreateIndexConcurrentlyPhases))
+	for _, prefix := range shared.CreateIndexConcurrentlyPhases {
 		if prefix == blockingPhase {
 			break
 		}

@@ -3,6 +3,8 @@
 This document describes the exact changes needed to update a single-node Sourcegraph instance.
 **Always refer to this page before upgrading Sourcegraph,** as it comprehensively describes the steps needed to upgrade, and any manual migration steps you must perform.
 
+## Upgrade procedure
+
 1. Read our [update policy](index.md#update-policy) to learn about Sourcegraph updates.
 2. Find the relevant entry for your update in the update notes on this page.
 3. After checking the relevant update notes, refer to the [standard upgrade procedure](../deploy/docker-single-container/index.md#operation) to upgrade your instance.
@@ -15,7 +17,7 @@ This document describes the exact changes needed to update a single-node Sourceg
 
 Follow the [standard upgrade procedure](../deploy/docker-single-container/index.md#upgrade).
 
-*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.41).*
+*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out [this feedback form](https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku?update_version=3.42).*
 
 ## 3.40 -> 3.41
 

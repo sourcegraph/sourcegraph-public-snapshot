@@ -15,6 +15,60 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func TestGetServiceVersion(t *testing.T) {
+	ctx := context.Background()
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db)
+
+	t.Run("fresh db", func(t *testing.T) {
+		_, ok, err := store.GetServiceVersion(ctx, "service")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if ok {
+			t.Fatalf("did not expect value")
+		}
+	})
+
+	t.Run("after updates", func(t *testing.T) {
+		if err := store.UpdateServiceVersion(ctx, "service", "1.2.3"); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if err := store.UpdateServiceVersion(ctx, "service", "1.2.4"); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if err := store.UpdateServiceVersion(ctx, "service", "1.3.0"); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		version, ok, err := store.GetServiceVersion(ctx, "service")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if !ok {
+			t.Fatalf("unexpected value, got none")
+		}
+		if version != "1.3.0" {
+			t.Errorf("unexpected version. want=%s have=%s", "1.3.0", version)
+		}
+	})
+
+	t.Run("missing table", func(t *testing.T) {
+		if err := store.db.Exec(ctx, sqlf.Sprintf("DROP TABLE versions;")); err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		_, ok, err := store.GetServiceVersion(ctx, "service")
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		if ok {
+			t.Fatalf("did not expect value")
+		}
+	})
+}
+
 func TestGetFirstServiceVersion(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)

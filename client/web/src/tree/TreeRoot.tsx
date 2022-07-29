@@ -19,7 +19,7 @@ import { asError, ErrorLike, isErrorLike } from '@sourcegraph/common'
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 import { fetchTreeEntries } from '@sourcegraph/shared/src/backend/repo'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { TreeFields } from '@sourcegraph/shared/src/graphql-operations'
+import { Scalars, TreeFields } from '@sourcegraph/shared/src/graphql-operations'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 import { AbsoluteRepo } from '@sourcegraph/shared/src/util/url'
@@ -30,10 +30,12 @@ import { requestGraphQL } from '../backend/graphql'
 
 import { ChildTreeLayer } from './ChildTreeLayer'
 import { TreeLayerTable, TreeLayerCell, TreeRowAlert } from './components'
+import { MAX_TREE_ENTRIES } from './constants'
 import { TreeNode } from './Tree'
+import { TreeRootContext } from './TreeContext'
 import { hasSingleChild, compareTreeProps, singleChildEntriesToGitTree, SingleChildGitTree } from './util'
 
-const maxEntries = 2500
+import styles from './Tree.module.scss'
 
 const errorWidth = (width?: string): { width: string } => ({
     width: width ? `${width}px` : 'auto',
@@ -56,6 +58,7 @@ export interface TreeRootProps extends AbsoluteRepo, ExtensionsControllerProps, 
     onToggleExpand: (path: string, expanded: boolean, node: TreeNode) => void
     setChildNodes: (node: TreeNode, index: number) => void
     setActiveNode: (node: TreeNode) => void
+    repoID: Scalars['ID']
 }
 
 const LOADING = 'loading' as const
@@ -97,7 +100,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                     revision: props.revision,
                     commitID: props.commitID,
                     filePath: props.parentPath || '',
-                    first: maxEntries,
+                    first: MAX_TREE_ENTRIES,
                     requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
                 }).pipe(
                     catchError(error => [asError(error)]),
@@ -150,7 +153,7 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                             revision: this.props.revision,
                             commitID: this.props.commitID,
                             filePath: path,
-                            first: maxEntries,
+                            first: MAX_TREE_ENTRIES,
                             requestGraphQL: ({ request, variables }) => requestGraphQL(request, variables),
                         }).pipe(catchError(error => [asError(error)]))
                     )
@@ -202,23 +205,29 @@ export class TreeRoot extends React.Component<TreeRootProps, TreeRootState> {
                             <tr>
                                 <TreeLayerCell>
                                     {treeOrError === LOADING ? (
-                                        <div className="d-flex">
+                                        <div className={styles.treeLoadingSpinner}>
                                             <LoadingSpinner className="tree-page__entries-loader mr-2" />
                                             Loading tree
                                         </div>
                                     ) : (
                                         treeOrError && (
-                                            <ChildTreeLayer
-                                                {...this.props}
-                                                parent={this.node}
-                                                depth={-1 as number}
-                                                entries={treeOrError.entries}
-                                                singleChildTreeEntry={singleChildTreeEntry}
-                                                childrenEntries={singleChildTreeEntry.children}
-                                                onHover={this.fetchChildContents}
-                                                setChildNodes={this.setChildNode}
-                                                fileDecorationsByPath={this.state.fileDecorationsByPath}
-                                            />
+                                            <TreeRootContext.Provider
+                                                value={{
+                                                    rootTreeUrl: treeOrError.url,
+                                                }}
+                                            >
+                                                <ChildTreeLayer
+                                                    {...this.props}
+                                                    parent={this.node}
+                                                    depth={-1 as number}
+                                                    entries={treeOrError.entries}
+                                                    singleChildTreeEntry={singleChildTreeEntry}
+                                                    childrenEntries={singleChildTreeEntry.children}
+                                                    onHover={this.fetchChildContents}
+                                                    setChildNodes={this.setChildNode}
+                                                    fileDecorationsByPath={this.state.fileDecorationsByPath}
+                                                />
+                                            </TreeRootContext.Provider>
                                         )
                                     )}
                                 </TreeLayerCell>

@@ -1424,6 +1424,25 @@ CREATE TABLE event_logs (
     CONSTRAINT event_logs_check_version_not_empty CHECK ((version <> ''::text))
 );
 
+CREATE TABLE event_logs_export_allowlist (
+    id integer NOT NULL,
+    event_name text NOT NULL
+);
+
+COMMENT ON TABLE event_logs_export_allowlist IS 'An allowlist of events that are approved for export if the scraping job is enabled';
+
+COMMENT ON COLUMN event_logs_export_allowlist.event_name IS 'Name of the event that corresponds to event_logs.name';
+
+CREATE SEQUENCE event_logs_export_allowlist_id_seq
+    AS integer
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+ALTER SEQUENCE event_logs_export_allowlist_id_seq OWNED BY event_logs_export_allowlist.id;
+
 CREATE SEQUENCE event_logs_id_seq
     START WITH 1
     INCREMENT BY 1
@@ -3212,6 +3231,8 @@ ALTER TABLE ONLY discussion_threads_target_repo ALTER COLUMN id SET DEFAULT next
 
 ALTER TABLE ONLY event_logs ALTER COLUMN id SET DEFAULT nextval('event_logs_id_seq'::regclass);
 
+ALTER TABLE ONLY event_logs_export_allowlist ALTER COLUMN id SET DEFAULT nextval('event_logs_export_allowlist_id_seq'::regclass);
+
 ALTER TABLE ONLY event_logs_scrape_state ALTER COLUMN id SET DEFAULT nextval('event_logs_scrape_state_id_seq'::regclass);
 
 ALTER TABLE ONLY executor_heartbeats ALTER COLUMN id SET DEFAULT nextval('executor_heartbeats_id_seq'::regclass);
@@ -3393,6 +3414,9 @@ ALTER TABLE ONLY discussion_threads
 
 ALTER TABLE ONLY discussion_threads_target_repo
     ADD CONSTRAINT discussion_threads_target_repo_pkey PRIMARY KEY (id);
+
+ALTER TABLE ONLY event_logs_export_allowlist
+    ADD CONSTRAINT event_logs_export_allowlist_pkey PRIMARY KEY (id);
 
 ALTER TABLE ONLY event_logs
     ADD CONSTRAINT event_logs_pkey PRIMARY KEY (id);
@@ -3718,6 +3742,8 @@ CREATE INDEX discussion_threads_author_user_id_idx ON discussion_threads USING b
 CREATE INDEX discussion_threads_target_repo_repo_id_path_idx ON discussion_threads_target_repo USING btree (repo_id, path);
 
 CREATE INDEX event_logs_anonymous_user_id ON event_logs USING btree (anonymous_user_id);
+
+CREATE UNIQUE INDEX event_logs_export_allowlist_event_name_idx ON event_logs_export_allowlist USING btree (event_name);
 
 CREATE INDEX event_logs_name ON event_logs USING btree (name);
 

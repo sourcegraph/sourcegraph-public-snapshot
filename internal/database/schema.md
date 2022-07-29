@@ -947,6 +947,22 @@ Check constraints:
 
 ```
 
+# Table "public.event_logs_export_allowlist"
+```
+   Column   |  Type   | Collation | Nullable |                         Default                         
+------------+---------+-----------+----------+---------------------------------------------------------
+ id         | integer |           | not null | nextval('event_logs_export_allowlist_id_seq'::regclass)
+ event_name | text    |           | not null | 
+Indexes:
+    "event_logs_export_allowlist_pkey" PRIMARY KEY, btree (id)
+    "event_logs_export_allowlist_event_name_idx" UNIQUE, btree (event_name)
+
+```
+
+An allowlist of events that are approved for export if the scraping job is enabled
+
+**event_name**: Name of the event that corresponds to event_logs.name
+
 # Table "public.event_logs_scrape_state"
 ```
    Column    |  Type   | Collation | Nullable |                       Default                       
