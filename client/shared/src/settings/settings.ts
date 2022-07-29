@@ -34,6 +34,7 @@ export interface Settings {
         }
         enableExtensionsDecorationsColumnView?: boolean
         extensionsAsCoreFeatures?: boolean
+        enableLegacyExtensions?: boolean
     }
     [key: string]: any
 

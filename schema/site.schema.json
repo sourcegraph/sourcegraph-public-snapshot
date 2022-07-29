@@ -495,6 +495,11 @@
               "github.com/foo/bar2": "gitserverHostname2"
             }
           ]
+        },
+        "enableLegacyExtensions": {
+          "description": "Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).",
+          "type": "boolean",
+          "default": true
         }
       },
       "examples": [
