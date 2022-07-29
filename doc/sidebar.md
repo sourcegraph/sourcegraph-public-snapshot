@@ -49,7 +49,6 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [Explanations](cli/explanations/index.md)
   - [How-to guides](cli/how-tos/index.md)
   - [References](cli/references/index.md)
-- [Cloud](cloud/index.md)
 - [Adopting](adopt/index.md)
 - [Administration](admin/index.md)
   - [Deploy](admin/deploy/index.md)
@@ -67,6 +66,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [How-to guides](dev/how-to/index.md)
   - [Background information](dev/background-information/index.md)
   - [Contributing](dev/contributing.md)
+- [Dotcom](dotcom/index.md)
 - <br/>
 - [★ Quick install](index.md#getting-started)
 - [★ Search query syntax](code_search/reference/queries.md)
