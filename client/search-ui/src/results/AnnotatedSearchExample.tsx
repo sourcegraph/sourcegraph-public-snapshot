@@ -68,8 +68,6 @@ export const AnnotatedSearchInput: React.FunctionComponent<
         // the viewBox is adjusted to "crop" the image to its content
         // Original width and height of the image was 800x270
         <svg
-            role="img"
-            aria-hidden={true}
             className={styles.annotatedSearchInput}
             width={width}
             height={height}
