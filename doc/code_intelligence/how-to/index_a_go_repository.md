@@ -1,12 +1,12 @@
 # Go LSIF Indexing
 
-This guide is meant to provide specific instructions to get you producing index data in LSIF as quickly as possible for Go codebases.
+This guide provides specific instructions to get you producing index data in LSIF as quickly as possible for Go codebases.
 
 ## Automated indexing
 
-We provide the docker images `sourcegraph/lsif-go` and `sourcegraph/src-cli` to make automating this process in your favorite CI framework as easy as possible. Note that the `lsif-go` image bundles `src-cli` so the second image may not be necessary.
+We provide the docker images `sourcegraph/lsif-go` and `sourcegraph/src-cli` to make automating this process in your favorite CI framework as easy as possible. Note that the `lsif-go` image bundles `src-cli`, so the second image may not be necessary.
 
-Here's some examples in a couple popular frameworks, just substitute the indexer and upload commands with what works for your project locally. If you end up implementing this in a different framework, feel free to edit this page with instructions!
+Here are some examples in a couple popular frameworks. Just substitute the indexer and upload commands with what works for your project locally. If you implement this in a different framework, feel free to edit this page with instructions!
 
 ### GitHub Actions
 

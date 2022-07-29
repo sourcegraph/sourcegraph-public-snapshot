@@ -127,7 +127,7 @@ indexing github.com/sgtest/megarepo@14a3d9849ba587d667efbc542cf0c7cd106c3e72
     holding iLock
 ```
 
-In this example you can see there's 1 repository and the symbols service has indexed 9% of all commits with an ETA of 36H from now. There's also a breakdown of tasks that are part of Rockskip's internal workings mostly for Sourcegraph engineers, so you can ignore that.
+In this example, you can see one repository being indexed. The symbols service has indexed 9% of all commits with an ETA of 36 hours. There's also a breakdown of tasks that are part of Rockskip's internal workings, which is mostly intended for Sourcegraph engineers, so you can ignore that.
 
 ## How does it work?
 

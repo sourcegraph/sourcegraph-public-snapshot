@@ -31,12 +31,12 @@ See the [how-to guides](../how-to/index.md) to get started with precise code nav
 Cross-repository code navigation works out-of-the-box when both the dependent repository and the dependency repository have indexes _at the correct commits or versions_.
 We are working on relaxing this constraint so that nearest-commit functionality works on a cross-repository basis as well.
 
-When the current repository has an index and a dependent doesn't,
-the missing precise results will be supplemented with imprecise search-based code navigation.
-This also applies when both repositories have indexes, but for a different set of versions.
+When the current repository has an index but a dependent doesn't, we supplement
+the missing precise results with imprecise search-based code navigation.
+This also applies when both repositories have indexes but for a different set of versions.
 For example, if repository A@v1 depends on B@v2,
 then we will get precise cross-repository intelligence when we have indexes for both A@v1 and B@v2,
-but would not get a precise result we instead have indexes for A@v1 and B@v1.
+but we will not get a precise result if we instead have indexes for A@v1 and B@v1.
 
 ## Why are my results sometimes incorrect?
 

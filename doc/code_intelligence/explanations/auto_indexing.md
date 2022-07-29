@@ -31,15 +31,15 @@ Index jobs are run asynchronously from a queue. Each index job has an attached _
 
 ![Index job state diagram](./diagrams/index-states.svg)
 
-The general happy-path for an index job is: `QUEUED`, `PROCESSING`, then `COMPLETED`.
+The general happy path for an index job is: `QUEUED`, `PROCESSING`, then `COMPLETED`.
 
-Index jobs may fail to complete due to the job configuration not aligning with the repository contents or due to transient errors related to the network (for example). An index job will enter the `FAILED` state on the former type of error and the `ERRORED` state on the later. Errored index jobs may be retried a number of times before moving into the `FAILED` state.
+Index jobs may fail to complete due to the job configuration not aligning with the repository contents or due to transient errors related to the network (for example). An index job will enter the `FAILED` state on the former type of error and the `ERRORED` state on the latter. Errored index jobs may be retried a number of times before moving into the `FAILED` state.
 
 At any point, an index job record may be deleted (usually due to explicit deletion by the user).
 
 ## Lifecycle of an indexing job (via UI)
 
-Users can see precise code navigation index jobs for a particular, repository by navigating to the code graph page in the target repository's index page.
+Users can see precise code navigation index jobs for a particular repository by navigating to the code graph page in the target repository's index page.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.33/repository-page.png" class="screenshot" alt="Repository index page">
 

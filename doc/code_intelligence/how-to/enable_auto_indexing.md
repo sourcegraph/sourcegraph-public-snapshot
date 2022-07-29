@@ -2,7 +2,7 @@
 
 <aside class="beta">
 <p>
-<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future. We've released it as a beta feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future. We've released it as a beta feature to provide a preview of the functionality we're working on.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
@@ -24,7 +24,7 @@ Next, enable the precise code navigation auto-indexing feature by enabling the f
 }
 ```
 
-This step will control the scheduling of indexing jobs which are made available to the executors deployed in the previous step.
+This step will control the scheduling of indexing jobs that are made available to the executors deployed in the previous step.
 
 ## Configure auto-indexing policies
 
@@ -40,4 +40,4 @@ The frequency of index job scheduling can be tuned via the following environment
 
 **`PRECISE_CODE_INTEL_AUTO_INDEXING_REPOSITORY_BATCH_SIZE`**: The number of repositories to consider for auto-indexing scheduling at a time. Default is 100.
 
-**`PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_REPOSITORIES_INSPECTED_PER_SECOND`**: The maximum number of repositories inspected for auto-indexing per second. Set to zero to disable limit. Default is 0.
+**`PRECISE_CODE_INTEL_AUTO_INDEX_MAXIMUM_REPOSITORIES_INSPECTED_PER_SECOND`**: The maximum number of repositories inspected for auto-indexing per second. Set to zero to disable the limit. Default is 0.
