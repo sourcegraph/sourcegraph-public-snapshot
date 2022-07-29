@@ -23,7 +23,7 @@ import (
 // NOTE: This should only be used at development or build time - the root parameter should point to a
 // valid git clone root directory. Resulting errors are apparent.
 func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedMigration, error) {
-	definitionMap, rootIDByRev, leafIDsByRev, err := overlayDefinitions(schemaName, root, revs)
+	definitionMap, boundsByRev, err := overlayDefinitions(schemaName, root, revs)
 	if err != nil {
 		return shared.StitchedMigration{}, err
 	}
@@ -39,9 +39,8 @@ func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedM
 	}
 
 	return shared.StitchedMigration{
-		Definitions:  definitions,
-		RootIDByRev:  rootIDByRev,
-		LeafIDsByRev: leafIDsByRev,
+		Definitions: definitions,
+		BoundsByRev: boundsByRev,
 	}, nil
 }
 
@@ -54,22 +53,20 @@ func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedM
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinitions(schemaName, root string, revs []string) (map[int]definition.Definition, map[string]int, map[string][]int, error) {
+func overlayDefinitions(schemaName, root string, revs []string) (map[int]definition.Definition, map[string]shared.MigrationBounds, error) {
 	definitionMap := map[int]definition.Definition{}
-	leafIDsByRev := make(map[string][]int, len(revs))
-	rootIDByRev := make(map[string]int, len(revs))
+	boundsByRev := make(map[string]shared.MigrationBounds, len(revs))
 	for _, rev := range revs {
-		rootID, leafIDs, err := overlayDefinition(schemaName, root, rev, definitionMap)
+		bounds, err := overlayDefinition(schemaName, root, rev, definitionMap)
 		if err != nil {
-			return nil, nil, nil, err
+			return nil, nil, err
 		}
 
-		rootIDByRev[rev] = rootID
-		leafIDsByRev[rev] = leafIDs
+		boundsByRev[rev] = bounds
 	}
 
 	linkVirtualPrivilegedMigrations(definitionMap)
-	return definitionMap, rootIDByRev, leafIDsByRev, nil
+	return definitionMap, boundsByRev, nil
 }
 
 const squashedMigrationPrefix = "squashed migrations"
@@ -85,15 +82,15 @@ const squashedMigrationPrefix = "squashed migrations"
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) (int, []int, error) {
+func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
 	fs, err := readMigrations(schemaName, root, rev)
 	if err != nil {
-		return 0, nil, err
+		return shared.MigrationBounds{}, err
 	}
 
 	revDefinitions, err := definition.ReadDefinitions(fs, migrationPath(schemaName))
 	if err != nil {
-		return 0, nil, errors.Wrap(err, "@"+rev)
+		return shared.MigrationBounds{}, errors.Wrap(err, "@"+rev)
 	}
 
 	for i, newDefinition := range revDefinitions.All() {
@@ -104,7 +101,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		// version incorrectly.
 
 		if isSquashedMigration && !strings.HasPrefix(newDefinition.Name, squashedMigrationPrefix) {
-			return 0, nil, errors.Newf("expected migration %d@%s to have a name prefixed with %q", newDefinition.ID, rev, squashedMigrationPrefix)
+			return shared.MigrationBounds{}, errors.Newf("expected migration %d@%s to have a name prefixed with %q", newDefinition.ID, rev, squashedMigrationPrefix)
 		}
 
 		existingDefinition, ok := definitionMap[newDefinition.ID]
@@ -124,7 +121,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 			continue
 		}
 
-		return 0, nil, errors.Newf("migration %d unexpectedly edited in release %s", newDefinition.ID, rev)
+		return shared.MigrationBounds{}, errors.Newf("migration %d unexpectedly edited in release %s", newDefinition.ID, rev)
 	}
 
 	leafIDs := []int{}
@@ -132,7 +129,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		leafIDs = append(leafIDs, migration.ID)
 	}
 
-	return revDefinitions.Root().ID, leafIDs, nil
+	return shared.MigrationBounds{RootID: revDefinitions.Root().ID, LeafIDs: leafIDs}, nil
 }
 
 func areEqualDefinitions(x, y definition.Definition) bool {
