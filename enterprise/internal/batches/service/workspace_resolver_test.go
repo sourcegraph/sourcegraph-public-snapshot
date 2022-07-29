@@ -113,7 +113,7 @@ func TestService_ResolveWorkspacesForBatchSpec(t *testing.T) {
 
 	newGitserverClient := func(commitMap map[api.CommitID]bool, branches map[string]api.CommitID) gitserver.Client {
 		gitserverClient := gitserver.NewMockClient()
-		gitserverClient.GetDefaultBranchFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName) (string, api.CommitID, error) {
+		gitserverClient.GetDefaultBranchFunc.SetDefaultHook(func(ctx context.Context, repo api.RepoName, short bool) (string, api.CommitID, error) {
 			if res, ok := defaultBranches[repo]; ok {
 				return res.branch, res.commit, nil
 			}
