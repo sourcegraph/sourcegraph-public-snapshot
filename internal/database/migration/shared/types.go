@@ -8,6 +8,9 @@ type StitchedMigration struct {
 	// several releases. This should contain all migrations defined in the associated version range.
 	Definitions *definition.Definitions
 
+	// RootIDByRev is a map from schema name to the identifier of the root migration for that schema.
+	RootIDByRev map[string]int
+
 	// LeafIDsByRev is a map from schema name to the set of identifiers of leaf migration for that
 	// schema. This is used to determine the points in the graph that are associated with a particular
 	// minor release.
