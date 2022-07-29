@@ -88,40 +88,6 @@ func Test_descriptionMatchRanges(t *testing.T) {
 			},
 		},
 		{
-			name:          "multiple description patterns that match",
-			inputPatterns: []string{"(?:this).*?(?:go)", "(?:input).*?(?:other).*?(?:things)"},
-			want: map[api.RepoID][]result.Range{
-				1: {
-					result.Range{
-						Start: result.Location{
-							Offset: 0,
-							Line:   0,
-							Column: 0,
-						},
-						End: result.Location{
-							Offset: 12,
-							Line:   0,
-							Column: 12,
-						},
-					},
-				},
-				2: {
-					result.Range{
-						Start: result.Location{
-							Offset: 37,
-							Line:   0,
-							Column: 37,
-						},
-						End: result.Location{
-							Offset: 62,
-							Line:   0,
-							Column: 62,
-						},
-					},
-				},
-			},
-		},
-		{
 			name:          "no matches",
 			inputPatterns: []string{"(?:this).*?(?:matches).*?(?:nothing)"},
 			want:          map[api.RepoID][]result.Range{},
