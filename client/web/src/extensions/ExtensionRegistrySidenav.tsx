@@ -4,24 +4,11 @@ import { mdiMenuDown } from '@mdi/js'
 import classNames from 'classnames'
 
 import { EXTENSION_CATEGORIES } from '@sourcegraph/shared/src/schema/extensionSchema'
-import {
-    Button,
-    Link,
-    Menu,
-    MenuButton,
-    MenuDivider,
-    MenuItem,
-    MenuList,
-    Icon,
-    H3,
-    H4,
-    Checkbox,
-} from '@sourcegraph/wildcard'
+import { Button, Menu, MenuButton, MenuDivider, MenuItem, MenuList, Icon, Checkbox } from '@sourcegraph/wildcard'
 
 import { SidebarGroup, SidebarGroupHeader } from '../components/Sidebar'
 
 import { ExtensionCategoryOrAll, ExtensionsEnablement } from './ExtensionRegistry'
-import { extensionBannerIconURL } from './icons'
 
 import styles from './ExtensionRegistrySidenav.module.scss'
 
