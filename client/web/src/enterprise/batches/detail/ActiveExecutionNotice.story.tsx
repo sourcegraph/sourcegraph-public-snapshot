@@ -1,6 +1,5 @@
 import { useMemo } from 'react'
 
-import { number } from '@storybook/addon-knobs'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 
 import { WebStory } from '../../../components/WebStory'
@@ -12,6 +11,20 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 const config: Meta = {
     title: 'web/batches/details',
     decorators: [decorator],
+    argTypes: {
+        numberActive: {
+            name: 'number of specs executing',
+            control: { type: 'number' },
+            defaultValue: 1,
+            min: 0,
+        },
+        numberComplete: {
+            name: 'number of specs completed',
+            control: { type: 'number' },
+            defaultValue: 1,
+            min: 0,
+        },
+    },
 }
 
 export default config
@@ -19,9 +32,9 @@ export default config
 const PROCESSING_BATCH_SPEC = { state: BatchSpecState.PROCESSING }
 const COMPLETE_BATCH_SPEC = { state: BatchSpecState.COMPLETED }
 
-export const ActiveExecutionNoticeStory: Story = () => {
-    const numberActive = number('number of specs executing', 1, { min: 0 })
-    const numberComplete = number('number of specs complete', 1, { min: 0 })
+export const ActiveExecutionNoticeStory: Story = args => {
+    const numberActive = args.numberActive
+    const numberComplete = args.numberComplete
 
     const specs = useMemo(
         () => [

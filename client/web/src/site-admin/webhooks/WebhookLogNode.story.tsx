@@ -34,7 +34,7 @@ export default config
 // the external service name is handled properly when there isn't an external
 // service.
 //
-// Some bonus knobs are provided for the tinkerers.
+// Some bonus controls are provided for the tinkerers.
 
 export const Collapsed: Story = () => (
     <WebStory>

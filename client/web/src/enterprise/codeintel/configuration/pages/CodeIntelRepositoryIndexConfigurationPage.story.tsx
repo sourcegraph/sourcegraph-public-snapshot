@@ -1,4 +1,3 @@
-import { withKnobs } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 
 import { WebStory } from '../../../../components/WebStory'
@@ -10,11 +9,18 @@ import {
 
 const story: Meta = {
     title: 'web/codeintel/configuration/CodeIntelRepositoryIndexConfigurationPage',
-    decorators: [story => <div className="p-3 container">{story()}</div>, withKnobs],
+    decorators: [story => <div className="p-3 container">{story()}</div>],
     parameters: {
         component: CodeIntelRepositoryIndexConfigurationPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
+        },
+    },
+    argTypes: {
+        repo: {
+            table: {
+                disable: true,
+            },
         },
     },
 }

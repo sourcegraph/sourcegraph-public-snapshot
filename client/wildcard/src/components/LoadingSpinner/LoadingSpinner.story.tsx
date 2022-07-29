@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -23,8 +22,14 @@ const config: Meta = {
             disableSnapshot: false,
         },
     },
+    argTypes: {
+        inline: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+    },
 }
 
 export default config
 
-export const Simple: Story = () => <LoadingSpinner inline={boolean('inline', true)} />
+export const Simple: Story = (args = {}) => <LoadingSpinner inline={args.inline} />

@@ -1,4 +1,3 @@
-import { select } from '@storybook/addon-knobs'
 import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { noop } from 'lodash'
 import { MATCH_ANY_PARAMETERS, WildcardMockLink } from 'wildcard-mock-link'
@@ -27,7 +26,7 @@ const config: Meta = {
 
 export default config
 
-export const RequiresSSHstep1: Story = () => (
+export const RequiresSSHstep1: Story = args => (
     <WebStory>
         {props => (
             <MockedTestProvider
@@ -56,11 +55,7 @@ export const RequiresSSHstep1: Story = () => (
                 <AddCredentialModal
                     {...props}
                     userID="user-id-1"
-                    externalServiceKind={select(
-                        'External service kind',
-                        Object.values(ExternalServiceKind),
-                        ExternalServiceKind.GITHUB
-                    )}
+                    externalServiceKind={args.externalServiceKind}
                     externalServiceURL="https://github.com/"
                     requiresSSH={true}
                     requiresUsername={false}
@@ -71,20 +66,23 @@ export const RequiresSSHstep1: Story = () => (
         )}
     </WebStory>
 )
+RequiresSSHstep1.argTypes = {
+    externalServiceKind: {
+        name: 'External service kind',
+        control: { type: 'select', options: Object.values(ExternalServiceKind) },
+        defaultValue: ExternalServiceKind.GITHUB,
+    },
+}
 
 RequiresSSHstep1.storyName = 'Requires SSH - step 1'
 
-export const RequiresSSHstep2: Story = () => (
+export const RequiresSSHstep2: Story = args => (
     <WebStory>
         {props => (
             <AddCredentialModal
                 {...props}
                 userID="user-id-1"
-                externalServiceKind={select(
-                    'External service kind',
-                    Object.values(ExternalServiceKind),
-                    ExternalServiceKind.GITHUB
-                )}
+                externalServiceKind={args.externalServiceKind}
                 externalServiceURL="https://github.com/"
                 requiresSSH={true}
                 requiresUsername={false}
@@ -95,6 +93,13 @@ export const RequiresSSHstep2: Story = () => (
         )}
     </WebStory>
 )
+RequiresSSHstep2.argTypes = {
+    externalServiceKind: {
+        name: 'External service kind',
+        control: { type: 'select', options: Object.values(ExternalServiceKind) },
+        defaultValue: ExternalServiceKind.GITHUB,
+    },
+}
 
 RequiresSSHstep2.storyName = 'Requires SSH - step 2'
 

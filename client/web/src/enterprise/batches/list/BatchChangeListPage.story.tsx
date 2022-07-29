@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { WildcardMockLink, MATCH_ANY_PARAMETERS } from 'wildcard-mock-link'
 
@@ -62,23 +61,26 @@ const MOCKS_FOR_NAMESPACE = new WildcardMockLink([
     },
 ])
 
-export const ListOfBatchChanges: Story = () => {
-    const canCreate = boolean('can create batch changes', true)
-
-    return (
-        <WebStory>
-            {props => (
-                <MockedTestProvider link={buildMocks()}>
-                    <BatchChangeListPage
-                        {...props}
-                        headingElement="h1"
-                        canCreate={canCreate}
-                        settingsCascade={EMPTY_SETTINGS_CASCADE}
-                    />
-                </MockedTestProvider>
-            )}
-        </WebStory>
-    )
+export const ListOfBatchChanges: Story = args => (
+    <WebStory>
+        {props => (
+            <MockedTestProvider link={buildMocks()}>
+                <BatchChangeListPage
+                    {...props}
+                    headingElement="h1"
+                    canCreate={args.canCreate}
+                    settingsCascade={EMPTY_SETTINGS_CASCADE}
+                />
+            </MockedTestProvider>
+        )}
+    </WebStory>
+)
+ListOfBatchChanges.argTypes = {
+    canCreate: {
+        name: 'can create batch changes',
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
 }
 
 ListOfBatchChanges.storyName = 'List of batch changes'

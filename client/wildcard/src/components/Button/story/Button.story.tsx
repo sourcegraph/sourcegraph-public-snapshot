@@ -1,4 +1,3 @@
-import { boolean, select } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import SearchIcon from 'mdi-react/SearchIcon'
 
@@ -41,16 +40,33 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => (
-    <Button
-        variant={select('Variant', BUTTON_VARIANTS, 'primary')}
-        size={select('Size', BUTTON_SIZES, undefined)}
-        disabled={boolean('Disabled', false)}
-        outline={boolean('Outline', false)}
-    >
+export const Simple: Story = (args = {}) => (
+    <Button variant={args.variant} size={args.size} disabled={args.disabled} outline={args.outline}>
         Click me!
     </Button>
 )
+Simple.argTypes = {
+    variant: {
+        name: 'Variant',
+        control: { type: 'select', options: BUTTON_VARIANTS },
+        defaultValue: 'primary',
+    },
+    size: {
+        name: 'Name',
+        control: { type: 'select', options: BUTTON_SIZES },
+        defaultValue: 'sm',
+    },
+    disabled: {
+        name: 'Disabled',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+    outline: {
+        name: 'Outline',
+        control: { type: 'boolean' },
+        defaultValue: false,
+    },
+}
 
 export const AllButtons: Story = () => (
     <div className="pb-3">

@@ -1,5 +1,6 @@
 import { MockedResponse } from '@apollo/client/testing'
 import { number, text } from '@storybook/addon-knobs'
+import { Args } from '@storybook/addons'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
 
@@ -61,9 +62,9 @@ export const webhookLogNode = (overrides?: Partial<WebhookLogFields>): WebhookLo
     },
 })
 
-export const buildExternalServices = (count: number): WebhookLogPageHeaderExternalService[] => {
+export const buildExternalServices = (count: number, ctrlProps: Args): WebhookLogPageHeaderExternalService[] => {
     const services: WebhookLogPageHeaderExternalService[] = []
-    count = number('external service count', count)
+    count = ctrlProps.externalServiceCount /* number('external service count', count)*/
 
     for (let index = 0; index < count; index++) {
         const name = `External service ${index}`
@@ -79,7 +80,8 @@ export const buildExternalServices = (count: number): WebhookLogPageHeaderExtern
 
 export const buildHeaderMock = (
     externalServiceCount: number,
-    webhookLogCount: number
+    webhookLogCount: number,
+    ctrlProps: Args
 ): MockedResponse<WebhookLogPageHeaderResult>[] => [
     {
         request: { query: getDocumentNode(WEBHOOK_LOG_PAGE_HEADER) },
@@ -87,10 +89,10 @@ export const buildHeaderMock = (
             data: {
                 externalServices: {
                     totalCount: externalServiceCount,
-                    nodes: buildExternalServices(externalServiceCount),
+                    nodes: buildExternalServices(externalServiceCount, ctrlProps),
                 },
                 webhookLogs: {
-                    totalCount: number('errored webhook count', webhookLogCount),
+                    totalCount: ctrlProps.erroredWebhookCount /* number('errored webhook count', webhookLogCount),*/,
                 },
             },
         },

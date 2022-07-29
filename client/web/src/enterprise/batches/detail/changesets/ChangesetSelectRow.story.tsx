@@ -1,4 +1,3 @@
-import { number } from '@storybook/addon-knobs'
 import { Meta, Story, DecoratorFn } from '@storybook/react'
 import { of } from 'rxjs'
 
@@ -15,10 +14,32 @@ import {
 import { ChangesetSelectRow } from './ChangesetSelectRow'
 
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
-
+let rangeMax = 100
 const config: Meta = {
     title: 'web/batches/ChangesetSelectRow',
     decorators: [decorator],
+    argTypes: {
+        totalChangesets: {
+            name: 'Total changesets',
+            control: { type: 'number' },
+            defaultValue: 100,
+        },
+        visibleChangesets: {
+            name: 'Visible changesets',
+            control: { type: 'range', min: 0, max: rangeMax },
+            defaultValue: 10,
+        },
+        selectableChangesets: {
+            name: 'Selectable changesets',
+            control: { type: 'range', min: 0, max: rangeMax },
+            defaultValue: 100,
+        },
+        selectedChangesets: {
+            name: 'Selected changesets',
+            control: { type: 'range', min: 0, max: rangeMax },
+            defaultValue: 0,
+        },
+    },
 }
 
 export default config
@@ -32,11 +53,12 @@ const queryAll50ChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_
 
 const allBulkOperations = Object.keys(BulkOperationType) as BulkOperationType[]
 
-export const AllStates: Story = () => {
-    const totalChangesets = number('Total changesets', 100)
-    const visibleChangesets = number('Visible changesets', 10, { range: true, min: 0, max: totalChangesets })
-    const selectableChangesets = number('Selectable changesets', 100, { range: true, min: 0, max: totalChangesets })
-    const selectedChangesets = number('Selected changesets', 0, { range: true, min: 0, max: selectableChangesets })
+export const AllStates: Story = args => {
+    const totalChangesets = args.totalChangesets
+    rangeMax = totalChangesets
+    const visibleChangesets = args.visibleChangesets
+    const selectableChangesets = args.selectableChangesets
+    const selectedChangesets = args.selectedChangesets
 
     const queryAllChangesetIDs: typeof _queryAllChangesetIDs = () => of(CHANGESET_IDS.slice(0, selectableChangesets))
     const initialSelected = CHANGESET_IDS.slice(0, selectedChangesets)

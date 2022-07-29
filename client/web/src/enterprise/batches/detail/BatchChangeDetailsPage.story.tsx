@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { useMemo } from '@storybook/addons'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 import { subDays } from 'date-fns'
@@ -27,7 +26,7 @@ import {
     BATCH_CHANGE_CHANGESETS_RESULT,
     EMPTY_BATCH_CHANGE_CHANGESETS_RESULT,
 } from './BatchChangeDetailsPage.mock'
-
+let SBSdefaultValue = false
 const decorator: DecoratorFn = story => <div className="p-3 container">{story()}</div>
 const config: Meta = {
     title: 'web/batches/details/BatchChangeDetailsPage',
@@ -36,6 +35,30 @@ const config: Meta = {
         chromatic: {
             viewports: [320, 576, 978, 1440],
             disableSnapshot: false,
+        },
+    },
+    argTypes: {
+        supersedingBatchSpec: {
+            control: { type: 'boolean' },
+            defaultValue: SBSdefaultValue,
+        },
+        viewerCanAdminister: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        isClosed: {
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+        url: {
+            table: {
+                disable: true,
+            },
+        },
+        supersededBatchSpec: {
+            table: {
+                disable: true,
+            },
         },
     },
 }
@@ -127,10 +150,12 @@ const queryChangesetCountsOverTime: typeof _queryChangesetCountsOverTime = () =>
 
 const deleteBatchChange = () => Promise.resolve(undefined)
 
-const Template: Story<{ url: string; supersededBatchSpec?: boolean }> = ({ url, supersededBatchSpec }) => {
-    const supersedingBatchSpec = boolean('supersedingBatchSpec', !!supersededBatchSpec)
-    const viewerCanAdminister = boolean('viewerCanAdminister', true)
-    const isClosed = boolean('isClosed', false)
+const Template: Story = ({ url, supersededBatchSpec, ...args }) => {
+    SBSdefaultValue = !!supersededBatchSpec
+    const supersedingBatchSpec = args.supersedingBatchSpec
+    const viewerCanAdminister = args.viewerCanAdminister
+    const isClosed = args.isClosed
+
     const batchChange: BatchChangeFields = useMemo(
         () => ({
             ...MOCK_BATCH_CHANGE,

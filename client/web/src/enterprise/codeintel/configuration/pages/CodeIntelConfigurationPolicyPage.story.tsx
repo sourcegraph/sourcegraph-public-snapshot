@@ -1,4 +1,3 @@
-import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -128,11 +127,22 @@ const previewRepositoryFilterRequest = {
 
 const story: Meta = {
     title: 'web/codeintel/configuration/CodeIntelConfigurationPolicyPage',
-    decorators: [story => <div className="p-3 container">{story()}</div>, withKnobs],
+    decorators: [story => <div className="p-3 container">{story()}</div>],
     parameters: {
         component: CodeIntelConfigurationPolicyPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
+        },
+    },
+    argTypes: {
+        indexingEnabled: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        repo: {
+            table: {
+                disable: true,
+            },
         },
     },
 }
@@ -152,7 +162,10 @@ const Template: Story<CodeIntelConfigurationPolicyPageProps> = args => (
         ]}
     >
         {props => (
-            <CodeIntelConfigurationPolicyPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
+            <CodeIntelConfigurationPolicyPage
+                {...props}
+                /* indexingEnabled={boolean('indexingEnabled', true)}*/ {...args}
+            />
         )}
     </WebStory>
 )

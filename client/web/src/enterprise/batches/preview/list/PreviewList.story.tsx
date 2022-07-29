@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { DecoratorFn, Story, Meta } from '@storybook/react'
 import { of, Observable } from 'rxjs'
 
@@ -15,14 +14,21 @@ const decorator: DecoratorFn = story => <div className="p-3 container">{story()}
 const config: Meta = {
     title: 'web/batches/preview',
     decorators: [decorator],
+    argTypes: {
+        publicationStateSet: {
+            name: 'publication state set by spec file',
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+    },
 }
 
 export default config
 
 const queryEmptyFileDiffs = () => of({ totalCount: 0, pageInfo: { endCursor: null, hasNextPage: false }, nodes: [] })
 
-export const PreviewListStory: Story = () => {
-    const publicationStateSet = boolean('publication state set by spec file', false)
+export const PreviewListStory: Story = args => {
+    const publicationStateSet = args.publicationStateSet
 
     const nodes: ChangesetApplyPreviewFields[] = [
         ...Object.values(visibleChangesetApplyPreviewNodeStories(publicationStateSet)),

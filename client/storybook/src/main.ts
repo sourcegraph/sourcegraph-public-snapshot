@@ -81,6 +81,7 @@ const config: Config = {
         '@storybook/addon-a11y',
         '@storybook/addon-toolbars',
         '@storybook/addon-docs',
+        '@storybook/addon-controls',
         {
             name: '@storybook/addon-storysource',
             options: {

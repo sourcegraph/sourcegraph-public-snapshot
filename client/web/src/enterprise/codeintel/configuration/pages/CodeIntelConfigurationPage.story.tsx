@@ -1,5 +1,4 @@
 import { MockedResponse } from '@apollo/client/testing'
-import { boolean, withKnobs } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 
 import { getDocumentNode } from '@sourcegraph/http-client'
@@ -238,11 +237,22 @@ const inferredRepositoryConfigurationRequest: MockedResponse<InferredIndexConfig
 const story: Meta = {
     title: 'web/codeintel/configuration/CodeIntelConfigurationPage',
     // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-    decorators: [story => <div className="p-3 container">{story()}</div>, withKnobs],
+    decorators: [story => <div className="p-3 container">{story()}</div>],
     parameters: {
         component: CodeIntelConfigurationPage,
         chromatic: {
             viewports: [320, 576, 978, 1440],
+        },
+    },
+    argTypes: {
+        indexingEnabled: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        authenticatedUser: {
+            table: {
+                disable: true,
+            },
         },
     },
 }
@@ -259,7 +269,7 @@ const Template: Story<CodeIntelConfigurationPageProps> = args => (
         ]}
     >
         {props => (
-            <CodeIntelConfigurationPage {...props} indexingEnabled={boolean('indexingEnabled', true)} {...args} />
+            <CodeIntelConfigurationPage {...props} /* indexingEnabled={boolean('indexingEnabled', true)} */ {...args} />
         )}
     </WebStory>
 )

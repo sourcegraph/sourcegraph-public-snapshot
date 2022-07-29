@@ -1,6 +1,5 @@
 import { useState } from 'react'
 
-import { number } from '@storybook/addon-knobs'
 import { DecoratorFn, Meta, Story } from '@storybook/react'
 
 import { BrandedStory } from '@sourcegraph/branded/src/components/BrandedStory'
@@ -22,9 +21,16 @@ const config: Meta = {
 
 export default config
 
-export const Simple: Story = () => {
+export const Simple: Story = (args = {}) => {
     const [page, setPage] = useState(1)
-    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={number('maxPages', 5)} />
+    return <PageSelector currentPage={page} onPageChange={setPage} totalPages={args.totalPages} />
+}
+Simple.argTypes = {
+    totalPages: {
+        name: 'maxPages',
+        control: { type: 'number' },
+        defaultValue: 5,
+    },
 }
 
 export const AllPageSelectors: Story = () => (

@@ -1,4 +1,3 @@
-import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import { of } from 'rxjs'
 
@@ -109,14 +108,39 @@ const story: Meta = {
             viewports: [320, 576, 978, 1440],
         },
     },
+    argTypes: {
+        stale: {
+            control: { type: 'boolean' },
+            defaultValue: false,
+        },
+        updatedAt: {
+            control: { type: 'boolean' },
+            defaultValue: true,
+        },
+        now: {
+            table: {
+                disable: true,
+            },
+        },
+        repo: {
+            table: {
+                disable: true,
+            },
+        },
+        queryLsifUploadsByRepository: {
+            table: {
+                disable: true,
+            },
+        },
+    },
 }
 export default story
 
-const Template: Story<CodeIntelUploadsPageProps> = args => {
+const Template: Story = args => {
     const queryCommitGraphMetadata = () =>
         of({
-            stale: boolean('staleCommitGraph', false),
-            updatedAt: boolean('previouslyUpdatedCommitGraph', true) ? now() : null,
+            stale: args.stale,
+            updatedAt: args.updatedAt ? now() : null,
         })
 
     return (

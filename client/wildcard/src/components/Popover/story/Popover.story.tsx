@@ -1,6 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react'
 
-import { boolean } from '@storybook/addon-knobs'
 import { Meta, Story } from '@storybook/react'
 import classNames from 'classnames'
 import { noop } from 'rxjs'
@@ -400,14 +399,14 @@ export const WithControlledState: Story = () => {
     )
 }
 
-export const WithNestedScrollParents: Story = () => {
-    const constrainToScrollParents = boolean('constrainToScrollParents', true)
+export const WithNestedScrollParents: Story = (args = {}) => {
+    const constrainToScrollParents = args.constrainToScrollParents
 
     return (
         <ScrollCenterBox title="Root scroll block" className={styles.root}>
             <div className={styles.spreadContentBlock}>
                 <ScrollCenterBox
-                    title="Sub scroll block (see knobs panel for rendering tooltip outside of the scroll container"
+                    title="Sub scroll block (see controls panel for rendering tooltip outside of the scroll container"
                     className={classNames(styles.container, styles.containerAsSubRoot)}
                 >
                     <div className={styles.content}>
@@ -439,6 +438,12 @@ export const WithNestedScrollParents: Story = () => {
             </div>
         </ScrollCenterBox>
     )
+}
+WithNestedScrollParents.argTypes = {
+    constrainToScrollParents: {
+        control: { type: 'boolean' },
+        defaultValue: true,
+    },
 }
 
 export const WithVirtualTarget: Story = () => {
