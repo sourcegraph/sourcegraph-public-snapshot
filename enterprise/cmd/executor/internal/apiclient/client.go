@@ -214,10 +214,7 @@ func (c *Client) Heartbeat(ctx context.Context, queueName string, jobIDs []int) 
 	}})
 	defer endObservation(1, observation.Args{})
 
-	// Add some timeout here so metrics don't wreck heartbeats.
-	metricCtx, cancel := context.WithTimeout(ctx, 2*time.Second)
-	defer cancel()
-	metrics, err := gatherMetrics(metricCtx, c.metricsGatherer)
+	metrics, err := gatherMetrics(c.logger, c.metricsGatherer)
 	if err != nil {
 		c.logger.Error("Failed to collect prometheus metrics for heartbeat", log.Error(err))
 		// Continue, no metrics should not prevent heartbeats.
@@ -287,7 +284,16 @@ func intsToString(ints []int) string {
 	return strings.Join(segments, ", ")
 }
 
-func gatherMetrics(ctx context.Context, gatherer prometheus.Gatherer) (string, error) {
+func gatherMetrics(logger log.Logger, gatherer prometheus.Gatherer) (string, error) {
+	maxDuration := 3 * time.Second
+	ctx, cancel := context.WithTimeout(context.Background(), maxDuration)
+	defer cancel()
+	go func() {
+		select {
+		case <-ctx.Done():
+			logger.Warn("gathering metrics took longer than expected", log.Duration("maxDuration", maxDuration))
+		}
+	}()
 	mfs, err := gatherer.Gather()
 	if err != nil {
 		return "", err
@@ -295,11 +301,6 @@ func gatherMetrics(ctx context.Context, gatherer prometheus.Gatherer) (string, e
 	var buf bytes.Buffer
 	enc := expfmt.NewEncoder(&buf, expfmt.FmtText)
 	for _, mf := range mfs {
-		// Check if we should stop working.
-		if ctx.Err() != nil {
-			return "", ctx.Err()
-		}
-
 		if err := enc.Encode(mf); err != nil {
 			return "", errors.Wrap(err, "encoding metric family")
 		}
