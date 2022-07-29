@@ -1,6 +1,6 @@
 # Developing the code insights backend
 
-- [Sstate of the backend](#state-of-the-backend)
+- [State of the backend](#state-of-the-backend)
 - [Architecture](#architecture)
 - [Life of an insight](#life-of-an-insight)
     - [(1) User creates an insight](#1-a-user-creates-an-insight)
