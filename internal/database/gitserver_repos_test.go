@@ -4,12 +4,12 @@ import (
 	"context"
 	"fmt"
 	"sort"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -34,27 +34,9 @@ func TestIterateRepoGitserverStatus(t *testing.T) {
 	ctx := context.Background()
 
 	repos := types.Repos{
-		&types.Repo{
-			Name:         "github.com/sourcegraph/repo1",
-			URI:          "github.com/sourcegraph/repo1",
-			Description:  "",
-			ExternalRepo: api.ExternalRepoSpec{},
-			Sources:      nil,
-		},
-		&types.Repo{
-			Name:         "github.com/sourcegraph/repo2",
-			URI:          "github.com/sourcegraph/repo2",
-			Description:  "",
-			ExternalRepo: api.ExternalRepoSpec{},
-			Sources:      nil,
-		},
-		&types.Repo{
-			Name:         "github.com/sourcegraph/repo3",
-			URI:          "github.com/sourcegraph/repo3",
-			Description:  "",
-			ExternalRepo: api.ExternalRepoSpec{},
-			Sources:      nil,
-		},
+		&types.Repo{Name: "github.com/sourcegraph/repo1"},
+		&types.Repo{Name: "github.com/sourcegraph/repo2"},
+		&types.Repo{Name: "github.com/sourcegraph/repo3"},
 	}
 	createTestRepos(ctx, t, db, repos)
 
@@ -114,19 +96,12 @@ func TestIteratePurgeableRepos(t *testing.T) {
 	ctx := context.Background()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
+	store := basestore.NewWithHandle(db.Handle())
 
-	normalRepo := &types.Repo{
-		Name: "normal",
-	}
-	blockedRepo := &types.Repo{
-		Name: "blocked",
-	}
-	deletedRepo := &types.Repo{
-		Name: "deleted",
-	}
-	notCloned := &types.Repo{
-		Name: "notCloned",
-	}
+	normalRepo := &types.Repo{Name: "normal"}
+	blockedRepo := &types.Repo{Name: "blocked"}
+	deletedRepo := &types.Repo{Name: "deleted"}
+	notCloned := &types.Repo{Name: "notCloned"}
 
 	createTestRepos(ctx, t, db, types.Repos{
 		normalRepo,
@@ -137,19 +112,25 @@ func TestIteratePurgeableRepos(t *testing.T) {
 	for _, repo := range []*types.Repo{normalRepo, blockedRepo, deletedRepo} {
 		updateTestGitserverRepos(ctx, t, db, false, types.CloneStatusCloned, repo.ID)
 	}
+	// Delete & load soft-deleted name of repo
 	if err := db.Repos().Delete(ctx, deletedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
+	deletedRepoNameStr, _, err := basestore.ScanFirstString(store.Query(ctx, sqlf.Sprintf("SELECT name FROM repo WHERE id = %s", deletedRepo.ID)))
+	if err != nil {
+		t.Fatal(err)
+	}
+	deletedRepoName := api.RepoName(deletedRepoNameStr)
+
 	// Blocking a repo is currently done manually
 	if _, err := db.ExecContext(ctx, `UPDATE repo set blocked = '{}' WHERE id = $1`, blockedRepo.ID); err != nil {
 		t.Fatal(err)
 	}
 
 	for _, tt := range []struct {
-		name         string
-		options      IteratePurgableReposOptions
-		blockedCount int
-		deletedCount int
+		name      string
+		options   IteratePurgableReposOptions
+		wantRepos []api.RepoName
 	}{
 		{
 			name: "zero deletedBefore",
@@ -157,8 +138,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 				DeletedBefore: time.Time{},
 				Limit:         0,
 			},
-			blockedCount: 1,
-			deletedCount: 1,
+			wantRepos: []api.RepoName{deletedRepoName, blockedRepo.Name},
 		},
 		{
 			name: "deletedBefore now",
@@ -167,8 +147,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 				Limit:         0,
 			},
 
-			blockedCount: 1,
-			deletedCount: 1,
+			wantRepos: []api.RepoName{deletedRepoName, blockedRepo.Name},
 		},
 		{
 			name: "deletedBefore 5 minutes ago",
@@ -176,8 +155,7 @@ func TestIteratePurgeableRepos(t *testing.T) {
 				DeletedBefore: time.Now().Add(-5 * time.Minute),
 				Limit:         0,
 			},
-			blockedCount: 1,
-			deletedCount: 0,
+			wantRepos: []api.RepoName{blockedRepo.Name},
 		},
 		{
 			name: "test limit",
@@ -185,32 +163,22 @@ func TestIteratePurgeableRepos(t *testing.T) {
 				DeletedBefore: time.Time{},
 				Limit:         1,
 			},
-			blockedCount: 0,
-			deletedCount: 1,
+			wantRepos: []api.RepoName{deletedRepoName},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			var have []api.RepoName
-			var blockedCount int
-			var deletedCount int
 			if err := db.GitserverRepos().IteratePurgeableRepos(ctx, tt.options, func(repo api.RepoName) error {
-				if repo == "blocked" {
-					blockedCount++
-				}
-				if strings.HasPrefix(string(repo), "DELETED") {
-					deletedCount++
-				}
 				have = append(have, repo)
 				return nil
 			}); err != nil {
 				t.Fatal(err)
 			}
-			t.Log(have)
-			if blockedCount != tt.blockedCount {
-				t.Fatalf("Want %d blocked repos, have %d", tt.blockedCount, blockedCount)
-			}
-			if deletedCount != tt.deletedCount {
-				t.Fatalf("Want %d deleted repos, have %d", tt.deletedCount, deletedCount)
+
+			sort.Slice(have, func(i, j int) bool { return have[i] < have[j] })
+
+			if diff := cmp.Diff(have, tt.wantRepos); diff != "" {
+				t.Fatalf("wrong iterated: %s", diff)
 			}
 		})
 	}
@@ -383,8 +351,6 @@ func TestGitserverReposGetByID(t *testing.T) {
 	// Create one test repo
 	_, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo",
-		URI:           "github.com/sourcegraph/repo",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		RepoSizeBytes: 100,
 	})
 
@@ -411,8 +377,6 @@ func TestGitserverReposGetByName(t *testing.T) {
 	// Create one test repo
 	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo",
-		URI:           "github.com/sourcegraph/repo",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		RepoSizeBytes: 100,
 	})
 
@@ -444,9 +408,7 @@ func TestGitserverReposGetByNames(t *testing.T) {
 	for i := 0; i < len(repoNames); i++ {
 		repoName := fmt.Sprintf("github.com/sourcegraph/repo%d", i)
 		repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
-			Name:         api.RepoName(repoName),
-			URI:          repoName,
-			ExternalRepo: api.ExternalRepoSpec{},
+			Name: api.RepoName(repoName),
 		})
 		repoNames[i] = repo.Name
 		gitserverRepos[i] = gitserverRepo
@@ -482,8 +444,6 @@ func TestSetCloneStatus(t *testing.T) {
 	// Create one test repo
 	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo",
-		URI:           "github.com/sourcegraph/repo",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		RepoSizeBytes: 100,
 		CloneStatus:   types.CloneStatusNotCloned,
 	})
@@ -558,8 +518,6 @@ func TestSetLastError(t *testing.T) {
 	// Create one test repo
 	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo",
-		URI:           "github.com/sourcegraph/repo",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
 	})
@@ -639,8 +597,6 @@ func TestSetRepoSize(t *testing.T) {
 	// Create one test repo
 	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo",
-		URI:           "github.com/sourcegraph/repo",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		RepoSizeBytes: 100,
 	})
 
@@ -718,8 +674,6 @@ func TestGitserverRepo_Update(t *testing.T) {
 	// Create one test repo
 	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo",
-		URI:           "github.com/sourcegraph/repo",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
 	})
@@ -784,15 +738,11 @@ func TestGitserverRepoUpdateMany(t *testing.T) {
 	// Create two test repos
 	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo1",
-		URI:           "github.com/sourcegraph/repo1",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
 	})
 	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo2",
-		URI:           "github.com/sourcegraph/repo2",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		CloneStatus:   types.CloneStatusNotCloned,
 		RepoSizeBytes: 100,
 	})
@@ -852,8 +802,6 @@ func TestGitserverRepoListReposWithoutSize(t *testing.T) {
 	// Create one test repo
 	repo, gitserverRepo := createTestRepo(ctx, t, db, &createTestRepoPayload{
 		Name:          "github.com/sourcegraph/repo",
-		URI:           "github.com/sourcegraph/repo",
-		ExternalRepo:  api.ExternalRepoSpec{},
 		RepoSizeBytes: 0,
 	})
 
@@ -1008,13 +956,7 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTestRepoPayload) (*types.Repo, *types.GitserverRepo) {
 	t.Helper()
 
-	repo := &types.Repo{
-		Name:         payload.Name,
-		URI:          payload.URI,
-		Description:  payload.Description,
-		ExternalRepo: payload.ExternalRepo,
-		Sources:      payload.Sources,
-	}
+	repo := &types.Repo{Name: payload.Name}
 
 	// Create Repo
 	err := db.Repos().Create(ctx, repo)
@@ -1048,17 +990,6 @@ type createTestRepoPayload struct {
 	//
 	// Previously, this was called RepoURI.
 	Name api.RepoName
-	// URI is the full name for this repository (e.g.,
-	// "github.com/user/repo"). See the documentation for the Name field.
-	URI string
-	// Description is a brief description of the repository.
-	Description string
-	// ExternalRepo identifies this repository by its ID on the external service where it resides (and the external
-	// service itself).
-	ExternalRepo api.ExternalRepoSpec
-	// Sources identifies all the repo sources this Repo belongs to.
-	// The key is a URN created by extsvc.URN
-	Sources map[string]*types.SourceInfo
 
 	// Gitserver related properties
 
