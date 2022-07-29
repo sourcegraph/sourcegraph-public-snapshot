@@ -36,18 +36,7 @@ func NewWith(db basestore.TransactableHandle) *store {
 // service.
 func (s *store) GetFirstServiceVersion(ctx context.Context, service string) (_ string, _ bool, err error) {
 	version, ok, err := basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getFirstServiceVersionQuery, service)))
-	if err != nil {
-		if isMissingRelation(err) {
-			// Swallow the error if the versions table does not exist. We will need this behavior
-			// to be acceptable once we begin adding instance version checks in the migrator, which
-			// occurs before schemas are applied.
-			return "", false, nil
-		}
-
-		return "", false, err
-	}
-
-	return version, ok, nil
+	return version, ok, filterMissingRelationError(err)
 }
 
 const getFirstServiceVersionQuery = `
@@ -111,6 +100,18 @@ VALUES (%s, %s, %s) ON CONFLICT (service) DO
 UPDATE SET (version, updated_at) = (excluded.version, excluded.updated_at)
 WHERE versions.version = %s
 `
+
+// filterMissingRelationError returns a nil error if the given error was caused by
+// the target relation not yet existing. We will need this behavior to be acceptable
+// once we begin adding instance version checks in the migrator, which occurs before
+// schemas are applied.
+func filterMissingRelationError(err error) error {
+	if isMissingRelation(err) {
+		return nil
+	}
+
+	return err
+}
 
 func isMissingRelation(err error) bool {
 	var pgErr *pgconn.PgError
