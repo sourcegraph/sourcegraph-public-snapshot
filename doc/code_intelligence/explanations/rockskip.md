@@ -1,6 +1,6 @@
-# Rockskip: fast symbol sidebar and search-based code intelligence on monorepos
+# Rockskip: fast symbol sidebar and search-based code navigation on monorepos
 
-Rockskip is an alternative symbol indexing and query engine for the symbol service intended to improve performance of the symbol sidebar and search-based code intelligence on big monorepos. It was added in Sourcegraph 3.38.
+Rockskip is an alternative symbol indexing and query engine for the symbol service intended to improve performance of the symbol sidebar and search-based code navigation on big monorepos. It was added in Sourcegraph 3.38.
 
 ## When should I use Rockskip?
 
@@ -26,7 +26,7 @@ services:
     environment:
       # 👇 Enables Rockskip
       - USE_ROCKSKIP=true
-      # 👇 Uses Rockskip for all the repositories over 1GB
+      # 👇 Uses Rockskip for all repositories over 1GB
       - ROCKSKIP_MIN_REPO_SIZE_MB=1000
 ```
 
@@ -40,9 +40,9 @@ symbols:
     # 👇 Enables Rockskip
     USE_ROCKSHIP:
       value: "true"
-    # 👇 Uses Rockskip for the repositories in the comma separated list
-    ROCKSKIP_REPOS:
-      value: "github.com/crossplane/crossplane,github.com/sgtest/megarepo"
+    # 👇 Uses Rockskip for all repositories over 1GB
+    ROCKSKIP_MIN_REPO_SIZE_MB:
+      value: "1000"
 ```
 
 For Kubernetes:
@@ -58,7 +58,7 @@ spec:
         # 👇 Enables Rockskip
         - name: USE_ROCKSKIP
           value: "true"
-        # 👇 Uses Rockskip for all the repositories over 1GB
+        # 👇 Uses Rockskip for all repositories over 1GB
         - name: ROCKSKIP_MIN_REPO_SIZE_MB
           value: "1000"
 ```
@@ -77,7 +77,7 @@ For all deployments, make sure that:
 
 **Step 3:** Wait for indexing to complete. You can check the status as before by refreshing the page, opening the symbols sidebar, and looking at the error message. If you are interested in more technical details about the status, see the [instructions below](#how-do-i-check-the-indexing-status).
 
-**Step 4:** Open the symbols sidebar again and the symbols should appear quickly. Hover popovers and jump-to-definition via search-based code intelligence should also respond quickly.
+**Step 4:** Open the symbols sidebar again and the symbols should appear quickly. Hover popovers and jump-to-definition via search-based code navigation should also respond quickly.
 
 That's it! New commits will be indexed automatically when users visit them.
 

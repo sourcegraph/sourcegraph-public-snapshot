@@ -1,6 +1,5 @@
 import * as path from 'path'
 import * as readline from 'readline'
-import { URL } from 'url'
 
 import execa from 'execa'
 import { readFile, writeFile, mkdir } from 'mz/fs'
@@ -59,18 +58,6 @@ export function getWeekNumber(date: Date): number {
     const firstJan = new Date(date.getFullYear(), 0, 1)
     const day = 86400000
     return Math.ceil(((date.valueOf() - firstJan.valueOf()) / day + firstJan.getDay() + 1) / 7)
-}
-
-export function hubSpotFeedbackFormStub(version: string): string {
-    const link = `[this feedback form](${hubSpotFeedbackFormURL(version)})`
-    return `*How smooth was this upgrade process for you? You can give us your feedback on this upgrade by filling out ${link}.*`
-}
-
-function hubSpotFeedbackFormURL(version: string): string {
-    const url = new URL('https://share.hsforms.com/1aGeG7ALQQEGO6zyfauIiCA1n7ku')
-    url.searchParams.set('update_version', version)
-
-    return url.toString()
 }
 
 export async function ensureDocker(): Promise<execa.ExecaReturnValue<string>> {

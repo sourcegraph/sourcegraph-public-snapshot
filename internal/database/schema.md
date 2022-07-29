@@ -54,6 +54,7 @@ Foreign-key constraints:
     "batch_changes_namespace_org_id_fkey" FOREIGN KEY (namespace_org_id) REFERENCES orgs(id) ON DELETE CASCADE DEFERRABLE
     "batch_changes_namespace_user_id_fkey" FOREIGN KEY (namespace_user_id) REFERENCES users(id) ON DELETE CASCADE DEFERRABLE
 Referenced by:
+    TABLE "batch_specs" CONSTRAINT "batch_specs_batch_change_id_fkey" FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE
     TABLE "changeset_jobs" CONSTRAINT "changeset_jobs_batch_change_id_fkey" FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE CASCADE DEFERRABLE
     TABLE "changesets" CONSTRAINT "changesets_owned_by_batch_spec_id_fkey" FOREIGN KEY (owned_by_batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE
 Triggers:
@@ -225,12 +226,14 @@ Referenced by:
  allow_unsupported | boolean                  |           | not null | false
  allow_ignored     | boolean                  |           | not null | false
  no_cache          | boolean                  |           | not null | false
+ batch_change_id   | bigint                   |           |          | 
 Indexes:
     "batch_specs_pkey" PRIMARY KEY, btree (id)
     "batch_specs_rand_id" btree (rand_id)
 Check constraints:
     "batch_specs_has_1_namespace" CHECK ((namespace_user_id IS NULL) <> (namespace_org_id IS NULL))
 Foreign-key constraints:
+    "batch_specs_batch_change_id_fkey" FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE
     "batch_specs_user_id_fkey" FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL DEFERRABLE
 Referenced by:
     TABLE "batch_changes" CONSTRAINT "batch_changes_batch_spec_id_fkey" FOREIGN KEY (batch_spec_id) REFERENCES batch_specs(id) DEFERRABLE
@@ -943,6 +946,37 @@ Check constraints:
     "event_logs_check_version_not_empty" CHECK (version <> ''::text)
 
 ```
+
+# Table "public.event_logs_export_allowlist"
+```
+   Column   |  Type   | Collation | Nullable |                         Default                         
+------------+---------+-----------+----------+---------------------------------------------------------
+ id         | integer |           | not null | nextval('event_logs_export_allowlist_id_seq'::regclass)
+ event_name | text    |           | not null | 
+Indexes:
+    "event_logs_export_allowlist_pkey" PRIMARY KEY, btree (id)
+    "event_logs_export_allowlist_event_name_idx" UNIQUE, btree (event_name)
+
+```
+
+An allowlist of events that are approved for export if the scraping job is enabled
+
+**event_name**: Name of the event that corresponds to event_logs.name
+
+# Table "public.event_logs_scrape_state"
+```
+   Column    |  Type   | Collation | Nullable |                       Default                       
+-------------+---------+-----------+----------+-----------------------------------------------------
+ id          | integer |           | not null | nextval('event_logs_scrape_state_id_seq'::regclass)
+ bookmark_id | integer |           | not null | 
+Indexes:
+    "event_logs_scrape_state_pk" PRIMARY KEY, btree (id)
+
+```
+
+Contains state for the periodic telemetry job that scrapes events if enabled.
+
+**bookmark_id**: Bookmarks the maximum most recent successful event_logs.id that was scraped
 
 # Table "public.executor_heartbeats"
 ```
@@ -2791,6 +2825,30 @@ Indexes:
     "versions_pkey" PRIMARY KEY, btree (service)
 Triggers:
     versions_insert BEFORE INSERT ON versions FOR EACH ROW EXECUTE FUNCTION versions_insert_row_trigger()
+
+```
+
+# Table "public.webhook_build_jobs"
+```
+      Column       |           Type           | Collation | Nullable |                    Default                     
+-------------------+--------------------------+-----------+----------+------------------------------------------------
+ repo_id           | integer                  |           |          | 
+ repo_name         | text                     |           |          | 
+ extsvc_kind       | text                     |           |          | 
+ queued_at         | timestamp with time zone |           |          | now()
+ id                | integer                  |           | not null | nextval('webhook_build_jobs_id_seq'::regclass)
+ state             | text                     |           | not null | 'queued'::text
+ failure_message   | text                     |           |          | 
+ started_at        | timestamp with time zone |           |          | 
+ finished_at       | timestamp with time zone |           |          | 
+ process_after     | timestamp with time zone |           |          | 
+ num_resets        | integer                  |           | not null | 0
+ num_failures      | integer                  |           | not null | 0
+ execution_logs    | json[]                   |           |          | 
+ last_heartbeat_at | timestamp with time zone |           |          | 
+ worker_hostname   | text                     |           | not null | ''::text
+Indexes:
+    "webhook_build_jobs_queued_at_idx" btree (queued_at)
 
 ```
 

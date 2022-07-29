@@ -1,7 +1,9 @@
 .separator {
-    display: block;
-    width: 100%;
-    margin-top: 1rem;
-    padding-bottom: 1rem;
+    // Make it full width in the current row.
+    grid-column: 1 / -1;
     border-top: 1px solid var(--border-color-2);
+    @media (--xs-breakpoint-down) {
+        margin-top: 1rem;
+        padding-bottom: 1rem;
+    }
 }

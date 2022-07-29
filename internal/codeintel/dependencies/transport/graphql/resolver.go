@@ -146,3 +146,18 @@ func validateListArgs(args *graphqlbackend.ListLockfileIndexesArgs) (params, err
 
 	return p, nil
 }
+
+func (r *resolver) DeleteLockfileIndex(ctx context.Context, args *graphqlbackend.DeleteLockfileIndexArgs) (*graphqlbackend.EmptyResponse, error) {
+	// 🚨 SECURITY: For now we only allow site admins to query lockfile indexes.
+	if err := backend.CheckCurrentUserIsSiteAdmin(ctx, r.db); err != nil {
+		return nil, err
+	}
+
+	id, err := unmarshalLockfileIndexID(args.LockfileIndex)
+	if err != nil {
+		return nil, err
+	}
+
+	err = r.svc.DeleteLockfileIndexByID(ctx, id)
+	return &graphqlbackend.EmptyResponse{}, err
+}

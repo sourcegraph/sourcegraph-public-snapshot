@@ -1,5 +1,9 @@
 .block {
     padding: 1rem;
+
+    :global(.is-read-only-notebook) & {
+        padding: 0.25rem 1rem;
+    }
 }
 
 .content {

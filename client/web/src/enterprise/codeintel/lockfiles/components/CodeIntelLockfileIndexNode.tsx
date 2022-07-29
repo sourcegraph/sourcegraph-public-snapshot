@@ -1,6 +1,8 @@
 import React, { FunctionComponent } from 'react'
 
-import { Link, H3, Code } from '@sourcegraph/wildcard'
+import { mdiChevronRight } from '@mdi/js'
+
+import { Link, H3, Code, Icon } from '@sourcegraph/wildcard'
 
 import { Timestamp } from '../../../../components/time/Timestamp'
 import { LockfileIndexFields } from '../../../../graphql-operations'
@@ -44,5 +46,11 @@ export const CodeIntelLockfileNode: FunctionComponent<React.PropsWithChildren<Co
                 </small>
             </div>
         </div>
+
+        <span className="d-none d-md-inline">
+            <Link to={`./lockfiles/${node.id}`}>
+                <Icon svgPath={mdiChevronRight} inline={false} aria-label="View more information" />
+            </Link>
+        </span>
     </>
 )

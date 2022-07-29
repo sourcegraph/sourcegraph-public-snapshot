@@ -392,12 +392,12 @@ type Client interface {
 	// TODO: Rename to something like PersonCount?
 	ShortLog(ctx context.Context, repo api.RepoName, opt ShortLogOptions) ([]*gitdomain.PersonCount, error)
 
-	LogReverseEach(repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
+	// LogReverseEach runs git log in reverse order and calls the given callback for each entry.
+	LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error
 
-	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-	RevList(repo string, commit string, onCommit func(commit string) (bool, error)) error
-
-	RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error
+	// RevList makes a git rev-list call and iterates through the resulting commits, calling the provided
+	// onCommit function for each.
+	RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (bool, error)) error
 
 	Addrs() []string
 }
@@ -480,7 +480,7 @@ func addrForKey(key string, addrs []string) string {
 // ArchiveOptions contains options for the Archive func.
 type ArchiveOptions struct {
 	Treeish   string               // the tree or commit to produce an archive for
-	Format    string               // format of the resulting archive (usually "tar" or "zip")
+	Format    ArchiveFormat        // format of the resulting archive (usually "tar" or "zip")
 	Pathspecs []gitdomain.Pathspec // if nonempty, only include these pathspecs.
 }
 
@@ -524,7 +524,7 @@ func (c *clientImplementor) archiveURL(ctx context.Context, repo api.RepoName, o
 	q := url.Values{
 		"repo":    {string(repo)},
 		"treeish": {opt.Treeish},
-		"format":  {opt.Format},
+		"format":  {string(opt.Format)},
 	}
 
 	for _, pathspec := range opt.Pathspecs {
@@ -1130,22 +1130,25 @@ func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 		return ClientMocks.RepoInfo(ctx, repos...)
 	}
 
-	numPossibleShards := len(c.Addrs())
-	shards := make(map[string]*protocol.RepoInfoRequest, (len(repos)/numPossibleShards)*2) // 2x because it may not be a perfect division
+	totalShards := len(c.Addrs())
+	shards := make(map[string]*protocol.RepoInfoRequest, totalShards)
 
+	// Build a map of each shards -> [list of repos that belong to that shard]. We do this so that
+	// we can send only one request with the entire list of repos for that shard. This allows us to
+	// get away with making only N HTTP requests, where N is the total number of shards.
 	for _, r := range repos {
 		addr, err := c.AddrForRepo(ctx, r)
 		if err != nil {
 			return nil, err
 		}
-		shard := shards[addr]
 
-		if shard == nil {
-			shard = new(protocol.RepoInfoRequest)
-			shards[addr] = shard
+		repoInfoReq := shards[addr]
+		if repoInfoReq == nil {
+			repoInfoReq = new(protocol.RepoInfoRequest)
+			shards[addr] = repoInfoReq
 		}
 
-		shard.Repos = append(shard.Repos, r)
+		repoInfoReq.Repos = append(repoInfoReq.Repos, r)
 	}
 
 	type op struct {
@@ -1166,11 +1169,26 @@ func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 
 			defer resp.Body.Close()
 			if resp.StatusCode != http.StatusOK {
+				msg := fmt.Sprintf("RepoInfo: http status code: %d", resp.StatusCode)
+				content, err := io.ReadAll(resp.Body)
+				if err != nil {
+					msg = fmt.Sprintf("%s, failed to read response body, error: %v", msg, err)
+				}
+
+				// strings.TrimSpace is needed to remove trailing \n characters that is added by the
+				// server. We use http.Error in the server which in turn uses fmt.Fprintln to format
+				// the error message. And in translation that newline gets escapted into a \n
+				// character.  For what the error message would look in the UI without
+				// strings.TrimSpace, see attached screenshots in this pull request:
+				// https://github.com/sourcegraph/sourcegraph/pull/39358.
+				msg = fmt.Sprintf("%s, reason: %q", msg, strings.TrimSpace(string(content)))
+
 				o.err = &url.Error{
 					URL: resp.Request.URL.String(),
 					Op:  "RepoInfo",
-					Err: errors.Errorf("RepoInfo: http status %d", resp.StatusCode),
+					Err: errors.New(msg),
 				}
+
 				ch <- o
 				return // we never get an error status code AND result
 			}

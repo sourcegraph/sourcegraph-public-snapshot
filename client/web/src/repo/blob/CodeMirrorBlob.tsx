@@ -4,7 +4,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-import { Extension } from '@codemirror/state'
+import { EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
 import { useHistory, useLocation } from 'react-router'
 
@@ -13,7 +13,8 @@ import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { BlobProps, updateBrowserHistoryIfChanged } from './Blob'
-import { selectLines, selectableLineNumbers, SelectedLineRange } from './CodeMirrorLineNumbers'
+import { syntaxHighlight } from './codemirror/highlight'
+import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 
 const staticExtensions: Extension = [
     EditorView.editable.of(false),
@@ -40,12 +41,12 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
 }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
-    const dynamicExtensions = useMemo(
+    const settings = useMemo(
         () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
         [wrapCode, isLightTheme]
     )
 
-    const [compartment, updateCompartment] = useCompartment(dynamicExtensions)
+    const [settingsCompartment, updateSettingsCompartment] = useCompartment(settings)
 
     const history = useHistory()
     const location = useLocation()
@@ -80,18 +81,43 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
         )
     }, [])
 
-    const extensions = useMemo(() => [staticExtensions, compartment, selectableLineNumbers({ onSelection })], [
-        compartment,
-        onSelection,
-    ])
+    const extensions = useMemo(
+        () => [
+            staticExtensions,
+            settingsCompartment,
+            selectableLineNumbers({ onSelection }),
+            syntaxHighlight(blobInfo.lsif),
+        ],
+        [settingsCompartment, onSelection, blobInfo]
+    )
 
-    const editor = useCodeMirror(container, blobInfo.content, extensions)
+    const editor = useCodeMirror(container, blobInfo.content, extensions, {
+        updateValueOnChange: false,
+        updateOnExtensionChange: false,
+    })
 
     useEffect(() => {
         if (editor) {
-            updateCompartment(editor, dynamicExtensions)
+            updateSettingsCompartment(editor, settings)
         }
-    }, [editor, updateCompartment, dynamicExtensions])
+    }, [editor, updateSettingsCompartment, settings])
+
+    useEffect(() => {
+        if (editor) {
+            // We use setState here instead of dispatching a transaction because
+            // the new document has nothing to do with the previous one and so
+            // any existing state should be discarded.
+            editor.setState(
+                EditorState.create({
+                    doc: blobInfo.content,
+                    extensions,
+                })
+            )
+        }
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [blobInfo, extensions])
 
     // Update selected lines when URL changes
     const position = useMemo(() => parseQueryAndHash(location.search, location.hash), [location.search, location.hash])

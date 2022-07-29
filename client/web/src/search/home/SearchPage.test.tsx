@@ -105,7 +105,6 @@ describe('SearchPage', () => {
         authenticatedUser: authUser,
         globbing: false,
         platformContext: {} as any,
-        keyboardShortcuts: [],
         searchContextsEnabled: true,
         selectedSearchContextSpec: '',
         setSelectedSearchContextSpec: () => {},

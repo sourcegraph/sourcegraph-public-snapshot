@@ -8,14 +8,13 @@ import copy from 'copy-to-clipboard'
 import { Observable, merge, of } from 'rxjs'
 import { tap, switchMapTo, startWith, delay } from 'rxjs/operators'
 
-import { KeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { Button, Icon, DeprecatedTooltipController, useEventObservable, Tooltip } from '@sourcegraph/wildcard'
 
 interface Props {
     fullQuery: string
     className?: string
     isMacPlatform: boolean
-    keyboardShortcutForFullCopy: KeyboardShortcut
 }
 
 /**
@@ -44,6 +43,8 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
         )
     )
 
+    const fullCopyShortcut = useKeyboardShortcut('copyFullQuery')
+
     const copyFullQueryTooltip = `Copy full query\n${props.isMacPlatform ? '⌘' : 'Ctrl'}+⇧+C`
     return (
         <>
@@ -59,7 +60,7 @@ export const CopyQueryButton: React.FunctionComponent<React.PropsWithChildren<Pr
                     <Icon aria-hidden={true} svgPath={mdiClipboardOutline} />
                 </Button>
             </Tooltip>
-            {props.keyboardShortcutForFullCopy.keybindings.map((keybinding, index) => (
+            {fullCopyShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={copyFullQuery} allowDefault={false} ignoreInput={true} />
             ))}
         </>

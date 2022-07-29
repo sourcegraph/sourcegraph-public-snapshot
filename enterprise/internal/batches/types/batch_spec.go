@@ -32,7 +32,8 @@ type BatchSpec struct {
 	NamespaceUserID int32
 	NamespaceOrgID  int32
 
-	UserID int32
+	UserID        int32
+	BatchChangeID int64
 
 	// CreatedFromRaw is true when the BatchSpec was created through the
 	// createBatchSpecFromRaw GraphQL mutation, which means that it's meant to be

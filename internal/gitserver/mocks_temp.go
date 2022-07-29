@@ -179,9 +179,6 @@ type MockClient struct {
 	// RevListFunc is an instance of a mock function object controlling the
 	// behavior of the method RevList.
 	RevListFunc *ClientRevListFunc
-	// RevListEachFunc is an instance of a mock function object controlling
-	// the behavior of the method RevListEach.
-	RevListEachFunc *ClientRevListEachFunc
 	// SearchFunc is an instance of a mock function object controlling the
 	// behavior of the method Search.
 	SearchFunc *ClientSearchFunc
@@ -358,7 +355,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		LogReverseEachFunc: &ClientLogReverseEachFunc{
-			defaultHook: func(string, string, int, func(entry gitdomain.LogEntry) error) (r0 error) {
+			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) (r0 error) {
 				return
 			},
 		},
@@ -448,12 +445,7 @@ func NewMockClient() *MockClient {
 			},
 		},
 		RevListFunc: &ClientRevListFunc{
-			defaultHook: func(string, string, func(commit string) (bool, error)) (r0 error) {
-				return
-			},
-		},
-		RevListEachFunc: &ClientRevListEachFunc{
-			defaultHook: func(io.Reader, func(commit string) (bool, error)) (r0 error) {
+			defaultHook: func(context.Context, string, string, func(commit string) (bool, error)) (r0 error) {
 				return
 			},
 		},
@@ -640,7 +632,7 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		LogReverseEachFunc: &ClientLogReverseEachFunc{
-			defaultHook: func(string, string, int, func(entry gitdomain.LogEntry) error) error {
+			defaultHook: func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
 				panic("unexpected invocation of MockClient.LogReverseEach")
 			},
 		},
@@ -730,13 +722,8 @@ func NewStrictMockClient() *MockClient {
 			},
 		},
 		RevListFunc: &ClientRevListFunc{
-			defaultHook: func(string, string, func(commit string) (bool, error)) error {
+			defaultHook: func(context.Context, string, string, func(commit string) (bool, error)) error {
 				panic("unexpected invocation of MockClient.RevList")
-			},
-		},
-		RevListEachFunc: &ClientRevListEachFunc{
-			defaultHook: func(io.Reader, func(commit string) (bool, error)) error {
-				panic("unexpected invocation of MockClient.RevListEach")
 			},
 		},
 		SearchFunc: &ClientSearchFunc{
@@ -913,9 +900,6 @@ func NewMockClientFrom(i Client) *MockClient {
 		},
 		RevListFunc: &ClientRevListFunc{
 			defaultHook: i.RevList,
-		},
-		RevListEachFunc: &ClientRevListEachFunc{
-			defaultHook: i.RevListEach,
 		},
 		SearchFunc: &ClientSearchFunc{
 			defaultHook: i.Search,
@@ -4524,24 +4508,24 @@ func (c ClientListTagsFuncCall) Results() []interface{} {
 // ClientLogReverseEachFunc describes the behavior when the LogReverseEach
 // method of the parent MockClient instance is invoked.
 type ClientLogReverseEachFunc struct {
-	defaultHook func(string, string, int, func(entry gitdomain.LogEntry) error) error
-	hooks       []func(string, string, int, func(entry gitdomain.LogEntry) error) error
+	defaultHook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
+	hooks       []func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error
 	history     []ClientLogReverseEachFuncCall
 	mutex       sync.Mutex
 }
 
 // LogReverseEach delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockClient) LogReverseEach(v0 string, v1 string, v2 int, v3 func(entry gitdomain.LogEntry) error) error {
-	r0 := m.LogReverseEachFunc.nextHook()(v0, v1, v2, v3)
-	m.LogReverseEachFunc.appendCall(ClientLogReverseEachFuncCall{v0, v1, v2, v3, r0})
+func (m *MockClient) LogReverseEach(v0 context.Context, v1 string, v2 string, v3 int, v4 func(entry gitdomain.LogEntry) error) error {
+	r0 := m.LogReverseEachFunc.nextHook()(v0, v1, v2, v3, v4)
+	m.LogReverseEachFunc.appendCall(ClientLogReverseEachFuncCall{v0, v1, v2, v3, v4, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the LogReverseEach
 // method of the parent MockClient instance is invoked and the hook queue is
 // empty.
-func (f *ClientLogReverseEachFunc) SetDefaultHook(hook func(string, string, int, func(entry gitdomain.LogEntry) error) error) {
+func (f *ClientLogReverseEachFunc) SetDefaultHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
 	f.defaultHook = hook
 }
 
@@ -4549,7 +4533,7 @@ func (f *ClientLogReverseEachFunc) SetDefaultHook(hook func(string, string, int,
 // LogReverseEach method of the parent MockClient instance invokes the hook
 // at the front of the queue and discards it. After the queue is empty, the
 // default hook function is invoked for any future action.
-func (f *ClientLogReverseEachFunc) PushHook(hook func(string, string, int, func(entry gitdomain.LogEntry) error) error) {
+func (f *ClientLogReverseEachFunc) PushHook(hook func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -4558,19 +4542,19 @@ func (f *ClientLogReverseEachFunc) PushHook(hook func(string, string, int, func(
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientLogReverseEachFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(string, string, int, func(entry gitdomain.LogEntry) error) error {
+	f.SetDefaultHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientLogReverseEachFunc) PushReturn(r0 error) {
-	f.PushHook(func(string, string, int, func(entry gitdomain.LogEntry) error) error {
+	f.PushHook(func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
 		return r0
 	})
 }
 
-func (f *ClientLogReverseEachFunc) nextHook() func(string, string, int, func(entry gitdomain.LogEntry) error) error {
+func (f *ClientLogReverseEachFunc) nextHook() func(context.Context, string, string, int, func(entry gitdomain.LogEntry) error) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -4605,16 +4589,19 @@ func (f *ClientLogReverseEachFunc) History() []ClientLogReverseEachFuncCall {
 type ClientLogReverseEachFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 int
+	Arg2 string
 	// Arg3 is the value of the 4th argument passed to this method
 	// invocation.
-	Arg3 func(entry gitdomain.LogEntry) error
+	Arg3 int
+	// Arg4 is the value of the 5th argument passed to this method
+	// invocation.
+	Arg4 func(entry gitdomain.LogEntry) error
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -4623,7 +4610,7 @@ type ClientLogReverseEachFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientLogReverseEachFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3, c.Arg4}
 }
 
 // Results returns an interface slice containing the results of this
@@ -6566,23 +6553,23 @@ func (c ClientResolveRevisionsFuncCall) Results() []interface{} {
 // ClientRevListFunc describes the behavior when the RevList method of the
 // parent MockClient instance is invoked.
 type ClientRevListFunc struct {
-	defaultHook func(string, string, func(commit string) (bool, error)) error
-	hooks       []func(string, string, func(commit string) (bool, error)) error
+	defaultHook func(context.Context, string, string, func(commit string) (bool, error)) error
+	hooks       []func(context.Context, string, string, func(commit string) (bool, error)) error
 	history     []ClientRevListFuncCall
 	mutex       sync.Mutex
 }
 
 // RevList delegates to the next hook function in the queue and stores the
 // parameter and result values of this invocation.
-func (m *MockClient) RevList(v0 string, v1 string, v2 func(commit string) (bool, error)) error {
-	r0 := m.RevListFunc.nextHook()(v0, v1, v2)
-	m.RevListFunc.appendCall(ClientRevListFuncCall{v0, v1, v2, r0})
+func (m *MockClient) RevList(v0 context.Context, v1 string, v2 string, v3 func(commit string) (bool, error)) error {
+	r0 := m.RevListFunc.nextHook()(v0, v1, v2, v3)
+	m.RevListFunc.appendCall(ClientRevListFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
 // SetDefaultHook sets function that is called when the RevList method of
 // the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientRevListFunc) SetDefaultHook(hook func(string, string, func(commit string) (bool, error)) error) {
+func (f *ClientRevListFunc) SetDefaultHook(hook func(context.Context, string, string, func(commit string) (bool, error)) error) {
 	f.defaultHook = hook
 }
 
@@ -6590,7 +6577,7 @@ func (f *ClientRevListFunc) SetDefaultHook(hook func(string, string, func(commit
 // RevList method of the parent MockClient instance invokes the hook at the
 // front of the queue and discards it. After the queue is empty, the default
 // hook function is invoked for any future action.
-func (f *ClientRevListFunc) PushHook(hook func(string, string, func(commit string) (bool, error)) error) {
+func (f *ClientRevListFunc) PushHook(hook func(context.Context, string, string, func(commit string) (bool, error)) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -6599,19 +6586,19 @@ func (f *ClientRevListFunc) PushHook(hook func(string, string, func(commit strin
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
 func (f *ClientRevListFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(string, string, func(commit string) (bool, error)) error {
+	f.SetDefaultHook(func(context.Context, string, string, func(commit string) (bool, error)) error {
 		return r0
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
 func (f *ClientRevListFunc) PushReturn(r0 error) {
-	f.PushHook(func(string, string, func(commit string) (bool, error)) error {
+	f.PushHook(func(context.Context, string, string, func(commit string) (bool, error)) error {
 		return r0
 	})
 }
 
-func (f *ClientRevListFunc) nextHook() func(string, string, func(commit string) (bool, error)) error {
+func (f *ClientRevListFunc) nextHook() func(context.Context, string, string, func(commit string) (bool, error)) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -6646,13 +6633,16 @@ func (f *ClientRevListFunc) History() []ClientRevListFuncCall {
 type ClientRevListFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
-	Arg0 string
+	Arg0 context.Context
 	// Arg1 is the value of the 2nd argument passed to this method
 	// invocation.
 	Arg1 string
 	// Arg2 is the value of the 3rd argument passed to this method
 	// invocation.
-	Arg2 func(commit string) (bool, error)
+	Arg2 string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 func(commit string) (bool, error)
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
 	Result0 error
@@ -6661,116 +6651,12 @@ type ClientRevListFuncCall struct {
 // Args returns an interface slice containing the arguments of this
 // invocation.
 func (c ClientRevListFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c ClientRevListFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
-}
-
-// ClientRevListEachFunc describes the behavior when the RevListEach method
-// of the parent MockClient instance is invoked.
-type ClientRevListEachFunc struct {
-	defaultHook func(io.Reader, func(commit string) (bool, error)) error
-	hooks       []func(io.Reader, func(commit string) (bool, error)) error
-	history     []ClientRevListEachFuncCall
-	mutex       sync.Mutex
-}
-
-// RevListEach delegates to the next hook function in the queue and stores
-// the parameter and result values of this invocation.
-func (m *MockClient) RevListEach(v0 io.Reader, v1 func(commit string) (bool, error)) error {
-	r0 := m.RevListEachFunc.nextHook()(v0, v1)
-	m.RevListEachFunc.appendCall(ClientRevListEachFuncCall{v0, v1, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the RevListEach method
-// of the parent MockClient instance is invoked and the hook queue is empty.
-func (f *ClientRevListEachFunc) SetDefaultHook(hook func(io.Reader, func(commit string) (bool, error)) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// RevListEach method of the parent MockClient instance invokes the hook at
-// the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *ClientRevListEachFunc) PushHook(hook func(io.Reader, func(commit string) (bool, error)) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultHook with a function that returns the
-// given values.
-func (f *ClientRevListEachFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(io.Reader, func(commit string) (bool, error)) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushHook with a function that returns the given values.
-func (f *ClientRevListEachFunc) PushReturn(r0 error) {
-	f.PushHook(func(io.Reader, func(commit string) (bool, error)) error {
-		return r0
-	})
-}
-
-func (f *ClientRevListEachFunc) nextHook() func(io.Reader, func(commit string) (bool, error)) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *ClientRevListEachFunc) appendCall(r0 ClientRevListEachFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of ClientRevListEachFuncCall objects
-// describing the invocations of this function.
-func (f *ClientRevListEachFunc) History() []ClientRevListEachFuncCall {
-	f.mutex.Lock()
-	history := make([]ClientRevListEachFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// ClientRevListEachFuncCall is an object that describes an invocation of
-// method RevListEach on an instance of MockClient.
-type ClientRevListEachFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 io.Reader
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 func(commit string) (bool, error)
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c ClientRevListEachFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c ClientRevListEachFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
