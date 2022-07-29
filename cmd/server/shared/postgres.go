@@ -3,6 +3,7 @@ package shared
 import (
 	"bytes"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"strings"
@@ -14,6 +15,11 @@ var databases = map[string]string{
 }
 
 func maybePostgresProcFile() (string, error) {
+	if AllowSingleDockerCodeInsights {
+		log.Println(AllowSingleDockerCodeInsights)
+		databases["CODEINSIGHTS_"] = "sourcegraph-codeinsights"
+	}
+
 	missingExternalConfig := false
 	for prefix := range databases {
 		if !isPostgresConfigured(prefix) {

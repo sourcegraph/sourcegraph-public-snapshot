@@ -122,6 +122,11 @@ func Main() {
 		SetDefaultEnv(k, v)
 	}
 
+	if v, _ := strconv.ParseBool(os.Getenv("ALLOW_SINGLE_DOCKER_CODE_INSIGHTS")); v {
+		log.Println(AllowSingleDockerCodeInsights)
+		AllowSingleDockerCodeInsights = true
+	}
+
 	// Now we put things in the right place on the FS
 	if err := copySSH(); err != nil {
 		// TODO There are likely several cases where we don't need SSH
@@ -259,7 +264,14 @@ func startProcesses(group *errgroup.Group, name string, procfile []string, optio
 func runMigrator() {
 	log.Println("Starting migrator")
 
-	for _, schemaName := range []string{"frontend", "codeintel"} {
+	schemas := []string{"frontend", "codeintel"}
+	log.Println("checks this")
+	if AllowSingleDockerCodeInsights {
+		log.Println(AllowSingleDockerCodeInsights)
+		schemas = append(schemas, "codeinsights")
+	}
+
+	for _, schemaName := range schemas {
 		e := execer{}
 		e.Command("migrator", "up", "-db", schemaName)
 
