@@ -198,8 +198,6 @@ Now that you have published your changes to your code host you deploy your custo
 
 In this example, you SSH into the server and clone the branch you created earlier: 
 
-
-
   ```bash
   git clone --branch release https://github.com/<you/private-repository>.git 
   ```
