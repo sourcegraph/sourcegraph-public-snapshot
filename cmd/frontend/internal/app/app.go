@@ -83,7 +83,7 @@ func NewHandler(db database.DB, githubAppCloudSetupHandler http.Handler) http.Ha
 
 	r.Get(router.DebugHeaders).Handler(trace.Route(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := r.Header.Clone()
-		// We redact Cookie to prevent XSS attacks.
+		// We redact Cookie to prevent XSS attacks from stealing sessions.
 		if len(h.Values("Cookie")) > 0 {
 			h.Set("Cookie", "REDACTED")
 		}
