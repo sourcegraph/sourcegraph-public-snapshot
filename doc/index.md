@@ -47,5 +47,5 @@ To use Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com
 - [Sourcegraph blog](https://about.sourcegraph.com/blog/)
 - [@sourcegraph on Twitter](https://twitter.com/sourcegraph)
 - [File an issue](https://github.com/sourcegraph/sourcegraph/issues/new?&title=Improve+Sourcegraph+quickstart+guide)
-- [Talk to an engineer](https://info.sourcegraph.com/talk-to-a-developer)
+- [Request a demo](https://about.sourcegraph.com/demo)
 - [Talk to a product specialist](https://about.sourcegraph.com/contact/request-info/)
