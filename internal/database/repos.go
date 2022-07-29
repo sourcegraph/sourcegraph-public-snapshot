@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/regexp"
 	regexpsyntax "github.com/grafana/regexp/syntax"
 	"github.com/keegancsmith/sqlf"
 	"github.com/lib/pq"
@@ -782,6 +783,14 @@ func (s *repoStore) StreamMinimalRepos(ctx context.Context, opt ReposListOptions
 
 // ListMinimalRepos returns a list of repositories names and ids.
 func (s *repoStore) ListMinimalRepos(ctx context.Context, opt ReposListOptions) (results []types.MinimalRepo, err error) {
+	preallocSize := 128
+	if opt.LimitOffset != nil {
+		preallocSize = opt.Limit
+	}
+	if preallocSize > 4096 {
+		preallocSize = 4096
+	}
+	results = make([]types.MinimalRepo, 0, preallocSize)
 	return results, s.StreamMinimalRepos(ctx, opt, func(r *types.MinimalRepo) {
 		results = append(results, *r)
 	})
@@ -1558,19 +1567,32 @@ func parsePattern(tr *trace.Trace, p string, caseSensitive bool) ([]*sqlf.Query,
 }
 
 func parseDescriptionPattern(tr *trace.Trace, p string) ([]*sqlf.Query, error) {
-	// parseIncludePattern won't ever return exact string matches for patterns passed to repo:description(...)
-	// because they are transformed into fuzzy regexps during job creation
-	_, like, pattern, err := parseIncludePattern(p)
+	exact, like, pattern, err := parseIncludePattern(p)
 	if err != nil {
 		return nil, err
 	}
 
 	tr.LogFields(
 		otlog.String("parseDescriptionPattern", p),
+		trace.Strings("exact", exact),
 		trace.Strings("like", like),
 		otlog.String("pattern", pattern))
 
 	var conds []*sqlf.Query
+	if len(exact) > 0 {
+		// NOTE: We add anchors to each element of `exact`, store the resulting contents in `exactWithAnchors`,
+		// then pass `exactWithAnchors` into the query condition, because using `~* ANY (%s)` is more efficient
+		// than `IN (%s)` as it uses the trigram index on `description`.
+		// Equality support for `gin_trgm_ops` was added in Postgres v14, we are currently on v12. If we upgrade our
+		//  min pg version, then this block should be able to be simplified to just pass `exact` directly into
+		// `lower(description) IN (%s)`.
+		// Discussion: https://github.com/sourcegraph/sourcegraph/pull/39117#discussion_r925131158
+		exactWithAnchors := make([]string, len(exact))
+		for i, v := range exact {
+			exactWithAnchors[i] = "^" + regexp.QuoteMeta(v) + "$"
+		}
+		conds = append(conds, sqlf.Sprintf("lower(description) ~* ANY (%s)", pq.Array(exactWithAnchors)))
+	}
 	for _, v := range like {
 		conds = append(conds, sqlf.Sprintf(`lower(description) LIKE %s`, strings.ToLower(v)))
 	}

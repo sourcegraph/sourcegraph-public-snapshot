@@ -648,16 +648,35 @@ func testPermsStore_SetRepoPermissionsUnrestricted(db database.DB) func(*testing
 			assertUnrestricted(ctx, t, s, 1, true)
 			assertUnrestricted(ctx, t, s, 2, true)
 
+			// Set unrestricted on a repo missing from repo_permissions.
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{3}, true); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, true)
+			assertUnrestricted(ctx, t, s, 2, true)
+			assertUnrestricted(ctx, t, s, 3, true)
+
+			// Unset restricted on a present and missing repo from repo_permissions.
+			if err := s.SetRepoPermissionsUnrestricted(ctx, []int32{2, 3, 4}, false); err != nil {
+				t.Fatal(err)
+			}
+			assertUnrestricted(ctx, t, s, 1, true)
+			assertUnrestricted(ctx, t, s, 2, false)
+			assertUnrestricted(ctx, t, s, 3, false)
+			assertUnrestricted(ctx, t, s, 4, false)
+
 			// Set them back to false again, also checking that more than 65535 IDs
 			// can be processed without an error
 			var ids [66000]int32
-			ids[0] = 1
-			ids[65900] = 2
+			for i := range ids {
+				ids[i] = int32(i + 1)
+			}
 			if err := s.SetRepoPermissionsUnrestricted(ctx, ids[:], false); err != nil {
 				t.Fatal(err)
 			}
 			assertUnrestricted(ctx, t, s, 1, false)
-			assertUnrestricted(ctx, t, s, 2, false)
+			assertUnrestricted(ctx, t, s, 500, false)
+			assertUnrestricted(ctx, t, s, 66000, false)
 		})
 	}
 }

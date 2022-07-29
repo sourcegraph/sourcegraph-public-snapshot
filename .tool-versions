@@ -7,7 +7,7 @@ shellcheck 0.7.1
 kubectl 1.21.7
 github-cli 2.0.0
 packer 1.7.10
-trivy 0.20.0
+trivy 0.30.3
 kustomize 4.0.5
 awscli 2.4.7
 python system

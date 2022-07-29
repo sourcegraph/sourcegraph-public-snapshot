@@ -124,6 +124,23 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Authentication provider instances in site config. */
     authProviders: AuthProvider[]
 
+    /** What the minimum length for a password should be. */
+    authMinPasswordLength: number
+
+    authPasswordPolicy?: {
+        /** Whether password policy is enabled or not */
+        enabled?: boolean
+
+        /** Mandatory amount of special characters in password */
+        numberOfSpecialCharacters?: number
+
+        /** Require at least one number in password */
+        requireAtLeastOneNumber?: boolean
+
+        /** Require at least an upper and a lowercase character password */
+        requireUpperandLowerCase?: boolean
+    }
+
     /** Custom branding for the homepage and search icon. */
     branding?: {
         /** The URL of the favicon to be used for your instance */
@@ -145,6 +162,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** The publishable key for the billing service (Stripe). */
     billingPublishableKey?: string
+
+    /** Whether the extension registry and the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
+    enableLegacyExtensions?: boolean
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean

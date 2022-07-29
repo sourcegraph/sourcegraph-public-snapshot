@@ -82,7 +82,7 @@ class UserUsageStatisticsHeader extends React.PureComponent<UserUsageStatisticsH
                     <th>User</th>
                     <th>Page views</th>
                     <th>Search queries</th>
-                    <th>Code intelligence actions</th>
+                    <th>Code navigation actions</th>
                     <th className={styles.dateColumn}>Last active</th>
                     <th className={styles.dateColumn}>Last active in code host or code review</th>
                 </tr>

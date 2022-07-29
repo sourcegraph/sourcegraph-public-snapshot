@@ -4,3 +4,4 @@
 **/*.tsx
 **/*.svg
 node_modules/
+__mocks__/

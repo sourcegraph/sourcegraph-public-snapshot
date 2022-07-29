@@ -6,6 +6,7 @@ import (
 	"strings"
 	"sync"
 
+	"github.com/google/zoekt"
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/backend"
@@ -13,22 +14,24 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/comby"
 	"github.com/sourcegraph/sourcegraph/internal/database"
+	"github.com/sourcegraph/sourcegraph/internal/endpoint"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
-	"github.com/sourcegraph/sourcegraph/internal/search/run"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type Observer struct {
-	Logger log.Logger
-	Db     database.DB
+	Logger   log.Logger
+	Db       database.DB
+	Zoekt    zoekt.Streamer
+	Searcher *endpoint.Map
 
 	// Inputs are used to generate alert messages based on the query.
-	*run.SearchInputs
+	*search.Inputs
 
 	// Update state.
 	HasResults bool
@@ -44,7 +47,7 @@ type Observer struct {
 // raising NoResolvedRepos alerts with suggestions when we know the original
 // query does not contain any repos to search.
 func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) bool {
-	repositoryResolver := searchrepos.NewResolver(o.Db)
+	repositoryResolver := searchrepos.NewResolver(o.Logger, o.Db, o.Searcher, o.Zoekt)
 	resolved, err := repositoryResolver.Resolve(ctx, options)
 	return err == nil && len(resolved.RepoRevs) > 0
 }
@@ -295,11 +298,17 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 	}
 
 	if errors.As(err, &lErr) {
+		title := "Also showing additional results"
+		description := "We returned all the results for your query. We also added results for similar queries that might interest you."
+		if lErr.Type == LuckyAlertPure {
+			title = "No results for original query. Showing related results instead"
+			description = "The original query returned no results. Below are results for similar queries that might interest you."
+		}
 		return &search.Alert{
 			PrometheusType:  "lucky_search_notice",
-			Title:           "Showing additional results for similar queries",
+			Title:           title,
 			Kind:            string(luckySearchQueries),
-			Description:     "We returned all the results for your query. We also added results you might be interested in for similar queries. Below are similar queries we ran.",
+			Description:     description,
 			ProposedQueries: lErr.ProposedQueries,
 		}, nil
 	}
@@ -379,12 +388,20 @@ func (e *errOverRepoLimit) Error() string {
 	return "Too many matching repositories"
 }
 
+type LuckyAlertType int
+
+const (
+	LuckyAlertAdded LuckyAlertType = iota
+	LuckyAlertPure
+)
+
 type ErrLuckyQueries struct {
+	Type            LuckyAlertType
 	ProposedQueries []*search.ProposedQuery
 }
 
 func (e *ErrLuckyQueries) Error() string {
-	return "We were able to find more results by slightly modifying your query"
+	return "Showing results for lucky search"
 }
 
 // isContextError returns true if ctx.Err() is not nil or if err

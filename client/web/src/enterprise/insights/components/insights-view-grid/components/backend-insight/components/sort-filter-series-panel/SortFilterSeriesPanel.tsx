@@ -13,19 +13,14 @@ interface SortFilterSeriesPanelProps {
         limit: string
         sortOptions: SeriesSortOptionsInput
     }
-    seriesCount: number
     onChange: (parameter: DrillDownFiltersFormValues['seriesDisplayOptions']) => void
 }
 
-export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({
-    value,
-    seriesCount,
-    onChange,
-}) => {
-    // It is possible to have N number of series, but we need to have maximum to render in UI
-    // or else it gets too cluttered to view
-    const maxLimit = Math.min(seriesCount, MAX_NUMBER_OF_SERIES)
+// It is possible to have N number of series, but we need to have maximum to render in UI
+// or else it gets too cluttered to view
+const maxLimit = MAX_NUMBER_OF_SERIES
 
+export const SortFilterSeriesPanel: React.FunctionComponent<SortFilterSeriesPanelProps> = ({ value, onChange }) => {
     const handleToggle = (sortOptions: SeriesSortOptionsInput): void => {
         onChange({ ...value, sortOptions })
     }

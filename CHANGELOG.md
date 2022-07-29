@@ -17,6 +17,35 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Added
 
+- Changesets that are not associated with any batch changes can have a retention period set using the site configuration `batchChanges.changesetsRetention`. [#36188](https://github.com/sourcegraph/sourcegraph/pull/36188)
+- Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
+- Code Insights over some repos now get 12 historic data points in addition to a current daily value and future points that align with the defined interval. [#37756](https://github.com/sourcegraph/sourcegraph/pull/37756)
+- Added `ROCKSKIP_MIN_REPO_SIZE_MB` to automatically use [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) for repositories over a certain size. [#38192](https://github.com/sourcegraph/sourcegraph/pull/38192)
+
+### Changed
+
+-
+
+### Fixed
+
+- Fix issue during code insight creation where selecting `"Run your insight over all your repositories"` reset the currently selected distance between data points. [#39261](https://github.com/sourcegraph/sourcegraph/pull/39261)
+- Fix issue where symbols in the side panel did not have file level permission filtering applied correctly. [#39592](https://github.com/sourcegraph/sourcegraph/pull/39592)
+
+### Removed
+
+-
+
+## 3.42.1
+
+### Fixed
+
+- Reverted git version to avoid an issue with commit-graph that could cause repository corruptions [#39537](https://github.com/sourcegraph/sourcegraph/pull/39537)
+- Fixed an issue with symbols where they were not respecting sub-repository permissions [#39592](https://github.com/sourcegraph/sourcegraph/pull/39592)
+
+## 3.42.0
+
+### Added
+
 - Reattached changesets now display an action and factor into the stats when previewing batch changes. [#36359](https://github.com/sourcegraph/sourcegraph/issues/36359)
 - New site configuration option `"permissions.syncUsersMaxConcurrency"` to control the maximum number of user-centric permissions syncing jobs could be spawned concurrently. [#37918](https://github.com/sourcegraph/sourcegraph/issues/37918)
 - Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
@@ -28,6 +57,8 @@ All notable changes to Sourcegraph are documented in this file.
 - Better search-based code navigation for Python using tree-sitter [#38459](https://github.com/sourcegraph/sourcegraph/pull/38459)
 - Gitserver endpoint access logs can now be enabled by adding `"log": { "gitserver.accessLogs": true }` to the site config. [#38798](https://github.com/sourcegraph/sourcegraph/pull/38798)
 - Code Insights supports a new type of insight - compute-powered insight, currently under the experimental feature flag: `codeInsightsCompute` [#37857](https://github.com/sourcegraph/sourcegraph/issues/37857)
+- Cache execution result when mounting files in a batch spec. [sourcegraph/src-cli#795](https://github.com/sourcegraph/src-cli/pull/795)
+- Batch Changes changesets open on archived repositories will now move into a [Read-Only state](https://docs.sourcegraph.com/batch_changes/references/faq#why-is-my-changeset-read-only). [#26820](https://github.com/sourcegraph/sourcegraph/issues/26820)
 
 ### Changed
 
@@ -39,6 +70,7 @@ All notable changes to Sourcegraph are documented in this file.
 - Log sampling is now enabled by default for Sourcegraph components that use the [new internal logging library](https://github.com/sourcegraph/log) - the first 100 identical log entries per second will always be output, but thereafter only every 100th identical message will be output. It can be configured for each service using the environment variables `SRC_LOG_SAMPLING_INITIAL` and `SRC_LOG_SAMPLING_THEREAFTER`, and if `SRC_LOG_SAMPLING_INITIAL` is set to `0` or `-1` the sampling will be disabled entirely. [#38451](https://github.com/sourcegraph/sourcegraph/pull/38451)
 - Deprecated `experimentalFeatures.enableGitServerCommandExecFilter`. Setting this value has no effect on the code any longer and the code to guard against unknown commands is always enabled.
 - Zoekt now runs with GOGC=25 by default, helping to reduce the memory consumption of Sourcegraph. Previously it ran with GOGC=50, but we noticed a regression when we switched to go 1.18 which contained significant changes to the go garbage collector. [#38708](https://github.com/sourcegraph/sourcegraph/issues/38708)
+- Hide `Publish` action when working with imported changesets. [#37882](https://github.com/sourcegraph/sourcegraph/issues/37882)
 
 ### Fixed
 
@@ -54,6 +86,14 @@ All notable changes to Sourcegraph are documented in this file.
 - Fixed regression of mismatched `From` address when render emails. [#38589](https://github.com/sourcegraph/sourcegraph/pull/38589)
 - Fixed a bug with GitHub code hosts using `"repositoryQuery":{"public"}` where it wasn't respecting exclude archived. [#38839](https://github.com/sourcegraph/sourcegraph/pull/38839)
 - Fixed a bug with GitHub code hosts using `repositoryQuery` with custom queries, where it could potentially stall out searching for repos. [#38839](https://github.com/sourcegraph/sourcegraph/pull/38839)
+- Fixed an issue in Code Insights were duplicate points were sometimes being returned when displaying series data. [#38903](https://github.com/sourcegraph/sourcegraph/pull/38903)
+- Fix issue with Bitbucket Projects repository permissions sync regarding granting pending permissions. [#39013](https://github.com/sourcegraph/sourcegraph/pull/39013)
+- Fix issue with Bitbucket Projects repository permissions sync when BindID is username. [#39035](https://github.com/sourcegraph/sourcegraph/pull/39035)
+- Improve keyboard navigation for batch changes server-side execution flow. [#38601](https://github.com/sourcegraph/sourcegraph/pull/38601)
+- Fixed a bug with the WorkspacePreview panel glitching when it's resized. [#36470](https://github.com/sourcegraph/sourcegraph/issues/36470)
+- Handle special characters in search query when creating a batch change from search. [#38772](https://github.com/sourcegraph/sourcegraph/pull/38772)
+- Fixed bug when parsing numeric timezone offset in Gitlab webhook payload. [#38250](https://github.com/sourcegraph/sourcegraph/pull/38250)
+- Fixed setting unrestricted status on a repository when using the explicit permissions API. If the repository had never had explicit permissions before, previously this call would fail. [#39141](https://github.com/sourcegraph/sourcegraph/pull/39141)
 
 ### Removed
 

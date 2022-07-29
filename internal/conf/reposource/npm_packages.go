@@ -178,6 +178,12 @@ type NpmVersionedPackage struct {
 //
 // npm supports many ways of specifying dependencies (https://docs.npmjs.com/cli/v8/commands/npm-install)
 // but we only support exact versions for now.
+//
+// Some packages have names containing multiple '/' characters.
+// (https://sourcegraph.com/search?q=context:global+file:package.json%24+%22name%22:+%22%40%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn/%5D%2B/%5B%5E%5Cn%5D%2B%5C%22&patternType=regexp)
+// So it is possible for indexes to reference packages by that name,
+// but such names are not supported by recent npm versions, so we don't
+// allow those here.
 func ParseNpmVersionedPackage(dependency string) (*NpmVersionedPackage, error) {
 	// We use slightly more restrictive validation compared to the official
 	// rules (https://github.com/npm/validate-npm-package-name#naming-rules).

@@ -9,7 +9,7 @@ import { tap } from 'rxjs/operators'
 import { isErrorLike, ErrorLike } from '@sourcegraph/common'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Link, Button, Icon, H2, Text } from '@sourcegraph/wildcard'
+import { Link, Button, Icon, PageHeader, Container } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../auth'
 import { ListExternalServiceFields, Scalars, ExternalServicesResult } from '../../graphql-operations'
@@ -87,45 +87,55 @@ export const ExternalServicesPage: React.FunctionComponent<React.PropsWithChildr
     return (
         <div className="site-admin-external-services-page">
             <PageTitle title="Manage code hosts" />
-            <div className="d-flex justify-content-between align-items-center mb-3">
-                <H2 className="mb-0">Manage code hosts</H2>
-                {!isManagingOtherUser && (
-                    <Button
-                        className="test-goto-add-external-service-page"
-                        to={`${routingPrefix}/external-services/new`}
-                        variant="primary"
-                        as={Link}
-                    >
-                        <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
-                    </Button>
-                )}
-            </div>
-            <Text className="mt-2">Manage code host connections to sync repositories.</Text>
-            <FilteredConnection<
-                ListExternalServiceFields,
-                Omit<ExternalServiceNodeProps, 'node'>,
-                {},
-                ExternalServicesResult['externalServices']
-            >
-                className="list-group list-group-flush mt-3"
-                noun="code host"
-                pluralNoun="code hosts"
-                queryConnection={queryConnection}
-                nodeComponent={ExternalServiceNode}
-                nodeComponentProps={{
-                    onDidUpdate: onDidUpdateExternalServices,
-                    history,
-                    routingPrefix,
-                    afterDeleteRoute,
-                }}
-                hideSearch={true}
-                noSummaryIfAllNodesVisible={true}
-                cursorPaging={true}
-                updates={updates}
-                history={history}
-                location={location}
-                onUpdate={onUpdate}
+            <PageHeader
+                path={[{ text: 'Manage code hosts' }]}
+                description="Manage code host connections to sync repositories."
+                headingElement="h2"
+                actions={
+                    <>
+                        {!isManagingOtherUser && (
+                            <Button
+                                className="test-goto-add-external-service-page"
+                                to={`${routingPrefix}/external-services/new`}
+                                variant="primary"
+                                as={Link}
+                            >
+                                <Icon aria-hidden={true} svgPath={mdiPlus} /> Add code host
+                            </Button>
+                        )}
+                    </>
+                }
+                className="mb-3"
             />
+
+            <Container className="mb-3">
+                <FilteredConnection<
+                    ListExternalServiceFields,
+                    Omit<ExternalServiceNodeProps, 'node'>,
+                    {},
+                    ExternalServicesResult['externalServices']
+                >
+                    className="mb-0"
+                    listClassName="list-group list-group-flush mb-0"
+                    noun="code host"
+                    pluralNoun="code hosts"
+                    queryConnection={queryConnection}
+                    nodeComponent={ExternalServiceNode}
+                    nodeComponentProps={{
+                        onDidUpdate: onDidUpdateExternalServices,
+                        history,
+                        routingPrefix,
+                        afterDeleteRoute,
+                    }}
+                    hideSearch={true}
+                    noSummaryIfAllNodesVisible={true}
+                    cursorPaging={true}
+                    updates={updates}
+                    history={history}
+                    location={location}
+                    onUpdate={onUpdate}
+                />
+            </Container>
         </div>
     )
 }

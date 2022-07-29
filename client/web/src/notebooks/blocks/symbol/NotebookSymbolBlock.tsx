@@ -221,7 +221,6 @@ export const NotebookSymbolBlock: React.FunctionComponent<
                             blobLines={symbolOutput.highlightedLines}
                             highlightRanges={[symbolOutput.highlightSymbolRange]}
                             {...symbolOutput.highlightLineRange}
-                            isFirst={false}
                             fetchHighlightedFileRangeLines={() => of([])}
                             hoverifier={hoverifier}
                             viewerUpdates={viewerUpdates}

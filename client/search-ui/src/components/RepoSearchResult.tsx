@@ -14,6 +14,8 @@ import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
 
+const REPO_DESCRIPTION_CHAR_LIMIT = 500
+
 export interface RepoSearchResultProps {
     result: RepositoryMatch
     onSelect: () => void
@@ -104,7 +106,11 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         <div className={styles.dividerVertical} />
                         <div>
                             <small>
-                                <em>{result.description}</em>
+                                <em>
+                                    {result.description.length > REPO_DESCRIPTION_CHAR_LIMIT
+                                        ? result.description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
+                                        : result.description}
+                                </em>
                             </small>
                         </div>
                     </>

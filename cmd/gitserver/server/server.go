@@ -117,11 +117,93 @@ func runCommand(ctx context.Context, cmd *exec.Cmd) (exitCode int, err error) {
 	}()
 
 	err = cmd.Run()
-	exitStatus := -10810
+	exitStatus := -10810         // sentinel value to indicate not set
 	if cmd.ProcessState != nil { // is nil if process failed to start
 		exitStatus = cmd.ProcessState.Sys().(syscall.WaitStatus).ExitStatus()
 	}
 	return exitStatus, err
+}
+
+// runCommandGraceful runs the command and returns the exit status. If the
+// supplied context is cancelled we attempt to send SIGINT to the command to
+// allow it to gracefully shutdown. All clients of this function should pass in a
+// command *without* a context.
+func runCommandGraceful(ctx context.Context, logger log.Logger, cmd *exec.Cmd) (exitCode int, err error) {
+	span, _ := ot.StartSpanFromContext(ctx, "runCommandGraceful")
+	span.SetTag("path", cmd.Path)
+	span.SetTag("args", cmd.Args)
+	span.SetTag("dir", cmd.Dir)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.SetTag("err", err.Error())
+			span.SetTag("exitCode", exitCode)
+		}
+		span.Finish()
+	}()
+
+	exitCode = -10810 // sentinel value to indicate not set
+	err = cmd.Start()
+	if err != nil {
+		return exitCode, err
+	}
+
+	done := make(chan struct{})
+	go func() {
+		defer close(done)
+		err = cmd.Wait()
+		if err != nil {
+			logger.Error("running command", log.Error(err))
+		}
+	}()
+
+	// Wait for command to exit or context to be done
+	select {
+	case <-ctx.Done():
+		logger.Debug("context cancelled, sending SIGINT")
+		// Attempt to send SIGINT
+		if err := cmd.Process.Signal(syscall.SIGINT); err != nil {
+			logger.Warn("Sending SIGINT to command", log.Error(err))
+			if err := cmd.Process.Kill(); err != nil {
+				logger.Warn("killing process", log.Error(err))
+			}
+			return exitCode, err
+		}
+		// Now, continue waiting for command for up to two seconds before killing it
+		timer := time.NewTimer(2 * time.Second)
+		select {
+		case <-done:
+			logger.Debug("process exited after SIGINT sent")
+			timer.Stop()
+			if err == nil {
+				exitCode = 0
+			}
+		case <-timer.C:
+			logger.Debug("timed out, killing process")
+			if err := cmd.Process.Kill(); err != nil {
+				logger.Warn("killing process", log.Error(err))
+			}
+			logger.Debug("process killed, waiting for done")
+			// Wait again to ensure we can access cmd.ProcessState below
+			<-done
+		}
+
+		if exitError, ok := err.(*exec.ExitError); ok {
+			exitCode = exitError.ExitCode()
+		}
+		err = ctx.Err()
+		return exitCode, err
+	case <-done:
+		// Happy path, command exits
+	}
+
+	if exitError, ok := err.(*exec.ExitError); ok {
+		exitCode = exitError.ExitCode()
+	}
+	if err == nil {
+		exitCode = 0
+	}
+	return exitCode, err
 }
 
 // cloneJob abstracts away a repo and necessary metadata to clone it. In the future it may be
@@ -380,7 +462,6 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("/list", trace.WithRouteName("list", s.handleList))
 	mux.HandleFunc("/list-gitolite", trace.WithRouteName("list-gitolite", s.handleListGitolite))
 	mux.HandleFunc("/is-repo-cloneable", trace.WithRouteName("is-repo-cloneable", s.handleIsRepoCloneable))
-	mux.HandleFunc("/is-repo-cloned", trace.WithRouteName("is-repo-cloned", s.handleIsRepoCloned))
 	mux.HandleFunc("/repos", trace.WithRouteName("repos", s.handleRepoInfo))
 	mux.HandleFunc("/repos-stats", trace.WithRouteName("repos-stats", s.handleReposStats))
 	mux.HandleFunc("/repo-clone-progress", trace.WithRouteName("repo-clone-progress", s.handleRepoCloneProgress))
@@ -531,9 +612,7 @@ func (s *Server) cloneJobConsumer(ctx context.Context, jobs <-chan *cloneJob) {
 				s.Logger.Error("failed to clone repo", log.String("repo", string(job.repo)), log.Error(err))
 			}
 			// Use a different context in case we failed because the original context failed.
-			ctx2, cancel := s.serverContext()
-			defer cancel()
-			s.setLastErrorNonFatal(ctx2, job.repo, err)
+			s.setLastErrorNonFatal(s.ctx, job.repo, err)
 		}(j)
 	}
 }
@@ -861,19 +940,6 @@ func (s *Server) handleIsRepoCloneable(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (s *Server) handleIsRepoCloned(w http.ResponseWriter, r *http.Request) {
-	var req protocol.IsRepoClonedRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	if repoCloned(s.dir(req.Repo)) {
-		w.WriteHeader(http.StatusOK)
-	} else {
-		w.WriteHeader(http.StatusNotFound)
-	}
-}
-
 // handleRepoUpdate is a synchronous (waits for update to complete or
 // time out) method so it can yield errors. Updates are not
 // unconditional; we debounce them based on the provided
@@ -917,7 +983,7 @@ func (s *Server) handleRepoUpdate(w http.ResponseWriter, r *http.Request) {
 		var statusErr, updateErr error
 
 		if debounce(req.Repo, req.Since) {
-			updateErr = s.doRepoUpdate(ctx, req.Repo)
+			updateErr = s.doRepoUpdate(ctx, req.Repo, "")
 		}
 
 		// attempts to acquire these values are not contingent on the success of
@@ -999,7 +1065,7 @@ func (s *Server) handleArchive(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	if format == "zip" {
+	if format == string(gitserver.ArchiveFormatZip) {
 		// Compression level of 0 (no compression) seems to perform the
 		// best overall on fast network links, but this has not been tuned
 		// thoroughly.
@@ -1161,6 +1227,7 @@ func (s *Server) search(ctx context.Context, args *protocol.SearchRequest, match
 
 		searcher := &search.CommitSearcher{
 			Logger:               s.Logger,
+			RepoName:             args.Repo,
 			RepoDir:              dir.Path(),
 			Revisions:            args.Revisions,
 			Query:                mt,
@@ -1921,9 +1988,7 @@ func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOp
 	// We always want to store whether there was an error cloning the repo
 	defer func() {
 		// Use a different context in case we failed because the original context failed.
-		ctx2, cancel := s.serverContext()
-		defer cancel()
-		s.setLastErrorNonFatal(ctx2, repo, err)
+		s.setLastErrorNonFatal(s.ctx, repo, err)
 	}()
 
 	dir := s.dir(repo)
@@ -2082,7 +2147,7 @@ func (s *Server) doClone(ctx context.Context, repo api.RepoName, dir GitDir, syn
 
 	go readCloneProgress(newURLRedactor(remoteURL), lock, pr, repo)
 
-	if output, err := runWithRemoteOpts(ctx, cmd, pw); err != nil {
+	if output, err := runWith(ctx, cmd, true, pw); err != nil {
 		return errors.Wrapf(err, "clone failed. Output: %s", string(output))
 	}
 
@@ -2342,7 +2407,7 @@ func honeySampleRate(cmd string, internal bool) uint {
 
 var headBranchPattern = lazyregexp.New(`HEAD branch: (.+?)\n`)
 
-func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
+func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName, revspec string) error {
 	span, ctx := ot.StartSpanFromContext(ctx, "Server.doRepoUpdate")
 	span.SetTag("repo", repo)
 	defer span.Finish()
@@ -2380,13 +2445,11 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 			l.once = new(sync.Once) // Make new requests wait for next update.
 			s.repoUpdateLocksMu.Unlock()
 
-			err = s.doBackgroundRepoUpdate(repo)
+			err = s.doBackgroundRepoUpdate(repo, revspec)
 			if err != nil {
 				s.Logger.Error("performing background repo update", log.Error(err))
 			}
-			ctx, cancel := s.serverContext()
-			defer cancel()
-			s.setLastErrorNonFatal(ctx, repo, err)
+			s.setLastErrorNonFatal(s.ctx, repo, err)
 		})
 	}()
 
@@ -2401,7 +2464,7 @@ func (s *Server) doRepoUpdate(ctx context.Context, repo api.RepoName) error {
 
 var doBackgroundRepoUpdateMock func(api.RepoName) error
 
-func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
+func (s *Server) doBackgroundRepoUpdate(repo api.RepoName, revspec string) error {
 	if doBackgroundRepoUpdateMock != nil {
 		return doBackgroundRepoUpdateMock(repo)
 	}
@@ -2445,7 +2508,7 @@ func (s *Server) doBackgroundRepoUpdate(repo api.RepoName) error {
 	// when the cleanup happens, just that it does.
 	defer s.cleanTmpFiles(dir)
 
-	err = syncer.Fetch(ctx, remoteURL, dir)
+	err = syncer.Fetch(ctx, remoteURL, dir, revspec)
 	if err != nil {
 		return errors.Wrap(err, "failed to fetch")
 	}
@@ -2547,7 +2610,7 @@ func setHEAD(ctx context.Context, dir GitDir, syncer VCSSyncer, repo api.RepoNam
 		return errors.Wrap(err, "get remote show command")
 	}
 	dir.Set(cmd)
-	output, err := runWithRemoteOpts(ctx, cmd, nil)
+	output, err := runWith(ctx, cmd, true, nil)
 	if err != nil {
 		logger.Error("Failed to fetch remote info", log.String("repo", string(repo)), log.Error(err), log.String("output", string(output)))
 		return errors.Wrap(err, "failed to fetch remote info")
@@ -2727,7 +2790,7 @@ func (s *Server) ensureRevision(ctx context.Context, repo api.RepoName, rev stri
 		return false
 	}
 	// Revision not found, update before returning.
-	err := s.doRepoUpdate(ctx, repo)
+	err := s.doRepoUpdate(ctx, repo, rev)
 	if err != nil {
 		s.Logger.Warn("failed to perform background repo update", log.Error(err), log.String("repo", string(repo)), log.String("rev", rev))
 	}

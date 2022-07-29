@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"testing"
@@ -191,6 +192,51 @@ func TestUpsertLockfileGraph(t *testing.T) {
 	packageD := shared.TestPackageDependencyLiteral("D", "4", "5", "pkg-D", "7")
 	packageE := shared.TestPackageDependencyLiteral("E", "5", "6", "pkg-E", "8")
 	packageF := shared.TestPackageDependencyLiteral("F", "6", "7", "pkg-F", "9")
+
+	t.Run("timestamps", func(t *testing.T) {
+		now := timeutil.Now()
+
+		deps := []shared.PackageDependency{packageA}
+		graph := shared.TestDependencyGraphLiteral([]shared.PackageDependency{packageA}, false, [][]shared.PackageDependency{})
+		commit := "cafebabe"
+
+		if err := store.upsertLockfileGraphAt(ctx, "foo", commit, "lock.file", deps, graph, now); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		index, err := store.GetLockfileIndex(ctx, GetLockfileIndexOpts{RepoName: "foo", Commit: commit, Lockfile: "lock.file"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !index.CreatedAt.Equal(now) {
+			t.Fatalf("createdAt not equal to timestamp passed in. want=%s, have=%s", now, index.CreatedAt)
+		}
+
+		if !index.UpdatedAt.Equal(now) {
+			t.Fatalf("updatedAt not equal to timestamp passed in. want=%s, have=%s", now, index.UpdatedAt)
+		}
+
+		// upsert again, with different timestamp, to see that `updated_at` is updated
+		now2 := now.Add(5 * time.Hour)
+
+		if err := store.upsertLockfileGraphAt(ctx, "foo", commit, "lock.file", deps, graph, now2); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		index, err = store.GetLockfileIndex(ctx, GetLockfileIndexOpts{RepoName: "foo", Commit: commit, Lockfile: "lock.file"})
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if !index.CreatedAt.Equal(now) {
+			t.Fatalf("createdAt not equal to timestamp passed in. want=%s, have=%s", now, index.CreatedAt)
+		}
+
+		if !index.UpdatedAt.Equal(now2) {
+			t.Fatalf("updatedAt not equal to timestamp passed in. want=%s, have=%s", now2, index.UpdatedAt)
+		}
+	})
 
 	t.Run("with graph", func(t *testing.T) {
 		deps := []shared.PackageDependency{packageA, packageB, packageC, packageD, packageE, packageF}
@@ -1125,11 +1171,12 @@ func TestLockfileDependents(t *testing.T) {
 	}
 }
 
-func TestListAndCountLockfileIndexes(t *testing.T) {
+func TestListAndGetLockfileIndexes(t *testing.T) {
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	store := New(db, &observation.TestContext)
+	now := timeutil.Now()
 
 	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
 		t.Fatalf(err.Error())
@@ -1172,16 +1219,16 @@ func TestListAndCountLockfileIndexes(t *testing.T) {
 			lockfile: "lock2.file",
 		},
 	} {
-		if err := store.UpsertLockfileGraph(ctx, tt.repoName, tt.commit, tt.lockfile, tt.deps, tt.graph); err != nil {
+		if err := store.upsertLockfileGraphAt(ctx, tt.repoName, tt.commit, tt.lockfile, tt.deps, tt.graph, now); err != nil {
 			t.Fatalf("error: %s", err)
 		}
 	}
 
 	// Query
 	lockfileIndexes := []shared.LockfileIndex{
-		{ID: 1, RepositoryID: 1, Commit: "cafebabe", LockfileReferenceIDs: []int{1}, Lockfile: "lock.file", Fidelity: "graph"},
-		{ID: 2, RepositoryID: 1, Commit: "d34db33f", LockfileReferenceIDs: []int{3}, Lockfile: "lock.file", Fidelity: "graph"},
-		{ID: 3, RepositoryID: 2, Commit: "d34db33f", LockfileReferenceIDs: []int{5}, Lockfile: "lock2.file", Fidelity: "flat"},
+		{ID: 1, RepositoryID: 1, Commit: "cafebabe", LockfileReferenceIDs: []int{1}, Lockfile: "lock.file", Fidelity: "graph", CreatedAt: now, UpdatedAt: now},
+		{ID: 2, RepositoryID: 1, Commit: "d34db33f", LockfileReferenceIDs: []int{3}, Lockfile: "lock.file", Fidelity: "graph", CreatedAt: now, UpdatedAt: now},
+		{ID: 3, RepositoryID: 2, Commit: "d34db33f", LockfileReferenceIDs: []int{5}, Lockfile: "lock2.file", Fidelity: "flat", CreatedAt: now, UpdatedAt: now},
 	}
 
 	for i, tt := range []struct {
@@ -1253,4 +1300,156 @@ func TestListAndCountLockfileIndexes(t *testing.T) {
 			t.Errorf("[%d] unexpected lockfiles count (-want +got):\n%s", i, diff)
 		}
 	}
+
+	for i, tt := range []struct {
+		opts     GetLockfileIndexOpts
+		expected shared.LockfileIndex
+	}{
+		{
+			opts:     GetLockfileIndexOpts{ID: lockfileIndexes[0].ID},
+			expected: lockfileIndexes[0],
+		},
+		{
+			opts:     GetLockfileIndexOpts{ID: lockfileIndexes[1].ID},
+			expected: lockfileIndexes[1],
+		},
+		{
+			// two indexes for this repo, but first one is returned
+			opts:     GetLockfileIndexOpts{RepoName: "foo"},
+			expected: lockfileIndexes[0],
+		},
+		{
+			opts:     GetLockfileIndexOpts{RepoName: "foo", Commit: "d34db33f"},
+			expected: lockfileIndexes[1],
+		},
+		{
+			opts:     GetLockfileIndexOpts{Lockfile: "lock2.file"},
+			expected: lockfileIndexes[2],
+		},
+	} {
+		lockfile, err := store.GetLockfileIndex(ctx, tt.opts)
+		if err != nil {
+			t.Fatalf("error: %s", err)
+		}
+
+		if diff := cmp.Diff(tt.expected, lockfile); diff != "" {
+			t.Errorf("[%d] unexpected lockfiles (-want +got):\n%s", i, diff)
+		}
+	}
+
+	_, err := store.GetLockfileIndex(ctx, GetLockfileIndexOpts{ID: 1999})
+	if err != ErrLockfileIndexNotFound {
+		t.Fatalf("unexpected error: %s", err)
+	}
+}
+
+func TestDeleteLockfileIndexByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	t.Run("with dependencies", func(t *testing.T) {
+		packageA := shared.TestPackageDependencyLiteral("A", "1", "2", "pkg-A", "4")
+		packageB := shared.TestPackageDependencyLiteral("B", "2", "3", "pkg-B", "5")
+		packageC := shared.TestPackageDependencyLiteral("C", "3", "4", "pkg-C", "6")
+
+		deps := []shared.PackageDependency{packageA, packageB, packageC}
+		graph := shared.TestDependencyGraphLiteral(
+			[]shared.PackageDependency{packageA},
+			false,
+			[][]shared.PackageDependency{{packageA, packageB}, {packageA, packageC}},
+		)
+		commit := "cafebabe"
+
+		// Insert and check everything's been inserted
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, graph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+		index, err := store.GetLockfileIndex(ctx, GetLockfileIndexOpts{RepoName: "foo", Commit: commit, Lockfile: "lock.file"})
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		names, err := queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if len(names) != 3 {
+			t.Fatalf("references not inserted")
+		}
+
+		// Delete
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if err != nil {
+			t.Fatalf("failed to delete: %s", err)
+		}
+
+		// Query again to make sure it's deleted
+		_, err = store.GetLockfileIndex(ctx, GetLockfileIndexOpts{ID: index.ID})
+		if err != ErrLockfileIndexNotFound {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		// Query references again to make sure they're deleted
+		names, err = queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if len(names) != 0 {
+			t.Fatalf("references not inserted")
+		}
+
+		// Delete again
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if !errors.Is(err, ErrLockfileIndexNotFound) {
+			t.Fatalf("wrong error: %s (%T)", err, err)
+		}
+	})
+
+	t.Run("without any dependencies", func(t *testing.T) {
+		deps := []shared.PackageDependency{}
+		commit := "d34db30f"
+
+		// Insert and check everything's been inserted
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, nil); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+		index, err := store.GetLockfileIndex(ctx, GetLockfileIndexOpts{RepoName: "foo", Commit: commit, Lockfile: "lock.file"})
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		names, err := queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if len(names) != 0 {
+			t.Fatalf("references not inserted")
+		}
+
+		// Delete
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if err != nil {
+			t.Fatalf("failed to delete: %s", err)
+		}
+
+		// Query again to make sure it's deleted
+		_, err = store.GetLockfileIndex(ctx, GetLockfileIndexOpts{ID: index.ID})
+		if err != ErrLockfileIndexNotFound {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		// Delete again
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if !errors.Is(err, ErrLockfileIndexNotFound) {
+			t.Fatalf("wrong error: %s", err)
+		}
+	})
 }

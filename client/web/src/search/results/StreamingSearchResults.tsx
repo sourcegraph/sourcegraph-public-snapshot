@@ -11,6 +11,7 @@ import {
     StreamingProgress,
     StreamingSearchResultsList,
     FetchFileParameters,
+    SidebarButtonStrip,
 } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
@@ -20,7 +21,7 @@ import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import { sanitizeQueryForTelemetry, updateFilters } from '@sourcegraph/shared/src/search/query/transformer'
 import { LATEST_VERSION, StreamSearchOptions } from '@sourcegraph/shared/src/search/stream'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
-import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
+import { useTemporarySetting } from '@sourcegraph/shared/src/settings/temporary/useTemporarySetting'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
@@ -40,7 +41,7 @@ import { GettingStartedTour } from '../../tour/GettingStartedTour'
 import { SearchUserNeedsCodeHost } from '../../user/settings/codeHosts/OrgUserNeedsCodeHost'
 import { submitSearch } from '../helpers'
 import { DidYouMean } from '../suggestion/DidYouMean'
-import { LuckySearch } from '../suggestion/LuckySearch'
+import { LuckySearch, luckySearchEvent } from '../suggestion/LuckySearch'
 
 import { SearchAlert } from './SearchAlert'
 import { useCachedSearchResults } from './SearchResultsCacheProvider'
@@ -85,7 +86,6 @@ export const StreamingSearchResults: React.FunctionComponent<
     const caseSensitive = useNavbarQueryState(state => state.searchCaseSensitivity)
     const patternType = useNavbarQueryState(state => state.searchPatternType)
     const query = useNavbarQueryState(state => state.searchQueryFromURL)
-    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
 
     // Log view event on first load
     useEffect(
@@ -167,6 +167,19 @@ export const StreamingSearchResults: React.FunctionComponent<
         }
     }, [results, telemetryService])
 
+    // Log lucky search events
+    useEffect(() => {
+        if (results?.alert?.kind === 'lucky-search-queries' && results?.alert?.title && results.alert.proposedQueries) {
+            const events = luckySearchEvent(
+                results.alert.title,
+                results.alert.proposedQueries.map(entry => entry.description || '')
+            )
+            for (const event of events) {
+                telemetryService.log(event)
+            }
+        }
+    }, [results, telemetryService])
+
     useNotepad(
         useMemo(
             () =>
@@ -214,18 +227,16 @@ export const StreamingSearchResults: React.FunctionComponent<
         },
         [query, telemetryService, patternType, caseSensitive, props]
     )
-    const [showSidebar, setShowSidebar] = useState(false)
+    const [showMobileSidebar, setShowMobileSidebar] = useState(false)
+    const [selectedTab] = useTemporarySetting('search.sidebar.selectedTab', 'filters')
 
     const resultsFound = useMemo<boolean>(() => (results ? results.results.length > 0 : false), [results])
 
     return (
-        <div
-            className={classNames(
-                styles.container,
-                coreWorkflowImprovementsEnabled && styles.containerWithImprovements
-            )}
-        >
+        <div className={classNames(styles.container, selectedTab !== 'filters' && styles.containerWithSidebarHidden)}>
             <PageTitle key="page-title" title={query} />
+
+            <SidebarButtonStrip className={styles.sidebarButtonStrip} />
 
             <SearchSidebar
                 activation={props.activation}
@@ -234,7 +245,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                 settingsCascade={props.settingsCascade}
                 telemetryService={props.telemetryService}
                 selectedSearchContextSpec={props.selectedSearchContextSpec}
-                className={classNames(styles.sidebar, showSidebar && styles.sidebarShow)}
+                className={classNames(styles.sidebar, showMobileSidebar && styles.sidebarShowMobile)}
                 filters={results?.filters}
                 getRevisions={getRevisions}
                 prefixContent={
@@ -260,7 +271,7 @@ export const StreamingSearchResults: React.FunctionComponent<
                 allExpanded={allExpanded}
                 onExpandAllResultsToggle={onExpandAllResultsToggle}
                 onSaveQueryClick={onSaveQueryClick}
-                onShowFiltersChanged={show => setShowSidebar(show)}
+                onShowFiltersChanged={show => setShowMobileSidebar(show)}
                 stats={
                     <StreamingProgress
                         progress={results?.progress || { durationMs: 0, matchCount: 0, skipped: [] }}

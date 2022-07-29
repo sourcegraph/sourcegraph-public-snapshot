@@ -19,7 +19,7 @@ import { HorizontalSelect } from '../components/HorizontalSelect'
 import { TimeSavedCalculatorGroup } from '../components/TimeSavedCalculatorGroup'
 import { ToggleSelect } from '../components/ToggleSelect'
 import { ValueLegendList, ValueLegendListProps } from '../components/ValueLegendList'
-import { StandardDatum, buildStandardDatum } from '../utils'
+import { StandardDatum } from '../utils'
 
 import { CODEINTEL_STATISTICS } from './queries'
 
@@ -62,11 +62,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 name:
                     eventAggregation === 'count' ? '"Find references" clicked' : 'Users who clicked "Find references"',
                 color: 'var(--cyan)',
-                data: buildStandardDatum(
-                    referenceClicks.nodes.map(node => ({
+                data: referenceClicks.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -79,11 +79,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         ? '"Go to definition" clicked'
                         : 'Users who clicked "Go to definition"',
                 color: 'var(--orange)',
-                data: buildStandardDatum(
-                    definitionClicks.nodes.map(node => ({
+                data: definitionClicks.nodes.map(
+                    node => ({
                         date: new Date(node.date),
                         value: node[eventAggregation],
-                    })),
+                    }),
                     dateRange
                 ),
                 getXValue: ({ date }) => date,
@@ -105,15 +105,16 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                 value: Math.floor((crossRepoEvents.summary.totalCount * totalEvents) / totalHoverEvents || 0),
                 description: 'Cross repo events',
                 position: 'right',
-                color: 'var(--black)',
+                color: 'var(--body-color)',
             },
         ]
 
         const calculatorProps = {
-            label: 'Intel Events',
+            page: 'CodeIntel',
+            label: 'Intel events',
             color: 'var(--purple)',
             description:
-                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this caculation down into use cases and types of code intel to be able to independantly value important product capabilities.',
+                'Code navigation helps users quickly understand a codebase, identify dependencies, reuse code, and perform more efficient and accurate code reviews.<br/><br/>We’ve broken this calculation down into use cases and types of code intel to be able to independently value product capabilities.',
             value: totalEvents,
             items: [
                 {
@@ -121,7 +122,7 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     minPerItem: 0.5,
                     value: inAppEvents.summary.totalCount,
                     description:
-                        'In app code navigation supports developers finding the impact of a change by listing references and finding definitions to reference.',
+                        'In app code navigation supports developers finding the impact of a change or code to reuse by listing references and finding definitions.',
                 },
                 {
                     label: 'Code intel on code hosts <br/> via the browser extension',
@@ -162,8 +163,6 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
     }
 
     const repos = data?.site.analytics.repos
-    const browserExtensionInstalls =
-        data?.site.analytics.codeIntel.browserExtensionInstalls.summary.totalRegisteredUsers || 0
 
     return (
         <>
@@ -174,7 +173,10 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     <HorizontalSelect<AnalyticsDateRange>
                         value={dateRange}
                         label="Date&nbsp;range"
-                        onChange={setDateRange}
+                        onChange={value => {
+                            setDateRange(value)
+                            eventLogger.log(`AdminAnalyticsCodeIntelDateRange${value}Selected`)
+                        }}
                         items={[
                             { value: AnalyticsDateRange.LAST_WEEK, label: 'Last week' },
                             { value: AnalyticsDateRange.LAST_MONTH, label: 'Last month' },
@@ -196,7 +198,12 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                         <div className="d-flex justify-content-end align-items-stretch mb-2">
                             <ToggleSelect<typeof eventAggregation>
                                 selected={eventAggregation}
-                                onChange={setEventAggregation}
+                                onChange={value => {
+                                    setEventAggregation(value)
+                                    eventLogger.log(
+                                        `AdminAnalyticsCodeIntelAgg${value === 'count' ? 'Totals' : 'Uniques'}Clicked`
+                                    )
+                                }}
                                 items={[
                                     {
                                         tooltip: 'total # of actions triggered',
@@ -220,11 +227,11 @@ export const AnalyticsCodeIntelPage: React.FunctionComponent<RouteComponentProps
                     <div className={classNames(styles.border, 'mb-3')} />
                     <ul className="mb-3 pl-3">
                         <Text as="li">
-                            <b>{browserExtensionInstalls}</b> {browserExtensionInstalls === 1 ? 'user' : 'users'} have
-                            installed the browser extension.{' '}
+                            Promote installation of the{' '}
                             <AnchorLink to="/help/integration/browser_extension" target="_blank">
-                                Promote installation of the browser extesion to increase value.
-                            </AnchorLink>
+                                browser extension
+                            </AnchorLink>{' '}
+                            to add code intelligence to your code hosts.
                         </Text>
                         {repos && (
                             <Text as="li">

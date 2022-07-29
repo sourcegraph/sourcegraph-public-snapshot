@@ -1,34 +1,35 @@
 import * as React from 'react'
 
+import {
+    mdiCodeArray,
+    mdiCodeBraces,
+    mdiCodeNotEqual,
+    mdiCodeString,
+    mdiCube,
+    mdiCubeOutline,
+    mdiDrawingBox,
+    mdiFileDocument,
+    mdiFunction,
+    mdiKey,
+    mdiLink,
+    mdiMatrix,
+    mdiNull,
+    mdiNumeric,
+    mdiPackage,
+    mdiPiBox,
+    mdiPillar,
+    mdiPound,
+    mdiShape,
+    mdiSitemap,
+    mdiTextBox,
+    mdiTimetable,
+    mdiWeb,
+    mdiWrench,
+} from '@mdi/js'
 import classNames from 'classnames'
 import { upperFirst } from 'lodash'
-import { MdiReactIconComponentType } from 'mdi-react'
-import CodeArrayIcon from 'mdi-react/CodeArrayIcon'
-import CodeBracesIcon from 'mdi-react/CodeBracesIcon'
-import CodeNotEqualIcon from 'mdi-react/CodeNotEqualIcon'
-import CodeStringIcon from 'mdi-react/CodeStringIcon'
-import CubeIcon from 'mdi-react/CubeIcon'
-import CubeOutlineIcon from 'mdi-react/CubeOutlineIcon'
-import DrawingBoxIcon from 'mdi-react/DrawingBoxIcon'
-import FileDocumentIcon from 'mdi-react/FileDocumentIcon'
-import FunctionIcon from 'mdi-react/FunctionIcon'
-import KeyIcon from 'mdi-react/KeyIcon'
-import LinkIcon from 'mdi-react/LinkIcon'
-import MatrixIcon from 'mdi-react/MatrixIcon'
-import NullIcon from 'mdi-react/NullIcon'
-import NumericIcon from 'mdi-react/NumericIcon'
-import PackageIcon from 'mdi-react/PackageIcon'
-import PiBoxIcon from 'mdi-react/PiBoxIcon'
-import PillarIcon from 'mdi-react/PillarIcon'
-import PoundIcon from 'mdi-react/PoundIcon'
-import ShapeIcon from 'mdi-react/ShapeIcon'
-import SitemapIcon from 'mdi-react/SitemapIcon'
-import TextBoxIcon from 'mdi-react/TextBoxIcon'
-import TimetableIcon from 'mdi-react/TimetableIcon'
-import WebIcon from 'mdi-react/WebIcon'
-import WrenchIcon from 'mdi-react/WrenchIcon'
 
-import { Icon } from '@sourcegraph/wildcard'
+import { Icon, Tooltip } from '@sourcegraph/wildcard'
 
 import { SymbolKind } from '../graphql-operations'
 
@@ -36,63 +37,63 @@ import styles from './SymbolIcon.module.scss'
 /**
  * Returns the icon component for a given symbol kind
  */
-const getSymbolIconComponent = (kind: SymbolKind): MdiReactIconComponentType => {
+const getSymbolIconComponent = (kind: SymbolKind): string => {
     switch (kind) {
         case 'FILE':
-            return FileDocumentIcon
+            return mdiFileDocument
         case 'MODULE':
-            return CodeBracesIcon
+            return mdiCodeBraces
         case 'NAMESPACE':
-            return WebIcon
+            return mdiWeb
         case 'PACKAGE':
-            return PackageIcon
+            return mdiPackage
         case 'CLASS':
-            return SitemapIcon
+            return mdiSitemap
         case 'METHOD':
-            return CubeOutlineIcon
+            return mdiCubeOutline
         case 'PROPERTY':
-            return WrenchIcon
+            return mdiWrench
         case 'FIELD':
-            return TextBoxIcon
+            return mdiTextBox
         case 'CONSTRUCTOR':
-            return CubeOutlineIcon
+            return mdiCubeOutline
         case 'ENUM':
-            return NumericIcon
+            return mdiNumeric
         case 'INTERFACE':
-            return LinkIcon
+            return mdiLink
         case 'FUNCTION':
-            return FunctionIcon
+            return mdiFunction
         case 'VARIABLE':
-            return CubeIcon
+            return mdiCube
         case 'CONSTANT':
-            return PiBoxIcon
+            return mdiPiBox
         case 'STRING':
-            return CodeStringIcon
+            return mdiCodeString
         case 'NUMBER':
-            return PoundIcon
+            return mdiPound
         case 'BOOLEAN':
-            return MatrixIcon
+            return mdiMatrix
         case 'ARRAY':
-            return CodeArrayIcon
+            return mdiCodeArray
         case 'OBJECT':
-            return DrawingBoxIcon
+            return mdiDrawingBox
         case 'KEY':
-            return KeyIcon
+            return mdiKey
         case 'NULL':
-            return NullIcon
+            return mdiNull
         case 'ENUMMEMBER':
-            return NumericIcon
+            return mdiNumeric
         case 'STRUCT':
-            return PillarIcon
+            return mdiPillar
         case 'EVENT':
-            return TimetableIcon
+            return mdiTimetable
         case 'OPERATOR':
-            return CodeNotEqualIcon
+            return mdiCodeNotEqual
         case 'TYPEPARAMETER':
-            return CubeIcon
+            return mdiCube
         case 'UNKNOWN':
         default:
-            return ShapeIcon
+            return mdiShape
     }
 }
 
@@ -111,10 +112,13 @@ export const SymbolIcon: React.FunctionComponent<React.PropsWithChildren<SymbolI
     kind,
     className = '',
 }) => (
-    <Icon
-        className={classNames(getSymbolIconClassName(kind), className)}
-        data-tooltip={kind.toLowerCase()}
-        as={getSymbolIconComponent(kind)}
-        aria-label={`Symbol kind ${kind.toLowerCase()}`}
-    />
+    <Tooltip content={kind.toLowerCase()}>
+        <Icon
+            data-testid="symbol-icon"
+            data-symbol-kind={kind.toLowerCase()}
+            className={classNames(getSymbolIconClassName(kind), className)}
+            svgPath={getSymbolIconComponent(kind)}
+            aria-label={`Symbol kind ${kind.toLowerCase()}`}
+        />
+    </Tooltip>
 )

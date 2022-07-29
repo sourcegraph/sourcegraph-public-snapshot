@@ -82,6 +82,18 @@ type AuthLockout struct {
 	LockoutPeriod int `json:"lockoutPeriod,omitempty"`
 }
 
+// AuthPasswordPolicy description: Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.
+type AuthPasswordPolicy struct {
+	// Enabled description: Enables password policy
+	Enabled bool `json:"enabled,omitempty"`
+	// NumberOfSpecialCharacters description: The required number of special characters
+	NumberOfSpecialCharacters int `json:"numberOfSpecialCharacters,omitempty"`
+	// RequireAtLeastOneNumber description: Does the password require a number
+	RequireAtLeastOneNumber bool `json:"requireAtLeastOneNumber,omitempty"`
+	// RequireUpperandLowerCase description: Require Mixed characters
+	RequireUpperandLowerCase bool `json:"requireUpperandLowerCase,omitempty"`
+}
+
 // AuthProviderCommon description: Common properties for authentication providers.
 type AuthProviderCommon struct {
 	// DisplayName description: The name to use when displaying this authentication provider in the UI. Defaults to an auto-generated name with the type of authentication provider and other relevant identifiers (such as a hostname).
@@ -595,6 +607,8 @@ type ExperimentalFeatures struct {
 	EnableGitServerCommandExecFilter bool `json:"enableGitServerCommandExecFilter,omitempty"`
 	// EnableGithubInternalRepoVisibility description: Enable support for visilibity of internal Github repositories
 	EnableGithubInternalRepoVisibility bool `json:"enableGithubInternalRepoVisibility,omitempty"`
+	// EnableLegacyExtensions description: Enable the extension registry and the use of extensions (doesn't affect code intel and git extras).
+	EnableLegacyExtensions bool `json:"enableLegacyExtensions,omitempty"`
 	// EnablePermissionsWebhooks description: Enables webhook consumers to sync permissions from external services faster than the defaults schedule
 	EnablePermissionsWebhooks bool `json:"enablePermissionsWebhooks,omitempty"`
 	// EnablePostSignupFlow description: Enables post sign-up user flow to add code hosts and sync code
@@ -605,20 +619,26 @@ type ExperimentalFeatures struct {
 	Gerrit string `json:"gerrit,omitempty"`
 	// GitServerPinnedRepos description: List of repositories pinned to specific gitserver instances. The specified repositories will remain at their pinned servers on scaling the cluster. If the specified pinned server differs from the current server that stores the repository, then it must be re-cloned to the specified server.
 	GitServerPinnedRepos map[string]string `json:"gitServerPinnedRepos,omitempty"`
-	// JvmPackages description: Allow adding JVM packages code host connections
+	// GoPackages description: Allow adding Go package host connections
+	GoPackages string `json:"goPackages,omitempty"`
+	// JvmPackages description: Allow adding JVM package host connections
 	JvmPackages string `json:"jvmPackages,omitempty"`
-	// NpmPackages description: Allow adding npm packages code host connections
+	// NpmPackages description: Allow adding npm package code host connections
 	NpmPackages string `json:"npmPackages,omitempty"`
 	// Pagure description: Allow adding Pagure code host connections
 	Pagure string `json:"pagure,omitempty"`
-	// PasswordPolicy description: Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.
+	// PasswordPolicy description: DEPRECATED: this is now a standard feature see: auth.passwordPolicy
 	PasswordPolicy *PasswordPolicy `json:"passwordPolicy,omitempty"`
 	// Perforce description: Allow adding Perforce code host connections
 	Perforce string `json:"perforce,omitempty"`
+	// PythonPackages description: Allow adding Python package code host connections
+	PythonPackages string `json:"pythonPackages,omitempty"`
 	// Ranking description: Experimental search result ranking options.
 	Ranking *Ranking `json:"ranking,omitempty"`
 	// RateLimitAnonymous description: Configures the hourly rate limits for anonymous calls to the GraphQL API. Setting limit to 0 disables the limiter. This is only relevant if unauthenticated calls to the API are permitted.
 	RateLimitAnonymous int `json:"rateLimitAnonymous,omitempty"`
+	// RustPackages description: Allow adding Rust package code host connections
+	RustPackages string `json:"rustPackages,omitempty"`
 	// SearchIndexBranches description: A map from repository name to a list of extra revs (branch, ref, tag, commit sha, etc) to index for a repository. We always index the default branch ("HEAD") and revisions in version contexts. This allows specifying additional revisions. Sourcegraph can index up to 64 branches per repository.
 	SearchIndexBranches map[string][]string `json:"search.index.branches,omitempty"`
 	// SearchIndexQueryContexts description: Enables indexing of revisions of repos matching any query defined in search contexts.
@@ -636,6 +656,16 @@ type ExperimentalFeatures struct {
 	//
 	// JSON array of version context configuration
 	VersionContexts []*VersionContext `json:"versionContexts,omitempty"`
+}
+type ExportUsageTelemetry struct {
+	// BatchSize description: Maximum number of events scraped from the events table in a single scrape.
+	BatchSize int `json:"batchSize,omitempty"`
+	// Enabled description: Toggles whether or not to export Sourcegraph telemetry. If enabled events will be scraped and sent to an analytics store. This is an opt-in setting, and only should only be enabled for customers that have agreed to event level data collection.
+	Enabled bool `json:"enabled,omitempty"`
+	// TopicName description: Destination pubsub topic name to export usage data
+	TopicName string `json:"topicName"`
+	// TopicProjectName description: GCP project name containing the usage data pubsub topic
+	TopicProjectName string `json:"topicProjectName"`
 }
 
 // Extensions description: Configures Sourcegraph extensions.
@@ -1372,11 +1402,11 @@ type ParentSourcegraph struct {
 	Url string `json:"url,omitempty"`
 }
 
-// PasswordPolicy description: Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.
+// PasswordPolicy description: DEPRECATED: this is now a standard feature see: auth.passwordPolicy
 type PasswordPolicy struct {
 	// Enabled description: Enables password policy
 	Enabled bool `json:"enabled,omitempty"`
-	// MinimumLength description: The minimum length required for a password
+	// MinimumLength description: DEPRECATED: replaced by auth.minPasswordLength
 	MinimumLength int `json:"minimumLength,omitempty"`
 	// NumberOfSpecialCharacters description: The required number of special characters
 	NumberOfSpecialCharacters int `json:"numberOfSpecialCharacters,omitempty"`
@@ -1739,6 +1769,8 @@ type SettingsExperimentalFeatures struct {
 	EnableSearchStack *bool `json:"enableSearchStack,omitempty"`
 	// EnableSmartQuery description: REMOVED. Previously, added more syntax highlighting and hovers for queries in the web app. This behavior is active by default now.
 	EnableSmartQuery *bool `json:"enableSmartQuery,omitempty"`
+	// ExtensionsAsCoreFeatures description: Use default extensions (Git extras, Open in editor, Search export) functionality as core features instead of extensions.
+	ExtensionsAsCoreFeatures *bool `json:"extensionsAsCoreFeatures,omitempty"`
 	// FuzzyFinder description: Enables fuzzy finder with the keyboard shortcut `Cmd+K` on macOS and `Ctrl+K` on Linux/Windows.
 	FuzzyFinder *bool `json:"fuzzyFinder,omitempty"`
 	// FuzzyFinderCaseInsensitiveFileCountThreshold description: The maximum number of files a repo can have to use case-insensitive fuzzy finding
@@ -1797,6 +1829,8 @@ type SiteConfiguration struct {
 	AuthLockout *AuthLockout `json:"auth.lockout,omitempty"`
 	// AuthMinPasswordLength description: The minimum number of Unicode code points that a password must contain.
 	AuthMinPasswordLength int `json:"auth.minPasswordLength,omitempty"`
+	// AuthPasswordPolicy description: Enables and configures password policy. This will allow admins to enforce password complexity and length requirements.
+	AuthPasswordPolicy *AuthPasswordPolicy `json:"auth.passwordPolicy,omitempty"`
 	// AuthPasswordResetLinkExpiry description: The duration (in seconds) that a password reset link is considered valid.
 	AuthPasswordResetLinkExpiry int `json:"auth.passwordResetLinkExpiry,omitempty"`
 	// AuthProviders description: The authentication providers to use for identifying and signing in users. See instructions below for configuring SAML, OpenID Connect (including Google Workspace), and HTTP authentication proxies. Multiple authentication providers are supported (by specifying multiple elements in this array).
@@ -1827,6 +1861,8 @@ type SiteConfiguration struct {
 	AuthzEnforceForSiteAdmins bool `json:"authz.enforceForSiteAdmins,omitempty"`
 	// AuthzRefreshInterval description: Time interval (in seconds) of how often each component picks up authorization changes in external services.
 	AuthzRefreshInterval int `json:"authz.refreshInterval,omitempty"`
+	// BatchChangesChangesetsRetention description: How long changesets will be retained after they have been detached from a batch change.
+	BatchChangesChangesetsRetention string `json:"batchChanges.changesetsRetention,omitempty"`
 	// BatchChangesDisableWebhooksWarning description: Hides Batch Changes warnings about webhooks not being configured.
 	BatchChangesDisableWebhooksWarning bool `json:"batchChanges.disableWebhooksWarning,omitempty"`
 	// BatchChangesEnabled description: Enables/disables the Batch Changes feature.
@@ -1889,6 +1925,7 @@ type SiteConfiguration struct {
 	ExecutorsFrontendURL string `json:"executors.frontendURL,omitempty"`
 	// ExperimentalFeatures description: Experimental features to enable or disable. Features that are now enabled by default are marked as deprecated.
 	ExperimentalFeatures *ExperimentalFeatures `json:"experimentalFeatures,omitempty"`
+	ExportUsageTelemetry *ExportUsageTelemetry `json:"exportUsageTelemetry,omitempty"`
 	// Extensions description: Configures Sourcegraph extensions.
 	Extensions *Extensions `json:"extensions,omitempty"`
 	// ExternalServiceUserMode description: Enable to allow users to add external services for public and private repositories to the Sourcegraph instance.
@@ -1979,7 +2016,7 @@ type SiteConfiguration struct {
 	RepoConcurrentExternalServiceSyncers int `json:"repoConcurrentExternalServiceSyncers,omitempty"`
 	// RepoListUpdateInterval description: Interval (in minutes) for checking code hosts (such as GitHub, Gitolite, etc.) for new repositories.
 	RepoListUpdateInterval int `json:"repoListUpdateInterval,omitempty"`
-	// SearchIndexEnabled description: Whether indexed search is enabled. If unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
+	// SearchIndexEnabled description: Whether indexed search is enabled. If : unset Sourcegraph detects the environment to decide if indexed search is enabled. Indexed search is RAM heavy, and is disabled by default in the single docker image. All other environments will have it enabled by default. The size of all your repository working copies is the amount of additional RAM required.
 	SearchIndexEnabled *bool `json:"search.index.enabled,omitempty"`
 	// SearchIndexSymbolsEnabled description: Whether indexed symbol search is enabled. This is contingent on the indexed search configuration, and is true by default for instances with indexed search enabled. Enabling this will cause every repository to re-index, which is a time consuming (several hours) operation. Additionally, it requires more storage and ram to accommodate the added symbols information in the search index.
 	SearchIndexSymbolsEnabled *bool `json:"search.index.symbols.enabled,omitempty"`

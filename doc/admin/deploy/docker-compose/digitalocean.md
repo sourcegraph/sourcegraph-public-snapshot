@@ -49,7 +49,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/root/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.41.1'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.42.1'
 
 # Install git
 sudo apt-get update -y
@@ -144,7 +144,7 @@ After initial setup, we recommend you do the following:
 
 ## Update your Sourcegraph version
 
-Refer to the [Docker Compose upgrade docs](../../updates/upgrade_docker-compose.md).
+Refer to the [Docker Compose upgrade docs](upgrade.md).
 
 ## Storage and Backups
 

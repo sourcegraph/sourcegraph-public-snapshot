@@ -46,7 +46,7 @@ DEPLOY_SOURCEGRAPH_DOCKER_CHECKOUT='/home/ec2-user/deploy-sourcegraph-docker'
 
 # 🚨 Update these variables with the correct values from your fork!
 DEPLOY_SOURCEGRAPH_DOCKER_FORK_CLONE_URL='https://github.com/sourcegraph/deploy-sourcegraph-docker.git'
-DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.41.1'
+DEPLOY_SOURCEGRAPH_DOCKER_FORK_REVISION='v3.42.1'
 
 # Install git
 yum update -y
@@ -141,7 +141,7 @@ docker ps --filter="name=sourcegraph-frontend-0"
 
 ## Update your Sourcegraph version
 
-Refer to the [Docker Compose upgrade docs](../../updates/upgrade_docker-compose.md).
+Refer to the [Docker Compose upgrade docs](upgrade.md).
 
 ## Storage and Backups
 

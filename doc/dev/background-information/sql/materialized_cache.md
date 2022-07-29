@@ -91,7 +91,7 @@ FOR EACH STATEMENT EXECUTE PROCEDURE update_condition_locations_delete();
 
 Sample uses:
 
-- [update_lsif_data_documents_schema_versions_insert](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+CREATE+FUNCTION+update_lsif_data_documents_schema_versions_insert&patternType=literal): Code intelligence stores the minimum and maximum row versions for each LSIF document grouped by dump identifier. This is used to efficiently determine sets of records that need to be migrated from an old version to a new version.
+- [update_lsif_data_documents_schema_versions_insert](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+CREATE+FUNCTION+update_lsif_data_documents_schema_versions_insert&patternType=literal): Code navigation stores the minimum and maximum row versions for each LSIF document grouped by dump identifier. This is used to efficiently determine sets of records that need to be migrated from an old version to a new version.
 - [lsif_data_documentation_pages_insert](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+%27CREATE+OR+REPLACE+FUNCTION+lsif_data_documentation_pages_insert%27&patternType=regexp): API Docs updates three aggregate counts including the number of rows, the number of distinct dump identifiers, and the number of distinct indexed dump identifiers (a conditional value).
 
 ## Result
