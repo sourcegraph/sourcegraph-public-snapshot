@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/locker"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
-	"github.com/sourcegraph/sourcegraph/internal/database/migration/storetypes"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
@@ -197,7 +197,7 @@ func (s *Store) Down(ctx context.Context, definition definition.Definition) (err
 
 // IndexStatus returns an object describing the current validity status and creation progress of the
 // index with the given name. If the index does not exist, a false-valued flag is returned.
-func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ storetypes.IndexStatus, _ bool, err error) {
+func (s *Store) IndexStatus(ctx context.Context, tableName, indexName string) (_ shared.IndexStatus, _ bool, err error) {
 	ctx, _, endObservation := s.operations.indexStatus.With(ctx, &err, observation.Args{})
 	defer endObservation(1, observation.Args{})
 
@@ -328,9 +328,9 @@ func scanMigrationLogs(rows *sql.Rows, queryErr error) (_ []migrationLog, err er
 }
 
 // scanFirstIndexStatus scans a slice of index status objects from the return value of `*Store.query`.
-func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status storetypes.IndexStatus, _ bool, err error) {
+func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status shared.IndexStatus, _ bool, err error) {
 	if queryErr != nil {
-		return storetypes.IndexStatus{}, false, queryErr
+		return shared.IndexStatus{}, false, queryErr
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
 
@@ -347,11 +347,11 @@ func scanFirstIndexStatus(rows *sql.Rows, queryErr error) (status storetypes.Ind
 			&status.TuplesDone,
 			&status.TuplesTotal,
 		); err != nil {
-			return storetypes.IndexStatus{}, false, err
+			return shared.IndexStatus{}, false, err
 		}
 
 		return status, true, nil
 	}
 
-	return storetypes.IndexStatus{}, false, nil
+	return shared.IndexStatus{}, false, nil
 }
