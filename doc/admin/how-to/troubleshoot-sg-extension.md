@@ -147,7 +147,7 @@ This is most likely due to the file being opened in a Sourcegraph instance that 
      Change-Id: I105c5d6c801d354467e0cefd268189c18846858e
      Change-Id: I02f4ef8a143bb1faafe3d11ad223f36f5cc245c6
    ```
-   To learn more about `src` cli go [here](https://github.com/sourcegraph/src-cli)
+   [Visit the `src` cli quickstart documentation](https://docs.sourcegraph.com/cli/quickstart) to start using `src` to export search results.
 
 #### Search-export: Network Error when downloading CSV
 
