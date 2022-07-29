@@ -252,7 +252,10 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             codeViewReference.current = codeView
             codeViewElements.next(codeView)
         },
-        [codeViewElements]
+        // As we use dangerousSetInnerHTML, we need to make sure that the codeView
+        // reference is updated whenever the <Code> element is updated.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [codeViewElements, blobInfo.html]
     )
 
     // Emits on changes from URL search params
@@ -793,6 +796,7 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     useEffect(() => {
         const subscription = codeViewElements.subscribe(codeView => {
             if (codeView) {
+                console.log('Running!')
                 const table = codeView.firstElementChild as HTMLTableElement
                 const firstRow = table.rows[0]
                 const lastRow = table.rows[table.rows.length - 1]
