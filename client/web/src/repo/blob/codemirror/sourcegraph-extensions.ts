@@ -32,11 +32,12 @@ import { BlobInfo } from '../Blob'
 import { showTextDocumentDecorations } from './decorations'
 import { documentHighlightsSource } from './document-highlights'
 import { hovercard } from './hovercard'
-import { createFacetInputField, positionToOffset } from './utils'
+import { positionToOffset } from './utils'
 
 import { locationField } from '.'
 
 import blobStyles from '../Blob.module.scss'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 /**
  * Context holds all the information needed for CodeMirror extensions to
@@ -264,7 +265,9 @@ class TextDecorationManager {
 }
 
 function textDocumentDecorations(): Extension {
-    const [decorationsField, setDecorations] = createFacetInputField(showTextDocumentDecorations, [])
+    const [decorationsField, , setDecorations] = createUpdateableField<
+        [TextDocumentDecorationType, TextDocumentDecoration[]][]
+    >([], field => showTextDocumentDecorations.from(field))
     return [decorationsField, ViewPlugin.define(view => new TextDecorationManager(view, setDecorations))]
 }
 

@@ -174,11 +174,11 @@ export function useCompartment(
  * }, [editor, onChange])
  */
 export function createUpdateableField<T>(
-    defaultValue?: T,
+    defaultValue: T,
     provider?: (field: StateField<T>) => Extension
-): [StateField<T>, (editor: EditorView, newValue: typeof defaultValue) => void, StateEffectType<typeof defaultValue>] {
-    const fieldEffect = StateEffect.define<typeof defaultValue>()
-    const field = StateField.define<typeof defaultValue>({
+): [StateField<T>, (editor: EditorView, newValue: T) => void, StateEffectType<T>] {
+    const fieldEffect = StateEffect.define<T>()
+    const field = StateField.define<T>({
         create() {
             return defaultValue
         },

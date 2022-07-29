@@ -1,5 +1,4 @@
-/* eslint-disable jsdoc/check-indentation */
-import { ChangeSpec, EditorState, Extension, StateEffect, StateEffectType, StateField } from '@codemirror/state'
+import { ChangeSpec, EditorState, Extension } from '@codemirror/state'
 import { EditorView, ViewUpdate } from '@codemirror/view'
 import { Observable } from 'rxjs'
 

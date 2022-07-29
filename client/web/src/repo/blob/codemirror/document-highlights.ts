@@ -15,7 +15,8 @@ import { switchMap, throttleTime, filter, mergeAll, map } from 'rxjs/operators'
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
 
-import { createFacetInputField, positionToOffset, sortRangeValuesByStart } from './utils'
+import { positionToOffset, sortRangeValuesByStart } from './utils'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 interface HoverPosition {
     position: Position
@@ -87,7 +88,9 @@ function documentHighlights(sources: Facet<DocumentHighlightsSource>, sink: Face
     // The facet gets updated whenever the field changes. The view plugin
     // listens to mouse events, sents queries to the extensions host and
     // dispatches transactions to update the field.
-    const [documentHighlightsField, setDocumentHighlights] = createFacetInputField(sink, [])
+    const [documentHighlightsField, , setDocumentHighlights] = createUpdateableField<DocumentHighlight[]>([], field =>
+        sink.from(field)
+    )
 
     return [
         documentHighlightsField,
