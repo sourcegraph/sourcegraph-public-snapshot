@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { useEffect, useState } from 'react'
 
-import { mdiSourceRepository } from '@mdi/js'
+import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
@@ -31,9 +31,10 @@ import {
 import { MAX_TREE_ENTRIES } from './constants'
 import { FileDecorator } from './FileDecorator'
 import { TreeLayerProps } from './TreeLayer'
-import { TreeEntryInfo, treePadding } from './util'
+import { TreeEntryInfo, getTreeItemOffset } from './util'
 
 import styles from './File.module.scss'
+import treeStyles from './Tree.module.scss'
 
 interface FileProps extends ThemeProps {
     fileDecorations?: FileDecoration[]
@@ -46,6 +47,7 @@ interface FileProps extends ThemeProps {
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     isActive: boolean
     isSelected: boolean
+    customIconPath?: string
 
     // For core workflow inline symbols redesign
     repoID: Scalars['ID']
@@ -65,7 +67,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
         />
     )
 
-    const padding = treePadding(props.depth, false)
+    const offsetStyle = getTreeItemOffset(props.depth)
 
     return (
         <>
@@ -87,7 +89,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             >
                                 <TreeLayerRowContentsText>
                                     {/* TODO Improve accessibility: https://github.com/sourcegraph/sourcegraph/issues/12916 */}
-                                    <TreeRowIcon style={treePadding(props.depth, true)} onClick={props.noopRowClick}>
+                                    <TreeRowIcon style={offsetStyle} onClick={props.noopRowClick}>
                                         <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                                     </TreeRowIcon>
                                     <TreeRowLabel className="test-file-decorable-name">
@@ -99,7 +101,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                         ) : (
                             <TreeLayerRowContents title={'Submodule: ' + props.entryInfo.submodule.url}>
                                 <TreeLayerRowContentsText>
-                                    <TreeRowIcon style={treePadding(props.depth, true)}>
+                                    <TreeRowIcon style={offsetStyle}>
                                         <Icon aria-hidden={true} svgPath={mdiSourceRepository} />
                                     </TreeRowIcon>
                                     <TreeRowLabel className="test-file-decorable-name">
@@ -118,11 +120,18 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                             draggable={false}
                             title={props.entryInfo.path}
                             // needed because of dynamic styling
-                            style={padding}
+                            style={offsetStyle}
                             tabIndex={-1}
                         >
-                            <TreeLayerRowContentsText className="d-flex flex-row flex-1 justify-content-between">
-                                <span className="test-file-decorable-name">{props.entryInfo.name}</span>
+                            <TreeLayerRowContentsText className="d-flex">
+                                <TreeRowIcon onClick={props.noopRowClick}>
+                                    <Icon
+                                        className={treeStyles.treeIcon}
+                                        svgPath={props.customIconPath || mdiFileDocumentOutline}
+                                        aria-hidden={true}
+                                    />
+                                </TreeRowIcon>
+                                <TreeRowLabel className="test-file-decorable-name">{props.entryInfo.name}</TreeRowLabel>
                                 {renderedFileDecorations}
                             </TreeLayerRowContentsText>
                         </TreeLayerRowContentsLink>
@@ -130,7 +139,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     {props.index === MAX_TREE_ENTRIES - 1 && (
                         <TreeRowAlert
                             variant="warning"
-                            style={treePadding(props.depth, true)}
+                            style={getTreeItemOffset(props.depth + 1)}
                             error="Too many entries. Use search to find a specific file."
                         />
                     )}
@@ -142,7 +151,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                     revision={props.revision}
                     activePath={props.entryInfo.path}
                     location={props.location}
-                    style={padding}
+                    style={offsetStyle}
                 />
             )}
         </>
