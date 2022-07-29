@@ -111,8 +111,8 @@ type scipQueryRequest struct {
 }
 
 type scipResponse struct {
-	// Base64 encoded string of a single SCIP Data
-	Data string `json:"data"`
+	// Base64 encoded string of a single SCIP Scip
+	Scip string `json:"scip"`
 
 	// Error response fields.
 	Error string `json:"error"`
@@ -155,11 +155,12 @@ var (
 type response struct {
 	// Successful response fields.
 
-	// Data can be several different "types" of data, depending on the request.
-	//   In the future, we could remove the several different types and just always
-	//   have it be a SCIP Document, but that's not the case at the moment.
-	Data      string `json:"data"`
-	Plaintext bool   `json:"plaintext"`
+	// Contains highlight Data
+	Data string `json:"data"`
+	// Boolean representing whether the returned text is plaintext or not
+	Plaintext bool `json:"plaintext"`
+	// Contains a single base64 encoded SCIP Document
+	Scip string `json:"scip"`
 
 	// Error response fields.
 	Error string `json:"error"`
@@ -274,7 +275,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 
 	return &Response{
 		Data:      r.Data,
-		Scip:      r.LSIF,
+		Scip:      r.Scip,
 		Plaintext: r.Plaintext,
 	}, nil
 }
@@ -284,7 +285,6 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 // removing Highlight() and upgrading this to just become `Highlight` but we're
 // in the transition of codemirror for now.
 func (c *Client) ScipHighlight(ctx context.Context, q *ScipQueryArguments) (*Response, error) {
-	fmt.Println("Scip Highlight...")
 	engine, err := highlights.EngineTypeToNameChecked(q.Engine)
 	if err != nil {
 		return nil, err
@@ -347,10 +347,9 @@ func (c *Client) ScipHighlight(ctx context.Context, q *ScipQueryArguments) (*Res
 		return nil, err
 	}
 
-	fmt.Println("ScipHighlight:", r.Data)
 	return &Response{
 		Data:      "",
-		Scip:      r.Data,
+		Scip:      r.Scip,
 		Plaintext: false,
 	}, nil
 }

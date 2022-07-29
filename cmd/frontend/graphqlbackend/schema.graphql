@@ -4622,9 +4622,9 @@ type HighlightedFile {
     """
     html: String!
     """
-    Base64 encoded JSON payload of LSIF Typed with syntax highlighting data.
+    Base64 encoded JSON payload of a SCIP Document
     """
-    lsif: String! @deprecated(reason: "use scip instead")
+    lsif: String!
     """
     A list of the desired line ranges. Each list is a list of lines, where each element is an HTML
     table row '<tr>...</tr>' string. This is useful if you only need to display specific subsets of

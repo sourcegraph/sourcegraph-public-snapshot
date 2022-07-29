@@ -527,11 +527,12 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 
 	if !p.ForceSCIP && filetypeQuery.Engine == highlights.EngineTreeSitter {
 		document := new(scip.Document)
-		data, err := base64.StdEncoding.DecodeString(resp.Data)
 
+		data, err := base64.StdEncoding.DecodeString(resp.Data)
 		if err != nil {
 			return unhighlightedCode(err, code)
 		}
+
 		err = proto.Unmarshal(data, document)
 		if err != nil {
 			return unhighlightedCode(err, code)

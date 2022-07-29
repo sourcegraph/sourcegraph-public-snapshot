@@ -132,11 +132,9 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
             )
             .generate();
             let encoded = document.write_to_bytes().map_err(jsonify_err)?;
-            Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+            Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
         }),
         crate::SyntaxEngine::TreeSitter => {
-            println!("Doing tree-sitter...");
-            // TODO: Can skip passing language if syntect?
             let language = q
                 .language
                 .ok_or_else(|| json!({"error": "Must pass a language for /scip" }))?
@@ -146,7 +144,7 @@ pub fn scip_highlight(q: ScipHighlightQuery) -> Result<JsonValue, JsonValue> {
                 Ok(document) => {
                     let encoded = document.write_to_bytes().map_err(jsonify_err)?;
 
-                    Ok(json!({"data": base64::encode(&encoded), "plaintext": false}))
+                    Ok(json!({"scip": base64::encode(&encoded), "plaintext": false}))
                 }
                 Err(Error::InvalidLanguage) => Err(json!({
                     "error": format!("{} is not a valid filetype for treesitter", language)
