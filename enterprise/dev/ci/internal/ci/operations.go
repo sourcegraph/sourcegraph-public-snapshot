@@ -223,6 +223,7 @@ func buildWebAppWithSentrySourcemaps(version string) operations.Operation {
 		// Webapp build with Sentry's webpack plugin enabled
 		pipeline.AddStep(":webpack::globe_with_meridians: Build and upload sourcemaps to Sentry",
 			withYarnCache(),
+			bk.SoftFail(),
 			bk.Cmd("dev/ci/yarn-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", ""),
