@@ -183,19 +183,12 @@ type Client interface {
 	CreateCommitFromPatch(context.Context, protocol.CreateCommitFromPatchRequest) (string, error)
 
 	// GetDefaultBranch returns the name of the default branch and the commit it's
-	// currently at from the given repository.
+	// currently at from the given repository. If short is true, then `main` instead
+	// of `refs/heads/main` would be returned.
 	//
 	// If the repository is empty or currently being cloned, empty values and no
 	// error are returned.
-	GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
-
-	// GetDefaultBranchShort returns the short name of the default branch for the
-	// given repository and the commit it's currently at. A short name would return
-	// something like `main` instead of `refs/heads/main`.
-	//
-	// If the repository is empty or currently being cloned, empty values and no
-	// error are returned.
-	GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error)
+	GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error)
 
 	// GetObject fetches git object data in the supplied repo
 	GetObject(ctx context.Context, repo api.RepoName, objectName string) (*gitdomain.GitObject, error)

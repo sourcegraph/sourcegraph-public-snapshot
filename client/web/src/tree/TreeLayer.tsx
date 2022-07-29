@@ -36,7 +36,7 @@ import {
     singleChildEntriesToGitTree,
     SingleChildGitTree,
     TreeEntryInfo,
-    treePadding,
+    getTreeItemOffset,
 } from './util'
 
 export interface TreeLayerProps extends Omit<TreeRootProps, 'sizeKey'> {
@@ -294,7 +294,7 @@ export class TreeLayer extends React.Component<TreeLayerProps, TreeLayerState> {
                                             {isErrorLike(treeOrError) ? (
                                                 <TreeRowAlert
                                                     // needed because of dynamic styling
-                                                    style={treePadding(this.props.depth, true)}
+                                                    style={getTreeItemOffset(this.props.depth)}
                                                     error={treeOrError}
                                                     prefix="Error loading file tree"
                                                 />

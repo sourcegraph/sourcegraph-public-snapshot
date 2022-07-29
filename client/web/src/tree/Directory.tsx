@@ -1,6 +1,6 @@
 import * as React from 'react'
 
-import { mdiChevronDown, mdiChevronRight } from '@mdi/js'
+import { mdiFolderOutline, mdiFolderOpenOutline } from '@mdi/js'
 import { FileDecoration } from 'sourcegraph'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
@@ -17,7 +17,9 @@ import {
 } from './components'
 import { MAX_TREE_ENTRIES } from './constants'
 import { FileDecorator } from './FileDecorator'
-import { TreeEntryInfo, treePadding } from './util'
+import { TreeEntryInfo, getTreeItemOffset } from './util'
+
+import styles from './Tree.module.scss'
 
 interface DirectoryProps extends ThemeProps {
     depth: number
@@ -55,13 +57,17 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
                 <TreeLayerRowContentsText className="flex-1 justify-between">
                     <div className="d-flex">
                         <TreeRowIconLink
-                            style={treePadding(props.depth, true, true)}
+                            style={getTreeItemOffset(props.depth)}
                             className="test-tree-noop-link"
                             href={props.entryInfo.url}
                             onClick={props.noopRowClick}
                             tabIndex={-1}
                         >
-                            <Icon svgPath={props.isExpanded ? mdiChevronDown : mdiChevronRight} aria-hidden={true} />
+                            <Icon
+                                className={styles.treeIcon}
+                                svgPath={props.isExpanded ? mdiFolderOpenOutline : mdiFolderOutline}
+                                aria-hidden={true}
+                            />
                         </TreeRowIconLink>
                         <TreeRowLabelLink
                             to={props.entryInfo.url}
@@ -91,7 +97,7 @@ export const Directory: React.FunctionComponent<React.PropsWithChildren<Director
             {props.index === MAX_TREE_ENTRIES - 1 && (
                 <TreeRowAlert
                     variant="warning"
-                    style={treePadding(props.depth, true, true)}
+                    style={getTreeItemOffset(props.depth)}
                     error="Too many entries. Use search to find a specific file."
                 />
             )}

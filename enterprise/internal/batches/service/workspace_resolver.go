@@ -445,7 +445,7 @@ func repoToRepoRevisionWithDefaultBranch(ctx context.Context, gitserverClient gi
 		tr.Finish()
 	}()
 
-	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name)
+	branch, commit, err := gitserverClient.GetDefaultBranch(ctx, repo.Name, false)
 	if err != nil {
 		return nil, err
 	}
