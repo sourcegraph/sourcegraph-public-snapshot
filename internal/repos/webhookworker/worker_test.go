@@ -1,18 +1,16 @@
-package webhookworker_test
+package webhookworker
 
 import (
 	"context"
-	"database/sql"
 	"testing"
 
 	"github.com/keegancsmith/sqlf"
-	"github.com/lib/pq"
 	"github.com/sourcegraph/log/logtest"
 
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	wb "github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
+	"github.com/sourcegraph/sourcegraph/internal/extsvc"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -23,7 +21,7 @@ func TestJobQueue(t *testing.T) {
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
 	workerBaseStore := basestore.NewWithHandle(db.Handle())
 
-	extSvcKind := "GITHUB"
+	extSvcKind := extsvc.KindGitHub
 
 	t.Run(extSvcKind, func(t *testing.T) {
 		recordID := 0
@@ -33,24 +31,24 @@ func TestJobQueue(t *testing.T) {
 		}
 		assertEqual(t, nil, nil, job)
 
-		firstJob := &wb.Job{
+		firstJob := &Job{
 			RepoID:     1,
 			RepoName:   "repo 1",
 			ExtSvcKind: extSvcKind,
 		}
 
-		firstJobID, err := wb.EnqueueJob(ctx, workerBaseStore, firstJob)
+		firstJobID, err := EnqueueJob(ctx, workerBaseStore, firstJob)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		secondJob := &wb.Job{
+		secondJob := &Job{
 			RepoID:     1,
 			RepoName:   "repo 2",
 			ExtSvcKind: extSvcKind,
 		}
 
-		secondJobID, err := wb.EnqueueJob(ctx, workerBaseStore, secondJob)
+		secondJobID, err := EnqueueJob(ctx, workerBaseStore, secondJob)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -63,7 +61,7 @@ func TestJobQueue(t *testing.T) {
 	})
 }
 
-func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (*wb.Job, error) {
+func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (*Job, error) {
 	tx, err := workerBaseStore.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -106,44 +104,7 @@ FROM webhook_build_jobs
 WHERE id = %s
 `
 
-func doScanWebhookBuildJobs(rows *sql.Rows, err error) ([]*wb.Job, error) {
-	if err != nil {
-		return nil, err
-	}
-	defer func() { err = basestore.CloseRows(rows, err) }()
-	var jobs []*wb.Job
-
-	for rows.Next() {
-		var job wb.Job
-		if err := rows.Scan(
-			// Webhook builder fields
-			&job.RepoID,
-			&job.RepoName,
-			&job.ExtSvcKind,
-			&job.QueuedAt,
-
-			// Standard dbworker fields
-			&job.ID,
-			&job.State,
-			&job.FailureMessage,
-			&job.StartedAt,
-			&job.FinishedAt,
-			&job.ProcessAfter,
-			&job.NumResets,
-			&job.NumFailures,
-			pq.Array(&job.ExecutionLogs),
-		); err != nil {
-			return nil, err
-		}
-		jobs = append(jobs, &job)
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return jobs, nil
-}
-
-func assertEqual(t *testing.T, err error, want *wb.Job, have *wb.Job) {
+func assertEqual(t *testing.T, err error, want *Job, have *Job) {
 	t.Helper()
 
 	if err != nil {

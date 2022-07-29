@@ -20,6 +20,8 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
 )
 
+// webhookBuildJob implements the Job interface
+// from package job
 type webhookBuildJob struct {
 }
 
