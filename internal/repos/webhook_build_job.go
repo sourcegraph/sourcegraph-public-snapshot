@@ -14,7 +14,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/env"
 	"github.com/sourcegraph/sourcegraph/internal/goroutine"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
-	webhookbuilder "github.com/sourcegraph/sourcegraph/internal/repos/worker"
+	webhookworker "github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker"
@@ -28,7 +28,7 @@ func NewWebhookBuildJob() *webhookBuildJob {
 }
 
 func (w *webhookBuildJob) Description() string {
-	return ""
+	return "A background routine that builds webhooks for repos"
 }
 
 func (w *webhookBuildJob) Config() []env.Config {
@@ -52,12 +52,12 @@ func (w *webhookBuildJob) Routines(ctx context.Context, logger log.Logger) ([]go
 	db := database.NewDB(logger, mainAppDB)
 	store := NewStore(logger, db)
 	baseStore := basestore.NewWithHandle(store.Handle())
-	workerStore := webhookbuilder.CreateWorkerStore(store.Handle())
+	workerStore := webhookworker.CreateWorkerStore(store.Handle())
 
 	return []goroutine.BackgroundRoutine{
-		webhookbuilder.NewWorker(ctx, newWebhookBuildHandler(store), workerStore, webhookBuildWorkerMetrics),
-		webhookbuilder.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
-		webhookbuilder.NewCleaner(ctx, baseStore, observationContext),
+		webhookworker.NewWorker(ctx, newWebhookBuildHandler(store), workerStore, webhookBuildWorkerMetrics),
+		webhookworker.NewResetter(ctx, workerStore, webhookBuildResetterMetrics),
+		webhookworker.NewCleaner(ctx, baseStore, observationContext),
 	}, nil
 }
 

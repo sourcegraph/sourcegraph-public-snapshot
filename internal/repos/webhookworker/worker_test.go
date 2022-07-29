@@ -1,4 +1,4 @@
-package webhookbuilder_test
+package webhookworker_test
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 	"github.com/sourcegraph/sourcegraph/internal/database/dbtest"
-	webhookbuilder "github.com/sourcegraph/sourcegraph/internal/repos/worker"
+	wb "github.com/sourcegraph/sourcegraph/internal/repos/webhookworker"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
@@ -33,24 +33,24 @@ func TestJobQueue(t *testing.T) {
 		}
 		assertEqual(t, nil, nil, job)
 
-		firstJob := &webhookbuilder.Job{
+		firstJob := &wb.Job{
 			RepoID:     1,
 			RepoName:   "repo 1",
 			ExtSvcKind: extSvcKind,
 		}
 
-		firstJobID, err := webhookbuilder.EnqueueJob(ctx, workerBaseStore, firstJob)
+		firstJobID, err := wb.EnqueueJob(ctx, workerBaseStore, firstJob)
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		secondJob := &webhookbuilder.Job{
+		secondJob := &wb.Job{
 			RepoID:     1,
 			RepoName:   "repo 2",
 			ExtSvcKind: extSvcKind,
 		}
 
-		secondJobID, err := webhookbuilder.EnqueueJob(ctx, workerBaseStore, secondJob)
+		secondJobID, err := wb.EnqueueJob(ctx, workerBaseStore, secondJob)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -63,7 +63,7 @@ func TestJobQueue(t *testing.T) {
 	})
 }
 
-func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (*webhookbuilder.Job, error) {
+func dequeueJob(ctx context.Context, workerBaseStore *basestore.Store, recordID int) (*wb.Job, error) {
 	tx, err := workerBaseStore.Transact(ctx)
 	if err != nil {
 		return nil, err
@@ -106,15 +106,15 @@ FROM webhook_build_jobs
 WHERE id = %s
 `
 
-func doScanWebhookBuildJobs(rows *sql.Rows, err error) ([]*webhookbuilder.Job, error) {
+func doScanWebhookBuildJobs(rows *sql.Rows, err error) ([]*wb.Job, error) {
 	if err != nil {
 		return nil, err
 	}
 	defer func() { err = basestore.CloseRows(rows, err) }()
-	var jobs []*webhookbuilder.Job
+	var jobs []*wb.Job
 
 	for rows.Next() {
-		var job webhookbuilder.Job
+		var job wb.Job
 		if err := rows.Scan(
 			// Webhook builder fields
 			&job.RepoID,
@@ -143,7 +143,7 @@ func doScanWebhookBuildJobs(rows *sql.Rows, err error) ([]*webhookbuilder.Job, e
 	return jobs, nil
 }
 
-func assertEqual(t *testing.T, err error, want *webhookbuilder.Job, have *webhookbuilder.Job) {
+func assertEqual(t *testing.T, err error, want *wb.Job, have *wb.Job) {
 	t.Helper()
 
 	if err != nil {

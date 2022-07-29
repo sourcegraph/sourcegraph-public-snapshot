@@ -1,4 +1,4 @@
-package webhookbuilder
+package webhookworker
 
 import (
 	"context"
@@ -16,7 +16,7 @@ func NewCleaner(ctx context.Context, workerBaseStore *basestore.Store, observati
 	metrics := metrics.NewREDMetrics(
 		observationContext.Registerer,
 		"webhook_build_worker_cleaner",
-		metrics.WithCountHelp("Total number of jobs webhookbuilder cleaner executions"),
+		metrics.WithCountHelp("Total number of webhookbuilder cleaner executions"),
 	)
 	operation := observationContext.Operation(observation.Op{
 		Name:    "WebhookBuilder.Cleaner.Run",
@@ -35,7 +35,7 @@ func NewCleaner(ctx context.Context, workerBaseStore *basestore.Store, observati
 func cleanJobs(ctx context.Context, workerBaseStore *basestore.Store) (numCleaned int, err error) {
 	numCleaned, _, err = basestore.ScanFirstInt(workerBaseStore.Query(
 		ctx,
-		sqlf.Sprintf(cleanJobsFmtStr, time.Now().Add(-168*time.Hour)),
+		sqlf.Sprintf(cleanJobsFmtStr, time.Now().Add(-168*time.Hour)), // 7 days
 	))
 	return
 }
@@ -43,6 +43,6 @@ func cleanJobs(ctx context.Context, workerBaseStore *basestore.Store) (numCleane
 const cleanJobsFmtStr = `
 -- source: internal/repos/worker/cleaner.go:cleanJobs
 WITH deleted AS (
-	DELETE FROM webhook_build_jobs WHERE state='completed' AND started_at <= %s RETURNING *
+	DELETE FROM webhook_build_jobs WHERE state='completed' OR state='failed' AND started_at <= %s RETURNING *
 ) SELECT count(*) from deleted
 `

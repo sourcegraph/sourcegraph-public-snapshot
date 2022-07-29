@@ -6,6 +6,7 @@ import (
 	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
+	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
 type webhookBuildHandler struct {
@@ -17,6 +18,5 @@ func newWebhookBuildHandler(store Store) *webhookBuildHandler {
 }
 
 func (w *webhookBuildHandler) Handle(ctx context.Context, logger log.Logger, record workerutil.Record) error {
-	// TODO
-	return nil
+	return errors.New("TODO")
 }

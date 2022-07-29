@@ -1,4 +1,4 @@
-package webhookbuilder
+package webhookworker
 
 import (
 	"time"
