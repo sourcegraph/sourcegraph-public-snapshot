@@ -12271,6 +12271,19 @@
           "Comment": ""
         },
         {
+          "Name": "uncompressed_size",
+          "Index": 30,
+          "TypeName": "bigint",
+          "IsNullable": true,
+          "Default": "",
+          "CharacterMaximumLength": 0,
+          "IsIdentity": false,
+          "IdentityGeneration": "",
+          "IsGenerated": "NEVER",
+          "GenerationExpression": "",
+          "Comment": ""
+        },
+        {
           "Name": "upload_size",
           "Index": 15,
           "TypeName": "bigint",

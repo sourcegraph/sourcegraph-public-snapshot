@@ -2029,6 +2029,7 @@ CREATE TABLE lsif_uploads (
     indexer_version text,
     queued_at timestamp with time zone,
     cancel boolean DEFAULT false NOT NULL,
+    uncompressed_size bigint,
     CONSTRAINT lsif_uploads_commit_valid_chars CHECK ((commit ~ '^[a-z0-9]{40}$'::text))
 );
 

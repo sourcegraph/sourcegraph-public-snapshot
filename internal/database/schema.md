@@ -1803,6 +1803,7 @@ Stores the retention policy of code intellience data for a repository.
  indexer_version        | text                     |           |          | 
  queued_at              | timestamp with time zone |           |          | 
  cancel                 | boolean                  |           | not null | false
+ uncompressed_size      | bigint                   |           |          | 
 Indexes:
     "lsif_uploads_pkey" PRIMARY KEY, btree (id)
     "lsif_uploads_repository_id_commit_root_indexer" UNIQUE, btree (repository_id, commit, root, indexer) WHERE state = 'completed'::text
