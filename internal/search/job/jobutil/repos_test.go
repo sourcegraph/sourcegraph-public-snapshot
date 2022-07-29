@@ -1,10 +1,12 @@
 package jobutil
 
 import (
+	"testing"
+
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
-	"testing"
 )
 
 func Test_descriptionMatchRanges(t *testing.T) {
