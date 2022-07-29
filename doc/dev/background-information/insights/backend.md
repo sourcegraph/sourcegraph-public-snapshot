@@ -269,6 +269,12 @@ kubectl exec -it deployment/codeinsights-db -- psql -U postgres
 * If trying to access Sourcegraph.com's DB: `kubectl -n prod exec -it deployment/codeinsights-db -- psql -U postgres`
 * If trying to access k8s.sgdev.org's DB: `kubectl -n dogfood-k8s exec -it deployment/codeinsights-db -- psql -U postgres`
 
+### `sg insights` tool
+
+The `sg insights` tool is a developer-built tool to perform some common database queries used when debugging insight issues.
+
+You can check available commands using the `sg insights -h` command. 
+
 ### Finding logs
 
 Since insights runs inside of the `frontend` and `worker` containers/processes, it can be difficult to locate the relevant logs. Best way to do it is to grep for `insights`.
@@ -286,12 +292,6 @@ and
 ```
 docker logs worker | grep insights
 ```
-
-#### `sg insights` tool
-
-The `sg insights` tool is a developer-built tool to perform some common database queries used when debugging insight issues.
-
-You can check available commands using the `sg insights -h` command. 
 
 #### Grafana
 
