@@ -1,0 +1,7 @@
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/davetry/dev/sg/sourcegraph'
+ 
+make: *** No targets specified and no makefile found.  Stop.
+
+make: Leaving directory `/Users/davetry/dev/sg/sourcegraph'
+ 
