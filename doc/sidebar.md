@@ -50,6 +50,7 @@ Keep it as a single list with at most 2 levels. (Anything else may not render co
   - [How-to guides](cli/how-tos/index.md)
   - [References](cli/references/index.md)
 - [Adopting](adopt/index.md)
+- [Cloud](cloud/index.md)
 - [Administration](admin/index.md)
   - [Deploy](admin/deploy/index.md)
   - [Upgrade](admin/updates/index.md)
