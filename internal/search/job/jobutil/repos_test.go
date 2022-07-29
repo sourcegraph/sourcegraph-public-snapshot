@@ -117,25 +117,6 @@ func Test_descriptionMatchRanges(t *testing.T) {
 			want:          map[api.RepoID][]result.Range{},
 		},
 		{
-			name: "skips invalid regex",
-			// inputPattern[0] won't compile as valid regex, inputPattern[1] should still produce a match
-			inputPatterns: []string{"(?:for.*?(?:validating)", "(?:go).*?(?:package)"},
-			want: map[api.RepoID][]result.Range{
-				1: {result.Range{
-					Start: result.Location{
-						Offset: 10,
-						Line:   0,
-						Column: 10,
-					},
-					End: result.Location{
-						Offset: 20,
-						Line:   0,
-						Column: 20,
-					},
-				}},
-			},
-		},
-		{
 			name:          "matches same pattern multiple times",
 			inputPatterns: []string{"(?:zb)"},
 			want: map[api.RepoID][]result.Range{

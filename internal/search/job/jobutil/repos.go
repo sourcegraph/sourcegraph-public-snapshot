@@ -63,18 +63,14 @@ func (s *RepoSearchJob) repoDescriptions(ctx context.Context, db database.DB, re
 func (s *RepoSearchJob) descriptionMatchRanges(repoDescriptions map[api.RepoID]string, descriptionPatterns []string) map[api.RepoID][]result.Range {
 	res := make(map[api.RepoID][]result.Range)
 
-	regexDescriptionPatterns := make([]*regexp.Regexp, 0, len(descriptionPatterns))
-	for _, dp := range descriptionPatterns {
-		rg, err := regexp.Compile(`(?is)` + dp)
-		if err != nil {
-			// `dp` is invalid regex, don't match against this pattern
-			continue
-		}
-		regexDescriptionPatterns = append(regexDescriptionPatterns, rg)
-	}
-
 	for repoID, repoDescription := range repoDescriptions {
-		for _, re := range regexDescriptionPatterns {
+		for _, dp := range descriptionPatterns {
+			re, err := regexp.Compile(`(?is)` + dp) // case-insensitive and match across newlines
+			if err != nil {
+				// this should never happen. repo:has.description predicate arguments should already be validated and `re` should always compile.
+				panic(err)
+			}
+
 			submatches := re.FindAllStringSubmatchIndex(repoDescription, -1)
 			if len(submatches) > 0 {
 				for _, sm := range submatches {
