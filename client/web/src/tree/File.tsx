@@ -2,7 +2,7 @@
 import * as React from 'react'
 import { useEffect, useState } from 'react'
 
-import { mdiSourceRepository, mdiFileDocumentOutline, mdiFolderOutline } from '@mdi/js'
+import { mdiSourceRepository, mdiFileDocumentOutline } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 import { escapeRegExp, isEqual } from 'lodash'
@@ -47,7 +47,7 @@ interface FileProps extends ThemeProps {
     linkRowClick: (event: React.MouseEvent<HTMLAnchorElement>) => void
     isActive: boolean
     isSelected: boolean
-    renderDirectoryIcon?: boolean
+    customIconPath?: string
 
     // For core workflow inline symbols redesign
     repoID: Scalars['ID']
@@ -127,7 +127,7 @@ export const File: React.FunctionComponent<React.PropsWithChildren<FileProps>> =
                                 <TreeRowIcon onClick={props.noopRowClick}>
                                     <Icon
                                         className={treeStyles.treeIcon}
-                                        svgPath={props.renderDirectoryIcon ? mdiFolderOutline : mdiFileDocumentOutline}
+                                        svgPath={props.customIconPath || mdiFileDocumentOutline}
                                         aria-hidden={true}
                                     />
                                 </TreeRowIcon>

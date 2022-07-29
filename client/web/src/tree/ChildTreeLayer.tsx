@@ -1,5 +1,7 @@
 import React from 'react'
 
+import { mdiFolderOutline } from '@mdi/js'
+
 import { FileDecorationsByPath } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
 
 import { dirname } from '../util/path'
@@ -84,7 +86,7 @@ export const ChildTreeLayer: React.FunctionComponent<React.PropsWithChildren<Chi
                                                 linkRowClick={() => props.telemetryService.log('FileTreeClick')}
                                                 isActive={false}
                                                 isSelected={false}
-                                                renderDirectoryIcon={true}
+                                                customIconPath={mdiFolderOutline}
                                             />
                                         )}
                                     </TreeRootContext.Consumer>
