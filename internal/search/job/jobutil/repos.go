@@ -25,21 +25,11 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	defer func() { finish(alert, err) }()
 
 	repos := searchrepos.NewResolver(clients.Logger, clients.DB, clients.SearcherURLs, clients.Zoekt)
-	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) (err error) {
+	err = repos.Paginate(ctx, s.RepoOpts, func(page *searchrepos.Resolved) error {
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
-		descriptionMatches := map[api.RepoID][]result.Range{}
-		// If repo:has.description was included in the query, then compute description match ranges
-		if len(s.RepoOpts.DescriptionPatterns) > 0 {
-			repoDescriptions, err := s.repoDescriptions(ctx, clients.DB, page.RepoRevs)
-			if err != nil {
-				return err
-			}
-			descriptionMatches = s.descriptionMatchRanges(repoDescriptions, s.RepoOpts.DescriptionPatterns)
-		}
-
 		stream.Send(streaming.SearchEvent{
-			Results: repoRevsToRepoMatches(page.RepoRevs, descriptionMatches),
+			Results: repoRevsToRepoMatches(page.RepoRevs),
 		})
 
 		return nil
@@ -91,7 +81,7 @@ func (s *RepoSearchJob) descriptionMatchRanges(repoDescriptions map[api.RepoID]s
 					res[repoID] = append(res[repoID], result.Range{
 						Start: result.Location{
 							Offset: sm[0],
-							Line:   0, // TODO: what happens if description contains a newline?
+							Line:   0,
 							Column: sm[0],
 						},
 						End: result.Location{
@@ -127,20 +117,15 @@ func (s *RepoSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 func (s *RepoSearchJob) Children() []job.Describer       { return nil }
 func (s *RepoSearchJob) MapChildren(job.MapFunc) job.Job { return s }
 
-func repoRevsToRepoMatches(repos []*search.RepositoryRevisions, descriptionMatches map[api.RepoID][]result.Range) []result.Match {
+func repoRevsToRepoMatches(repos []*search.RepositoryRevisions) []result.Match {
 	matches := make([]result.Match, 0, len(repos))
 	for _, r := range repos {
 		for _, rev := range r.Revs {
-			rm := &result.RepoMatch{
+			matches = append(matches, &result.RepoMatch{
 				Name: r.Repo.Name,
 				ID:   r.Repo.ID,
 				Rev:  rev,
-			}
-			if dms, ok := descriptionMatches[r.Repo.ID]; ok {
-				rm.DescriptionMatches = dms
-			}
-
-			matches = append(matches, rm)
+			})
 		}
 	}
 	return matches
