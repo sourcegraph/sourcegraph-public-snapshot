@@ -1,6 +1,6 @@
 # Developing the code insights backend
 
-- [Beta state of the backend](#beta-state-of-the-backend)
+- [Sstate of the backend](#state-of-the-backend)
 - [Architecture](#architecture)
 - [Life of an insight](#life-of-an-insight)
     - [(1) User defines insight in settings](#1-user-defines-insight-in-settings)
@@ -18,14 +18,16 @@
 
 ## State of the backend
 
-* Supports running search-based insights over all indexable repositories on the Sourcegraph installation.
+* Supports running search- and compute- based insights over all indexable repositories on the Sourcegraph installation.
 * Is backed by a separate Postgres instance. See the [database section](#database) below for more information.
 * Optimizes unnecessary search queries by using an index of commits to query only for time periods that have had at least one commit.
-* Supports regexp based drilldown on repository name.
+* Supports filtering:
+  * By repository regexp
+  * By search context
+  * By filter options: name, result count, date added, and number of data series
 * Provides permissions restrictions by filtering of repositories that are not visible to the user at query time.
-* Does not yet support synchronous insight creation through an API. Read more below in the [Insight Metadata section](#insight-metadata-section).
 
-The current version of the backend is an MVP to achieve beta status to unblock the feature request of "running an insight over all my repos".
+Up-to-date feature updates are added to the [Sourcegraph changelog](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md).
 
 ## Architecture
 
