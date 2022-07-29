@@ -1,3 +1,6 @@
+// Global styles provided by @reach packages. Should be imported once in the global scope.
+@import '@reach/tabs/styles';
+
 @import '../../../branded/src/global-styles/base.scss';
 @import './theming/highlight.scss';
 @import './theming/monaco.scss';
@@ -5,15 +8,15 @@
 
 // Bootstrap configuration before Bootstrap is imported
 $popover-border-radius: var(--popover-border-radius);
-$grid-gutter-width: 1.5rem;
+$grid-gutter-width: var(--grid-gutter-width);
 
 // Tables
 
-$table-cell-padding: 0.625rem;
+$table-cell-padding: var(--table-cell-padding);
 $table-border-color: var(--border-color);
 
 $hr-border-color: var(--border-color);
-$hr-margin-y: 0.25rem;
+$hr-margin-y: var(--hr-margin-y);
 
 // Disable transitions
 $input-transition: none;
@@ -85,9 +88,6 @@ $input-transition: none;
     --media-lg: 992px;
     --media-xl: 1200px;
 }
-
-// Global styles provided by @reach packages. Should be imported once in the global scope.
-@import '@reach/tabs/styles';
 
 // stylelint-disable-next-line selector-max-id
 html,
