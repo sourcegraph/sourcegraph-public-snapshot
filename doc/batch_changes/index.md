@@ -87,9 +87,9 @@ Create a batch change by specifying a search query to get a list of repositories
 - [Site admin configuration for Batch Changes](how-tos/site_admin_configuration.md)
 - [Configuring credentials for Batch Changes](how-tos/configuring_credentials.md)
 - [Handling errored changesets](how-tos/handling_errored_changesets.md)
-- [Opting out of batch changes](how-tos/opting_out_of_batch_changes.md)
+- [Opting out of Batch Changes](how-tos/opting_out_of_batch_changes.md)
 - [Bulk operations on changesets](how-tos/bulk_operations_on_changesets.md)
-- Batch changes in monorepos <span class="badge badge-experimental">Experimental</span>
+- Batch Changes in monorepos <span class="badge badge-experimental">Experimental</span>
   - [Creating changesets per project in monorepos](how-tos/creating_changesets_per_project_in_monorepos.md)
   - <span class="badge badge-experimental">Experimental</span> [Creating multiple changesets in large repositories](how-tos/creating_multiple_changesets_in_large_repositories.md)
 
