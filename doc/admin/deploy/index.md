@@ -10,7 +10,7 @@ Sourcegraph also provides a [resource estimator](#resource-planning) to help pre
 
 If you are short on time and looking for a quick way to test Sourcegraph locally, consider running Sourcegraph via our [Docker Single Container](docker-single-container/index.md). 
 
-Or, if you don't want to bother with setup and configuration [try Sourcegraph Cloud](https://sourcegraph.com) instead.
+To just use Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com](https://sourcegraph.com/search).
 
 ## Resource planning
 
@@ -57,9 +57,7 @@ This path will require advanced knowledge of Kubernetes. For team's without the 
 
 The Docker Single container option is provided for **local proof-of-concept only** and is **not intended for testing or deployment at a pre-production/production level**. 
 
-Some features, such as [Code Insights](../../code_insights/index.md), are not available when using this deployment type. 
-
-If you're just starting out and want the absolute quickest setup time, [try Sourcegraph Cloud](https://sourcegraph.com).
+Some features, such as [Code Insights](../../code_insights/index.md), are not available when using this deployment type.
 
 ## Reference repositories
 

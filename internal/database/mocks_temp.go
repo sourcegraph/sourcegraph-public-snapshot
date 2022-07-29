@@ -27070,6 +27070,9 @@ type MockRepoStore struct {
 	// object controlling the behavior of the method
 	// GetFirstRepoNameByCloneURL.
 	GetFirstRepoNameByCloneURLFunc *RepoStoreGetFirstRepoNameByCloneURLFunc
+	// GetRepoDescriptionsByIDsFunc is an instance of a mock function object
+	// controlling the behavior of the method GetRepoDescriptionsByIDs.
+	GetRepoDescriptionsByIDsFunc *RepoStoreGetRepoDescriptionsByIDsFunc
 	// GetReposSetByIDsFunc is an instance of a mock function object
 	// controlling the behavior of the method GetReposSetByIDs.
 	GetReposSetByIDsFunc *RepoStoreGetReposSetByIDsFunc
@@ -27148,6 +27151,11 @@ func NewMockRepoStore() *MockRepoStore {
 		},
 		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
 			defaultHook: func(context.Context, string) (r0 api.RepoName, r1 error) {
+				return
+			},
+		},
+		GetRepoDescriptionsByIDsFunc: &RepoStoreGetRepoDescriptionsByIDsFunc{
+			defaultHook: func(context.Context, ...api.RepoID) (r0 map[api.RepoID]string, r1 error) {
 				return
 			},
 		},
@@ -27253,6 +27261,11 @@ func NewStrictMockRepoStore() *MockRepoStore {
 				panic("unexpected invocation of MockRepoStore.GetFirstRepoNameByCloneURL")
 			},
 		},
+		GetRepoDescriptionsByIDsFunc: &RepoStoreGetRepoDescriptionsByIDsFunc{
+			defaultHook: func(context.Context, ...api.RepoID) (map[api.RepoID]string, error) {
+				panic("unexpected invocation of MockRepoStore.GetRepoDescriptionsByIDs")
+			},
+		},
 		GetReposSetByIDsFunc: &RepoStoreGetReposSetByIDsFunc{
 			defaultHook: func(context.Context, ...api.RepoID) (map[api.RepoID]*types.Repo, error) {
 				panic("unexpected invocation of MockRepoStore.GetReposSetByIDs")
@@ -27336,6 +27349,9 @@ func NewMockRepoStoreFrom(i RepoStore) *MockRepoStore {
 		},
 		GetFirstRepoNameByCloneURLFunc: &RepoStoreGetFirstRepoNameByCloneURLFunc{
 			defaultHook: i.GetFirstRepoNameByCloneURL,
+		},
+		GetRepoDescriptionsByIDsFunc: &RepoStoreGetRepoDescriptionsByIDsFunc{
+			defaultHook: i.GetRepoDescriptionsByIDs,
 		},
 		GetReposSetByIDsFunc: &RepoStoreGetReposSetByIDsFunc{
 			defaultHook: i.GetReposSetByIDs,
@@ -28344,6 +28360,124 @@ func (c RepoStoreGetFirstRepoNameByCloneURLFuncCall) Args() []interface{} {
 // Results returns an interface slice containing the results of this
 // invocation.
 func (c RepoStoreGetFirstRepoNameByCloneURLFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
+// RepoStoreGetRepoDescriptionsByIDsFunc describes the behavior when the
+// GetRepoDescriptionsByIDs method of the parent MockRepoStore instance is
+// invoked.
+type RepoStoreGetRepoDescriptionsByIDsFunc struct {
+	defaultHook func(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
+	hooks       []func(context.Context, ...api.RepoID) (map[api.RepoID]string, error)
+	history     []RepoStoreGetRepoDescriptionsByIDsFuncCall
+	mutex       sync.Mutex
+}
+
+// GetRepoDescriptionsByIDs delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockRepoStore) GetRepoDescriptionsByIDs(v0 context.Context, v1 ...api.RepoID) (map[api.RepoID]string, error) {
+	r0, r1 := m.GetRepoDescriptionsByIDsFunc.nextHook()(v0, v1...)
+	m.GetRepoDescriptionsByIDsFunc.appendCall(RepoStoreGetRepoDescriptionsByIDsFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the
+// GetRepoDescriptionsByIDs method of the parent MockRepoStore instance is
+// invoked and the hook queue is empty.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) SetDefaultHook(hook func(context.Context, ...api.RepoID) (map[api.RepoID]string, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetRepoDescriptionsByIDs method of the parent MockRepoStore instance
+// invokes the hook at the front of the queue and discards it. After the
+// queue is empty, the default hook function is invoked for any future
+// action.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) PushHook(hook func(context.Context, ...api.RepoID) (map[api.RepoID]string, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) SetDefaultReturn(r0 map[api.RepoID]string, r1 error) {
+	f.SetDefaultHook(func(context.Context, ...api.RepoID) (map[api.RepoID]string, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) PushReturn(r0 map[api.RepoID]string, r1 error) {
+	f.PushHook(func(context.Context, ...api.RepoID) (map[api.RepoID]string, error) {
+		return r0, r1
+	})
+}
+
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) nextHook() func(context.Context, ...api.RepoID) (map[api.RepoID]string, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) appendCall(r0 RepoStoreGetRepoDescriptionsByIDsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of RepoStoreGetRepoDescriptionsByIDsFuncCall
+// objects describing the invocations of this function.
+func (f *RepoStoreGetRepoDescriptionsByIDsFunc) History() []RepoStoreGetRepoDescriptionsByIDsFuncCall {
+	f.mutex.Lock()
+	history := make([]RepoStoreGetRepoDescriptionsByIDsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// RepoStoreGetRepoDescriptionsByIDsFuncCall is an object that describes an
+// invocation of method GetRepoDescriptionsByIDs on an instance of
+// MockRepoStore.
+type RepoStoreGetRepoDescriptionsByIDsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is a slice containing the values of the variadic arguments
+	// passed to this method invocation.
+	Arg1 []api.RepoID
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 map[api.RepoID]string
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation. The variadic slice argument is flattened in this array such
+// that one positional argument and three variadic arguments would result in
+// a slice of four, not two.
+func (c RepoStoreGetRepoDescriptionsByIDsFuncCall) Args() []interface{} {
+	trailing := []interface{}{}
+	for _, val := range c.Arg1 {
+		trailing = append(trailing, val)
+	}
+
+	return append([]interface{}{c.Arg0}, trailing...)
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c RepoStoreGetRepoDescriptionsByIDsFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
 }
 

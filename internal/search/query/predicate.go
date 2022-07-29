@@ -340,32 +340,3 @@ func (f *FileHasOwnerPredicate) ParseParams(params string) error {
 
 func (f FileHasOwnerPredicate) Field() string { return FieldFile }
 func (f FileHasOwnerPredicate) Name() string  { return "has.owner" }
-
-// nonPredicateRepos returns the repo nodes in a query that aren't predicates,
-// respecting parameters that determine repo results.
-func nonPredicateRepos(q Basic) []Node {
-	var res []Node
-	VisitParameter(q.ToParseTree(), func(field, value string, negated bool, ann Annotation) {
-		if ann.Labels.IsSet(IsPredicate) {
-			// Skip predicates
-			return
-		}
-		switch field {
-		case
-			FieldRepo,
-			FieldContext,
-			FieldIndex,
-			FieldFork,
-			FieldArchived,
-			FieldVisibility,
-			FieldCase:
-			res = append(res, Parameter{
-				Field:      field,
-				Value:      value,
-				Negated:    negated,
-				Annotation: ann,
-			})
-		}
-	})
-	return res
-}

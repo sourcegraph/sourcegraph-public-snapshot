@@ -50,8 +50,7 @@ Every search on Sourcegraph uses a search context. Search contexts can be define
 
 **Sourcegraph.com** supports a [set of predefined search contexts](https://sourcegraph.com/contexts?order=spec-asc&visible=17&owner=all) that include:
 
-- Your personal context, `context:@username`, which automatically includes all repositories you add to Sourcegraph Cloud.
-- The global context, `context:global`, which includes all repositories on Sourcegraph Cloud.
+- The global context, `context:global`, which includes all repositories on Sourcegraph.com.
 - Search contexts for various software communities like [CNCF](https://sourcegraph.com/search?q=context:CNCF), [crates.io](https://sourcegraph.com/search?q=context:crates.io), [JVM](https://sourcegraph.com/search?q=context:JVM), and more.  
 
 If no search context is specified, `context:global` is used.

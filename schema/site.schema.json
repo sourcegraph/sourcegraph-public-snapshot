@@ -220,11 +220,35 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "jvmPackages": {
-          "description": "Allow adding JVM packages code host connections",
+        "goPackages": {
+          "description": "Allow adding Go package host connections",
           "type": "string",
           "enum": ["enabled", "disabled"],
-          "default": "enabled"
+          "default": "disabled"
+        },
+        "jvmPackages": {
+          "description": "Allow adding JVM package host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "npmPackages": {
+          "description": "Allow adding npm package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "pythonPackages": {
+          "description": "Allow adding Python package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
+        },
+        "rustPackages": {
+          "description": "Allow adding Rust package code host connections",
+          "type": "string",
+          "enum": ["enabled", "disabled"],
+          "default": "disabled"
         },
         "pagure": {
           "description": "Allow adding Pagure code host connections",
@@ -260,12 +284,6 @@
               "minimum": 1
             }
           }
-        },
-        "npmPackages": {
-          "description": "Allow adding npm packages code host connections",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
         },
         "tls.external": {
           "description": "Global TLS/SSL settings for Sourcegraph to use when communicating with code hosts.",

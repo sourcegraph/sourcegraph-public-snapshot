@@ -11,20 +11,19 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// StitchDefinitions constructs a migration graph over time in two values. First, the migration graph
-// itself is formed by merging migration definitions as they were defined over time in Git. Second, the set
-// of leaves of the migration point at each of the given revisions is also constructed. This data is useful
-// during instance upgrades as these points in the graph represent the "edge" of the graph as it was defined
-// for a particular release.
+// StitchDefinitions constructs a migration graph over time, which includes both the stitched unified
+// migration graph as defined over multiple releases, as well as a mapping fom schema names to their
+// root and leaf migrations so that we can later determine what portion of the graph corresponds to a
+// particular release.
 //
-// Stitch is an undoing of squashing. We construct the migration graph by layering the definitions of the
-// migrations as they're defined in each of the given git revisions. Migration definitions with the same
-// identifier will be "merged" by some custom rules/edge-case logic.
+// Stitch is an undoing of squashing. We construct the migration graph by layering the definitions of
+// the migrations as they're defined in each of the given git revisions. Migration definitions with the
+// same identifier will be "merged" by some custom rules/edge-case logic.
 //
 // NOTE: This should only be used at development or build time - the root parameter should point to a
 // valid git clone root directory. Resulting errors are apparent.
 func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedMigration, error) {
-	definitionMap, leafIDsByRev, err := overlayDefinitions(schemaName, root, revs)
+	definitionMap, boundsByRev, err := overlayDefinitions(schemaName, root, revs)
 	if err != nil {
 		return shared.StitchedMigration{}, err
 	}
@@ -39,32 +38,35 @@ func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedM
 		return shared.StitchedMigration{}, err
 	}
 
-	return shared.StitchedMigration{definitions, leafIDsByRev}, nil
+	return shared.StitchedMigration{
+		Definitions: definitions,
+		BoundsByRev: boundsByRev,
+	}, nil
 }
 
 // overlayDefinitions combines the definitions defined at all of the given git revisions for the given schema,
 // then spot-rewrites portions of definitions to ensure they can be reordered to form a valid migration graph
-// (as it would be defined today). The leaf migration identifiers for each of the given revs are also returned.
+// (as it would be defined today). The root and leaf migration identifiers for each of the given revs are also
+// returned.
 //
 // An error is returned if the git revision's contents cannot be rewritten into a format readable by the
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinitions(schemaName, root string, revs []string) (map[int]definition.Definition, map[string][]int, error) {
+func overlayDefinitions(schemaName, root string, revs []string) (map[int]definition.Definition, map[string]shared.MigrationBounds, error) {
 	definitionMap := map[int]definition.Definition{}
-	leafIDsByRev := make(map[string][]int, len(revs))
-
+	boundsByRev := make(map[string]shared.MigrationBounds, len(revs))
 	for _, rev := range revs {
-		leafIDs, err := overlayDefinition(schemaName, root, rev, definitionMap)
+		bounds, err := overlayDefinition(schemaName, root, rev, definitionMap)
 		if err != nil {
 			return nil, nil, err
 		}
 
-		leafIDsByRev[rev] = leafIDs
+		boundsByRev[rev] = bounds
 	}
 
 	linkVirtualPrivilegedMigrations(definitionMap)
-	return definitionMap, leafIDsByRev, nil
+	return definitionMap, boundsByRev, nil
 }
 
 const squashedMigrationPrefix = "squashed migrations"
@@ -72,23 +74,23 @@ const squashedMigrationPrefix = "squashed migrations"
 // overlayDefinition reads migrations from a locally available git revision for the given schema, then
 // extends the given map of definitions with migrations that have not yet been inserted.
 //
-// This function returns the identifiers of the migration leaves at this revision, which will be necessary
-// to distinguish where on the graph out-of-band migration interrupt points can "rest" to wait for data
-// migrations to complete.
+// This function returns the identifiers of the migration root and leaves at this revision, which will be
+// necessary to distinguish where on the graph out-of-band migration interrupt points can "rest" to wait
+// for data migrations to complete.
 //
 // An error is returned if the git revision's contents cannot be rewritten into a format readable by the
 // current migration definition utilities. An error is also returned if migrations with the same identifier
 // differ in a significant way (e.g., definitions, parents) and there is not an explicit exception to deal
 // with it in this code.
-func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) ([]int, error) {
+func overlayDefinition(schemaName, root, rev string, definitionMap map[int]definition.Definition) (shared.MigrationBounds, error) {
 	fs, err := readMigrations(schemaName, root, rev)
 	if err != nil {
-		return nil, err
+		return shared.MigrationBounds{}, err
 	}
 
 	revDefinitions, err := definition.ReadDefinitions(fs, migrationPath(schemaName))
 	if err != nil {
-		return nil, errors.Wrap(err, "@"+rev)
+		return shared.MigrationBounds{}, errors.Wrap(err, "@"+rev)
 	}
 
 	for i, newDefinition := range revDefinitions.All() {
@@ -99,7 +101,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		// version incorrectly.
 
 		if isSquashedMigration && !strings.HasPrefix(newDefinition.Name, squashedMigrationPrefix) {
-			return nil, errors.Newf("expected migration %d@%s to have a name prefixed with %q", newDefinition.ID, rev, squashedMigrationPrefix)
+			return shared.MigrationBounds{}, errors.Newf("expected migration %d@%s to have a name prefixed with %q", newDefinition.ID, rev, squashedMigrationPrefix)
 		}
 
 		existingDefinition, ok := definitionMap[newDefinition.ID]
@@ -119,7 +121,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 			continue
 		}
 
-		return nil, errors.Newf("migration %d unexpectedly edited in release %s", newDefinition.ID, rev)
+		return shared.MigrationBounds{}, errors.Newf("migration %d unexpectedly edited in release %s", newDefinition.ID, rev)
 	}
 
 	leafIDs := []int{}
@@ -127,7 +129,7 @@ func overlayDefinition(schemaName, root, rev string, definitionMap map[int]defin
 		leafIDs = append(leafIDs, migration.ID)
 	}
 
-	return leafIDs, nil
+	return shared.MigrationBounds{RootID: revDefinitions.Root().ID, LeafIDs: leafIDs}, nil
 }
 
 func areEqualDefinitions(x, y definition.Definition) bool {
