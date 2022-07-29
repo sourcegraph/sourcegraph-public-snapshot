@@ -22,8 +22,9 @@ func TestPackagesSource_GetRepo(t *testing.T) {
 		t.Fatalf("expected ParsePackageFromRepoName to be called, was not")
 	}
 
-	if !dummySrc.getPackageCalled {
-		t.Fatalf("expected GetPackage to be called, was not")
+	// Flip the condition below after https://github.com/sourcegraph/sourcegraph/issues/39653 has been fixed.
+	if dummySrc.getPackageCalled {
+		t.Fatalf("expected GetPackage to not be called, but it was called")
 	}
 }
 
