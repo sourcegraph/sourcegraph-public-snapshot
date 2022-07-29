@@ -100,18 +100,19 @@ export const ExtensionsArea: React.FunctionComponent<React.PropsWithChildren<Ext
                 />
             ) : null}
             <Switch>
-                {props.routes &&
-                    props.routes.map(
-                        ({ path, exact, condition = () => true, render }) =>
-                            condition(context) && (
-                                <Route
-                                    key="hardcoded-key"
-                                    path={props.match.url + path}
-                                    exact={exact}
-                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                                />
-                            )
-                    )}
+                {props.routes
+                    ? props.routes.map(
+                          ({ path, exact, condition = () => true, render }) =>
+                              condition(context) && (
+                                  <Route
+                                      key="hardcoded-key"
+                                      path={props.match.url + path}
+                                      exact={exact}
+                                      render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                  />
+                              )
+                      )
+                    : null}
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </Page>
