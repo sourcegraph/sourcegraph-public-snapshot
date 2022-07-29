@@ -209,7 +209,6 @@ const config = {
         include: hotLoadablePaths,
         exclude: extensionHostWorker,
         use: [
-          ...(IS_PRODUCTION ? ['thread-loader'] : []),
           {
             loader: 'babel-loader',
             options: {
@@ -222,7 +221,7 @@ const config = {
       {
         test: /\.[jt]sx?$/,
         exclude: [...hotLoadablePaths, extensionHostWorker],
-        use: [...(IS_PRODUCTION ? ['thread-loader'] : []), getBabelLoader()],
+        use: [getBabelLoader()],
       },
       {
         test: /\.(sass|scss)$/,

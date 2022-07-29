@@ -340,7 +340,6 @@
     "svgo": "^2.7.0",
     "term-size": "^2.2.0",
     "terser-webpack-plugin": "^5.1.4",
-    "thread-loader": "^3.0.4",
     "ts-loader": "^9.3.0",
     "ts-node": "^10.7.0",
     "typed-scss-modules": "^4.1.1",
