@@ -565,12 +565,13 @@ func (s *Server) setRepoSizes(ctx context.Context, repoToSize map[api.RepoName]i
 	}
 
 	// updating repos
-	err = s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
+	updatedRepos, err := s.DB.GitserverRepos().UpdateRepoSizes(ctx, s.Hostname, reposToUpdate)
 	if err != nil {
 		return err
 	}
-	logger.Info("repos had their sizes updated",
-		log.Int("reposToUpdate", len(reposToUpdate)))
+	if updatedRepos > 0 {
+		logger.Info("repos had their sizes updated", log.Int("updatedRepos", updatedRepos))
+	}
 
 	return nil
 }

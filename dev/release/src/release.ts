@@ -1,4 +1,4 @@
-import { readFileSync, rmdirSync, writeFileSync } from 'fs'
+import { readFileSync, rmdirSync, writeFileSync, readdirSync } from 'fs'
 import * as path from 'path'
 
 import commandExists from 'command-exists'
@@ -25,11 +25,11 @@ import {
 } from './github'
 import { ensureEvent, getClient, EventOptions, calendarTime } from './google-calendar'
 import { postMessage, slackURL } from './slack'
+import * as update from './update'
 import {
     cacheFolder,
     formatDate,
     timezoneLink,
-    hubSpotFeedbackFormStub,
     ensureDocker,
     changelogURL,
     ensureReleaseBranchUpToDate,
@@ -319,6 +319,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
                 await execa('git', ['branch', branch])
                 await execa('git', ['push', 'origin', branch])
                 await postMessage(message, config.slackAnnounceChannel)
+                console.log(`To check the status of the branch, run:\nsg ci status -branch ${release.version} --wait\n`)
             } catch (error) {
                 console.error('Failed to create release branch', error)
             }
@@ -369,16 +370,21 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
             const branch = `${release.major}.${release.minor}`
             const tag = `v${release.version}${candidate === 'final' ? '' : `-rc.${candidate}`}`
             ensureReleaseBranchUpToDate(branch)
-            await createTag(
-                await getAuthenticatedGitHubClient(),
-                {
-                    owner: 'sourcegraph',
-                    repo: 'sourcegraph',
-                    branch,
-                    tag,
-                },
-                config.dryRun.tags || false
-            )
+            try {
+                await createTag(
+                    await getAuthenticatedGitHubClient(),
+                    {
+                        owner: 'sourcegraph',
+                        repo: 'sourcegraph',
+                        branch,
+                        tag,
+                    },
+                    config.dryRun.tags || false
+                )
+                console.log(`To check the status of the build, run:\nsg ci status -branch ${tag} --wait\n`)
+            } catch (error) {
+                console.error(`Failed to create tag: ${tag}`, error)
+            }
         },
     },
     {
@@ -405,6 +411,7 @@ ${trackingIssues.map(index => `- ${slackURL(index.title, index.url)}`).join('\n'
 
             // default values
             const notPatchRelease = release.patch === 0
+            const previousNotPatchRelease = previous.patch === 0
             const versionRegex = '[0-9]+\\.[0-9]+\\.[0-9]+'
             const batchChangeURL = batchChanges.batchChangeURL(batchChange)
             const trackingIssue = await getTrackingIssue(await getAuthenticatedGitHubClient(), release)
@@ -452,13 +459,6 @@ cc @${config.captainGitHubUsername}
                 `${release.major}.${release.minor}`,
             ]
 
-            // we join with escaped newlines for the 'sed' command
-            const upgradeGuideEntry = [
-                `## ${previousVersion} -> ${nextVersion}`,
-                'TODO',
-                hubSpotFeedbackFormStub(previousVersion),
-            ].join('\\n\\n')
-
             // Render changes
             const createdChanges = await createChangesets({
                 requiredCommands: ['comby', sed, 'find', 'go', 'src', 'sg'],
@@ -499,22 +499,29 @@ cc @${config.captainGitHubUsername}
                                 ? `comby -in-place 'const minimumUpgradeableVersion = ":[1]"' 'const minimumUpgradeableVersion = "${release.version}"' enterprise/dev/ci/internal/ci/*.go`
                                 : 'echo "Skipping minimumUpgradeableVersion bump on patch release"',
 
-                            // Add a stub to add upgrade guide entries
-                            notPatchRelease
-                                ? `${sed} -i -E '/GENERATE UPGRADE GUIDE ON RELEASE/a \\\n\\n${upgradeGuideEntry}' doc/admin/updates/*.md`
-                                : 'echo "Skipping upgrade guide entries on patch release"',
+                            // Cut udpate guides with entries from unreleased.
+                            (directory: string, updateDirectory = '/doc/admin/updates') => {
+                                updateDirectory = directory + updateDirectory
+                                for (const file of readdirSync(updateDirectory)) {
+                                    const fullPath = path.join(updateDirectory, file)
+                                    let updateContents = readFileSync(fullPath).toString()
+                                    if (notPatchRelease) {
+                                        const releaseHeader = `## ${previousVersion} -> ${nextVersion}`
+                                        const unreleasedHeader = '## Unreleased'
+                                        updateContents = updateContents.replace(unreleasedHeader, releaseHeader)
+                                        updateContents = updateContents.replace(update.divider, update.releaseTemplate)
+                                    } else if (previousNotPatchRelease) {
+                                        updateContents = updateContents.replace(previousVersion, release.version)
+                                    } else {
+                                        updateContents = updateContents.replace(previous.version, release.version)
+                                    }
+                                    writeFileSync(fullPath, updateContents)
+                                }
+                            },
                         ],
                         ...prBodyAndDraftState(
                             ((): string[] => {
                                 const items: string[] = []
-                                if (notPatchRelease) {
-                                    items.push('Update the upgrade guides in `doc/admin/updates`')
-                                } else {
-                                    items.push(
-                                        'Update the [CHANGELOG](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md) to include all the changes included in this patch. Learn more about [how to update CHANGELOG.md](https://handbook.sourcegraph.com/departments/product-engineering/engineering/process/releases#changelogmd).',
-                                        'If any specific upgrade steps are required, update the upgrade guides in `doc/admin/updates`'
-                                    )
-                                }
                                 items.push(
                                     'Ensure all other pull requests in the batch change have been merged',
                                     'Run `yarn run release release:finalize` to generate the tags required. CI will not pass until this command is run.',

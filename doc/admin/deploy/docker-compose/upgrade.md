@@ -16,11 +16,11 @@ To start, familiarise yourself with the details of the upgrade that you will be 
 - The version number of your current instance.
 - The version number of the latest Sourcegraph release.
 - The sequence of minor releases required to upgrade from your version to the latest version (your upgrade sequence). This is required because Sourcegraph only supports upgrading one minor version at a time. 
-- Details of the changes for each minor version in your upgrade sequence in the [product changelog](../../../CHANGELOG.md) and also in the [docker-compose changelog](docker_compose.md). 
+- Details of the changes for each minor version in your upgrade sequence in the [product changelog](../../../CHANGELOG.md) and also in the [docker-compose changelog](../../updates/docker_compose.md). 
 
 ## 2. Upgrade to the next minor version
 
-If you [configured Docker Compose with a release branch](../deploy/docker-compose/index.md#configure-a-release-branch), you merge the upstream release tag for the next minor version into your `release` branch. In the following example the release branch is being upgraded to v3.40.2. 
+If you [configured Docker Compose with a release branch](index.md#configure-a-release-branch), you merge the upstream release tag for the next minor version into your `release` branch. In the following example the release branch is being upgraded to v3.40.2. 
 
 ```bash
 # fetch updates
@@ -69,7 +69,7 @@ Before upgrading to the next minor version in your upgrade sequence, you must al
 
 In this situation, upgrading to the next version will not result in any data loss, but all new instances will detect the illegal migration state and refuse to start up with a fatal message (`Unfinished migrations`).
 
-See [How to troubleshoot an unfinished migration](../how-to/unfinished_migration.md) for more information.
+See [How to troubleshoot an unfinished migration](../../how-to/unfinished_migration.md) for more information.
 
 ## 4. Repeat steps 2 and 3 until Sourcegraph is up to date 
 

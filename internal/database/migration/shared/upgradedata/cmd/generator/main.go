@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/stitch"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
 )
@@ -19,14 +20,14 @@ func main() {
 
 func mainErr() error {
 	// This script is invoked via a go:generate directive in
-	// internal/database/migration/cliutil (upgrade_data.go)
+	// internal/database/migration/shared (embed.go)
 	wd, err := os.Getwd()
 	if err != nil {
 		return err
 	}
 
 	repoRoot := filepath.Join(wd, "..", "..", "..", "..")
-	filepath := filepath.Join(wd, "upgrade_data", "payload.json")
+	filepath := filepath.Join(wd, "upgradedata", "stitched-migration-graph.json")
 
 	versions, err := oobmigration.UpgradeRange(MinVersion, MaxVersion)
 	if err != nil {
@@ -38,7 +39,7 @@ func mainErr() error {
 		versionTags = append(versionTags, version.GitTag())
 	}
 
-	stitchedMigrationBySchemaName := map[string]stitch.StitchedMigration{}
+	stitchedMigrationBySchemaName := map[string]shared.StitchedMigration{}
 	for _, schemaName := range schemas.SchemaNames {
 		stitched, err := stitch.StitchDefinitions(schemaName, repoRoot, versionTags)
 		if err != nil {

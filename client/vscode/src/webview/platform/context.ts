@@ -2,19 +2,22 @@ import { createContext, useContext } from 'react'
 
 import * as Comlink from 'comlink'
 import { print } from 'graphql'
-import { BehaviorSubject, from, Observable } from 'rxjs'
-
-import { GraphQLResult } from '@sourcegraph/http-client'
+import { BehaviorSubject, from, Observable, Subscribable } from 'rxjs'
+import { checkOk, GraphQLResult } from '@sourcegraph/http-client'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
 import { PlatformContext } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeOrError } from '@sourcegraph/shared/src/settings/settings'
 import { DeprecatedTooltipController } from '@sourcegraph/wildcard'
 
+import { extensions } from '../../../bundled-code-intel-extensions.json'
+
 import { ExtensionCoreAPI } from '../../contract'
 
 import { EventLogger } from './EventLogger'
 import { VsceTelemetryService } from './telemetryService'
+import { ExecutableExtension } from '@sourcegraph/shared/src/api/extension/activation'
+import { ExtensionManifest } from '@sourcegraph/shared/src/schema/extensionSchema'
 
 export interface VSCodePlatformContext
     extends Pick<
@@ -65,6 +68,9 @@ export function createPlatformContext(extensionCoreAPI: Comlink.Remote<Extension
         forceUpdateTooltip: () => DeprecatedTooltipController.forceUpdate(),
         // TODO showInputBox
         // TODO showMessage
+        getStaticExtensions: () => {
+            return getInlineExtensions()
+        },
     }
 
     return context
@@ -90,4 +96,36 @@ export function useWebviewPageContext(): WebviewPageProps {
     }
 
     return context
+}
+
+function getInlineExtensions(): Subscribable<ExecutableExtension[]> {
+    const promises: Promise<ExecutableExtension>[] = []
+
+    for (let extensionName of extensions) {
+        const { manifestURL, scriptURL } = getURLsForInlineExtension(extensionName)
+        promises.push(
+            fetch(manifestURL)
+                .then(response => checkOk(response).json())
+                .then(
+                    (manifest: ExtensionManifest): ExecutableExtension => ({
+                        id: `sourcegraph/${extensionName}`,
+                        manifest,
+                        scriptURL,
+                    })
+                )
+        )
+    }
+
+    return from(Promise.all(promises))
+}
+
+/**
+ * Get the manifest URL and script URL for a Sourcegraph extension which is inline (bundled with the browser add-on).
+ */
+function getURLsForInlineExtension(extensionName: string): { manifestURL: string; scriptURL: string } {
+    const extensionsDistPath = document.documentElement.dataset.extensionsDistPath!
+    return {
+        manifestURL: `${extensionsDistPath}/${extensionName}/package.json`,
+        scriptURL: `${extensionsDistPath}/${extensionName}/extension.js`,
+    }
 }
