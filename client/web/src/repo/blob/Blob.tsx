@@ -796,7 +796,6 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
     useEffect(() => {
         const subscription = codeViewElements.subscribe(codeView => {
             if (codeView) {
-                console.log('Running!')
                 const table = codeView.firstElementChild as HTMLTableElement
                 const firstRow = table.rows[0]
                 const lastRow = table.rows[table.rows.length - 1]
