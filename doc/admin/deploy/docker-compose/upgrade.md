@@ -20,7 +20,7 @@ To start, familiarise yourself with the details of the upgrade that you will be 
 
 ## 2. Upgrade to the next minor version
 
-If you [configured Docker Compose with a release branch](index.md#configure-a-release-branch), you merge the upstream release tag for the next minor version into your `release` branch. In the following example the release branch is being upgraded to v3.40.2. 
+If you [configured Docker Compose with a release branch](index.md#step-3-configure-the-release-branch), you merge the upstream release tag for the next minor version into your `release` branch. In the following example the release branch is being upgraded to v3.40.2. 
 
 ```bash
 # fetch updates
