@@ -97,7 +97,7 @@ Add the reference repository as an `upstream` remote so that you can get updates
   git remote add upstream https://github.com/sourcegraph/deploy-sourcegraph-docker
 ```
 
-Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](#upgrade-and-migration) and install your Sourcegraph instance.
+Create a `release` branch to track all of your customizations to Sourcegraph. This branch will be used to [upgrade Sourcegraph](/upgrade) and install your Sourcegraph instance.
 
 ```bash
   # Specify the version you want to install
