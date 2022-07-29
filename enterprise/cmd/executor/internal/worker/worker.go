@@ -79,7 +79,7 @@ type Options struct {
 // as a heartbeat routine that will periodically hit the remote API with the work that is
 // currently being performed, which is necessary so the job queue API doesn't hand out jobs
 // it thinks may have been dropped.
-func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) (worker goroutine.WaitableBackgroundRoutine, canceler goroutine.BackgroundRoutine) {
+func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *observation.Context) goroutine.WaitableBackgroundRoutine {
 	gatherer := metrics.MakeExecutorMetricsGatherer(log.Scoped("executor-worker.metrics-gatherer", ""), prometheus.DefaultGatherer, options.NodeExporterEndpoint, options.DockerRegistryNodeExporterEndpoint)
 	queueStore := apiclient.New(options.ClientOptions, gatherer, observationContext)
 	store := &storeShim{queueName: options.QueueName, queueStore: queueStore}
