@@ -22,6 +22,7 @@ import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/com
 import { FlatExtensionHostAPI } from '@sourcegraph/shared/src/api/contract'
 import { StatusBarItemWithKey } from '@sourcegraph/shared/src/api/extension/api/codeEditor'
 import { ViewerId } from '@sourcegraph/shared/src/api/viewerTypes'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { toURIWithPath } from '@sourcegraph/shared/src/util/url'
 import { WildcardThemeContext } from '@sourcegraph/wildcard'
@@ -37,7 +38,6 @@ import { positionToOffset } from './utils'
 import { locationField } from '.'
 
 import blobStyles from '../Blob.module.scss'
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 /**
  * Context holds all the information needed for CodeMirror extensions to
@@ -419,22 +419,25 @@ class StatusBarPlugin {
             )
 
         this.subscription = combineLatest([contextUpdates, this.triggerRender]).subscribe(([context]) => {
-            this.reactRoot.render(
-                React.createElement(
-                    WildcardThemeContext.Provider,
-                    { value: { isBranded: true } },
-                    React.createElement(StatusBar, {
-                        getStatusBarItems,
-                        extensionsController: context.extensionsController,
-                        uri: toURIWithPath(context.blobInfo),
-                        location: view.state.field(locationField),
-                        className: blobStyles.blobStatusBarBody,
-                        statusBarRef: () => {},
-                        hideWhileInitializing: true,
-                        isBlobPage: true,
-                    })
+            const location = view.state.field(locationField)
+            if (location) {
+                this.reactRoot.render(
+                    React.createElement(
+                        WildcardThemeContext.Provider,
+                        { value: { isBranded: true } },
+                        React.createElement(StatusBar, {
+                            getStatusBarItems,
+                            extensionsController: context.extensionsController,
+                            uri: toURIWithPath(context.blobInfo),
+                            location,
+                            className: blobStyles.blobStatusBarBody,
+                            statusBarRef: () => {},
+                            hideWhileInitializing: true,
+                            isBlobPage: true,
+                        })
+                    )
                 )
-            )
+            }
         })
 
         this.view.dom.append(this.container)

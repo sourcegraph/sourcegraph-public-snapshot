@@ -14,9 +14,9 @@ import { switchMap, throttleTime, filter, mergeAll, map } from 'rxjs/operators'
 
 import { DocumentHighlight } from '@sourcegraph/codeintellify'
 import { Position } from '@sourcegraph/extension-api-types'
+import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 import { positionToOffset, sortRangeValuesByStart } from './utils'
-import { createUpdateableField } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 
 interface HoverPosition {
     position: Position
