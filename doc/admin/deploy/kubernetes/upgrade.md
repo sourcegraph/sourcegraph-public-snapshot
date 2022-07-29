@@ -1,17 +1,16 @@
-# Updating Sourcegraph with Kubernetes
+# Upgrading Sourcegraph on Kubernetes without Helm
 
-> WARNING: This guide applies exclusively to a Kubernetes deployment **without** Helm. If using Helm, please go to [Updating Sourcegraph in the Helm guide](helm.md#upgrading-sourcegraph).
-> If you have not deployed Sourcegraph yet, it is higly recommended to use Helm as it simplifies the configuration and greatly simplifies the upgrade process. See our [Helm guide](helm.md) for more information.
+This upgrade guide applies to a Kubernetes deployment **without** Helm. If using Helm, please go to [Upgrading Sourcegraph in the Helm guide](helm.md#upgrading-sourcegraph).
 
-A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements.
-
-> WARNING: Please check the [Kubernetes update notes](../../updates/kubernetes.md) before upgrading to any particular version of Sourcegraph to check if any manual migrations are necessary.
+A new version of Sourcegraph is released every month (with patch releases in between, released as needed). Check the [Sourcegraph blog](https://about.sourcegraph.com/blog) for release announcements. We highly recommend upgrading one minor release at a time (eg, 3.32 to 3.33 ... not 3.32 to 3.36).
 
 ## Steps
 
-**These steps assume that you have created a `release` branch following the [instructions in the configuration guide](configure.md)**.
+1. Please check the [Kubernetes update notes](../../updates/kubernetes.md) before upgrading to any particular version of Sourcegraph to check if any manual migrations are necessary.
 
-1. Merge the new version of Sourcegraph into your release branch.
+**Note: the remaining steps assume that you have created a `release` branch following the [instructions in the configuration guide](configure.md)**.
+
+2. Merge the new version of Sourcegraph into your release branch.
 
    ```bash
    cd $DEPLOY_SOURCEGRAPH_FORK
@@ -23,13 +22,13 @@ A new version of Sourcegraph is released every month (with patch releases in bet
    git merge $NEW_VERSION
    ```
 
-2. Deploy the updated version of Sourcegraph to your Kubernetes cluster:
+3. Deploy the updated version of Sourcegraph to your Kubernetes cluster:
 
    ```bash
    ./kubectl-apply-all.sh
    ```
 
-3. Monitor the status of the deployment.
+4. Monitor the status of the deployment.
 
    ```bash
    kubectl get pods -o wide --watch
@@ -67,9 +66,7 @@ selectors](scale.md#node-selector) for Sourcegraph on Kubernetes.
 ## High-availability updates
 
 Sourcegraph is designed to be a high-availability (HA) service, but upgrades by default require a 10m downtime
-window. If you need zero-downtime upgrades, please contact us. Services employ health checks to test the health
-of newly updated components before switching live traffic over to them by default. HA-enabling features include
-the following:
+window. Services employ health checks to test the health of newly updated components before switching live traffic over to them by default. HA-enabling features include the following:
 
 - Replication: nearly all of the critical services within Sourcegraph are replicated. If a single instance of a
   service fails, that instance is restarted and removed from operation until it comes online again.
