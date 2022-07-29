@@ -1895,7 +1895,6 @@ func (s *Server) setCloneStatus(ctx context.Context, name api.RepoName, status t
 	return s.DB.GitserverRepos().SetCloneStatus(ctx, name, status, s.Hostname)
 }
 
-// TODO: Why does this exist? It could mean we miss clone status in the UI, correct?
 // setCloneStatusNonFatal is the same as setCloneStatus but only logs errors
 func (s *Server) setCloneStatusNonFatal(ctx context.Context, name api.RepoName, status types.CloneStatus) {
 	if err := s.setCloneStatus(ctx, name, status); err != nil {
@@ -1954,9 +1953,9 @@ type cloneOptions struct {
 // cloneRepo performs a clone operation for the given repository. It is
 // non-blocking by default.
 func (s *Server) cloneRepo(ctx context.Context, repo api.RepoName, opts *cloneOptions) (cloneProgress string, err error) {
-	// if isAlwaysCloningTest(repo) {
-	// 	return "This will never finish cloning", nil
-	// }
+	if isAlwaysCloningTest(repo) {
+		return "This will never finish cloning", nil
+	}
 
 	// We always want to store whether there was an error cloning the repo
 	defer func() {
