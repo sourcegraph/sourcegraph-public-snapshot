@@ -340,10 +340,15 @@ export interface CodeIntelligenceProps extends TelemetryProps {
     showGlobalDebug?: boolean
 }
 
-export const createOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
-    const mount = document.createElement('div')
-    mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
-    container.append(mount)
+export const getExistingOrCreateOverlayMount = (codeHostName: string, container: HTMLElement): HTMLElement => {
+    let mount = container.querySelector<HTMLDivElement>(`.hover-overlay-mount.hover-overlay-mount__${codeHostName}`)
+
+    if (!mount) {
+        mount = document.createElement('div')
+        mount.classList.add('hover-overlay-mount', `hover-overlay-mount__${codeHostName}`)
+        container.append(mount)
+    }
+
     return mount
 }
 
@@ -602,7 +607,7 @@ function initCodeIntelligence({
     if (!getHoverOverlayMountLocation) {
         // This renders to document.body, which we can assume is never removed,
         // so we don't need to subscribe to mutations.
-        const overlayMount = createOverlayMount(codeHost.type, document.body)
+        const overlayMount = getExistingOrCreateOverlayMount(codeHost.type, document.body)
         render(<HoverOverlayContainer />, overlayMount)
     } else {
         let previousMount: HTMLElement | null = null
@@ -613,7 +618,7 @@ function initCodeIntelligence({
                 if (previousMount) {
                     previousMount.remove()
                 }
-                const mount = createOverlayMount(codeHost.type, mountLocation)
+                const mount = getExistingOrCreateOverlayMount(codeHost.type, mountLocation)
                 previousMount = mount
                 render(<HoverOverlayContainer />, mount)
             })

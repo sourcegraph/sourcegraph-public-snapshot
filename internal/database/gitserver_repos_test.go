@@ -990,35 +990,38 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	ctx := context.Background()
 
 	repo1, gitserverRepo1 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo1",
-		URI:           "github.com/sourcegraph/repo1",
-		ExternalRepo:  api.ExternalRepoSpec{},
-		ShardID:       shardID,
-		RepoSizeBytes: 100,
+		Name:    "github.com/sourcegraph/repo1",
+		ShardID: shardID,
 	})
 
 	repo2, gitserverRepo2 := createTestRepo(ctx, t, db, &createTestRepoPayload{
-		Name:          "github.com/sourcegraph/repo2",
-		URI:           "github.com/sourcegraph/repo2",
-		ExternalRepo:  api.ExternalRepoSpec{},
-		ShardID:       shardID,
-		RepoSizeBytes: 100,
+		Name:    "github.com/sourcegraph/repo2",
+		ShardID: shardID,
+	})
+
+	repo3, gitserverRepo3 := createTestRepo(ctx, t, db, &createTestRepoPayload{
+		Name:    "github.com/sourcegraph/repo3",
+		ShardID: shardID,
 	})
 
 	// Setting repo sizes in DB
 	sizes := map[api.RepoID]int64{
 		repo1.ID: 100,
 		repo2.ID: 500,
+		repo3.ID: 800,
 	}
-	if err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes); err != nil {
+	numUpdated, err := db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	if err != nil {
 		t.Fatal(err)
+	}
+	if have, want := numUpdated, len(sizes); have != want {
+		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
 	}
 
 	// Updating sizes in test data for further diff comparison
 	gitserverRepo1.RepoSizeBytes = sizes[gitserverRepo1.RepoID]
-	gitserverRepo1.CloneStatus = types.CloneStatusCloned
 	gitserverRepo2.RepoSizeBytes = sizes[gitserverRepo2.RepoID]
-	gitserverRepo2.CloneStatus = types.CloneStatusCloned
+	gitserverRepo3.RepoSizeBytes = sizes[gitserverRepo3.RepoID]
 
 	// Checking repo diffs, excluding UpdatedAt. This is to verify that nothing except repo_size_bytes
 	// has changed
@@ -1036,6 +1039,53 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 	}
 	if diff := cmp.Diff(gitserverRepo2, after2, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
 		t.Fatal(diff)
+	}
+
+	after3, err := db.GitserverRepos().GetByID(ctx, repo3.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(gitserverRepo3, after3, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+		t.Fatal(diff)
+	}
+
+	// update again to make sure they're not updated again
+	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if have, want := numUpdated, 0; have != want {
+		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+	}
+
+	// update subset
+	sizes = map[api.RepoID]int64{
+		repo3.ID: 900,
+	}
+	numUpdated, err = db.GitserverRepos().UpdateRepoSizes(ctx, shardID, sizes)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if have, want := numUpdated, 1; have != want {
+		t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+	}
+
+	// update with different batch sizes
+	gitserverRepoStore := &gitserverRepoStore{Store: basestore.NewWithHandle(db.Handle())}
+	for _, batchSize := range []int64{1, 2, 3, 6} {
+		sizes = map[api.RepoID]int64{
+			repo1.ID: 123 + batchSize,
+			repo2.ID: 456 + batchSize,
+			repo3.ID: 789 + batchSize,
+		}
+
+		numUpdated, err = gitserverRepoStore.updateRepoSizesWithBatchSize(ctx, shardID, sizes, int(batchSize))
+		if err != nil {
+			t.Fatal(err)
+		}
+		if have, want := numUpdated, 3; have != want {
+			t.Fatalf("wrong number of repos updated. have=%d, want=%d", have, want)
+		}
 	}
 }
 

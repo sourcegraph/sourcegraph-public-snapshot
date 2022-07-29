@@ -10,7 +10,7 @@ while : ; do
     echo "--- ✂️ timeout reached, aborting".
     exit 1
   fi
-  if yarn --mutex network --frozen-lockfile --ignore-scripts --network-timeout 30000 --silent "$@" 2> >(tee "$tmp_log">&2); then
+  if yarn --mutex network --frozen-lockfile --network-timeout 30000 --silent "$@" 2> >(tee "$tmp_log">&2); then
     break
   fi
 

@@ -5,6 +5,14 @@ import (
 	"testing"
 	"time"
 
+	"github.com/lib/pq"
+
+	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
+
+	"github.com/keegancsmith/sqlf"
+
+	"github.com/google/go-cmp/cmp"
+
 	"github.com/sourcegraph/sourcegraph/internal/conf/deploy"
 
 	"github.com/sourcegraph/sourcegraph/internal/version"
@@ -108,7 +116,7 @@ func TestHandlerEnabledDisabled(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			confClient.Mock(&conf.Unified{SiteConfiguration: test.mockedConfig})
 
-			handler := newTelemetryHandler(logtest.Scoped(t), database.NewMockEventLogStore(), database.NewMockUserEmailsStore(), database.NewMockGlobalStateStore(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 				return nil
 			})
 			err := handler.Handle(ctx)
@@ -133,8 +141,10 @@ func TestHandlerLoadsEvents(t *testing.T) {
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
+	initAllowedEvents(t, db, []string{"event1", "event2"})
+
 	t.Run("loads no events when table is empty", func(t *testing.T) {
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			if len(event) != 0 {
 				t.Errorf("expected empty events but got event array with size: %d", len(event))
 			}
@@ -163,13 +173,13 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-
 	t.Run("loads events without error", func(t *testing.T) {
 		var got []*types.Event
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			got = event
 			return nil
 		})
+		handler.eventLogStore = db.EventLogs()
 
 		err := handler.Handle(ctx)
 		if err != nil {
@@ -201,10 +211,11 @@ func TestHandlerLoadsEvents(t *testing.T) {
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
 		var got []*types.Event
-		handler := newTelemetryHandler(logtest.Scoped(t), db.EventLogs(), db.UserEmails(), db.GlobalState(), func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+		handler := mockTelemetryHandler(t, func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 			got = event
 			return nil
 		})
+		handler.eventLogStore = db.EventLogs()
 		err := handler.Handle(ctx)
 		if err != nil {
 			t.Fatal(err)
@@ -222,6 +233,163 @@ func TestHandlerLoadsEvents(t *testing.T) {
 	})
 }
 
+func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+
+	initAllowedEvents(t, db, []string{"event1", "event2", "event4"})
+	testData := []*database.Event{
+		{
+			Name:   "event1",
+			UserID: 1,
+			Source: "test",
+		},
+		{
+			Name:   "event2",
+			UserID: 2,
+			Source: "test",
+		},
+	}
+	err := db.EventLogs().BulkInsert(ctx, testData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (0);"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	config := validEnabledConfiguration()
+	config.ExportUsageTelemetry.BatchSize = 1
+	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+
+	handler := mockTelemetryHandler(t, noopHandler())
+	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
+	handler.bookmarkStore = newBookmarkStore(db)
+
+	t.Run("first execution of handler should return first event", func(t *testing.T) {
+		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("first execution of handler should return first event", []*types.Event{{
+				ID:       1,
+				Name:     "event1",
+				UserID:   1,
+				Argument: "{}",
+				Source:   "test",
+				Version:  "0.0.0+dev",
+			}}).Equal(t, got)
+			return nil
+		}
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("second execution of handler should return second event", func(t *testing.T) {
+		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("second execution of handler should return second event", []*types.Event{{
+				ID:       2,
+				Name:     "event2",
+				UserID:   2,
+				Argument: "{}",
+				Source:   "test",
+				Version:  "0.0.0+dev",
+			}}).Equal(t, got)
+			return nil
+		}
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+	t.Run("third execution of handler should return no events", func(t *testing.T) {
+		handler.sendEventsCallback = func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			if len(event) == 0 {
+				t.Error("expected empty events")
+			}
+			return nil
+		}
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
+func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+
+	initAllowedEvents(t, db, []string{"allowed"})
+	testData := []*database.Event{
+		{
+			Name:   "allowed",
+			UserID: 1,
+			Source: "test",
+		},
+		{
+			Name:   "not-allowed",
+			UserID: 2,
+			Source: "test",
+		},
+		{
+			Name:   "allowed",
+			UserID: 3,
+			Source: "test",
+		},
+	}
+	err := db.EventLogs().BulkInsert(ctx, testData)
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (0);"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	config := validEnabledConfiguration()
+	confClient.Mock(&conf.Unified{SiteConfiguration: config})
+
+	handler := mockTelemetryHandler(t, noopHandler())
+	handler.eventLogStore = db.EventLogs() // replace mocks with real stores for a partially mocked handler
+	handler.bookmarkStore = newBookmarkStore(db)
+
+	t.Run("ensure only allowed events are returned", func(t *testing.T) {
+		handler.sendEventsCallback = func(ctx context.Context, got []*types.Event, config topicConfig, metadata instanceMetadata) error {
+			autogold.Want("first execution of handler should return first event", []*types.Event{
+				{
+					ID:       1,
+					Name:     "allowed",
+					UserID:   1,
+					Argument: "{}",
+					Source:   "test",
+					Version:  "0.0.0+dev",
+				},
+				{
+					ID:       3,
+					Name:     "allowed",
+					UserID:   3,
+					Argument: "{}",
+					Source:   "test",
+					Version:  "0.0.0+dev",
+				},
+			}).Equal(t, got)
+			return nil
+		}
+
+		err = handler.Handle(ctx)
+		if err != nil {
+			t.Fatal(err)
+		}
+	})
+}
+
 func validEnabledConfiguration() schema.SiteConfiguration {
 	return schema.SiteConfiguration{ExportUsageTelemetry: &schema.ExportUsageTelemetry{
 		Enabled:          true,
@@ -235,6 +403,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 	dbHandle := dbtest.NewDB(logger, t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbHandle)
+	bookmarkStore := newBookmarkStore(db)
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
@@ -243,7 +412,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 		config.ExportUsageTelemetry.TopicProjectName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), noopHandler())
+		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler())
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
@@ -253,7 +422,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 		config.ExportUsageTelemetry.TopicName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), noopHandler())
+		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler())
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing topic name", "getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
@@ -331,5 +500,119 @@ func TestGetInstanceMetadata(t *testing.T) {
 func noopHandler() sendEventsCallbackFunc {
 	return func(ctx context.Context, event []*types.Event, config topicConfig, metadata instanceMetadata) error {
 		return nil
+	}
+}
+
+func TestGetBookmark(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+	store := newBookmarkStore(db)
+	eventLogStore := db.EventLogs()
+
+	clearStateTable := func() {
+		dbHandle.Exec("DELETE FROM event_logs_scrape_state;")
+	}
+
+	insert := []*database.Event{
+		{
+			Name:   "event1",
+			UserID: 1,
+			Source: "test",
+		},
+		{
+			Name:   "event2",
+			UserID: 2,
+			Source: "test",
+		},
+	}
+	err := eventLogStore.BulkInsert(ctx, insert)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	t.Run("state is empty should generate row", func(t *testing.T) {
+		got, err := store.GetBookmark(ctx)
+		if err != nil {
+			t.Error(err)
+		}
+		want := 2
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("%s (want/got): %s", t.Name(), diff)
+		}
+		clearStateTable()
+	})
+
+	t.Run("state exists and returns bookmark", func(t *testing.T) {
+		err := basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
+		if err != nil {
+			t.Error(err)
+		}
+
+		got, err := store.GetBookmark(ctx)
+		if err != nil {
+			t.Error(err)
+		}
+		want := 1
+		if diff := cmp.Diff(want, got); diff != "" {
+			t.Errorf("%s (want/got): %s", t.Name(), diff)
+		}
+		clearStateTable()
+	})
+}
+
+func TestUpdateBookmark(t *testing.T) {
+	logger := logtest.Scoped(t)
+	dbHandle := dbtest.NewDB(logger, t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbHandle)
+	store := newBookmarkStore(db)
+
+	err := basestore.NewWithHandle(db.Handle()).Exec(ctx, sqlf.Sprintf("insert into event_logs_scrape_state (bookmark_id) values (1);"))
+	if err != nil {
+		t.Error(err)
+	}
+
+	want := 6
+	err = store.UpdateBookmark(ctx, want)
+	if err != nil {
+		t.Error(errors.Wrap(err, "UpdateBookmark"))
+	}
+
+	got, err := store.GetBookmark(ctx)
+	if err != nil {
+		t.Error(err)
+	}
+	if diff := cmp.Diff(want, got); diff != "" {
+		t.Errorf("%s (want/got): %s", t.Name(), diff)
+	}
+}
+
+func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *telemetryHandler {
+	bms := NewMockBookmarkStore()
+	bms.GetBookmarkFunc.SetDefaultReturn(0, nil)
+
+	return &telemetryHandler{
+		logger:             logtest.Scoped(t),
+		eventLogStore:      database.NewMockEventLogStore(),
+		globalStateStore:   database.NewMockGlobalStateStore(),
+		userEmailsStore:    database.NewMockUserEmailsStore(),
+		bookmarkStore:      bms,
+		sendEventsCallback: callbackFunc,
+	}
+}
+
+// initAllowedEvents is a helper to establish a deterministic set of allowed events. This is useful because
+// the standard database migrations will create data in the allowed events table that may conflict with tests.
+func initAllowedEvents(t *testing.T, db database.DB, names []string) {
+	store := basestore.NewWithHandle(db.Handle())
+	err := store.Exec(context.Background(), sqlf.Sprintf("delete from event_logs_export_allowlist"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	err = store.Exec(context.Background(), sqlf.Sprintf("insert into event_logs_export_allowlist (event_name) values (unnest(%s::text[]))", pq.Array(names)))
+	if err != nil {
+		t.Fatal(err)
 	}
 }

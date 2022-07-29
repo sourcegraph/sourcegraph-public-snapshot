@@ -11,7 +11,7 @@ Sourcegraph is a code search and intelligence tool for developers. It lets you s
 Sourcegraph's main features are:
 
 - [Code search](#code-search): fast, up-to-date, and scalable, with regexp support on any branch or commit without an indexing delay (and diff search)
-- [Code intelligence](#code-intelligence): jump-to-definition, find references, and other smart, IDE-like code browsing features on any branch, commit, or PR/code review
+- [Code navigation](#code-navigation): jump-to-definition, find references, and other smart, IDE-like code browsing features on any branch, commit, or PR/code review
 - [Code Insights](../code_insights/index.md): reveal high-level information about your codebase at it's current state and over time, to track migrations, version usage, vulnerability remediation, ownership, and anything else you can search in Sourcegraph
 - [Batch Changes](../batch_changes/index.md): make large-scale code changes across many repositories and code hosts
 - [Notebooks](../notebooks/index.md): pair code and markdown to create powerful live–and persistent–documentation
@@ -54,7 +54,7 @@ You can also try [Sourcegraph.com](https://sourcegraph.com/search), which is a p
 
 ---
 
-## Code intelligence
+## Code navigation
 
 Sourcegraph gives your development team cross-repository IDE-like features on your code:
 
@@ -63,21 +63,21 @@ Sourcegraph gives your development team cross-repository IDE-like features on yo
 - Find references
 - Symbol search
 
-Sourcegraph gives you code intelligence in:
+Sourcegraph gives you code navigation in:
 
 - **code files in Sourcegraph's web UI**
 
-![Hover tooltip](../code_intelligence/img/hover-tooltip.png)
+![Hover tooltip](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/hover-tooltip.png)
 
 - **diffs in your code review tool**, via [integrations](../integration/index.md)
 
-![GitHub pull request integration](../code_intelligence/img/github-pr.png)
+![GitHub pull request integration](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/github-pr.png)
 
 - **code files on your code host**, via [integrations](../integration/index.md)
 
-![GitHub file integration](../code_intelligence/img/github-file.png)
+![GitHub file integration](https://storage.googleapis.com/sourcegraph-assets/code-graph/docs/github-file.png)
 
-Read the [code intelligence documentation](../code_intelligence/index.md) to learn more and to set it up.
+Read the [code navigation documentation](../code_intelligence/index.md) to learn more and to set it up.
 
 ---
 
@@ -97,4 +97,4 @@ Read the [code search documentation](../code_search/index.md) to learn more and 
 
 ## Integrations
 
-Sourcegraph allows you to get code intelligence and code search on code files and code review diffs in your code host and review tool. See our [integrations documentation](../integration/index.md) to set up Sourcegraph with your tools and roll it out to your entire team.
+Sourcegraph allows you to get code navigation and code search on code files and code review diffs in your code host and review tool. See our [integrations documentation](../integration/index.md) to set up Sourcegraph with your tools and roll it out to your entire team.

@@ -220,6 +220,9 @@ func QueryToGitQuery(b query.Basic, diff bool) gitprotocol.Node {
 
 	// Convert parameters to nodes
 	for _, parameter := range b.Parameters {
+		if parameter.Annotation.Labels.IsSet(query.IsPredicate) {
+			continue
+		}
 		newPred := queryParameterToPredicate(parameter, caseSensitive, diff)
 		if newPred != nil {
 			res = append(res, newPred)
@@ -334,8 +337,10 @@ func queryParameterToPredicate(parameter query.Parameter, caseSensitive, diff bo
 
 func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.CommitMatch) *result.CommitMatch {
 	var diffPreview, messagePreview *result.MatchedString
+	var structuredDiff []result.DiffFile
 	if diff {
 		diffPreview = &in.Diff
+		structuredDiff, _ = result.ParseDiffString(in.Diff.Content)
 	} else {
 		messagePreview = &in.Message
 	}
@@ -358,6 +363,7 @@ func protocolMatchToCommitMatch(repo types.MinimalRepo, diff bool, in protocol.C
 		},
 		Repo:           repo,
 		DiffPreview:    diffPreview,
+		Diff:           structuredDiff,
 		MessagePreview: messagePreview,
 		ModifiedFiles:  in.ModifiedFiles,
 	}

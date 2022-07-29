@@ -14,11 +14,6 @@ import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import {
-    KeyboardShortcutsProps,
-    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
-    KEYBOARD_SHORTCUT_SWITCH_THEME,
-} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -68,7 +63,6 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeyboardShortcutsProps,
         TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
@@ -101,6 +95,7 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
+    showKeyboardShortcutsHelp: () => void
 }
 
 /**
@@ -200,6 +195,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
+    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -311,11 +307,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </NavLink>
                         </NavItem>
                     )}
-                    <NavItem icon={PuzzleOutlineIcon}>
-                        <NavLink variant={navLinkVariant} to="/extensions">
-                            Extensions
-                        </NavLink>
-                    </NavItem>
+                    {!extensionsAsCoreFeatures && (
+                        <NavItem icon={PuzzleOutlineIcon}>
+                            <NavLink variant={navLinkVariant} to="/extensions">
+                                Extensions
+                            </NavLink>
+                        </NavItem>
+                    )}
                     {props.activation && (
                         <NavItem>
                             <ActivationDropdown activation={props.activation} history={history} />
@@ -367,7 +365,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                                 {...props}
                                 location={location}
                                 menu={ContributableMenu.CommandPalette}
-                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                             />
                         </NavAction>
                     )}
@@ -418,7 +415,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                     'browser-extension'
                                 }
-                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                             />
                         </NavAction>
                     )}

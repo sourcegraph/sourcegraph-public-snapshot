@@ -38,6 +38,101 @@ import (
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
+func TestClient_RepoInfo(t *testing.T) {
+	repos := []api.RepoName{
+		"github.com/sourcegraph/sourcegraph", // Address of this repo hashes to 172.16.8.1:8080, DO NOT CHANGE THE NAME.
+		"gitlab.com/foo/baz",                 // Address of this repo hashes to 172.16.8.2:8080, DO NOT CHANGE THE NAME.
+	}
+	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
+
+	t.Run("200 status code", func(t *testing.T) {
+		cli := gitserver.NewTestClient(
+			httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+				return &http.Response{
+					Request:    r,
+					StatusCode: 200,
+					Body: io.NopCloser(bytes.NewBufferString(`
+{
+  "Results": {
+    "github.com/sourcegraph/sourcegraph": {
+      "URL": "github.com/sourcegraph/sourcegraph",
+      "Cloned": true
+    },
+    "gitlab.com/foo/baz": {
+      "URL": "gitlab.com/foo/baz",
+      "Cloned": true
+    }
+  }
+}
+`,
+					)),
+				}, nil
+			}),
+			database.NewMockDB(),
+			addrs,
+		)
+
+		resp, err := cli.RepoInfo(context.Background(), repos...)
+		if err != nil {
+			t.Errorf("expected nil, but got err: %v", err)
+		}
+
+		l := len(resp.Results)
+		if l != 2 {
+			t.Fatalf("expected length of RepoInfoResponse.Results to be 2, but got %d", l)
+		}
+
+		for _, repo := range repos {
+			repoInfo, ok := resp.Results[repo]
+			if !ok {
+				t.Fatalf("expected repoInfo for repo %q, but found none", repo)
+			}
+
+			if repoInfo.URL != string(repo) {
+				t.Errorf("expected repoInfo.URL to be %q, but got %q", repo, repoInfo.URL)
+			}
+
+			if !repoInfo.Cloned {
+				t.Error("expected repoInfo.Cloned to be true, but got false")
+			}
+		}
+	})
+
+	t.Run("500 status code", func(t *testing.T) {
+		cli := gitserver.NewTestClient(
+			httpcli.DoerFunc(func(r *http.Request) (*http.Response, error) {
+				return &http.Response{
+					Request:    r,
+					StatusCode: 500,
+					Body:       io.NopCloser(bytes.NewBufferString("test error message")),
+				}, nil
+			}),
+			database.NewMockDB(),
+			addrs,
+		)
+
+		resp, err := cli.RepoInfo(context.Background(), repos...)
+		if err == nil {
+			t.Error("expected err, but got nil")
+		}
+
+		expected := `
+2 errors occurred:
+		* RepoInfo "http://172.16.8.2:8080/repos": RepoInfo: http status code: 500, body: "test error message"
+		* RepoInfo "http://172.16.8.1:8080/repos": RepoInfo: http status code: 500, body: "test error message"
+`
+
+		if cmp.Equal(expected, err.Error()) {
+			t.Errorf("mismatch in error message (-want +got):\n%s", cmp.Diff(expected, err.Error()))
+		}
+
+		l := len(resp.Results)
+		if l != 0 {
+			t.Fatalf("expected length of RepoInfoResponse.Results to be 0, but got %d", l)
+		}
+	})
+}
+
 func TestClient_RequestRepoMigrate(t *testing.T) {
 	repo := api.RepoName("github.com/sourcegraph/sourcegraph")
 	addrs := []string{"172.16.8.1:8080", "172.16.8.2:8080"}
@@ -167,7 +262,7 @@ func TestClient_Archive(t *testing.T) {
 				}
 			}
 
-			rc, err := cli.Archive(ctx, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: "zip"})
+			rc, err := cli.Archive(ctx, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}

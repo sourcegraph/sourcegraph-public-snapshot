@@ -7,14 +7,15 @@ import (
 	"github.com/keegancsmith/sqlf"
 
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/definition"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/shared"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
 )
 
-// StitchDefinitions constructs a migration graph over time in two values. First, the migration graph itself
-// is formed by merging migration definitions as they were defined over time in Git. Second, the set of leaves
-// of the migration point at each of the given revisions is also constructed. This data is useful during
-// instance upgrades as these points in the graph represent the "edge" of the graph as it was defined for a
-// particular release.
+// StitchDefinitions constructs a migration graph over time in two values. First, the migration graph
+// itself is formed by merging migration definitions as they were defined over time in Git. Second, the set
+// of leaves of the migration point at each of the given revisions is also constructed. This data is useful
+// during instance upgrades as these points in the graph represent the "edge" of the graph as it was defined
+// for a particular release.
 //
 // Stitch is an undoing of squashing. We construct the migration graph by layering the definitions of the
 // migrations as they're defined in each of the given git revisions. Migration definitions with the same
@@ -22,10 +23,10 @@ import (
 //
 // NOTE: This should only be used at development or build time - the root parameter should point to a
 // valid git clone root directory. Resulting errors are apparent.
-func StitchDefinitions(schemaName, root string, revs []string) (*definition.Definitions, map[string][]int, error) {
+func StitchDefinitions(schemaName, root string, revs []string) (shared.StitchedMigration, error) {
 	definitionMap, leafIDsByRev, err := overlayDefinitions(schemaName, root, revs)
 	if err != nil {
-		return nil, nil, err
+		return shared.StitchedMigration{}, err
 	}
 
 	migrationDefinitions := make([]definition.Definition, 0, len(definitionMap))
@@ -35,10 +36,10 @@ func StitchDefinitions(schemaName, root string, revs []string) (*definition.Defi
 
 	definitions, err := definition.NewDefinitions(migrationDefinitions)
 	if err != nil {
-		return nil, nil, err
+		return shared.StitchedMigration{}, err
 	}
 
-	return definitions, leafIDsByRev, nil
+	return shared.StitchedMigration{definitions, leafIDsByRev}, nil
 }
 
 // overlayDefinitions combines the definitions defined at all of the given git revisions for the given schema,

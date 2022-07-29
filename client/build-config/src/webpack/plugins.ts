@@ -1,6 +1,6 @@
 import StatoscopeWebpackPlugin from '@statoscope/webpack-plugin'
 import TerserPlugin from 'terser-webpack-plugin'
-import webpack from 'webpack'
+import webpack, { StatsOptions } from 'webpack'
 
 export const getTerserPlugin = (): TerserPlugin =>
     new TerserPlugin({
@@ -23,9 +23,7 @@ export const getProvidePlugin = (): webpack.ProvidePlugin =>
         Buffer: ['buffer', 'Buffer'],
     })
 
-export const getStatoscopePlugin = (): StatoscopeWebpackPlugin => new StatoscopeWebpackPlugin()
-
-export const STATOSCOPE_STATS = {
+const STATOSCOPE_STATS: StatsOptions = {
     all: false, // disable all the stats
     hash: true, // compilation hash
     entrypoints: true,
@@ -47,3 +45,8 @@ export const STATOSCOPE_STATS = {
     timings: true, // modules timing information
     performance: true, // info about oversized assets
 }
+
+export const getStatoscopePlugin = (): StatoscopeWebpackPlugin =>
+    new StatoscopeWebpackPlugin({
+        statsOptions: STATOSCOPE_STATS as Record<string, unknown>,
+    })

@@ -14,7 +14,6 @@ import {
     lprToRange,
     pluralize,
     toPositionOrRangeQueryParameter,
-    toViewStateHash,
 } from '@sourcegraph/common'
 import { useQuery } from '@sourcegraph/http-client'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
@@ -336,7 +335,7 @@ export const ReferencesList: React.FunctionComponent<
             }
         }
 
-        panelHistory.push(appendJumpToFirstQueryParameter(url) + toViewStateHash('references'))
+        panelHistory.push(appendJumpToFirstQueryParameter(url))
     }
 
     const navigateToUrl = (url: string): void => {
@@ -348,17 +347,24 @@ export const ReferencesList: React.FunctionComponent<
     const location = useLocation()
     const initialCollapseState = useMemo((): Record<string, boolean> => {
         const { viewState } = parseQueryAndHash(location.search, location.hash)
-        return {
+        const state = {
             references: viewState === 'references',
             definitions: viewState === 'definitions',
             implementations: viewState?.startsWith('implementations_') ?? false,
         }
+        // If the URL doesn't contain tab=<tab>, we open it (likely because the
+        // user clicked on a link in the preview code blob) to show definitions.
+        if (!state.references && !state.definitions && !state.implementations) {
+            state.definitions = true
+        }
+        return state
     }, [location])
     const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
     const handleOpenChange = (id: string, isOpen: boolean): void =>
         setCollapsed(previous => ({ ...previous, [id]: isOpen }))
 
     const isOpen = (id: string): boolean | undefined => collapsed[id]
+
     // But when the input changes, we reset the collapse state
     useEffect(() => {
         setCollapsed(initialCollapseState)
