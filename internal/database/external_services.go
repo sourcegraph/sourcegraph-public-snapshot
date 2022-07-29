@@ -256,9 +256,6 @@ type ExternalServicesListOptions struct {
 	// When true, will only return services that have the cloud_default flag set to
 	// true.
 	OnlyCloudDefault bool
-	// When true, will only return services that have the cloud_default flag set to
-	// false.
-	NoCloudDefault bool
 
 	*LimitOffset
 
@@ -300,9 +297,6 @@ func (o ExternalServicesListOptions) sqlConditions() []*sqlf.Query {
 	}
 	if o.OnlyCloudDefault {
 		conds = append(conds, sqlf.Sprintf("cloud_default = true"))
-	}
-	if o.NoCloudDefault {
-		conds = append(conds, sqlf.Sprintf("cloud_default IS FALSE"))
 	}
 	if o.NoCachedWebhooks {
 		conds = append(conds, sqlf.Sprintf("has_webhooks IS NULL"))

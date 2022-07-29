@@ -47,7 +47,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 		updatedAfter         time.Time
 		wantQuery            string
 		onlyCloudDefault     bool
-		noCloudDefault       bool
 		noCachedWebhooks     bool
 		wantArgs             []any
 	}{
@@ -113,11 +112,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 			noCachedWebhooks: true,
 			wantQuery:        "deleted_at IS NULL AND has_webhooks IS NULL",
 		},
-		{
-			name:           "has noCloudDefault",
-			noCloudDefault: true,
-			wantQuery:      "cloud_default IS TRUE",
-		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -130,7 +124,6 @@ func TestExternalServicesListOptions_sqlConditions(t *testing.T) {
 				AfterID:              test.afterID,
 				UpdatedAfter:         test.updatedAfter,
 				OnlyCloudDefault:     test.onlyCloudDefault,
-				NoCloudDefault:       test.noCloudDefault,
 				NoCachedWebhooks:     test.noCachedWebhooks,
 			}
 			q := sqlf.Join(opts.sqlConditions(), "AND")
@@ -1703,19 +1696,6 @@ func TestExternalServicesStore_List(t *testing.T) {
 		// We should find all services were updated after a time in the past
 		if len(ess) != 1 {
 			t.Fatalf("Want 0 external services but got %d", len(ess))
-		}
-	})
-
-	t.Run("list all but cloud default services", func(t *testing.T) {
-		ess, err := db.ExternalServices().List(ctx, ExternalServicesListOptions{
-			NoCloudDefault: true,
-		})
-		if err != nil {
-			t.Fatal(err)
-		}
-		// We should find all services were updated after a time in the past
-		if len(ess) != 2 {
-			t.Fatalf("Want 2 external services but got %d", len(ess))
 		}
 	})
 }
