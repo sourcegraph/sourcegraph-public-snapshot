@@ -33,7 +33,7 @@ import { MutationRecordLike } from '../../util/dom'
 import {
     CodeIntelligenceProps,
     createGlobalDebugMount,
-    createOverlayMount,
+    getExistingOrCreateOverlayMount,
     handleCodeHost,
     observeHoverOverlayMountLocation,
     HandleCodeHostOptions,
@@ -130,7 +130,7 @@ describe('codeHost', () => {
 
     describe('createOverlayMount()', () => {
         it('should create the overlay mount', () => {
-            createOverlayMount('some-code-host', document.body)
+            getExistingOrCreateOverlayMount('some-code-host', document.body)
             const mount = document.body.querySelector('.hover-overlay-mount')
             expect(mount).toBeDefined()
             expect(mount!.className).toBe('hover-overlay-mount hover-overlay-mount__some-code-host')
