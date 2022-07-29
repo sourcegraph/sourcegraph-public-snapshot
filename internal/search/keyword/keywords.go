@@ -11,6 +11,7 @@ var keywordPrefixes = []string{
 	"class ",
 	"type ",
 	"var ",
+	"export ",
 }
 
 func hasKeywordPrefix(line string) bool {
