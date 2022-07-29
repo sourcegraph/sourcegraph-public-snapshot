@@ -115,8 +115,8 @@ func transformPatterns(patterns []string) []string {
 	return transformedPatterns
 }
 
-func basicQueryToSmartQuery(basicQuery query.Basic) (*smartQuery, error) {
-	rawParseTree, err := query.Parse(query.StringHuman(basicQuery.ToParseTree()), query.SearchTypeStandard)
+func queryStringToSmartQuery(queryString string) (*smartQuery, error) {
+	rawParseTree, err := query.Parse(queryString, query.SearchTypeStandard)
 	if err != nil {
 		return nil, err
 	}
@@ -153,5 +153,9 @@ func basicQueryToSmartQuery(basicQuery query.Basic) (*smartQuery, error) {
 		return nil, err
 	}
 
-	return &smartQuery{newBasic, patterns}, nil
+	return &smartQuery{newBasic, transformedPatterns}, nil
+}
+
+func basicQueryToSmartQuery(basicQuery query.Basic) (*smartQuery, error) {
+	return queryStringToSmartQuery(query.StringHuman(basicQuery.ToParseTree()))
 }
