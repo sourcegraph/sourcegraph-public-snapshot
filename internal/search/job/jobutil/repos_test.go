@@ -14,8 +14,7 @@ func Test_descriptionMatchRanges(t *testing.T) {
 		1: "this is a go package",
 		2: "description for tests and validating input, among other things",
 		3: "description containing go but also\na newline",
-		4: "no matches here",
-		5: "---zb bz zb bz---",
+		4: "---zb bz zb bz---",
 	}
 
 	// NOTE: Any pattern passed into repo:has.description() is converted to the format `(?:*).*?(?:*)` when the predicate
@@ -32,84 +31,94 @@ func Test_descriptionMatchRanges(t *testing.T) {
 			name:          "string literal match",
 			inputPatterns: []string{"(?:go).*?(?:package)"},
 			want: map[api.RepoID][]result.Range{
-				1: {result.Range{
-					Start: result.Location{
-						Offset: 10,
-						Line:   0,
-						Column: 10,
+				1: {
+					result.Range{
+						Start: result.Location{
+							Offset: 10,
+							Line:   0,
+							Column: 10,
+						},
+						End: result.Location{
+							Offset: 20,
+							Line:   0,
+							Column: 20,
+						},
 					},
-					End: result.Location{
-						Offset: 20,
-						Line:   0,
-						Column: 20,
-					},
-				}},
+				},
 			},
 		},
 		{
 			name:          "wildcard match",
 			inputPatterns: []string{"(?:test).*?(?:input)"},
 			want: map[api.RepoID][]result.Range{
-				2: {result.Range{
-					Start: result.Location{
-						Offset: 16,
-						Line:   0,
-						Column: 16,
+				2: {
+					result.Range{
+						Start: result.Location{
+							Offset: 16,
+							Line:   0,
+							Column: 16,
+						},
+						End: result.Location{
+							Offset: 42,
+							Line:   0,
+							Column: 42,
+						},
 					},
-					End: result.Location{
-						Offset: 42,
-						Line:   0,
-						Column: 42,
-					},
-				}},
+				},
 			},
 		},
 		{
 			name:          "match across newline",
 			inputPatterns: []string{"(?:containing).*?(?:newline)"},
 			want: map[api.RepoID][]result.Range{
-				3: {result.Range{
-					Start: result.Location{
-						Offset: 12,
-						Line:   0,
-						Column: 12,
+				3: {
+					result.Range{
+						Start: result.Location{
+							Offset: 12,
+							Line:   0,
+							Column: 12,
+						},
+						End: result.Location{
+							Offset: 44,
+							Line:   0,
+							Column: 44,
+						},
 					},
-					End: result.Location{
-						Offset: 44,
-						Line:   0,
-						Column: 44,
-					},
-				}},
+				},
 			},
 		},
 		{
 			name:          "multiple description patterns that match",
 			inputPatterns: []string{"(?:this).*?(?:go)", "(?:input).*?(?:other).*?(?:things)"},
 			want: map[api.RepoID][]result.Range{
-				1: {result.Range{
-					Start: result.Location{
-						Offset: 0,
-						Line:   0,
-						Column: 0,
+				1: {
+					result.Range{
+						Start: result.Location{
+							Offset: 0,
+							Line:   0,
+							Column: 0,
+						},
+						End: result.Location{
+							Offset: 12,
+							Line:   0,
+							Column: 12,
+						},
 					},
-					End: result.Location{
-						Offset: 12,
-						Line:   0,
-						Column: 12,
+				},
+				2: {
+					result.Range{
+						Start: result.Location{
+							Offset: 37,
+							Line:   0,
+							Column: 37,
+						},
+						End: result.Location{
+							Offset: 62,
+							Line:   0,
+							Column: 62,
+						},
 					},
-				}},
-				2: {result.Range{
-					Start: result.Location{
-						Offset: 37,
-						Line:   0,
-						Column: 37,
-					},
-					End: result.Location{
-						Offset: 62,
-						Line:   0,
-						Column: 62,
-					},
-				}},
+				},
 			},
 		},
 		{
@@ -121,18 +130,19 @@ func Test_descriptionMatchRanges(t *testing.T) {
 			name:          "matches same pattern multiple times",
 			inputPatterns: []string{"(?:zb)"},
 			want: map[api.RepoID][]result.Range{
-				5: {result.Range{
-					Start: result.Location{
-						Offset: 3,
-						Line:   0,
-						Column: 3,
+				4: {
+					result.Range{
+						Start: result.Location{
+							Offset: 3,
+							Line:   0,
+							Column: 3,
+						},
+						End: result.Location{
+							Offset: 5,
+							Line:   0,
+							Column: 5,
+						},
 					},
-					End: result.Location{
-						Offset: 5,
-						Line:   0,
-						Column: 5,
-					},
-				},
 					result.Range{
 						Start: result.Location{
 							Offset: 9,
@@ -144,7 +154,8 @@ func Test_descriptionMatchRanges(t *testing.T) {
 							Line:   0,
 							Column: 11,
 						},
-					}},
+					},
+				},
 			},
 		},
 	}
