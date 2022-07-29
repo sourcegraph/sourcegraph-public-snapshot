@@ -3,7 +3,7 @@
 - [Sstate of the backend](#state-of-the-backend)
 - [Architecture](#architecture)
 - [Life of an insight](#life-of-an-insight)
-    - [(1) User defines insight in settings](#1-user-defines-insight-in-settings)
+    - [(1) User creates an insight](#1-a-user-creates-an-insight)
     - [(2) The _insight enqueuer_ detects the new insight](#2-the-insight-enqueuer-indexed-recorder-detects-the-new-insight)
     - [(3) The queryrunner worker gets work and runs the search query](#3-the-historical-data-enqueuer-historical-recorder-gets-to-work)
     - [(4) The historical data enqueuer gets to work](#4-the-queryrunner-worker-gets-work-and-runs-the-search-query)
@@ -75,7 +75,17 @@ all data from settings to the database for the last time. 3.35 also disabled the
 
 ## Life of an insight
 
-### Unique ID
+#### (1) A user creates an insight
+
+At the moment we support four types of insights:
+* Search insights
+* Capture-group insights
+* Language usage insights (over a list of repositories only)
+* Group-by insights ([experimental as of 3.42](https://github.com/sourcegraph/sourcegraph/blob/main/CHANGELOG.md#3420))
+
+These can all be created from the UI and get resolved through a [GraphQL API](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:graphqlbackend/insights+createLineChartSearchInsight&patternType=lucky).
+
+#### Unique ID
 An Insight View is defined to have a globally unique referencable ID. Each ID is [generated when the view is created](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+UniqueID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
 
 [Read more about Insight Views](./insight_view.md)
