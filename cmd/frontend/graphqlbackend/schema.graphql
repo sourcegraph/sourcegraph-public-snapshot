@@ -1887,7 +1887,7 @@ enum SearchPatternType {
     regexp
     structural
     lucky
-    smart
+    keyword
 }
 
 """

@@ -17,6 +17,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/filter"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
+	"github.com/sourcegraph/sourcegraph/internal/search/keyword"
 	"github.com/sourcegraph/sourcegraph/internal/search/limits"
 	"github.com/sourcegraph/sourcegraph/internal/search/lucky"
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
@@ -24,7 +25,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/searchcontexts"
 	"github.com/sourcegraph/sourcegraph/internal/search/searcher"
-	"github.com/sourcegraph/sourcegraph/internal/search/smart"
 	"github.com/sourcegraph/sourcegraph/internal/search/structural"
 	"github.com/sourcegraph/sourcegraph/internal/search/zoekt"
 	"github.com/sourcegraph/sourcegraph/lib/errors"
@@ -48,8 +48,8 @@ func NewPlanJob(inputs *search.Inputs, plan query.Plan) (job.Job, error) {
 	}
 	if inputs.PatternType == query.SearchTypeLucky {
 		jobTree = lucky.NewFeelingLuckySearchJob(jobTree, newJob, plan)
-	} else if inputs.PatternType == query.SearchTypeSmart && len(plan) == 1 {
-		newJobTree, err := smart.NewSmartJob(plan[0], newJob)
+	} else if inputs.PatternType == query.SearchTypeKeyword && len(plan) == 1 {
+		newJobTree, err := keyword.NewKeywordSearchJob(plan[0], newJob)
 		if err != nil {
 			return nil, err
 		}

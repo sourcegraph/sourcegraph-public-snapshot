@@ -1,4 +1,4 @@
-package smart
+package keyword
 
 var stopWords = stringSet{
 	"a":          {},

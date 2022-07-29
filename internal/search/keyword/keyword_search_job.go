@@ -1,4 +1,4 @@
-package smart
+package keyword
 
 import (
 	"context"
@@ -15,60 +15,60 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 )
 
-func NewSmartJob(b query.Basic, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
-	smartQuery, err := basicQueryToSmartQuery(b)
-	if err != nil || smartQuery == nil {
+func NewKeywordSearchJob(b query.Basic, newJob func(query.Basic) (job.Job, error)) (job.Job, error) {
+	keywordQuery, err := basicQueryToKeywordQuery(b)
+	if err != nil || keywordQuery == nil {
 		return nil, err
 	}
 
-	child, err := newJob(smartQuery.query)
+	child, err := newJob(keywordQuery.query)
 	if err != nil {
 		return nil, err
 	}
-	return &smartJob{child: child, patterns: smartQuery.patterns}, nil
+	return &keywordSearchJob{child: child, patterns: keywordQuery.patterns}, nil
 }
 
-type smartJob struct {
+type keywordSearchJob struct {
 	child    job.Job
 	patterns []string
 }
 
-func (j *smartJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
+func (j *keywordSearchJob) Run(ctx context.Context, clients job.RuntimeClients, stream streaming.Sender) (alert *search.Alert, err error) {
 	_, ctx, stream, finish := job.StartSpan(ctx, stream, j)
 	defer func() { finish(alert, err) }()
 
 	// TODO(novoselrok): Use NewBatchingStream to batch the events before processing them.
-	smartStream := newSmartStream(stream, j.patterns)
-	return j.child.Run(ctx, clients, smartStream)
+	keywordSearchStream := newKeywordSearchStream(stream, j.patterns)
+	return j.child.Run(ctx, clients, keywordSearchStream)
 }
 
-func (j *smartJob) Name() string {
-	return "SmartJob"
+func (j *keywordSearchJob) Name() string {
+	return "KeywordSearchJob"
 }
 
-func (j *smartJob) Fields(v job.Verbosity) (res []log.Field) {
+func (j *keywordSearchJob) Fields(v job.Verbosity) (res []log.Field) {
 	switch v {
 	case job.VerbosityMax:
 		fallthrough
 	case job.VerbosityBasic:
 		res = append(res,
-			trace.Printf("smart", ""),
+			trace.Printf("keyword", ""),
 		)
 	}
 	return res
 }
 
-func (j *smartJob) Children() []job.Describer {
+func (j *keywordSearchJob) Children() []job.Describer {
 	return []job.Describer{j.child}
 }
 
-func (j *smartJob) MapChildren(fn job.MapFunc) job.Job {
+func (j *keywordSearchJob) MapChildren(fn job.MapFunc) job.Job {
 	cp := *j
 	cp.child = job.Map(j.child, fn)
 	return &cp
 }
 
-func newSmartStream(parent streaming.Sender, patterns []string) streaming.Sender {
+func newKeywordSearchStream(parent streaming.Sender, patterns []string) streaming.Sender {
 	var mux sync.Mutex
 	return streaming.StreamFunc(func(e streaming.SearchEvent) {
 		mux.Lock()

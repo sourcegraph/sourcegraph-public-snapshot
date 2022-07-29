@@ -1,4 +1,4 @@
-package smart
+package keyword
 
 type stringSet map[string]struct{}
 

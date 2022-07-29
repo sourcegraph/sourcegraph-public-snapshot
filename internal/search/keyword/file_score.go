@@ -1,4 +1,4 @@
-package smart
+package keyword
 
 import "strings"
 

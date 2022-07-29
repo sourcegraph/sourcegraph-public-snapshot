@@ -1,4 +1,4 @@
-package smart
+package keyword
 
 import (
 	"strings"
@@ -9,7 +9,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/query"
 )
 
-type smartQuery struct {
+type keywordQuery struct {
 	query    query.Basic
 	patterns []string
 }
@@ -115,7 +115,7 @@ func transformPatterns(patterns []string) []string {
 	return transformedPatterns
 }
 
-func queryStringToSmartQuery(queryString string) (*smartQuery, error) {
+func queryStringToKeywordQuery(queryString string) (*keywordQuery, error) {
 	rawParseTree, err := query.Parse(queryString, query.SearchTypeStandard)
 	if err != nil {
 		return nil, err
@@ -153,9 +153,9 @@ func queryStringToSmartQuery(queryString string) (*smartQuery, error) {
 		return nil, err
 	}
 
-	return &smartQuery{newBasic, transformedPatterns}, nil
+	return &keywordQuery{newBasic, transformedPatterns}, nil
 }
 
-func basicQueryToSmartQuery(basicQuery query.Basic) (*smartQuery, error) {
-	return queryStringToSmartQuery(query.StringHuman(basicQuery.ToParseTree()))
+func basicQueryToKeywordQuery(basicQuery query.Basic) (*keywordQuery, error) {
+	return queryStringToKeywordQuery(query.StringHuman(basicQuery.ToParseTree()))
 }

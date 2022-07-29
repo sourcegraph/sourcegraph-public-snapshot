@@ -1,4 +1,4 @@
-package smart
+package keyword
 
 import (
 	"testing"
@@ -44,7 +44,7 @@ func TestTransformPattern(t *testing.T) {
 	}
 }
 
-func TestCasicQueryToSmartQuery(t *testing.T) {
+func TestCasicQueryToKeywordQuery(t *testing.T) {
 	tests := []struct {
 		query        string
 		wantQuery    string
@@ -69,21 +69,21 @@ func TestCasicQueryToSmartQuery(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.query, func(t *testing.T) {
-			smartQuery, err := queryStringToSmartQuery(tt.query)
+			keywordQuery, err := queryStringToKeywordQuery(tt.query)
 			if err != nil {
 				t.Fatal(err)
 			}
-			if smartQuery == nil {
-				t.Fatal("smartQuery == nil")
+			if keywordQuery == nil {
+				t.Fatal("keywordQuery == nil")
 			}
 
-			if diff := cmp.Diff(tt.wantPatterns, smartQuery.patterns); diff != "" {
+			if diff := cmp.Diff(tt.wantPatterns, keywordQuery.patterns); diff != "" {
 				t.Fatal(diff)
 			}
 
-			smartQueryString := query.StringHuman(smartQuery.query.ToParseTree())
-			if smartQueryString != tt.wantQuery {
-				t.Fatalf("expected `%s` query, got `%s`", tt.wantQuery, smartQueryString)
+			keywordQueryString := query.StringHuman(keywordQuery.query.ToParseTree())
+			if keywordQueryString != tt.wantQuery {
+				t.Fatalf("expected `%s` query, got `%s`", tt.wantQuery, keywordQueryString)
 			}
 		})
 	}
