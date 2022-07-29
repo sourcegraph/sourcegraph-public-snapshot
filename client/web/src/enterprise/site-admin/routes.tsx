@@ -7,7 +7,7 @@ import { SiteAdminAreaRoute } from '../../site-admin/SiteAdminArea'
 import { SHOW_BUSINESS_FEATURES } from '../dotcom/productSubscriptions/features'
 import type { ExecutorsListPageProps } from '../executors/ExecutorsListPage'
 
-export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
+export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = ([
     ...siteAdminAreaRoutes,
     {
         path: '/license',
@@ -203,4 +203,4 @@ export const enterpriseSiteAdminAreaRoutes: readonly SiteAdminAreaRoute[] = [
         render: lazyComponent(() => import('../organizations/EarlyAccessOrgsCodeForm'), 'EarlyAccessOrgsCodeForm'),
         exact: true,
     },
-].filter(Boolean) as readonly SiteAdminAreaRoute[]
+] as readonly (SiteAdminAreaRoute | undefined)[]).filter(Boolean) as readonly SiteAdminAreaRoute[]
