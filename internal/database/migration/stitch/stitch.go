@@ -16,9 +16,9 @@ import (
 // root and leaf migrations so that we can later determine what portion of the graph corresponds to a
 // particular release.
 //
-// Stitch is an undoing of squashing. We construct the migration graph by layering the definitions of the
-// migrations as they're defined in each of the given git revisions. Migration definitions with the same
-// identifier will be "merged" by some custom rules/edge-case logic.
+// Stitch is an undoing of squashing. We construct the migration graph by layering the definitions of
+// the migrations as they're defined in each of the given git revisions. Migration definitions with the
+// same identifier will be "merged" by some custom rules/edge-case logic.
 //
 // NOTE: This should only be used at development or build time - the root parameter should point to a
 // valid git clone root directory. Resulting errors are apparent.
