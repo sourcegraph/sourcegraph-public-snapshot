@@ -17,6 +17,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/require"
 
 	"github.com/sourcegraph/log/logtest"
 
@@ -67,6 +68,7 @@ func TestCleanup_computeStats(t *testing.T) {
 	// the correct file in the correct place.
 	s := &Server{ReposDir: root,
 		Logger: logtest.Scoped(t),
+		DB:     database.NewMockDB(),
 	}
 	s.testSetup(t)
 
@@ -131,6 +133,7 @@ func TestCleanupInactive(t *testing.T) {
 
 	s := &Server{ReposDir: root,
 		Logger: logtest.Scoped(t),
+		DB:     database.NewMockDB(),
 	}
 	s.testSetup(t)
 	s.cleanupRepos([]string{"gitserver-0"})
@@ -162,6 +165,7 @@ func TestCleanupWrongShard(t *testing.T) {
 
 		s := &Server{ReposDir: root,
 			Logger: logtest.Scoped(t),
+			DB:     database.NewMockDB(),
 		}
 		s.testSetup(t)
 		s.Hostname = "does-not-exist"
@@ -192,6 +196,7 @@ func TestCleanupWrongShard(t *testing.T) {
 
 		s := &Server{ReposDir: root,
 			Logger: logtest.Scoped(t),
+			DB:     database.NewMockDB(),
 		}
 		s.testSetup(t)
 		s.Hostname = "gitserver-0"
@@ -222,6 +227,7 @@ func TestCleanupWrongShard(t *testing.T) {
 
 		s := &Server{ReposDir: root,
 			Logger: logtest.Scoped(t),
+			DB:     database.NewMockDB(),
 		}
 		s.testSetup(t)
 		wrongShardReposDeleteLimit = -1
@@ -288,6 +294,7 @@ func TestGitGCAuto(t *testing.T) {
 	// Handler must be invoked for Server side-effects.
 	s := &Server{ReposDir: root,
 		Logger: logtest.Scoped(t),
+		DB:     database.NewMockDB(),
 	}
 	s.testSetup(t)
 	s.cleanupRepos([]string{"gitserver-0"})
@@ -408,6 +415,7 @@ func TestCleanupExpired(t *testing.T) {
 		GetVCSSyncer: func(ctx context.Context, name api.RepoName) (VCSSyncer, error) {
 			return &GitRepoSyncer{}, nil
 		},
+		DB: database.NewMockDB(),
 	}
 	s.testSetup(t)
 	s.cleanupRepos([]string{"gitserver-0"})
@@ -589,7 +597,7 @@ func TestCleanupOldLocks(t *testing.T) {
 		}
 	}
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
 	s.testSetup(t)
 	s.cleanupRepos([]string{"gitserver-0"})
 
@@ -613,7 +621,7 @@ func TestCleanupOldLocks(t *testing.T) {
 func TestSetupAndClearTmp(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
 
 	// All non .git paths should become .git
 	mkFiles(t, root,
@@ -675,7 +683,7 @@ func TestSetupAndClearTmp(t *testing.T) {
 func TestSetupAndClearTmp_Empty(t *testing.T) {
 	root := t.TempDir()
 
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
 
 	_, err := s.SetupAndClearTmp()
 	if err != nil {
@@ -718,7 +726,7 @@ func TestRemoveRepoDirectory(t *testing.T) {
 		if err := db.Repos().Create(ctx, repo); err != nil {
 			t.Fatal(err)
 		}
-		if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
+		if err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
 			RepoID:      repo.ID,
 			ShardID:     "test",
 			CloneStatus: types.CloneStatusCloned,
@@ -791,9 +799,13 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	mkFiles(t, root,
 		"github.com/foo/baz/.git/HEAD",
 	)
+	db := database.NewMockDB()
+	gr := database.NewMockGitserverRepoStore()
+	db.GitserverReposFunc.SetDefaultReturn(gr)
 	s := &Server{
 		Logger:   logtest.Scoped(t),
 		ReposDir: root,
+		DB:       db,
 	}
 
 	if err := s.removeRepoDirectory(GitDir(filepath.Join(root, "github.com/foo/baz/.git")), true); err != nil {
@@ -803,6 +815,11 @@ func TestRemoveRepoDirectory_Empty(t *testing.T) {
 	assertPaths(t, root,
 		".tmp",
 	)
+
+	if len(gr.SetCloneStatusFunc.History()) == 0 {
+		t.Fatal("expected gitserverRepos.SetLastError to be called, but wasn't")
+	}
+	require.Equal(t, gr.SetCloneStatusFunc.History()[0].Arg2, types.CloneStatusNotCloned)
 }
 
 func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
@@ -820,7 +837,7 @@ func TestRemoveRepoDirectory_UpdateCloneStatus(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if err := db.GitserverRepos().Upsert(ctx, &types.GitserverRepo{
+	if err := db.GitserverRepos().Update(ctx, &types.GitserverRepo{
 		RepoID:      repo.ID,
 		ShardID:     "test",
 		CloneStatus: types.CloneStatusCloned,
@@ -863,6 +880,7 @@ func TestHowManyBytesToFree(t *testing.T) {
 	s := &Server{
 		Logger:             logtest.Scoped(t),
 		DesiredPercentFree: 10,
+		DB:                 database.NewMockDB(),
 	}
 
 	tcs := []struct {
@@ -1003,13 +1021,13 @@ func isEmptyDir(path string) (bool, error) {
 
 func TestFreeUpSpace(t *testing.T) {
 	t.Run("no error if no space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t)}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
 		if err := s.freeUpSpace(0); err != nil {
 			t.Fatal(err)
 		}
 	})
 	t.Run("error if space requested and no repos", func(t *testing.T) {
-		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t)}
+		s := &Server{DiskSizer: &fakeDiskSizer{}, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
 		if err := s.freeUpSpace(1); err == nil {
 			t.Fatal("want error")
 		}
@@ -1036,11 +1054,15 @@ func TestFreeUpSpace(t *testing.T) {
 			t.Fatal(err)
 		}
 
+		db := database.NewMockDB()
+		gr := database.NewMockGitserverRepoStore()
+		db.GitserverReposFunc.SetDefaultReturn(gr)
 		// Run.
 		s := Server{
 			Logger:    logtest.Scoped(t),
 			ReposDir:  rd,
 			DiskSizer: &fakeDiskSizer{},
+			DB:        db,
 		}
 		if err := s.freeUpSpace(1000); err != nil {
 			t.Fatal(err)
@@ -1056,6 +1078,11 @@ func TestFreeUpSpace(t *testing.T) {
 		if rds > wantSize {
 			t.Errorf("repo dir size is %d, want no more than %d", rds, wantSize)
 		}
+
+		if len(gr.SetCloneStatusFunc.History()) == 0 {
+			t.Fatal("expected gitserverRepos.SetCloneStatus to be called, but wasn't")
+		}
+		require.Equal(t, gr.SetCloneStatusFunc.History()[0].Arg2, types.CloneStatusNotCloned)
 	})
 }
 
@@ -1411,7 +1438,7 @@ func TestCleanup_setRepoSizes(t *testing.T) {
 
 	// We run cleanupRepos because we want to test as a side-effect it creates
 	// the correct file in the correct place.
-	s := &Server{ReposDir: root, Logger: logtest.Scoped(t)}
+	s := &Server{ReposDir: root, Logger: logtest.Scoped(t), DB: database.NewMockDB()}
 	s.Handler() // Handler as a side-effect sets up Server
 	db := dbtest.NewDB(logger, t)
 	s.DB = database.NewDB(logger, db)

@@ -87,16 +87,15 @@ func (s *gitserverRepoStore) Transact(ctx context.Context) (GitserverRepoStore, 
 func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.GitserverRepo) error {
 	values := make([]*sqlf.Query, 0, len(repos))
 	for _, gr := range repos {
-		q := sqlf.Sprintf("(%s, %s, %s, %s, %s, %s, %s, NOW())",
+		values = append(values, sqlf.Sprintf("(%s::integer, %s::text, %s::text, %s::text, %s::timestamp with time zone, %s::timestamp with time zone, %s::bigint, NOW())",
+			gr.RepoID,
 			gr.CloneStatus,
 			gr.ShardID,
 			dbutil.NewNullString(sanitizeToUTF8(gr.LastError)),
 			gr.LastFetched,
 			gr.LastChanged,
-			gr.RepoSizeBytes,
-		)
-
-		values = append(values, q)
+			&dbutil.NullInt64{N: &gr.RepoSizeBytes},
+		))
 	}
 
 	err := s.Exec(ctx, sqlf.Sprintf(updateGitserverReposQueryFmtstr, sqlf.Join(values, ",")))
@@ -106,10 +105,21 @@ func (s *gitserverRepoStore) Update(ctx context.Context, repos ...*types.Gitserv
 
 const updateGitserverReposQueryFmtstr = `
 -- source: internal/database/gitserver_repos.go:gitserverRepoStore.Update
-UPDATE
-	gitserver_repos
-SET (clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes, updated_at)
-VALUES(%s)
+UPDATE gitserver_repos AS gr
+SET
+	clone_status = tmp.clone_status,
+	shard_id = tmp.shard_id,
+	last_error = tmp.last_error,
+	last_fetched = tmp.last_fetched,
+	last_changed = tmp.last_changed,
+	repo_size_bytes = tmp.repo_size_bytes,
+	updated_at = NOW()
+FROM (VALUES
+	-- (<repo_id>, <clone_status>, <shard_id>, <last_error>, <last_fetched>, <last_changed>, <repo_size_bytes>),
+		%s
+	) AS tmp(repo_id, clone_status, shard_id, last_error, last_fetched, last_changed, repo_size_bytes)
+	WHERE
+		tmp.repo_id = gr.repo_id
 `
 
 func (s *gitserverRepoStore) TotalErroredCloudDefaultRepos(ctx context.Context) (int, error) {
@@ -127,7 +137,7 @@ JOIN external_service_repos esr ON gr.repo_id = esr.repo_id
 JOIN external_services es on esr.external_service_id = es.id
 WHERE
 	gr.last_error != ''
-	AND repo.deleted_at IS NULL
+	AND r.deleted_at IS NULL
 	AND es.cloud_default IS TRUE
 `
 
@@ -608,7 +618,7 @@ FROM (VALUES
 WHERE
 	tmp.repo_id = gr.repo_id
 AND
-	tmp.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes;
+	tmp.repo_size_bytes IS DISTINCT FROM gr.repo_size_bytes
 `
 
 // sanitizeToUTF8 will remove any null character terminated string. The null character can be
