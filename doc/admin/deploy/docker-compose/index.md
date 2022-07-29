@@ -233,6 +233,7 @@ The following command allows a user to shell into the Sourcegraph database conta
 docker exec -it pgsql psql -U sg #access pgsql container and run psql
 docker exec -it codeintel-db psql -U sg #access codeintel-db container and run psql
 ```
+
 ### Database Migrations
 
 > NOTE: The `migrator` service is only available in versions `3.37` and later.
