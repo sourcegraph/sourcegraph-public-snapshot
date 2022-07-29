@@ -81,14 +81,14 @@ An Insight View is defined to have a globally unique referencable ID. Each ID is
 [Read more about Insight Views](./insight_view.md)
 
 #### A note about data series
-Currently, data series are can be defined with a repository scope that will ultimately define how the series is generated. Any series that is provided a repository scope will be executed
-just-in-time, whereas any series missing a repository scope will be assumed to be global and will be recorded in the background. This is an area of improvement in Q1, where we will likely
-integrate with other "repository group" objects such as Search Contexts.
+
+Data series defined with a repository scope used to be executed just-in-time, with no data recorded on the database, whereas any series missing a repository scope were be assumed to be global and were recorded in the background.
+As of Sourcegraph 3.42, all data series behave the same, in that they are all recorded in the background.
 
 Data series are [uniquely identified by a randomly generated unique ID](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/resolvers/insight_view_resolvers%5C.go+SeriesID:%5Cs*ksuid.New%28%29.String%28%29%2C&patternType=regexp).
-Data series are also identified by a [compound key](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/store/insight_store.go?L709) that is used to preserve data series that have already been calculated. This will effectively share this data series among all users if the compound key matches.
+Data series are also identified by a [compound key](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/store/insight_store%5C.go+MatchSeriesArgs&patternType=lucky) that is used to preserve data series that have already been calculated. This will effectively share this data series among all users if the compound key matches.
 
-Data series are defined with a [recording interval](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/types/types.go?L86-87) that will define the frequency of samples that are taken for the series.
+Data series are defined with a [recording interval](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Eenterprise/internal/insights/types/types%5C.go+SampleInterval&patternType=lucky) that will define the frequency of samples that are taken for the series.
 
 Data series are also given a field that describes how the series can be populated, called [generation_method](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/types/types.go?L106-110#tab=references).
 These `generation_method` types will allow the insights backend to select different behaviors depending on the series definition, for example, to execute a `compute` query instead of a standard search.
