@@ -31,8 +31,6 @@ func init() {
 }
 
 func main() {
-	// FIXME: Flaky test in CI. Re-enable https://github.com/sourcegraph/sourcegraph/issues/37671
-	return
 	if err := flag.CommandLine.Parse(os.Args[1:]); err != nil {
 		fmt.Fprintf(os.Stderr, "error: %s\n", err)
 		os.Exit(1)
@@ -74,6 +72,9 @@ func mainErr(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
+	sort.Slice(uploads, func(i, j int) bool {
+		return uploads[i].id < uploads[j].id
+	})
 
 	if err := monitor(ctx, repoNames, uploads); err != nil {
 		return err

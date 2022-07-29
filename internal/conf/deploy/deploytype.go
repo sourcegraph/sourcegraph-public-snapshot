@@ -13,14 +13,23 @@ const (
 	Helm          = "helm"
 )
 
+var mock string
+
 // Type tells the deployment type.
 func Type() string {
+	if mock != "" {
+		return mock
+	}
 	if e := os.Getenv("DEPLOY_TYPE"); e != "" {
 		return e
 	}
 	// Default to Kubernetes cluster so that every Kubernetes
 	// cluster deployment doesn't need to be configured with DEPLOY_TYPE.
 	return Kubernetes
+}
+
+func Mock(val string) {
+	mock = val
 }
 
 // IsDeployTypeKubernetes tells if the given deployment type is a Kubernetes

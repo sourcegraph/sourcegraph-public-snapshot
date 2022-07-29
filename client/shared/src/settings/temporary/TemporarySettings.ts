@@ -6,7 +6,7 @@ import { MultiSelectState } from '@sourcegraph/wildcard'
 
 import { BatchChangeState } from '../../graphql-operations'
 
-import { SectionID, NoResultsSectionID } from './searchSidebar'
+import { SectionID, NoResultsSectionID, SidebarTabID } from './searchSidebar'
 
 /**
  * Schema for temporary settings.
@@ -15,7 +15,7 @@ export interface TemporarySettingsSchema {
     'search.collapsedSidebarSections': { [key in SectionID]?: boolean }
     'search.hiddenNoResultsSections': NoResultsSectionID[]
     'search.sidebar.revisions.tab': number
-    'search.contexts.ctaDismissed': boolean
+    'search.sidebar.selectedTab': SidebarTabID | null // Used only when coreWorkflowImprovements.enabled is set
     'search.notepad.enabled': boolean
     'search.notepad.ctaSeen': boolean
     'search.notebooks.gettingStartedTabSeen': boolean
@@ -28,10 +28,6 @@ export interface TemporarySettingsSchema {
     'user.daysActiveCount': number
     'signup.finishedWelcomeFlow': boolean
     'homepage.userInvites.tab': number
-    'integrations.vscode.lastDetectionTimestamp': number
-    'integrations.jetbrains.lastDetectionTimestamp': number
-    'cta.browserExtensionAlertDismissed': boolean
-    'cta.ideExtensionAlertDismissed': boolean
     'batches.defaultListFilters': MultiSelectState<BatchChangeState>
     'batches.downloadSpecModalDismissed': boolean
     'codeintel.badge.used': boolean
@@ -39,6 +35,7 @@ export interface TemporarySettingsSchema {
     'codeintel.referencePanel.redesign.enabled': boolean
     'onboarding.quickStartTour': TourListState
     'coreWorkflowImprovements.enabled': boolean
+    'characterKeyShortcuts.enabled': boolean
 }
 
 /**

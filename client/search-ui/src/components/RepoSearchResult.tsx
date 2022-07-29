@@ -6,12 +6,15 @@ import SourceRepositoryIcon from 'mdi-react/SourceRepositoryIcon'
 
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { getRepoMatchLabel, getRepoMatchUrl, RepositoryMatch } from '@sourcegraph/shared/src/search/stream'
+import { useCoreWorkflowImprovementsEnabled } from '@sourcegraph/shared/src/settings/useCoreWorkflowImprovementsEnabled'
 import { Icon, Link } from '@sourcegraph/wildcard'
 
 import { LastSyncedIcon } from './LastSyncedIcon'
 import { ResultContainer } from './ResultContainer'
 
 import styles from './SearchResult.module.scss'
+
+const REPO_DESCRIPTION_CHAR_LIMIT = 500
 
 export interface RepoSearchResultProps {
     result: RepositoryMatch
@@ -28,9 +31,17 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
     as,
     index,
 }) => {
+    const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
+
     const renderTitle = (): JSX.Element => (
         <div className={styles.title}>
-            <span className={classNames('test-search-result-label', styles.titleInner)}>
+            <span
+                className={classNames(
+                    'test-search-result-label',
+                    styles.titleInner,
+                    coreWorkflowImprovementsEnabled && styles.mutedRepoFileLink
+                )}
+            >
                 <Link to={getRepoMatchUrl(result)}>{displayRepoName(getRepoMatchLabel(result))}</Link>
             </span>
         </div>
@@ -95,7 +106,11 @@ export const RepoSearchResult: React.FunctionComponent<RepoSearchResultProps> = 
                         <div className={styles.dividerVertical} />
                         <div>
                             <small>
-                                <em>{result.description}</em>
+                                <em>
+                                    {result.description.length > REPO_DESCRIPTION_CHAR_LIMIT
+                                        ? result.description.slice(0, REPO_DESCRIPTION_CHAR_LIMIT) + ' ...'
+                                        : result.description}
+                                </em>
                             </small>
                         </div>
                     </>

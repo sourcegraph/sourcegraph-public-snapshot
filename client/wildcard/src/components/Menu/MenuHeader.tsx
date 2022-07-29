@@ -3,6 +3,7 @@ import React from 'react'
 import classNames from 'classnames'
 
 import { ForwardReferenceComponent } from '../../types'
+import { Heading } from '../Typography'
 
 import styles from './MenuHeader.module.scss'
 
@@ -13,8 +14,8 @@ export type MenuHeadingType = 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6'
  * label sections of a `<Menu />` component.
  */
 
-export const MenuHeader = React.forwardRef(({ children, as: Component = 'h6', className, ...props }, reference) => (
-    <Component ref={reference} {...props} className={classNames(styles.dropdownHeader, className)}>
+export const MenuHeader = React.forwardRef(({ children, as: headerElement = 'h6', className, ...props }, reference) => (
+    <Heading as={headerElement} ref={reference} {...props} className={classNames(styles.dropdownHeader, className)}>
         {children}
-    </Component>
+    </Heading>
 )) as ForwardReferenceComponent<MenuHeadingType>

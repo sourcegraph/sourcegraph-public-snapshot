@@ -78,6 +78,14 @@ func (f ObservableOption) safeApply(observable Observable) Observable {
 	return f(observable)
 }
 
+// and creates a chained ObservableOption that first invokes the receiver,
+// and the the argument on the result of invoking the receiver.
+func (f ObservableOption) and(m ObservableOption) ObservableOption {
+	return func(observable Observable) Observable {
+		return m.safeApply(f.safeApply(observable))
+	}
+}
+
 // WarningOption creates an ObservableOption that overrides this Observable's
 // warning-level alert with the given alert.
 func WarningOption(a *monitoring.ObservableAlertDefinition) ObservableOption {

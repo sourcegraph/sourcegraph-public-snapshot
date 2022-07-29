@@ -181,7 +181,6 @@ ComplexDiagram(
         Terminal("case", {href: "#case"}),
         Terminal("fork", {href: "#fork"}),
         Terminal("archived", {href: "#archived"}),
-        Terminal("repogroup", {href: "#repogroup"}),
         Terminal("repohasfile", {href: "#repo-has-file"}),
         Terminal("repohascommitafter", {href: "#repo-has-commit-after"}),
         Terminal("count", {href: "#count"}),
@@ -491,23 +490,6 @@ archives should be searched. Archived repositories are excluded by default.
 
 **Example:** [`archived:only repo:sourcegraph` ↗](https://sourcegraph.com/search?q=archived:only+repo:sourcegraph&patternType=regexp)
 
-### Repo group
-
-<script>
-ComplexDiagram(
-    Choice(0,
-        Terminal("repogroup:"),
-        Terminal("g:")),
-        Terminal("string")).addTo()
-</script>
-
-Only include results from the named group of repositories (defined by the server
-admin). Same as using [repo](#repo) that matches all of the group’s
-repositories. Use [repo](#repo) unless you know that the group
-exists.
-
-**Example:** [`repogroup:go-gh-100 helm` ↗](https://sourcegraph.com/search?q=repogroup:go-gh-100+helm&patternType=literal)  – searches the top 100 Go repositories on GitHub, ranked by stars.
-
 ### Repo has file
 
 <script>
@@ -619,7 +601,8 @@ ComplexDiagram(
         Terminal("contains.file(...)", {href: "#repo-contains-file"}),
         Terminal("contains(...)", {href: "#repo-contains-file-and-content"}),
         Terminal("contains.commit.after(...)", {href: "#repo-contains-commit-after"}),
-        Terminal("dependencies(...)", {href: "#repo-dependencies"}))).addTo();
+        Terminal("dependencies(...)", {href: "#repo-dependencies"}),
+        Terminal("has.description(...)", {href: "#repo-has-description"}))).addTo();
 </script>
 
 ### Repo contains file
@@ -702,6 +685,21 @@ ComplexDiagram(
 Search only inside dependencies of repositories matching the given `regex@rev:a:b:c` input.
 
 **Example:** [`repo:dependencies(^github\.com/sourcegraph/sourcegraph$@3.36:3.35) count:all` ↗](https://sourcegraph.com/search?q=context:global+repo:dependencies%28%5Egithub%5C.com/sourcegraph/sourcegraph%24%403.36:3.35%29+count:all&patternType=literal)
+
+### Repo has description
+
+<script>
+ComplexDiagram(
+    Terminal("has.description:"),
+    Terminal("("),
+    Terminal("regexp", {href: "#regular-expression"}),
+    Terminal(")")).addTo();
+</script>
+
+Search only inside repositores which have a description matching the given regular expresion.
+
+**Example:** [`repo:has.description(go package)` ↗](https://sourcegraph.com/search?q=context:global+repo:has.description%28go.*package%29+&patternType=literal)
+
 
 ## Built-in file predicate
 

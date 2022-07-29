@@ -196,10 +196,32 @@ func readQueryFromFile(fs fs.FS, filepath string) (*sqlf.Query, error) {
 		return nil, err
 	}
 
-	// Stringify -> SQL-ify the contents of the file. We first replace any
-	// SQL placeholder values with an escaped version so that the sqlf.Sprintf
-	// call does not try to interpolate the text with variables we don't have.
-	return sqlf.Sprintf(strings.ReplaceAll(string(contents), "%", "%%")), nil
+	return queryFromString(string(contents)), nil
+}
+
+// queryFromString creates a sqlf Query object from the conetents of a file or serialized
+// string literal. We first replace any SQL placeholder values with an escaped version so
+// that the sqlf.Sprintf call does not try to interpolate the text with variables we don't
+// have.
+func queryFromString(query string) *sqlf.Query {
+	// Strip out embedded yaml frontmatter (existed temporarily)
+	parts := strings.SplitN(query, "-- +++\n", 3)
+	if len(parts) == 3 {
+		query = parts[2]
+	}
+
+	// Strip outermost transactions
+	canonicalizedQuery := strings.TrimSpace(
+		strings.TrimSuffix(
+			strings.TrimPrefix(
+				strings.TrimSpace(query),
+				"BEGIN;",
+			),
+			"COMMIT;",
+		),
+	)
+
+	return sqlf.Sprintf(strings.ReplaceAll(canonicalizedQuery, "%", "%%"))
 }
 
 var createIndexConcurrentlyPattern = lazyregexp.New(`CREATE\s+INDEX\s+CONCURRENTLY\s+(?:IF\s+NOT\s+EXISTS\s+)?([A-Za-z0-9_]+)\s+ON\s+([A-Za-z0-9_]+)`)
@@ -310,7 +332,7 @@ func findDefinitionOrder(migrationDefinitions []Definition) ([]int, error) {
 			// We're currently processing the descendants of this node, so we have a paths in
 			// both directions between these two nodes.
 
-			// Peel off the head of the parent list until we reach the target  node. This leaves
+			// Peel off the head of the parent list until we reach the target node. This leaves
 			// us with a slice starting with the target node, followed by the path back to itself.
 			// We'll use this instance of a cycle in the error description.
 			for len(parents) > 0 && parents[0] != id {
@@ -395,7 +417,7 @@ func root(migrationDefinitions []Definition) (int, error) {
 
 		return 0, instructionalError{
 			class:       "multiple roots",
-			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d", len(roots)),
+			description: fmt.Sprintf("expected exactly one migration to have no parent but found %d (%v)", len(roots), roots),
 			instructions: strings.Join([]string{
 				`There are multiple migrations defined in this schema that do not declare a parent.`,
 				`This indicates a new migration that did not correctly attach itself to an existing migration.`,

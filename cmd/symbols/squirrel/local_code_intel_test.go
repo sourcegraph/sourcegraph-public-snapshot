@@ -47,6 +47,8 @@ class Foo {
 `}, {
 		path: "test.go",
 		contents: `
+var x = 5
+
 //      v f1.p def
 //      v f1.p ref
 func f1(p int) {
@@ -173,8 +175,6 @@ def f(p1, p2: bool, p3 = False, p4: bool = False):
 `}, {
 		path: "test.js",
 		contents: `
-//    v f def
-//    v f ref
 //         vv f.p1 def
 //         vv f.p1 ref
 //             vv f.p2 def
@@ -219,8 +219,6 @@ const f = (p1, p2 = 3, ...p3) => {
 `}, {
 		path: "test.ts",
 		contents: `
-//    v f def
-//    v f ref
 //         vv f.p1 def
 //         vv f.p1 ref
 //                      vv f.p2 def

@@ -64,7 +64,7 @@ func NewResolver(db database.DB, codeIntelDB database.DB, gitserver GitserverCli
 	return &frankenResolver{
 		Resolver:                    baseResolver,
 		AutoindexingServiceResolver: autoindexinggraphql.GetResolver(autoindexing.GetService(db, nil, nil, nil)), // Note: Currently unused
-		UploadsServiceResolver:      uploadsgraphql.GetResolver(uploads.GetService(db, codeIntelDB)),
+		UploadsServiceResolver:      uploadsgraphql.GetResolver(uploads.GetService(db, codeIntelDB, gitserver)),
 		PoliciesServiceResolver:     policiesgraphql.GetResolver(policies.GetService(db)),
 	}
 }

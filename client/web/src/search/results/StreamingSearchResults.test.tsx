@@ -124,7 +124,7 @@ describe('StreamingSearchResults', () => {
         renderWrapper(<StreamingSearchResults {...defaultProps} streamSearch={() => of(COLLAPSABLE_SEARCH_RESULT)} />)
 
         expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
-            'data-tooltip',
+            'data-test-tooltip-content',
             'Show more matches on all results'
         )
 
@@ -135,7 +135,7 @@ describe('StreamingSearchResults', () => {
         userEvent.click(screen.getByTestId('search-result-expand-btn'))
 
         expect(screen.getByTestId('search-result-expand-btn')).toHaveAttribute(
-            'data-tooltip',
+            'data-test-tooltip-content',
             'Hide more matches on all results'
         )
 

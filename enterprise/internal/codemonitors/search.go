@@ -27,7 +27,6 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/search/commit"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	"github.com/sourcegraph/sourcegraph/internal/search/job/jobutil"
-	"github.com/sourcegraph/sourcegraph/internal/search/predicate"
 	"github.com/sourcegraph/sourcegraph/internal/search/repos"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"github.com/sourcegraph/sourcegraph/internal/search/streaming"
@@ -117,12 +116,7 @@ func Search(ctx context.Context, logger log.Logger, db database.DB, query string
 
 	// Inline job creation so we can mutate the commit job before running it
 	clients := searchClient.JobClients()
-	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
-	if err != nil {
-		return nil, errcode.MakeNonRetryable(err)
-	}
-
-	planJob, err := jobutil.NewPlanJob(inputs, plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
 		return nil, errcode.MakeNonRetryable(err)
 	}
@@ -192,12 +186,7 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 	}
 
 	clients := searchClient.JobClients()
-	plan, err := predicate.Expand(ctx, clients, inputs, inputs.Plan)
-	if err != nil {
-		return err
-	}
-
-	planJob, err := jobutil.NewPlanJob(inputs, plan)
+	planJob, err := jobutil.NewPlanJob(inputs, inputs.Plan)
 	if err != nil {
 		return err
 	}
@@ -223,40 +212,41 @@ func Snapshot(ctx context.Context, logger log.Logger, db database.DB, query stri
 var ErrInvalidMonitorQuery = errors.New("code monitor cannot use different patterns for different repos")
 
 func limitConcurrency(in job.Job) job.Job {
-	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
-		switch typedAtom := atom.(type) {
+	return job.Map(in, func(j job.Job) job.Job {
+		switch v := j.(type) {
 		case *commit.SearchJob:
-			jobCopy := *typedAtom
-			jobCopy.Concurrency = 1
-			return &jobCopy
+			cp := *v
+			cp.Concurrency = 1
+			return &cp
 		default:
-			return atom
+			return j
 		}
 	})
-
 }
 
 func addCodeMonitorHook(in job.Job, hook commit.CodeMonitorHook) (_ job.Job, err error) {
 	commitSearchJobCount := 0
-	return jobutil.MapAtom(in, func(atom job.Job) job.Job {
-		switch typedAtom := atom.(type) {
+	return job.Map(in, func(j job.Job) job.Job {
+		switch v := j.(type) {
 		case *commit.SearchJob:
 			commitSearchJobCount++
 			if commitSearchJobCount > 1 && err == nil {
 				err = ErrInvalidMonitorQuery
 			}
-			jobCopy := *typedAtom
-			jobCopy.CodeMonitorSearchWrapper = hook
-			return &jobCopy
+			cp := *v
+			cp.CodeMonitorSearchWrapper = hook
+			return &cp
 		case *repos.ComputeExcludedJob, *jobutil.NoopJob:
 			// ComputeExcludedJob is fine for code monitor jobs, but should be
 			// removed since it's not used
 			return jobutil.NewNoopJob()
 		default:
-			if err == nil {
-				err = errors.Errorf("found invalid atom job type %T for code monitor search", atom)
+			if len(j.Children()) == 0 {
+				if err == nil {
+					err = errors.Errorf("found invalid atom job type %T for code monitor search", j)
+				}
 			}
-			return atom
+			return j
 		}
 	}), err
 }

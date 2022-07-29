@@ -1,7 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react'
 
+import { mdiCheckCircle } from '@mdi/js'
 import classNames from 'classnames'
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { Form } from '@sourcegraph/branded/src/components/Form'
@@ -157,7 +157,7 @@ export const InvitePane: React.FunctionComponent<React.PropsWithChildren<Props>>
                                     <LoadingSpinner inline={true} className={classNames('ml-auto', 'mr-3')} />
                                 ) : successfulInvites.has(person.email) ? (
                                     <span className="text-muted ml-auto mr-3">
-                                        <Icon className="mr-1" as={CheckCircleIcon} aria-hidden={true} />
+                                        <Icon className="mr-1" aria-hidden={true} svgPath={mdiCheckCircle} />
                                         Invited
                                     </span>
                                 ) : (

@@ -1,7 +1,7 @@
 package shared
 
 const (
-	GoModulesScheme      = "go"
+	GoPackagesScheme     = "go"
 	JVMPackagesScheme    = "semanticdb"
 	NpmPackagesScheme    = "npm"
 	PythonPackagesScheme = "python"

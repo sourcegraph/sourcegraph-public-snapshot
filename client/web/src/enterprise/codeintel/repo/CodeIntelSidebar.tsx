@@ -15,7 +15,7 @@ interface Props extends RouteComponentProps<{}> {
     repo: { url: string }
 }
 
-/** Sidebar for code intelligence pages. */
+/** Sidebar for code navigation pages. */
 export const CodeIntelSidebar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
     codeIntelSidebarGroups,
     className,
@@ -30,11 +30,7 @@ export const CodeIntelSidebar: React.FunctionComponent<React.PropsWithChildren<P
                         {items.map(
                             ({ label, to, exact, condition = () => true }) =>
                                 condition({}) && (
-                                    <SidebarNavItem
-                                        to={`${repo.url}/-/code-intelligence${to}`}
-                                        exact={exact}
-                                        key={label}
-                                    >
+                                    <SidebarNavItem to={`${repo.url}/-/code-graph${to}`} exact={exact} key={label}>
                                         {label}
                                     </SidebarNavItem>
                                 )

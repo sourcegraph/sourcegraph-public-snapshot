@@ -126,6 +126,7 @@ type HeartbeatRequest struct {
 	PrometheusMetrics string `json:"prometheusMetrics"`
 }
 
-type CanceledRequest struct {
+type CanceledJobsRequest struct {
+	KnownJobIDs  []int  `json:"knownJobIds"`
 	ExecutorName string `json:"executorName"`
 }

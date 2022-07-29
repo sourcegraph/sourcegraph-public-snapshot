@@ -3,7 +3,7 @@ package autoindexing
 import (
 	"strings"
 
-	"github.com/inconshreveable/log15"
+	"github.com/sourcegraph/log"
 
 	"github.com/sourcegraph/sourcegraph/internal/api"
 	"github.com/sourcegraph/sourcegraph/internal/codeintel/dependencies"
@@ -18,6 +18,7 @@ func InferRepositoryAndRevision(pkg precise.Package) (repoName api.RepoName, git
 		inferJVMRepositoryAndRevision,
 		inferNpmRepositoryAndRevision,
 		inferRustRepositoryAndRevision,
+		inferPythonRepositoryAndRevision,
 	} {
 		if repoName, gitTagOrCommit, ok := fn(pkg); ok {
 			return repoName, gitTagOrCommit, true
@@ -60,9 +61,12 @@ func inferNpmRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, b
 	if pkg.Scheme != dependencies.NpmPackagesScheme {
 		return "", "", false
 	}
-	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(pkg.Name)
+
+	logger := log.Scoped("inferNpmRepositoryAndRevision", "")
+	npmPkg, err := reposource.ParseNpmPackageFromPackageSyntax(reposource.PackageName(pkg.Name))
+
 	if err != nil {
-		log15.Error("invalid npm package name in database", "error", err)
+		logger.Error("invalid npm package name in database", log.Error(err))
 		return "", "", false
 	}
 	return npmPkg.RepoName(), "v" + pkg.Version, true
@@ -73,11 +77,28 @@ func inferRustRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, 
 		return "", "", false
 	}
 
-	rustPkg, err := reposource.ParseRustPackageVersion(pkg.Name)
+	logger := log.Scoped("inferRustRepositoryAndRevision", "")
+	rustPkg, err := reposource.ParseRustVersionedPackage(pkg.Name)
 	if err != nil {
-		log15.Error("invalid rust package name in database", "error", err, "pkg", pkg.Name)
+		logger.Error("invalid rust package name in database", log.Error(err), log.String("pkg", pkg.Name))
 		return "", "", false
 	}
 
 	return rustPkg.RepoName(), "v" + pkg.Version, true
+}
+
+func inferPythonRepositoryAndRevision(pkg precise.Package) (api.RepoName, string, bool) {
+	if pkg.Scheme != dependencies.PythonPackagesScheme {
+		return "", "", false
+	}
+
+	logger := log.Scoped("inferPythonRepositoryAndRevision", "")
+	pythonPkg, err := reposource.ParsePythonPackageFromName(reposource.PackageName(pkg.Name))
+
+	if err != nil {
+		logger.Error("invalid python package name in database", log.Error(err), log.String("pkg", pkg.Name))
+		return "", "", false
+	}
+
+	return pythonPkg.RepoName(), pkg.Version, true
 }

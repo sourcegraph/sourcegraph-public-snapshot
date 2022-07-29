@@ -48,8 +48,10 @@ const SymbolNode: React.FunctionComponent<React.PropsWithChildren<SymbolNodeProp
                 activeClassName={styles.linkActive}
                 onClick={onHandleClick}
             >
-                <SymbolIcon kind={node.kind} className="mr-1 test-symbol-icon" />
-                <span className={classNames('test-symbol-name', styles.name)}>{node.name}</span>
+                <SymbolIcon kind={node.kind} className="mr-1" />
+                <span className={styles.name} data-testid="symbol-name">
+                    {node.name}
+                </span>
                 {node.containerName && (
                     <span className={styles.containerName}>
                         <small>{node.containerName}</small>

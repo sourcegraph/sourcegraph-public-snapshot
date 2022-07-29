@@ -4,8 +4,12 @@ import (
 	"context"
 	"time"
 
+	"github.com/sourcegraph/sourcegraph/enterprise/cmd/worker/internal/telemetry"
+	"github.com/sourcegraph/sourcegraph/enterprise/internal/productsubscription"
+
 	"github.com/sourcegraph/log"
 
+	"github.com/sourcegraph/sourcegraph/cmd/frontend/globals"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/shared"
 	workerdb "github.com/sourcegraph/sourcegraph/cmd/worker/shared/init/db"
@@ -53,6 +57,7 @@ func main() {
 		"executors-metricsserver":       executors.NewMetricsServerJob(),
 		"codemonitors-job":              codemonitors.NewCodeMonitorJob(),
 		"bitbucket-project-permissions": permissions.NewBitbucketProjectPermissionsJob(),
+		"export-usage-telemetry":        telemetry.NewTelemetryJob(),
 
 		// fresh
 		"codeintel-upload-janitor":         freshcodeintel.NewUploadJanitorJob(),
@@ -85,6 +90,9 @@ func setAuthzProviders(logger log.Logger) {
 		return
 	}
 
+	// authz also relies on UserMappings being setup.
+	globals.WatchPermissionsUserMapping()
+
 	ctx := context.Background()
 	db := database.NewDB(logger, sqlDB)
 
@@ -104,6 +112,10 @@ func registerEnterpriseMigrations(db database.DB, outOfBandMigrationRunner *oobm
 	}
 
 	if err := insights.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
+		return err
+	}
+
+	if err := productsubscription.RegisterMigrations(db, outOfBandMigrationRunner); err != nil {
 		return err
 	}
 

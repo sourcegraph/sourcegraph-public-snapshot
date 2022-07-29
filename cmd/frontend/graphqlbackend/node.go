@@ -278,3 +278,13 @@ func (r *NodeResolver) ToExecutor() (*executor.ExecutorResolver, bool) {
 	n, ok := r.Node.(*executor.ExecutorResolver)
 	return n, ok
 }
+
+func (r *NodeResolver) ToLockfileIndex() (LockfileIndexResolver, bool) {
+	n, ok := r.Node.(LockfileIndexResolver)
+	return n, ok
+}
+
+func (r *NodeResolver) ToExternalServiceSyncJob() (*externalServiceSyncJobResolver, bool) {
+	n, ok := r.Node.(*externalServiceSyncJobResolver)
+	return n, ok
+}

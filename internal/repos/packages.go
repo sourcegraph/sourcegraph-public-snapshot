@@ -2,7 +2,6 @@ package repos
 
 import (
 	"context"
-	"sync"
 
 	"golang.org/x/sync/errgroup"
 	"golang.org/x/sync/semaphore"
@@ -25,9 +24,24 @@ type PackagesSource struct {
 }
 
 type packagesSource interface {
-	Get(ctx context.Context, name, version string) (reposource.PackageVersion, error)
-	ParsePackageVersionFromConfiguration(dep string) (reposource.PackageVersion, error)
-	ParsePackageFromRepoName(repoName string) (reposource.Package, error)
+	// ParseVersionedPackageFromConfiguration parses a package and version from the "dependencies"
+	// field from the site-admin interface.
+	// For example: "react@1.2.0" or "com.google.guava:guava:30.0-jre".
+	ParseVersionedPackageFromConfiguration(dep string) (reposource.VersionedPackage, error)
+	// ParsePackageFromRepoName parses a Sourcegraph repository name of the package.
+	// For example: "npm/react" or "maven/com.google.guava/guava".
+	ParsePackageFromRepoName(repoName api.RepoName) (reposource.Package, error)
+	// ParsePackageFromName parses a package from the name of the package, as accepted by the ecosystem's package manager.
+	// For example: "react" or "com.google.guava:guava".
+	ParsePackageFromName(name reposource.PackageName) (reposource.Package, error)
+	// functions in this file that switch against concrete implementations of this interface:
+	// getPackage(): to fetch the description of this package, only supported by a few implementations.
+	// metadata(): to store gob-encoded structs with implementation-specific metadata.
+}
+
+type packagesDownloadSource interface {
+	// GetPackage sends a request to the package host to get metadata about this package, like the description.
+	GetPackage(ctx context.Context, name reposource.PackageName) (reposource.Package, error)
 }
 
 var _ Source = &PackagesSource{}
@@ -39,24 +53,20 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 		return
 	}
 
-	var mu sync.Mutex
-	set := make(map[string]struct{})
+	handledPackages := make(map[reposource.PackageName]struct{})
 
 	for _, dep := range deps {
-		_, err := s.src.Get(ctx, dep.PackageSyntax(), dep.PackageVersion())
-		if err != nil {
-			results <- SourceResult{Source: s, Err: err}
-			continue
-		}
-
-		if _, ok := set[dep.PackageSyntax()]; !ok {
+		if _, ok := handledPackages[dep.PackageSyntax()]; !ok {
+			_, err := getPackage(ctx, s.src, dep.PackageSyntax())
+			if err != nil {
+				results <- SourceResult{Source: s, Err: err}
+				continue
+			}
 			repo := s.makeRepo(dep)
 			results <- SourceResult{Source: s, Repo: repo}
-			set[dep.PackageSyntax()] = struct{}{}
+			handledPackages[dep.PackageSyntax()] = struct{}{}
 		}
 	}
-
-	lastID := 0
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
@@ -70,12 +80,15 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 		}
 	}()
 
+	const batchLimit = 100
+	var lastName reposource.PackageName
+	lastName = ""
 	for {
 		depRepos, err := s.depsSvc.ListDependencyRepos(ctx, dependencies.ListDependencyReposOpts{
-			Scheme:      s.scheme,
-			After:       lastID,
-			Limit:       100,
-			NewestFirst: true,
+			Scheme:          s.scheme,
+			After:           lastName,
+			Limit:           batchLimit,
+			ExcludeVersions: true,
 		})
 		if err != nil {
 			results <- SourceResult{Source: s, Err: err}
@@ -85,34 +98,35 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 			break
 		}
 
-		lastID = depRepos[len(depRepos)-1].ID
+		lastName = depRepos[len(depRepos)-1].Name
 
+		// at most batchLimit because of the limit above
+		depReposToHandle := make([]dependencies.Repo, 0, len(depRepos))
 		for _, depRepo := range depRepos {
+			if _, ok := handledPackages[depRepo.Name]; !ok {
+				// don't need to add to handledPackages here, as the results from
+				// depRepos should be unique
+				depReposToHandle = append(depReposToHandle, depRepo)
+			}
+		}
+
+		for _, depRepo := range depReposToHandle {
 			if err := sem.Acquire(ctx, 1); err != nil {
 				return
 			}
-
 			depRepo := depRepo
 			g.Go(func() error {
 				defer sem.Release(1)
-
-				dep, err := s.src.Get(ctx, depRepo.Name, depRepo.Version)
+				pkg, err := getPackage(ctx, s.src, depRepo.Name)
 				if err != nil {
-					if errcode.IsNotFound(err) {
-						return nil
+					if !errcode.IsNotFound(err) {
+						results <- SourceResult{Source: s, Err: err}
 					}
-					return err
+					return nil
 				}
 
-				mu.Lock()
-				if _, ok := set[depRepo.Name]; !ok {
-					set[depRepo.Name] = struct{}{}
-					mu.Unlock()
-					repo := s.makeRepo(dep)
-					results <- SourceResult{Source: s, Repo: repo}
-				} else {
-					mu.Unlock()
-				}
+				repo := s.makeRepo(pkg)
+				results <- SourceResult{Source: s, Repo: repo}
 
 				return nil
 			})
@@ -121,17 +135,16 @@ func (s *PackagesSource) ListRepos(ctx context.Context, results chan SourceResul
 }
 
 func (s *PackagesSource) GetRepo(ctx context.Context, repoName string) (*types.Repo, error) {
-	dep, err := s.src.ParsePackageFromRepoName(repoName)
+	parsedPkg, err := s.src.ParsePackageFromRepoName(api.RepoName(repoName))
 	if err != nil {
 		return nil, err
 	}
 
-	dep, err = s.src.Get(ctx, dep.PackageSyntax(), "")
+	pkg, err := getPackage(ctx, s.src, parsedPkg.PackageSyntax())
 	if err != nil {
 		return nil, err
 	}
-
-	return s.makeRepo(dep), nil
+	return s.makeRepo(pkg), nil
 }
 
 func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
@@ -157,13 +170,24 @@ func (s *PackagesSource) makeRepo(dep reposource.Package) *types.Repo {
 	}
 }
 
+func getPackage(ctx context.Context, s packagesSource, name reposource.PackageName) (reposource.Package, error) {
+	switch d := s.(type) {
+	// Downloading package descriptions is disabled due to performance issues, causing sync times to take >12hr.
+	// Don't re-enable the case below without fixing https://github.com/sourcegraph/sourcegraph/issues/39653.
+	//case packagesDownloadSource:
+	//	return d.GetPackage(ctx, name)
+	default:
+		return d.ParsePackageFromName(name)
+	}
+}
+
 func metadata(dep reposource.Package) any {
 	switch d := dep.(type) {
-	case *reposource.MavenPackageVersion:
+	case *reposource.MavenVersionedPackage:
 		return &reposource.MavenMetadata{
 			Module: d.MavenModule,
 		}
-	case *reposource.NpmPackageVersion:
+	case *reposource.NpmVersionedPackage:
 		return &reposource.NpmMetadata{
 			Package: d.NpmPackageName,
 		}
@@ -181,9 +205,9 @@ func (s *PackagesSource) SetDependenciesService(depsSvc *dependencies.Service) {
 	s.depsSvc = depsSvc
 }
 
-func (s *PackagesSource) configDependencies(deps []string) (dependencies []reposource.PackageVersion, err error) {
+func (s *PackagesSource) configDependencies(deps []string) (dependencies []reposource.VersionedPackage, err error) {
 	for _, dep := range deps {
-		dependency, err := s.src.ParsePackageVersionFromConfiguration(dep)
+		dependency, err := s.src.ParseVersionedPackageFromConfiguration(dep)
 		if err != nil {
 			return nil, err
 		}

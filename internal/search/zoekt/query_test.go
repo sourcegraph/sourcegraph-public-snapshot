@@ -76,12 +76,6 @@ func TestQueryToZoektQuery(t *testing.T) {
 			Query:   `test`,
 		},
 		{
-			Name:    "repos must include",
-			Type:    search.TextRequest,
-			Pattern: `foo repohasfile:\.go$ repohasfile:\.yaml$ -repohasfile:\.java$ -repohasfile:\.xml$ patterntype:regexp`,
-			Query:   `foo (type:repo file:\.go$) (type:repo file:\.yaml$) -(type:repo file:\.java$) -(type:repo file:\.xml$)`,
-		},
-		{
 			Name:    "Just file",
 			Type:    search.TextRequest,
 			Pattern: `file:\.go$`,

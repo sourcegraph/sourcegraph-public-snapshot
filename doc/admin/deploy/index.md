@@ -16,6 +16,8 @@ Or, if you don't want to bother with setup and configuration [try Sourcegraph Cl
 
 Sourcegraph has provided the [Resource Estimator](resource_estimator.md) as a starting point to determine necessary resources based on the size of your deployment. 
 
+The [Scaling Overview for Services docs](scale.md) provides a comprehensive overview of how each Sourcegraph service scales.
+
 We recommend the Kubernetes deployment type if your deployment scenario includes a large codebase and many users. The [Kubernetes docs](kubernetes/index.md) provide additional information for [scaling Kubernetes deployments](kubernetes/scale.md).
 
 ## Deployment types
@@ -73,7 +75,7 @@ For more information, follow the install and configuration docs for your specifi
 By default, Sourcegraph provides versions of services it needs to operate, including:
 
 - A [PostgreSQL](https://www.postgresql.org/) instance for storing long-term information, such as user data, when using Sourcegraph's built-in authentication provider instead of an external one.
-- A second PostgreSQL instance for storing large-volume precise code intelligence data.
+- A second PostgreSQL instance for storing large-volume code graph data.
 - A [Redis](https://redis.io/) instance for storing short-term information such as user sessions.
 - A second Redis instance for storing cache data.
 - A [MinIO](https://min.io/) instance that serves as a local S3-compatible object storage to hold user uploads before processing. _This data is for temporary storage, and content will be automatically deleted once processed._

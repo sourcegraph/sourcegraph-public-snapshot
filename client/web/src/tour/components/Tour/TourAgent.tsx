@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState, useMemo } from 'react'
 
-import CheckCircleIcon from 'mdi-react/CheckCircleIcon'
+import { mdiCheckCircle } from '@mdi/js'
 import ReactDOM from 'react-dom'
 import { useLocation } from 'react-router-dom'
 
@@ -64,7 +64,7 @@ export const TourAgent: React.FunctionComponent<React.PropsWithChildren<TourAgen
 
         return ReactDOM.createPortal(
             <div className={styles.infoPanel}>
-                <Icon as={CheckCircleIcon} className={styles.infoIcon} aria-hidden={true} />
+                <Icon className={styles.infoIcon} aria-hidden={true} svgPath={mdiCheckCircle} />
                 <span>{info}</span>
             </div>,
             infoContainerReference.current

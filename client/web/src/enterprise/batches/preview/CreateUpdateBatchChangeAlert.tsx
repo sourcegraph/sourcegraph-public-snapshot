@@ -6,9 +6,10 @@ import * as H from 'history'
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { isErrorLike } from '@sourcegraph/common'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { Button, Alert, Link, Code } from '@sourcegraph/wildcard'
+import { Button, Alert, Link, Code, Tooltip } from '@sourcegraph/wildcard'
 
 import { BatchSpecFields } from '../../../graphql-operations'
+import { eventLogger } from '../../../tracking/eventLogger'
 import { MultiSelectContext } from '../MultiSelectContext'
 
 import { createBatchChange, applyBatchChange } from './backend'
@@ -95,18 +96,26 @@ export const CreateUpdateBatchChangeAlert: React.FunctionComponent<
                     all changesets.
                 </div>
                 <div className={styles.createUpdateBatchChangeAlertBtn}>
-                    <Button
-                        variant="primary"
-                        className={classNames(
-                            'test-batches-confirm-apply-btn text-nowrap',
-                            isLoading === true || (!viewerCanAdminister && 'disabled')
-                        )}
-                        onClick={onApply}
-                        disabled={!canApply}
-                        data-tooltip={disabledTooltip()}
-                    >
-                        Apply
-                    </Button>
+                    <Tooltip content={disabledTooltip()}>
+                        <Button
+                            variant="primary"
+                            className={classNames(
+                                'test-batches-confirm-apply-btn text-nowrap',
+                                isLoading === true || (!viewerCanAdminister && 'disabled')
+                            )}
+                            onClick={() => {
+                                if (batchChange) {
+                                    eventLogger.log('batch_change_execution_preview:apply_update:clicked')
+                                } else {
+                                    eventLogger.log('batch_change_execution_preview:apply:clicked')
+                                }
+                                return onApply()
+                            }}
+                            disabled={!canApply}
+                        >
+                            Apply
+                        </Button>
+                    </Tooltip>
                 </div>
             </Alert>
             {isErrorLike(isLoading) && <ErrorAlert error={isLoading} />}

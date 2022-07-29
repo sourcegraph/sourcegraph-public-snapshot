@@ -3,6 +3,7 @@ package inttests
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"testing"
 	"time"
 
@@ -76,7 +77,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 		}
 
-		commits, err := gitserver.NewClient(db).GetCommits(ctx, repoCommits, true, nil)
+		commits, err := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses).GetCommits(ctx, repoCommits, true, nil)
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -114,7 +115,7 @@ func TestGetCommits(t *testing.T) {
 			nil,
 		}
 
-		commits, err := gitserver.NewClient(db).GetCommits(ctx, repoCommits, true, getTestSubRepoPermsChecker("file1", "file3"))
+		commits, err := gitserver.NewTestClient(http.DefaultClient, db, gitserverAddresses).GetCommits(ctx, repoCommits, true, getTestSubRepoPermsChecker("file1", "file3"))
 		if err != nil {
 			t.Fatalf("unexpected error calling getCommits: %s", err)
 		}
@@ -162,7 +163,7 @@ func mustParseDate(s string, t *testing.T) *time.Time {
 }
 
 func TestHead(t *testing.T) {
-	client := gitserver.NewClient(database.NewMockDB())
+	client := gitserver.NewTestClient(http.DefaultClient, database.NewMockDB(), gitserverAddresses)
 	t.Run("basic", func(t *testing.T) {
 		gitCommands := []string{
 			"GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z",

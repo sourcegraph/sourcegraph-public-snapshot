@@ -11,7 +11,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/schema"
 )
 
-var customGitFetch = conf.Cached(func() any {
+var customGitFetch = conf.Cached[map[string][]string](func() map[string][]string {
 	exp := conf.ExperimentalFeatures()
 	return buildCustomFetchMappings(exp.CustomGitFetch)
 })
@@ -30,7 +30,7 @@ func buildCustomFetchMappings(c []*schema.CustomGitFetchMapping) map[string][]st
 }
 
 func customFetchCmd(ctx context.Context, remoteURL *vcs.URL) *exec.Cmd {
-	cgm := customGitFetch().(map[string][]string)
+	cgm := customGitFetch()
 	if len(cgm) == 0 {
 		return nil
 	}

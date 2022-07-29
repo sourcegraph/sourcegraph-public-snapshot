@@ -23,6 +23,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/authz"
 	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/gitserver"
+	"github.com/sourcegraph/sourcegraph/internal/gitserver/gitdomain"
 )
 
 // Examples:
@@ -115,10 +116,10 @@ func serveRaw(db database.DB) handlerFunc {
 		// Allow users to override the negotiated content type so that e.g. browser
 		// users can easily download tar/zip archives by adding ?format=zip etc. to
 		// the URL.
-		switch r.URL.Query().Get("format") {
-		case "zip":
+		switch gitserver.ArchiveFormat(r.URL.Query().Get("format")) {
+		case gitserver.ArchiveFormatZip:
 			contentType = applicationZip
-		case "tar":
+		case gitserver.ArchiveFormatTar:
 			contentType = applicationXTar
 		}
 
@@ -183,7 +184,7 @@ func serveRaw(db database.DB) handlerFunc {
 			// internet, so we use default compression levels on zips (instead of no
 			// compression).
 			f, err := gitserver.NewClient(db).ArchiveReader(r.Context(), authz.DefaultSubRepoPermsChecker, common.Repo.Name,
-				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitserver.Pathspec{gitserver.PathspecLiteral(relativePath)}})
+				gitserver.ArchiveOptions{Format: format, Treeish: string(common.CommitID), Pathspecs: []gitdomain.Pathspec{gitdomain.PathspecLiteral(relativePath)}})
 			if err != nil {
 				return err
 			}

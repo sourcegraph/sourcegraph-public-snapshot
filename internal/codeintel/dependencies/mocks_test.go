@@ -35,7 +35,7 @@ type MockLockfilesService struct {
 func NewMockLockfilesService() *MockLockfilesService {
 	return &MockLockfilesService{
 		ListDependenciesFunc: &LockfilesServiceListDependenciesFunc{
-			defaultHook: func(context.Context, api.RepoName, string) (r0 []*lockfiles.Result, r1 error) {
+			defaultHook: func(context.Context, api.RepoName, string) (r0 []lockfiles.Result, r1 error) {
 				return
 			},
 		},
@@ -47,7 +47,7 @@ func NewMockLockfilesService() *MockLockfilesService {
 func NewStrictMockLockfilesService() *MockLockfilesService {
 	return &MockLockfilesService{
 		ListDependenciesFunc: &LockfilesServiceListDependenciesFunc{
-			defaultHook: func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error) {
+			defaultHook: func(context.Context, api.RepoName, string) ([]lockfiles.Result, error) {
 				panic("unexpected invocation of MockLockfilesService.ListDependencies")
 			},
 		},
@@ -69,15 +69,15 @@ func NewMockLockfilesServiceFrom(i LockfilesService) *MockLockfilesService {
 // ListDependencies method of the parent MockLockfilesService instance is
 // invoked.
 type LockfilesServiceListDependenciesFunc struct {
-	defaultHook func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error)
-	hooks       []func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error)
+	defaultHook func(context.Context, api.RepoName, string) ([]lockfiles.Result, error)
+	hooks       []func(context.Context, api.RepoName, string) ([]lockfiles.Result, error)
 	history     []LockfilesServiceListDependenciesFuncCall
 	mutex       sync.Mutex
 }
 
 // ListDependencies delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockLockfilesService) ListDependencies(v0 context.Context, v1 api.RepoName, v2 string) ([]*lockfiles.Result, error) {
+func (m *MockLockfilesService) ListDependencies(v0 context.Context, v1 api.RepoName, v2 string) ([]lockfiles.Result, error) {
 	r0, r1 := m.ListDependenciesFunc.nextHook()(v0, v1, v2)
 	m.ListDependenciesFunc.appendCall(LockfilesServiceListDependenciesFuncCall{v0, v1, v2, r0, r1})
 	return r0, r1
@@ -86,7 +86,7 @@ func (m *MockLockfilesService) ListDependencies(v0 context.Context, v1 api.RepoN
 // SetDefaultHook sets function that is called when the ListDependencies
 // method of the parent MockLockfilesService instance is invoked and the
 // hook queue is empty.
-func (f *LockfilesServiceListDependenciesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error)) {
+func (f *LockfilesServiceListDependenciesFunc) SetDefaultHook(hook func(context.Context, api.RepoName, string) ([]lockfiles.Result, error)) {
 	f.defaultHook = hook
 }
 
@@ -95,7 +95,7 @@ func (f *LockfilesServiceListDependenciesFunc) SetDefaultHook(hook func(context.
 // invokes the hook at the front of the queue and discards it. After the
 // queue is empty, the default hook function is invoked for any future
 // action.
-func (f *LockfilesServiceListDependenciesFunc) PushHook(hook func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error)) {
+func (f *LockfilesServiceListDependenciesFunc) PushHook(hook func(context.Context, api.RepoName, string) ([]lockfiles.Result, error)) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -103,20 +103,20 @@ func (f *LockfilesServiceListDependenciesFunc) PushHook(hook func(context.Contex
 
 // SetDefaultReturn calls SetDefaultHook with a function that returns the
 // given values.
-func (f *LockfilesServiceListDependenciesFunc) SetDefaultReturn(r0 []*lockfiles.Result, r1 error) {
-	f.SetDefaultHook(func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error) {
+func (f *LockfilesServiceListDependenciesFunc) SetDefaultReturn(r0 []lockfiles.Result, r1 error) {
+	f.SetDefaultHook(func(context.Context, api.RepoName, string) ([]lockfiles.Result, error) {
 		return r0, r1
 	})
 }
 
 // PushReturn calls PushHook with a function that returns the given values.
-func (f *LockfilesServiceListDependenciesFunc) PushReturn(r0 []*lockfiles.Result, r1 error) {
-	f.PushHook(func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error) {
+func (f *LockfilesServiceListDependenciesFunc) PushReturn(r0 []lockfiles.Result, r1 error) {
+	f.PushHook(func(context.Context, api.RepoName, string) ([]lockfiles.Result, error) {
 		return r0, r1
 	})
 }
 
-func (f *LockfilesServiceListDependenciesFunc) nextHook() func(context.Context, api.RepoName, string) ([]*lockfiles.Result, error) {
+func (f *LockfilesServiceListDependenciesFunc) nextHook() func(context.Context, api.RepoName, string) ([]lockfiles.Result, error) {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -161,7 +161,7 @@ type LockfilesServiceListDependenciesFuncCall struct {
 	Arg2 string
 	// Result0 is the value of the 1st result returned from this method
 	// invocation.
-	Result0 []*lockfiles.Result
+	Result0 []lockfiles.Result
 	// Result1 is the value of the 2nd result returned from this method
 	// invocation.
 	Result1 error
@@ -501,9 +501,18 @@ type MockStore struct {
 	// object controlling the behavior of the method
 	// DeleteDependencyReposByID.
 	DeleteDependencyReposByIDFunc *StoreDeleteDependencyReposByIDFunc
+	// DeleteLockfileIndexByIDFunc is an instance of a mock function object
+	// controlling the behavior of the method DeleteLockfileIndexByID.
+	DeleteLockfileIndexByIDFunc *StoreDeleteLockfileIndexByIDFunc
+	// GetLockfileIndexFunc is an instance of a mock function object
+	// controlling the behavior of the method GetLockfileIndex.
+	GetLockfileIndexFunc *StoreGetLockfileIndexFunc
 	// ListDependencyReposFunc is an instance of a mock function object
 	// controlling the behavior of the method ListDependencyRepos.
 	ListDependencyReposFunc *StoreListDependencyReposFunc
+	// ListLockfileIndexesFunc is an instance of a mock function object
+	// controlling the behavior of the method ListLockfileIndexes.
+	ListLockfileIndexesFunc *StoreListLockfileIndexesFunc
 	// LockfileDependenciesFunc is an instance of a mock function object
 	// controlling the behavior of the method LockfileDependencies.
 	LockfileDependenciesFunc *StoreLockfileDependenciesFunc
@@ -540,8 +549,23 @@ func NewMockStore() *MockStore {
 				return
 			},
 		},
+		DeleteLockfileIndexByIDFunc: &StoreDeleteLockfileIndexByIDFunc{
+			defaultHook: func(context.Context, int) (r0 error) {
+				return
+			},
+		},
+		GetLockfileIndexFunc: &StoreGetLockfileIndexFunc{
+			defaultHook: func(context.Context, store.GetLockfileIndexOpts) (r0 shared.LockfileIndex, r1 error) {
+				return
+			},
+		},
 		ListDependencyReposFunc: &StoreListDependencyReposFunc{
 			defaultHook: func(context.Context, store.ListDependencyReposOpts) (r0 []shared.Repo, r1 error) {
+				return
+			},
+		},
+		ListLockfileIndexesFunc: &StoreListLockfileIndexesFunc{
+			defaultHook: func(context.Context, store.ListLockfileIndexesOpts) (r0 []shared.LockfileIndex, r1 int, r2 error) {
 				return
 			},
 		},
@@ -597,9 +621,24 @@ func NewStrictMockStore() *MockStore {
 				panic("unexpected invocation of MockStore.DeleteDependencyReposByID")
 			},
 		},
+		DeleteLockfileIndexByIDFunc: &StoreDeleteLockfileIndexByIDFunc{
+			defaultHook: func(context.Context, int) error {
+				panic("unexpected invocation of MockStore.DeleteLockfileIndexByID")
+			},
+		},
+		GetLockfileIndexFunc: &StoreGetLockfileIndexFunc{
+			defaultHook: func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error) {
+				panic("unexpected invocation of MockStore.GetLockfileIndex")
+			},
+		},
 		ListDependencyReposFunc: &StoreListDependencyReposFunc{
 			defaultHook: func(context.Context, store.ListDependencyReposOpts) ([]shared.Repo, error) {
 				panic("unexpected invocation of MockStore.ListDependencyRepos")
+			},
+		},
+		ListLockfileIndexesFunc: &StoreListLockfileIndexesFunc{
+			defaultHook: func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
+				panic("unexpected invocation of MockStore.ListLockfileIndexes")
 			},
 		},
 		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
@@ -652,8 +691,17 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		DeleteDependencyReposByIDFunc: &StoreDeleteDependencyReposByIDFunc{
 			defaultHook: i.DeleteDependencyReposByID,
 		},
+		DeleteLockfileIndexByIDFunc: &StoreDeleteLockfileIndexByIDFunc{
+			defaultHook: i.DeleteLockfileIndexByID,
+		},
+		GetLockfileIndexFunc: &StoreGetLockfileIndexFunc{
+			defaultHook: i.GetLockfileIndex,
+		},
 		ListDependencyReposFunc: &StoreListDependencyReposFunc{
 			defaultHook: i.ListDependencyRepos,
+		},
+		ListLockfileIndexesFunc: &StoreListLockfileIndexesFunc{
+			defaultHook: i.ListLockfileIndexes,
 		},
 		LockfileDependenciesFunc: &StoreLockfileDependenciesFunc{
 			defaultHook: i.LockfileDependencies,
@@ -796,6 +844,220 @@ func (c StoreDeleteDependencyReposByIDFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 
+// StoreDeleteLockfileIndexByIDFunc describes the behavior when the
+// DeleteLockfileIndexByID method of the parent MockStore instance is
+// invoked.
+type StoreDeleteLockfileIndexByIDFunc struct {
+	defaultHook func(context.Context, int) error
+	hooks       []func(context.Context, int) error
+	history     []StoreDeleteLockfileIndexByIDFuncCall
+	mutex       sync.Mutex
+}
+
+// DeleteLockfileIndexByID delegates to the next hook function in the queue
+// and stores the parameter and result values of this invocation.
+func (m *MockStore) DeleteLockfileIndexByID(v0 context.Context, v1 int) error {
+	r0 := m.DeleteLockfileIndexByIDFunc.nextHook()(v0, v1)
+	m.DeleteLockfileIndexByIDFunc.appendCall(StoreDeleteLockfileIndexByIDFuncCall{v0, v1, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the
+// DeleteLockfileIndexByID method of the parent MockStore instance is
+// invoked and the hook queue is empty.
+func (f *StoreDeleteLockfileIndexByIDFunc) SetDefaultHook(hook func(context.Context, int) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// DeleteLockfileIndexByID method of the parent MockStore instance invokes
+// the hook at the front of the queue and discards it. After the queue is
+// empty, the default hook function is invoked for any future action.
+func (f *StoreDeleteLockfileIndexByIDFunc) PushHook(hook func(context.Context, int) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreDeleteLockfileIndexByIDFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreDeleteLockfileIndexByIDFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int) error {
+		return r0
+	})
+}
+
+func (f *StoreDeleteLockfileIndexByIDFunc) nextHook() func(context.Context, int) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreDeleteLockfileIndexByIDFunc) appendCall(r0 StoreDeleteLockfileIndexByIDFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreDeleteLockfileIndexByIDFuncCall
+// objects describing the invocations of this function.
+func (f *StoreDeleteLockfileIndexByIDFunc) History() []StoreDeleteLockfileIndexByIDFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreDeleteLockfileIndexByIDFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreDeleteLockfileIndexByIDFuncCall is an object that describes an
+// invocation of method DeleteLockfileIndexByID on an instance of MockStore.
+type StoreDeleteLockfileIndexByIDFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreDeleteLockfileIndexByIDFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreDeleteLockfileIndexByIDFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
+}
+
+// StoreGetLockfileIndexFunc describes the behavior when the
+// GetLockfileIndex method of the parent MockStore instance is invoked.
+type StoreGetLockfileIndexFunc struct {
+	defaultHook func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error)
+	hooks       []func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error)
+	history     []StoreGetLockfileIndexFuncCall
+	mutex       sync.Mutex
+}
+
+// GetLockfileIndex delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) GetLockfileIndex(v0 context.Context, v1 store.GetLockfileIndexOpts) (shared.LockfileIndex, error) {
+	r0, r1 := m.GetLockfileIndexFunc.nextHook()(v0, v1)
+	m.GetLockfileIndexFunc.appendCall(StoreGetLockfileIndexFuncCall{v0, v1, r0, r1})
+	return r0, r1
+}
+
+// SetDefaultHook sets function that is called when the GetLockfileIndex
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreGetLockfileIndexFunc) SetDefaultHook(hook func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// GetLockfileIndex method of the parent MockStore instance invokes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreGetLockfileIndexFunc) PushHook(hook func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreGetLockfileIndexFunc) SetDefaultReturn(r0 shared.LockfileIndex, r1 error) {
+	f.SetDefaultHook(func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error) {
+		return r0, r1
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreGetLockfileIndexFunc) PushReturn(r0 shared.LockfileIndex, r1 error) {
+	f.PushHook(func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error) {
+		return r0, r1
+	})
+}
+
+func (f *StoreGetLockfileIndexFunc) nextHook() func(context.Context, store.GetLockfileIndexOpts) (shared.LockfileIndex, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreGetLockfileIndexFunc) appendCall(r0 StoreGetLockfileIndexFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreGetLockfileIndexFuncCall objects
+// describing the invocations of this function.
+func (f *StoreGetLockfileIndexFunc) History() []StoreGetLockfileIndexFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreGetLockfileIndexFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreGetLockfileIndexFuncCall is an object that describes an invocation
+// of method GetLockfileIndex on an instance of MockStore.
+type StoreGetLockfileIndexFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.GetLockfileIndexOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 shared.LockfileIndex
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreGetLockfileIndexFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreGetLockfileIndexFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1}
+}
+
 // StoreListDependencyReposFunc describes the behavior when the
 // ListDependencyRepos method of the parent MockStore instance is invoked.
 type StoreListDependencyReposFunc struct {
@@ -902,6 +1164,117 @@ func (c StoreListDependencyReposFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreListDependencyReposFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1}
+}
+
+// StoreListLockfileIndexesFunc describes the behavior when the
+// ListLockfileIndexes method of the parent MockStore instance is invoked.
+type StoreListLockfileIndexesFunc struct {
+	defaultHook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error)
+	hooks       []func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error)
+	history     []StoreListLockfileIndexesFuncCall
+	mutex       sync.Mutex
+}
+
+// ListLockfileIndexes delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) ListLockfileIndexes(v0 context.Context, v1 store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
+	r0, r1, r2 := m.ListLockfileIndexesFunc.nextHook()(v0, v1)
+	m.ListLockfileIndexesFunc.appendCall(StoreListLockfileIndexesFuncCall{v0, v1, r0, r1, r2})
+	return r0, r1, r2
+}
+
+// SetDefaultHook sets function that is called when the ListLockfileIndexes
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreListLockfileIndexesFunc) SetDefaultHook(hook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error)) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// ListLockfileIndexes method of the parent MockStore instance invokes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreListLockfileIndexesFunc) PushHook(hook func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error)) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultHook with a function that returns the
+// given values.
+func (f *StoreListLockfileIndexesFunc) SetDefaultReturn(r0 []shared.LockfileIndex, r1 int, r2 error) {
+	f.SetDefaultHook(func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
+		return r0, r1, r2
+	})
+}
+
+// PushReturn calls PushHook with a function that returns the given values.
+func (f *StoreListLockfileIndexesFunc) PushReturn(r0 []shared.LockfileIndex, r1 int, r2 error) {
+	f.PushHook(func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
+		return r0, r1, r2
+	})
+}
+
+func (f *StoreListLockfileIndexesFunc) nextHook() func(context.Context, store.ListLockfileIndexesOpts) ([]shared.LockfileIndex, int, error) {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreListLockfileIndexesFunc) appendCall(r0 StoreListLockfileIndexesFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreListLockfileIndexesFuncCall objects
+// describing the invocations of this function.
+func (f *StoreListLockfileIndexesFunc) History() []StoreListLockfileIndexesFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreListLockfileIndexesFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreListLockfileIndexesFuncCall is an object that describes an
+// invocation of method ListLockfileIndexes on an instance of MockStore.
+type StoreListLockfileIndexesFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 store.ListLockfileIndexesOpts
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 []shared.LockfileIndex
+	// Result1 is the value of the 2nd result returned from this method
+	// invocation.
+	Result1 int
+	// Result2 is the value of the 3rd result returned from this method
+	// invocation.
+	Result2 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreListLockfileIndexesFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreListLockfileIndexesFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0, c.Result1, c.Result2}
 }
 
 // StoreLockfileDependenciesFunc describes the behavior when the

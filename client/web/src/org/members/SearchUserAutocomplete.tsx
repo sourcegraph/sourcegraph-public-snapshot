@@ -6,7 +6,7 @@ import { debounce } from 'lodash'
 // eslint-disable-next-line no-restricted-imports
 import { Dropdown, DropdownItem, DropdownMenu, DropdownToggle } from 'reactstrap'
 
-import { Input } from '@sourcegraph/wildcard'
+import { Input, Tooltip } from '@sourcegraph/wildcard'
 
 import { AutocompleteMembersSearchResult, AutocompleteMembersSearchVariables, Maybe } from '../../graphql-operations'
 import { eventLogger } from '../../tracking/eventLogger'
@@ -61,12 +61,13 @@ const UserResultItem: React.FunctionComponent<
         >
             <div className={classNames('d-flex align-items-center justify-content-between', styles.userContainer)}>
                 <div className={styles.avatarContainer}>
-                    <UserAvatar
-                        size={24}
-                        className={classNames(styles.avatar, user.inOrg ? styles.avatarDisabled : undefined)}
-                        user={user}
-                        data-tooltip={user.displayName || user.username}
-                    />
+                    <Tooltip content={user.displayName || user.username}>
+                        <UserAvatar
+                            size={24}
+                            className={classNames(styles.avatar, user.inOrg ? styles.avatarDisabled : undefined)}
+                            user={user}
+                        />
+                    </Tooltip>
                 </div>
                 <div className="d-flex flex-column">
                     <div>

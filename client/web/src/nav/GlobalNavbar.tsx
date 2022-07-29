@@ -14,11 +14,6 @@ import { isErrorLike } from '@sourcegraph/common'
 import { SearchContextInputProps, isSearchContextSpecAvailable } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import {
-    KeyboardShortcutsProps,
-    KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE,
-    KEYBOARD_SHORTCUT_SWITCH_THEME,
-} from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { getGlobalSearchContextFilter } from '@sourcegraph/shared/src/search/query/query'
@@ -44,6 +39,7 @@ import { CodeMonitoringLogo } from '../code-monitoring/CodeMonitoringLogo'
 import { ActivationDropdown } from '../components/ActivationDropdown'
 import { BrandLogo } from '../components/branding/BrandLogo'
 import { WebCommandListPopoverButton } from '../components/shared'
+import { useFeatureFlag } from '../featureFlags/useFeatureFlag'
 import { useHandleSubmitFeedback, useRoutesMatch } from '../hooks'
 import { CodeInsightsProps } from '../insights/types'
 import { isCodeInsightsEnabled } from '../insights/utils/is-code-insights-enabled'
@@ -57,7 +53,7 @@ import { showDotComMarketing } from '../util/features'
 
 import { NavDropdown, NavDropdownItem } from './NavBar/NavDropdown'
 import { StatusMessagesNavItem } from './StatusMessagesNavItem'
-import { ExtensionAlertAnimationProps, UserNavItem } from './UserNavItem'
+import { UserNavItem } from './UserNavItem'
 
 import { NavGroup, NavItem, NavBar, NavLink, NavActions, NavAction } from '.'
 
@@ -67,17 +63,15 @@ interface Props
     extends SettingsCascadeProps<Settings>,
         PlatformContextProps,
         ExtensionsControllerProps,
-        KeyboardShortcutsProps,
         TelemetryProps,
         ThemeProps,
         ThemePreferenceProps,
-        ExtensionAlertAnimationProps,
         ActivationProps,
         SearchContextInputProps,
         CodeInsightsProps,
         BatchChangesProps {
     history: H.History
-    location: H.Location<{ query: string }>
+    location: H.Location
     authenticatedUser: AuthenticatedUser | null
     authRequired: boolean
     isSourcegraphDotCom: boolean
@@ -101,6 +95,7 @@ interface Props
     isSearchAutoFocusRequired?: boolean
     isRepositoryRelatedPage?: boolean
     branding?: typeof window.context.branding
+    showKeyboardShortcutsHelp: () => void
 }
 
 /**
@@ -128,6 +123,22 @@ function useCalculatedNavLinkVariant(
     }, [containerReference, savedWindowWidth, width])
 
     return navLinkVariant
+}
+
+const AnalyticsNavItem: React.FunctionComponent = () => {
+    const [isAdminAnalyticsDisabled] = useFeatureFlag('admin-analytics-disabled', false)
+
+    if (isAdminAnalyticsDisabled) {
+        return null
+    }
+
+    return (
+        <NavAction className="d-none d-sm-flex">
+            <Link to="/site-admin/analytics/search" className={classNames('font-weight-medium', styles.link)}>
+                Analytics
+            </Link>
+        </NavAction>
+    )
 }
 
 export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props>> = ({
@@ -295,11 +306,13 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </NavLink>
                         </NavItem>
                     )}
-                    <NavItem icon={PuzzleOutlineIcon}>
-                        <NavLink variant={navLinkVariant} to="/extensions">
-                            Extensions
-                        </NavLink>
-                    </NavItem>
+                    {window.context.enableLegacyExtensions && (
+                        <NavItem icon={PuzzleOutlineIcon}>
+                            <NavLink variant={navLinkVariant} to="/extensions">
+                                Extensions
+                            </NavLink>
+                        </NavItem>
+                    )}
                     {props.activation && (
                         <NavItem>
                             <ActivationDropdown activation={props.activation} history={history} />
@@ -328,6 +341,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             )}
                         </>
                     )}
+                    {props.authenticatedUser?.siteAdmin && <AnalyticsNavItem />}
                     {props.authenticatedUser && (
                         <NavAction>
                             <FeedbackPrompt onSubmit={handleSubmitFeedback} productResearchEnabled={true}>
@@ -350,7 +364,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                                 {...props}
                                 location={location}
                                 menu={ContributableMenu.CommandPalette}
-                                keyboardShortcutForShow={KEYBOARD_SHORTCUT_SHOW_COMMAND_PALETTE}
                             />
                         </NavAction>
                     )}
@@ -401,7 +414,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                                         props.settingsCascade.final?.['alerts.codeHostIntegrationMessaging']) ||
                                     'browser-extension'
                                 }
-                                keyboardShortcutForSwitchTheme={KEYBOARD_SHORTCUT_SWITCH_THEME}
                             />
                         </NavAction>
                     )}

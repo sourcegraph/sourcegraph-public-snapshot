@@ -40,14 +40,19 @@ describe('Layout', () => {
         platformContext: { forceUpdateTooltip: () => {}, settings: NEVER },
     } as unknown) as LayoutProps
 
+    const origContext = window.context
     beforeEach(() => {
         const root = document.createElement('div')
         root.id = 'root'
         document.body.append(root)
+        window.context = {
+            enableLegacyExtensions: true,
+        } as any
     })
 
     afterEach(() => {
         document.querySelector('#root')?.remove()
+        window.context = origContext
     })
 
     it('should update patternType if different between URL and context', () => {

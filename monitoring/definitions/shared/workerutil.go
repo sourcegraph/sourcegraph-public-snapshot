@@ -3,6 +3,8 @@ package shared
 import (
 	"fmt"
 
+	"github.com/prometheus/common/model"
+
 	"github.com/sourcegraph/sourcegraph/monitoring/monitoring"
 )
 
@@ -68,6 +70,12 @@ func (workerutilConstructor) Handlers(options ObservableConstructorOptions) shar
 			Owner:       owner,
 		}
 	}
+}
+
+// LastOverTime creates a workerutil-specific last-over-time aggregate for the error-rate metric.
+func (workerutilConstructor) LastOverTimeErrorRate(containerName string, lookbackWindow model.Duration, options ObservableConstructorOptions) string {
+	options.MetricNameRoot += "_processor"
+	return Standard.LastOverTimeErrorRate(containerName, lookbackWindow, options)
 }
 
 type WorkerutilGroupOptions struct {

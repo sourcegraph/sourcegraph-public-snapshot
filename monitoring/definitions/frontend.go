@@ -137,7 +137,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `histogram_quantile(0.9, sum by(le) (rate(src_http_request_duration_seconds_bucket{route!="raw",route!="blob",route!~"graphql.*"}[10m])))`,
 							Warning:     monitoring.Alert().GreaterOrEqual(2),
 							Panel:       monitoring.Panel().LegendFormat("latency").Unit(monitoring.Seconds),
-							Owner:       monitoring.ObservableOwnerCloudSaaS,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps: `
 								- Confirm that the Sourcegraph frontend has enough CPU/memory using the provisioning panels.
 								- Investigate potential sources of latency by selecting Explore and modifying the 'sum by(le)' section to include additional labels: for example, 'sum by(le, job)' or 'sum by (le, instance)'.
@@ -415,7 +415,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:       `sum by(category) (increase(src_frontend_internal_request_duration_seconds_count{code!~"2.."}[5m])) / ignoring(code) group_left sum(increase(src_frontend_internal_request_duration_seconds_count[5m])) * 100`,
 							Warning:     monitoring.Alert().GreaterOrEqual(5).For(15 * time.Minute),
 							Panel:       monitoring.Panel().LegendFormat("{{category}}").Unit(monitoring.Percentage),
-							Owner:       monitoring.ObservableOwnerCloudSaaS,
+							Owner:       monitoring.ObservableOwnerIAM,
 							NextSteps: `
 								- May not be a substantial issue, check the 'frontend' logs for potential causes.
 							`,
@@ -474,7 +474,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `Rate (QPS) of requests to sign-in`,
 						},
 						{
@@ -483,7 +483,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-in",method="post"}[5m])) by (le))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `99% percentile of sign-in latency`,
 						},
 						{
@@ -492,7 +492,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-in",method="post"}[5m]))*100`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `Percentage of sign-in requests grouped by http code`,
 						},
 					},
@@ -504,7 +504,7 @@ func Frontend() *monitoring.Dashboard {
 
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `Rate (QPS) of requests to sign-up`,
 						},
 						{
@@ -514,7 +514,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-up",method="post"}[5m])) by (le))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `99% percentile of sign-up latency`,
 						},
 						{
@@ -523,7 +523,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-up",method="post"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `Percentage of sign-up requests grouped by http code`,
 						},
 					},
@@ -534,7 +534,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.RequestsPerSecond),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `Rate (QPS) of requests to sign-out`,
 						},
 						{
@@ -543,7 +543,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `histogram_quantile(0.99, sum(rate(src_http_request_duration_seconds_bucket{route="sign-out"}[5m])) by (le))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Milliseconds),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `99% percentile of sign-out latency`,
 						},
 						{
@@ -552,7 +552,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          ` sum by (code)(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))/ ignoring (code) group_left sum(irate(src_http_request_duration_seconds_count{route="sign-out"}[5m]))*100`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Percentage),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `Percentage of sign-out requests grouped by http code`,
 						},
 					},
@@ -563,7 +563,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `sum(rate(src_frontend_account_failed_sign_in_attempts_total[1m]))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `Failed sign-in attempts per minute`,
 						},
 						{
@@ -572,7 +572,7 @@ func Frontend() *monitoring.Dashboard {
 							Query:          `sum(rate(src_frontend_account_lockouts_total[1m]))`,
 							NoAlert:        true,
 							Panel:          monitoring.Panel().Unit(monitoring.Number),
-							Owner:          monitoring.ObservableOwnerCloudSaaS,
+							Owner:          monitoring.ObservableOwnerIAM,
 							Interpretation: `Account lockouts per minute`,
 						},
 					},

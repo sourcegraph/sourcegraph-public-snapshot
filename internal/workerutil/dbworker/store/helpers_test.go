@@ -122,7 +122,8 @@ func setupStoreTest(t *testing.T) *sql.DB {
 			num_failures      integer NOT NULL default 0,
 			created_at        timestamp with time zone NOT NULL default NOW(),
 			execution_logs    json[],
-			worker_hostname   text NOT NULL default ''
+			worker_hostname   text NOT NULL default '',
+			cancel            boolean NOT NULL default false
 		)
 	`); err != nil {
 		t.Fatalf("unexpected error creating test table: %s", err)

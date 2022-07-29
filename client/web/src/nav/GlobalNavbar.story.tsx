@@ -14,15 +14,10 @@ import { ThemeProps } from '@sourcegraph/shared/src/theme'
 
 import { AuthenticatedUser } from '../auth'
 import { WebStory } from '../components/WebStory'
-import { SourcegraphContext } from '../jscontext'
 import { useExperimentalFeatures } from '../stores'
 import { ThemePreference } from '../stores/themeState'
 
 import { GlobalNavbar } from './GlobalNavbar'
-
-if (!window.context) {
-    window.context = {} as SourcegraphContext & Mocha.SuiteFunction
-}
 
 const history = createMemoryHistory()
 
@@ -45,12 +40,10 @@ const defaultProps = (
     onThemePreferenceChange: () => undefined,
     globbing: false,
     platformContext: {} as any,
-    keyboardShortcuts: [],
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
     isLightTheme: props.isLightTheme,
-    isExtensionAlertAnimating: false,
     searchContextsEnabled: true,
     batchChangesEnabled: true,
     batchChangesExecutionEnabled: true,
@@ -59,9 +52,8 @@ const defaultProps = (
     routes: [],
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
-    hasUserAddedRepositories: false,
-    hasUserAddedExternalServices: false,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    showKeyboardShortcutsHelp: () => undefined,
 })
 
 const decorator: DecoratorFn = Story => {

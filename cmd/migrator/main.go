@@ -14,6 +14,7 @@ import (
 
 	connections "github.com/sourcegraph/sourcegraph/internal/database/connections/live"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/cliutil"
+	"github.com/sourcegraph/sourcegraph/internal/database/migration/schemas"
 	"github.com/sourcegraph/sourcegraph/internal/database/migration/store"
 	"github.com/sourcegraph/sourcegraph/internal/database/postgresdsn"
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -37,6 +38,8 @@ func main() {
 		args = append(args, "up")
 	}
 
+	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator v%s", version.Version()))
+
 	if err := mainErr(context.Background(), args); err != nil {
 		fmt.Printf("error: %s\n", err)
 		os.Exit(1)
@@ -51,10 +54,7 @@ func mainErr(ctx context.Context, args []string) error {
 	})
 
 	logger := log.Scoped("mainErr", "")
-
 	defer liblog.Sync()
-
-	runnerFactory := newRunnerFactory()
 	outputFactory := func() *output.Output { return out }
 
 	command := &cli.App{
@@ -62,20 +62,25 @@ func mainErr(ctx context.Context, args []string) error {
 		Usage:  "Validates and runs schema migrations",
 		Action: cli.ShowSubcommandHelp,
 		Commands: []*cli.Command{
-			cliutil.Up(appName, runnerFactory, outputFactory, false),
-			cliutil.UpTo(appName, runnerFactory, outputFactory, false),
-			cliutil.DownTo(appName, runnerFactory, outputFactory, false),
-			cliutil.Validate(appName, runnerFactory, outputFactory),
-			cliutil.Describe(appName, runnerFactory, outputFactory),
-			cliutil.Drift(appName, runnerFactory, outputFactory, cliutil.GCSExpectedSchemaFactory, cliutil.GitHubExpectedSchemaFactory),
-			cliutil.AddLog(logger, appName, runnerFactory, outputFactory),
+			cliutil.Up(appName, newRunner, outputFactory, false),
+			cliutil.UpTo(appName, newRunner, outputFactory, false),
+			cliutil.DownTo(appName, newRunner, outputFactory, false),
+			cliutil.Validate(appName, newRunner, outputFactory),
+			cliutil.Describe(appName, newRunner, outputFactory),
+			cliutil.Drift(appName, newRunner, outputFactory, cliutil.GCSExpectedSchemaFactory, cliutil.GitHubExpectedSchemaFactory),
+			cliutil.AddLog(logger, appName, newRunner, outputFactory),
+			cliutil.Upgrade(logger, appName, newRunnerWithSchemas, outputFactory),
 		},
 	}
 
 	return command.RunContext(ctx, args)
 }
 
-func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+func newRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+	return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
+}
+
+func newRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
 	logger := log.Scoped("runner", "")
 	observationContext := &observation.Context{
 		Logger:     logger,
@@ -84,19 +89,17 @@ func newRunnerFactory() func(ctx context.Context, schemaNames []string) (cliutil
 	}
 	operations := store.NewOperations(observationContext)
 
-	return func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
-		dsns, err := postgresdsn.DSNsBySchema(schemaNames)
-		if err != nil {
-			return nil, err
-		}
-		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
-		}
-		r, err := connections.RunnerFromDSNs(logger, dsns, appName, storeFactory)
-		if err != nil {
-			return nil, err
-		}
-
-		return cliutil.NewShim(r), nil
+	dsns, err := postgresdsn.DSNsBySchema(schemaNames)
+	if err != nil {
+		return nil, err
 	}
+	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
+	}
+	r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
+	if err != nil {
+		return nil, err
+	}
+
+	return cliutil.NewShim(r), nil
 }

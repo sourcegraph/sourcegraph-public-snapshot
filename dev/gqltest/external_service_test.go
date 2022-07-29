@@ -198,6 +198,11 @@ func TestExternalService_Perforce(t *testing.T) {
 }
 
 func checkPerforceEnvironment(t *testing.T) {
+	// context: https://sourcegraph.slack.com/archives/C07KZF47K/p1658178309055259
+	// But it seems that there is still an issue with P4 and they're currently timing out.
+	// cc @mollylogue
+	t.Skip("Currently broken")
+
 	if len(*perforcePort) == 0 || len(*perforceUser) == 0 || len(*perforcePassword) == 0 {
 		t.Skip("Environment variables PERFORCE_PORT, PERFORCE_USER or PERFORCE_PASSWORD are not set")
 	}

@@ -98,25 +98,7 @@ func NewWorker(nameSet *janitor.NameSet, options Options, observationContext *ob
 
 	ctx := context.Background()
 
-	w := workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
-	canceler = goroutine.NewPeriodicGoroutine(
-		ctx,
-		canceledJobsPollInterval,
-		goroutine.NewHandlerWithErrorMessage("executor.worker.pollCanceled", func(ctx context.Context) error {
-			canceled, err := queueStore.Canceled(ctx, options.QueueName)
-			if err != nil {
-				return err
-			}
-
-			for _, id := range canceled {
-				w.Cancel(id)
-			}
-
-			return nil
-		}),
-	)
-
-	return w, canceler
+	return workerutil.NewWorker(ctx, store, handler, options.WorkerOptions)
 }
 
 // connectToFrontend will ping the configured Sourcegraph instance until it receives a 200 response.

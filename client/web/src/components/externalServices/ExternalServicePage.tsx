@@ -1,19 +1,37 @@
-import React, { useEffect, useState, useCallback } from 'react'
+import React, { useEffect, useState, useCallback, useMemo } from 'react'
 
 import * as H from 'history'
 import { parse as parseJSONC } from 'jsonc-parser'
+import { useHistory } from 'react-router'
+import { Observable, Subject } from 'rxjs'
 import { catchError } from 'rxjs/operators'
 
 import { ErrorAlert } from '@sourcegraph/branded/src/components/alerts'
 import { asError, ErrorLike, isErrorLike, hasProperty } from '@sourcegraph/common'
 import * as GQL from '@sourcegraph/shared/src/schema'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, H2 } from '@sourcegraph/wildcard'
+import { LoadingSpinner, H2, H3, Badge, Container } from '@sourcegraph/wildcard'
 
-import { ExternalServiceFields, Scalars, AddExternalServiceInput } from '../../graphql-operations'
+import {
+    ExternalServiceFields,
+    Scalars,
+    AddExternalServiceInput,
+    ExternalServiceSyncJobListFields,
+    ExternalServiceSyncJobConnectionFields,
+} from '../../graphql-operations'
+import { FilteredConnection, FilteredConnectionQueryArguments } from '../FilteredConnection'
+import { LoaderButton } from '../LoaderButton'
 import { PageTitle } from '../PageTitle'
+import { Duration } from '../time/Duration'
+import { Timestamp } from '../time/Timestamp'
 
-import { isExternalService, updateExternalService, fetchExternalService as _fetchExternalService } from './backend'
+import {
+    isExternalService,
+    updateExternalService,
+    fetchExternalService as _fetchExternalService,
+    useSyncExternalService,
+    queryExternalServiceSyncJobs,
+} from './backend'
 import { ExternalServiceCard } from './ExternalServiceCard'
 import { ExternalServiceForm } from './ExternalServiceForm'
 import { defaultExternalServices, codeHostExternalServices } from './externalServices'
@@ -108,7 +126,22 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
         error = isUpdating
     }
 
+    const [
+        syncExternalService,
+        { error: syncExternalServiceError, loading: syncExternalServiceLoading },
+    ] = useSyncExternalService()
+
     const externalService = (!isErrorLike(externalServiceOrError) && externalServiceOrError) || undefined
+
+    const syncJobUpdates = useMemo(() => new Subject<void>(), [])
+    const triggerSync = useCallback(
+        () =>
+            externalService &&
+            syncExternalService({ variables: { id: externalService.id } }).then(() => {
+                syncJobUpdates.next()
+            }),
+        [externalService, syncExternalService, syncJobUpdates]
+    )
 
     let externalServiceCategory = externalService && defaultExternalServices[externalService.kind]
     if (
@@ -141,32 +174,140 @@ export const ExternalServicePage: React.FunctionComponent<React.PropsWithChildre
             ) : (
                 <PageTitle title="External service" />
             )}
-            <H2>Update synced repositories</H2>
+            <H2>Update code host connection</H2>
             {externalServiceOrError === undefined && <LoadingSpinner />}
             {isErrorLike(externalServiceOrError) && <ErrorAlert className="mb-3" error={externalServiceOrError} />}
-            {externalServiceCategory && (
-                <div className="mb-3">
-                    <ExternalServiceCard {...externalServiceCategory} namespace={externalService?.namespace} />
-                </div>
+
+            {externalService && (
+                <Container className="mb-3">
+                    {externalServiceCategory && (
+                        <div className="mb-3">
+                            <ExternalServiceCard {...externalServiceCategory} namespace={externalService?.namespace} />
+                        </div>
+                    )}
+                    {externalServiceCategory && (
+                        <ExternalServiceForm
+                            input={{ ...externalService, namespace: externalService.namespace?.id ?? null }}
+                            editorActions={externalServiceCategory.editorActions}
+                            jsonSchema={externalServiceCategory.jsonSchema}
+                            error={error}
+                            warning={externalService.warning}
+                            mode="edit"
+                            loading={isUpdating === true}
+                            onSubmit={onSubmit}
+                            onChange={onChange}
+                            history={history}
+                            isLightTheme={isLightTheme}
+                            telemetryService={telemetryService}
+                            autoFocus={autoFocusForm}
+                        />
+                    )}
+                    <LoaderButton
+                        label="Trigger manual sync"
+                        alwaysShowLabel={true}
+                        variant="secondary"
+                        onClick={triggerSync}
+                        loading={syncExternalServiceLoading}
+                        disabled={syncExternalServiceLoading}
+                    />
+                    {syncExternalServiceError && <ErrorAlert error={syncExternalServiceError} />}
+                    <ExternalServiceWebhook externalService={externalService} className="mt-3" />
+                    <ExternalServiceSyncJobsList externalServiceID={externalService.id} updates={syncJobUpdates} />
+                </Container>
             )}
-            {externalService && externalServiceCategory && (
-                <ExternalServiceForm
-                    input={{ ...externalService, namespace: externalService.namespace?.id ?? null }}
-                    editorActions={externalServiceCategory.editorActions}
-                    jsonSchema={externalServiceCategory.jsonSchema}
-                    error={error}
-                    warning={externalService.warning}
-                    mode="edit"
-                    loading={isUpdating === true}
-                    onSubmit={onSubmit}
-                    onChange={onChange}
-                    history={history}
-                    isLightTheme={isLightTheme}
-                    telemetryService={telemetryService}
-                    autoFocus={autoFocusForm}
-                />
-            )}
-            {externalService && <ExternalServiceWebhook externalService={externalService} />}
         </div>
     )
 }
+
+interface ExternalServiceSyncJobsListProps {
+    externalServiceID: Scalars['ID']
+    updates: Observable<void>
+}
+
+const ExternalServiceSyncJobsList: React.FunctionComponent<ExternalServiceSyncJobsListProps> = ({
+    externalServiceID,
+    updates,
+}) => {
+    const queryConnection = useCallback(
+        (args: FilteredConnectionQueryArguments) =>
+            queryExternalServiceSyncJobs({
+                first: args.first ?? null,
+                externalService: externalServiceID,
+            }),
+        [externalServiceID]
+    )
+
+    const history = useHistory()
+
+    return (
+        <>
+            <H3 className="mt-3">Recent sync jobs</H3>
+            <FilteredConnection<
+                ExternalServiceSyncJobListFields,
+                Omit<ExternalServiceSyncJobNodeProps, 'node'>,
+                {},
+                ExternalServiceSyncJobConnectionFields
+            >
+                className="mb-0"
+                listClassName="list-group list-group-flush mb-0"
+                noun="sync job"
+                pluralNoun="sync jobs"
+                queryConnection={queryConnection}
+                nodeComponent={ExternalServiceSyncJobNode}
+                nodeComponentProps={{}}
+                hideSearch={true}
+                noSummaryIfAllNodesVisible={true}
+                history={history}
+                updates={updates}
+                location={history.location}
+            />
+        </>
+    )
+}
+
+interface ExternalServiceSyncJobNodeProps {
+    node: ExternalServiceSyncJobListFields
+}
+
+const ExternalServiceSyncJobNode: React.FunctionComponent<ExternalServiceSyncJobNodeProps> = ({ node }) => (
+    <li className="list-group-item py-3">
+        <div className="d-flex align-items-center justify-content-between">
+            <div className="flex-shrink-0 mr-2">
+                <Badge>{node.state}</Badge>
+            </div>
+            <div className="flex-shrink-0">
+                {node.startedAt && (
+                    <>
+                        {node.finishedAt === null && <>Running since </>}
+                        {node.finishedAt !== null && <>Ran for </>}
+                        <Duration
+                            start={node.startedAt}
+                            end={node.finishedAt ?? undefined}
+                            stableWidth={false}
+                            className="d-inline"
+                        />
+                    </>
+                )}
+            </div>
+            <div className="text-right flex-grow-1">
+                <div>
+                    {node.startedAt === null && 'Not started yet'}
+                    {node.startedAt !== null && (
+                        <>
+                            Started <Timestamp date={node.startedAt} />
+                        </>
+                    )}
+                </div>
+                <div>
+                    {node.finishedAt === null && 'Not finished yet'}
+                    {node.finishedAt !== null && (
+                        <>
+                            Finished <Timestamp date={node.finishedAt} />
+                        </>
+                    )}
+                </div>
+            </div>
+        </div>
+        {node.failureMessage && <ErrorAlert error={node.failureMessage} className="mt-2 mb-0" />}
+    </li>
+)

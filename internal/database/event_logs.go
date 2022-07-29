@@ -113,6 +113,9 @@ type EventLogStore interface {
 	// ListAll gets all event logs in descending order of timestamp.
 	ListAll(ctx context.Context, opt EventLogsListOptions) ([]*types.Event, error)
 
+	// ListExportableEvents gets all event logs that are allowed to be exported.
+	ListExportableEvents(ctx context.Context, after, limit int) ([]*types.Event, error)
+
 	ListUniqueUsersAll(ctx context.Context, startDate, endDate time.Time) ([]int32, error)
 
 	// MaxTimestampByUserID gets the max timestamp among event logs for a given user.
@@ -289,6 +292,11 @@ func (l *eventLogStore) ListAll(ctx context.Context, opt EventLogsListOptions) (
 		conds = append(conds, sqlf.Sprintf("name = %s", opt.EventName))
 	}
 	return l.getBySQL(ctx, sqlf.Sprintf("WHERE %s ORDER BY timestamp DESC %s", sqlf.Join(conds, "AND"), opt.LimitOffset.SQL()))
+}
+
+func (l *eventLogStore) ListExportableEvents(ctx context.Context, after, limit int) ([]*types.Event, error) {
+	suffix := "WHERE event_logs.id > %d AND name IN (SELECT event_name FROM event_logs_export_allowlist) ORDER BY event_logs.id LIMIT %d"
+	return l.getBySQL(ctx, sqlf.Sprintf(suffix, after, limit))
 }
 
 func (l *eventLogStore) LatestPing(ctx context.Context) (*types.Event, error) {

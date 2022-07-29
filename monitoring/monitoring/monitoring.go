@@ -326,8 +326,12 @@ func (c *Dashboard) renderRules() (*promRulesFile, error) {
 					}
 
 					// The alertQuery must contribute a query that returns true when it should be firing.
-					alertQuery := fmt.Sprintf("%s((%s) %s %v)",
-						a.aggregator, o.Query, a.comparator, a.threshold)
+					var alertQuery string
+					if a.query != "" {
+						alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, a.query, a.comparator, a.threshold)
+					} else {
+						alertQuery = fmt.Sprintf("%s((%s) %s %v)", a.aggregator, o.Query, a.comparator, a.threshold)
+					}
 
 					// If the data must exist, we alert if the query returns no value as well
 					if o.DataMustExist {
@@ -572,7 +576,7 @@ func (r Row) validate() error {
 }
 
 // ObservableOwner denotes a team that owns an Observable. The current teams are described in
-// the handbook: https://handbook.sourcegraph.com/engineering/eng_org#current-organization
+// the handbook: https://handbook.sourcegraph.com/departments/engineering/
 type ObservableOwner struct {
 	// identifier is the team's name on OpsGenie and is used for routing alerts.
 	identifier       string
@@ -597,55 +601,55 @@ var identifierPattern = regexp.MustCompile("^([a-z]+)(-[a-z]+)*?$")
 var (
 	ObservableOwnerSearch = ObservableOwner{
 		identifier:       "search",
-		handbookSlug:     "code-graph/search/product",
+		handbookSlug:     "search/product",
 		handbookTeamName: "Search",
 	}
 	ObservableOwnerSearchCore = ObservableOwner{
 		identifier:       "search-core",
-		handbookSlug:     "code-graph/search/core",
+		handbookSlug:     "search/core",
 		handbookTeamName: "Search Core",
 	}
 	ObservableOwnerBatches = ObservableOwner{
 		identifier:       "batch-changes",
-		handbookSlug:     "code-graph/batch-changes",
+		handbookSlug:     "batch-changes",
 		handbookTeamName: "Batch Changes",
 	}
 	ObservableOwnerCodeIntel = ObservableOwner{
 		identifier:       "code-intel",
-		handbookSlug:     "code-graph/code-intelligence",
+		handbookSlug:     "code-intelligence",
 		handbookTeamName: "Code intelligence",
 	}
 	ObservableOwnerSecurity = ObservableOwner{
 		identifier:       "security",
-		handbookSlug:     "cloud/security",
+		handbookSlug:     "security",
 		handbookTeamName: "Security",
 	}
 	ObservableOwnerRepoManagement = ObservableOwner{
 		identifier:       "repo-management",
-		handbookSlug:     "enablement/repo-management",
+		handbookSlug:     "repo-management",
 		handbookTeamName: "Repo Management",
 	}
 	ObservableOwnerCodeInsights = ObservableOwner{
 		identifier:       "code-insights",
-		handbookSlug:     "code-graph/code-insights",
+		handbookSlug:     "code-insights",
 		handbookTeamName: "Code Insights",
 	}
 	ObservableOwnerDevOps = ObservableOwner{
 		identifier:       "devops",
-		handbookSlug:     "cloud/devops",
+		handbookSlug:     "devops",
 		handbookTeamName: "Cloud DevOps",
 	}
-	ObservableOwnerCloudSaaS = ObservableOwner{
-		identifier:       "cloud-saas",
-		handbookSlug:     "cloud/saas",
-		handbookTeamName: "Cloud Software-as-a-Service",
+	ObservableOwnerIAM = ObservableOwner{
+		identifier:       "iam",
+		handbookSlug:     "iam",
+		handbookTeamName: "Identity and Access Management",
 	}
 )
 
 // toMarkdown returns a Markdown string that also links to the owner's team page in the handbook.
 func (o ObservableOwner) toMarkdown() string {
 	return fmt.Sprintf(
-		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/product-engineering/engineering/%s)",
+		"[Sourcegraph %s team](https://handbook.sourcegraph.com/departments/engineering/teams/%s)",
 		o.handbookTeamName, o.handbookSlug,
 	)
 }
@@ -893,10 +897,12 @@ type ObservableAlertDefinition struct {
 	// See https://github.com/sourcegraph/sourcegraph/issues/11571#issuecomment-654571953,
 	// https://github.com/sourcegraph/sourcegraph/issues/17599, and related pull requests.
 	aggregator Aggregator
-	// Comparator sets how a metric should be compared against a threshold
+	// Comparator sets how a metric should be compared against a threshold.
 	comparator string
-	// Threshold sets the value to be compared against
+	// Threshold sets the value to be compared against.
 	threshold float64
+	// alternative query to use for an alert instead of the observables query.
+	query string
 }
 
 // GreaterOrEqual indicates the alert should fire when greater or equal the given value.
@@ -939,6 +945,15 @@ func (a *ObservableAlertDefinition) Less(f float64) *ObservableAlertDefinition {
 // considered firing. Defaults to 0s (immediately alerts when threshold is exceeded).
 func (a *ObservableAlertDefinition) For(d time.Duration) *ObservableAlertDefinition {
 	a.duration = d
+	return a
+}
+
+// CustomQuery sets a different query to be used for this alert instead of the query used
+// in the Grafana panel. Note that thresholds, etc will still be generated for the panel, so
+// ensure the panel query still makes sense in the context of an alert with a custom
+// query.
+func (a *ObservableAlertDefinition) CustomQuery(query string) *ObservableAlertDefinition {
+	a.query = query
 	return a
 }
 

@@ -32,11 +32,6 @@ type QueueOptions struct {
 	// RecordTransformer is a required hook for each registered queue that transforms a generic
 	// record from that queue into the job to be given to an executor.
 	RecordTransformer func(ctx context.Context, record workerutil.Record) (apiclient.Job, error)
-
-	// CanceledRecordsFetcher is an optional hook that can be provided to support cancelation.
-	// If it is set, it will be invoked periodically and should return the IDs to be
-	// canceled for the given executor.
-	CanceledRecordsFetcher func(ctx context.Context, executorName string) (canceledIDs []int, err error)
 }
 
 func newHandler(executorStore executor.Store, metricsStore metricsstore.DistributedStore, queueOptions QueueOptions) *handler {
@@ -181,11 +176,7 @@ func (h *handler) heartbeat(ctx context.Context, executor types.Executor, ids []
 
 // canceled reaches to the queueOptions.FetchCanceled to determine jobs that need
 // to be canceled.
-func (h *handler) canceled(ctx context.Context, executorName string) (knownIDs []int, err error) {
-	if h.CanceledRecordsFetcher == nil {
-		return nil, nil
-	}
-
-	knownIDs, err = h.CanceledRecordsFetcher(ctx, executorName)
-	return knownIDs, errors.Wrap(err, "CanceledRecordsFetcher")
+func (h *handler) canceled(ctx context.Context, executorName string, knownIDs []int) (canceledIDs []int, err error) {
+	canceledIDs, err = h.Store.CanceledJobs(ctx, knownIDs, store.CanceledJobsOptions{})
+	return canceledIDs, errors.Wrap(err, "dbworkerstore.CanceledJobs")
 }

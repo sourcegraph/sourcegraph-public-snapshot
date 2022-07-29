@@ -6,43 +6,16 @@ This integration makes it possible to search and navigate through the source cod
 Feature | Supported?
 ------- | ----------
 [Repository syncing](#repository-syncing) | ✅
-[Credentials](#credentials) | ✅
-[Rate limiting](#rate-limiting) | ✅
 [Repository permissions](#repository-syncing) | ❌
 [Multiple npm dependencies code hosts](#multiple-npm-dependency-code-hosts) | ❌
 
+## Setup
+
+See the "[npm dependencies](../admin/external_service/npm.md)" documentation.
+
 ## Repository syncing
 
-There are three ways to sync npm dependency repositories.
-
-* **SCIP** (recommended): run [`scip-typescript`](https://github.com/sourcegraph/scip-typescript) on your JavaScript/TypeScript codebase and upload the generated index to Sourcegraph using the [src-cli](https://github.com/sourcegraph/src-cli) command `src code-intel upload`. Sourcegraph automatically synchronizes npm dependency repositories based on the dependencies that are discovered by `scip-typescript`.
-* **Dependencies search**: Sourcegraph automatically synchronizes npm dependency repositories that are in `package-lock.json` or `yarn.lock` files during a [dependencies search](../code_search/how-to/dependencies_search.md).
-* **Code host configuration**: manually list dependencies in the `"dependencies"` section of the JSON configuration when creating the npm dependency code host. This method can be useful to verify that the credentials are picked up correctly without having to upload an index.
-
-## Credentials
-
-Use the `"credentials"` section of the JSON configuration to provide an access token for your private npm registry. See the [official npm documentation](https://docs.npmjs.com/about-access-tokens) for more details about how to create, list and view npm access tokens.
-
-## Rate limiting
-
-By default, requests to the npm registry will be rate-limited based on a default [internal limit](https://github.com/sourcegraph/sourcegraph/blob/main/schema/npm-packages.schema.json) which complies with the [documented acceptable use policy](https://docs.npmjs.com/policies/open-source-terms#acceptable-use) of registry.npmjs.org (i.e. max 5 million requests per month).
-
-```json
-"rateLimit": {
-  "enabled": true,
-  "requestsPerHour": 3000.0
-}
-```
-where the `requestsPerHour` field is set based on your requirements.
-
-**Not recommended**: Rate-limiting can be turned off entirely as well.
-This increases the risk of overloading the code host.
-
-```json
-"rateLimit": {
-  "enabled": false
-}
-```
+Site admins can [add npm packages to Sourcegraph](../admin/external_service/npm.md#repository-syncing).
 
 ## Repository permissions
 
