@@ -195,4 +195,4 @@ following:
   currently search for something that is _not_ there. For example, you cannot 
   search for results that aren't `<This Component>`.
 
-**Note**: While structural search is stable and functioning swimmingly, it is still in development. We welcome any and all suggestions from our customers for feature requests, which you can raise [here](https://github.com/sourcegraph/sourcegraph).
+**Note**: While structural search is stable, it is still in development. We welcome any and all suggestions from our customers for feature requests, which you can raise [at our public repo on GitHub](https://github.com/sourcegraph/sourcegraph).
