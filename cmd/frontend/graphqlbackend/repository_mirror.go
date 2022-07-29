@@ -95,7 +95,9 @@ func (r *repositoryMirrorInfoResolver) RemoteURL(ctx context.Context) (string, e
 
 	cloneURLs := repo.CloneURLs()
 	if len(cloneURLs) == 0 {
-		// TODO: Can this happen? Why?
+		// This should never happen: clone URL is enforced to be a non-empty string
+		// in our store, and we delete repos once they have no external service connection
+		// anymore.
 		return "", errors.Errorf("no sources for %q", repo)
 	}
 
