@@ -7,16 +7,18 @@ import { Observable } from 'rxjs'
 
 import { RepoLink } from '@sourcegraph/shared/src/components/RepoLink'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
-import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text, Tooltip } from '@sourcegraph/wildcard'
+import { LoadingSpinner, Button, Link, Alert, Icon, H2, Text, Tooltip, Container } from '@sourcegraph/wildcard'
 
 import { TerminalLine } from '../auth/Terminal'
+import { defaultExternalServices } from '../components/externalServices/externalServices'
 import {
     FilteredConnection,
     FilteredConnectionFilter,
     FilteredConnectionQueryArguments,
 } from '../components/FilteredConnection'
 import { PageTitle } from '../components/PageTitle'
-import { RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
+import { Timestamp } from '../components/time/Timestamp'
+import { ExternalServiceKind, RepositoriesResult, SiteAdminRepositoryFields } from '../graphql-operations'
 import { refreshSiteFlags } from '../site/backend'
 
 import { fetchAllRepositoriesAndPollIfEmptyOrAnyCloning } from './backend'
@@ -27,55 +29,85 @@ interface RepositoryNodeProps {
     node: SiteAdminRepositoryFields
 }
 
-const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => (
-    <li
-        className="repository-node list-group-item py-2"
-        data-test-repository={node.name}
-        data-test-cloned={node.mirrorInfo.cloned}
-    >
-        <div className="d-flex align-items-center justify-content-between">
-            <div>
-                <RepoLink repoName={node.name} to={node.url} />
-                {node.mirrorInfo.cloneInProgress && (
-                    <small className="ml-2 text-success">
-                        <LoadingSpinner /> Cloning
-                    </small>
-                )}
-                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
-                        <small className="ml-2 text-muted">
-                            <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
+const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<RepositoryNodeProps>> = ({ node }) => {
+    console.log(node.externalRepository)
+
+    const externalServiceKind = node.externalRepository.serviceType.toUpperCase() as ExternalServiceKind
+    const IconComponent = defaultExternalServices[externalServiceKind].icon
+    return (
+        <li
+            className="repository-node list-group-item py-2"
+            data-test-repository={node.name}
+            data-test-cloned={node.mirrorInfo.cloned}
+        >
+            <div className="d-flex align-items-center justify-content-between">
+                <div>
+                    <Icon as={IconComponent} aria-label="Code host logo" className="mr-2" />
+                    <RepoLink repoName={node.name} to={node.url} />
+                    {node.mirrorInfo.cloneInProgress && (
+                        <small className="ml-2 text-success">
+                            <LoadingSpinner /> Cloning
                         </small>
-                    </Tooltip>
-                )}
-            </div>
+                    )}
+                    {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
+                        <Tooltip content="Visit the repository to clone it. See its mirroring settings for diagnostics.">
+                            <small className="ml-2 text-muted">
+                                <Icon aria-hidden={true} svgPath={mdiCloudOutline} /> Not yet cloned
+                            </small>
+                        </Tooltip>
+                    )}
 
-            <div className="repository-node__actions">
-                {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
-                    <Button to={node.url} variant="secondary" size="sm" as={Link}>
-                        <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
-                    </Button>
-                )}{' '}
-                {
-                    <Tooltip content="Repository settings">
-                        <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
-                            <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                    <Text className="mb-0 text-muted">
+                        <small>
+                            {node.mirrorInfo.updatedAt === null ? (
+                                <>Never fetched from code host.</>
+                            ) : (
+                                <>
+                                    Last updated <Timestamp date={node.mirrorInfo.updatedAt} />.
+                                </>
+                            )}{' '}
+                            {node.mirrorInfo.updateSchedule && (
+                                <>
+                                    Next scheduled update <Timestamp date={node.mirrorInfo.updateSchedule.due} />.
+                                </>
+                            )}{' '}
+                            {node.mirrorInfo.updateQueue && !node.mirrorInfo.updateQueue.updating && (
+                                <>
+                                    Queued for update (position {node.mirrorInfo.updateQueue.index + 1} out of{' '}
+                                    {node.mirrorInfo.updateQueue.total} in the queue)
+                                </>
+                            )}
+                        </small>
+                    </Text>
+                </div>
+
+                <div className="repository-node__actions">
+                    {!node.mirrorInfo.cloneInProgress && !node.mirrorInfo.cloned && (
+                        <Button to={node.url} variant="secondary" size="sm" as={Link}>
+                            <Icon aria-hidden={true} svgPath={mdiCloudDownload} /> Clone now
                         </Button>
-                    </Tooltip>
-                }{' '}
+                    )}{' '}
+                    {
+                        <Tooltip content="Repository settings">
+                            <Button to={`/${node.name}/-/settings`} variant="secondary" size="sm" as={Link}>
+                                <Icon aria-hidden={true} svgPath={mdiCog} /> Settings
+                            </Button>
+                        </Tooltip>
+                    }{' '}
+                </div>
             </div>
-        </div>
 
-        {node.mirrorInfo.lastError && (
-            <div className={classNames(styles.alertWrapper)}>
-                <Alert variant="warning">
-                    <TerminalLine>Error updating repo:</TerminalLine>
-                    <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
-                </Alert>
-            </div>
-        )}
-    </li>
-)
+            {node.mirrorInfo.lastError && (
+                <div className={classNames(styles.alertWrapper)}>
+                    <Alert variant="warning">
+                        <TerminalLine>Error updating repo:</TerminalLine>
+                        <TerminalLine>{node.mirrorInfo.lastError}</TerminalLine>
+                    </Alert>
+                </div>
+            )}
+        </li>
+    )
+}
 
 interface Props extends RouteComponentProps<{}>, TelemetryProps {}
 
@@ -83,7 +115,7 @@ const FILTERS: FilteredConnectionFilter[] = [
     {
         id: 'status',
         label: 'Status',
-        type: 'radio',
+        type: 'select',
         values: [
             {
                 label: 'All',
@@ -162,20 +194,23 @@ export const SiteAdminRepositoriesPage: React.FunctionComponent<React.PropsWithC
             <Text>
                 Repositories are synced from connected{' '}
                 <Link to="/site-admin/external-services" data-testid="test-repositories-code-host-connections-link">
-                    code host connections
+                    code hosts
                 </Link>
                 .
             </Text>
-            <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
-                className="list-group list-group-flush mt-3"
-                noun="repository"
-                pluralNoun="repositories"
-                queryConnection={queryRepositories}
-                nodeComponent={RepositoryNode}
-                filters={FILTERS}
-                history={history}
-                location={location}
-            />
+            <Container className="mb-3">
+                <FilteredConnection<SiteAdminRepositoryFields, Omit<RepositoryNodeProps, 'node'>>
+                    className="mb-0"
+                    listClassName="list-group list-group-flush mt-3"
+                    noun="repository"
+                    pluralNoun="repositories"
+                    queryConnection={queryRepositories}
+                    nodeComponent={RepositoryNode}
+                    filters={FILTERS}
+                    history={history}
+                    location={location}
+                />
+            </Container>
         </div>
     )
 }
