@@ -98,8 +98,7 @@ A standard search series will execute Sourcegraph searches, and tabulate the cou
 was to be able to derive the series themselves from the results; that is to say a result of `(result: 1.17, count: 5) (result: 1.13, count: 3)` would generate two individual time series,
 one for each unique result.
 
-We support this behavior by tabulating the results of a `compute` [search](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/query/graphql_compute.go), and dynamically modifying the series that are returned. These series can be calculated both [globally](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L160:6&subtree=true), and 
-[just-in-time](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/resolvers/insight_view_resolvers.go?L221-244&subtree=true).
+We support this behavior by tabulating the results of a `compute` [search](https://sourcegraph.com/github.com/sourcegraph/sourcegraph/-/blob/enterprise/internal/insights/query/graphql_compute.go), and dynamically modifying the series that are returned.
 
 ### (2) The _insight enqueuer_ (indexed recorder) detects the new insight
 
