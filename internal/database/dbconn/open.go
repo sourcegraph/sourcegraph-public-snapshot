@@ -1,7 +1,9 @@
 package dbconn
 
 import (
+	"context"
 	"database/sql"
+	"database/sql/driver"
 	"fmt"
 	"log"
 	"strconv"
@@ -12,6 +14,9 @@ import (
 	"github.com/XSAM/otelsql"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/stdlib"
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+	"github.com/qustavo/sqlhooks/v2"
 	"go.opentelemetry.io/otel"
 
 	"github.com/sourcegraph/sourcegraph/internal/env"
@@ -69,11 +74,70 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 	}
 }
 
+type noodle interface {
+	// driver.Pinger
+	driver.Execer
+	driver.ExecerContext
+	driver.Queryer
+	driver.QueryerContext
+	driver.Conn
+	driver.ConnPrepareContext
+	driver.ConnBeginTx
+	// driver.SessionResetter
+	// driver.NamedValueChecker
+}
+
+type noodleDriver struct {
+	driver.Driver
+}
+
+func (d *noodleDriver) Open(str string) (driver.Conn, error) {
+	c, err := d.Driver.Open(str)
+	if err != nil {
+		return nil, err
+	}
+	return newNoodleConn(c), nil
+}
+
+func newNoodleConn(conn driver.Conn) *noodleConn {
+	return &noodleConn{
+		// Execer:             conn.(any).(driver.Execer),
+		ExecerContext: conn.(any).(driver.ExecerContext),
+		// Queryer:            conn.(any).(driver.Queryer),
+		QueryerContext:     conn.(any).(driver.QueryerContext),
+		Conn:               conn.(any).(driver.Conn),
+		ConnPrepareContext: conn.(any).(driver.ConnPrepareContext),
+		ConnBeginTx:        conn.(any).(driver.ConnBeginTx),
+	}
+}
+
+type noodleConn struct {
+	// driver.Execer
+	driver.ExecerContext
+	// driver.Queryer
+	driver.QueryerContext
+	driver.Conn
+	driver.ConnPrepareContext
+	driver.ConnBeginTx
+}
+
+func (n *noodleConn) Ping(ctx context.Context) error {
+	return nil
+}
+
+func (n *noodleConn) ResetSession(ctx context.Context) error {
+	return nil
+}
+
+func (c *noodleConn) CheckNamedValue(namedValue *driver.NamedValue) error {
+	return nil
+}
+
 func registerPostgresProxy() {
-	// m := promauto.NewCounterVec(prometheus.CounterOpts{
-	// 	Name: "src_pgsql_request_total",
-	// 	Help: "Total number of SQL requests to the database.",
-	// }, []string{"type"})
+	m := promauto.NewCounterVec(prometheus.CounterOpts{
+		Name: "src_pgsql_request_total",
+		Help: "Total number of SQL requests to the database.",
+	}, []string{"type"})
 	//
 	// sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
 	// 	&metricHooks{
@@ -83,7 +147,18 @@ func registerPostgresProxy() {
 	// 	&tracingHooks{},
 	// )))
 
-	sql.Register("postgres-proxy", stdlib.GetDefaultDriver())
+	dri := sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
+		&metricHooks{
+			metricSQLSuccessTotal: m.WithLabelValues("success"),
+			metricSQLErrorTotal:   m.WithLabelValues("error"),
+		},
+		&tracingHooks{},
+	))
+
+	// ping
+	// reset session
+
+	sql.Register("postgres-proxy", &noodleDriver{dri})
 }
 
 var registerOnce sync.Once
