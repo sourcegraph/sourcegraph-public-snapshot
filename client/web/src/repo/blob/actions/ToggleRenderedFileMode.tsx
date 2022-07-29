@@ -1,10 +1,10 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 
 import { mdiEye } from '@mdi/js'
 import { useLocation } from 'react-router'
 
 import { RenderMode } from '@sourcegraph/shared/src/util/url'
-import { createLinkUrl, DeprecatedTooltipController, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
+import { createLinkUrl, Icon, Link, Tooltip } from '@sourcegraph/wildcard'
 
 import { RepoHeaderActionButtonLink, RepoHeaderActionMenuLink } from '../../components/RepoHeaderActions'
 import { RepoHeaderContext } from '../../RepoHeader'
@@ -31,10 +31,6 @@ export const ToggleRenderedFileMode: React.FunctionComponent<React.PropsWithChil
     const otherMode: RenderMode = mode === 'code' ? 'rendered' : 'code'
     const label = mode === 'rendered' ? 'Show raw code file' : 'Show formatted file'
     const location = useLocation()
-
-    useEffect(() => {
-        DeprecatedTooltipController.forceUpdate()
-    }, [mode])
 
     if (actionType === 'dropdown') {
         return (
