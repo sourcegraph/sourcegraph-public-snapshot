@@ -28,7 +28,6 @@ CREATE FUNCTION count_soft_deleted_repo() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
     BEGIN
-        -- if a repo is soft-deleted, delete every row that references that repo
         IF (OLD.deleted_at IS NULL AND OLD.blocked IS NULL AND NEW.deleted_at IS NOT NULL AND NEW.blocked IS NULL) THEN
           UPDATE repo_statistics
           SET soft_deleted = soft_deleted + 1, total = total - 1
@@ -82,19 +81,14 @@ CREATE FUNCTION count_cloned_gitserver_repos() RETURNS trigger
     LANGUAGE plpgsql
     AS $$
     BEGIN
-        -- if a repo is soft-deleted, delete every row that references that repo
-        IF ((OLD.clone_status = 'cloning' OR OLD.clone_status = '') AND NEW.clone_status = 'cloned') THEN
+        IF ((OLD.clone_status = 'cloning' OR OLD.clone_status = '' OR OLD.clone_status = 'not_cloned') AND NEW.clone_status = 'cloned') THEN
           UPDATE repo_statistics
-          SET
-            cloned = cloned + 1
-          WHERE
-              id = TRUE;
+          SET cloned = cloned + 1
+          WHERE id = TRUE;
         ELSIF (OLD.clone_status = 'cloned' AND NEW.clone_status = 'not_cloned') THEN
           UPDATE repo_statistics
-          SET
-            cloned = cloned - 1
-          WHERE
-              id = TRUE;
+          SET cloned = cloned - 1
+          WHERE id = TRUE;
           END IF;
         RETURN OLD;
     END;
