@@ -44,6 +44,19 @@ const getFirstServiceVersionQuery = `
 SELECT first_version FROM versions WHERE service = %s
 `
 
+// GetServiceVersion returns the previous version registered for the given Sourcegraph service. This
+// method will return a false-valued flag if UpdateServiceVersion has never been called for the given
+// service.
+func (s *store) GetServiceVersion(ctx context.Context, service string) (_ string, _ bool, err error) {
+	version, ok, err := basestore.ScanFirstString(s.db.Query(ctx, sqlf.Sprintf(getServiceVersionQuery, service)))
+	return version, ok, filterMissingRelationError(err)
+}
+
+const getServiceVersionQuery = `
+-- source: internal/version/store/store.go:GetServiceVersion
+SELECT version FROM versions WHERE service = %s
+`
+
 // ValidateUpgrade enforces our documented upgrade policy and will return an error (performing no side-effects)
 // if the upgrade is between two unsupported versions. See https://docs.sourcegraph.com/#upgrading-sourcegraph.
 func (s *store) ValidateUpgrade(ctx context.Context, service, version string) (err error) {
