@@ -196,6 +196,7 @@ In your [docker-compose.yaml](https://github.com/sourcegraph/deploy-sourcegraph-
    ```
    - '/LOCAL/KEY/PATH.key:/sourcegraph.key'
    ```
+**NOTE**: When adding your certs to your instance, make sure they are in the `deploy-sourcegraph-docker` folder, not outside of it. They will not be recognized otherwise.
 
 ## Other Sourcegraph clusters (e.g. pure-Docker)
 
