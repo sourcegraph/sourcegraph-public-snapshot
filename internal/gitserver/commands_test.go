@@ -994,7 +994,7 @@ func TestClientImplementor_ExecSafe(t *testing.T) {
 
 	repo := MakeGitRepository(t, "GIT_COMMITTER_NAME=a GIT_COMMITTER_EMAIL=a@a.com GIT_COMMITTER_DATE=2006-01-02T15:04:05Z git commit --allow-empty -m foo --author='a <a@a.com>' --date 2006-01-02T15:04:05Z")
 
-	client := newClientImplementor(database.NewMockDB())
+	client := NewClient(database.NewMockDB()).(*clientImplementor)
 	for _, test := range tests {
 		t.Run(fmt.Sprint(test.args), func(t *testing.T) {
 			stdout, stderr, exitCode, err := client.execSafe(context.Background(), repo, test.args)
@@ -2247,7 +2247,7 @@ func TestFilterRefDescriptions(t *testing.T) { // KEEP
 	}
 
 	checker := getTestSubRepoPermsChecker("file3")
-	client := newClientImplementor(database.NewMockDB())
+	client := NewClient(database.NewMockDB()).(*clientImplementor)
 	filtered := client.filterRefDescriptions(ctx, repo, refDescriptions, checker)
 	expectedRefDescriptions := map[string][]gitdomain.RefDescription{
 		"d38233a79e037d2ab8170b0d0bc0aa438473e6da": {},
@@ -2395,7 +2395,7 @@ func TestCommitDate(t *testing.T) {
 func testCommits(ctx context.Context, label string, repo api.RepoName, opt CommitsOptions, checker authz.SubRepoPermissionChecker, wantTotal uint, wantCommits []*gitdomain.Commit, t *testing.T) {
 	t.Helper()
 	db := database.NewMockDB()
-	client := newClientImplementor(db)
+	client := NewClient(db).(*clientImplementor)
 	commits, err := client.Commits(ctx, repo, opt, checker)
 	if err != nil {
 		t.Errorf("%s: Commits(): %s", label, err)
