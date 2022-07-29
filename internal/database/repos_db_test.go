@@ -331,10 +331,6 @@ func TestRepos_GetByIDs_EmptyIDs(t *testing.T) {
 }
 
 func TestRepos_GetRepoDescriptionsByIDs(t *testing.T) {
-	if testing.Short() {
-		t.Skip()
-	}
-
 	t.Parallel()
 	logger := logtest.Scoped(t)
 	db := NewDB(logger, dbtest.NewDB(logger, t))
