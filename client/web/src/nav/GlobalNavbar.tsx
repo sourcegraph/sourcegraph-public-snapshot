@@ -195,7 +195,6 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
     const showSearchContext = useExperimentalFeatures(features => features.showSearchContext)
     const enableCodeMonitoring = useExperimentalFeatures(features => features.codeMonitoring)
     const showSearchNotebook = useExperimentalFeatures(features => features.showSearchNotebook)
-    const extensionsAsCoreFeatures = useExperimentalFeatures(features => features.extensionsAsCoreFeatures)
 
     useEffect(() => {
         // On a non-search related page or non-repo page, we clear the query in
@@ -307,7 +306,7 @@ export const GlobalNavbar: React.FunctionComponent<React.PropsWithChildren<Props
                             </NavLink>
                         </NavItem>
                     )}
-                    {!extensionsAsCoreFeatures && (
+                    {window.context.enableLegacyExtensions && (
                         <NavItem icon={PuzzleOutlineIcon}>
                             <NavLink variant={navLinkVariant} to="/extensions">
                                 Extensions
