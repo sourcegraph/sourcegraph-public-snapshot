@@ -208,7 +208,7 @@ func TestClient_Remove(t *testing.T) {
 	}
 }
 
-func TestClient_Archive(t *testing.T) {
+func TestClient_ArchiveReader(t *testing.T) {
 	root := gitserver.CreateRepoDir(t)
 
 	tests := map[api.RepoName]struct {
@@ -262,16 +262,19 @@ func TestClient_Archive(t *testing.T) {
 				}
 			}
 
-			rc, err := cli.Archive(ctx, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
+			rc, err := cli.ArchiveReader(ctx, nil, name, gitserver.ArchiveOptions{Treeish: "HEAD", Format: gitserver.ArchiveFormatZip})
 			if have, want := fmt.Sprint(err), fmt.Sprint(test.err); have != want {
 				t.Errorf("archive: have err %v, want %v", have, want)
 			}
-
 			if rc == nil {
 				return
 			}
 
-			defer rc.Close()
+			t.Cleanup(func() {
+				if err := rc.Close(); err != nil {
+					t.Fatal(err)
+				}
+			})
 			data, err := io.ReadAll(rc)
 			if err != nil {
 				t.Fatal(err)
