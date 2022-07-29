@@ -144,7 +144,7 @@ After initial setup, we recommend you do the following:
 
 ## Update your Sourcegraph version
 
-Refer to the [Docker Compose upgrade docs](../../updates/upgrade_docker-compose.md).
+Refer to the [Docker Compose upgrade docs](upgrade.md).
 
 ## Storage and Backups
 

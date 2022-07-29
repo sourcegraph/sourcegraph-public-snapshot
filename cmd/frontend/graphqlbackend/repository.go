@@ -200,7 +200,7 @@ func (r *RepositoryResolver) CommitFromID(ctx context.Context, args *RepositoryC
 
 func (r *RepositoryResolver) DefaultBranch(ctx context.Context) (*GitRefResolver, error) {
 	do := func() (*GitRefResolver, error) {
-		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName())
+		refName, _, err := gitserver.NewClient(r.db).GetDefaultBranch(ctx, r.RepoName(), false)
 		if err != nil {
 			return nil, err
 		}

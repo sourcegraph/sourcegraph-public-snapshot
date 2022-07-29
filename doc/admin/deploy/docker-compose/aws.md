@@ -141,7 +141,7 @@ docker ps --filter="name=sourcegraph-frontend-0"
 
 ## Update your Sourcegraph version
 
-Refer to the [Docker Compose upgrade docs](../../updates/upgrade_docker-compose.md).
+Refer to the [Docker Compose upgrade docs](upgrade.md).
 
 ## Storage and Backups
 

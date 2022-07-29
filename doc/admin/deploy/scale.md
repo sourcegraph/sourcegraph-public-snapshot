@@ -695,8 +695,9 @@ An HTTP server that exposes the Rust Syntect syntax highlighting library to othe
 
 ```
 Runs a collection of background jobs periodically in response to internal requests and external events.
-It is currently janitorial and commit-based.
 ```
+
+> NOTE: See the docs on [Worker services](https://docs.sourcegraph.com/admin/workers#worker-jobs) for a list of worker jobs.
 
 | Replica     |                                                         |
 | :---------- | :------------------------------------------------------ |
