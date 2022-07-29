@@ -29,6 +29,7 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 		tr.LogFields(log.Int("resolved.len", len(page.RepoRevs)))
 
 		descriptionMatches := map[api.RepoID][]result.Range{}
+		// If repo:has.description was included in the query, then compute description match ranges
 		if len(s.RepoOpts.DescriptionPatterns) > 0 {
 			repoDescriptions, err := s.repoDescriptions(ctx, clients.DB, page.RepoRevs)
 			if err != nil {
@@ -50,6 +51,8 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	return nil, err
 }
 
+// repoDescriptions gets the repo ID and repo description from the database for each of the repos in repoRevs, and returns
+// a map of repo ID to repo description.
 func (s *RepoSearchJob) repoDescriptions(ctx context.Context, db database.DB, repoRevs []*search.RepositoryRevisions) (map[api.RepoID]string, error) {
 	repoIDs := make([]api.RepoID, 0, len(repoRevs))
 	for _, repoRev := range repoRevs {
@@ -64,20 +67,25 @@ func (s *RepoSearchJob) repoDescriptions(ctx context.Context, db database.DB, re
 	return repoDescriptions, nil
 }
 
+// descriptionMatchRanges takes a map of repo IDs to their descriptions, and a list of patterns to match against those repo descriptions.
+// It returns a map of repo IDs to []result.Range. The []result.Range value contains the match ranges
+// for repos with a description that matches at least one of the patterns in descriptionPatterns.
 func (s *RepoSearchJob) descriptionMatchRanges(repoDescriptions map[api.RepoID]string, descriptionPatterns []string) map[api.RepoID][]result.Range {
-	res := make(map[api.RepoID][]result.Range, len(repoDescriptions))
+	res := make(map[api.RepoID][]result.Range)
+
+	regexDescriptionPatterns := make([]*regexp.Regexp, 0, len(descriptionPatterns))
+	for _, dp := range descriptionPatterns {
+		rg, err := regexp.Compile(`(?is)` + dp)
+		if err != nil {
+			// `dp` is invalid regex, don't match against this pattern
+			continue
+		}
+		regexDescriptionPatterns = append(regexDescriptionPatterns, rg)
+	}
 
 	for repoID, repoDescription := range repoDescriptions {
-		for i, dp := range descriptionPatterns {
-			rg, err := regexp.Compile(`(?i)` + dp)
-			if err != nil {
-				// `dp` is invalid regex, skip this pattern and remove it from descriptionPatterns so we don't check it again
-				descriptionPatterns[i] = descriptionPatterns[len(descriptionPatterns)-1]
-				descriptionPatterns = descriptionPatterns[:len(descriptionPatterns)-1]
-				continue
-			}
-
-			submatches := rg.FindAllStringSubmatchIndex(repoDescription, -1)
+		for _, re := range regexDescriptionPatterns {
+			submatches := re.FindAllStringSubmatchIndex(repoDescription, -1)
 			if len(submatches) > 0 {
 				for _, sm := range submatches {
 					res[repoID] = append(res[repoID], result.Range{
