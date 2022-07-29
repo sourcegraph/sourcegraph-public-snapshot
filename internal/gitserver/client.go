@@ -83,13 +83,7 @@ func newClientImplementor(db database.DB) *clientImplementor {
 		addrs: func() []string {
 			return conf.Get().ServiceConnections().GitServers
 		},
-		pinned: func() map[string]string {
-			cfg := conf.Get()
-			if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
-				return cfg.ExperimentalFeatures.GitServerPinnedRepos
-			}
-			return map[string]string{}
-		},
+		pinned:      pinnedReposFromConfig,
 		db:          db,
 		httpClient:  defaultDoer,
 		HTTPLimiter: defaultLimiter,
@@ -107,10 +101,7 @@ func NewTestClient(cli httpcli.Doer, db database.DB, addrs []string) Client {
 		addrs: func() []string {
 			return addrs
 		},
-		pinned: func() map[string]string {
-			// nothing needs to be pinned for the tests
-			return conf.Get().ExperimentalFeatures.GitServerPinnedRepos
-		},
+		pinned:      pinnedReposFromConfig,
 		httpClient:  cli,
 		HTTPLimiter: parallel.NewRun(500),
 		// Use the binary name for userAgent. This should effectively identify
@@ -158,6 +149,7 @@ type RawBatchLogResult struct {
 	Stdout string
 	Error  error
 }
+
 type BatchLogCallback func(repoCommit api.RepoCommit, gitLogResult RawBatchLogResult) error
 
 type Client interface {
@@ -1406,4 +1398,12 @@ func shouldUseRendezvousHashing(ctx context.Context, db database.DB, repo string
 func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, string) {
 	pinned, found := pinnedServers[repo]
 	return found, pinned
+}
+
+func pinnedReposFromConfig() map[string]string {
+	cfg := conf.Get()
+	if cfg.ExperimentalFeatures != nil && cfg.ExperimentalFeatures.GitServerPinnedRepos != nil {
+		return cfg.ExperimentalFeatures.GitServerPinnedRepos
+	}
+	return map[string]string{}
 }
