@@ -59,12 +59,12 @@ func planUpgrade(versionRange []oobmigration.Version) (upgradePlan, error) {
 	// Extract/rotate leaf identifiers so we can query them by version/git-tag first
 	leafIDsBySchemaNameByTag := make(map[string]map[string][]int, len(versionRange))
 	for schemaName, stitchedMigration := range stitchedMigrationBySchemaName {
-		for tag, leafIDs := range stitchedMigration.LeafIDsByRev {
+		for tag, bounds := range stitchedMigration.BoundsByRev {
 			if _, ok := leafIDsBySchemaNameByTag[tag]; !ok {
 				leafIDsBySchemaNameByTag[tag] = map[string][]int{}
 			}
 
-			leafIDsBySchemaNameByTag[tag][schemaName] = leafIDs
+			leafIDsBySchemaNameByTag[tag][schemaName] = bounds.LeafIDs
 		}
 	}
 
@@ -103,18 +103,18 @@ func planUpgrade(versionRange []oobmigration.Version) (upgradePlan, error) {
 // to tags outside of the given set removed. This allows a migrator instance that knows the upgrade
 // path from X -> Y to also know the path from any partial upgrade X <= W -> Z <= Y.
 func filterStitchedMigrationsForTags(tags []string) (map[string]shared.StitchedMigration, error) {
-	stitchedMigrationBySchemaName := make(map[string]shared.StitchedMigration, len(schemas.SchemaNames))
+	filteredstitchedMigrationBySchemaName := make(map[string]shared.StitchedMigration, len(schemas.SchemaNames))
 	for _, schemaName := range schemas.SchemaNames {
-		leafIDsByRev := make(map[string][]int, len(tags))
+		boundsByRev := make(map[string]shared.MigrationBounds, len(tags))
 		for _, tag := range tags {
-			leafIDsByRev[tag] = shared.StitchedMigationsBySchemaName[schemaName].LeafIDsByRev[tag]
+			boundsByRev[tag] = shared.StitchedMigationsBySchemaName[schemaName].BoundsByRev[tag]
 		}
 
-		stitchedMigrationBySchemaName[schemaName] = shared.StitchedMigration{
-			Definitions:  shared.StitchedMigationsBySchemaName[schemaName].Definitions,
-			LeafIDsByRev: leafIDsByRev,
+		filteredstitchedMigrationBySchemaName[schemaName] = shared.StitchedMigration{
+			Definitions: shared.StitchedMigationsBySchemaName[schemaName].Definitions,
+			BoundsByRev: boundsByRev,
 		}
 	}
 
-	return stitchedMigrationBySchemaName, nil
+	return filteredstitchedMigrationBySchemaName, nil
 }
