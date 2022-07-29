@@ -8,8 +8,6 @@ import { ExtensionCategory, EXTENSION_CATEGORIES } from '@sourcegraph/shared/src
 import { Settings } from '@sourcegraph/shared/src/settings/settings'
 
 import { RegistryExtensionFieldsForList } from '../graphql-operations'
-import { LayoutRouteProps } from '../routes'
-import { PageRoutes } from '../routes.constants'
 
 import { validCategories } from './extension/extension'
 import { ConfiguredExtensionCache, ExtensionsEnablement } from './ExtensionRegistry'

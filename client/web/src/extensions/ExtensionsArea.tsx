@@ -52,7 +52,7 @@ interface ExtensionsAreaProps
         PlatformContextProps,
         ThemeProps,
         TelemetryProps {
-    routes: readonly ExtensionsAreaRoute[]
+    routes?: readonly ExtensionsAreaRoute[]
 
     /**
      * The currently authenticated user.
@@ -100,17 +100,18 @@ export const ExtensionsArea: React.FunctionComponent<React.PropsWithChildren<Ext
                 />
             ) : null}
             <Switch>
-                {props.routes.map(
-                    ({ path, exact, condition = () => true, render }) =>
-                        condition(context) && (
-                            <Route
-                                key="hardcoded-key"
-                                path={props.match.url + path}
-                                exact={exact}
-                                render={routeComponentProps => render({ ...context, ...routeComponentProps })}
-                            />
-                        )
-                )}
+                {props.routes &&
+                    props.routes.map(
+                        ({ path, exact, condition = () => true, render }) =>
+                            condition(context) && (
+                                <Route
+                                    key="hardcoded-key"
+                                    path={props.match.url + path}
+                                    exact={exact}
+                                    render={routeComponentProps => render({ ...context, ...routeComponentProps })}
+                                />
+                            )
+                    )}
                 <Route key="hardcoded-key" component={NotFoundPage} />
             </Switch>
         </Page>
