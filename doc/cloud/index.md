@@ -63,13 +63,18 @@ As with any Sourcegraph enterprise customer, you will also receive support from 
 - A dedicated project manager point of contact for the rollout process
 - A mutual non-disclosure agreement, and any additional approvals or special status required to allow Sourcegraph to manage infrastructure access tokens (listed below)
 - Acceptance of our [Terms of Service for private instances](https://about.sourcegraph.com/terms-private) or an enterprise contract
+- SOC 2 Type 2 and ISO 27000 certifications are not yet available.
 
 ## Technical
 
 - A dedicated technical point of contact for the installation process.
 - [Tokens with read access to your code hosts](../admin/external_service/index.md) (we will direct you on how to enter them)
 - [Keys, access tokens, or any other setup required to integrate your SSO (single sign-on) provider with Sourcegraph](../admin/auth/index.md), as well as support from a member of your team with administrator access to your SSO provider to help set up and test the integration.
-- If you desire VPN/IP-restricted access, we will need to know the IP/CIDR source ranges of your enterprise VPN to allow access to the instance.
+- The Sourcegraph instance can only be accessible via a public IP. Running it in a private network (such as a VPN) is not yet supported.
+  - An IP restriction policy can be applied to limit the clients that are able to connect to Sourcegraph.
+- Scale above 3,000 total users or 25,000 repositories is not yet supported.
+- Code hosts or user authentication providers running in a private network (such as a VPN) are not yet supported.
+- Instances currently run only on Google Cloud Platform in the us-central1 region. Other regions and cloud providers (such as AWS or Azure) are not yet supported.
 
 # Security
 
