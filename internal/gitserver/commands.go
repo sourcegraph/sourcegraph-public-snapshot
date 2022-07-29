@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"net/mail"
 	"os"
 	stdlibpath "path"
@@ -20,6 +22,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
 	"github.com/grafana/regexp"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -2391,7 +2394,7 @@ func (c *clientImplementor) ArchiveReader(
 	checker authz.SubRepoPermissionChecker,
 	repo api.RepoName,
 	options ArchiveOptions,
-) (io.ReadCloser, error) {
+) (_ io.ReadCloser, err error) {
 	if authz.SubRepoEnabled(checker) {
 		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
 			return nil, errors.Wrap(err, "sub-repo permissions check:")
@@ -2399,7 +2402,65 @@ func (c *clientImplementor) ArchiveReader(
 			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
 		}
 	}
-	return c.Archive(ctx, repo, options)
+
+	if ClientMocks.Archive != nil {
+		return ClientMocks.Archive(ctx, repo, options)
+	}
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
+	span.SetTag("Repo", repo)
+	span.SetTag("Treeish", options.Treeish)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(log.Error(err))
+		}
+		span.Finish()
+	}()
+
+	// Check that ctx is not expired.
+	if err := ctx.Err(); err != nil {
+		deadlineExceededCounter.Inc()
+		return nil, err
+	}
+
+	u, err := c.archiveURL(ctx, repo, options)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return &archiveReader{
+			base: &cmdReader{
+				rc:      resp.Body,
+				trailer: resp.Trailer,
+			},
+			repo: repo,
+			spec: options.Treeish,
+		}, nil
+	case http.StatusNotFound:
+		var payload protocol.NotFoundPayload
+		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body.Close()
+		return nil, &badRequestError{
+			error: &gitdomain.RepoNotExistError{
+				Repo:            repo,
+				CloneInProgress: payload.CloneInProgress,
+				CloneProgress:   payload.CloneProgress,
+			},
+		}
+	default:
+		resp.Body.Close()
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {
