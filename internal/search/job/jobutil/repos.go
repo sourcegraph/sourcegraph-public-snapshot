@@ -60,7 +60,7 @@ func (s *RepoSearchJob) repoDescriptions(ctx context.Context, db database.DB, re
 // descriptionMatchRanges takes a map of repo IDs to their descriptions, and a list of patterns to match against those repo descriptions.
 // It returns a map of repo IDs to []result.Range. The []result.Range value contains the match ranges
 // for repos with a description that matches at least one of the patterns in descriptionPatterns.
-func (s *RepoSearchJob) descriptionMatchRanges(repoDescriptions map[api.RepoID]string, descriptionPatterns []string) map[api.RepoID][]result.Range {
+func descriptionMatchRanges(repoDescriptions map[api.RepoID]string, descriptionPatterns []string) map[api.RepoID][]result.Range {
 	res := make(map[api.RepoID][]result.Range)
 
 	for repoID, repoDescription := range repoDescriptions {

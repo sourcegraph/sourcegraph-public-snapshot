@@ -3,7 +3,6 @@ package jobutil
 import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/result"
 	"testing"
 )
@@ -150,8 +149,7 @@ func Test_descriptionMatchRanges(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			s := &RepoSearchJob{RepoOpts: search.RepoOptions{}}
-			got := s.descriptionMatchRanges(repoIDsToDescriptions, tc.inputPatterns)
+			got := descriptionMatchRanges(repoIDsToDescriptions, tc.inputPatterns)
 
 			if diff := cmp.Diff(got, tc.want); diff != "" {
 				t.Errorf("unexpected results (-want +got)\n%s", diff)
