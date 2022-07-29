@@ -2,7 +2,6 @@
 
 - Why should my company use Sourcegraph?
   - [Sourcegraph user features](../getting-started/index.md)
-  - [Code search product comparisons](https://docs.sourcegraph.com/@v3.9.0-rc.4/adopt/comp)
   - [Why code search is still needed for monorepos](code_search_in_monorepos.md)
 - [How to run a Sourcegraph trial](trial/index.md)
   1. [Define success](trial/index.md#1-define-trial-success)
