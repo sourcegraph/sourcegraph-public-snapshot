@@ -173,6 +173,10 @@
         &:active {
             box-shadow: none;
         }
+        &:focus-visible {
+            outline: none;
+            box-shadow: var(--focus-box-shadow);
+        }
     }
 
     .CodeMirror-hints {

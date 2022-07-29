@@ -3,8 +3,15 @@
     flex-direction: column;
     flex: 1 1 auto;
 }
+
 .loader {
     align-self: center;
     margin-top: auto;
     margin-bottom: auto;
+}
+
+:global(.graphiql-container) .toolbar-button {
+    margin-left: 5px;
+    margin-right: 5px;
+    color: var(--body-color);
 }
