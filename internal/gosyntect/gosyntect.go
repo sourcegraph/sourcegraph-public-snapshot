@@ -124,8 +124,8 @@ type Response struct {
 	// Data is the actual highlighted HTML version of Query.Code.
 	Data string
 
-	// LSIF is the base64 encoded byte array of an LSIF Typed payload containing highlighting data.
-	LSIF string
+	// Scip is the base64 string of a SCIP Document
+	Scip string
 
 	// Plaintext indicates whether or not a syntax could not be found for the
 	// file and instead it was rendered as plain text.
@@ -154,9 +154,12 @@ var (
 
 type response struct {
 	// Successful response fields.
+
+	// Data can be several different "types" of data, depending on the request.
+	//   In the future, we could remove the several different types and just always
+	//   have it be a SCIP Document, but that's not the case at the moment.
 	Data      string `json:"data"`
 	Plaintext bool   `json:"plaintext"`
-	LSIF      string `json:"lsif"`
 
 	// Error response fields.
 	Error string `json:"error"`
@@ -271,7 +274,7 @@ func (c *Client) Highlight(ctx context.Context, q *Query, useTreeSitter bool) (*
 
 	return &Response{
 		Data:      r.Data,
-		LSIF:      r.LSIF,
+		Scip:      r.LSIF,
 		Plaintext: r.Plaintext,
 	}, nil
 }
@@ -347,7 +350,7 @@ func (c *Client) ScipHighlight(ctx context.Context, q *ScipQueryArguments) (*Res
 	fmt.Println("ScipHighlight:", r.Data)
 	return &Response{
 		Data:      "",
-		LSIF:      r.Data,
+		Scip:      r.Data,
 		Plaintext: false,
 	}, nil
 }

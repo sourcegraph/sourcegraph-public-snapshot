@@ -348,7 +348,6 @@ func scipCode(ctx context.Context, p Params) (*gosyntect.Response, error) {
 		Tracer:           ot.GetTracer(ctx),
 	}
 
-	fmt.Println("Params:", scipParams)
 	return client.ScipHighlight(ctx, &scipParams)
 }
 
@@ -464,12 +463,12 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	}
 
 	var resp *gosyntect.Response
+
 	// This is effectively the "codemirror" path.
 	//
 	// The rest of this code could most likely be deleted at some point in the
 	// future when we just have codemirror everywhere.
 	if p.ForceSCIP {
-		fmt.Println("Doing Scip Code...")
 		resp, err = scipCode(ctx, p)
 	} else {
 		resp, err = client.Highlight(ctx, query, filetypeQuery.Engine == highlights.EngineTreeSitter)
@@ -483,8 +482,6 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 		}
 		return plainResponse, true, nil
 	}
-
-	fmt.Println("==> Respone:", resp, err)
 
 	if ctx.Err() == context.DeadlineExceeded {
 		log15.Warn(
@@ -566,11 +563,11 @@ func Code(ctx context.Context, p Params) (response *HighlightedCode, aborted boo
 	}
 
 	var document *scip.Document
-	if resp.LSIF != "" {
+	if resp.Scip != "" {
 		fmt.Println("=============================")
-		fmt.Println("Lsif:", resp.LSIF)
+		fmt.Println("Lsif:", resp.Scip)
 		lsifDocument := new(scip.Document)
-		data, err := base64.StdEncoding.DecodeString(resp.LSIF)
+		data, err := base64.StdEncoding.DecodeString(resp.Scip)
 		err = proto.Unmarshal(data, lsifDocument)
 		if err == nil {
 			document = lsifDocument
