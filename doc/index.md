@@ -27,7 +27,7 @@ For more information, see [single-container Docker deployment documentation](adm
 
 To use Sourcegraph on 2 million open-source repositories, visit [Sourcegraph.com](https://sourcegraph.com/search).
 
-**For production deployments:** [use Sourcegraph Cloud](admin/deploy/managed.md) or [deploy self-hosted Sourcegraph](admin/deploy/index.md).
+**For production deployments:** [use Sourcegraph Cloud](cloud/index.md) or [deploy self-hosted Sourcegraph](admin/deploy/index.md).
 
 ## Popular documentation
 
