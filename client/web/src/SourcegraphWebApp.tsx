@@ -32,7 +32,11 @@ import { FetchFileParameters } from '@sourcegraph/search-ui'
 import { getEnabledExtensions } from '@sourcegraph/shared/src/api/client/enabledExtensions'
 import { preloadExtensions } from '@sourcegraph/shared/src/api/client/preload'
 import { NotificationType } from '@sourcegraph/shared/src/api/extension/extensionHostApi'
-import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import {
+    fetchFormattedFileLineRanges,
+    FetchFormattedFileParameters,
+    fetchHighlightedFileLineRanges,
+} from '@sourcegraph/shared/src/backend/file'
 import {
     Controller as ExtensionsController,
     createController as createExtensionsController,
@@ -381,6 +385,9 @@ export class SourcegraphWebApp extends React.Component<
                                                                         fetchHighlightedFileLineRanges={
                                                                             this.fetchHighlightedFileLineRanges
                                                                         }
+                                                                        fetchFormattedFileLineRanges={
+                                                                            this.fetchFormattedFileLineRanges
+                                                                        }
                                                                         // Extensions
                                                                         platformContext={this.platformContext}
                                                                         extensionsController={this.extensionsController}
@@ -498,4 +505,10 @@ export class SourcegraphWebApp extends React.Component<
         force?: boolean | undefined
     ): Observable<string[][]> =>
         fetchHighlightedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
+
+    private fetchFormattedFileLineRanges = (
+        parameters: FetchFormattedFileParameters,
+        force?: boolean | undefined
+    ): Observable<string[][]> =>
+        fetchFormattedFileLineRanges({ ...parameters, platformContext: this.platformContext }, force)
 }

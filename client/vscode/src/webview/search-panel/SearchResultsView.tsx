@@ -18,7 +18,11 @@ import {
     FetchFileParameters,
 } from '@sourcegraph/search-ui'
 import { wrapRemoteObservable } from '@sourcegraph/shared/src/api/client/api/common'
-import { fetchHighlightedFileLineRanges } from '@sourcegraph/shared/src/backend/file'
+import {
+    fetchFormattedFileLineRanges,
+    FetchFormattedFileParameters,
+    fetchHighlightedFileLineRanges,
+} from '@sourcegraph/shared/src/backend/file'
 import { collectMetrics } from '@sourcegraph/shared/src/search/query/metrics'
 import {
     appendContextFilter,
@@ -243,6 +247,11 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
         [platformContext]
     )
 
+    const fetchFormattedFileLineRangesWithContext = useCallback(
+        (parameters: FetchFormattedFileParameters) => fetchFormattedFileLineRanges({ ...parameters, platformContext }),
+        [platformContext]
+    )
+
     const fetchStreamSuggestions = useCallback(
         (query: string): Observable<SearchMatch[]> =>
             wrapRemoteObservable(extensionCoreAPI.fetchStreamSuggestions(query, instanceURL)),
@@ -405,6 +414,7 @@ export const SearchResultsView: React.FunctionComponent<React.PropsWithChildren<
                             results={context.searchResults ?? undefined}
                             authenticatedUser={authenticatedUser}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRangesWithContext}
+                            fetchFormattedFileLineRanges={fetchFormattedFileLineRangesWithContext}
                             executedQuery={context.submittedSearchQueryState.queryState.query}
                             resultClassName="mr-0"
                             // TODO "no results" video thumbnail assets

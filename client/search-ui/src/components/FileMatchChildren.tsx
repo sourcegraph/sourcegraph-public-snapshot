@@ -15,6 +15,7 @@ import {
     toPositionOrRangeQueryParameter,
 } from '@sourcegraph/common'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
+import { FetchFormattedFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { MatchGroup } from '@sourcegraph/shared/src/components/ranking/PerFileResultRanking'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
 import { HoverContext } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
@@ -41,6 +42,8 @@ interface FileMatchProps extends SettingsCascadeProps, TelemetryProps {
     /* Clicking on a match opens the link in a new tab */
     openInNewTab?: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    fetchFormattedFileLineRanges: (parameters: FetchFormattedFileParameters, force?: boolean) => Observable<string[][]>
+
     extensionsController?: Pick<ExtensionsController, 'extHostAPI'>
     hoverifier?: Hoverifier<HoverContext, HoverMerged, ActionItemAction>
 }
@@ -157,7 +160,41 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
         props.settingsCascade.final.experimentalFeatures &&
         props.settingsCascade.final.experimentalFeatures.enableFastResultLoading
 
-    const { result, grouped, fetchHighlightedFileLineRanges, telemetryService, extensionsController } = props
+    const {
+        result,
+        grouped,
+        fetchHighlightedFileLineRanges,
+        fetchFormattedFileLineRanges,
+        telemetryService,
+        extensionsController,
+    } = props
+
+    const fetchFormattedFileMatch = React.useCallback(
+        (startLine: number, endLine: number) =>
+            fetchFormattedFileLineRanges(
+                {
+                    repoName: result.repository,
+                    commitID: result.commit || '',
+                    filePath: result.path,
+                    ranges: optimizeHighlighting
+                        ? grouped.map(
+                              (group): IHighlightLineRange => ({
+                                  startLine: group.startLine,
+                                  endLine: group.endLine,
+                              })
+                          )
+                        : [{ startLine: 0, endLine: 2147483647 }],
+                },
+                false
+            ).pipe(
+                map(lines =>
+                    optimizeHighlighting
+                        ? lines[grouped.findIndex(group => group.startLine === startLine && group.endLine === endLine)]
+                        : lines[0].slice(startLine, endLine)
+                )
+            ),
+        [fetchFormattedFileLineRanges, result.repository, result.commit, result.path, optimizeHighlighting, grouped]
+    )
 
     const fetchHighlightedFileMatchLineRanges = React.useCallback(
         (startLine: number, endLine: number) => {
@@ -365,6 +402,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                             startLine={symbol.line - 1}
                             endLine={symbol.line}
                             fetchHighlightedFileRangeLines={fetchHighlightedSymbolMatchLineRanges}
+                            fetchFormattedFileMatch={fetchFormattedFileMatch}
                             viewerUpdates={viewerUpdates}
                             hoverifier={props.hoverifier}
                             onCopy={logEventOnCopy}
@@ -405,6 +443,7 @@ export const FileMatchChildren: React.FunctionComponent<React.PropsWithChildren<
                                     startLine={group.startLine}
                                     endLine={group.endLine}
                                     highlightRanges={group.matches}
+                                    fetchFormattedFileMatch={fetchFormattedFileMatch}
                                     fetchHighlightedFileRangeLines={fetchHighlightedFileMatchLineRanges}
                                     blobLines={group.blobLines}
                                     viewerUpdates={viewerUpdates}

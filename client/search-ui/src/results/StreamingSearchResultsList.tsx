@@ -13,6 +13,7 @@ import { SearchContextProps } from '@sourcegraph/search'
 import { CommitSearchResult, RepoSearchResult, FileSearchResult, FetchFileParameters } from '@sourcegraph/search-ui'
 import { ActionItemAction } from '@sourcegraph/shared/src/actions/ActionItem'
 import { AuthenticatedUser } from '@sourcegraph/shared/src/auth'
+import { FetchFormattedFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { VirtualList } from '@sourcegraph/shared/src/components/VirtualList'
 import { Controller as ExtensionsController } from '@sourcegraph/shared/src/extensions/controller'
@@ -46,6 +47,8 @@ export interface StreamingSearchResultsListProps
     results?: AggregateStreamingSearchResults
     allExpanded: boolean
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    fetchFormattedFileLineRanges: (parameters: FetchFormattedFileParameters, force?: boolean) => Observable<string[][]>
+
     authenticatedUser: AuthenticatedUser | null
     showSearchContext: boolean
     /** Clicking on a match opens the link in a new tab. */
@@ -74,6 +77,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
     results,
     allExpanded,
     fetchHighlightedFileLineRanges,
+    fetchFormattedFileLineRanges,
     settingsCascade,
     telemetryService,
     isLightTheme,
@@ -122,6 +126,7 @@ export const StreamingSearchResultsList: React.FunctionComponent<
                             showAllMatches={false}
                             allExpanded={allExpanded}
                             fetchHighlightedFileLineRanges={fetchHighlightedFileLineRanges}
+                            fetchFormattedFileLineRanges={fetchFormattedFileLineRanges}
                             repoDisplayName={displayRepoName(result.repository)}
                             settingsCascade={settingsCascade}
                             extensionsController={extensionsController}

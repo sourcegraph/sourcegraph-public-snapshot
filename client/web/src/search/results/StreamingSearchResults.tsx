@@ -13,6 +13,7 @@ import {
     FetchFileParameters,
     SidebarButtonStrip,
 } from '@sourcegraph/search-ui'
+import { FetchFormattedFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { SearchPatternType } from '@sourcegraph/shared/src/graphql-operations'
@@ -66,6 +67,7 @@ export interface StreamingSearchResultsProps
     isSourcegraphDotCom: boolean
 
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    fetchFormattedFileLineRanges: (parameters: FetchFormattedFileParameters, force?: boolean) => Observable<string[][]>
 }
 
 export const StreamingSearchResults: React.FunctionComponent<

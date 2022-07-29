@@ -8,6 +8,7 @@ import { TabbedPanelContent } from '@sourcegraph/branded/src/components/panel/Ta
 import { isMacPlatform } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { FetchFileParameters } from '@sourcegraph/search-ui'
+import { FetchFormattedFileParameters } from '@sourcegraph/shared/src/backend/file'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import {
@@ -110,6 +111,8 @@ export interface LayoutProps
 
     // Search
     fetchHighlightedFileLineRanges: (parameters: FetchFileParameters, force?: boolean) => Observable<string[][]>
+    fetchFormattedFileLineRanges: (parameters: FetchFormattedFileParameters, force?: boolean) => Observable<string[][]>
+
     onCreateNotebookFromNotepad: (blocks: BlockInput[]) => void
 
     globbing: boolean

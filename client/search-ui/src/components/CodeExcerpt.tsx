@@ -39,6 +39,7 @@ interface Props extends Repo {
     /** A function to fetch the range of lines this code excerpt will display. It will be provided
      * the same start and end lines properties that were provided as component props */
     fetchHighlightedFileRangeLines: (startLine: number, endLine: number) => Observable<string[]>
+    fetchFormattedFileMatch: (startLine: number, endLine: number) => Observable<string[]>
     blobLines?: string[]
 
     viewerUpdates?: Observable<{ viewerId: ViewerId } & HoverContext>
@@ -101,6 +102,7 @@ const visibilitySensorOffset = { bottom: -500 }
  */
 export const CodeExcerpt: React.FunctionComponent<Props> = ({
     blobLines,
+    fetchFormattedFileMatch,
     fetchHighlightedFileRangeLines,
     startLine,
     endLine,
@@ -111,6 +113,8 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     onCopy,
 }) => {
     const [blobLinesOrError, setBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+    const [formattedBlobLinesOrError, setFormattedBlobLinesOrError] = useState<string[] | ErrorLike | null>(null)
+
     const [isVisible, setIsVisible] = useState(false)
 
     // Both the behavior subject and the React state are needed here. The behavior subject is
@@ -118,13 +122,28 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
     // The state is needed because React won't re-render when the behavior subject's value changes.
     const tableContainerElements = useMemo(() => new BehaviorSubject<HTMLElement | null>(null), [])
     const [tableContainerElement, setTableContainerElement] = useState<HTMLElement | null>(null)
+
+    const usefulBlobInfoOrError = blobLinesOrError || formattedBlobLinesOrError
+
     const updateTableContainerElementReference = useCallback(
         (reference: HTMLElement | null): void => {
             tableContainerElements.next(reference)
             setTableContainerElement(reference)
         },
+        // eslint-disable-next-line react-hooks/exhaustive-deps
         [tableContainerElements]
     )
+
+    useEffect(() => {
+        let subscription: Subscription | undefined
+        if (isVisible) {
+            const observable = blobLines ? of(blobLines) : fetchFormattedFileMatch(startLine, endLine)
+            subscription = observable.pipe(catchError(error => [asError(error)])).subscribe(blobLinesOrError => {
+                setFormattedBlobLinesOrError(blobLinesOrError)
+            })
+        }
+        return () => subscription?.unsubscribe()
+    }, [blobLines, endLine, fetchFormattedFileMatch, isVisible, startLine])
 
     // Get the syntax highlighted blob lines
     useEffect(() => {
@@ -195,10 +214,10 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                     isErrorLike(blobLinesOrError) && styles.codeExcerptError
                 )}
             >
-                {blobLinesOrError && !isErrorLike(blobLinesOrError) && (
+                {usefulBlobInfoOrError && !isErrorLike(usefulBlobInfoOrError) && (
                     <div
                         ref={updateTableContainerElementReference}
-                        dangerouslySetInnerHTML={{ __html: makeTableHTML(blobLinesOrError) }}
+                        dangerouslySetInnerHTML={{ __html: makeTableHTML(usefulBlobInfoOrError) }}
                     />
                 )}
                 {blobLinesOrError && isErrorLike(blobLinesOrError) && (
@@ -207,7 +226,7 @@ export const CodeExcerpt: React.FunctionComponent<Props> = ({
                         {blobLinesOrError.message}
                     </div>
                 )}
-                {!blobLinesOrError && (
+                {!usefulBlobInfoOrError && (
                     <table>
                         <tbody>
                             {range(startLine, endLine).map(index => (
