@@ -29,7 +29,9 @@ func TestProductSubscriptions_Create(t *testing.T) {
 		require.NoError(t, err)
 		assert.Equal(t, sub, got.ID)
 		assert.Equal(t, u.ID, got.UserID)
-		assert.Nil(t, got.AccountNumber)
+
+		require.NotNil(t, got.AccountNumber)
+		assert.Empty(t, *got.AccountNumber)
 	})
 
 	u, err := db.Users().Create(ctx, database.NewUser{Username: "u-11223344"})

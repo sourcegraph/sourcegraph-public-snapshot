@@ -223,6 +223,7 @@ func buildWebAppWithSentrySourcemaps(version string) operations.Operation {
 		// Webapp build with Sentry's webpack plugin enabled
 		pipeline.AddStep(":webpack::globe_with_meridians: Build and upload sourcemaps to Sentry",
 			withYarnCache(),
+			bk.SoftFail(),
 			bk.Cmd("dev/ci/yarn-build.sh client/web"),
 			bk.Env("NODE_ENV", "production"),
 			bk.Env("ENTERPRISE", ""),
@@ -365,7 +366,7 @@ func clientChromaticTests(opts CoreTestOperationsOptions) operations.Operation {
 		stepOpts := []bk.StepOpt{
 			withYarnCache(),
 			bk.AutomaticRetry(3),
-			bk.Cmd("yarn --mutex network --frozen-lockfile --network-timeout 60000 --silent"),
+			bk.Cmd("./dev/ci/yarn-install-with-retry.sh"),
 			bk.Cmd("yarn gulp generate"),
 			bk.Env("MINIFY", "1"),
 		}

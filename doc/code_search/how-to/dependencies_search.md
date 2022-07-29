@@ -13,12 +13,12 @@ Dependencies search is a code search feature that lets you search through the de
   - [Python dependencies](../../admin/external_service/python.md)
 1. Add `"codeIntelLockfileIndexing.enabled": true` to your [site configuration](../../admin/config/site_config.md) to enable the lockfile-indexing feature.
 1. Add `"codeIntelAutoIndexing.allowGlobalPolicies": true` to your [site configuration](../../admin/config/site_config.md) to allow a lockfile-indexing policy to match multiple repositories. This is **optional** if you want to lockfile-index only single repositories.
-1. Go to **Site admin > Code intelligence > Configuration** and click on **Create new policy** to create a policy with **Lockfile-indexing** enabled to index the repositories matching this policy. Example: lockfile-index all repositories matching the name `go-*` and `go/`.
+1. Go to **Site admin > Code Graph > Configuration** and click on **Create new policy** to create a policy with **Lockfile-indexing** enabled to index the repositories matching this policy. Example: lockfile-index all repositories matching the name `go-*` and `go/`.
 1. Wait until the indexing of lockfiles has finished and then run a dependency search.
 
 ### Use cases
 
-Resolve an incident faster by [quickly finding where an error comes from](https://sourcegraph.com/search?q=context:global+repo:deps%28%5Egithub%5C.com/sourcegraph/sourcegraph%24%403.37%29+Observable+cannot+be+called+as+a+function&patternType=literal) and then understanding the code around it by leveraging [code intelligence](../../code_intelligence/explanations/features.md).<br/>
+Resolve an incident faster by [quickly finding where an error comes from](https://sourcegraph.com/search?q=context:global+repo:deps%28%5Egithub%5C.com/sourcegraph/sourcegraph%24%403.37%29+Observable+cannot+be+called+as+a+function&patternType=literal) and then understanding the code around it by leveraging [code navigation](../../code_intelligence/explanations/features.md).<br/>
 
 ```sgquery
 r:deps(^github\.com/sourcegraph/sourcegraph$@3.37) Observable cannot be called as a function

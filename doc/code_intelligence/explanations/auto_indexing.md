@@ -11,15 +11,19 @@ img.screenshot {
 }
 </style>
 
-<aside class="experimental">
+<aside class="beta">
 <p>
-<span class="badge badge-experimental">Experimental</span> This feature is experimental and might change or be removed in the future. We've released it as an experimental feature to provide a preview of functionality we're working on.
+<span class="badge badge-beta">Beta</span> This feature is in beta and might change in the future.
 </p>
 
 <p><b>We're very much looking for input and feedback on this feature.</b> You can either <a href="https://about.sourcegraph.com/contact">contact us directly</a>, <a href="https://github.com/sourcegraph/sourcegraph">file an issue</a>, or <a href="https://twitter.com/sourcegraph">tweet at us</a>.</p>
 </aside>
 
-With Sourcegraph deployments supporting [executors](../../admin/executors.md), your repository contents can be automatically analyzed to produce a precise code intelligence index file. Once [auto-indexing is enabled](../how-to/enable_auto_indexing.md) and [auto-indexing policies are configured](../how-to/configure_auto_indexing.md), repositories will be periodically cloned into an executor sandbox, analyzed, and the resulting index file will be uploaded back to the Sourcegraph instance.
+With Sourcegraph deployments supporting [executors](../../admin/executors.md), your repository contents can be automatically analyzed to produce a code graph index file. Once [auto-indexing is enabled](../how-to/enable_auto_indexing.md) and [auto-indexing policies are configured](../how-to/configure_auto_indexing.md), repositories will be periodically cloned into an executor sandbox, analyzed, and the resulting index file will be uploaded back to the Sourcegraph instance.
+
+## Language support
+
+Auto-indexing is currently available for Go, TypeScript, JavaScript and Python repositories. See also [dependency navigation](features.md#dependency-navigation) for instructions on to setup cross-dependency navigation depending on what language ecosystem you use.
 
 ## Lifecycle of an indexing job
 
@@ -35,13 +39,13 @@ At any point, an index job record may be deleted (usually due to explicit deleti
 
 ## Lifecycle of an indexing job (via UI)
 
-Users can see precise code intelligence index jobs for a particular, repository by navigating to the code intelligence page in the target repository's index page.
+Users can see precise code navigation index jobs for a particular, repository by navigating to the code graph page in the target repository's index page.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.33/repository-page.png" class="screenshot" alt="Repository index page">
 
-Administrators of a Sourcegraph instance can see a global view of precise code intelligence index jobs across all repositories from the _Site Admin_ page.
+Administrators of a Sourcegraph instance can see a global view of code graph index jobs across all repositories from the _Site Admin_ page.
 
-<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/indexes/list.png" class="screenshot" alt="Global list of precise code intelligence index jobs across all repositories">
+<img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/indexes/list.png" class="screenshot" alt="Global list of precise code navigation index jobs across all repositories">
 
 The detail page of an index job will show its current state as well as detailed logs about its execution up to the current point in time.
 
@@ -51,6 +55,6 @@ The stdout and stderr of each command run during pre-indexing and indexing steps
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/indexes/processing-detail.png" class="screenshot" alt="Detailed look at index job logs">
 
-Once the index job completes, a precise code intelligence file has been uploaded to the Sourcegraph instance. The associated upload record is available from the detail view of an index job.
+Once the index job completes, a code graph data file has been uploaded to the Sourcegraph instance. The associated upload record is available from the detail view of an index job.
 
 <img src="https://storage.googleapis.com/sourcegraph-assets/docs/images/code-intelligence/sg-3.34/indexes/completed.png" class="screenshot" alt="Upload in completed state">

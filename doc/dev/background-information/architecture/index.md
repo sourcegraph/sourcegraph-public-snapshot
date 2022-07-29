@@ -60,18 +60,18 @@ If you want to learn more about search:
 - [Life of a search query](life-of-a-search-query.md)
 - [Indexed ranking](indexed-ranking.md)
 
-## Code intelligence
+## Code navigation
 
-Code intelligence surfaces data (for example: doc comments for a symbol) and actions (for example: go to definition, find references) based on our semantic understanding of code (unlike search, which is completely text based).
+Code navigation surfaces data (for example: doc comments for a symbol) and actions (for example: go to definition, find references) based on our semantic understanding of code (unlike search, which is completely text based).
 
-By default, Sourcegraph provides imprecise [search-based code intelligence](../../../code_intelligence/explanations/search_based_code_intelligence.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
+By default, Sourcegraph provides imprecise [search-based code navigation](../../../code_intelligence/explanations/search_based_code_intelligence.md). This reuses all the architecture that makes search fast, but it can result in false positives (for example: finding two definitions for a symbol, or references that aren't actually references), or false negatives (for example: not able to find the definition or all references). This is the default because it works with no extra configuration and is pretty good for many use cases and languages. We support a lot of languages this way because it only requires writing a few regular expressions.
 
-With some setup, customers can enable [precise code intelligence](../../../code_intelligence/explanations/precise_code_intelligence.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code intel support for new languages is a non-trivial task.
+With some setup, customers can enable [precise code navigation](../../../code_intelligence/explanations/precise_code_intelligence.md). Repositories add a step to their build pipeline that computes the index for that revision of code and uploads it to Sourcegraph. We have to write language specific indexers, so adding precise code navigation support for new languages is a non-trivial task.
 
-If you want to learn more about code intelligence:
+If you want to learn more about code navigation:
 
-- [Code intelligence product documentation](../../../code_intelligence/index.md)
-- [Code intelligence developer documentation](../codeintel/index.md)
+- [Code navigation product documentation](../../../code_intelligence/index.md)
+- [Code navigation developer documentation](../codeintel/index.md)
 - [Available indexers](../../../code_intelligence/references/indexers.md)
 
 ### Dependencies
@@ -79,7 +79,7 @@ If you want to learn more about code intelligence:
 <small>Last updated: 2021-07-05</small>
 
 - [Search](#search)
-  - Symbol search is used for basic code intel
+  - Symbol search is used for basic code navigation
 - [Sourcegraph extension API](#sourcegraph-extension-api)
   - Hover and definition providers
 - [Native integrations (for code hosts)](#native-integrations-for-code-hosts)
@@ -112,7 +112,7 @@ If you want to learn more about batch changes:
 ## Code insights
 
 Code insights surface higher-level, aggregated information to leaders in engineering organizations in dashboards.
-For example, code insights can track the number of matches of a search query over time, the number of code intelligence diagnostic warnings in a code base, usage of different programming languages, or even data from external services, like test coverage from Codecov.
+For example, code insights can track the number of matches of a search query over time, the number of code navigation diagnostic warnings in a code base, usage of different programming languages, or even data from external services, like test coverage from Codecov.
 Sample use cases for this are for tracking migrations, usage of libraries across an organization, tech debt, code base health, and much more.
 
 Code Insights are persisted in a separate databased called `codeinsights-db`. The web application interacts with the backend through a [GraphQL API](../../../code_insights/references/code_insights_graphql_api.md).
@@ -179,7 +179,7 @@ If you want to learn more about code monitoring:
 
 The Sourcegraph browser extensions bring the features of Sourcegraph directly into the UI of code hosts such as GitHub, GitLab and Bitbucket.
 
-With the Sourcegraph browser extension installed, users get Sourcegraph features (including code intelligence and Sourcegraph extensions) on their code host while browsing code, viewing diffs, or reviewing pull requests.
+With the Sourcegraph browser extension installed, users get Sourcegraph features (including code navigation and Sourcegraph extensions) on their code host while browsing code, viewing diffs, or reviewing pull requests.
 
 This lets users get value from Sourcegraph without leaving their existing workflows on their code host, while also giving them a convenient way to jump into Sourcegraph at any time (by using the `Open in Sourcegraph` button on any repository or file). The browser extension also adds an address bar search shortcut, allowing you to search on Sourcegraph directly from the browser address bar.
 
@@ -216,7 +216,7 @@ Extensions that use the API can add elements and interactions to the Sourcegraph
 - contributing hover tooltip information on specific tokens in a file
 - decorating files in directory listings
 
-Some core features of Sourcegraph, like displaying code intelligence hover tooltips, are implemented using the extension API.
+Some core features of Sourcegraph, like displaying code navigation hover tooltips, are implemented using the extension API.
 
 If you want to learn more about our extension API:
 
@@ -255,7 +255,7 @@ If you want to learn more about src-cli:
 
 ## Editor extensions
 
-Sourcegraph editor extensions will bring Sourcegraph features like search, code intelligence, and Sourcegraph extensions into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.)
+Sourcegraph editor extensions will bring Sourcegraph features like search, code navigation, and Sourcegraph extensions into your IDE. (Switching between Sourcegraph and an IDE when viewing a file is separately powered by Sourcegraph extensions.)
 
 The editor extension is still in the exploratory phase of determining priority and scope. For more information:
 

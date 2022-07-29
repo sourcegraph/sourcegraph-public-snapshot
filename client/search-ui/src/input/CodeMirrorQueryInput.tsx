@@ -31,7 +31,7 @@ import classNames from 'classnames'
 import { renderMarkdown } from '@sourcegraph/common'
 import { EditorHint, QueryChangeSource, SearchPatternTypeProps } from '@sourcegraph/search'
 import { useCodeMirror } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
-import { KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { DecoratedToken, toCSSClassName } from '@sourcegraph/shared/src/search/query/decoratedToken'
 import { Diagnostic, getDiagnostics } from '@sourcegraph/shared/src/search/query/diagnostics'
 import { resolveFilter } from '@sourcegraph/shared/src/search/query/filters'
@@ -100,6 +100,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
     // run when a prop changes, not the editor).
     const [editor, setEditor] = useState<EditorView | undefined>()
     const editorReference = useRef<EditorView>()
+    const focusSearchBarShortcut = useKeyboardShortcut('focusSearch')
 
     const editorCreated = useCallback(
         (editor: EditorView) => {
@@ -228,7 +229,7 @@ export const CodeMirrorMonacoFacade: React.FunctionComponent<React.PropsWithChil
                 className={className}
                 extensions={extensions}
             />
-            {KEYBOARD_SHORTCUT_FOCUS_SEARCHBAR.keybindings.map((keybinding, index) => (
+            {focusSearchBarShortcut?.keybindings.map((keybinding, index) => (
                 <Shortcut key={index} {...keybinding} onMatch={globalFocus} />
             ))}
         </>

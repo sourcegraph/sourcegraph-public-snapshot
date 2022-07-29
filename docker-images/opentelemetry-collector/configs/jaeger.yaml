@@ -8,6 +8,7 @@ receivers:
   otlp:
     protocols:
       grpc:
+      http:
 
 exporters:
   jaeger:

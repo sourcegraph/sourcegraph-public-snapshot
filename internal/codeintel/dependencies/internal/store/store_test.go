@@ -2,6 +2,7 @@ package store
 
 import (
 	"context"
+	"errors"
 	"sort"
 	"strconv"
 	"testing"
@@ -1340,4 +1341,115 @@ func TestListAndGetLockfileIndexes(t *testing.T) {
 	if err != ErrLockfileIndexNotFound {
 		t.Fatalf("unexpected error: %s", err)
 	}
+}
+
+func TestDeleteLockfileIndexByID(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	store := New(db, &observation.TestContext)
+
+	if _, err := db.ExecContext(ctx, `INSERT INTO repo (name) VALUES ('foo')`); err != nil {
+		t.Fatalf(err.Error())
+	}
+
+	t.Run("with dependencies", func(t *testing.T) {
+		packageA := shared.TestPackageDependencyLiteral("A", "1", "2", "pkg-A", "4")
+		packageB := shared.TestPackageDependencyLiteral("B", "2", "3", "pkg-B", "5")
+		packageC := shared.TestPackageDependencyLiteral("C", "3", "4", "pkg-C", "6")
+
+		deps := []shared.PackageDependency{packageA, packageB, packageC}
+		graph := shared.TestDependencyGraphLiteral(
+			[]shared.PackageDependency{packageA},
+			false,
+			[][]shared.PackageDependency{{packageA, packageB}, {packageA, packageC}},
+		)
+		commit := "cafebabe"
+
+		// Insert and check everything's been inserted
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, graph); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+		index, err := store.GetLockfileIndex(ctx, GetLockfileIndexOpts{RepoName: "foo", Commit: commit, Lockfile: "lock.file"})
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		names, err := queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if len(names) != 3 {
+			t.Fatalf("references not inserted")
+		}
+
+		// Delete
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if err != nil {
+			t.Fatalf("failed to delete: %s", err)
+		}
+
+		// Query again to make sure it's deleted
+		_, err = store.GetLockfileIndex(ctx, GetLockfileIndexOpts{ID: index.ID})
+		if err != ErrLockfileIndexNotFound {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		// Query references again to make sure they're deleted
+		names, err = queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if len(names) != 0 {
+			t.Fatalf("references not inserted")
+		}
+
+		// Delete again
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if !errors.Is(err, ErrLockfileIndexNotFound) {
+			t.Fatalf("wrong error: %s (%T)", err, err)
+		}
+	})
+
+	t.Run("without any dependencies", func(t *testing.T) {
+		deps := []shared.PackageDependency{}
+		commit := "d34db30f"
+
+		// Insert and check everything's been inserted
+		if err := store.UpsertLockfileGraph(ctx, "foo", commit, "lock.file", deps, nil); err != nil {
+			t.Fatalf("error: %s", err)
+		}
+		index, err := store.GetLockfileIndex(ctx, GetLockfileIndexOpts{RepoName: "foo", Commit: commit, Lockfile: "lock.file"})
+		if err != nil {
+			t.Fatalf("unexpected error: %s", err)
+		}
+		names, err := queryLockfileReferences(t, ctx, store, "foo", commit)
+		if err != nil {
+			t.Fatalf("database query error: %s", err)
+		}
+		if len(names) != 0 {
+			t.Fatalf("references not inserted")
+		}
+
+		// Delete
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if err != nil {
+			t.Fatalf("failed to delete: %s", err)
+		}
+
+		// Query again to make sure it's deleted
+		_, err = store.GetLockfileIndex(ctx, GetLockfileIndexOpts{ID: index.ID})
+		if err != ErrLockfileIndexNotFound {
+			t.Fatalf("unexpected error: %s", err)
+		}
+
+		// Delete again
+		err = store.DeleteLockfileIndexByID(ctx, index.ID)
+		if !errors.Is(err, ErrLockfileIndexNotFound) {
+			t.Fatalf("wrong error: %s", err)
+		}
+	})
 }

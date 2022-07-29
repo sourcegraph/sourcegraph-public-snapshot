@@ -8,7 +8,7 @@ import { Form } from '@sourcegraph/branded/src/components/Form'
 import { SearchContextInputProps, SubmitSearchParameters } from '@sourcegraph/search'
 import { SearchBox } from '@sourcegraph/search-ui'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { KEYBOARD_SHORTCUT_FUZZY_FINDER } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
+import { useKeyboardShortcut } from '@sourcegraph/shared/src/keyboardShortcuts/useKeyboardShortcut'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
 import { TelemetryProps } from '@sourcegraph/shared/src/telemetry/telemetryService'
@@ -66,6 +66,7 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
         features => features.showSearchContextManagement ?? false
     )
     const editorComponent = useExperimentalFeatures(features => features.editor ?? 'codemirror6')
+    const fuzzyFinderShortcut = useKeyboardShortcut('fuzzyFinder')
 
     const submitSearchOnChange = useCallback(
         (parameters: Partial<SubmitSearchParameters> = {}) => {
@@ -127,16 +128,19 @@ export const SearchNavbarItem: React.FunctionComponent<React.PropsWithChildren<P
                 isExternalServicesUserModeAll={window.context.externalServicesUserMode === 'all'}
                 structuralSearchDisabled={window.context?.experimentalFeatures?.structuralSearch === 'disabled'}
             />
-            <Shortcut
-                {...KEYBOARD_SHORTCUT_FUZZY_FINDER.keybindings[0]}
-                onMatch={() => {
-                    setIsFuzzyFinderVisible(true)
-                    setRetainFuzzyFinderCache(true)
-                    const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
-                    input?.focus()
-                    input?.select()
-                }}
-            />
+            {fuzzyFinderShortcut?.keybindings.map((keybinding, index) => (
+                <Shortcut
+                    key={index}
+                    {...keybinding}
+                    onMatch={() => {
+                        setIsFuzzyFinderVisible(true)
+                        setRetainFuzzyFinderCache(true)
+                        const input = document.querySelector<HTMLInputElement>('#fuzzy-modal-input')
+                        input?.focus()
+                        input?.select()
+                    }}
+                />
+            ))}
             {props.isRepositoryRelatedPage && retainFuzzyFinderCache && fuzzyFinder && (
                 <FuzzyFinder
                     setIsVisible={bool => setIsFuzzyFinderVisible(bool)}

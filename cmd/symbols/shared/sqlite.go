@@ -1,9 +1,7 @@
 package shared
 
 import (
-	"fmt"
 	"net/http"
-	"os"
 	"time"
 
 	"golang.org/x/sync/semaphore"
@@ -38,17 +36,6 @@ func SetupSqlite(observationContext *observation.Context, gitserverClient gitser
 	// Ensure we register our database driver before calling
 	// anything that tries to open a SQLite database.
 	sqlite.Init()
-
-	if config.SanityCheck {
-		fmt.Print("Running sanity check...")
-		if err := sqlite.SanityCheck(); err != nil {
-			fmt.Println("failed ❌", err)
-			os.Exit(1)
-		}
-
-		fmt.Println("passed ✅")
-		os.Exit(0)
-	}
 
 	parserFactory := func() (ctags.Parser, error) {
 		return parser.SpawnCtags(logger, config.Ctags)

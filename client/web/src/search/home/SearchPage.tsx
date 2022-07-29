@@ -6,7 +6,6 @@ import * as H from 'history'
 import { SearchContextInputProps } from '@sourcegraph/search'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
-import { KeyboardShortcutsProps } from '@sourcegraph/shared/src/keyboardShortcuts/keyboardShortcuts'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
 import { SettingsCascadeProps } from '@sourcegraph/shared/src/settings/settings'
@@ -32,7 +31,6 @@ export interface SearchPageProps
         ThemeProps,
         ThemePreferenceProps,
         ActivationProps,
-        KeyboardShortcutsProps,
         TelemetryProps,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'>,
         PlatformContextProps<

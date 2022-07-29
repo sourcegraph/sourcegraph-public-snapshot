@@ -46,10 +46,10 @@ env:
   SRC_PROF_SERVICES: |
     [
       { "Name": "oss-frontend", "Host": "127.0.0.1:6063" },
-      { "Name": "enterprise-frontend", "Host": "127.0.0.1:6063" },
       { "Name": "frontend", "Host": "127.0.0.1:6063" },
       { "Name": "gitserver", "Host": "127.0.0.1:6068" },
       { "Name": "searcher", "Host": "127.0.0.1:6069" },
+      { "Name": "oss-symbols", "Host": "127.0.0.1:6071" },
       { "Name": "symbols", "Host": "127.0.0.1:6071" },
       { "Name": "oss-repo-updater", "Host": "127.0.0.1:6074" },
       { "Name": "repo-updater", "Host": "127.0.0.1:6074" },
@@ -150,13 +150,13 @@ commands:
       # If EXTSVC_CONFIG_FILE is *unset*, set a default.
       export EXTSVC_CONFIG_FILE=${EXTSVC_CONFIG_FILE-'../dev-private/enterprise/dev/external-services-config.json'}
 
-      .bin/enterprise-frontend
+      .bin/frontend
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
-    checkBinary: .bin/enterprise-frontend
+      go build -gcflags="$GCFLAGS" -o .bin/frontend github.com/sourcegraph/sourcegraph/enterprise/cmd/frontend
+    checkBinary: .bin/frontend
     env:
       CONFIGURATION_MODE: server
       USE_ENHANCED_LANGUAGE_DETECTION: false
@@ -244,13 +244,13 @@ commands:
       - cmd/repo-updater
 
   repo-updater:
-    cmd: .bin/enterprise-repo-updater
+    cmd: .bin/repo-updater
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
-    checkBinary: .bin/enterprise-repo-updater
+      go build -gcflags="$GCFLAGS" -o .bin/repo-updater github.com/sourcegraph/sourcegraph/enterprise/cmd/repo-updater
+    checkBinary: .bin/repo-updater
     env:
       HOSTNAME: $SRC_GIT_SERVER_1
       ENTERPRISE: 1
@@ -280,15 +280,15 @@ commands:
       - cmd/symbols
 
   symbols:
-    cmd: .bin/enterprise-symbols
+    cmd: .bin/symbols
     install: |
       if [ -n "$DELVE" ]; then
         export GCFLAGS='all=-N -l'
       fi
 
       ./cmd/symbols/build-ctags.sh &&
-      go build -gcflags="$GCFLAGS" -o .bin/enterprise-symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
-    checkBinary: .bin/enterprise-symbols
+      go build -gcflags="$GCFLAGS" -o .bin/symbols github.com/sourcegraph/sourcegraph/enterprise/cmd/symbols
+    checkBinary: .bin/symbols
     env:
       CTAGS_COMMAND: cmd/symbols/universal-ctags-dev
       CTAGS_PROCESSES: 2
@@ -684,7 +684,7 @@ commands:
 
       docker container rm otel-collector
       docker run --rm --name=otel-collector $DOCKER_NET $DOCKER_ARGS \
-        -p 4317:4317 -p 55679:55679 \
+        -p 4317:4317 -p 4318:4318 -p 55679:55679 \
         -e JAEGER_HOST=$JAEGER_HOST \
         -e HONEYCOMB_API_KEY=$HONEYCOMB_API_KEY \
         -e HONEYCOMB_DATASET=$HONEYCOMB_DATASET \
