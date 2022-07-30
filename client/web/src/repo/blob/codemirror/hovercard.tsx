@@ -1,3 +1,5 @@
+import { useEffect } from 'react'
+
 import { Extension } from '@codemirror/state'
 import { EditorView, hoverTooltip, repositionTooltips, Tooltip } from '@codemirror/view'
 import { upperFirst } from 'lodash'
@@ -11,7 +13,6 @@ import { HoverOverlayContent } from '@sourcegraph/shared/src/hover/HoverOverlayC
 import { Alert, Card, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import webHoverOverlayStyle from '../../../components/WebHoverOverlay/WebHoverOverlay.module.scss'
-import { useEffect } from 'react'
 
 const HOVER_TIMEOUT = 50
 
@@ -96,7 +97,7 @@ export function hovercard(
 export const Hovercard: React.FunctionComponent<
     Pick<HoverOverlayBaseProps, 'hoverOrError'> & { onRender: () => void }
 > = ({ hoverOrError, onRender }) => {
-    useEffect(onRender, [])
+    useEffect(onRender, [onRender])
 
     if (isErrorLike(hoverOrError)) {
         return <Alert className={hoverOverlayStyle.hoverError}>{upperFirst(hoverOrError.message)}</Alert>
