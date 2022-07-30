@@ -55,7 +55,7 @@ func runCommand(ctx context.Context, command command, logger Logger) (err error)
 		//    attached to the command is canceled. The pipes are only closed
 		//    after Wait has been called.
 		// 2. According to the docs, we are not meant to call cmd.Wait() until
-		//    we have complete read the pipes attached to the command.
+		//    we have completely read the pipes attached to the command.
 		//
 		// Since we're following the expected usage, we block on a wait group
 		// tracking the consumption of stdout and stderr pipes in two separate
@@ -148,7 +148,18 @@ var forwardedHostEnvVars = []string{"HOME", "PATH", "USER", "DOCKER_HOST"}
 func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgroup.Group {
 	eg := &errgroup.Group{}
 
-	readIntoBuf := func(prefix string, r io.Reader) error {
+	eg.Go(func() error {
+		return logLineWriter(logWriter)("stdout", stdout)
+	})
+	eg.Go(func() error {
+		return logLineWriter(logWriter)("stderr", stderr)
+	})
+
+	return eg
+}
+
+func logLineWriter(logWriter io.WriteCloser) func(prefix string, reader io.Reader) error {
+	return func(prefix string, r io.Reader) error {
 		scanner := bufio.NewScanner(r)
 		// Allocate an initial buffer of 4k.
 		buf := make([]byte, 4*1024)
@@ -163,15 +174,6 @@ func readProcessPipes(logWriter io.WriteCloser, stdout, stderr io.Reader) *errgr
 		}
 		return scanner.Err()
 	}
-
-	eg.Go(func() error {
-		return readIntoBuf("stdout", stdout)
-	})
-	eg.Go(func() error {
-		return readIntoBuf("stderr", stderr)
-	})
-
-	return eg
 }
 
 // monitorCommand starts the given command and waits for the given errgroup to complete.

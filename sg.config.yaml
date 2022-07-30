@@ -467,6 +467,17 @@ commands:
       EXECUTOR_QUEUE_NAME: codeintel
       SRC_PROF_HTTP: ':6092'
 
+  codeintel-executor-firecracker:
+    <<: *executor_template
+    cmd: |
+      env TMPDIR="$HOME/.sourcegraph/batches-executor-temp" \
+        sudo --preserve-env=TMPDIR,EXECUTOR_QUEUE_NAME,SRC_PROF_HTTP,EXECUTOR_FRONTEND_URL,EXECUTOR_FRONTEND_PASSWORD,EXECUTOR_USE_FIRECRACKER,EXECUTOR_IMAGE_ARCHIVE_PATH \
+          .bin/executor
+    env:
+      EXECUTOR_QUEUE_NAME: codeintel
+      EXECUTOR_USE_FIRECRACKER: true
+      SRC_PROF_HTTP: ':6092'
+
   batches-executor:
     <<: *executor_template
     cmd: |
