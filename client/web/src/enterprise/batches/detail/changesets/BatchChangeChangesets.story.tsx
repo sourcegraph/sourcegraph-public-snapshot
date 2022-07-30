@@ -120,7 +120,6 @@ export const ListOfExpandedChangesets: Story = args => (
 ListOfExpandedChangesets.storyName = 'List of expanded changesets'
 
 export const DraftWithoutChangesets: Story = args => {
-    const options = Object.keys(BatchChangeState)
     const batchChangeState = args.batchChangeState
 
     return (
