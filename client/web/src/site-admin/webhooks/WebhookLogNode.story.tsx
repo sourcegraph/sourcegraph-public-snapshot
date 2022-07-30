@@ -24,6 +24,18 @@ const config: Meta = {
         },
     },
     decorators: [decorator],
+    argTypes: {
+        receivedAt: {
+            name: 'received at',
+            control: { type: 'text' },
+            defaultValue: 'Sun Nov 07 2021 14:31:00 GMT-0500 (Eastern Standard Time)',
+        },
+        statusCode: {
+            name: 'status code',
+            control: { type: 'number', min: 100, max: 599 },
+            defaultValue: 204,
+        },
+    },
 }
 
 export default config
@@ -36,11 +48,11 @@ export default config
 //
 // Some bonus controls are provided for the tinkerers.
 
-export const Collapsed: Story = () => (
+export const Collapsed: Story = args => (
     <WebStory>
         {() => (
             <WebhookLogNode
-                node={webhookLogNode({
+                node={webhookLogNode(args, {
                     externalService: {
                         displayName: 'GitLab',
                     },
@@ -50,14 +62,16 @@ export const Collapsed: Story = () => (
     </WebStory>
 )
 
-export const ExpandedRequest: Story = () => (
-    <WebStory>{() => <WebhookLogNode node={webhookLogNode()} initiallyExpanded={true} />}</WebStory>
+export const ExpandedRequest: Story = args => (
+    <WebStory>{() => <WebhookLogNode node={webhookLogNode(args)} initiallyExpanded={true} />}</WebStory>
 )
 
 ExpandedRequest.storyName = 'expanded request'
 
-export const ExpandedResponse: Story = () => (
-    <WebStory>{() => <WebhookLogNode node={webhookLogNode()} initiallyExpanded={true} initialTabIndex={1} />}</WebStory>
+export const ExpandedResponse: Story = args => (
+    <WebStory>
+        {() => <WebhookLogNode node={webhookLogNode(args)} initiallyExpanded={true} initialTabIndex={1} />}
+    </WebStory>
 )
 
 ExpandedResponse.storyName = 'expanded response'
