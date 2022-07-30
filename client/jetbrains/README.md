@@ -28,6 +28,8 @@ The plugin works with all JetBrains IDEs, including:
 - Rider
 - Android Studio
 
+**Exception:** Due to a Java bug, search doesn't work with IDE versions **2021.1** and **2021.2** for users with **Apple Silicone** CPUs.
+
 ## Installation
 
 - Open settings

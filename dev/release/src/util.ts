@@ -149,6 +149,18 @@ export async function ensureSrcCliUpToDate(): Promise<void> {
     }
 }
 
+export async function getLatestTag(owner: string, repo: string): Promise<string> {
+    const latestTag = await fetch(`https://api.github.com/repos/${owner}/${repo}/tags`, {
+        method: 'GET',
+        headers: {
+            Accept: 'application/json',
+        },
+    })
+        .then(response => response.json())
+        .then(json => json[0].name)
+    return latestTag
+}
+
 interface ContainerRegistryCredential {
     username: string
     password: string
