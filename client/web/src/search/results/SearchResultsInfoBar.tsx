@@ -1,14 +1,6 @@
-import React, { useCallback, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
-import {
-    mdiBookmarkOutline,
-    mdiMenu,
-    mdiMenuDown,
-    mdiMenuUp,
-    mdiArrowExpandDown,
-    mdiArrowCollapseUp,
-    mdiDownload,
-} from '@mdi/js'
+import { mdiBookmarkOutline, mdiMenu, mdiMenuDown, mdiMenuUp, mdiArrowExpandDown, mdiArrowCollapseUp } from '@mdi/js'
 import classNames from 'classnames'
 import * as H from 'history'
 
@@ -26,7 +18,6 @@ import { Button, ButtonLink, Icon, Tooltip } from '@sourcegraph/wildcard'
 import { AuthenticatedUser } from '../../auth'
 import { BookmarkRadialGradientIcon, CodeMonitorRadialGradientIcon } from '../../components/CtaIcons'
 import { eventLogger } from '../../tracking/eventLogger'
-import { fetchSearchResults } from '../backend'
 
 import { ButtonDropdownCta, ButtonDropdownCtaProps } from './ButtonDropdownCta'
 import {
@@ -37,6 +28,7 @@ import {
     CreateAction,
 } from './createActions'
 import { CreateActionsMenu } from './CreateActionsMenu'
+import { ExportSearchResultsButton } from './ExportSearchResultsButton'
 import { SearchActionsMenu } from './SearchActionsMenu'
 
 import createActionsStyles from './CreateActions.module.scss'
@@ -44,7 +36,7 @@ import styles from './SearchResultsInfoBar.module.scss'
 
 export interface SearchResultsInfoBarProps
     extends ExtensionsControllerProps<'executeCommand' | 'extHostAPI'>,
-        PlatformContextProps<'forceUpdateTooltip' | 'settings'>,
+        PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sourcegraphURL'>,
         TelemetryProps,
         SearchPatternTypeProps,
         Pick<CaseSensitivityProps, 'caseSensitive'> {
@@ -257,29 +249,19 @@ export const SearchResultsInfoBar: React.FunctionComponent<
         [props.location, showActionButtonExperimentalVersion, props.onSaveQueryClick, props.telemetryService]
     )
 
-    const onExportSearchResultsClick = useCallback(() => {
-        console.log(props.query, props.patternType)
-        if (props.query && props.patternType) {
-            fetchSearchResults(props.query, props.patternType)
-        }
-    }, [props.query, props.patternType])
-
     const searchExportButton = useMemo(
         () => (
             <Tooltip content="Export search results as CVS file">
                 <li className={classNames('mr-2', styles.navItem)}>
-                    <button
-                        type="button"
-                        className="btn btn-sm btn-outline-secondary text-decoration-none"
-                        onClick={onExportSearchResultsClick}
-                    >
-                        <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
-                        Export Results
-                    </button>
+                    <ExportSearchResultsButton
+                        query={props.query}
+                        patternType={props.patternType}
+                        platformContext={props.platformContext}
+                    />
                 </li>
             </Tooltip>
         ),
-        [onExportSearchResultsClick]
+        [props.patternType, props.platformContext, props.query]
     )
 
     const extraContext = useMemo(
