@@ -1239,7 +1239,7 @@ func TestEventLogs_LatestPing(t *testing.T) {
 		if err != nil || gotPing == nil {
 			t.Fatal(err)
 		}
-		expectedPing := &types.Event{
+		expectedPing := &database.Event{
 			ID:              2,
 			Name:            events[1].Name,
 			URL:             events[1].URL,
