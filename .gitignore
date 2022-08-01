@@ -178,3 +178,12 @@ go.work.sum
 
 # binary
 /sg
+
+# New Yarn without using Zero-Installs (https://yarnpkg.com/getting-started/qa#which-files-should-be-gitignored)
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/sdks
+!.yarn/versions
