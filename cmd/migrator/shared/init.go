@@ -30,7 +30,7 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 })
 
 func Start() error {
-	args := os.Args[:]
+	args := os.Args
 	if len(args) == 1 {
 		args = append(args, "up")
 	}
