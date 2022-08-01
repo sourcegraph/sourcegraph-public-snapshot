@@ -29,17 +29,34 @@ var out = output.NewOutput(os.Stdout, output.OutputOpts{
 	ForceTTY:   true,
 })
 
-func Start() error {
-	args := os.Args
-	if len(args) == 1 {
-		args = append(args, "up")
+func Start(logger log.Logger) error {
+	observationContext := &observation.Context{
+		Logger:     logger,
+		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
+		Registerer: prometheus.DefaultRegisterer,
 	}
+	operations := store.NewOperations(observationContext)
 
-	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator v%s", version.Version()))
-
-	ctx := context.Background()
-	logger := log.Scoped("migrator.Start", "")
 	outputFactory := func() *output.Output { return out }
+
+	newRunnerWithSchemas := func(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
+		dsns, err := postgresdsn.DSNsBySchema(schemaNames)
+		if err != nil {
+			return nil, err
+		}
+		storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
+			return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
+		}
+		r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
+		if err != nil {
+			return nil, err
+		}
+
+		return cliutil.NewShim(r), nil
+	}
+	newRunner := func(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
+		return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
+	}
 
 	command := &cli.App{
 		Name:   appName,
@@ -57,33 +74,12 @@ func Start() error {
 		},
 	}
 
-	return command.RunContext(ctx, args)
-}
+	out.WriteLine(output.Linef(output.EmojiAsterisk, output.StyleReset, "Sourcegraph migrator v%s", version.Version()))
 
-func newRunner(ctx context.Context, schemaNames []string) (cliutil.Runner, error) {
-	return newRunnerWithSchemas(ctx, schemaNames, schemas.Schemas)
-}
-
-func newRunnerWithSchemas(ctx context.Context, schemaNames []string, schemas []*schemas.Schema) (cliutil.Runner, error) {
-	logger := log.Scoped("runner", "")
-	observationContext := &observation.Context{
-		Logger:     logger,
-		Tracer:     &trace.Tracer{Tracer: opentracing.GlobalTracer()},
-		Registerer: prometheus.DefaultRegisterer,
-	}
-	operations := store.NewOperations(observationContext)
-
-	dsns, err := postgresdsn.DSNsBySchema(schemaNames)
-	if err != nil {
-		return nil, err
-	}
-	storeFactory := func(db *sql.DB, migrationsTable string) connections.Store {
-		return connections.NewStoreShim(store.NewWithDB(db, migrationsTable, operations))
-	}
-	r, err := connections.RunnerFromDSNsWithSchemas(logger, dsns, appName, storeFactory, schemas)
-	if err != nil {
-		return nil, err
+	args := os.Args
+	if len(args) == 1 {
+		args = append(args, "up")
 	}
 
-	return cliutil.NewShim(r), nil
+	return command.RunContext(context.Background(), args)
 }

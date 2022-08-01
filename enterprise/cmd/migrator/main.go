@@ -17,7 +17,7 @@ func main() {
 
 	logger := log.Scoped("migrator", "migrator enterprise edition")
 
-	if err := shared.Start(); err != nil {
+	if err := shared.Start(logger); err != nil {
 		logger.Fatal(err.Error())
 	}
 }
