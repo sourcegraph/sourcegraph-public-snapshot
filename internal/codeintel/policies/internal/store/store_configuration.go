@@ -24,7 +24,6 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 		log.String("term", opts.Term),
 		log.Bool("forDataRetention", opts.ForDataRetention),
 		log.Bool("forIndexing", opts.ForIndexing),
-		log.Bool("forLockfileIndexing", opts.ForLockfileIndexing),
 		log.Int("limit", opts.Limit),
 		log.Int("offset", opts.Offset),
 	}})
@@ -50,9 +49,6 @@ func (s *store) GetConfigurationPolicies(ctx context.Context, opts shared.GetCon
 	}
 	if opts.ForIndexing {
 		conds = append(conds, sqlf.Sprintf("p.indexing_enabled"))
-	}
-	if opts.ForLockfileIndexing {
-		conds = append(conds, sqlf.Sprintf("p.lockfile_indexing_enabled"))
 	}
 	if len(conds) == 0 {
 		conds = append(conds, sqlf.Sprintf("TRUE"))
@@ -110,8 +106,7 @@ SELECT
 	p.retain_intermediate_commits,
 	p.indexing_enabled,
 	p.index_commit_max_age_hours,
-	p.index_intermediate_commits,
-	p.lockfile_indexing_enabled
+	p.index_intermediate_commits
 FROM lsif_configuration_policies p
 LEFT JOIN repo ON repo.id = p.repository_id
 WHERE %s
@@ -250,7 +245,6 @@ func scanConfigurationPolicy(s dbutil.Scanner) (configurationPolicy shared.Confi
 		&configurationPolicy.IndexingEnabled,
 		&indexCommitMaxAgeHours,
 		&configurationPolicy.IndexIntermediateCommits,
-		&configurationPolicy.LockfileIndexingEnabled,
 	); err != nil {
 		return configurationPolicy, err
 	}
