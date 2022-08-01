@@ -7,6 +7,10 @@ import (
 
 	"github.com/lib/pq"
 
+	"github.com/sourcegraph/sourcegraph/internal/metrics"
+
+	"github.com/sourcegraph/sourcegraph/internal/observation"
+
 	"github.com/sourcegraph/sourcegraph/internal/database/basestore"
 
 	"github.com/keegancsmith/sqlf"
@@ -407,12 +411,19 @@ func TestHandleInvalidConfig(t *testing.T) {
 
 	confClient.Mock(&conf.Unified{SiteConfiguration: validEnabledConfiguration()})
 
+	obsContext := &observation.Context{
+		Logger:       logger,
+		Tracer:       nil,
+		Registerer:   metrics.TestRegisterer,
+		HoneyDataset: nil,
+	}
+
 	t.Run("handle fails when missing project name", func(t *testing.T) {
 		config := validEnabledConfiguration()
 		config.ExportUsageTelemetry.TopicProjectName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler())
+		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing project name", "getTopicConfig: missing project name to export usage data").Equal(t, err.Error())
@@ -422,7 +433,7 @@ func TestHandleInvalidConfig(t *testing.T) {
 		config.ExportUsageTelemetry.TopicName = ""
 		confClient.Mock(&conf.Unified{SiteConfiguration: config})
 
-		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler())
+		handler := newTelemetryHandler(logger, db.EventLogs(), db.UserEmails(), db.GlobalState(), bookmarkStore, noopHandler(), newHandlerMetrics(obsContext))
 		err := handler.Handle(ctx)
 
 		autogold.Want("handle fails when missing topic name", "getTopicConfig: missing topic name to export usage data").Equal(t, err.Error())
@@ -593,13 +604,21 @@ func mockTelemetryHandler(t *testing.T, callbackFunc sendEventsCallbackFunc) *te
 	bms := NewMockBookmarkStore()
 	bms.GetBookmarkFunc.SetDefaultReturn(0, nil)
 
+	logger := logtest.Scoped(t)
+
+	obsContext := &observation.Context{
+		Logger:     logger,
+		Registerer: metrics.TestRegisterer,
+	}
+
 	return &telemetryHandler{
-		logger:             logtest.Scoped(t),
+		logger:             logger,
 		eventLogStore:      database.NewMockEventLogStore(),
 		globalStateStore:   database.NewMockGlobalStateStore(),
 		userEmailsStore:    database.NewMockUserEmailsStore(),
 		bookmarkStore:      bms,
 		sendEventsCallback: callbackFunc,
+		metrics:            newHandlerMetrics(obsContext),
 	}
 }
 
