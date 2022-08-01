@@ -224,6 +224,11 @@ func serializeLocalEvents(events []Event) ([]*database.Event, error) {
 			EvaluatedFlagSet: event.EvaluatedFlagSet,
 			CohortID:         event.CohortID,
 			PublicArgument:   event.PublicArgument,
+			FirstSourceURL:   event.FirstSourceURL,
+			LastSourceURL:    event.LastSourceURL,
+			Referrer:         event.Referrer,
+			DeviceID:         event.DeviceID,
+			InsertID:         event.InsertID,
 		})
 	}
 

@@ -188,6 +188,11 @@ type Event struct {
 	Timestamp        time.Time
 	EvaluatedFlagSet featureflag.EvaluatedFlagSet
 	CohortID         *string // date in YYYY-MM-DD format
+	FirstSourceURL   *string
+	LastSourceURL    *string
+	Referrer         *string
+	DeviceID         *string
+	InsertID         *string
 }
 
 func (l *eventLogStore) Insert(ctx context.Context, e *Event) error {
@@ -225,6 +230,11 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			event.Timestamp.UTC(),
 			featureFlags,
 			event.CohortID,
+			event.FirstSourceURL,
+			event.LastSourceURL,
+			event.Referrer,
+			event.DeviceID,
+			event.InsertID,
 		}
 	}
 	close(rowValues)
@@ -246,6 +256,11 @@ func (l *eventLogStore) BulkInsert(ctx context.Context, events []*Event) error {
 			"timestamp",
 			"feature_flags",
 			"cohort_id",
+			"first_source_url",
+			"last_source_url",
+			"referrer",
+			"device_id",
+			"insert_id",
 		},
 		rowValues,
 	)
