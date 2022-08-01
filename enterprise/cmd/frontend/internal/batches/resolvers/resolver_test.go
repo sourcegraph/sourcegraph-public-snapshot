@@ -1112,11 +1112,11 @@ func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
 	s, err := newSchema(db, r)
 	require.NoError(t, err)
 
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 
 	falsy := overridable.FromBoolOrString(false)
 	batchSpec := &btypes.BatchSpec{
-		RawSpec: ct.TestRawBatchSpec,
+		RawSpec: bt.TestRawBatchSpec,
 		Spec: &batcheslib.BatchSpec{
 			Name:        "my-batch-change",
 			Description: "My description",
@@ -2378,7 +2378,7 @@ func TestMaxUnlicensedChangesets(t *testing.T) {
 
 	logger := logtest.Scoped(t)
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
-	userID := ct.CreateTestUser(t, db, true).ID
+	userID := bt.CreateTestUser(t, db, true).ID
 
 	var response struct{ MaxUnlicensedChangesets int32 }
 	actorCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
