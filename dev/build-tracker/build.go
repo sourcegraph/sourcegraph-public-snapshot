@@ -19,16 +19,11 @@ func (b *Build) hasFailed() bool {
 
 func (b *Build) isFinished() bool {
 	switch b.state() {
-	case "passed":
-		fallthrough
-	case "failed":
-		fallthrough
-	case "blocked":
-		fallthrough
-	case "canceled":
+	case "passed", "failed", "blocked", "canceled":
 		return true
+	default:
+		return false
 	}
-	return false
 }
 
 func (b *Build) authorName() string {
