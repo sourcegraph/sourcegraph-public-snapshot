@@ -15,8 +15,7 @@ import (
 
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/codeintel"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/gitserver"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
-	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations/migrators"
+	workermigrations "github.com/sourcegraph/sourcegraph/cmd/worker/internal/migrations"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/internal/webhooks"
 	"github.com/sourcegraph/sourcegraph/cmd/worker/job"
 	"github.com/sourcegraph/sourcegraph/internal/conf"
@@ -28,6 +27,7 @@ import (
 	"github.com/sourcegraph/sourcegraph/internal/httpserver"
 	"github.com/sourcegraph/sourcegraph/internal/logging"
 	"github.com/sourcegraph/sourcegraph/internal/oobmigration"
+	"github.com/sourcegraph/sourcegraph/internal/oobmigration/migrations"
 	"github.com/sourcegraph/sourcegraph/internal/profiler"
 	"github.com/sourcegraph/sourcegraph/internal/trace"
 	"github.com/sourcegraph/sourcegraph/internal/tracer"
@@ -38,11 +38,11 @@ const addr = ":3189"
 
 // Start runs the worker.
 func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpriseMigrations func(db database.DB, outOfBandMigrationRunner *oobmigration.Runner) error) error {
-	registerMigrations := composeRegisterMigrations(migrators.RegisterOSSMigrations, registerEnterpriseMigrations)
+	registerMigrations := composeRegisterMigrations(migrations.RegisterOSSMigrations, registerEnterpriseMigrations)
 
 	builtins := map[string]job.Job{
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
-		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
+		"out-of-band-migrations":                workermigrations.NewMigrator(registerMigrations),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
