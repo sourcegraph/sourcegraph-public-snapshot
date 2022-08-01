@@ -308,7 +308,6 @@ func sendEvents(ctx context.Context, events []*database.Event, config topicConfi
 	if err != nil {
 		return errors.Wrap(err, "json.Marshal")
 	}
-	log15.Info("sendevents", "msg", string(marshal))
 
 	topic := client.Topic(config.topicName)
 	defer topic.Stop()
