@@ -421,7 +421,7 @@
     "eventsource": "1.1.1",
     "focus-visible": "^5.2.0",
     "fzy.js": "^0.4.1",
-    "got": "^11.5.2",
+    "got": "^11.8.5",
     "graphiql": "^1.8.0",
     "highlight.js": "^10.5.0",
     "highlightjs-graphql": "^1.0.2",

@@ -3905,12 +3905,7 @@
   resolved "https://registry.npmjs.org/@sindresorhus/is/-/is-0.14.0.tgz#9fb3a3cf3132328151f353de4632e01e52102bea"
   integrity sha512-9NET910DNaIPngYnLLPeg+Ogzqsi9uM4mSboU5y6p8S5DzMTVEsJZrawi+BoDNUVBa2DhJqQYUFvMDfgU062LQ==
 
-"@sindresorhus/is@^3.0.0":
-  version "3.0.0"
-  resolved "https://registry.npmjs.org/@sindresorhus/is/-/is-3.0.0.tgz#78fabc5e295adb6e1ef57eaafe4cc5d7aa35b183"
-  integrity sha512-kqA5I6Yun7PBHk8WN9BBP1c7FfN2SrD05GuVSEYPqDb4nerv7HqYfgBfMIKmT/EuejURkJKLZuLyGKGs6WEG9w==
-
-"@sindresorhus/is@^4.6.0":
+"@sindresorhus/is@^4.0.0", "@sindresorhus/is@^4.6.0":
   version "4.6.0"
   resolved "https://registry.npmjs.org/@sindresorhus/is/-/is-4.6.0.tgz#3c7c9c46e678feefe7a2e5bb609d3dbd665ffb3f"
   integrity sha512-t09vSN3MdfsyCHoFcTRCH/iUtG7OJ0CsjzB8cjAmKc/va/kIgeDI/TxsigdncE/4be734m0cvIYwNaV4i2XqAw==
@@ -8619,7 +8614,7 @@ cacheable-request@^6.0.0:
     normalize-url "^4.1.0"
     responselike "^1.0.2"
 
-cacheable-request@^7.0.1, cacheable-request@^7.0.2:
+cacheable-request@^7.0.2:
   version "7.0.2"
   resolved "https://registry.npmjs.org/cacheable-request/-/cacheable-request-7.0.2.tgz#ea0d0b889364a25854757301ca12b2da77f91d27"
   integrity sha512-pouW8/FmiPQbuGpkXQ9BAPv/Mo5xDGANgSNXzTzJ8DrKGuXOssM4wIQRjfanNRh3Yu5cfYPvcorqbhg2KIJtew==
@@ -13922,19 +13917,19 @@ googleapis@^47.0.0:
     google-auth-library "^5.6.1"
     googleapis-common "^3.2.0"
 
-got@^11.5.2:
-  version "11.5.2"
-  resolved "https://registry.npmjs.org/got/-/got-11.5.2.tgz#772e3f3a06d9c7589c7c94dc3c83cdb31ddbf742"
-  integrity sha512-yUhpEDLeuGiGJjRSzEq3kvt4zJtAcjKmhIiwNp/eUs75tRlXfWcHo5tcBaMQtnjHWC7nQYT5HkY/l0QOQTkVww==
+got@^11.8.5:
+  version "11.8.5"
+  resolved "https://registry.npmjs.org/got/-/got-11.8.5.tgz#ce77d045136de56e8f024bebb82ea349bc730046"
+  integrity sha512-o0Je4NvQObAuZPHLFoRSkdG2lTgtcynqymzg2Vupdx6PorhaT5MCbIyXG6d4D94kk8ZG57QeosgdiqfJWhEhlQ==
   dependencies:
-    "@sindresorhus/is" "^3.0.0"
+    "@sindresorhus/is" "^4.0.0"
     "@szmarczak/http-timer" "^4.0.5"
     "@types/cacheable-request" "^6.0.1"
     "@types/responselike" "^1.0.0"
     cacheable-lookup "^5.0.3"
-    cacheable-request "^7.0.1"
+    cacheable-request "^7.0.2"
     decompress-response "^6.0.0"
-    http2-wrapper "^1.0.0-beta.5.0"
+    http2-wrapper "^1.0.0-beta.5.2"
     lowercase-keys "^2.0.0"
     p-cancelable "^2.0.0"
     responselike "^2.0.0"
@@ -14771,10 +14766,10 @@ http-status-codes@^2.1.4:
   resolved "https://registry.npmjs.org/http-status-codes/-/http-status-codes-2.1.4.tgz#453d99b4bd9424254c4f6a9a3a03715923052798"
   integrity sha512-MZVIsLKGVOVE1KEnldppe6Ij+vmemMuApDfjhVSLzyYP+td0bREEYyAoIw9yFePoBXManCuBqmiNP5FqJS5Xkg==
 
-http2-wrapper@^1.0.0-beta.5.0:
-  version "1.0.0-beta.5.2"
-  resolved "https://registry.npmjs.org/http2-wrapper/-/http2-wrapper-1.0.0-beta.5.2.tgz#8b923deb90144aea65cf834b016a340fc98556f3"
-  integrity sha512-xYz9goEyBnC8XwXDTuC/MZ6t+MrKVQZOk4s7+PaDkwIsQd8IwqvM+0M6bA/2lvG8GHXcPdf+MejTUeO2LCPCeQ==
+http2-wrapper@^1.0.0-beta.5.2:
+  version "1.0.3"
+  resolved "https://registry.npmjs.org/http2-wrapper/-/http2-wrapper-1.0.3.tgz#b8f55e0c1f25d4ebd08b3b0c2c079f9590800b3d"
+  integrity sha512-V+23sDMr12Wnz7iTcDeJr3O6AIxlnvT/bmaAAAP/Xda35C90p9599p0F1eHR/N1KILWSoWVAiOMFjBBXaXSMxg==
   dependencies:
     quick-lru "^5.1.1"
     resolve-alpn "^1.0.0"
@@ -21998,12 +21993,12 @@ safe-buffer@5.1.1:
   resolved "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.1.tgz#893312af69b2123def71f57889001671eeb2c853"
   integrity sha512-kKvNJn6Mm93gAczWVJg7wH+wGYWNrDHdWvpUmHyEsgCtIwwo3bqPtV4tR5tuPaUhTOo/kvhVwd8XwwOllGYkbg==
 
-safe-buffer@5.1.2, safe-buffer@>=5.1.0, safe-buffer@^5.0.1, safe-buffer@^5.1.0, safe-buffer@^5.1.2, safe-buffer@~5.1.0, safe-buffer@~5.1.1:
+safe-buffer@5.1.2, safe-buffer@~5.1.0, safe-buffer@~5.1.1:
   version "5.1.2"
   resolved "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.1.2.tgz#991ec69d296e0313747d59bdfd2b745c35f8828d"
   integrity sha512-Gd2UZBJDkXlY7GbJxfsE8/nvKkUEU1G38c1siN6QP6a9PT9MmHB8GnpscSmMJSoF8LOIrt8ud/wPtojys4G6+g==
 
-safe-buffer@5.2.1:
+safe-buffer@5.2.1, safe-buffer@>=5.1.0, safe-buffer@^5.0.1, safe-buffer@^5.1.0, safe-buffer@^5.1.2:
   version "5.2.1"
   resolved "https://registry.npmjs.org/safe-buffer/-/safe-buffer-5.2.1.tgz#1eaf9fa9bdb1fdd4ec75f58f9cdb4e6b7827eec6"
   integrity sha512-rp3So07KcdmmKbGvgaNxQSJr7bGVSVk5S9Eq1F+ppbRo70+YeaDxkw5Dd8NPN+GD6bjnYm2VuPuCXmpuYvmCXQ==
