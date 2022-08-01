@@ -1,7 +1,11 @@
+import { useContext, useState } from 'react'
+
 import { mdiDownload } from '@mdi/js'
 
+import { NotificationType } from '@sourcegraph/extension-api-classes'
 import { gql, useLazyQuery } from '@sourcegraph/http-client'
 import { SearchPatternTypeProps } from '@sourcegraph/search'
+import { NotificationContext } from '@sourcegraph/shared/src/notifications/Notifications'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Button, Icon } from '@sourcegraph/wildcard'
 
@@ -77,6 +81,8 @@ function truncateMatches(searchMatches: string): string {
 }
 
 export const ExportSearchResultsButton: React.FC<Props> = ({ query, patternType, platformContext }) => {
+    const { addNotification } = useContext(NotificationContext)
+    const [csv, setCsv] = useState<string>('')
     const [fetchCSV] = useLazyQuery<any, any>(searchResultsQuery, {
         variables: { query, patternType },
         onCompleted: data => {
@@ -136,7 +142,17 @@ export const ExportSearchResultsButton: React.FC<Props> = ({ query, patternType,
                 }),
             ]
             const encodedData = encodeURIComponent(csvData.map(row => row.join(',')).join('\n'))
-            console.log(encodedData)
+            const downloadFilename = `sourcegraph-search-export-${query.replace(/\W/g, '-')}.csv`
+            addNotification({
+                type: NotificationType.Success,
+                message: `Search results export is complete.\n\n<a href="data:text/csv;charset=utf-8,${encodedData}" download="${downloadFilename}"><strong>Download CSV</strong></a>`,
+            })
+            // sourcegraph.app.activeWindow?.showNotification(
+            //     `Search results export is complete.\n\n<a href="data:text/csv;charset=utf-8,${encodedData}" download="${downloadFilename}"><strong>Download CSV</strong></a>`,
+            //     sourcegraph.NotificationType.Success
+            // )
+            // setCsv(encodedData)
+            // console.log(encodedData)
 
             // const element = document.createElement('a')
             // element.setAttribute('href', 'data:text/csv;charset=utf-8,' + encodedData)
@@ -149,14 +165,16 @@ export const ExportSearchResultsButton: React.FC<Props> = ({ query, patternType,
     })
 
     return (
-        <Button
-            className="btn btn-sm btn-outline-secondary text-decoration-none"
-            variant="secondary"
-            outline={true}
-            onClick={() => fetchCSV()}
-        >
-            <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
-            Export Results
-        </Button>
+        <>
+            <Button
+                className="btn btn-sm btn-outline-secondary text-decoration-none"
+                variant="secondary"
+                outline={true}
+                onClick={() => fetchCSV()}
+            >
+                <Icon aria-hidden={true} className="mr-1" svgPath={mdiDownload} />
+                Export Results
+            </Button>
+        </>
     )
 }

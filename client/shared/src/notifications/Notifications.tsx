@@ -21,17 +21,53 @@ export interface NotificationsProps
     extends ExtensionsControllerProps,
         Pick<NotificationItemProps, 'notificationItemStyleProps'> {}
 
+interface NotificationWithId extends Notification {
+    id: string
+}
+
 interface NotificationsState {
     // TODO(tj): use remote progress observable type
-    notifications: (Notification & { id: string })[]
+    notifications: NotificationWithId[]
 }
 
 const HAS_NOTIFICATIONS_CONTEXT_KEY = 'hasNotifications'
+
+export const NotificationContext = React.createContext<{
+    notifications: NotificationWithId[]
+    addNotification: (notification: Notification) => void
+    removeNotification: (notification: NotificationWithId) => void
+}>({
+    notifications: [],
+    addNotification: () => {},
+    removeNotification: () => {},
+})
+
+export const NotificationContextProvider: React.FC<React.PropsWithChildren<{}>> = ({ children }) => {
+    const [notifications, setNotifications] = React.useState<(Notification & { id: string })[]>([])
+    const addNotification = React.useCallback(
+        (notification: Notification) =>
+            setNotifications(current => [...current, { ...notification, id: uniqueId('n') }]),
+        [setNotifications]
+    )
+    const removeNotification = React.useCallback(
+        (notification: Notification) => setNotifications(current => current.filter(item => item !== notification)),
+        [setNotifications]
+    )
+
+    return (
+        <NotificationContext.Provider value={{ notifications, addNotification, removeNotification }}>
+            {children}
+        </NotificationContext.Provider>
+    )
+}
 
 /**
  * A notifications center that displays global, non-modal messages.
  */
 export class Notifications extends React.PureComponent<NotificationsProps, NotificationsState> {
+    public static contextType = NotificationContext
+    public context!: React.ContextType<typeof NotificationContext>
+
     /**
      * The maximum number of notifications at a time. Older notifications are truncated when the length exceeds
      * this number.
@@ -188,9 +224,11 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     }
 
     public render(): JSX.Element | null {
+        const notifications = [...this.context.notifications, ...this.state.notifications]
+
         return (
             <div className={styles.sourcegraphNotifications} ref={this.notificationsReference}>
-                {this.state.notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
+                {notifications.slice(0, Notifications.MAX_RETAIN).map(notification => (
                     <NotificationItem
                         key={notification.id}
                         notification={notification}
@@ -204,8 +242,14 @@ export class Notifications extends React.PureComponent<NotificationsProps, Notif
     }
 
     private onDismiss = (dismissedNotification: Notification): void => {
-        this.setState(previousState => ({
-            notifications: previousState.notifications.filter(notification => notification !== dismissedNotification),
-        }))
+        if (this.context.notifications.includes(dismissedNotification)) {
+            this.context.removeNotification(dismissedNotification)
+        } else {
+            this.setState(previousState => ({
+                notifications: previousState.notifications.filter(
+                    notification => notification !== dismissedNotification
+                ),
+            }))
+        }
     }
 }
