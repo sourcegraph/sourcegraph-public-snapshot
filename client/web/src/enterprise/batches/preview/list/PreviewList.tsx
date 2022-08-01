@@ -5,13 +5,12 @@ import * as H from 'history'
 import { tap } from 'rxjs/operators'
 
 import { ThemeProps } from '@sourcegraph/shared/src/theme'
-import { Alert, Container, Icon } from '@sourcegraph/wildcard'
+import { Container, Icon } from '@sourcegraph/wildcard'
 
 import { DismissibleAlert } from '../../../../components/DismissibleAlert'
 import { FilteredConnection, FilteredConnectionQueryArguments } from '../../../../components/FilteredConnection'
 import { BatchSpecApplyPreviewVariables, ChangesetApplyPreviewFields, Scalars } from '../../../../graphql-operations'
 import { MultiSelectContext } from '../../MultiSelectContext'
-import { useBatchChangesLicense } from '../../useBatchChangesLicense'
 import { BatchChangePreviewContext } from '../BatchChangePreviewContext'
 import { PreviewPageAuthenticatedUser } from '../BatchChangePreviewPage'
 import { filterPublishableIDs } from '../utils'
@@ -124,8 +123,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
         ]
     )
 
-    const { maxUnlicensedChangesets, exceedsLicense } = useBatchChangesLicense()
-
     const showSelectRow = selected === 'all' || selected.size > 0
 
     return (
@@ -137,17 +134,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
                 />
             ) : (
                 <PreviewFilterRow history={history} location={location} />
-            )}
-            {exceedsLicense(totalCount) && (
-                <Alert variant="warning">
-                    <div className="mb-2">
-                        <strong>
-                            Your license only allows for {maxUnlicensedChangesets} changesets per batch change
-                        </strong>
-                    </div>
-                    Since more than {maxUnlicensedChangesets} changesets are generated, you won't be able to apply the
-                    batch change and actually publish the changesets to the code host.
-                </Alert>
             )}
             <PublicationStatesUpdateAlerts />
             <FilteredConnection<
