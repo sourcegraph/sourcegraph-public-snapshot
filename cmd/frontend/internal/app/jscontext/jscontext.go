@@ -104,7 +104,6 @@ type JSContext struct {
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
-	CodeIntelLockfileIndexingEnabled         bool `json:"codeIntelLockfileIndexingEnabled"`
 
 	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
@@ -113,6 +112,8 @@ type JSContext struct {
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
+
+	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -176,6 +177,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
+	var enableLegacyExtensions = true
+	if siteConfig.ExperimentalFeatures != nil {
+		enableLegacyExtensions = siteConfig.ExperimentalFeatures.EnableLegacyExtensions
+	}
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -232,13 +237,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
-		CodeIntelLockfileIndexingEnabled:         conf.CodeIntelLockfileIndexingEnabled(),
 
 		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
+
+		EnableLegacyExtensions: enableLegacyExtensions,
 	}
 }
 

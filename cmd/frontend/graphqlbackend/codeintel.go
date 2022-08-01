@@ -302,7 +302,6 @@ type CodeIntelConfigurationPolicy struct {
 	IndexingEnabled           bool
 	IndexCommitMaxAgeHours    *int32
 	IndexIntermediateCommits  bool
-	LockfileIndexingEnabled   bool
 }
 
 type CodeIntelligenceConfigurationPoliciesArgs struct {
@@ -402,7 +401,6 @@ type CodeIntelligenceConfigurationPolicyResolver interface {
 	IndexingEnabled() bool
 	IndexCommitMaxAgeHours() *int32
 	IndexIntermediateCommits() bool
-	LockfileIndexingEnabled() bool
 }
 
 type CodeIntelligenceRetentionPolicyMatchesConnectionResolver interface {

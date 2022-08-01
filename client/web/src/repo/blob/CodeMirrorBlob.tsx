@@ -6,18 +6,27 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { EditorState, Extension } from '@codemirror/state'
 import { EditorView } from '@codemirror/view'
-import { useHistory, useLocation } from 'react-router'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
-import { BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
+
+import { blameDecorationType, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
+import { locationField, updateLocation } from './codemirror'
+import {
+    enableExtensionsDecorationsColumnView as enableColumnView,
+    showTextDocumentDecorations,
+} from './codemirror/decorations'
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
+import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
 
 const staticExtensions: Extension = [
-    EditorView.editable.of(false),
+    // Using EditorState.readOnly instead of EditorView.editable allows us to
+    // focus the editor and placing a text cursor
+    EditorState.readOnly.of(true),
     editorHeight({ height: '100%' }),
     EditorView.theme({
         '&': {
@@ -27,6 +36,10 @@ const staticExtensions: Extension = [
         },
         '.selected-line': {
             backgroundColor: 'var(--code-selection-bg)',
+        },
+        '.cm-gutters': {
+            backgroundColor: 'initial',
+            borderRight: 'initial',
         },
     }),
 ]
@@ -38,18 +51,33 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
     isLightTheme,
     ariaLabel,
     role,
+    extensionsController,
+    settingsCascade,
+    location,
+    history,
+    blameDecorations,
+
+    // These props don't have to be supported yet because the CodeMirror blob
+    // view is only used on the blob page where these are always true
+    // disableStatusBar
+    // disableDecorations
 }) => {
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
+    const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
+
     const settings = useMemo(
-        () => [wrapCode ? EditorView.lineWrapping : [], EditorView.darkTheme.of(isLightTheme === false)],
-        [wrapCode, isLightTheme]
+        () => [
+            wrapCode ? EditorView.lineWrapping : [],
+            EditorView.darkTheme.of(isLightTheme === false),
+            locationField.init(() => location),
+            // Force column view if blameDecorations is set
+            enableColumnView.of(!!blameDecorations || enableExtensionsDecorationsColumnView),
+            blameDecorations ? showTextDocumentDecorations.of([[blameDecorationType, blameDecorations]]) : [],
+        ],
+        [wrapCode, isLightTheme, location, enableExtensionsDecorationsColumnView, blameDecorations]
     )
-
     const [settingsCompartment, updateSettingsCompartment] = useCompartment(settings)
-
-    const history = useHistory()
-    const location = useLocation()
 
     // Keep history and location in a ref so that we can use the latest value in
     // the onSelection callback without having to recreate it and having to
@@ -83,12 +111,13 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
 
     const extensions = useMemo(
         () => [
+            selectableLineNumbers({ onSelection }),
             staticExtensions,
             settingsCompartment,
-            selectableLineNumbers({ onSelection }),
-            syntaxHighlight(blobInfo.lsif),
+            syntaxHighlight.of(blobInfo),
+            sourcegraphExtensions({ blobInfo, extensionsController }),
         ],
-        [settingsCompartment, onSelection, blobInfo]
+        [settingsCompartment, onSelection, blobInfo, extensionsController]
     )
 
     const editor = useCodeMirror(container, blobInfo.content, extensions, {
@@ -98,9 +127,21 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
 
     useEffect(() => {
         if (editor) {
+            updateLocation(editor, location)
+        }
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [location])
+
+    useEffect(() => {
+        if (editor) {
             updateSettingsCompartment(editor, settings)
         }
-    }, [editor, updateSettingsCompartment, settings])
+        // editor is not provided because this should only be triggered after the
+        // editor was created (i.e. not on first render)
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [updateSettingsCompartment, settings])
 
     useEffect(() => {
         if (editor) {

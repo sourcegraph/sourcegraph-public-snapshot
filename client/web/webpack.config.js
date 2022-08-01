@@ -25,7 +25,6 @@ const {
   getMonacoTTFRule,
   getBasicCSSLoader,
   getStatoscopePlugin,
-  STATOSCOPE_STATS,
 } = require('@sourcegraph/build-config')
 
 const { IS_PRODUCTION, IS_DEVELOPMENT, ENVIRONMENT_CONFIG } = require('./dev/utils')
@@ -76,15 +75,13 @@ const extensionHostWorker = /main\.worker\.ts$/
 const config = {
   context: __dirname, // needed when running `gulp webpackDevServer` from the root dir
   mode: IS_PRODUCTION ? 'production' : 'development',
-  stats: WEBPACK_BUNDLE_ANALYZER
-    ? STATOSCOPE_STATS
-    : {
-        // Minimize logging in case if Webpack is used along with multiple other services.
-        // Use `normal` output preset in case of running standalone web server.
-        preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
-        errorDetails: true,
-        timings: true,
-      },
+  stats: {
+    // Minimize logging in case if Webpack is used along with multiple other services.
+    // Use `normal` output preset in case of running standalone web server.
+    preset: WEBPACK_SERVE_INDEX || IS_PRODUCTION ? 'normal' : 'errors-warnings',
+    errorDetails: true,
+    timings: true,
+  },
   infrastructureLogging: {
     // Controls webpack-dev-server logging level.
     level: 'warn',
@@ -215,7 +212,7 @@ const config = {
           {
             loader: 'babel-loader',
             options: {
-              cacheDirectory: true,
+              cacheDirectory: !IS_PRODUCTION,
               ...(isHotReloadEnabled && { plugins: ['react-refresh/babel'] }),
             },
           },

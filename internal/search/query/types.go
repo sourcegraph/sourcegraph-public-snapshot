@@ -428,26 +428,6 @@ func (p Parameters) Exists(field string) bool {
 	return found
 }
 
-func (p Parameters) Dependencies() (preds []RepoDependenciesPredicate) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "dependencies" || name == "deps") {
-			var pred RepoDependenciesPredicate
-			pred.ParseParams(value)
-			preds = append(preds, pred)
-		}
-	})
-	return preds
-}
-
-func (p Parameters) Dependents() (dependents []string) {
-	VisitPredicate(toNodes(p), func(field, name, value string) {
-		if field == FieldRepo && (name == "revdeps" || name == "dependents") {
-			dependents = append(dependents, value)
-		}
-	})
-	return dependents
-}
-
 func (p Parameters) RepoHasDescription() (descriptionPatterns []string) {
 	VisitTypedPredicate(toNodes(p), func(pred *RepoHasDescriptionPredicate, _ bool) {
 		split := strings.Split(pred.Pattern, " ")

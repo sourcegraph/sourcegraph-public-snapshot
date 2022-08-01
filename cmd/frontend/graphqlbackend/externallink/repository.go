@@ -43,7 +43,7 @@ func FileOrDir(ctx context.Context, db database.DB, repo *types.Repo, rev, path 
 	phabRepo, link, serviceType := linksForRepository(ctx, db, repo)
 	if phabRepo != nil {
 		// We need a branch name to construct the Phabricator URL.
-		branchName, _, err := gitserver.NewClient(db).GetDefaultBranchShort(ctx, repo.Name)
+		branchName, _, err := gitserver.NewClient(db).GetDefaultBranch(ctx, repo.Name, true)
 		if err == nil && branchName != "" {
 			links = append(links, NewResolver(
 				fmt.Sprintf("%s/source/%s/browse/%s/%s;%s", strings.TrimSuffix(phabRepo.URL, "/"), phabRepo.Callsign, url.PathEscape(branchName), path, rev),

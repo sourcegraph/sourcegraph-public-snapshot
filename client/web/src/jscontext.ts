@@ -112,9 +112,6 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
     /** Whether global policies are enabled for auto-indexing. */
     codeIntelAutoIndexingAllowGlobalPolicies: boolean
 
-    /** Whether the lockfile-indexer feature is enabled on the site. */
-    codeIntelLockfileIndexingEnabled: boolean
-
     /** Whether the new gql api for code insights is enabled. */
     codeInsightsGqlApiEnabled: boolean
 
@@ -162,6 +159,9 @@ export interface SourcegraphContext extends Pick<Required<SiteConfiguration>, 'e
 
     /** The publishable key for the billing service (Stripe). */
     billingPublishableKey?: string
+
+    /** Whether the extension registry and the use of extensions are enabled. (Doesn't affect code intel and git extras.) */
+    enableLegacyExtensions?: boolean
 
     /** Prompt users with browsers that would crash to download a modern browser. */
     RedirectUnsupportedBrowser?: boolean

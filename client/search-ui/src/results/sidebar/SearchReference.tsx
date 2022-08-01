@@ -209,22 +209,6 @@ To use this filter, the search query must contain \`type:diff\` or \`type:commit
         showSuggestions: false,
     },
     {
-        ...createQueryExampleFromString('dependencies({regex-pattern})'),
-        field: FilterType.repo,
-        description:
-            'Search inside repositories that are dependencies of repositories matched by the provided regex pattern. This parameter is experimental.',
-        examples: ['repo:deps(^github\\.com/sourcegraph/sourcegraph$@3.36:3.35)'],
-        showSuggestions: false,
-    },
-    {
-        ...createQueryExampleFromString('dependents({regex-pattern})'),
-        field: FilterType.repo,
-        description:
-            'Search inside repositories that depend on repositories matched by the provided regex pattern. This parameter is experimental.',
-        examples: ['repo:revdeps(^go/github\\.com/google/go-cmp$@v0.5.8)'],
-        showSuggestions: true,
-    },
-    {
         ...createQueryExampleFromString('has.description({regex-pattern})'),
         field: FilterType.repo,
         description: 'Search inside repositories that have a description matched by the provided regex pattern.',
