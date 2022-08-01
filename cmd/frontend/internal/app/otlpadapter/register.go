@@ -2,21 +2,11 @@ package otlpadapter
 
 import (
 	"context"
-	"net/http"
-	"net/http/httputil"
 	"net/url"
-	"path"
 
 	"github.com/gorilla/mux"
 	"github.com/sourcegraph/log"
-	"github.com/sourcegraph/log/std"
 	"go.opentelemetry.io/collector/component"
-	"go.opentelemetry.io/collector/config"
-	"go.opentelemetry.io/collector/config/confighttp"
-	"go.opentelemetry.io/collector/config/configtls"
-	"go.opentelemetry.io/collector/exporter/otlpexporter"
-	"go.opentelemetry.io/collector/exporter/otlphttpexporter"
-	"go.opentelemetry.io/collector/receiver/otlpreceiver"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
 
@@ -27,41 +17,17 @@ import (
 // Register sets up adapter services and registers proxies on the router.
 func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol, endpoint string, r *mux.Router) {
 	// Build an OTLP exporter that exports directly to the desired protocol and endpoint
-	var (
-		exporterFactory      component.ExporterFactory
-		signalExporterConfig config.Exporter
-	)
-	switch protocol {
-	case otlpenv.ProtocolGRPC:
-		exporterFactory = otlpexporter.NewFactory()
-		config := exporterFactory.CreateDefaultConfig().(*otlpexporter.Config)
-		config.GRPCClientSettings.Endpoint = endpoint
-		config.GRPCClientSettings.TLSSetting = configtls.TLSClientSetting{
-			Insecure: otlpenv.IsInsecure(endpoint),
-		}
-		signalExporterConfig = config
-
-	case otlpenv.ProtocolHTTPJSON:
-		exporterFactory = otlphttpexporter.NewFactory()
-		config := exporterFactory.CreateDefaultConfig().(*otlphttpexporter.Config)
-		config.HTTPClientSettings.Endpoint = endpoint
-		signalExporterConfig = config
-
-	default:
-		logger.Fatal("unexpected protocol")
+	exporterFactory, signalExporterConfig, err := newExporter(protocol, endpoint)
+	if err != nil {
+		logger.Fatal("newExporter", log.Error(err))
 	}
 
 	// Receive OTLP http/json signals
-	receiverEndpoint, err := url.Parse("http://127.0.0.1:4319")
+	receiverURL, err := url.Parse("http://127.0.0.1:4319")
 	if err != nil {
 		logger.Fatal("unreachable", log.Error(err))
 	}
-	receiverFactory := otlpreceiver.NewFactory()
-	signalReceiverConfig := receiverFactory.CreateDefaultConfig().(*otlpreceiver.Config)
-	signalReceiverConfig.GRPC = nil // disable gRPC receiver, we don't need it
-	signalReceiverConfig.HTTP = &confighttp.HTTPServerSettings{
-		Endpoint: receiverEndpoint.Host,
-	}
+	receiverFactory, signalReceiverConfig := newReceiver(receiverURL)
 
 	// Set up shared configuration for creating signal exporters and receivers - telemetry
 	// fields are required.
@@ -128,31 +94,6 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 
 	// Finally, spin up redirectors for each signal and set up the appropriate endpoints.
 	for _, otelSignal := range otelSignals {
-		otelSignal := otelSignal // copy lol
-
-		adapterLogger := logger.Scoped(path.Base(otelSignal.PathPrefix), "OpenTelemetry signal-specific tunnel")
-
-		// Set up an http/json -> ${configured_protocol} adapter
-		adapter, err := otelSignal.CreateAdapter()
-		if err != nil {
-			adapterLogger.Fatal("CreateAdapter", log.Error(err))
-		}
-		if err := adapter.Start(ctx, &otelHost{logger: logger}); err != nil {
-			adapterLogger.Fatal("adapter.Start", log.Error(err))
-		}
-
-		// The redirector starts up a receiver service running at receiverEndpoint,
-		// so now we have to reverse-proxy incoming requests to it so that things get
-		// exported correctly.
-		r.PathPrefix("/otlp" + otelSignal.PathPrefix).Handler(&httputil.ReverseProxy{
-			Director: func(req *http.Request) {
-				req.URL.Scheme = receiverEndpoint.Scheme
-				req.URL.Host = receiverEndpoint.Host
-				req.URL.Path = otelSignal.PathPrefix
-			},
-			ErrorLog: std.NewLogger(adapterLogger, log.LevelWarn),
-		})
-
-		adapterLogger.Info("signal adapter registered")
+		otelSignal.Register(ctx, logger, r, receiverURL)
 	}
 }
