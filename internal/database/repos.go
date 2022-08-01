@@ -1147,11 +1147,10 @@ func (s *repoStore) ListIndexableRepos(ctx context.Context, opts ListIndexableRe
 
 	if opts.OnlyUncloned {
 		joins = append(joins, sqlf.Sprintf(
-			"LEFT JOIN gitserver_repos gr ON gr.repo_id = repo.id",
+			"JOIN gitserver_repos gr ON gr.repo_id = repo.id",
 		))
 		where = append(where, sqlf.Sprintf(
-			"(gr.clone_status IS NULL OR gr.clone_status = %s)",
-			types.CloneStatusNotCloned,
+			"gr.clone_status = %s", types.CloneStatusNotCloned,
 		))
 	}
 

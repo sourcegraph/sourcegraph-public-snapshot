@@ -28,7 +28,7 @@ func checkSVGCompression() *linter {
 		var errs error
 		for file := range diff {
 			var optimizedFile bytes.Buffer
-			optimizeCmd := run.Cmd(ctx, fmt.Sprintf(`yarn run -s optimize-svg-assets -i "%s" -o -`, file))
+			optimizeCmd := run.Cmd(ctx, fmt.Sprintf(`yarn run optimize-svg-assets -i "%s" -o -`, file))
 			if err := root.Run(optimizeCmd).
 				Stream(&optimizedFile); err != nil {
 				errs = errors.Append(errs, errors.Wrap(err, file))

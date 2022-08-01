@@ -11,5 +11,5 @@ yarn gulp generate
 
 for cmd in "$@"; do
   echo "--- $cmd"
-  yarn -s run "$cmd"
+  yarn run "$cmd"
 done

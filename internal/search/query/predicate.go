@@ -1,7 +1,6 @@
 package query
 
 import (
-	"regexp/syntax" //nolint:depguard
 	"strings"
 
 	"github.com/grafana/regexp"
@@ -29,10 +28,6 @@ var DefaultPredicateRegistry = PredicateRegistry{
 		"contains.file":         func() Predicate { return &RepoContainsFilePredicate{} },
 		"contains.content":      func() Predicate { return &RepoContainsContentPredicate{} },
 		"contains.commit.after": func() Predicate { return &RepoContainsCommitAfterPredicate{} },
-		"dependencies":          func() Predicate { return &RepoDependenciesPredicate{} },
-		"deps":                  func() Predicate { return &RepoDependenciesPredicate{} },
-		"dependents":            func() Predicate { return &RepoDependentsPredicate{} },
-		"revdeps":               func() Predicate { return &RepoDependentsPredicate{} },
 		"has.description":       func() Predicate { return &RepoHasDescriptionPredicate{} },
 	},
 	FieldFile: {
@@ -215,74 +210,6 @@ func (f RepoContainsCommitAfterPredicate) Field() string { return FieldRepo }
 func (f RepoContainsCommitAfterPredicate) Name() string {
 	return "contains.commit.after"
 }
-
-// RepoDependenciesPredicate represents the `repo:dependencies(regex@rev)` predicate,
-// which filters to repos that are dependencies of the repos matching the given of regex.
-type RepoDependenciesPredicate struct {
-	RepoRev    string
-	Transitive bool
-}
-
-var emptyRepoDependencies = errors.New("no pattern to match a repository in repo:dependencies predicate parameter")
-
-func (f *RepoDependenciesPredicate) ParseParams(params string) (err error) {
-	for _, elem := range strings.Fields(params) {
-		if trimmed := strings.TrimPrefix(elem, "transitive:"); trimmed != elem {
-			f.Transitive = parseYesNoOnly(trimmed) == Yes
-		} else {
-			re := elem
-			if n := strings.LastIndex(re, "@"); n > 0 {
-				re = re[:n]
-			}
-
-			if re == "" {
-				return emptyRepoDependencies
-			}
-
-			_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-			if err != nil {
-				return errors.Errorf("invalid repo:dependencies predicate parameter %q: %v", re, err)
-			}
-
-			f.RepoRev = elem
-		}
-	}
-
-	if f.RepoRev == "" {
-		return emptyRepoDependencies
-	}
-
-	return nil
-}
-
-func (f *RepoDependenciesPredicate) Field() string { return FieldRepo }
-func (f *RepoDependenciesPredicate) Name() string  { return "dependencies" }
-
-// RepoDependentsPredicate represents the `repo:dependents(regex@rev)`
-// predicate, which filters to repos that depend on the repos matching the
-// given of regex.
-type RepoDependentsPredicate struct{}
-
-func (f *RepoDependentsPredicate) ParseParams(params string) (err error) {
-	re := params
-	if n := strings.LastIndex(params, "@"); n > 0 {
-		re = re[:n]
-	}
-
-	if re == "" {
-		return errors.Errorf("empty repo:dependents predicate parameter %q", params)
-	}
-
-	_, err = syntax.Parse(re, syntax.ClassNL|syntax.PerlX|syntax.UnicodeGroups)
-	if err != nil {
-		return errors.Errorf("invalid repo:dependents predicate parameter %q: %v", params, err)
-	}
-
-	return nil
-}
-
-func (f *RepoDependentsPredicate) Field() string { return FieldRepo }
-func (f *RepoDependentsPredicate) Name() string  { return "dependents" }
 
 /* repo:has.description(...) */
 
