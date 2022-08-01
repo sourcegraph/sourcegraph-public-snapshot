@@ -1087,10 +1087,9 @@ func TestSelectRepositoriesForIndexScanInDifferentTable(t *testing.T) {
 			retain_intermediate_commits,
 			indexing_enabled,
 			index_commit_max_age_hours,
-			index_intermediate_commits,
-			lockfile_indexing_enabled
+			index_intermediate_commits
 		) VALUES
-			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false, false)
+			(101, NULL, 'policy 1', 'GIT_TREE', 'ab/', null, true, 0, false, true, 0, false)
 	`
 	if _, err := db.ExecContext(context.Background(), query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)

@@ -100,10 +100,6 @@ type GetConfigurationPoliciesOptions struct {
 	// be returned.
 	ForIndexing bool
 
-	// ForLockfileIndexing indicates that only configuration policies with
-	// lockfile indexing enabled should be returned.
-	ForLockfileIndexing bool
-
 	// Limit indicates the number of results to take from the result set.
 	Limit int
 
@@ -120,7 +116,6 @@ func (s *Store) GetConfigurationPolicies(ctx context.Context, opts GetConfigurat
 		log.String("term", opts.Term),
 		log.Bool("forDataRetention", opts.ForDataRetention),
 		log.Bool("forIndexing", opts.ForIndexing),
-		log.Bool("forLockfileIndexing", opts.ForLockfileIndexing),
 		log.Int("limit", opts.Limit),
 		log.Int("offset", opts.Offset),
 	}})
