@@ -116,11 +116,6 @@ func (s *Server) handleHealthz(w http.ResponseWriter, req *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func readBody[T any](logger log.Logger, req *http.Request, target T) error {
-
-	return nil
-}
-
 // notifyIfFailed sends a notification over slack if the provided build has failed. If the build is successful not notifcation is sent
 func (s *Server) notifyIfFailed(build *Build) error {
 	if build.hasFailed() {

@@ -7,6 +7,8 @@ import (
 	"github.com/sourcegraph/log"
 )
 
+// Build keeps track of a buildkite.Build and it's associated jobs and pipeline.
+// See BuildStore for where jobs are added to the build.
 type Build struct {
 	buildkite.Build
 	Pipeline *Pipeline
@@ -70,6 +72,7 @@ func (j *Job) failed() bool {
 	return !j.SoftFailed && j.exitStatus() > 0
 }
 
+// Pipeline wraps a buildkite.Pipeline and provides convenience functions to access values of the wrapped pipeline is a safe maner
 type Pipeline struct {
 	buildkite.Pipeline
 }
@@ -78,6 +81,8 @@ func (p *Pipeline) name() string {
 	return strp(p.Name)
 }
 
+// Event contains information about a buildkite event. Each event contains the build, pipeline, and job. Note that when the event
+// is `build.*` then Job will be empty.
 type Event struct {
 	Name     string             `json:"event"`
 	Build    buildkite.Build    `json:"build,omitempty"`
@@ -113,6 +118,11 @@ func (b *Event) buildNumber() int {
 	return intp(b.Build.Number)
 }
 
+// BuildStore is a thread safe store which keeps track of Builds described by buildkite build events.
+//
+// The store is backed by a map and the build number is used as the key.
+// When a build event is added the Buildkite Build, Pipeline and Job is extracted, if available. If the Build does not exist, Buildkite is wrapped
+// in a Build and added to the map. When the event contains a Job the corresponding job is retrieved from the map and added to the Job it is for.
 type BuildStore struct {
 	logger log.Logger
 	builds map[int]*Build
