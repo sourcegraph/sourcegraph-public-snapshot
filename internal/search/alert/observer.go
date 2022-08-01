@@ -405,37 +405,3 @@ func AlertForMissingRepoRevs(missingRepoRevs []searchrepos.RepoRevSpecs) *search
 		Description:    description,
 	}
 }
-
-func AlertForMissingDependencyRepoRevs(missingRepoRevs []searchrepos.RepoRevSpecs) *search.Alert {
-	var description string
-	if len(missingRepoRevs) == 1 {
-		if len(missingRepoRevs[0].RevSpecs()) == 1 {
-			description = fmt.Sprintf("The dependency %s matched by your repo:deps(...) predicate could not be searched because it does not yet contain the revision %q.", missingRepoRevs[0].Repo.Name, missingRepoRevs[0].RevSpecs()[0])
-		} else {
-			description = fmt.Sprintf("The dependency %s matched by your repo:deps(...) predicate could not be searched because it has multiple missing revisions: @%s.", missingRepoRevs[0].Repo.Name, strings.Join(missingRepoRevs[0].RevSpecs(), ","))
-		}
-	} else {
-		sampleSize := 10
-		if sampleSize > len(missingRepoRevs) {
-			sampleSize = len(missingRepoRevs)
-		}
-		repoRevs := make([]string, 0, sampleSize)
-		for _, r := range missingRepoRevs[:sampleSize] {
-			repoRevs = append(repoRevs, string(r.Repo.Name)+"@"+strings.Join(r.RevSpecs(), ","))
-		}
-		b := strings.Builder{}
-		_, _ = fmt.Fprintf(&b, "%d dependencies matched by your repo:deps(...) predicate could not be searched because the following revisions either don't exist or aren't yet cloned:", len(missingRepoRevs))
-		for _, rr := range repoRevs {
-			_, _ = fmt.Fprintf(&b, "\n* %s", rr)
-		}
-		if sampleSize < len(missingRepoRevs) {
-			b.WriteString("\n* ...")
-		}
-		description = b.String()
-	}
-	return &search.Alert{
-		PrometheusType: "missing_dependency_repo_revs",
-		Title:          "Some dependencies could not be searched",
-		Description:    description + "\n\nDependency repository revisions are cloned on demand. Try again in a few seconds.",
-	}
-}

@@ -322,26 +322,6 @@ describe('getCompletionItems()', () => {
         ).toStrictEqual([{ label: 'connect.go', insertText: '^connect\\.go$ ' }])
     })
 
-    test('inserts valid suggestion when completing repo:deps predicate', async () => {
-        expect(
-            (
-                await getCompletionItems(
-                    getToken('repo:deps(sourcegraph', 0),
-                    { column: 21 },
-                    createFetcher([
-                        {
-                            type: 'repo',
-                            repository: 'github.com/sourcegraph/jsonrpc2.go',
-                        },
-                    ]),
-                    {}
-                )
-            )?.suggestions
-                .filter(({ kind }) => kind === repositoryCompletionItemKind)
-                .map(({ insertText }) => insertText)
-        ).toStrictEqual(['deps(^github\\.com/sourcegraph/jsonrpc2\\.go$) '])
-    })
-
     test('sets current filter value as filterText', async () => {
         expect(
             (
