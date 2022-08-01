@@ -19,7 +19,7 @@ type Endpoint = oauth2.Endpoint
 
 // todo docstring
 // todo Maybe can be deleted based on how do token refresh (i.e. need access to external service object anyway)
-type Context struct {
+type OauthContext struct {
 	//ServiceType string
 	// ClientID is the application's ID.
 	ClientID string
@@ -72,10 +72,10 @@ func getOAuthErrorDetails(body []byte) error {
 }
 
 // TokenRefresher is a function to refresh and return the new OAuth token.
-type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx Context) (string, error)
+type TokenRefresher func(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext) (string, error)
 
 // todo docstring
-func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx Context) (code int, header http.Header, body []byte, err error) {
+func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther *auth.OAuthBearerToken, tokenRefresher TokenRefresher, oauthCtx OauthContext) (code int, header http.Header, body []byte, err error) {
 	fmt.Println(".... DO REQUEST....")
 
 	for i := 0; i < 2; i++ {
@@ -103,6 +103,9 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 
 		fmt.Println("....IS RESPONSE UNAUTHORIZED ?", resp.StatusCode)
 
+		resp.StatusCode = 401
+		fmt.Println("....2 IS RESPONSE UNAUTHORIZED ?", resp.StatusCode)
+
 		if resp.StatusCode == http.StatusUnauthorized && auther != nil {
 			fmt.Println("....DO REQUEST WITH UNAUTHORIZED.. loop", i)
 			if err = getOAuthErrorDetails(body); err != nil {
@@ -111,6 +114,7 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 					fmt.Println("....1 WILL REFRESH TOKEN")
 
 					fmt.Println("params for token refresher")
+					fmt.Println("params ctx and oauthCTx", ctx, oauthCtx)
 					newToken, err := tokenRefresher(ctx, doer, oauthCtx)
 
 					if err != nil {

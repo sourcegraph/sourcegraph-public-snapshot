@@ -115,14 +115,17 @@ const (
 // as the POST body. An 'inParams' value of true means to send it in
 // the POST body (along with any values in v); false means to send it
 // in the Authorization header.
-func newTokenRequest(oauthCtx Context, authStyle AuthStyle) (*http.Request, error) {
+func newTokenRequest(oauthCtx OauthContext, authStyle AuthStyle) (*http.Request, error) {
 	v := url.Values{}
 	if authStyle == AuthStyleInParams {
 		v.Set("client_id", oauthCtx.ClientID)
 		v.Set("client_secret", oauthCtx.ClientSecret)
 	}
 
+	fmt.Println(".... NEW TOKEN REQUEST  - V", v)
+
 	req, err := http.NewRequest("POST", oauthCtx.Endpoint.TokenURL, strings.NewReader(v.Encode()))
+
 	if err != nil {
 		return nil, err
 	}
@@ -133,14 +136,17 @@ func newTokenRequest(oauthCtx Context, authStyle AuthStyle) (*http.Request, erro
 	return req, nil
 }
 
-func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx Context, authStyle AuthStyle) (*Token, error) {
+func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext, authStyle AuthStyle) (*Token, error) {
+
+	fmt.Println("... auth style", authStyle)
+	fmt.Println(".... retrieve token oauthctx", oauthCtx)
+	fmt.Println(".... retrieve token ctx", ctx)
+
 	req, err := newTokenRequest(oauthCtx, authStyle)
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Println(".... retrieve token request", req)
-	fmt.Println(".... retrieve token oauthctx", oauthCtx)
 	token, err := doTokenRoundTrip(ctx, doer, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do token round trip")
@@ -170,6 +176,9 @@ func doTokenRoundTrip(ctx context.Context, doer httpcli.Doer, req *http.Request)
 
 	fmt.Println("... 1 do token round trip...")
 	if code := r.StatusCode; code < 200 || code > 299 {
+		fmt.Println("1 A do token round trip -- r.Status code", r.StatusCode)
+		fmt.Println("1 A do token round trip -- body", string(body))
+
 		return nil, &RetrieveError{
 			Response: r,
 			Body:     body,

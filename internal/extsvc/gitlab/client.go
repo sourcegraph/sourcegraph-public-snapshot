@@ -318,11 +318,11 @@ func (c *Client) doWithBaseURLAndOAuthTokenRefresher(ctx context.Context, req *h
 	var header http.Header
 	var body []byte
 
-	oauthContext := oauth2ConfigFromGitLabProvider()
+	oauthContext := getOauthContext()
 
 	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
 	if ok {
-		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, oauthContext)
+		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, *oauthContext)
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
@@ -513,13 +513,13 @@ func (e ProjectNotFoundError) Error() string {
 
 func (e ProjectNotFoundError) NotFound() bool { return true }
 
-func oauth2ConfigFromGitLabProvider() *oauthutil.Context {
+func getOauthContext() *oauthutil.OauthContext {
 	for _, authProvider := range conf.SiteConfig().AuthProviders {
 		if authProvider.Gitlab != nil {
 			p := authProvider.Gitlab
 
 			glURL := strings.TrimSuffix(p.Url, "/")
-			return &oauthutil.Context{
+			return &oauthutil.OauthContext{
 				ClientID:     p.ClientID,
 				ClientSecret: p.ClientSecret,
 				Endpoint: oauth2.Endpoint{

@@ -413,9 +413,11 @@ type RefreshTokenConfig struct {
 
 // todo - add docstring and explain that we cannot import the current helper nor use the helper in other places
 // due to import cycle
-func (r *RefreshTokenConfig) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
-	fmt.Println(".... OPTIONAL REFRESH TOKEN FUNCTION....")
+func (r *RefreshTokenConfig) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error) {
+	fmt.Println(".... OPTIONAL REFRESH TOKEN FUNCTION.... ctx is", ctx)
+
 	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, oauthutil.AuthStyleInParams)
+
 	if err != nil {
 		fmt.Println("... optional function - didn't get refreshed token...", refreshedToken)
 
