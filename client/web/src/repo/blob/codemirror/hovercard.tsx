@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 
-import { Extension } from '@codemirror/state'
-import { EditorView, hoverTooltip, repositionTooltips, Tooltip } from '@codemirror/view'
+import { Extension, Facet } from '@codemirror/state'
+import { EditorView, hoverTooltip, repositionTooltips } from '@codemirror/view'
 import { upperFirst } from 'lodash'
 import { createRoot } from 'react-dom/client'
 
@@ -13,6 +13,10 @@ import { HoverOverlayContent } from '@sourcegraph/shared/src/hover/HoverOverlayC
 import { Alert, Card, WildcardThemeContext } from '@sourcegraph/wildcard'
 
 import webHoverOverlayStyle from '../../../components/WebHoverOverlay/WebHoverOverlay.module.scss'
+import { Position } from '@sourcegraph/extension-api-types'
+import { positionToOffset } from './utils'
+
+type HovercardSource = (position: Position) => Promise<Pick<HoverOverlayBaseProps, 'hoverOrError'> | null>
 
 const HOVER_TIMEOUT = 50
 
@@ -35,30 +39,59 @@ const hoverCardTheme = EditorView.theme({
 })
 
 /**
+ * Facet with which an extension can provide a hovercard source. For simplicity
+ * only one source can be provided, others are ignored (in practice there is
+ * only one source at the moment anyway).
+ */
+export const hovercardSource = Facet.define<HovercardSource, HovercardSource>({
+    combine: sources => sources[0],
+    enables: facet => hovercard(facet),
+})
+
+/**
  * Registers an extension to show a hovercard
  */
-export function hovercard(
-    source: (
-        view: EditorView,
-        position: number,
-        side: 1 | -1
-    ) => Promise<
-        (Omit<Tooltip, 'create'> & { props: Pick<HoverOverlayBaseProps, 'hoverOrError' | 'actionsOrError'> }) | null
-    > | null
-): Extension {
+export function hovercard(facet: Facet<HovercardSource, HovercardSource>): Extension {
     return [
         // hoverTooltip takes care of only calling the source (and processing
         // its return value) when necessary.
         hoverTooltip(
-            async (view, ...args) => {
-                const result = await source(view, ...args)
-                if (!result) {
+            async (view, offset) => {
+                const line = view.state.doc.lineAt(offset)
+                const character = Math.max(offset - line.from, 0)
+                const position = { character, line: line.number - 1 }
+
+                const result = await view.state.facet(facet)(position)
+                if (
+                    !result ||
+                    !result.hoverOrError ||
+                    result.hoverOrError === 'loading' ||
+                    isErrorLike(result.hoverOrError)
+                ) {
                     return null
                 }
-                const { props, ...tooltip } = result
+
+                // Try to align the tooltip with the token start,
+                // falling back to CodeMirror's logic to find a word
+                // boundary or the cursor position.
+                let start = offset
+                let end = offset
+
+                if (result.hoverOrError.range) {
+                    start = positionToOffset(view.state.doc, result.hoverOrError.range.start)
+                    end = positionToOffset(view.state.doc, result.hoverOrError.range.end)
+                } else {
+                    const word = view.state.wordAt(offset)
+                    if (word) {
+                        start = word.from
+                        end = word.from
+                    }
+                }
 
                 return {
-                    ...tooltip,
+                    pos: start,
+                    end,
+                    above: true,
                     create() {
                         const container = document.createElement('div')
                         return {
@@ -69,7 +102,7 @@ export function hovercard(
                                 const root = createRoot(container)
                                 root.render(
                                     <Hovercard
-                                        {...props}
+                                        hoverOrError={result.hoverOrError}
                                         onRender={() => {
                                             // Trigger repositioning after component rendered to ensure that
                                             // its position is account for its width and height

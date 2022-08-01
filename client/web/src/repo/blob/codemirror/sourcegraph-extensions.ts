@@ -32,12 +32,12 @@ import { BlobInfo } from '../Blob'
 
 import { showTextDocumentDecorations } from './decorations'
 import { documentHighlightsSource } from './document-highlights'
-import { hovercard } from './hovercard'
-import { positionToOffset } from './utils'
 
 import { locationField } from '.'
 
 import blobStyles from '../Blob.module.scss'
+import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
+import { hovercardSource } from './hovercard'
 
 /**
  * Context holds all the information needed for CodeMirror extensions to
@@ -127,7 +127,7 @@ export function sourcegraphExtensions({
         documentHighlightsDataSource(),
         textDocumentDecorations(),
         updateSelection(),
-        showHovercard,
+        hovercardDataSource(),
         statusBar,
     ]
 }
@@ -333,59 +333,33 @@ function updateSelection(): Extension {
  * showHovercard uses the {@link hovercard} extension and simply provides a
  * callback function that queries the extension host and generates tooltip data.
  */
-const showHovercard = hovercard((view, position) => {
-    const line = view.state.doc.lineAt(position)
-    const character = Math.max(position - line.from, 0)
+function hovercardDataSource() {
+    const nextContext: Subject<Context | null> = new ReplaySubject(1)
 
-    const { contextObservable } = view.state.field(sgExtensionsContextField)
+    const createObservable = (position: Position): Promise<Pick<HoverOverlayBaseProps, 'hoverOrError'> | null> =>
+        nextContext
+            .pipe(
+                switchMap(context =>
+                    context
+                        ? wrapRemoteObservable(
+                              context.extensionHostAPI.getHover({
+                                  textDocument: {
+                                      uri: toURIWithPath(context.blobInfo),
+                                  },
+                                  position,
+                              })
+                          ).pipe(
+                              filter(({ isLoading }) => !isLoading),
+                              map(({ result }) => ({ hoverOrError: result }))
+                          )
+                        : of(null)
+                ),
+                first()
+            )
+            .toPromise()
 
-    return contextObservable
-        .pipe(
-            switchMap(context =>
-                wrapRemoteObservable(
-                    context.extensionHostAPI.getHover({
-                        textDocument: {
-                            uri: toURIWithPath(context.blobInfo),
-                        },
-                        position: { character, line: line.number - 1 },
-                    })
-                )
-            ),
-            filter(({ isLoading }) => !isLoading),
-            map(({ result }) => {
-                if (!result) {
-                    return null
-                }
-
-                // Try to align the tooltip with the token start,
-                // falling back to CodeMirror's logic to find a word
-                // boundary or the cursor position.
-                let start = position
-                let end = position
-
-                if (result.range) {
-                    start = positionToOffset(view.state.doc, result.range.start)
-                    end = positionToOffset(view.state.doc, result.range.end)
-                } else {
-                    const word = view.state.wordAt(position)
-                    if (word) {
-                        start = word.from
-                        end = word.from
-                    }
-                }
-                return {
-                    pos: start,
-                    end,
-                    above: true,
-                    props: {
-                        hoverOrError: result,
-                    },
-                }
-            }),
-            first()
-        )
-        .toPromise()
-})
+    return [updateOnContextChange.of(context => nextContext.next(context)), hovercardSource.of(createObservable)]
+}
 
 //
 // Status bar
