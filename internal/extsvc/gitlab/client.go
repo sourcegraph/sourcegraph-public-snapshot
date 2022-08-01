@@ -14,6 +14,7 @@ import (
 	"time"
 
 	"github.com/inconshreveable/log15"
+	"golang.org/x/oauth2"
 
 	"github.com/sourcegraph/sourcegraph/internal/conf"
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
@@ -234,6 +235,7 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
 	//return c.doWithBaseURL(ctx, req, result)
+
 	return c.doWithBaseURLAndOAuthTokenRefresher(ctx, req, result)
 }
 
@@ -315,9 +317,12 @@ func (c *Client) doWithBaseURLAndOAuthTokenRefresher(ctx context.Context, req *h
 	var code int
 	var header http.Header
 	var body []byte
+
+	oauthContext := oauth2ConfigFromGitLabProvider()
+
 	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
 	if ok {
-		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, oauthutil.Context{})
+		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, oauthContext)
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
 			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
@@ -507,3 +512,24 @@ func (e ProjectNotFoundError) Error() string {
 }
 
 func (e ProjectNotFoundError) NotFound() bool { return true }
+
+func oauth2ConfigFromGitLabProvider() *oauthutil.Context {
+	for _, authProvider := range conf.SiteConfig().AuthProviders {
+		if authProvider.Gitlab != nil {
+			p := authProvider.Gitlab
+
+			glURL := strings.TrimSuffix(p.Url, "/")
+			return &oauthutil.Context{
+				ClientID:     p.ClientID,
+				ClientSecret: p.ClientSecret,
+				Endpoint: oauth2.Endpoint{
+					AuthURL:  glURL + "/oauth/authorize",
+					TokenURL: glURL + "/oauth/token",
+				},
+				Scopes: RequestedOAuthScopes(p.ApiScope, nil),
+			}
+		}
+	}
+
+	return nil
+}
