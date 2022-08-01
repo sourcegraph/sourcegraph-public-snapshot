@@ -57,7 +57,7 @@ indexing_jobs:
           # Yarn is used to resolve dependencies in an ancestor directory
           # when lerna.json configuration specifies "yarn" as the npmClient
           # or if the directory contains a yarn.lock file.
-          - yarn --ignore-engines
+          - yarn
       - root: <ancestor(dir)>
         image: sourcegraph/scip-typescript:autoindex
         commands:
