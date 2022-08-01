@@ -4,7 +4,7 @@ import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import { useHistory, useLocation } from 'react-router'
 
 import { useQuery } from '@sourcegraph/http-client'
-import { LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
+import { Alert, LoadingSpinner, PageHeader } from '@sourcegraph/wildcard'
 
 import { AuthenticatedUser } from '../../../auth'
 import { BatchChangesIcon } from '../../../batches/icons'
@@ -142,7 +142,7 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
         telemetryService.logViewEvent('BatchChangeApplyPage')
     }, [telemetryService])
 
-    const { exceedsLicense } = useBatchChangesLicense()
+    const { maxUnlicensedChangesets, exceedsLicense } = useBatchChangesLicense()
 
     // If we're loading and haven't received any data yet
     if (loading && !data) {
@@ -186,13 +186,23 @@ export const NewBatchChangePreviewPage: React.FunctionComponent<
                             telemetryService={telemetryService}
                         />
                     )}
+                    {exceedsLicense(spec.applyPreview.totalCount) && (
+                        <Alert variant="warning">
+                            <div className="mb-2">
+                                <strong>
+                                    Your license only allows for {maxUnlicensedChangesets} changesets per batch change
+                                </strong>
+                            </div>
+                            Since more than {maxUnlicensedChangesets} changesets are generated, you won't be able to
+                            apply the batch change and actually publish the changesets to the code host.
+                        </Alert>
+                    )}
                     <PreviewList
                         batchSpecID={specID}
                         history={history}
                         location={location}
                         authenticatedUser={authenticatedUser}
                         isLightTheme={isLightTheme}
-                        totalCount={spec.applyPreview.totalCount}
                         queryChangesetApplyPreview={queryChangesetApplyPreview}
                         queryChangesetSpecFileDiffs={queryChangesetSpecFileDiffs}
                         expandChangesetDescriptions={expandChangesetDescriptions}
