@@ -35,7 +35,7 @@ type OauthContext struct {
 	// RefreshToken is a token that's used by the application
 	// (as opposed to the user) to refresh the access token
 	// if it expires.
-	RefreshToken string
+	//RefreshToken string
 }
 
 type oauthError struct {
@@ -103,14 +103,14 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 
 		fmt.Println("....IS RESPONSE UNAUTHORIZED ?", resp.StatusCode)
 
-		resp.StatusCode = 401
+		//resp.StatusCode = 401
 		fmt.Println("....2 IS RESPONSE UNAUTHORIZED ?", resp.StatusCode)
 
 		if resp.StatusCode == http.StatusUnauthorized && auther != nil {
 			fmt.Println("....DO REQUEST WITH UNAUTHORIZED.. loop", i)
 			if err = getOAuthErrorDetails(body); err != nil {
 				if _, ok := err.(*oauthError); ok {
-					// Refresh the token
+					//Refresh the token
 					fmt.Println("....1 WILL REFRESH TOKEN")
 
 					fmt.Println("params for token refresher")
@@ -131,7 +131,10 @@ func DoRequest(ctx context.Context, doer httpcli.Doer, req *http.Request, auther
 			}
 		}
 
-		fmt.Println("....NO NEED TO REFRESH")
+		//fmt.Println("....NO NEED TO REFRESH")
+
+		fmt.Println("--- token refreshed???", resp.Header)
+		fmt.Println("--- token refreshed? body??", string(body))
 
 		return resp.StatusCode, resp.Header, body, nil
 	}

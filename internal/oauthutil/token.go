@@ -115,11 +115,13 @@ const (
 // as the POST body. An 'inParams' value of true means to send it in
 // the POST body (along with any values in v); false means to send it
 // in the Authorization header.
-func newTokenRequest(oauthCtx OauthContext, authStyle AuthStyle) (*http.Request, error) {
+func newTokenRequest(oauthCtx OauthContext, refeshToken string, authStyle AuthStyle) (*http.Request, error) {
 	v := url.Values{}
 	if authStyle == AuthStyleInParams {
 		v.Set("client_id", oauthCtx.ClientID)
 		v.Set("client_secret", oauthCtx.ClientSecret)
+		v.Set("grant_type", "refresh_token")
+		v.Set("refresh_token", refeshToken)
 	}
 
 	fmt.Println(".... NEW TOKEN REQUEST  - V", v)
@@ -136,13 +138,13 @@ func newTokenRequest(oauthCtx OauthContext, authStyle AuthStyle) (*http.Request,
 	return req, nil
 }
 
-func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext, authStyle AuthStyle) (*Token, error) {
+func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext, refreshToken string, authStyle AuthStyle) (*Token, error) {
 
 	fmt.Println("... auth style", authStyle)
 	fmt.Println(".... retrieve token oauthctx", oauthCtx)
 	fmt.Println(".... retrieve token ctx", ctx)
 
-	req, err := newTokenRequest(oauthCtx, authStyle)
+	req, err := newTokenRequest(oauthCtx, refreshToken, authStyle)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +157,8 @@ func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx OauthContext
 	// Don't overwrite `RefreshToken` with an empty value
 	// if this was a token refreshing request.
 	if token != nil && token.RefreshToken == "" {
-		token.RefreshToken = oauthCtx.RefreshToken
+		//token.RefreshToken = oauthCtx.RefreshToken
+		token.RefreshToken = refreshToken
 	}
 
 	return token, err

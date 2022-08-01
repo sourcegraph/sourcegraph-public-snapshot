@@ -104,7 +104,7 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 		return nil, err
 	}
 
-	helper := &RefreshTokenConfig{DB: db, ExternalServiceID: svc.ID}
+	helper := &RefreshTokenConfig{DB: db, ExternalServiceID: svc.ID, TokenOauthRefresh: c.TokenOauthRefresh}
 
 	fmt.Println("..... 1 ==== about to call new client provider in repos/gitlab.go....")
 
@@ -120,6 +120,7 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 		//	return nil, errors.Wrap(err, "refreshing OAuth token")
 		//}
 		//c.Token = refreshed
+
 		client = provider.GetOAuthClient(c.Token)
 	default:
 		client = provider.GetPATClient(c.Token, "")
@@ -409,6 +410,7 @@ func (s *GitLabSource) AffiliatedRepositories(ctx context.Context) ([]types.Code
 type RefreshTokenConfig struct {
 	DB                database.DB
 	ExternalServiceID int64
+	TokenOauthRefresh string
 }
 
 // todo - add docstring and explain that we cannot import the current helper nor use the helper in other places
@@ -416,8 +418,7 @@ type RefreshTokenConfig struct {
 func (r *RefreshTokenConfig) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.OauthContext) (string, error) {
 	fmt.Println(".... OPTIONAL REFRESH TOKEN FUNCTION.... ctx is", ctx)
 
-	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, oauthutil.AuthStyleInParams)
-
+	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, r.TokenOauthRefresh, oauthutil.AuthStyleInParams)
 	if err != nil {
 		fmt.Println("... optional function - didn't get refreshed token...", refreshedToken)
 
