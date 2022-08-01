@@ -12,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
+	"github.com/stretchr/testify/require"
 
 	"github.com/stretchr/testify/assert"
 
@@ -495,6 +496,15 @@ func TestApplyBatchChange(t *testing.T) {
 		t.Skip()
 	}
 
+	oldMock := licensing.MockCheckFeature
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		return nil
+	}
+
+	defer func() {
+		licensing.MockCheckFeature = oldMock
+	}()
+
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -885,6 +895,15 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 		t.Skip()
 	}
 
+	oldMock := licensing.MockCheckFeature
+	licensing.MockCheckFeature = func(feature licensing.Feature) error {
+		return nil
+	}
+
+	defer func() {
+		licensing.MockCheckFeature = oldMock
+	}()
+
 	logger := logtest.Scoped(t)
 	ctx := context.Background()
 	db := database.NewDB(logger, dbtest.NewDB(logger, t))
@@ -1065,6 +1084,116 @@ func TestApplyOrCreateBatchSpecWithPublicationStates(t *testing.T) {
 					t.Errorf("unexpected response (-want +have):\n%s", diff)
 				}
 			})
+		})
+	}
+}
+
+func TestApplyBatchChangeWithLicenseFail(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	ctx := context.Background()
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+
+	now := timeutil.Now()
+	clock := func() time.Time { return now }
+
+	bstore := store.NewWithClock(db, &observation.TestContext, nil, clock)
+	repoStore := database.ReposWith(logger, bstore)
+	esStore := database.ExternalServicesWith(logger, bstore)
+
+	repo := newGitHubTestRepo("github.com/sourcegraph/create-batch-spec-test", newGitHubExternalService(t, esStore))
+	err := repoStore.Create(ctx, repo)
+	require.NoError(t, err)
+
+	r := &Resolver{store: bstore}
+	s, err := newSchema(db, r)
+	require.NoError(t, err)
+
+	userID := bt.CreateTestUser(t, db, true).ID
+
+	falsy := overridable.FromBoolOrString(false)
+	batchSpec := &btypes.BatchSpec{
+		RawSpec: bt.TestRawBatchSpec,
+		Spec: &batcheslib.BatchSpec{
+			Name:        "my-batch-change",
+			Description: "My description",
+			ChangesetTemplate: &batcheslib.ChangesetTemplate{
+				Title:  "Hello there",
+				Body:   "This is the body",
+				Branch: "my-branch",
+				Commit: batcheslib.ExpandedGitCommitDescription{
+					Message: "Add hello world",
+				},
+				Published: &falsy,
+			},
+		},
+		UserID:          userID,
+		NamespaceUserID: userID,
+	}
+	err = bstore.CreateBatchSpec(ctx, batchSpec)
+	require.NoError(t, err)
+
+	input := map[string]any{
+		"batchSpec": string(marshalBatchSpecRandID(batchSpec.RandID)),
+	}
+
+	tests := []struct {
+		name          string
+		numChangesets int
+	}{
+		{
+			name:          "ApplyBatchChange under limit",
+			numChangesets: 1,
+		},
+		{
+			name:          "ApplyBatchChange at limit",
+			numChangesets: 5,
+		},
+		{
+			name:          "ApplyBatchChange over limit",
+			numChangesets: 6,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			oldMock := licensing.MockCheckFeature
+			licensing.MockCheckFeature = func(feature licensing.Feature) error {
+				return licensing.NewFeatureNotActivatedError("no batch changes for you!")
+			}
+			defer func() {
+				licensing.MockCheckFeature = oldMock
+			}()
+
+			// Create enough changeset specs to hit the license check.
+			changesetSpecs := make([]*btypes.ChangesetSpec, test.numChangesets)
+			for i := range changesetSpecs {
+				changesetSpecs[i] = &btypes.ChangesetSpec{
+					BatchSpecID: batchSpec.ID,
+					RepoID:      repo.ID,
+				}
+				err = bstore.CreateChangesetSpec(ctx, changesetSpecs[i])
+				require.NoError(t, err)
+			}
+
+			defer func() {
+				for _, changesetSpec := range changesetSpecs {
+					bstore.DeleteChangeset(ctx, changesetSpec.ID)
+				}
+				bstore.DeleteChangesetSpecs(ctx, store.DeleteChangesetSpecsOpts{BatchSpecID: batchSpec.ID})
+			}()
+
+			var response struct{ ApplyBatchChange apitest.BatchChange }
+			actorCtx := actor.WithActor(ctx, actor.FromUser(userID))
+			errs := apitest.Exec(actorCtx, t, s, input, &response, mutationApplyBatchChange)
+			if test.numChangesets > maxUnlicensedChangesets {
+				assert.Len(t, errs, 1)
+				assert.ErrorAs(t, errs[0], &ErrBatchChangesUnlicensed{})
+			} else {
+				assert.Len(t, errs, 0)
+			}
 		})
 	}
 }
@@ -2239,6 +2368,34 @@ func TestCheckBatchChangesCredential(t *testing.T) {
 const queryCheckCredential = `
 query($batchChangesCredential: ID!) {
   checkBatchChangesCredential(batchChangesCredential: $batchChangesCredential) { alwaysNil }
+}
+`
+
+func TestMaxUnlicensedChangesets(t *testing.T) {
+	if testing.Short() {
+		t.Skip()
+	}
+
+	logger := logtest.Scoped(t)
+	db := database.NewDB(logger, dbtest.NewDB(logger, t))
+	userID := bt.CreateTestUser(t, db, true).ID
+
+	var response struct{ MaxUnlicensedChangesets int32 }
+	actorCtx := actor.WithActor(context.Background(), actor.FromUser(userID))
+
+	cstore := store.New(db, &observation.TestContext, nil)
+	r := &Resolver{store: cstore}
+	s, err := newSchema(db, r)
+	require.NoError(t, err)
+
+	apitest.MustExec(actorCtx, t, s, nil, &response, querymaxUnlicensedChangesets)
+
+	assert.Equal(t, int32(5), response.MaxUnlicensedChangesets)
+}
+
+const querymaxUnlicensedChangesets = `
+query {
+  maxUnlicensedChangesets
 }
 `
 
