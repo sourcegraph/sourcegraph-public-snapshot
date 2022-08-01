@@ -1002,6 +1002,10 @@ func (d *dummyFileResolver) ToGitBlob() (*GitTreeEntryResolver, bool) {
 	return nil, false
 }
 
+func (d *dummyFileResolver) Format(ctx context.Context) (*highlightedFileResolver, error) {
+	return nil, errors.New("not implemented")
+}
+
 func (d *dummyFileResolver) ToVirtualFile() (*virtualFileResolver, bool) {
 	return nil, false
 }

@@ -252,8 +252,9 @@ export const Blob: React.FunctionComponent<React.PropsWithChildren<BlobProps>> =
             codeViewReference.current = codeView
             codeViewElements.next(codeView)
         },
-        // As we use dangerousSetInnerHTML, we need to make sure that the codeView
-        // reference is updated whenever the <Code> element is updated.
+        // We dangerousSetInnerHTML and modify the <code> element.
+        // We need to listen to blobInfo to ensure that we correctly
+        // respond whenever this element updates.
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [codeViewElements, blobInfo.html]
     )
