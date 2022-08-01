@@ -336,7 +336,7 @@ commands:
     install: yarn --no-progress
     env:
       ENTERPRISE: 1
-      ENABLE_MONITORING: true
+      ENABLE_OPEN_TELEMETRY: true
 
   web-standalone-http:
     description: Standalone web frontend (dev) with API proxy to a configurable URL
