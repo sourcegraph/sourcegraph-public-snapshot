@@ -94,6 +94,7 @@ func Register(ctx context.Context, logger log.Logger, protocol otlpenv.Protocol,
 
 	// Finally, spin up redirectors for each signal and set up the appropriate endpoints.
 	for _, otelSignal := range otelSignals {
+		otelSignal := otelSignal // copy
 		otelSignal.Register(ctx, logger, r, receiverURL)
 	}
 }
