@@ -2,6 +2,7 @@ package telemetry
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -192,7 +193,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 				ID:       1,
 				Name:     "event1",
 				UserID:   1,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			},
@@ -200,7 +201,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 				ID:       2,
 				Name:     "event2",
 				UserID:   2,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			},
@@ -227,7 +228,7 @@ func TestHandlerLoadsEvents(t *testing.T) {
 				ID:       1,
 				Name:     "event1",
 				UserID:   1,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			},
@@ -277,7 +278,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 				ID:       1,
 				Name:     "event1",
 				UserID:   1,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			}}).Equal(t, got)
@@ -295,7 +296,7 @@ func TestHandlerLoadsEventsWithBookmarkState(t *testing.T) {
 				ID:       2,
 				Name:     "event2",
 				UserID:   2,
-				Argument: "{}",
+				Argument: json.RawMessage("{}"),
 				Source:   "test",
 				Version:  "0.0.0+dev",
 			}}).Equal(t, got)
@@ -369,7 +370,7 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 					ID:       1,
 					Name:     "allowed",
 					UserID:   1,
-					Argument: "{}",
+					Argument: json.RawMessage("{}"),
 					Source:   "test",
 					Version:  "0.0.0+dev",
 				},
@@ -377,7 +378,7 @@ func TestHandlerLoadsEventsWithAllowlist(t *testing.T) {
 					ID:       3,
 					Name:     "allowed",
 					UserID:   3,
-					Argument: "{}",
+					Argument: json.RawMessage("{}"),
 					Source:   "test",
 					Version:  "0.0.0+dev",
 				},
@@ -446,7 +447,7 @@ func TestBuildBigQueryObject(t *testing.T) {
 		URL:             "https://sourcegraph.com/search",
 		UserID:          5,
 		AnonymousUserID: "anonymous",
-		Argument:        "argument",
+		Argument:        json.RawMessage("argument"),
 		Source:          "src",
 		Version:         "1.1.1",
 		Timestamp:       atTime,
