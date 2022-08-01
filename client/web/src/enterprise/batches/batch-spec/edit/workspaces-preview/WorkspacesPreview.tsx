@@ -14,6 +14,7 @@ import {
     PreviewHiddenBatchSpecWorkspaceFields,
     PreviewVisibleBatchSpecWorkspaceFields,
 } from '../../../../../graphql-operations'
+import { eventLogger } from '../../../../../tracking/eventLogger'
 import { useBatchChangesLicense } from '../../../useBatchChangesLicense'
 import { Header as WorkspacesListHeader } from '../../../workspaces-list'
 import { BatchSpecContextState, useBatchSpecContext } from '../../BatchSpecContext'
@@ -90,7 +91,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
     const connection = workspacesConnection.connection
 
     // Before we've ever previewed workspaces for this batch change, there's no reason to
-    // show the list or filters for the connection.
+    // show the list.
     const shouldShowConnection = hasPreviewed || !!connection?.nodes.length
 
     // We "cache" the last results of the workspaces preview so that we can continue to
@@ -148,7 +149,14 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
             >
                 <Button
                     variant={isWorkspacesPreviewInProgress ? 'secondary' : 'success'}
-                    onClick={isWorkspacesPreviewInProgress ? cancel : () => preview(debouncedCode)}
+                    onClick={
+                        isWorkspacesPreviewInProgress
+                            ? cancel
+                            : () => {
+                                  eventLogger.log('batch_change_editor:preview_workspaces:clicked')
+                                  return preview(debouncedCode)
+                              }
+                    }
                     // The "Cancel" button is always enabled while the preview is in progress
                     disabled={!isWorkspacesPreviewInProgress && !!isPreviewDisabled}
                 >
@@ -280,7 +288,7 @@ const MemoizedWorkspacesPreview: React.FunctionComponent<
                     {ctaButton}
                 </div>
             )}
-            {shouldShowConnection && (
+            {(hasPreviewed || isReadOnly) && (
                 <WorkspacePreviewFilterRow onFiltersChange={setFilters} disabled={isWorkspacesPreviewInProgress} />
             )}
             {shouldShowConnection && (

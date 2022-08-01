@@ -44,7 +44,6 @@ func Start(logger log.Logger, additionalJobs map[string]job.Job, registerEnterpr
 		"webhook-log-janitor":                   webhooks.NewJanitor(),
 		"out-of-band-migrations":                migrations.NewMigrator(registerMigrations),
 		"codeintel-documents-indexer":           codeintel.NewDocumentsIndexerJob(),
-		"codeintel-dependencies":                codeintel.NewDependenciesJob(),
 		"codeintel-policies-repository-matcher": codeintel.NewPoliciesRepositoryMatcherJob(),
 		"gitserver-metrics":                     gitserver.NewMetricsJob(),
 	}

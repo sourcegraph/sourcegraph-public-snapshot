@@ -19,6 +19,9 @@ All notable changes to Sourcegraph are documented in this file.
 
 - Enforce 5-changeset limit for batch changes run server-side on an unlicensed instance. [#37834](https://github.com/sourcegraph/sourcegraph/issues/37834)
 - Changesets that are not associated with any batch changes can have a retention period set using the site configuration `batchChanges.changesetsRetention`. [#36188](https://github.com/sourcegraph/sourcegraph/pull/36188)
+- Added experimental support for exporting traces to an OpenTelemetry collector with `"observability.tracing": { "type": "opentelemetry" }` [#37984](https://github.com/sourcegraph/sourcegraph/pull/37984)
+- Code Insights over some repos now get 12 historic data points in addition to a current daily value and future points that align with the defined interval. [#37756](https://github.com/sourcegraph/sourcegraph/pull/37756)
+- Added `ROCKSKIP_MIN_REPO_SIZE_MB` to automatically use [Rockskip](https://docs.sourcegraph.com/code_intelligence/explanations/rockskip) for repositories over a certain size. [#38192](https://github.com/sourcegraph/sourcegraph/pull/38192)
 
 ### Changed
 
@@ -26,11 +29,19 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Fixed
 
--
+- Fix issue during code insight creation where selecting `"Run your insight over all your repositories"` reset the currently selected distance between data points. [#39261](https://github.com/sourcegraph/sourcegraph/pull/39261)
+- Fix issue where symbols in the side panel did not have file level permission filtering applied correctly. [#39592](https://github.com/sourcegraph/sourcegraph/pull/39592)
 
 ### Removed
 
--
+- The experimental dependencies search feature has been removed, including the `repo:deps(...)` search predicate and the site configuration options `codeIntelLockfileIndexing.enabled` and `experimentalFeatures.dependenciesSearch`. [#39742](https://github.com/sourcegraph/sourcegraph/pull/39742)
+
+## 3.42.1
+
+### Fixed
+
+- Reverted git version to avoid an issue with commit-graph that could cause repository corruptions [#39537](https://github.com/sourcegraph/sourcegraph/pull/39537)
+- Fixed an issue with symbols where they were not respecting sub-repository permissions [#39592](https://github.com/sourcegraph/sourcegraph/pull/39592)
 
 ## 3.42.0
 

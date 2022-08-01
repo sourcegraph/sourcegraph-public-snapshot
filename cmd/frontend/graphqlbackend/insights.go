@@ -22,7 +22,11 @@ type InsightsResolver interface {
 	SearchInsightLivePreview(ctx context.Context, args SearchInsightLivePreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 	SearchInsightPreview(ctx context.Context, args SearchInsightPreviewArgs) ([]SearchInsightLivePreviewSeriesResolver, error)
 
-	RelatedInsightsInline(ctx context.Context, args RelatedInsightsInlineArgs) ([]RelatedInsightsInlineResolver, error)
+	RelatedInsightsInline(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsInlineResolver, error)
+	RelatedInsightsForFile(ctx context.Context, args RelatedInsightsArgs) ([]RelatedInsightsResolver, error)
+	RelatedInsightsForRepo(ctx context.Context, args RelatedInsightsRepoArgs) ([]RelatedInsightsResolver, error)
+
+	SearchQueryInsights(ctx context.Context, args SearchQueryInsightsArgs) (SearchQueryInsightsResult, error)
 
 	// Mutations
 	CreateInsightsDashboard(ctx context.Context, args *CreateInsightsDashboardArgs) (InsightsDashboardPayloadResolver, error)
@@ -452,18 +456,51 @@ type SearchInsightLivePreviewSeriesResolver interface {
 	Label(ctx context.Context) (string, error)
 }
 
-type RelatedInsightsInlineArgs struct {
-	Input RelatedInsightsInlineInput
+type RelatedInsightsArgs struct {
+	Input RelatedInsightsInput
 }
 
-type RelatedInsightsInlineInput struct {
+type RelatedInsightsInput struct {
 	Repo     string
 	File     string
-	Revision *string
+	Revision string
+}
+
+type RelatedInsightsRepoArgs struct {
+	Input RelatedInsightsRepoInput
+}
+
+type RelatedInsightsRepoInput struct {
+	Repo     string
+	Revision string
 }
 
 type RelatedInsightsInlineResolver interface {
 	ViewID() string
 	Title() string
 	LineNumbers() []int32
+}
+
+type RelatedInsightsResolver interface {
+	ViewID() string
+	Title() string
+}
+
+type SearchQueryInsightsResolver interface {
+	ThirtyDayPercentChange(ctx context.Context) (int32, error)
+	Preview(ctx context.Context) ([]SearchInsightLivePreviewSeriesResolver, error)
+}
+
+type SearchQueryInsightsNotAvailable interface {
+	Message(ctx context.Context) string
+}
+
+type SearchQueryInsightsArgs struct {
+	Query       string `json:"query"`
+	PatternType string `json:"patternType"`
+}
+
+type SearchQueryInsightsResult interface {
+	ToSearchQueryInsights() (SearchQueryInsightsResolver, bool)
+	ToSearchQueryInsightsNotAvailable() (SearchQueryInsightsNotAvailable, bool)
 }

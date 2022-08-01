@@ -40,7 +40,6 @@ const defaultProps = (
     onThemePreferenceChange: () => undefined,
     globbing: false,
     platformContext: {} as any,
-    keyboardShortcuts: [],
     selectedSearchContextSpec: '',
     setSelectedSearchContextSpec: () => undefined,
     defaultSearchContextSpec: '',
@@ -54,6 +53,7 @@ const defaultProps = (
     fetchAutoDefinedSearchContexts: mockFetchAutoDefinedSearchContexts(),
     fetchSearchContexts: mockFetchSearchContexts,
     getUserSearchContextNamespaces: mockGetUserSearchContextNamespaces,
+    showKeyboardShortcutsHelp: () => undefined,
 })
 
 const decorator: DecoratorFn = Story => {

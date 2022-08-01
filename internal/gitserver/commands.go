@@ -1,13 +1,14 @@
 package gitserver
 
 import (
-	"bufio"
 	"bytes"
 	"context"
 	"encoding/hex"
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/fs"
+	"net/http"
 	"net/mail"
 	"os"
 	stdlibpath "path"
@@ -21,6 +22,7 @@ import (
 	"github.com/go-git/go-git/v5/plumbing/format/config"
 	"github.com/golang/groupcache/lru"
 	"github.com/grafana/regexp"
+	"github.com/opentracing/opentracing-go/ext"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -652,8 +654,8 @@ func decodeOID(sha string) (gitdomain.OID, error) {
 	return oid, nil
 }
 
-func (c *clientImplementor) LogReverseEach(repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (c *clientImplementor) LogReverseEach(ctx context.Context, repo string, commit string, n int, onLogEntry func(entry gitdomain.LogEntry) error) error {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	command := c.gitCommand(api.RepoName(repo), gitdomain.LogReverseArgs(n, commit)...)
@@ -1158,36 +1160,15 @@ func parseTags(in []byte) ([]*gitdomain.Tag, error) {
 }
 
 // GetDefaultBranch returns the name of the default branch and the commit it's
-// currently at from the given repository.
+// currently at from the given repository. If short is true, then `main` instead
+// of `refs/heads/main` would be returned.
 //
 // If the repository is empty or currently being cloned, empty values and no
 // error are returned.
-func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
+func (c *clientImplementor) GetDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
 	if Mocks.GetDefaultBranch != nil {
 		return Mocks.GetDefaultBranch(repo)
 	}
-	return c.getDefaultBranch(ctx, repo, false)
-}
-
-// GetDefaultBranchShort returns the short name of the default branch for the
-// given repository and the commit it's currently at. A short name would return
-// something like `main` instead of `refs/heads/main`.
-//
-// If the repository is empty or currently being cloned, empty values and no
-// error are returned.
-func (c *clientImplementor) GetDefaultBranchShort(ctx context.Context, repo api.RepoName) (refName string, commit api.CommitID, err error) {
-	if Mocks.GetDefaultBranchShort != nil {
-		return Mocks.GetDefaultBranchShort(repo)
-	}
-	return c.getDefaultBranch(ctx, repo, true)
-}
-
-// getDefaultBranch returns the name of the default branch and the commit it's
-// currently at from the given repository.
-//
-// If the repository is empty or currently being cloned, empty values and no
-// error are returned.
-func (c *clientImplementor) getDefaultBranch(ctx context.Context, repo api.RepoName, short bool) (refName string, commit api.CommitID, err error) {
 	args := []string{"symbolic-ref", "HEAD"}
 	if short {
 		args = append(args, "--short")
@@ -1264,8 +1245,8 @@ func (c *clientImplementor) MergeBase(ctx context.Context, repo api.RepoName, a,
 }
 
 // RevList makes a git rev-list call and iterates through the resulting commits, calling the provided onCommit function for each.
-func (c *clientImplementor) RevList(repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	ctx, cancel := context.WithCancel(context.Background())
+func (c *clientImplementor) RevList(ctx context.Context, repo string, commit string, onCommit func(commit string) (shouldContinue bool, err error)) error {
+	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
 	command := c.gitCommand(api.RepoName(repo), RevListArgs(commit)...)
@@ -1276,31 +1257,11 @@ func (c *clientImplementor) RevList(repo string, commit string, onCommit func(co
 	}
 	defer stdout.Close()
 
-	return c.RevListEach(stdout, onCommit)
+	return gitdomain.RevListEach(stdout, onCommit)
 }
 
 func RevListArgs(givenCommit string) []string {
 	return []string{"rev-list", "--first-parent", givenCommit}
-}
-
-func (c *clientImplementor) RevListEach(stdout io.Reader, onCommit func(commit string) (shouldContinue bool, err error)) error {
-	reader := bufio.NewReader(stdout)
-
-	for {
-		commit, err := reader.ReadString('\n')
-		if err == io.EOF {
-			break
-		} else if err != nil {
-			return err
-		}
-		commit = commit[:len(commit)-1] // Drop the trailing newline
-		shouldContinue, err := onCommit(commit)
-		if !shouldContinue {
-			return err
-		}
-	}
-
-	return nil
 }
 
 // GetBehindAhead returns the behind/ahead commit counts information for right vs. left (both Git
@@ -2417,12 +2378,14 @@ func (c *clientImplementor) CommitDate(ctx context.Context, repo api.RepoName, c
 	return parts[0], duration, true, nil
 }
 
+type ArchiveFormat string
+
 const (
 	// ArchiveFormatZip indicates a zip archive is desired.
-	ArchiveFormatZip = "zip"
+	ArchiveFormatZip ArchiveFormat = "zip"
 
 	// ArchiveFormatTar indicates a tar archive is desired.
-	ArchiveFormatTar = "tar"
+	ArchiveFormatTar ArchiveFormat = "tar"
 )
 
 // ArchiveReader streams back the file contents of an archived git repo.
@@ -2431,7 +2394,7 @@ func (c *clientImplementor) ArchiveReader(
 	checker authz.SubRepoPermissionChecker,
 	repo api.RepoName,
 	options ArchiveOptions,
-) (io.ReadCloser, error) {
+) (_ io.ReadCloser, err error) {
 	if authz.SubRepoEnabled(checker) {
 		if enabled, err := authz.SubRepoEnabledForRepo(ctx, checker, repo); err != nil {
 			return nil, errors.Wrap(err, "sub-repo permissions check:")
@@ -2439,7 +2402,65 @@ func (c *clientImplementor) ArchiveReader(
 			return nil, errors.New("archiveReader invoked for a repo with sub-repo permissions")
 		}
 	}
-	return c.Archive(ctx, repo, options)
+
+	if ClientMocks.Archive != nil {
+		return ClientMocks.Archive(ctx, repo, options)
+	}
+	span, ctx := ot.StartSpanFromContext(ctx, "Git: Archive")
+	span.SetTag("Repo", repo)
+	span.SetTag("Treeish", options.Treeish)
+	defer func() {
+		if err != nil {
+			ext.Error.Set(span, true)
+			span.LogFields(log.Error(err))
+		}
+		span.Finish()
+	}()
+
+	// Check that ctx is not expired.
+	if err := ctx.Err(); err != nil {
+		deadlineExceededCounter.Inc()
+		return nil, err
+	}
+
+	u, err := c.archiveURL(ctx, repo, options)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := c.do(ctx, repo, "POST", u.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	switch resp.StatusCode {
+	case http.StatusOK:
+		return &archiveReader{
+			base: &cmdReader{
+				rc:      resp.Body,
+				trailer: resp.Trailer,
+			},
+			repo: repo,
+			spec: options.Treeish,
+		}, nil
+	case http.StatusNotFound:
+		var payload protocol.NotFoundPayload
+		if err := json.NewDecoder(resp.Body).Decode(&payload); err != nil {
+			resp.Body.Close()
+			return nil, err
+		}
+		resp.Body.Close()
+		return nil, &badRequestError{
+			error: &gitdomain.RepoNotExistError{
+				Repo:            repo,
+				CloneInProgress: payload.CloneInProgress,
+				CloneProgress:   payload.CloneProgress,
+			},
+		}
+	default:
+		resp.Body.Close()
+		return nil, errors.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
 }
 
 func addNameOnly(opt CommitsOptions, checker authz.SubRepoPermissionChecker) CommitsOptions {

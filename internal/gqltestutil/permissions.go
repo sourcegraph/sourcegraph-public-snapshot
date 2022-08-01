@@ -68,13 +68,14 @@ mutation SetRepositoryPermissionsForBitbucketProject($projectKey: String!, $code
 
 // GetLastBitbucketProjectPermissionJob returns a status of the most recent
 // BitbucketProjectPermissionJob for given projectKey
-func (c *Client) GetLastBitbucketProjectPermissionJob(projectKey string) (string, error) {
+func (c *Client) GetLastBitbucketProjectPermissionJob(projectKey string) (state string, failureMessage string, err error) {
 	const query = `
 query BitbucketProjectPermissionJobs($projectKeys: [String!], $status: String, $count: Int) {
 	bitbucketProjectPermissionJobs(projectKeys: $projectKeys, status: $status, count: $count) {
 		totalCount,
    		nodes {
 			State
+			FailureMessage
    		}
 	}
 }
@@ -87,19 +88,41 @@ query BitbucketProjectPermissionJobs($projectKeys: [String!], $status: String, $
 			Jobs struct {
 				TotalCount int `json:"totalCount"`
 				Nodes      []struct {
-					State string `json:"state"`
+					State          string `json:"state"`
+					FailureMessage string `json:"failureMessage"`
 				} `json:"nodes"`
 			} `json:"bitbucketProjectPermissionJobs"`
 		} `json:"data"`
 	}
-	err := c.GraphQL("", query, variables, &resp)
+	err = c.GraphQL("", query, variables, &resp)
 	if err != nil {
-		return "", errors.Wrap(err, "request GraphQL")
+		return "", "", errors.Wrap(err, "request GraphQL")
 	}
 
 	if resp.Data.Jobs.TotalCount < 1 {
-		return "", nil
+		return "", "", nil
 	} else {
-		return resp.Data.Jobs.Nodes[0].State, nil
+		job := resp.Data.Jobs.Nodes[0]
+		return job.State, job.FailureMessage, nil
 	}
+}
+
+// UsersWithPendingPermissions returns bind IDs of users with pending permissions
+func (c *Client) UsersWithPendingPermissions() ([]string, error) {
+	const query = `
+query {
+	usersWithPendingPermissions
+}
+`
+	var resp struct {
+		Data struct {
+			UsersWithPendingPermissions []string `json:"usersWithPendingPermissions"`
+		} `json:"data"`
+	}
+	err := c.GraphQL("", query, nil, &resp)
+	if err != nil {
+		return nil, errors.Wrap(err, "request GraphQL")
+	}
+
+	return resp.Data.UsersWithPendingPermissions, nil
 }

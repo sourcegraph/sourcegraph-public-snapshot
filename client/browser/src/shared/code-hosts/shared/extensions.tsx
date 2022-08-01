@@ -48,7 +48,7 @@ export function initializeExtensions(
 }
 
 interface InjectProps
-    extends PlatformContextProps<'forceUpdateTooltip' | 'settings' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
+    extends PlatformContextProps<'settings' | 'sideloadedExtensionURL' | 'sourcegraphURL'>,
         ExtensionsControllerProps {
     history: H.History
     render: Renderer

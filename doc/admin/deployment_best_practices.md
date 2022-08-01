@@ -52,9 +52,9 @@ _It is possible to migrate your data to a Docker-Compose or Kubernetes deploymen
 
 ## Additional Support Information
 
-### Precise Code Intel and Batch Changes
+### Precise Code navigation and Batch Changes
 
-- The list of languages currently supported for precise code intelligence can be found [here](https://docs.sourcegraph.com/code_intelligence/references/indexers)
+- The list of languages currently supported for precise code navigation can be found [here](https://docs.sourcegraph.com/code_intelligence/references/indexers)
 - Requirements to set-up Batch Changes can be found [here](https://docs.sourcegraph.com/batch_changes/references/requirements)
 
 ### Browsers Extensions
@@ -65,10 +65,8 @@ _It is possible to migrate your data to a Docker-Compose or Kubernetes deploymen
 
 Only the latest versions of IDEs are generally supported, but most versions within a few months up-to-date generally work.
 
-- VS code: [https://github.com/sourcegraph/sourcegraph-vscode](https://github.com/sourcegraph/sourcegraph-vscode); we don't yet support VSCodium
-- Atom: [https://github.com/sourcegraph/sourcegraph-atom](https://github.com/sourcegraph/sourcegraph-atom)
-- Sublime Text 3: [https://github.com/sourcegraph/sourcegraph-sublime](https://github.com/sourcegraph/sourcegraph-sublime); we don't yet support Sublime Text 2 or 4
-- Jetbrains IDEs: [https://github.com/sourcegraph/sourcegraph-jetbrains](https://github.com/sourcegraph/sourcegraph-jetbrains) - we only test with IntelliJ IDEA, but it should work with no issues in all Jetbrains IDEs:
+- VS Code: [https://github.com/sourcegraph/sourcegraph/tree/main/client/vscode](https://github.com/sourcegraph/sourcegraph/tree/main/client/vscode); we don't yet support VSCodium
+- JetBrains IDEs: [https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains](https://github.com/sourcegraph/sourcegraph/tree/main/client/jetbrains) – we mainly test the plugin with IntelliJ IDEA, but it should work with no issues in all JetBrains IDEs, including:
   - IntelliJ IDEA
   - IntelliJ IDEA Community Edition
   - PhpStorm
@@ -82,3 +80,5 @@ Only the latest versions of IDEs are generally supported, but most versions with
   - DataGrip
   - Rider
   - Android Studio
+- Sublime Text 3: [https://github.com/sourcegraph/sourcegraph-sublime](https://github.com/sourcegraph/sourcegraph-sublime); we don't yet support Sublime Text 2 or 4
+- Atom: [https://github.com/sourcegraph/sourcegraph-atom](https://github.com/sourcegraph/sourcegraph-atom)

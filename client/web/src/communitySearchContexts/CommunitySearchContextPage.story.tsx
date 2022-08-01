@@ -48,7 +48,6 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
-    forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
     requestGraphQL: () => EMPTY,
@@ -124,7 +123,6 @@ const commonProps = () =>
         caseSensitive: false,
         extensionsController: { ...EXTENSIONS_CONTROLLER },
         platformContext: PLATFORM_CONTEXT,
-        keyboardShortcuts: [],
         setCaseSensitivity: action('setCaseSensitivity'),
         activation: undefined,
         isSourcegraphDotCom: true,

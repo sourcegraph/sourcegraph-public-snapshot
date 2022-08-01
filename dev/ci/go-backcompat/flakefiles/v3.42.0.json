@@ -33,5 +33,10 @@
     "path": "enterprise/internal/batches/store",
     "prefix": "TestCancelQueuedBatchChangeChangesets",
     "reason": "New DB structure doesn't work with old test helper data."
+  },
+  {
+    "path": "lib/group",
+    "prefix": "ResultErrorGroup",
+    "reason": "A flaky test that was made unflaky after the release cut"
   }
 ]

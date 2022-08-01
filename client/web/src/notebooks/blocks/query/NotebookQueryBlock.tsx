@@ -46,7 +46,7 @@ interface NotebookQueryBlockProps
         ThemeProps,
         SettingsCascadeProps,
         TelemetryProps,
-        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings' | 'forceUpdateTooltip'>,
+        PlatformContextProps<'requestGraphQL' | 'urlToFile' | 'settings'>,
         ExtensionsControllerProps<'extHostAPI' | 'executeCommand'> {
     globbing: boolean
     isSourcegraphDotCom: boolean

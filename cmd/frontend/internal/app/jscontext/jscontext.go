@@ -38,6 +38,14 @@ type authProviderInfo struct {
 	AuthenticationURL string `json:"authenticationURL"`
 }
 
+// GenericPasswordPolicy a generic password policy that holds password requirements
+type authPasswordPolicy struct {
+	Enabled                   bool `json:"enabled"`
+	NumberOfSpecialCharacters int  `json:"numberOfSpecialCharacters"`
+	RequireAtLeastOneNumber   bool `json:"requireAtLeastOneNumber"`
+	RequireUpperAndLowerCase  bool `json:"requireUpperAndLowerCase"`
+}
+
 // JSContext is made available to JavaScript code via the
 // "sourcegraph/app/context" module.
 //
@@ -82,6 +90,9 @@ type JSContext struct {
 
 	ExternalServicesUserMode string `json:"externalServicesUserMode"`
 
+	AuthMinPasswordLength int                `json:"authMinPasswordLength"`
+	AuthPasswordPolicy    authPasswordPolicy `json:"authPasswordPolicy"`
+
 	AuthProviders []authProviderInfo `json:"authProviders"`
 
 	Branding *schema.Branding `json:"branding"`
@@ -93,7 +104,6 @@ type JSContext struct {
 	ExecutorsEnabled                         bool `json:"executorsEnabled"`
 	CodeIntelAutoIndexingEnabled             bool `json:"codeIntelAutoIndexingEnabled"`
 	CodeIntelAutoIndexingAllowGlobalPolicies bool `json:"codeIntelAutoIndexingAllowGlobalPolicies"`
-	CodeIntelLockfileIndexingEnabled         bool `json:"codeIntelLockfileIndexingEnabled"`
 
 	CodeInsightsGQLApiEnabled bool `json:"codeInsightsGqlApiEnabled"`
 
@@ -102,6 +112,8 @@ type JSContext struct {
 	ProductResearchPageEnabled bool `json:"productResearchPageEnabled"`
 
 	ExperimentalFeatures schema.ExperimentalFeatures `json:"experimentalFeatures"`
+
+	EnableLegacyExtensions bool `json:"enableLegacyExtensions"`
 }
 
 // NewJSContextFromRequest populates a JSContext struct from the HTTP
@@ -143,6 +155,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		}
 	}
 
+	pp := conf.AuthPasswordPolicy()
+
+	var authPasswordPolicy authPasswordPolicy
+	authPasswordPolicy.Enabled = pp.Enabled
+	authPasswordPolicy.NumberOfSpecialCharacters = pp.NumberOfSpecialCharacters
+	authPasswordPolicy.RequireAtLeastOneNumber = pp.RequireAtLeastOneNumber
+	authPasswordPolicy.RequireUpperAndLowerCase = pp.RequireUpperandLowerCase
+
 	var sentryDSN *string
 	siteConfig := conf.Get().SiteConfiguration
 
@@ -157,6 +177,10 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		githubAppCloudClientID = siteConfig.Dotcom.GithubAppCloud.ClientID
 	}
 
+	var enableLegacyExtensions = true
+	if siteConfig.ExperimentalFeatures != nil {
+		enableLegacyExtensions = siteConfig.ExperimentalFeatures.EnableLegacyExtensions
+	}
 	// 🚨 SECURITY: This struct is sent to all users regardless of whether or
 	// not they are logged in, for example on an auth.public=false private
 	// server. Including secret fields here is OK if it is based on the user's
@@ -199,6 +223,9 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 
 		AllowSignup: conf.AuthAllowSignup(),
 
+		AuthMinPasswordLength: conf.AuthMinPasswordLength(),
+		AuthPasswordPolicy:    authPasswordPolicy,
+
 		AuthProviders: authProviders,
 
 		Branding: globals.Branding(),
@@ -210,13 +237,14 @@ func NewJSContextFromRequest(req *http.Request, db database.DB) JSContext {
 		ExecutorsEnabled:                         conf.ExecutorsEnabled(),
 		CodeIntelAutoIndexingEnabled:             conf.CodeIntelAutoIndexingEnabled(),
 		CodeIntelAutoIndexingAllowGlobalPolicies: conf.CodeIntelAutoIndexingAllowGlobalPolicies(),
-		CodeIntelLockfileIndexingEnabled:         conf.CodeIntelLockfileIndexingEnabled(),
 
 		CodeInsightsGQLApiEnabled: conf.CodeInsightsGQLApiEnabled(),
 
 		ProductResearchPageEnabled: conf.ProductResearchPageEnabled(),
 
 		ExperimentalFeatures: conf.ExperimentalFeatures(),
+
+		EnableLegacyExtensions: enableLegacyExtensions,
 	}
 }
 

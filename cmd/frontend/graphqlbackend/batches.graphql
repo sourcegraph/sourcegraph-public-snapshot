@@ -1463,6 +1463,11 @@ extend type Mutation {
         used to create) batch changes in this namespace.
         """
         namespace: ID!
+
+        """
+        The batch change this batch spec is associated with.
+        """
+        batchChange: ID!
     ): BatchSpec!
 
     """
