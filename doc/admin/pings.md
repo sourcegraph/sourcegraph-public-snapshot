@@ -208,7 +208,7 @@ The most common scenario in which Sourcegraph stops sending pings is a change to
 
 *This section is under development and currently only applies for docker-compose instances: [39710](https://github.com/sourcegraph/sourcegraph/issues/39710)*
 
-If its reported that pings aren't being sent to the Sourcegraph.com you can check that the goroutine is running with the following command:
+If it's reported that pings aren't being sent to the Sourcegraph.com, you can check that the goroutine is running with the following command:
 ```
 docker exec -it sourcegraph-frontend-0 sh -c 'wget -nv -O- 'http://127.0.0.1:6060/debug/pprof/goroutine?debug=1' | grep updatecheck'
 ```
