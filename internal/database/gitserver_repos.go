@@ -654,7 +654,7 @@ const updateRepoSizesQueryFmtstr = `
 UPDATE gitserver_repos AS gr
 SET
     repo_size_bytes = tmp.repo_size_bytes,
-	updated_at = now()
+	updated_at = NOW()
 FROM (VALUES
 -- (<repo_id>, <repo_size_bytes>),
     %s
