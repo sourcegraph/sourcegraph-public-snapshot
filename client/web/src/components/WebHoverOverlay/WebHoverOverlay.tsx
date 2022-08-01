@@ -23,12 +23,23 @@ const iconKindToAlertVariant: Record<number, AlertProps['variant']> = {
 
 const getAlertVariant: HoverOverlayProps['getAlertVariant'] = iconKind => iconKindToAlertVariant[iconKind]
 
-interface Props extends HoverOverlayProps, HoverThresholdProps, SettingsCascadeProps {
+export interface WebHoverOverlayProps
+    extends Omit<
+            HoverOverlayProps,
+            | 'className'
+            | 'closeButtonClassName'
+            | 'actionItemClassName'
+            | 'onAlertDismissed'
+            | 'getAlertVariant'
+            | 'actionItemStyleProps'
+        >,
+        HoverThresholdProps,
+        SettingsCascadeProps {
     hoveredTokenElement?: HTMLElement
     nav?: (url: string) => void
 }
 
-export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<Props>> = props => {
+export const WebHoverOverlay: React.FunctionComponent<React.PropsWithChildren<WebHoverOverlayProps>> = props => {
     const [dismissedAlerts, setDismissedAlerts] = useLocalStorage<string[]>('WebHoverOverlay.dismissedAlerts', [])
     const onAlertDismissed = useCallback(
         (alertType: string) => {

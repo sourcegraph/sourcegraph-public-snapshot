@@ -9,13 +9,17 @@ import { EditorState, Extension } from '@codemirror/state'
 import { EditorView, keymap } from '@codemirror/view'
 
 import { addLineRangeQueryParameter, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
-import { editorHeight, useCodeMirror, useCompartment } from '@sourcegraph/shared/src/components/CodeMirrorEditor'
+import {
+    createUpdateableField,
+    editorHeight,
+    useCodeMirror,
+    useCompartment,
+} from '@sourcegraph/shared/src/components/CodeMirrorEditor'
 import { parseQueryAndHash } from '@sourcegraph/shared/src/util/url'
 
 import { enableExtensionsDecorationsColumnViewFromSettings } from '../../util/settings'
 
 import { blameDecorationType, BlobProps, updateBrowserHistoryIfChanged } from './Blob'
-import { locationField, updateLocation } from './codemirror'
 import {
     enableExtensionsDecorationsColumnView as enableColumnView,
     showTextDocumentDecorations,
@@ -23,6 +27,7 @@ import {
 import { syntaxHighlight } from './codemirror/highlight'
 import { selectLines, selectableLineNumbers, SelectedLineRange } from './codemirror/linenumbers'
 import { sourcegraphExtensions } from './codemirror/sourcegraph-extensions'
+import { blobPropsFacet } from './codemirror'
 
 const staticExtensions: Extension = [
     // Using EditorState.readOnly instead of EditorView.editable allows us to
@@ -49,24 +54,26 @@ const staticExtensions: Extension = [
     keymap.of(searchKeymap),
 ]
 
-export const Blob: React.FunctionComponent<BlobProps> = ({
-    className,
-    blobInfo,
-    wrapCode,
-    isLightTheme,
-    ariaLabel,
-    role,
-    extensionsController,
-    settingsCascade,
-    location,
-    history,
-    blameDecorations,
+export const Blob: React.FunctionComponent<BlobProps> = props => {
+    const {
+        className,
+        blobInfo,
+        wrapCode,
+        isLightTheme,
+        ariaLabel,
+        role,
+        extensionsController,
+        settingsCascade,
+        location,
+        history,
+        blameDecorations,
 
-    // These props don't have to be supported yet because the CodeMirror blob
-    // view is only used on the blob page where these are always true
-    // disableStatusBar
-    // disableDecorations
-}) => {
+        // These props don't have to be supported yet because the CodeMirror blob
+        // view is only used on the blob page where these are always true
+        // disableStatusBar
+        // disableDecorations
+    } = props
+
     const [container, setContainer] = useState<HTMLDivElement | null>(null)
 
     const enableExtensionsDecorationsColumnView = enableExtensionsDecorationsColumnViewFromSettings(settingsCascade)
@@ -75,10 +82,14 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
         () => [
             wrapCode ? EditorView.lineWrapping : [],
             EditorView.darkTheme.of(isLightTheme === false),
-            locationField.init(() => location),
-            // Force column view if blameDecorations is set
-            enableColumnView.of(!!blameDecorations || enableExtensionsDecorationsColumnView),
-            blameDecorations ? showTextDocumentDecorations.of([[blameDecorationType, blameDecorations]]) : [],
+            blameDecorations
+                ? [
+                      // Force column view if blameDecorations is set
+                      enableColumnView.of(true),
+                      showTextDocumentDecorations.of([[blameDecorationType, blameDecorations]]),
+                  ]
+                : [],
+            enableColumnView.of(enableExtensionsDecorationsColumnView),
         ],
         [wrapCode, isLightTheme, location, enableExtensionsDecorationsColumnView, blameDecorations]
     )
@@ -114,6 +125,10 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
         )
     }, [])
 
+    const [propsField, updatePropsField] = useMemo(
+        () => createUpdateableField(props, field => blobPropsFacet.from(field)),
+        []
+    )
     const extensions = useMemo(
         () => [
             selectableLineNumbers({ onSelection }),
@@ -121,8 +136,9 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
             settingsCompartment,
             syntaxHighlight.of(blobInfo),
             sourcegraphExtensions({ blobInfo, extensionsController }),
+            propsField,
         ],
-        [settingsCompartment, onSelection, blobInfo, extensionsController]
+        [propsField, settingsCompartment, onSelection, blobInfo, extensionsController]
     )
 
     const editor = useCodeMirror(container, blobInfo.content, extensions, {
@@ -132,12 +148,12 @@ export const Blob: React.FunctionComponent<BlobProps> = ({
 
     useEffect(() => {
         if (editor) {
-            updateLocation(editor, location)
+            updatePropsField(editor, props)
         }
         // editor is not provided because this should only be triggered after the
         // editor was created (i.e. not on first render)
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [location])
+    }, [props])
 
     useEffect(() => {
         if (editor) {

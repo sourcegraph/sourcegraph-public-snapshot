@@ -1,42 +1,51 @@
-import { useEffect } from 'react'
-
 import { Extension, Facet } from '@codemirror/state'
-import { EditorView, hoverTooltip, repositionTooltips } from '@codemirror/view'
-import { upperFirst } from 'lodash'
-import { createRoot } from 'react-dom/client'
+import { EditorView, hoverTooltip, repositionTooltips, ViewUpdate } from '@codemirror/view'
+import { createRoot, Root } from 'react-dom/client'
 
-import { isErrorLike } from '@sourcegraph/common'
-import hoverOverlayStyle from '@sourcegraph/shared/src/hover/HoverOverlay.module.scss'
+import { addLineRangeQueryParameter, isErrorLike, toPositionOrRangeQueryParameter } from '@sourcegraph/common'
 import { HoverOverlayBaseProps } from '@sourcegraph/shared/src/hover/HoverOverlay.types'
-import hoverOverlayContentsStyle from '@sourcegraph/shared/src/hover/HoverOverlayContents.module.scss'
-import { HoverOverlayContent } from '@sourcegraph/shared/src/hover/HoverOverlayContents/HoverOverlayContent'
-import { Alert, Card, WildcardThemeContext } from '@sourcegraph/wildcard'
 
-import webHoverOverlayStyle from '../../../components/WebHoverOverlay/WebHoverOverlay.module.scss'
 import { Position } from '@sourcegraph/extension-api-types'
-import { positionToOffset } from './utils'
+import { WebHoverOverlay, WebHoverOverlayProps } from '../../../components/WebHoverOverlay'
+import { blobPropsFacet } from '.'
+import { combineLatest, Observable, Subject } from 'rxjs'
+import { startWith } from 'rxjs/operators'
+import { BlobProps, updateBrowserHistoryIfChanged } from '../Blob'
+import { Container } from './react-interop'
+import webOverlayStyles from '../../../components/WebHoverOverlay/WebHoverOverlay.module.scss'
 
-type HovercardSource = (position: Position) => Promise<Pick<HoverOverlayBaseProps, 'hoverOrError'> | null>
+type HovercardSource = (
+    view: EditorView,
+    position: Position
+) => Observable<Pick<HoverOverlayBaseProps, 'hoverOrError' | 'actionsOrError'>>
 
 const HOVER_TIMEOUT = 50
 
 const hoverCardTheme = EditorView.theme({
     '.cm-code-intel-hovercard': {
+        // Without this all text in the hovercard is monospace
         fontFamily: 'sans-serif',
-        minWidth: '10rem',
-        maxWidth: '35rem',
     },
-    '.cm-code-intel-contents': {
-        maxHeight: '25rem',
-    },
-    '.cm-code-intel-content': {
-        maxHeight: '25rem',
+    [`.${webOverlayStyles.webHoverOverlay}`]: {
+        // This is normally "position: 'absolute'". CodeMirror does the
+        // positioning. Without this CodeMirror thinks the hover content is
+        // empty.
+        position: 'initial !important',
     },
     '.cm-tooltip': {
+        // Reset CodeMirror's default style
         border: 'initial',
         backgroundColor: 'initial',
     },
 })
+
+// WebHoverOverlay requires to be passed an element representing the currently
+// hovered token.  Since we don't have/want that for CodeMirror we are passing a
+// dummy element.
+const dummyHoveredElement = document.createElement('span')
+// WebHoverOverlay expects to be passed the overlay position. Since CodeMirror
+// positions the element we always use the same value.
+const dummyOverlayPosition = { left: 0, bottom: 0 }
 
 /**
  * Facet with which an extension can provide a hovercard source. For simplicity
@@ -58,35 +67,111 @@ export function hovercard(facet: Facet<HovercardSource, HovercardSource>): Exten
         hoverTooltip(
             async (view, offset) => {
                 const line = view.state.doc.lineAt(offset)
-                const character = Math.max(offset - line.from, 0)
-                const position = { character, line: line.number - 1 }
 
-                const result = await view.state.facet(facet)(position)
-                if (
-                    !result ||
-                    !result.hoverOrError ||
-                    result.hoverOrError === 'loading' ||
-                    isErrorLike(result.hoverOrError)
-                ) {
-                    return null
-                }
-
-                // Try to align the tooltip with the token start,
-                // falling back to CodeMirror's logic to find a word
-                // boundary or the cursor position.
+                // Find enclosing word/token. This is necessary otherwise
+                // the extension host cannot determine whether we are the
+                // definition or not.
                 let start = offset
                 let end = offset
 
-                if (result.hoverOrError.range) {
-                    start = positionToOffset(view.state.doc, result.hoverOrError.range.start)
-                    end = positionToOffset(view.state.doc, result.hoverOrError.range.end)
-                } else {
+                {
                     const word = view.state.wordAt(offset)
                     if (word) {
                         start = word.from
-                        end = word.from
+                        end = word.to
                     }
                 }
+
+                const character = Math.max(start - line.from + 1, 1)
+                const position = { character, line: line.number }
+                const nextRoot = new Subject<Root>()
+                const nextProps = new Subject<BlobProps>()
+
+                combineLatest([
+                    nextRoot,
+                    view.state.facet(facet)(view, position),
+                    nextProps.pipe(startWith(view.state.facet(blobPropsFacet))),
+                ]).subscribe(([root, { hoverOrError, actionsOrError }, props]) => {
+                    let hoverContext = {
+                        commitID: props.blobInfo.commitID,
+                        filePath: props.blobInfo.filePath,
+                        repoName: props.blobInfo.repoName,
+                        revision: props.blobInfo.revision,
+                    }
+
+                    let hoveredToken: WebHoverOverlayProps['hoveredToken'] = {
+                        ...hoverContext,
+                        ...position,
+                    }
+
+                    if (
+                        hoverOrError &&
+                        hoverOrError !== 'loading' &&
+                        !isErrorLike(hoverOrError) &&
+                        hoverOrError.range
+                    ) {
+                        hoveredToken = {
+                            ...hoveredToken,
+                            line: hoverOrError.range.start.line + 1,
+                            character: hoverOrError.range.start.character + 1,
+                        }
+                    }
+
+                    if (hoverOrError) {
+                        root.render(
+                            <Container onRender={() => repositionTooltips(view)} history={props.history}>
+                                <div className="cm-code-intel-hovercard">
+                                    <WebHoverOverlay
+                                        // Blob props
+                                        location={props.location}
+                                        onHoverShown={props.onHoverShown}
+                                        isLightTheme={props.isLightTheme}
+                                        platformContext={props.platformContext}
+                                        settingsCascade={props.settingsCascade}
+                                        telemetryService={props.telemetryService}
+                                        extensionsController={props.extensionsController}
+                                        nav={props.nav ?? (url => props.history.push(url))}
+                                        // Hover props
+                                        actionsOrError={actionsOrError}
+                                        hoverOrError={hoverOrError}
+                                        // CodeMirror handles the positioning but a
+                                        // non-nullable value must be passed for the
+                                        // hovercard to render
+                                        overlayPosition={dummyOverlayPosition}
+                                        hoveredToken={hoveredToken}
+                                        hoveredTokenElement={dummyHoveredElement}
+                                        pinOptions={{
+                                            showCloseButton: true,
+                                            onCloseButtonClick: () => {
+                                                const parameters = new URLSearchParams(props.location.search)
+                                                parameters.delete('popover')
+
+                                                updateBrowserHistoryIfChanged(props.history, props.location, parameters)
+                                            },
+                                            onCopyLinkButtonClick: async () => {
+                                                const range = { start: position, end: position }
+                                                const context = { position, range }
+                                                const search = new URLSearchParams(location.search)
+                                                search.set('popover', 'pinned')
+                                                updateBrowserHistoryIfChanged(
+                                                    props.history,
+                                                    props.location,
+                                                    addLineRangeQueryParameter(
+                                                        search,
+                                                        toPositionOrRangeQueryParameter(context)
+                                                    )
+                                                )
+                                                await navigator.clipboard.writeText(window.location.href)
+                                            },
+                                        }}
+                                    />
+                                </div>
+                            </Container>
+                        )
+                    } else {
+                        root.render([])
+                    }
+                })
 
                 return {
                     pos: start,
@@ -97,19 +182,16 @@ export function hovercard(facet: Facet<HovercardSource, HovercardSource>): Exten
                         return {
                             dom: container,
                             overlap: true,
-
                             mount() {
-                                const root = createRoot(container)
-                                root.render(
-                                    <Hovercard
-                                        hoverOrError={result.hoverOrError}
-                                        onRender={() => {
-                                            // Trigger repositioning after component rendered to ensure that
-                                            // its position is account for its width and height
-                                            repositionTooltips(view)
-                                        }}
-                                    />
-                                )
+                                nextRoot.next(createRoot(container))
+                            },
+                            update(viewUpdate: ViewUpdate) {
+                                if (
+                                    viewUpdate.startState.facet(blobPropsFacet) !==
+                                    viewUpdate.state.facet(blobPropsFacet)
+                                ) {
+                                    nextProps.next(viewUpdate.state.facet(blobPropsFacet))
+                                }
                             },
                         }
                     },
@@ -121,49 +203,4 @@ export function hovercard(facet: Facet<HovercardSource, HovercardSource>): Exten
         ),
         hoverCardTheme,
     ]
-}
-
-/**
- * A simple replication of the hovercard for the old blob view.
- * TODO: Reuse existing hovercard component for full feature parity
- */
-export const Hovercard: React.FunctionComponent<
-    Pick<HoverOverlayBaseProps, 'hoverOrError'> & { onRender: () => void }
-> = ({ hoverOrError, onRender }) => {
-    useEffect(onRender, [onRender])
-
-    if (isErrorLike(hoverOrError)) {
-        return <Alert className={hoverOverlayStyle.hoverError}>{upperFirst(hoverOrError.message)}</Alert>
-    }
-
-    if (hoverOrError === undefined || hoverOrError === 'loading') {
-        return null
-    }
-
-    if (hoverOrError === null || (hoverOrError.contents.length === 0 && hoverOrError.alerts?.length)) {
-        return (
-            // Show some content to give the close button space and communicate to the user we couldn't find a hover.
-            <small className={hoverOverlayStyle.hoverEmpty}>No hover information available.</small>
-        )
-    }
-
-    return (
-        <WildcardThemeContext.Provider value={{ isBranded: true }}>
-            <Card
-                className={`${hoverOverlayStyle.card} ${webHoverOverlayStyle.webHoverOverlay} cm-code-intel-hovercard`}
-            >
-                <div className={`${hoverOverlayContentsStyle.hoverOverlayContents} cm-code-intel-contents`}>
-                    {hoverOrError.contents.map((content, index) => (
-                        <HoverOverlayContent
-                            key={index}
-                            index={index}
-                            content={content}
-                            aggregatedBadges={hoverOrError.aggregatedBadges}
-                            contentClassName="cm-code-intel-content"
-                        />
-                    ))}
-                </div>
-            </Card>
-        </WildcardThemeContext.Provider>
-    )
 }
