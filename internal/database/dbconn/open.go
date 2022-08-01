@@ -137,7 +137,6 @@ func registerPostgresProxy() {
 			metricSQLSuccessTotal: m.WithLabelValues("success"),
 			metricSQLErrorTotal:   m.WithLabelValues("error"),
 		},
-		// &tracingHooks{},
 	))
 	sql.Register("postgres-proxy", &extendedDriver{dri})
 }
@@ -152,15 +151,7 @@ func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 		stdlib.RegisterConnConfig(cfg),
 		otelsql.WithTracerProvider(otel.GetTracerProvider()),
 		otelsql.WithSpanOptions(otelsql.SpanOptions{
-			Ping:                 false,
-			RowsNext:             false,
-			DisableErrSkip:       false,
-			DisableQuery:         false,
 			OmitConnResetSession: true,
-			OmitConnPrepare:      false,
-			OmitConnQuery:        false,
-			OmitRows:             false,
-			OmitConnectorConnect: false,
 		}),
 	)
 	if err != nil {
