@@ -223,4 +223,4 @@ Example:
 
 If the `update.check` is running, and the site config is correctly configured, then it may be the case that `pgsql` is failing to return data from the SQL queries to the `frontend`. Check out the frontend logs for logs tagged [`telemetry: updatecheck failed`](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/app/updatecheck/client%5C.go+telemetry:+updatecheck+failed&patternType=literal).
 
-If issues persist please reach out to a team member for support at support@sourcegraph.com 
+If issues persist, please reach out to a team member for support at support@sourcegraph.com 
