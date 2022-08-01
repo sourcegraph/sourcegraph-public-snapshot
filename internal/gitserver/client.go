@@ -753,7 +753,7 @@ func (c *clientImplementor) P4Exec(ctx context.Context, host, user, password str
 
 	if resp.StatusCode != http.StatusOK {
 		defer resp.Body.Close()
-		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, readResponseBody(resp))
+		return nil, nil, errors.Errorf("unexpected status code: %d - %s", resp.StatusCode, readResponseBody(resp.Body))
 	}
 
 	return resp.Body, resp.Trailer, nil
@@ -814,7 +814,7 @@ func (c *clientImplementor) BatchLog(ctx context.Context, opts BatchLogOptions, 
 		logger.Log(log.Int("resp.StatusCode", resp.StatusCode))
 
 		if resp.StatusCode != http.StatusOK {
-			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(resp))
+			return errors.Newf("http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200)))
 		}
 
 		var response protocol.BatchLogResponse
@@ -947,7 +947,7 @@ func (c *clientImplementor) RequestRepoUpdate(ctx context.Context, repo api.Repo
 		return nil, &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "RepoInfo",
-			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(resp)),
+			Err: errors.Errorf("RepoInfo: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 		}
 	}
 
@@ -981,7 +981,7 @@ func (c *clientImplementor) RequestRepoMigrate(ctx context.Context, repo api.Rep
 		return nil, &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "RepoMigrate",
-			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, readResponseBody(resp)),
+			Err: errors.Errorf("RepoMigrate: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 		}
 	}
 
@@ -1008,7 +1008,7 @@ func (c *clientImplementor) IsRepoCloneable(ctx context.Context, repo api.RepoNa
 	}
 	defer r.Body.Close()
 	if r.StatusCode != http.StatusOK {
-		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, readResponseBody(r))
+		return errors.Errorf("gitserver error (status code %d): %s", r.StatusCode, readResponseBody(r.Body))
 	}
 
 	var resp protocol.IsRepoCloneableResponse
@@ -1165,7 +1165,7 @@ func (c *clientImplementor) RepoInfo(ctx context.Context, repos ...api.RepoName)
 				o.err = &url.Error{
 					URL: resp.Request.URL.String(),
 					Op:  "RepoInfo",
-					Err: errors.Errorf("RepoInfo: http status code: %d, reason: %s", resp.StatusCode, readResponseBody(resp)),
+					Err: errors.Errorf("RepoInfo: http status code: %d, reason: %s", resp.StatusCode, readResponseBody(resp.Body)),
 				}
 
 				ch <- o
@@ -1263,7 +1263,7 @@ func (c *clientImplementor) RemoveFrom(ctx context.Context, repo api.RepoName, f
 		return &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "RepoRemove",
-			Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, readResponseBody(resp)),
+			Err: errors.Errorf("RepoRemove: http status %d: %s", resp.StatusCode, readResponseBody(io.LimitReader(resp.Body, 200))),
 		}
 	}
 	return nil
@@ -1352,7 +1352,7 @@ func (c *clientImplementor) CreateCommitFromPatch(ctx context.Context, req proto
 		return "", &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "CreateCommitFromPatch",
-			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.Status, readResponseBody(resp)),
+			Err: errors.Errorf("CreateCommitFromPatch: http status %d, %s", resp.Status, readResponseBody(resp.Body)),
 		}
 	}
 
@@ -1392,7 +1392,7 @@ func (c *clientImplementor) GetObject(ctx context.Context, repo api.RepoName, ob
 		return nil, &url.Error{
 			URL: resp.Request.URL.String(),
 			Op:  "GetObject",
-			Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp)),
+			Err: errors.Errorf("GetObject: http status %d, %s", resp.StatusCode, readResponseBody(resp.Body)),
 		}
 	}
 
@@ -1483,8 +1483,8 @@ func getPinnedRepoAddr(repo string, pinnedServers map[string]string) (bool, stri
 //
 // This is an unusual pattern of not returning an error. Be careful of replicating this in other
 // parts of the code.
-func readResponseBody(resp *http.Response) string {
-	content, err := io.ReadAll(resp.Body)
+func readResponseBody(body io.Reader) string {
+	content, err := io.ReadAll(body)
 	if err != nil {
 		return fmt.Sprintf("failed to read response body, error: %v", err)
 	}
