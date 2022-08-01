@@ -3,9 +3,9 @@ ALTER TABLE batch_specs
     ADD FOREIGN KEY (batch_change_id) REFERENCES batch_changes(id) ON DELETE SET NULL DEFERRABLE;
 
 UPDATE batch_specs SET batch_change_id = (
-    -- In the event that a batch change is manually mapped to different batch specs,
-    -- we want to use the oldest. This should never happen in production,
-    -- it's only added to minimize errors when running the migration on dev.
+    -- In the event, the database is in a not-so-optimal state (usually in dev environment)
+    -- we want the subquery to never return more than one row.
+    -- This will never happen in production.
     SELECT
         bc.id
     FROM batch_changes bc
