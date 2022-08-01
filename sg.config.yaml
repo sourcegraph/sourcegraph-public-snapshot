@@ -587,8 +587,6 @@ commands:
       DOCKER_USER: ''
       ADD_HOST_FLAG: ''
       CACHE: false
-    watch:
-      - monitoring
 
   prometheus:
     cmd: |

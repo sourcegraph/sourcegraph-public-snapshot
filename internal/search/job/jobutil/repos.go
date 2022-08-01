@@ -3,8 +3,11 @@ package jobutil
 import (
 	"context"
 
+	"github.com/grafana/regexp"
 	"github.com/opentracing/opentracing-go/log"
 
+	"github.com/sourcegraph/sourcegraph/internal/api"
+	"github.com/sourcegraph/sourcegraph/internal/database"
 	"github.com/sourcegraph/sourcegraph/internal/search"
 	"github.com/sourcegraph/sourcegraph/internal/search/job"
 	searchrepos "github.com/sourcegraph/sourcegraph/internal/search/repos"
@@ -37,6 +40,59 @@ func (s *RepoSearchJob) Run(ctx context.Context, clients job.RuntimeClients, str
 	// actionable error, but for repo search, it is not.
 	err = errors.Ignore(err, errors.IsPred(searchrepos.ErrNoResolvedRepos))
 	return nil, err
+}
+
+// repoDescriptions gets the repo ID and repo description from the database for each of the repos in repoRevs, and returns
+// a map of repo ID to repo description.
+func (s *RepoSearchJob) repoDescriptions(ctx context.Context, db database.DB, repoRevs []*search.RepositoryRevisions) (map[api.RepoID]string, error) {
+	repoIDs := make([]api.RepoID, 0, len(repoRevs))
+	for _, repoRev := range repoRevs {
+		repoIDs = append(repoIDs, repoRev.Repo.ID)
+	}
+
+	repoDescriptions, err := db.Repos().GetRepoDescriptionsByIDs(ctx, repoIDs...)
+	if err != nil {
+		return nil, err
+	}
+
+	return repoDescriptions, nil
+}
+
+// descriptionMatchRanges takes a map of repo IDs to their descriptions, and a list of patterns to match against those repo descriptions.
+// It returns a map of repo IDs to []result.Range. The []result.Range value contains the match ranges
+// for repos with a description that matches at least one of the patterns in descriptionPatterns.
+func descriptionMatchRanges(repoDescriptions map[api.RepoID]string, descriptionPatterns []string) map[api.RepoID][]result.Range {
+	res := make(map[api.RepoID][]result.Range)
+
+	for repoID, repoDescription := range repoDescriptions {
+		for _, dp := range descriptionPatterns {
+			re, err := regexp.Compile(`(?is)` + dp) // case-insensitive and match across newlines
+			if err != nil {
+				// this should never happen. repo:has.description predicate arguments should already be validated and `re` should always compile.
+				panic(err)
+			}
+
+			submatches := re.FindAllStringSubmatchIndex(repoDescription, -1)
+			if len(submatches) > 0 {
+				for _, sm := range submatches {
+					res[repoID] = append(res[repoID], result.Range{
+						Start: result.Location{
+							Offset: sm[0],
+							Line:   0,
+							Column: sm[0],
+						},
+						End: result.Location{
+							Offset: sm[1],
+							Line:   0,
+							Column: sm[1],
+						},
+					})
+				}
+			}
+		}
+	}
+
+	return res
 }
 
 func (*RepoSearchJob) Name() string {

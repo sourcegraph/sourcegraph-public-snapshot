@@ -48,7 +48,6 @@ const EXTENSIONS_CONTROLLER: ActionItemComponentProps['extensionsController'] = 
 }
 
 const PLATFORM_CONTEXT: CommunitySearchContextPageProps['platformContext'] = {
-    forceUpdateTooltip: () => undefined,
     settings: NEVER,
     sourcegraphURL: '',
     requestGraphQL: () => EMPTY,

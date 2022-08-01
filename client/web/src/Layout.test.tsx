@@ -37,7 +37,7 @@ describe('Layout', () => {
         },
         keyboardShortcuts: [],
         extensionsController,
-        platformContext: { forceUpdateTooltip: () => {}, settings: NEVER },
+        platformContext: { settings: NEVER },
     } as unknown) as LayoutProps
 
     const origContext = window.context
