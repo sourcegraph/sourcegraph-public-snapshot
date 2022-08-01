@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/inconshreveable/log15"
-
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/sourcegraph/sourcegraph/internal/metrics"
