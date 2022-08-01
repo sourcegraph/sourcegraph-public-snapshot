@@ -8,6 +8,9 @@ import (
 )
 
 type upgradePlan struct {
+	// the source and target instance versions
+	from, to oobmigration.Version
+
 	// the stitched schema migration definitions over the entire version range by schema name
 	stitchedDefinitionsBySchemaName map[string]*definition.Definitions
 
@@ -94,6 +97,8 @@ func planUpgrade(versionRange []oobmigration.Version) (upgradePlan, error) {
 	})
 
 	return upgradePlan{
+		from:                            from,
+		to:                              to,
 		stitchedDefinitionsBySchemaName: stitchedDefinitionsBySchemaName,
 		steps:                           steps,
 	}, nil
