@@ -253,14 +253,6 @@ func StructuralSearchEnabled() bool {
 	return val == "enabled"
 }
 
-func DependenciesSearchEnabled() bool {
-	val := ExperimentalFeatures().DependenciesSearch
-	if val == "" {
-		return true
-	}
-	return val == "enabled"
-}
-
 func ExperimentalFeatures() schema.ExperimentalFeatures {
 	val := Get().ExperimentalFeatures
 	if val == nil {

@@ -33,7 +33,7 @@ All notable changes to Sourcegraph are documented in this file.
 
 ### Removed
 
--
+- The experimental dependencies search feature has been removed, including the `repo:deps(...)` search predicate and the site configuration options `codeIntelLockfileIndexing.enabled` and `experimentalFeatures.dependenciesSearch`. [#39742](https://github.com/sourcegraph/sourcegraph/pull/39742)
 
 ## 3.42.1
 

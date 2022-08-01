@@ -190,12 +190,6 @@
           "enum": ["enabled", "disabled"],
           "default": "enabled"
         },
-        "dependenciesSearch": {
-          "description": "Enables support for repo:dependencies predicate queries.",
-          "type": "string",
-          "enum": ["enabled", "disabled"],
-          "default": "enabled"
-        },
         "andOrQuery": {
           "description": "DEPRECATED: Interpret a search input query as an and/or query.",
           "type": "string",
@@ -649,6 +643,13 @@
     },
     "codeIntelAutoIndexing.allowGlobalPolicies": {
       "description": "Whether auto-indexing policies may apply to all repositories on the Sourcegraph instance. Default is false. The policyRepositoryMatchLimit setting still applies to such auto-indexing policies.",
+      "type": "boolean",
+      "!go": { "pointer": true },
+      "group": "Code intelligence",
+      "default": false
+    },
+    "codeIntelLockfileIndexing.enabled": {
+      "description": "DEPRECATED: Enables/disables the code intel lockfile-indexing feature. Currently experimental.",
       "type": "boolean",
       "!go": { "pointer": true },
       "group": "Code intelligence",
