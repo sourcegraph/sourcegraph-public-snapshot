@@ -106,7 +106,7 @@ export const AnnotatedSearchInput: React.FunctionComponent<
                     d="M688 110H731C732.105 110 733 110.895 733 112V142C733 143.105 732.105 144 731 144H688V110Z"
                     fill="#1475CF"
                 />
-                <Icon aria-hidden={true} className={styles.searchIcon} x="698" y="115" svgPath={mdiMagnify} />
+                <Icon aria-label="Search" className={styles.searchIcon} x="698" y="115" svgPath={mdiMagnify} />
 
                 {arrow(188, 30, 'above')}
                 <text transform={`translate(${filterTextStart}, 44)`}>
