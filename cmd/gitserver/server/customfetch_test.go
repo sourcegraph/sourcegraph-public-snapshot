@@ -2,6 +2,9 @@ package server
 
 import (
 	"context"
+	"encoding/json"
+	"io/ioutil"
+	"os"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -11,10 +14,6 @@ import (
 )
 
 func TestEmptyCustomGitFetch(t *testing.T) {
-	customGitFetch = func() map[string][]string {
-		return buildCustomFetchMappings(nil)
-	}
-
 	remoteURL, _ := vcs.ParseURL("git@github.com:sourcegraph/sourcegraph.git")
 	customCmd := customFetchCmd(context.Background(), remoteURL)
 	if customCmd != nil {
@@ -24,7 +23,8 @@ func TestEmptyCustomGitFetch(t *testing.T) {
 
 func TestCustomGitFetch(t *testing.T) {
 	// mock value for test
-	insecureEnableGitFetch = "true"
+	customGitFetchCmdConf = "/tmp/customGitConfig.json"
+
 	mappings := []*schema.CustomGitFetchMapping{
 		{
 			DomainPath: "github.com/foo/normal/one",
@@ -42,6 +42,17 @@ func TestCustomGitFetch(t *testing.T) {
 			DomainPath: "github.com/foo/absolute",
 			Fetch:      "/foo/bar/git fetch things",
 		},
+	}
+
+	c, err := json.Marshal(mappings)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	err = ioutil.WriteFile(customGitFetchCmdConf, c, 0644)
+
+	if err != nil {
+		t.Fatal(err)
 	}
 
 	tests := []struct {
@@ -68,10 +79,6 @@ func TestCustomGitFetch(t *testing.T) {
 		},
 	}
 
-	customGitFetch = func() map[string][]string {
-		return buildCustomFetchMappings(mappings)
-	}
-
 	for _, test := range tests {
 		remoteURL, _ := vcs.ParseURL(test.url)
 		customCmd := customFetchCmd(context.Background(), remoteURL)
@@ -84,4 +91,8 @@ func TestCustomGitFetch(t *testing.T) {
 			t.Errorf("URL %q: %v", test.url, diff)
 		}
 	}
+
+	t.Cleanup(func() {
+		os.Remove(customGitFetchCmdConf)
+	})
 }
