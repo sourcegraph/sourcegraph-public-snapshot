@@ -199,7 +199,7 @@ Sourcegraph telemetry pings are handled by a goroutine running on Sourcegraphs f
 ### Misconfigured update.channel 
 The most common scenario in which Sourcegraph stops sending pings is a change to the `update.channel` setting in an instance's [site config](https://docs.sourcegraph.com/admin/config/site_config)
 ```
-"update.channel":"release",
+"update.channel": "release",
 ```
 *This setting [must be set to "release"](https://sourcegraph.com/search?q=context:global+repo:%5Egithub%5C.com/sourcegraph/sourcegraph%24+file:%5Ecmd/frontend/internal/app/updatecheck/client%5C.go+channel+%21%3D+%22release%22&patternType=literal) in order for the telemetry goroutine to run, don't worry only site admins see the update available banners!*
 
