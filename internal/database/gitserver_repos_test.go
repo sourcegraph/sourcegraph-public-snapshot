@@ -963,28 +963,22 @@ func TestGitserverUpdateRepoSizes(t *testing.T) {
 
 	// Checking repo diffs, excluding UpdatedAt. This is to verify that nothing except repo_size_bytes
 	// has changed
-	after1, err := db.GitserverRepos().GetByID(ctx, repo1.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff := cmp.Diff(gitserverRepo1, after1, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-		t.Fatal(diff)
-	}
-
-	after2, err := db.GitserverRepos().GetByID(ctx, repo2.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff := cmp.Diff(gitserverRepo2, after2, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-		t.Fatal(diff)
-	}
-
-	after3, err := db.GitserverRepos().GetByID(ctx, repo3.ID)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if diff := cmp.Diff(gitserverRepo3, after3, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
-		t.Fatal(diff)
+	for _, repo := range []*types.GitserverRepo{
+		gitserverRepo1,
+		gitserverRepo2,
+		gitserverRepo3,
+	} {
+		reloaded, err := db.GitserverRepos().GetByID(ctx, repo.RepoID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if diff := cmp.Diff(repo, reloaded, cmpopts.IgnoreFields(types.GitserverRepo{}, "UpdatedAt")); diff != "" {
+			t.Fatal(diff)
+		}
+		// Separately make sure UpdatedAt has changed, though
+		if repo.UpdatedAt.Equal(reloaded.UpdatedAt) {
+			t.Fatalf("UpdatedAt of GitserverRepo should be updated but was not. before=%s, after=%s", repo.UpdatedAt, reloaded.UpdatedAt)
+		}
 	}
 
 	// update again to make sure they're not updated again
@@ -1058,7 +1052,7 @@ func createTestRepo(ctx context.Context, t *testing.T, db DB, payload *createTes
 		t.Fatal(diff)
 	}
 
-	return repo, gitserverRepo
+	return repo, fromDB
 }
 
 type createTestRepoPayload struct {
