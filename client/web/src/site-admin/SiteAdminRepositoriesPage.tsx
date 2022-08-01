@@ -59,7 +59,9 @@ const RepositoryNode: React.FunctionComponent<React.PropsWithChildren<Repository
             <div className={styles.alertWrapper}>
                 <Alert variant="warning">
                     <Text className="font-weight-bold">Error updating repo:</Text>
-                    <TerminalLine className={styles.alertContent}>{node.mirrorInfo.lastError}</TerminalLine>
+                    <TerminalLine className={styles.alertContent}>
+                        {node.mirrorInfo.lastError.replaceAll('\r', '\n')}
+                    </TerminalLine>
                 </Alert>
             </div>
         )}
