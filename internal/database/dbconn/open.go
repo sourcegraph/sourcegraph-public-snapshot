@@ -4,7 +4,6 @@ import (
 	"context"
 	"database/sql"
 	"database/sql/driver"
-	"fmt"
 	"log"
 	"strconv"
 	"strings"
@@ -74,63 +73,57 @@ func openDBWithStartupWait(cfg *pgx.ConnConfig) (db *sql.DB, err error) {
 	}
 }
 
-type noodle interface {
-	// driver.Pinger
-	driver.Execer
+// extendedDriver turn a wrapping sql.Driver that doesn't implement Ping,
+// ResetSession and CheckNamedValue into one that does, by reaching for the
+// underlying implementation that actually does support it.
+//
+// A sqlhooks.Driver must be used as a Driver, otherwise this is going to crash.
+type extendedDriver struct {
+	driver.Driver
+}
+type extendedConn struct {
 	driver.ExecerContext
-	driver.Queryer
 	driver.QueryerContext
 	driver.Conn
 	driver.ConnPrepareContext
 	driver.ConnBeginTx
-	// driver.SessionResetter
-	// driver.NamedValueChecker
 }
 
-type noodleDriver struct {
-	driver.Driver
-}
-
-func (d *noodleDriver) Open(str string) (driver.Conn, error) {
+// Open returns a conn wrapped through extendedConn, implementing the
+// Ping, ResetSession and CheckNamedValue optional methods that the
+// otelsql.Conn expects to be implemented.
+func (d *extendedDriver) Open(str string) (driver.Conn, error) {
+	if _, ok := d.Driver.(*sqlhooks.Driver); !ok {
+		return nil, errors.New("sql driver is not a sqlhooks.Driver, aborting")
+	}
 	c, err := d.Driver.Open(str)
 	if err != nil {
 		return nil, err
 	}
-	return newNoodleConn(c), nil
+	return &extendedConn{
+		ExecerContext:      c.(any).(driver.ExecerContext),
+		QueryerContext:     c.(any).(driver.QueryerContext),
+		Conn:               c.(any).(driver.Conn),
+		ConnPrepareContext: c.(any).(driver.ConnPrepareContext),
+		ConnBeginTx:        c.(any).(driver.ConnBeginTx),
+	}, nil
 }
 
-func newNoodleConn(conn driver.Conn) *noodleConn {
-	return &noodleConn{
-		// Execer:             conn.(any).(driver.Execer),
-		ExecerContext: conn.(any).(driver.ExecerContext),
-		// Queryer:            conn.(any).(driver.Queryer),
-		QueryerContext:     conn.(any).(driver.QueryerContext),
-		Conn:               conn.(any).(driver.Conn),
-		ConnPrepareContext: conn.(any).(driver.ConnPrepareContext),
-		ConnBeginTx:        conn.(any).(driver.ConnBeginTx),
-	}
+func (n *extendedConn) rawConn() driver.Conn {
+	c := n.Conn.(*sqlhooks.ExecerQueryerContextWithSessionResetter)
+	return c.Conn.Conn
 }
 
-type noodleConn struct {
-	// driver.Execer
-	driver.ExecerContext
-	// driver.Queryer
-	driver.QueryerContext
-	driver.Conn
-	driver.ConnPrepareContext
-	driver.ConnBeginTx
+func (n *extendedConn) Ping(ctx context.Context) error {
+	return n.rawConn().(driver.Pinger).Ping(ctx)
 }
 
-func (n *noodleConn) Ping(ctx context.Context) error {
-	return nil
+func (n *extendedConn) ResetSession(ctx context.Context) error {
+	return n.rawConn().(driver.SessionResetter).ResetSession(ctx)
 }
 
-func (n *noodleConn) ResetSession(ctx context.Context) error {
-	return nil
-}
-
-func (c *noodleConn) CheckNamedValue(namedValue *driver.NamedValue) error {
-	return nil
+func (n *extendedConn) CheckNamedValue(namedValue *driver.NamedValue) error {
+	return n.rawConn().(driver.NamedValueChecker).CheckNamedValue(namedValue)
 }
 
 func registerPostgresProxy() {
@@ -138,35 +131,21 @@ func registerPostgresProxy() {
 		Name: "src_pgsql_request_total",
 		Help: "Total number of SQL requests to the database.",
 	}, []string{"type"})
-	//
-	// sql.Register("postgres-proxy", sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
-	// 	&metricHooks{
-	// 		metricSQLSuccessTotal: m.WithLabelValues("success"),
-	// 		metricSQLErrorTotal:   m.WithLabelValues("error"),
-	// 	},
-	// 	&tracingHooks{},
-	// )))
 
 	dri := sqlhooks.Wrap(stdlib.GetDefaultDriver(), combineHooks(
 		&metricHooks{
 			metricSQLSuccessTotal: m.WithLabelValues("success"),
 			metricSQLErrorTotal:   m.WithLabelValues("error"),
 		},
-		&tracingHooks{},
+		// &tracingHooks{},
 	))
-
-	// ping
-	// reset session
-
-	sql.Register("postgres-proxy", &noodleDriver{dri})
+	sql.Register("postgres-proxy", &extendedDriver{dri})
 }
 
 var registerOnce sync.Once
 
 func open(cfg *pgx.ConnConfig) (*sql.DB, error) {
 	registerOnce.Do(registerPostgresProxy)
-
-	fmt.Printf("---\n%v\n----\n", otel.GetTracerProvider())
 
 	db, err := otelsql.Open(
 		"postgres-proxy",
