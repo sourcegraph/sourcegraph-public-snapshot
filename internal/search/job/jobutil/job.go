@@ -756,6 +756,8 @@ func jobMode(b query.Basic, resultTypes result.Types, st query.SearchType, onSou
 				return n.Negated
 			case query.FieldRepoHasFile:
 				return false
+			case query.FieldRepoHasCommitAfter:
+				return false
 			default:
 				return true
 			}
