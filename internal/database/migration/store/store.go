@@ -174,25 +174,6 @@ func (s *Store) inferBackfillTarget(ctx context.Context) (int, bool, error) {
 	return 0, false, nil
 }
 
-// inferBackfillTargetViaGolangMigrate reads the old .*schema_migrations table (if it exists) and
-// returns the version number. Any migration defined prior to this version will be backfilled.
-//
-// DO NOT call this method from inside a transaction, otherwise the absence of this relation will
-// cause a transaction rollback while this function returns a nil-valued error (hard to debug).
-func (s *Store) inferBackfillTargetViaGolangMigrate(ctx context.Context) (int, bool, error) {
-	version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, sqlf.Sprintf(tableizeSchemaName(s.schemaName)))))
-	if err != nil && !isMissingRelation(err) {
-		return 0, false, err
-	}
-
-	return version, ok, nil
-}
-
-const inferBackfillTargetViaGolangMigrateQuery = `
--- source: internal/database/migration/store/store.go:inferBackfillTargetViaGolangMigrate
-SELECT version::integer FROM %s WHERE NOT dirty
-`
-
 // inferbackfillTargetViaMigrationLogs reads the migration_logs table and returns the smallest
 // identifier of a migration that has at one point been squashed. We use the fact that any existing
 // instance with data in this table will have applied _some_ squashed migration. Any migrations
@@ -236,6 +217,25 @@ func (s *Store) inferbackfillTargetViaMigrationLogs(ctx context.Context) (int, b
 	}
 	return appliedRootIDs[0], true, nil
 }
+
+// inferBackfillTargetViaGolangMigrate reads the old .*schema_migrations table (if it exists) and
+// returns the version number. Any migration defined prior to this version will be backfilled.
+//
+// DO NOT call this method from inside a transaction, otherwise the absence of this relation will
+// cause a transaction rollback while this function returns a nil-valued error (hard to debug).
+func (s *Store) inferBackfillTargetViaGolangMigrate(ctx context.Context) (int, bool, error) {
+	version, ok, err := basestore.ScanFirstInt(s.Query(ctx, sqlf.Sprintf(inferBackfillTargetViaGolangMigrateQuery, sqlf.Sprintf(tableizeSchemaName(s.schemaName)))))
+	if err != nil && !isMissingRelation(err) {
+		return 0, false, err
+	}
+
+	return version, ok, nil
+}
+
+const inferBackfillTargetViaGolangMigrateQuery = `
+-- source: internal/database/migration/store/store.go:inferBackfillTargetViaGolangMigrate
+SELECT version::integer FROM %s WHERE NOT dirty
+`
 
 // stitchedMigration returns the stitched migration graph (upgrade metadata) that is related
 // to this store's schema.
