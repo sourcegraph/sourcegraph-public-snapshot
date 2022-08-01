@@ -19,7 +19,7 @@
     "lint:css": "stylelint 'webview/**/*.scss'",
     "standalone": "ts-node standalone/src/server.ts",
     "storybook": "STORIES_GLOB=client/jetbrains/webview/src/**/*.story.tsx yarn workspace @sourcegraph/storybook run start",
-    "task:gulp": "cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
+    "task:gulp": "yarn cross-env NODE_OPTIONS=\"--max_old_space_size=8192\" gulp",
     "typecheck": "tsc -b",
     "watch": "WATCH=true yarn task:gulp esbuild"
   }
