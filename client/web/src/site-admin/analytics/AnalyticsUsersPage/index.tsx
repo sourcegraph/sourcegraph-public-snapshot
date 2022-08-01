@@ -42,18 +42,21 @@ export const AnalyticsUsersPage: React.FunctionComponent<RouteComponentProps<{}>
                 value: users.activity.summary.totalUniqueUsers,
                 description: 'Active users',
                 color: 'var(--purple)',
+                tooltip: 'Users using the application in the selected timeframe.',
             },
             {
                 value: data.users.totalCount,
                 description: 'Registered Users',
                 color: 'var(--body-color)',
                 position: 'right',
+                tooltip: 'The number of users who have created an account.',
             },
             {
                 value: data.site.productSubscription.license?.userCount ?? 0,
                 description: 'User licenses',
                 color: 'var(--body-color)',
                 position: 'right',
+                tooltip: 'The number of user licenses your current account is provisioned for.',
             },
         ]
 
