@@ -14,6 +14,7 @@ import { CreateNotebookPage } from './notebooks/createPage/CreateNotebookPage'
 import { NotebooksListPage } from './notebooks/listPage/NotebooksListPage'
 import { ConnectGitHubAppPage } from './org/settings/codeHosts/ConnectGitHubAppPage'
 import { InstallGitHubAppSuccessPage } from './org/settings/codeHosts/InstallGitHubAppSuccessPage'
+import { RepoContainerPrefetch } from './repo/RepoContainerPrefetch'
 import { PageRoutes } from './routes.constants'
 import { SearchPageWrapper } from './search/SearchPageWrapper'
 import { getExperimentalFeatures, useExperimentalFeatures } from './stores'
@@ -245,6 +246,6 @@ export const routes: readonly LayoutRouteProps<any>[] = ([
     ...communitySearchContextsRoutes,
     {
         path: PageRoutes.RepoContainer,
-        render: lazyComponent(() => import('./repo/RepoContainer'), 'RepoContainer'),
+        render: props => <RepoContainerPrefetch {...props} />,
     },
 ] as readonly (LayoutRouteProps<any> | undefined)[]).filter(Boolean) as readonly LayoutRouteProps<any>[]

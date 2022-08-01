@@ -7,20 +7,13 @@ import { escapeRegExp } from 'lodash'
 import AlertCircleIcon from 'mdi-react/AlertCircleIcon'
 import MapSearchIcon from 'mdi-react/MapSearchIcon'
 import { Route, RouteComponentProps, Switch } from 'react-router'
-import { NEVER, ObservableInput, of } from 'rxjs'
-import { catchError, switchMap } from 'rxjs/operators'
 
 import { ErrorMessage } from '@sourcegraph/branded/src/components/alerts'
-import { asError, ErrorLike, isErrorLike, encodeURIPathComponent, repeatUntil } from '@sourcegraph/common'
+import { ErrorLike, isErrorLike, encodeURIPathComponent } from '@sourcegraph/common'
 import { SearchContextProps } from '@sourcegraph/search'
 import { StreamingSearchResultsListProps } from '@sourcegraph/search-ui'
-import {
-    isCloneInProgressErrorLike,
-    isRepoNotFoundErrorLike,
-    isRepoSeeOtherErrorLike,
-} from '@sourcegraph/shared/src/backend/errors'
+import { isRepoNotFoundErrorLike } from '@sourcegraph/shared/src/backend/errors'
 import { ActivationProps } from '@sourcegraph/shared/src/components/activation/Activation'
-import { displayRepoName } from '@sourcegraph/shared/src/components/RepoLink'
 import { ExtensionsControllerProps } from '@sourcegraph/shared/src/extensions/controller'
 import { PlatformContextProps } from '@sourcegraph/shared/src/platform/context'
 import { Settings } from '@sourcegraph/shared/src/schema/settings.schema'
@@ -34,7 +27,6 @@ import {
     Icon,
     Button,
     ButtonGroup,
-    useObservable,
     Link,
     Popover,
     PopoverContent,
@@ -57,7 +49,7 @@ import { RouteDescriptor } from '../util/contributions'
 import { parseBrowserRepoURL } from '../util/url'
 
 import { GoToCodeHostAction } from './actions/GoToCodeHostAction'
-import { fetchFileExternalLinks, fetchRepository, resolveRevision } from './backend'
+import { fetchFileExternalLinks, ResolvedRevision } from './backend'
 import { BlameContextProvider } from './blame/useBlameVisibility'
 import { RepoHeader, RepoHeaderActionButton, RepoHeaderContributionsLifecycleProps } from './RepoHeader'
 import { RepoHeaderContributionPortal } from './RepoHeaderContributionPortal'
@@ -66,8 +58,6 @@ import { RepositoriesPopover } from './RepositoriesPopover'
 import { RepositoryNotFoundPage } from './RepositoryNotFoundPage'
 import { RepoSettingsAreaRoute } from './settings/RepoSettingsArea'
 import { RepoSettingsSideBarGroup } from './settings/RepoSettingsSidebar'
-
-import { redirectToExternalHost } from '.'
 
 import styles from './RepoContainer.module.scss'
 
@@ -91,7 +81,7 @@ export interface RepoContainerContext
         CodeIntelligenceProps,
         BatchChangesProps,
         CodeInsightsProps {
-    repo: RepositoryFields
+    repo?: RepositoryFields
     authenticatedUser: AuthenticatedUser | null
     repoSettingsAreaRoutes: readonly RepoSettingsAreaRoute[]
     repoSettingsSidebarGroups: readonly RepoSettingsSideBarGroup[]
@@ -115,7 +105,7 @@ const RepoPageNotFound: React.FunctionComponent<React.PropsWithChildren<unknown>
     <HeroPage icon={MapSearchIcon} title="404: Not Found" subtitle="The repository page was not found." />
 )
 
-interface RepoContainerProps
+export interface RepoContainerProps
     extends RouteComponentProps<{ repoRevAndRest: string }>,
         SettingsCascadeProps<Settings>,
         PlatformContextProps,
@@ -141,6 +131,9 @@ interface RepoContainerProps
     globbing: boolean
     isMacPlatform: boolean
     isSourcegraphDotCom: boolean
+
+    repoOrError?: RepositoryFields | ErrorLike
+    resolvedRevisionOrError?: ResolvedRevision | ErrorLike
 }
 
 export interface HoverThresholdProps {
@@ -158,54 +151,9 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
         location.pathname + location.search + location.hash
     )
 
+    const { repoOrError, resolvedRevisionOrError, ...otherProps } = props
+
     const [coreWorkflowImprovementsEnabled] = useCoreWorkflowImprovementsEnabled()
-
-    // Fetch repository upon mounting the component.
-    const repoOrError = useObservable(
-        useMemo(
-            () =>
-                fetchRepository({ repoName }).pipe(
-                    catchError(
-                        (error): ObservableInput<ErrorLike> => {
-                            const redirect = isRepoSeeOtherErrorLike(error)
-                            if (redirect) {
-                                redirectToExternalHost(redirect)
-                                return NEVER
-                            }
-                            return of(asError(error))
-                        }
-                    )
-                ),
-            [repoName]
-        )
-    )
-
-    const resolvedRevisionOrError = useObservable(
-        useMemo(
-            () =>
-                of(undefined)
-                    .pipe(
-                        // Wrap in switchMap so we don't break the observable chain when
-                        // catchError returns a new observable, so repeatUntil will
-                        // properly resubscribe to the outer observable and re-fetch.
-                        switchMap(() =>
-                            resolveRevision({ repoName, revision }).pipe(
-                                catchError(error => {
-                                    if (isCloneInProgressErrorLike(error)) {
-                                        return of<ErrorLike>(asError(error))
-                                    }
-                                    throw error
-                                })
-                            )
-                        )
-                    )
-                    .pipe(
-                        repeatUntil(value => !isCloneInProgressErrorLike(value), { delay: 1000 }),
-                        catchError(error => of<ErrorLike>(asError(error)))
-                    ),
-            [repoName, revision]
-        )
-    )
 
     // The external links to show in the repository header, if any.
     const [externalLinks, setExternalLinks] = useState<ExternalLinkFields[] | undefined>()
@@ -235,7 +183,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                     size="sm"
                     as={Link}
                 >
-                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> {displayRepoName(repoOrError.name)}
+                    <Icon aria-hidden={true} svgPath={mdiSourceRepository} /> Change repository
                 </Button>
             )
 
@@ -263,10 +211,12 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
                             className="pt-0 pb-0"
                             aria-label="Change repository"
                         >
-                            <RepositoriesPopover
-                                currentRepo={repoOrError.id}
-                                telemetryService={props.telemetryService}
-                            />
+                            {repoOrError && (
+                                <RepositoriesPopover
+                                    currentRepo={repoOrError.id}
+                                    telemetryService={props.telemetryService}
+                                />
+                            )}
                         </PopoverContent>
                     </Popover>
                 ),
@@ -357,7 +307,7 @@ export const RepoContainer: React.FunctionComponent<React.PropsWithChildren<Repo
     const repoMatchURL = '/' + encodeURIPathComponent(repoName)
 
     const context: RepoContainerContext = {
-        ...props,
+        ...otherProps,
         ...repoHeaderContributionsLifecycleProps,
         ...childBreadcrumbSetters,
         repo: repoOrError,
