@@ -2,6 +2,7 @@ package sources
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 
@@ -65,6 +66,7 @@ func newGitLabSource(urn string, c *schema.GitLabConnection, cf *httpcli.Factory
 		}
 	}
 
+	fmt.Println("..... about to call new calient provider in sources/gitlab.go....")
 	provider := gitlab.NewClientProvider(urn, baseURL, cli, nil)
 	return &GitLabSource{
 		au:     authr,

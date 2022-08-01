@@ -2,6 +2,7 @@ package repos
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strconv"
 	"strings"
@@ -65,6 +66,8 @@ var gitlabRatelimitWaitCounter = promauto.NewCounterVec(prometheus.CounterOpts{
 }, []string{"resource", "name"})
 
 func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalService, c *schema.GitLabConnection, cf *httpcli.Factory) (*GitLabSource, error) {
+	fmt.Println("... 0 - NEW GITLAB SOURCE....")
+
 	baseURL, err := url.Parse(c.Url)
 	if err != nil {
 		return nil, err
@@ -101,15 +104,17 @@ func newGitLabSource(ctx context.Context, db database.DB, svc *types.ExternalSer
 		return nil, err
 	}
 
-	helper := &RefreshTokenConfig{
-		DB:                db,
-		ExternalServiceID: svc.ID,
-	}
+	helper := &RefreshTokenConfig{DB: db, ExternalServiceID: svc.ID}
+
+	fmt.Println("..... 1 ==== about to call new client provider in repos/gitlab.go....")
+
 	provider := gitlab.NewClientProvider(svc.URN(), baseURL, cli, helper.RefreshToken)
 
+	fmt.Println("..... 3 Now -- we have a PROVIDER WITH HELPER...", provider)
 	var client *gitlab.Client
 	switch gitlab.TokenType(c.TokenType) {
 	case gitlab.TokenTypeOAuth:
+		fmt.Println("...4 -  GITLAB TOKEN IS OAUTH")
 		//refreshed, err := maybeRefreshGitLabOAuthTokenFromCodeHost(ctx, db, svc)
 		//if err != nil {
 		//	return nil, errors.Wrap(err, "refreshing OAuth token")
@@ -409,8 +414,15 @@ type RefreshTokenConfig struct {
 // todo - add docstring and explain that we cannot import the current helper nor use the helper in other places
 // due to import cycle
 func (r *RefreshTokenConfig) RefreshToken(ctx context.Context, doer httpcli.Doer, oauthCtx oauthutil.Context) (string, error) {
+	fmt.Println(".... OPTIONAL REFRESH TOKEN FUNCTION....")
 	refreshedToken, err := oauthutil.RetrieveToken(ctx, doer, oauthCtx, oauthutil.AuthStyleInParams)
+	if err != nil {
+		fmt.Println("... optional function - didn't get refreshed token...", refreshedToken)
 
+		return "", errors.Wrap(err, "error retrieving token")
+	}
+
+	fmt.Println("... optional function - got refreshed token...", refreshedToken)
 	svc, err := r.DB.ExternalServices().GetByID(ctx, r.ExternalServiceID)
 	if err != nil {
 		return "", errors.Wrap(err, "getting external service")
@@ -420,6 +432,10 @@ func (r *RefreshTokenConfig) RefreshToken(ctx context.Context, doer httpcli.Doer
 		success := err == nil
 		gitlab.TokenRefreshCounter.WithLabelValues("codehost", strconv.FormatBool(success)).Inc()
 	}()
+
+	fmt.Println("... OPTIONAL FUNCTION svc id", svc.ID)
+	fmt.Println("... OPTIONAL FUNCTION svc config", svc.Config)
+
 	svc.Config, err = jsonc.Edit(svc.Config, refreshedToken.AccessToken, "token")
 	if err != nil {
 		return "", errors.Wrap(err, "updating OAuth token")
@@ -437,6 +453,7 @@ func (r *RefreshTokenConfig) RefreshToken(ctx context.Context, doer httpcli.Doer
 		return "", errors.Wrap(err, "upserting external service")
 	}
 
+	fmt.Println("... TOKEN REFRESHED FOR CODE HOST....")
 	return "", nil
 }
 

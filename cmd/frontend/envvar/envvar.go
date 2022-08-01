@@ -18,7 +18,7 @@ var HTTPAddrInternal = env.Get(
 	"HTTP listen address for internal HTTP API. This should never be exposed externally, as it lacks certain authz checks.",
 )
 
-var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "false", "run as Sourcegraph.com, with add'l marketing and redirects"))
+var sourcegraphDotComMode, _ = strconv.ParseBool(env.Get("SOURCEGRAPHDOTCOM_MODE", "true", "run as Sourcegraph.com, with add'l marketing and redirects"))
 var openGraphPreviewServiceURL = env.Get("OPENGRAPH_PREVIEW_SERVICE_URL", "", "The URL of the OpenGraph preview image generating service")
 
 // SourcegraphDotComMode is true if this server is running Sourcegraph.com

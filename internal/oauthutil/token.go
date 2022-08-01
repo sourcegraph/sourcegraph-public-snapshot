@@ -138,6 +138,9 @@ func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx Context, aut
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(".... retrieve token request", req)
+	fmt.Println(".... retrieve token oauthctx", oauthCtx)
 	token, err := doTokenRoundTrip(ctx, doer, req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do token round trip")
@@ -153,6 +156,7 @@ func RetrieveToken(ctx context.Context, doer httpcli.Doer, oauthCtx Context, aut
 }
 
 func doTokenRoundTrip(ctx context.Context, doer httpcli.Doer, req *http.Request) (*Token, error) {
+	fmt.Println("... 0 = do token round trip request", req)
 	r, err := doer.Do(req)
 	if err != nil {
 		return nil, errors.Wrap(err, "do request")
@@ -164,12 +168,15 @@ func doTokenRoundTrip(ctx context.Context, doer httpcli.Doer, req *http.Request)
 		return nil, fmt.Errorf("oauth2: cannot fetch token: %v", err)
 	}
 
+	fmt.Println("... 1 do token round trip...")
 	if code := r.StatusCode; code < 200 || code > 299 {
 		return nil, &RetrieveError{
 			Response: r,
 			Body:     body,
 		}
 	}
+
+	fmt.Println("... 2 do token round trip...")
 
 	var token *Token
 	content, _, _ := mime.ParseMediaType(r.Header.Get("Content-Type"))

@@ -103,13 +103,17 @@ func NewClientProvider(urn string, baseURL *url.URL, cli httpcli.Doer, tokenRefr
 		return category
 	})
 
-	return &ClientProvider{
+	client := &ClientProvider{
 		urn:            urn,
 		baseURL:        baseURL.ResolveReference(&url.URL{Path: path.Join(baseURL.Path, "api/v4") + "/"}),
 		httpClient:     cli,
 		gitlabClients:  make(map[string]*Client),
 		tokenRefresher: tokenRefresher,
 	}
+
+	fmt.Println("... new auth provider client", client)
+
+	return client
 }
 
 // GetAuthenticatorClient returns a client authenticated by the given
@@ -229,17 +233,9 @@ func isGitLabDotComURL(baseURL *url.URL) bool {
 // base path.
 func (c *Client) do(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	req.URL = c.baseURL.ResolveReference(req.URL)
-	return c.doWithBaseURL(ctx, req, result)
+	//return c.doWithBaseURL(ctx, req, result)
+	return c.doWithBaseURLAndOAuthTokenRefresher(ctx, req, result)
 }
-
-/*
-
-1. Detect OAuth token expired
-2. Try to refresh the token
-3. We tell the Authenticator to use the new token
-4. Redo the same request
-
-*/
 
 // doWithBaseURL will not amend the request URL.
 func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
@@ -290,7 +286,9 @@ func (c *Client) doWithBaseURL(ctx context.Context, req *http.Request, result an
 	return resp.Header, resp.StatusCode, json.NewDecoder(resp.Body).Decode(result)
 }
 
-func (c *Client) doWithBaseURLWithOAuthContext(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
+// doWithBaseURLAndOAuthTokenRefresher doesn't amend the request URL. When an OAuth Bearer token is used for authentication,
+// it  will make a retry and refresh in case the token has expired.
+func (c *Client) doWithBaseURLAndOAuthTokenRefresher(ctx context.Context, req *http.Request, result any) (responseHeader http.Header, responseCode int, err error) {
 	var responseStatus string
 
 	span, ctx := ot.StartSpanFromContext(ctx, "GitLab")
@@ -319,10 +317,10 @@ func (c *Client) doWithBaseURLWithOAuthContext(ctx context.Context, req *http.Re
 	var body []byte
 	oauthAuther, ok := c.Auth.(*auth.OAuthBearerToken)
 	if ok {
-		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, oauthutil.Context{}) // do we need the ctx here
+		code, header, body, err = oauthutil.DoRequest(ctx, c.httpClient, req, oauthAuther, c.tokenRefresher, oauthutil.Context{})
 		if err != nil {
 			trace("GitLab API error", "method", req.Method, "url", req.URL.String(), "err", err)
-			return nil, 0, errors.Wrap(err, "do request")
+			return nil, 0, errors.Wrap(err, "do request with retry and refresh")
 		}
 	} else {
 		if c.Auth != nil {
@@ -347,7 +345,6 @@ func (c *Client) doWithBaseURLWithOAuthContext(ctx context.Context, req *http.Re
 	}
 	trace("GitLab API", "method", req.Method, "url", req.URL.String(), "respCode", code)
 
-	//c.rateLimitMonitor.Update(header)
 	if code < 200 || code >= 400 {
 		err := NewHTTPError(code, body)
 		return nil, code, errors.Wrap(err, fmt.Sprintf("unexpected response from GitLab API (%s)", req.URL))

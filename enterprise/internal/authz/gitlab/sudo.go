@@ -3,10 +3,11 @@ package gitlab
 import (
 	"context"
 	"fmt"
-	"github.com/sourcegraph/sourcegraph/internal/database"
 	"net/url"
 	"strconv"
 	"time"
+
+	"github.com/sourcegraph/sourcegraph/internal/database"
 
 	"github.com/sourcegraph/sourcegraph/cmd/frontend/auth/providers"
 	"github.com/sourcegraph/sourcegraph/internal/authz"
@@ -65,6 +66,8 @@ type SudoProviderOp struct {
 }
 
 func newSudoProvider(op SudoProviderOp, cli httpcli.Doer) *SudoProvider {
+	fmt.Println("..... about to add new sudo provider in sudo .go....")
+
 	return &SudoProvider{
 		sudoToken: op.SudoToken,
 

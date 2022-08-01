@@ -4,19 +4,20 @@ import (
 	"bytes"
 	"context"
 	"flag"
-	"fmt"
-	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/regexp"
-	"github.com/stretchr/testify/require"
 	"io"
 	"net/http"
 	"net/url"
 	"os"
 	"testing"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/regexp"
+	"github.com/stretchr/testify/require"
+
 	"github.com/sourcegraph/sourcegraph/internal/extsvc/auth"
 	"github.com/sourcegraph/sourcegraph/internal/httpcli"
 	"github.com/sourcegraph/sourcegraph/internal/httptestutil"
+	"github.com/sourcegraph/sourcegraph/internal/oauthutil"
 )
 
 func TestGetAuthenticatedUserOAuthScopes(t *testing.T) {
@@ -94,19 +95,17 @@ func TestClient_doWithBaseURLWithOAuthContext(t *testing.T) {
 		},
 	}
 
-	client := NewClientProvider("Test", baseURL, doer,
-		func(ctx context.Context, doer httpcli.Doer) (string, error) {
-			fmt.Println("trying to refresh")
-
-			return "refreshed-token", nil
-		},
-	).getClient(&auth.OAuthBearerToken{Token: "bad token"})
-
 	ctx := context.Background()
+
+	client := NewClientProvider("Test", baseURL, doer, func(ctx context.Context, doer httpcli.Doer, oauthCtxt oauthutil.Context) (string, error) {
+		return "refreshed-token", nil
+	}).getClient(&auth.OAuthBearerToken{Token: "bad token"})
+
 	req, err := http.NewRequest(http.MethodGet, "todo", nil)
 	require.NoError(t, err)
 
 	var result map[string]any
-	_, _, err = client.doWithBaseURLWithOAuthContext(ctx, req, &result)
+	_, _, err = client.doWithBaseURL(ctx, req, &result)
 	require.NoError(t, err)
 }
+
