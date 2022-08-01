@@ -1,7 +1,6 @@
 package query
 
 import (
-	//nolint:depguard
 	"strings"
 
 	"github.com/grafana/regexp"
