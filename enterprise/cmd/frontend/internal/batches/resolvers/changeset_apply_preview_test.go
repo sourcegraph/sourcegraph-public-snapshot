@@ -109,7 +109,7 @@ func TestChangesetApplyPreviewResolver(t *testing.T) {
 		OwnedByBatchChange: batchChange.ID,
 	})
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: cstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -275,7 +275,7 @@ func TestChangesetApplyPreviewResolverWithPublicationStates(t *testing.T) {
 	repo := newGitHubTestRepo("github.com/sourcegraph/test", newGitHubExternalService(t, esStore))
 	require.Nil(t, repoStore.Create(ctx, repo))
 
-	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
+	s, err := graphqlbackend.NewSchema(db, &Resolver{store: bstore}, nil, nil, nil, nil, nil, nil, nil, nil, nil, nil)
 	require.Nil(t, err)
 
 	// To make it easier to assert against the operations in a preview node,

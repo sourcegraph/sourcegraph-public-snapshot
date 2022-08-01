@@ -55,7 +55,6 @@ func (o *Observer) reposExist(ctx context.Context, options search.RepoOptions) b
 func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *search.Alert {
 	repoFilters, minusRepoFilters := q.Repositories()
 	contextFilters, _ := q.StringValues(query.FieldContext)
-	dependencies := q.Dependencies()
 	onlyForks, noForks, forksNotSet := false, false, true
 	if fork := q.Fork(); fork != nil {
 		onlyForks = *fork == query.Only
@@ -84,23 +83,6 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 
 	isSiteAdmin := backend.CheckCurrentUserIsSiteAdmin(ctx, o.Db) == nil
 	if !envvar.SourcegraphDotComMode() {
-		if len(dependencies) > 0 {
-			needsPackageHostConfig, err := needsPackageHostConfiguration(ctx, o.Db)
-			if err == nil && needsPackageHostConfig {
-				if isSiteAdmin {
-					return &search.Alert{
-						Title:       "No package hosts configured",
-						Description: "To start searching your dependencies, first go to site admin to configure package hosts.",
-					}
-				} else {
-					return &search.Alert{
-						Title:       "No package hosts configured",
-						Description: "To start searching your dependencies, ask the site admin to configure package hosts.",
-					}
-				}
-			}
-		}
-
 		if needsRepoConfig, err := needsRepositoryConfiguration(ctx, o.Db); err == nil && needsRepoConfig {
 			if isSiteAdmin {
 				return &search.Alert{
@@ -113,13 +95,6 @@ func (o *Observer) alertForNoResolvedRepos(ctx context.Context, q query.Q) *sear
 					Description: "To start searching code, ask the site admin to configure and enable repositories.",
 				}
 			}
-		}
-	}
-
-	if len(dependencies) > 0 {
-		return &search.Alert{
-			Title:       "No dependency repositories found",
-			Description: "Dependency repos are cloned on-demand when first searched. Try again in a few seconds if you know the given repositories have dependencies.\n\nRead more about dependencies search [here](https://docs.sourcegraph.com/code_search/how-to/dependencies_search).",
 		}
 	}
 
@@ -279,22 +254,9 @@ func (o *Observer) errorToAlert(ctx context.Context, err error) (*search.Alert, 
 
 	if errors.As(err, &mErr) {
 		var a *search.Alert
-		dependencies := o.Query.Dependencies()
-		if len(dependencies) == 0 {
-			a = AlertForMissingRepoRevs(mErr.Missing)
-		} else {
-			a = AlertForMissingDependencyRepoRevs(mErr.Missing)
-		}
+		a = AlertForMissingRepoRevs(mErr.Missing)
 		a.Priority = 6
 		return a, nil
-	}
-
-	var unindexedLockfile *searchrepos.MissingLockfileIndexing
-	if errors.As(err, &unindexedLockfile) {
-		repo := unindexedLockfile.RepoName()
-		revs := unindexedLockfile.RevNames()
-
-		return search.AlertForUnindexedLockfile(repo, revs), nil
 	}
 
 	if errors.As(err, &lErr) {

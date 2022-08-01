@@ -13,7 +13,6 @@ To add Go dependencies to Sourcegraph you need to setup a Go dependencies code h
 
 There are currently two ways to sync Go dependency repositories.
 
-* **Dependencies search**: Sourcegraph automatically syncs Go dependency repos that are found in `go.mod` files during a [dependencies search](../../code_search/how-to/dependencies_search.md).
 * **Code host configuration**: manually list dependencies in the `"dependencies"` section of the JSON configuration when creating the Go dependency code host. This method can be useful to verify that the credentials are picked up correctly without having to run a dependencies search.
 
 Sourcegraph tries to find each dependency repository in all configured `"urls"` until it's found. This means you can configure a public proxy first and fallback to a private one second (e.g. `"urls": ["https://proxy.golang.org", "https://admin:foobar@athens.yourcorp.com"]`).

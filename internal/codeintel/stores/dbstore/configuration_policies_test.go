@@ -36,8 +36,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			retain_intermediate_commits,
 			indexing_enabled,
 			index_commit_max_age_hours,
-			index_intermediate_commits,
-			lockfile_indexing_enabled
+			index_intermediate_commits
 		) VALUES
 			(101, 42,   'policy  1 abc', 'GIT_TREE', '', null,              false, 0, false, true,  0, false, false),
 			(102, 42,   'policy  2 def', 'GIT_TREE', '', null,              true , 0, false, false, 0, false, false),
@@ -47,8 +46,7 @@ func TestGetConfigurationPolicies(t *testing.T) {
 			(106, NULL, 'policy  6 bcd', 'GIT_TREE', '', '{gitlab.com/*}',  true , 0, false, false, 0, false, false),
 			(107, NULL, 'policy  7 def', 'GIT_TREE', '', '{gitlab.com/*1}', false, 0, false, true,  0, false, false),
 			(108, NULL, 'policy  8 abc', 'GIT_TREE', '', '{gitlab.com/*2}', true , 0, false, false, 0, false, false),
-			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false, false),
-			(110, NULL, 'policy 10 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, false, 0, false, true)
+			(109, NULL, 'policy  9 def', 'GIT_TREE', '', '{github.com/*}',  false, 0, false, true,  0, false, false)
 	`
 	if _, err := db.ExecContext(ctx, query); err != nil {
 		t.Fatalf("unexpected error while inserting configuration policies: %s", err)
