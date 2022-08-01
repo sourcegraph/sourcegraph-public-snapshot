@@ -530,6 +530,7 @@ describe('Repository component', () => {
                 })
 
                 test.skip('does navigation (same repo, same file)', async () => {
+                    // See https://github.com/sourcegraph/sourcegraph/pull/39747
                     await driver.page.goto(
                         sourcegraphBaseUrl +
                             '/github.com/sourcegraph/go-diff@3f415a150aec0685cb81b73cc201e762e075006d/-/blob/diff/parse.go?L25:10'
