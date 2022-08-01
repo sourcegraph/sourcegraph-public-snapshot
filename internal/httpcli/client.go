@@ -283,25 +283,11 @@ func GerritUnauthenticateMiddleware(cli Doer) Doer {
 func ExternalTransportOpt(cli *http.Client) error {
 	tr, err := getTransportForMutation(cli)
 	if err != nil {
-		// TODO(keegancsmith) for now we don't support unwrappable
-		// transports. https://github.com/sourcegraph/sourcegraph/pull/7741
-		// https://github.com/sourcegraph/sourcegraph/pull/71
-		if isUnwrappableTransport(cli) {
-			return nil
-		}
 		return errors.Wrap(err, "httpcli.ExternalTransportOpt")
 	}
 
 	cli.Transport = &externalTransport{base: tr}
 	return nil
-}
-
-func isUnwrappableTransport(cli *http.Client) bool {
-	if cli.Transport == nil {
-		return false
-	}
-	_, ok := cli.Transport.(interface{ UnwrappableTransport() })
-	return ok
 }
 
 // NewCertPoolOpt returns a Opt that sets the RootCAs pool of an http.Client's
@@ -610,13 +596,24 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		cli.Transport = http.DefaultTransport
 	}
 
-	tr, ok := cli.Transport.(*http.Transport)
-	if !ok {
-		return nil, errors.Errorf("http.Client.Transport is not an *http.Transport: %T", cli.Transport)
-	}
+	var tr *http.Transport
+	switch v := cli.Transport.(type) {
+	case *http.Transport:
+		tr = v.Clone()
+		cli.Transport = tr
 
-	tr = tr.Clone()
-	cli.Transport = tr
+	case UnwrappableTransport:
+		wrapped := unwrapAll(v)
+		t, ok := (*wrapped).(*http.Transport)
+		if !ok {
+			return nil, errors.Errorf("http.Client.Transport cannot be unwrapped as *http.Transport: %T", cli.Transport)
+		}
+		tr = t.Clone()
+		*wrapped = tr
+
+	default:
+		return nil, errors.Errorf("http.Client.Transport cannot be cast as an *http.Transport: %T", cli.Transport)
+	}
 
 	return tr, nil
 }
@@ -630,7 +627,10 @@ func ActorTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &actor.HTTPTransport{RoundTripper: cli.Transport}
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &actor.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
 
 	return nil
 }
@@ -644,7 +644,10 @@ func RequestClientTransportOpt(cli *http.Client) error {
 		cli.Transport = http.DefaultTransport
 	}
 
-	cli.Transport = &requestclient.HTTPTransport{RoundTripper: cli.Transport}
+	cli.Transport = &wrappedTransport{
+		RoundTripper: &requestclient.HTTPTransport{RoundTripper: cli.Transport},
+		Wrapped:      cli.Transport,
+	}
 
 	return nil
 }
