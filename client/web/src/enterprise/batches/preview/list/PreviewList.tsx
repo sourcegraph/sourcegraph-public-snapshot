@@ -34,9 +34,6 @@ interface Props extends ThemeProps {
     location: H.Location
     authenticatedUser: PreviewPageAuthenticatedUser
 
-    /** The total number of changesets. Used to determine whether to show the LicenseAlert. **/
-    totalCount?: number
-
     /** For testing only. */
     queryChangesetApplyPreview?: typeof _queryChangesetApplyPreview
     /** For testing only. */
@@ -56,8 +53,6 @@ export const PreviewList: React.FunctionComponent<React.PropsWithChildren<Props>
     location,
     authenticatedUser,
     isLightTheme,
-
-    totalCount = 0,
 
     queryChangesetApplyPreview = _queryChangesetApplyPreview,
     queryChangesetSpecFileDiffs,
