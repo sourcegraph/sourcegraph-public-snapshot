@@ -180,7 +180,7 @@ func TestNewCertPool(t *testing.T) {
 			name:  "fails if transport isn't an http.Transport",
 			cli:   &http.Client{Transport: bogusTransport{}},
 			certs: []string{cert},
-			err:   "httpcli.NewCertPoolOpt: http.Client.Transport is not an *http.Transport: httpcli.bogusTransport",
+			err:   "httpcli.NewCertPoolOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:  "pool is set to what is given",
@@ -242,7 +242,7 @@ func TestNewIdleConnTimeoutOpt(t *testing.T) {
 		{
 			name: "fails if transport isn't an http.Transport",
 			cli:  &http.Client{Transport: bogusTransport{}},
-			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport cannot be cast as an *http.Transport: httpcli.bogusTransport",
+			err:  "httpcli.NewIdleConnTimeoutOpt: http.Client.Transport cannot be cast as a *http.Transport: httpcli.bogusTransport",
 		},
 		{
 			name:    "IdleConnTimeout is set to what is given",

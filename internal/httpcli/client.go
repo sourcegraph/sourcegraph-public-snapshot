@@ -612,7 +612,7 @@ func getTransportForMutation(cli *http.Client) (*http.Transport, error) {
 		*wrapped = tr
 
 	default:
-		return nil, errors.Errorf("http.Client.Transport cannot be cast as an *http.Transport: %T", cli.Transport)
+		return nil, errors.Errorf("http.Client.Transport cannot be cast as a *http.Transport: %T", cli.Transport)
 	}
 
 	return tr, nil
