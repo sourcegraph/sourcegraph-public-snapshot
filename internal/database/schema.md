@@ -1914,6 +1914,7 @@ Associates a repository with the set of LSIF upload identifiers that can serve i
  finished_at                   | timestamp with time zone |           |          | 
  success                       | boolean                  |           |          | 
  error_message                 | text                     |           |          | 
+ backfilled                    | boolean                  |           | not null | false
 Indexes:
     "migration_logs_pkey" PRIMARY KEY, btree (id)
 
