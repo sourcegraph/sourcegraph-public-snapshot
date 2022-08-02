@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"time"
 
 	"github.com/sourcegraph/log"
@@ -32,6 +31,7 @@ type config struct {
 	BuildkiteToken string
 	SlackToken     string
 	GithubToken    string
+	SlackChannel   string
 }
 
 func configFromEnv() (*config, error) {
@@ -50,17 +50,22 @@ func configFromEnv() (*config, error) {
 		return nil, err
 	}
 
+	err = envVar("SLACK_CHANNEL", &c.SlackChannel)
+	if err != nil {
+		c.SlackChannel = DefaultChannel
+	}
+
 	return &c, nil
 }
 
 // NewServer creatse a new server to listen for Buildkite webhook events.
-func NewServer(logger log.Logger, c config, channel string) *Server {
+func NewServer(logger log.Logger, c config) *Server {
 	logger = logger.Scoped("server", "Server which tracks events received from Buildkite and sends notifications on failures")
 	return &Server{
 		logger:       logger,
 		store:        NewBuildStore(logger),
 		bkToken:      c.BuildkiteToken,
-		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, channel),
+		notifyClient: NewNotificationClient(logger, c.SlackToken, c.GithubToken, c.SlackChannel),
 	}
 }
 
@@ -191,16 +196,11 @@ func main() {
 
 	logger := log.Scoped("BuildTracker", "main entrypoint for Build Tracking Server")
 
-	channel := os.Getenv("SLACK_CHANNEL")
-	if channel == "" {
-		channel = DefaultChannel
-	}
-
 	serverConf, err := configFromEnv()
 	if err != nil {
 		logger.Fatal("failed to get config from env", log.Error(err))
 	}
-	server := NewServer(logger, *serverConf, channel)
+	server := NewServer(logger, *serverConf)
 
 	stopFn := server.startOldBuildCleaner(5*time.Minute, 24*time.Hour)
 	defer stopFn()
