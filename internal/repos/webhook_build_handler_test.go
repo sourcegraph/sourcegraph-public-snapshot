@@ -91,9 +91,4 @@ func TestWebhookBuildHandle(t *testing.T) {
 	if err := handler.Handle(ctx, logger, job); err != nil {
 		t.Fatal(err)
 	}
-
-	// test it works
-	// is the correct request made
-	// if anything gets modified in DB:
-	//
 }
