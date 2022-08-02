@@ -17,8 +17,6 @@ type warning struct {
 // Ensure that warning always implements the Warning error interface.
 var _ Warning = (*warning)(nil)
 
-var WarningReference = warning{}
-
 // NewWarningError will return an error of type warning. This should be used to wrap errors where we
 // do not intend to return an error, increment an error metric. That is, if an error is returned and
 // it is not critical and / or expected to be intermittent and / or nothing we can do about
