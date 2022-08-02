@@ -153,14 +153,14 @@ export const CodeIntelUploadsPage: FunctionComponent<React.PropsWithChildren<Cod
             )}
 
             {repo && commitGraphMetadata && (
-                <Container className="mb-2">
+                <div className="mb-3">
                     <CommitGraphMetadata
                         stale={commitGraphMetadata.stale}
                         updatedAt={commitGraphMetadata.updatedAt}
                         className="mb-0"
                         now={now}
                     />
-                </Container>
+                </div>
             )}
 
             <Container>
